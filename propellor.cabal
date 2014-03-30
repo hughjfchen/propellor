@@ -8,7 +8,7 @@ Stability: Stable
 Copyright: 2014 Joey Hess
 License-File: GPL
 Build-Type: Simple
-Homepage: http://git.kitenet.net/?p=propellor.git;a=summary
+Homepage: http://joeyh.name/code/propellor/
 Category: Utility
 Synopsis: property-based host configuration management in haskell
 Description:
