@@ -25,7 +25,7 @@ getProperties hostname@"clam.kitenet.net" =
 	-- Clam is a tor bridge.
 	, Tor.isBridge
 	-- Should come last as it reboots.
-	--, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
+	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
 	]
 -- add more hosts here...
 --getProperties "foo" =
@@ -59,4 +59,8 @@ cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
 	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
 	, Hostname.set hostname
 	, Ssh.uniqueHostKeys
+	-- Work around for #612402
+	, "/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
+		`onChange` cmdProperty "update-grub" []
+		`onChange` cmdProperty "update-initramfs" [Param "-u"]
 	]
