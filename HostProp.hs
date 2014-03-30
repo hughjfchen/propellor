@@ -25,7 +25,6 @@ getProperties "clam" =
 	, Apt.stdSourcesList Apt.Unstable `onChange` Apt.upgrade
 	, Apt.installed ["etckeeper"]
 	, Apt.installed ["ssh"]
-	, Apt.installed ["git", "myrepos"]
 	, GitHome.installedFor "root"
 	-- Harden the system, but only once root's authorized_keys
 	-- is safely in place.
@@ -38,7 +37,6 @@ getProperties "clam" =
 	, lineInFile "/etc/sudoers" "joey ALL=(ALL:ALL) ALL"
 	, GitHome.installedFor "joey"
 	-- Clam is a tor bridge.
-	, Apt.installed ["tor"]
 	, Tor.isBridge
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.scheduled "+10"

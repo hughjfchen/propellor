@@ -11,11 +11,13 @@ import Utility.SafeCommand
 import Utility.Directory
 import Utility.Monad
 import Utility.Exception
+import qualified Property.Apt as Apt
 
 {- Clones Joey Hess's git home directory, and runs its fixups script. -}
 installedFor :: UserName -> Property
 installedFor user = check (not <$> hasGitDir user) $ 
 	IOProperty ("githome " ++ user) (go =<< homedir user)
+		`requires` Apt.installed ["git", "myrepos"]
   where
  	go Nothing = noChange
 	go (Just home) = do
