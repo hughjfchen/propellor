@@ -15,7 +15,7 @@ main = ensureProperties . getProperties =<< getHostName
  - or one specified on the command line is converted into a list of
  - Properties for that system. -}
 getProperties :: HostName -> [Property]
-getProperties "clam" =
+getProperties "clam.kitenet.net" =
 	-- Clean up the system as installed by cloudatcost.com
 	[ User.nuked "user"
 	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
