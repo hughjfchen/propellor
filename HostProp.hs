@@ -4,8 +4,9 @@ import qualified Property.Apt as Apt
 import qualified Property.Ssh as Ssh
 import qualified Property.User as User
 import qualified Property.Hostname as Hostname
-import qualified Property.GitHome as GitHome
 import qualified Property.Reboot as Reboot
+import qualified Property.Tor as Tor
+import qualified Property.GitHome as GitHome
 
 main :: IO ()
 main = ensureProperties . getProperties =<< getHostName
@@ -38,6 +39,7 @@ getProperties "clam" =
 	, GitHome.installedFor "joey"
 	-- Clam is a tor bridge.
 	, Apt.installed ["tor"]
+	, Tor.isBridge
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.scheduled "+10"
 	]
