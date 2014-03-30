@@ -14,10 +14,12 @@ can ssh in and run it.
 For bootstrapping, propellor compiles to a single binary file,
 which can be transferred to a host and run.
 
-Properties are defined using Haskell. There is no special language as used
-in puppet, chef, ansible, etc, just the full power of Haskell. Hopefully
-that power can be put to good use in making declarative properties that are
-powerful, nicely idempotent, and easy to adapt to a system's special needs.
+Properties are defined using Haskell. Edit Propellor.hs
+
+There is no special language as used in puppet, chef, ansible, etc, just
+the full power of Haskell. Hopefully that power can be put to good use in
+making declarative properties that are powerful, nicely idempotent, and
+easy to adapt to a system's special needs.
 
 Also avoided is any form of node classification. Ie, which hosts are part
 of which classes and share which configuration. It might be nice to use
