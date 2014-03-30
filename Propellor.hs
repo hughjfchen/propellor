@@ -19,6 +19,8 @@ getProperties :: HostName -> [Property]
 getProperties hostname@"clam.kitenet.net" =
 	[ cleanCloudAtCost hostname
 	, standardSystem Apt.Unstable
+	, hasPassword "root"
+	, hasPassword "joey"
 	-- Clam is a tor bridge.
 	, Tor.isBridge
 	, Apt.installed ["docker.io"]

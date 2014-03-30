@@ -22,8 +22,8 @@ nuked user _ = check (isJust <$> homedir user) $ cmdProperty "userdel"
 	]
 	`describe` ("nuked user " ++ user)
 
-setPassword :: UserName -> Property
-setPassword user = Property (user ++ " password set") $
+hasPassword :: UserName -> Property
+hasPassword user = Property (user ++ " has password") $
 	withPrivData (Password user) $ \password -> makeChange $
 		withHandle StdinHandle createProcessSuccess
 			(proc "chpasswd" []) $ \h -> do
