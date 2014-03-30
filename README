@@ -1,15 +1,16 @@
 This is a work in progress configuration management system using Haskell
 and Git.
 
-The design is intentionally very bare bones: A git repository holds the
-source to a program that ensures that the system meets a set of properties,
-taking action as necessary when a property is not yet met.
+The design is intentionally very bare bones: Propellor enures that
+the system it's run in satisfies a list of properties, taking action as
+necessary when a property is not yet met.
 
-Once set up, a system will have this git repository cloned to it, and
-the program will be built and run periodically by a cron job. Or something
+Propellor lives in a git repository, and so to set it up it's cloned
+to a system, and "make" can be used to pull down any new changes,
+and compile and run propellor. This can be done by a cron job. Or something
 can ssh in and run it.
 
-For bootstrapping, the program compiles to a single binary file,
+For bootstrapping, propellor compiles to a single binary file,
 which can be transferred to a host and run.
 
 Properties are defined using Haskell. There is no special language as used
