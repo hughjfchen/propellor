@@ -1,7 +1,6 @@
 module Property.Tor where
 
-import Property
-import Utility.SafeCommand
+import Common
 import qualified Property.File as File
 import qualified Property.Apt as Apt
 

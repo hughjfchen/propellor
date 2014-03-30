@@ -1,22 +1,13 @@
 module Property.GitHome where
 
-import System.FilePath
-import System.Directory
-import Control.Applicative
-import Control.Monad
-
-import Property
-import Property.User
-import Utility.SafeCommand
-import Utility.Directory
-import Utility.Monad
-import Utility.Exception
+import Common
 import qualified Property.Apt as Apt
+import Property.User
 
 {- Clones Joey Hess's git home directory, and runs its fixups script. -}
 installedFor :: UserName -> Property
 installedFor user = check (not <$> hasGitDir user) $ 
-	IOProperty ("githome " ++ user) (go =<< homedir user)
+	Property ("githome " ++ user) (go =<< homedir user)
 		`requires` Apt.installed ["git", "myrepos"]
   where
  	go Nothing = noChange

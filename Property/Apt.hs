@@ -6,10 +6,9 @@ import Data.List
 import System.IO
 import Control.Monad
 
-import Property
+import Common
 import qualified Property.File as File
-import Utility.SafeCommand
-import Utility.Process
+import Property.File (Line)
 
 sourcesList :: FilePath
 sourcesList = "/etc/apt/sources.list"
@@ -109,7 +108,7 @@ unattendedUpgrades enabled = installed ["unattended-upgrades"]
 reConfigure :: Package -> [(String, String, String)] -> Property
 reConfigure package vals = reconfigure `requires` setselections
   where
-	setselections = IOProperty "preseed" $ makeChange $
+	setselections = Property "preseed" $ makeChange $
 		withHandle StdinHandle createProcessSuccess
 			(proc "debconf-set-selections" []) $ \h -> do
 				forM_ vals $ \(template, tmpltype, value) ->

@@ -1,6 +1,5 @@
-import Property
+import Common
 import HostName
-import Utility.SafeCommand
 import qualified Property.File as File
 import qualified Property.Apt as Apt
 import qualified Property.Ssh as Ssh

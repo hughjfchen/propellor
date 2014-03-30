@@ -1,18 +1,17 @@
 module Property.File where
 
-import System.Directory
+import Common
 
-import Property
-import Utility.Directory
+type Line = String
 
 {- Replaces all the content of a file. -}
 hasContent :: FilePath -> [Line] -> Property
-f `hasContent` newcontent = FileProperty ("replace " ++ f)
-	f (\_oldcontent -> newcontent)
+f `hasContent` newcontent = fileProperty ("replace " ++ f)
+	(\_oldcontent -> newcontent) f
 
 {- Ensures that a line is present in a file, adding it to the end if not. -}
 containsLine :: FilePath -> Line -> Property
-f `containsLine` l = FileProperty (f ++ " contains:" ++ l) f go
+f `containsLine` l = fileProperty (f ++ " contains:" ++ l) go f
   where
 	go ls
 		| l `elem` ls = ls
@@ -22,9 +21,20 @@ f `containsLine` l = FileProperty (f ++ " contains:" ++ l) f go
  - Note that the file is ensured to exist, so if it doesn't, an empty
  - file will be written. -}
 lacksLine :: FilePath -> Line -> Property
-f `lacksLine` l = FileProperty (f ++ " remove: " ++ l) f (filter (/= l))
+f `lacksLine` l = fileProperty (f ++ " remove: " ++ l) (filter (/= l)) f
 
 {- Note: Does not remove symlinks or non-plain-files. -}
 notPresent :: FilePath -> Property
-notPresent f = check (doesFileExist f) $ IOProperty (f ++ " not present") $ 
+notPresent f = check (doesFileExist f) $ Property (f ++ " not present") $ 
 	makeChange $ nukeFile f
+
+fileProperty :: Desc -> ([Line] -> [Line]) -> FilePath -> Property
+fileProperty desc a f = Property desc $ go =<< doesFileExist f
+  where
+	go True = do
+		ls <- lines <$> catchDefaultIO [] (readFile f)
+		let ls' = a ls
+		if ls' == ls
+			then noChange
+			else makeChange $ viaTmp writeFile f (unlines ls')
+	go False = makeChange $ writeFile f (unlines $ a [])

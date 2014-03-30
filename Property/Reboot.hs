@@ -1,6 +1,6 @@
 module Property.Reboot where
 
-import Property
+import Common
 
 now :: Property
 now = cmdProperty "reboot" []

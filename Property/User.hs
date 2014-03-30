@@ -1,13 +1,8 @@
 module Property.User where
 
 import System.Posix
-import Control.Applicative
-import Data.Maybe
 
-import Property
-import Utility.SafeCommand
-import Utility.Exception
-import Utility.Process
+import Common
 
 type UserName = String
 

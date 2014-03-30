@@ -1,8 +1,7 @@
 module Property.Hostname where
 
-import Property
+import Common
 import qualified Property.File as File
-import Utility.SafeCommand
 
 type HostName = String
 

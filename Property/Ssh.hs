@@ -1,14 +1,8 @@
 module Property.Ssh where
 
-import Control.Applicative
-import Control.Monad
-import System.FilePath
-
-import Property
-import Property.User
+import Common
 import qualified Property.File as File
-import Utility.SafeCommand
-import Utility.Exception
+import Property.User
 
 sshBool :: Bool -> String
 sshBool True = "yes"
@@ -48,7 +42,7 @@ uniqueHostKeys :: Property
 uniqueHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 	`onChange` restartSshd
   where
-	prop = IOProperty "ssh unique host keys" $ do
+	prop = Property "ssh unique host keys" $ do
 		void $ boolSystem "sh"
 			[ Param "-c"
 			, Param "rm -f /etc/ssh/ssh_host_*"
