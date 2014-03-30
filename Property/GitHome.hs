@@ -13,8 +13,8 @@ import Utility.Monad
 import Utility.Exception
 
 {- Clones Joey Hess's git home directory, and runs its fixups script. -}
-installed :: UserName -> Property
-installed user = check (not <$> hasGitDir user) $ 
+installedFor :: UserName -> Property
+installedFor user = check (not <$> hasGitDir user) $ 
 	IOProperty ("githome " ++ user) (go =<< homedir user)
   where
  	go Nothing = noChange
