@@ -8,3 +8,4 @@ type HostName = String
 set :: HostName -> Property
 set hostname = "/etc/hostname" `File.hasContent` [hostname]
 	`onChange` cmdProperty "hostname" [Param hostname]
+	`describe` ("hostname " ++ hostname)

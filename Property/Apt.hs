@@ -17,6 +17,7 @@ type Url = String
 type Section = String
 
 data Suite = Stable | Testing | Unstable | Experimental
+	deriving Show
 
 showSuite :: Suite -> String
 showSuite Stable = "stable"
@@ -44,7 +45,8 @@ debCdn suite = [l, srcLine l]
 {- Makes sources.list have a standard content using the mirror CDN,
  - with a particular Suite. -}
 stdSourcesList :: Suite -> Property
-stdSourcesList = setSourcesList . debCdn
+stdSourcesList suite = setSourcesList (debCdn suite)
+	`describe` ("standard sources.list for " ++ show suite)
 
 setSourcesList :: [Line] -> Property
 setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
