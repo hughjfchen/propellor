@@ -2,13 +2,16 @@ import Property
 import qualified Property.Apt as Apt
 import qualified Property.Ssh as Ssh
 import qualified Property.User as User
+import qualified Property.Hostname as Hostname
 import qualified Property.GitHome as GitHome
 import qualified Property.Reboot as Reboot
 
 main = defaultMain
 	[ Apt.stdSourcesList Apt.Unstable `onChange` Apt.upgrade
 	, Apt.installed ["etckeeper"]
+	, Hostname.set "clam.kitenet.net"
 	, Apt.installed ["ssh"]
+	, Ssh.uniqueHostKeys
 	, Apt.installed ["git", "myrepos"]
 	, GitHome.installedFor "root"
 	, check (Ssh.hasAuthorizedKeys "root") $

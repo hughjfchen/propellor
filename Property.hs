@@ -60,7 +60,7 @@ ensureProperty' (FileProperty _ f a) = go =<< doesFileExist f
 			then noChange
 			else makeChange $ viaTmp writeFile f (unlines ls')
 	go False = makeChange $ writeFile f (unlines $ a [])
-ensureProperty' (CmdProperty _ cmd params) = ifM (boolSystem ("./" ++ cmd) params)
+ensureProperty' (CmdProperty _ cmd params) = ifM (boolSystem cmd params)
 	( return MadeChange
 	, return FailedChange
 	)

@@ -38,4 +38,19 @@ hasAuthorizedKeys = go <=< homedir
 		(readFile $ home </> ".ssh" </> "authorized_keys")
 
 restartSshd :: Property
-restartSshd = CmdProperty "ssh restart" "service" [Param "sshd", Param "restart"]
+restartSshd = cmdProperty "service" [Param "sshd", Param "restart"]
+
+{- Blow away existing host keys and make new ones. Use a flag
+ - file to prevent doing this more than once. -}
+uniqueHostKeys :: Property
+uniqueHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
+	`onChange` restartSshd
+  where
+	prop = IOProperty "ssh unique host keys" $ do
+		void $ boolSystem "sh"
+			[ Param "-c"
+			, Param "rm -f /etc/ssh/ssh_host_*"
+			]
+		ensureProperty $
+			cmdProperty "/var/lib/dpkg/info/openssh-server.postinst"
+				[Param "configure"]

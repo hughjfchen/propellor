@@ -1,5 +1,6 @@
 build: 
 #	ghc --make 
+	$(MAKE) tags
 
 clean:
 	rm -rf dist Setup tags
