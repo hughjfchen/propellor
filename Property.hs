@@ -89,6 +89,10 @@ x `requires` y = combineProperties [y, x] `describe` propertyDesc x
 describe :: Property -> Desc -> Property
 describe p d = p { propertyDesc = d }
 
+(==>) :: Desc -> Property -> Property
+(==>) = flip describe
+infixl 1 ==>
+
 {- Makes a Property only be performed when a test succeeds. -}
 check :: IO Bool -> Property -> Property
 check c property = Property (propertyDesc property) $ ifM c

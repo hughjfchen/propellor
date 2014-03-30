@@ -51,8 +51,8 @@ standardSystem suite = propertyList "standard system"
 	, User.sshAccountFor "joey"
 	, Apt.installed ["sudo"]
 	-- nopasswd because no password is set up for joey.
-	, "/etc/sudoers" `File.containsLine` "joey ALL=(ALL:ALL) NOPASSWD:ALL"
-		`describe` "sudoer joey"
+	, "sudoer joey" ==>
+		"/etc/sudoers" `File.containsLine` "joey ALL=(ALL:ALL) NOPASSWD:ALL"
 	, GitHome.installedFor "joey"
 	-- I use postfix, or no MTA.
 	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
@@ -64,12 +64,13 @@ cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
 	[ User.nuked "user"
 	, Hostname.set hostname
 	, Ssh.uniqueHostKeys
-	, "/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
+	, "worked around grub/lvm boot bug #743126" ==>
+		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []
 		`onChange` cmdProperty "update-initramfs" [Param "-u"]
-		`describe` "work around grub/lvm boot bug #743126"
-	, combineProperties
-		[ File.notPresent "/etc/rc.local"
-		, File.notPresent "/etc/init.d/S97-setup.sh"
-		] `describe` "nuked cloudatcost cruft"
+	, "nuked cloudatcost cruft" ==>
+		combineProperties
+			[ File.notPresent "/etc/rc.local"
+			, File.notPresent "/etc/init.d/S97-setup.sh"
+			]
 	]
