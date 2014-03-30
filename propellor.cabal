@@ -1,4 +1,4 @@
-Name: hostprop
+Name: propellor
 Version: 0
 Cabal-Version: >= 1.6
 License: GPL
@@ -14,8 +14,8 @@ Synopsis: property-based host configuration management
 Description:
  TODO
 
-Executable hostprop
-  Main-Is: HostProp.hs
+Executable propellor
+  Main-Is: Propellor.hs
   GHC-Options: -Wall
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal
@@ -25,4 +25,4 @@ Executable hostprop
 
 source-repository head
   type: git
-  location: git://git.kitenet.net/hostprop.git
+  location: git://git.kitenet.net/propellor.git
