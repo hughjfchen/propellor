@@ -3,6 +3,8 @@ module Property.Apt where
 import Data.Maybe
 import Control.Applicative
 import Data.List
+import System.IO
+import Control.Monad
 
 import Property
 import Utility.SafeCommand
@@ -93,3 +95,23 @@ isInstalled ps = catMaybes . map parse . lines
 
 autoRemove :: Property
 autoRemove = runApt [Param "-y", Param "autoremove"]
+
+unattendedUpgrades :: Bool -> Property
+unattendedUpgrades enabled = installed ["unattended-upgrades"]
+	`onChange` reConfigure "unattended-upgrades"
+		[("unattended-upgrades/enable_auto_updates"
+		 , "boolean"
+		 , if enabled then "true" else "false")]
+
+{- Preseeds debconf values and reconfigures the package so it takes
+ - effect. -}
+reConfigure :: Package -> [(String, String, String)] -> Property
+reConfigure package vals = reconfigure `requires` setselections
+  where
+	setselections = IOProperty "preseed" $ makeChange $
+		withHandle StdinHandle createProcessSuccess
+			(proc "debconf-set-selections" []) $ \h -> do
+				forM_ vals $ \(template, tmpltype, value) ->
+					hPutStrLn h $ unwords [package, template, tmpltype, value]
+				hClose h
+	reconfigure = cmdProperty "dpkg-reconfigure" [Param "-fnone", Param package]

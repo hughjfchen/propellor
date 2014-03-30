@@ -38,6 +38,9 @@ getProperties "clam.kitenet.net" =
 	, GitHome.installedFor "joey"
 	-- Clam is a tor bridge.
 	, Tor.isBridge
+	-- This is not an important system so I don't want to need to 
+	-- manually upgrade it.
+	, Apt.unattendedUpgrades True
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.scheduled "+10"
 	]
