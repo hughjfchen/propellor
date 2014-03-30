@@ -5,7 +5,6 @@ import Control.Applicative
 import Control.Monad
 import System.Console.ANSI
 import System.Exit
-import System.IO
 
 import Utility.Tmp
 import Utility.Exception
@@ -75,9 +74,8 @@ ensureProperties ps = do
   where
 	ensure [] rs = return rs
 	ensure (l:ls) rs = do
-		putStr $ propertyDesc l ++ "... "
-		hFlush stdout
 		r <- ensureProperty l
+		putStr $ propertyDesc l ++ "... "
 		case r of
 			FailedChange -> do
 				setSGR [SetColor Foreground Vivid Red]

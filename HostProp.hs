@@ -15,24 +15,30 @@ main = ensureProperties . getProperties =<< getHostName
  - Properties for that system. -}
 getProperties :: HostName -> [Property]
 getProperties "clam" =
-	[ Apt.stdSourcesList Apt.Unstable `onChange` Apt.upgrade
-	, Apt.installed ["etckeeper"]
+	-- Clean up the system as installed by cloudatcost.com
+	[ User.nuked "user"
+	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
 	, Hostname.set "clam.kitenet.net"
-	, Apt.installed ["ssh"]
 	, Ssh.uniqueHostKeys
+	-- This is my standard system setup
+	, Apt.stdSourcesList Apt.Unstable `onChange` Apt.upgrade
+	, Apt.installed ["etckeeper"]
+	, Apt.installed ["ssh"]
 	, Apt.installed ["git", "myrepos"]
 	, GitHome.installedFor "root"
+	-- Harden the system, but only once root's authorized_keys
+	-- is safely in place.
 	, check (Ssh.hasAuthorizedKeys "root") $
 		Ssh.passwordAuthentication False
 	, check (Ssh.hasAuthorizedKeys "root") $
 		User.lockedPassword "root"
 	, User.nonsystem "joey"
-	, User.nuked "user"
 	, Apt.installed ["sudo"]
-	, lineInfFile "/etc/sudoers" "joey ALL=(ALL:ALL) ALL"
+	, lineInFile "/etc/sudoers" "joey ALL=(ALL:ALL) ALL"
 	, GitHome.installedFor "joey"
-	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
+	-- Clam is a tor bridge.
 	, Apt.installed ["tor"]
+	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.scheduled "+10"
 	]
 -- add more hosts here...
