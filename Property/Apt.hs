@@ -61,7 +61,7 @@ update :: Property
 update = runApt [Param "update"]
 
 upgrade :: Property
-upgrade = runApt [Params "-y safe-upgrade"]
+upgrade = runApt [Params "-y dist-upgrade"]
 
 type Package = String
 
