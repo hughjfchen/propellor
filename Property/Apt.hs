@@ -51,7 +51,7 @@ update :: Property
 update = cmdProperty "apt-get" [Param "update"]
 
 upgrade :: Property
-upgrade = cmdProperty "apt-get" [Params "-y safe-update"]
+upgrade = cmdProperty "apt-get" [Params "-y safe-upgrade"]
 
 type Package = String
 
