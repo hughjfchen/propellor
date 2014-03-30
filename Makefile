@@ -4,7 +4,7 @@ build: deps dist/setup-config
 	$(MAKE) tags
 
 deps:
-	if [ $$(whoami) = root ] then apt-get install ghc cabal-install libghc-missingh-dev libansi-terminal-dev libghc-ifelse-dev libghc-unix-compat-dev libghc-hslogger-dev; fi
+	if [ $$(whoami) = root ]; then apt-get install ghc cabal-install libghc-missingh-dev libansi-terminal-dev libghc-ifelse-dev libghc-unix-compat-dev libghc-hslogger-dev; fi
 
 dist/setup-config: propellor.cabal
 	cabal configure
