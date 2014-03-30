@@ -8,11 +8,12 @@ Stability: Stable
 Copyright: 2014 Joey Hess
 License-File: GPL
 Build-Type: Simple
-Homepage: 
+Homepage: http://git.kitenet.net/?p=propellor.git;a=summary
 Category: Utility
-Synopsis: property-based host configuration management
+Synopsis: property-based host configuration management in haskell
 Description:
- TODO
+ Propellor enures that the system it's run in satisfies a list of
+ properties, taking action as necessary when a property is not yet met.
 
 Executable propellor
   Main-Is: Propellor.hs
