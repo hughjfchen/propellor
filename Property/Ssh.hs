@@ -38,7 +38,7 @@ hasAuthorizedKeys = go <=< homedir
 		(readFile $ home </> ".ssh" </> "authorized_keys")
 
 restartSshd :: Property
-restartSshd = cmdProperty "service" [Param "sshd", Param "restart"]
+restartSshd = cmdProperty "service" [Param "ssh", Param "restart"]
 
 {- Blow away existing host keys and make new ones. Use a flag
  - file to prevent doing this more than once. -}
