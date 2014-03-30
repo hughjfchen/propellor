@@ -59,7 +59,7 @@ combineProperties desc ps = IOProperty desc $ go ps NoChange
 			_ -> go ls (combineResult r rs)
 
 ensureProperty :: Property -> IO Result
-ensureProperty = catchDefaultIO FailedChange . ensureProperty'
+ensureProperty = catchDefaultIO FailedChange . ensureProperty' 
 
 ensureProperty' :: Property -> IO Result
 ensureProperty' (FileProperty _ f a) = go =<< doesFileExist f
@@ -81,7 +81,7 @@ ensureProperty' (IOProperty _ a) = a
 
 ensureProperties :: [Property] -> IO ()
 ensureProperties ps = do
-	r <- ensureProperties' ps
+	r <- ensureProperties' [propertyList "overall" ps]
 	case r of
 		FailedChange -> exitWith (ExitFailure 1)
 		_ -> exitWith ExitSuccess
