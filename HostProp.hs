@@ -32,6 +32,7 @@ getProperties "clam.kitenet.net" =
 		Ssh.passwordAuthentication False
 	, check (Ssh.hasAuthorizedKeys "root") $
 		User.lockedPassword "root"
+	, Apt.installed ["vim"]
 	, User.nonsystem "joey"
 	, Apt.installed ["sudo"]
 	, lineInFile "/etc/sudoers" "joey ALL=(ALL:ALL) ALL"

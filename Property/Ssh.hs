@@ -18,11 +18,12 @@ sshdConfig = "/etc/ssh/sshd_config"
 
 setSshdConfig :: String -> Bool -> Property
 setSshdConfig setting allowed = combineProperties desc
-	[ lineNotInFile sshdConfig (setting ++ sshBool (not allowed))
-	, lineInFile sshdConfig (setting ++ sshBool allowed)
+	[ lineNotInFile sshdConfig $ sshLine (not allowed)
+	, lineInFile sshdConfig $ sshLine allowed
 	] `onChange` restartSshd
   where
 	desc = unwords [ "ssh config:", setting, sshBool allowed ]
+	sshline v = setting ++ " " ++ sshBool v
 
 permitRootLogin :: Bool -> Property
 permitRootLogin = setSshdConfig "PermitRootLogin"
