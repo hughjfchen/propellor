@@ -38,6 +38,16 @@ propertyDesc (FileProperty d _ _) = d
 propertyDesc (CmdProperty d _ _ _) = d
 propertyDesc (IOProperty d _) = d
 
+{- Combines a list of properties, resulting in a single property
+ - that when run will run each property in the list in turn,
+ - and print out the description of each as it's run. Does not stop
+ - on failure; does propigate overall success/failure.
+ -}
+propertyList :: Desc -> [Property] -> Property
+propertyList desc ps = IOProperty desc $ ensureProperties' ps
+
+{- Combines a list of properties, resulting in one property that
+ - ensures each in turn, stopping on failure. -}
 combineProperties :: Desc -> [Property] -> Property
 combineProperties desc ps = IOProperty desc $ go ps NoChange
   where
@@ -71,10 +81,13 @@ ensureProperty' (IOProperty _ a) = a
 
 ensureProperties :: [Property] -> IO ()
 ensureProperties ps = do
-	r <- ensure ps NoChange
+	r <- ensureProperties' ps
 	case r of
 		FailedChange -> exitWith (ExitFailure 1)
 		_ -> exitWith ExitSuccess
+
+ensureProperties' :: [Property] -> IO Result
+ensureProperties' ps = ensure ps NoChange
   where
 	ensure [] rs = return rs
 	ensure (l:ls) rs = do
