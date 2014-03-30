@@ -19,17 +19,20 @@ getProperties :: HostName -> [Property]
 getProperties hostname@"clam.kitenet.net" =
 	[ cleanCloudAtCost hostname
 	, standardSystem Apt.Unstable
+	-- Clam is a tor bridge.
+	, Tor.isBridge
 	-- This is not an important system so I don't want to need to 
 	-- manually upgrade it.
 	, Apt.unattendedUpgrades True
-	-- Clam is a tor bridge.
-	, Tor.isBridge
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
 	]
 -- add more hosts here...
 --getProperties "foo" =
-getProperties h = error $ "Unknown host: " ++ h ++ " (perhaps you should specify the real hostname on the command line?)"
+getProperties h = error $ unwords
+	[ "Unknown host:", h
+	, "(perhaps you should specify the real hostname on the command line?)"
+	]
 
 -- This is my standard system setup
 standardSystem :: Apt.Suite -> Property
@@ -51,13 +54,14 @@ standardSystem suite = propertyList "standard system"
 	, "/etc/sudoers" `File.containsLine` "joey ALL=(ALL:ALL) NOPASSWD:ALL"
 		`describe` "sudoer joey"
 	, GitHome.installedFor "joey"
+	-- I use postfix, or no MTA.
+	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
 	]
 
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: HostName -> Property
 cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
 	[ User.nuked "user"
-	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
 	, Hostname.set hostname
 	, Ssh.uniqueHostKeys
 	, "/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
