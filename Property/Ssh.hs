@@ -18,8 +18,8 @@ sshdConfig = "/etc/ssh/sshd_config"
 
 setSshdConfig :: String -> Bool -> Property
 setSshdConfig setting allowed = combineProperties desc
-	[ lineNotInFile sshdConfig $ sshLine (not allowed)
-	, lineInFile sshdConfig $ sshLine allowed
+	[ lineNotInFile sshdConfig $ sshline (not allowed)
+	, lineInFile sshdConfig $ sshline allowed
 	] `onChange` restartSshd
   where
 	desc = unwords [ "ssh config:", setting, sshBool allowed ]
