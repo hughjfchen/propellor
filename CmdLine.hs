@@ -62,8 +62,7 @@ spin host = do
 	bootstrap url = shellWrap $ intercalate " && "
 		[ intercalate " ; "
 			[ "if [ ! -d " ++ localdir ++ " ]"
-			, "then"
-			, intercalate " && "
+			, "then " ++ intercalate " && "
 				[ "apt-get -y install git"
 				, "git clone " ++ url ++ " " ++ localdir
 				]
