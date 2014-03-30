@@ -11,9 +11,6 @@ to a system, and "make" can be used to pull down any new changes,
 and compile and run propellor. This can be done by a cron job. Or something
 can ssh in and run it.
 
-For bootstrapping, propellor compiles to a single binary file,
-which can be transferred to a host and run.
-
 Properties are defined using Haskell. Edit Propellor.hs
 
 There is no special language as used in puppet, chef, ansible, etc, just
@@ -25,5 +22,21 @@ Also avoided is any form of node classification. Ie, which hosts are part
 of which classes and share which configuration. It might be nice to use
 reclass[1], but then again a host is configured using simply haskell code,
 and so it's easy to factor out things like classes of hosts as desired.
+
+To bootstrap propellor on a new host, use: propellor --spin $host
+This looks up the git repository's remote.origin.url (or remote.deploy.url
+if available) and logs into the host, clones the url (if not already
+done), and sets up and runs propellor in /usr/local/propellor
+
+Private data such as passwords, ssh private keys, etc should not be checked
+into a propellor git repository in the clear, unless you want to restrict
+access to the repository. Which would probably involve a separate fork 
+for each host and be annoying. 
+
+Instead, propellor --spin $host looks for a privdata/$host.gpg file and
+if found decrypts it and sends it to the host using ssh. To set a field
+in such a file, use: propellor --set $host $field $value
+The field name is will be something like 'Password "root"'; see PrivData.hs
+for available fields.
 
 [1] http://reclass.pantsfullofunix.net/

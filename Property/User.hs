@@ -4,8 +4,6 @@ import System.Posix
 
 import Common
 
-type UserName = String
-
 data Eep = YesReallyDeleteHome
 
 sshAccountFor :: UserName -> Property
@@ -23,6 +21,14 @@ nuked user _ = check (isJust <$> homedir user) $ cmdProperty "userdel"
 	, Param user
 	]
 	`describe` ("nuked user " ++ user)
+
+setPassword :: UserName -> Property
+setPassword user = Property (user ++ " password set") $
+	withPrivData (Password user) $ \password -> makeChange $
+		withHandle StdinHandle createProcessSuccess
+			(proc "chpasswd" []) $ \h -> do
+				hPutStrLn h $ user ++ ":" ++ password
+				hClose h
 
 lockedPassword :: UserName -> Property
 lockedPassword user = check (not <$> isLockedPassword user) $ cmdProperty "passwd"

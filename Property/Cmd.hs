@@ -6,7 +6,7 @@ module Property.Cmd (
 
 import Control.Applicative
 
-import Property
+import Types
 import Utility.Monad
 import Utility.SafeCommand
 import Utility.Env

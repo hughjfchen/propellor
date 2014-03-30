@@ -1,8 +1,11 @@
 module Common (module X) where
 
+import Types as X
 import Property as X
 import Property.Cmd as X
+import PrivData as X
 
+import Utility.PartialPrelude as X
 import Control.Applicative as X
 import Control.Monad as X
 import Utility.Process as X

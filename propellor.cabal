@@ -19,7 +19,8 @@ Executable propellor
   Main-Is: Propellor.hs
   GHC-Options: -Wall
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
-   IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal
+   IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
+   containers
 
   if (! os(windows))
     Build-Depends: unix

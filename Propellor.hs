@@ -1,5 +1,5 @@
 import Common
-import HostName
+import CmdLine
 import qualified Property.File as File
 import qualified Property.Apt as Apt
 import qualified Property.Ssh as Ssh
@@ -10,7 +10,7 @@ import qualified Property.Tor as Tor
 import qualified Property.GitHome as GitHome
 
 main :: IO ()
-main = ensureProperties . getProperties =<< getHostName
+main = defaultMain getProperties
 
 {- This is where the system's HostName, either as returned by uname
  - or one specified on the command line, is converted into a list of
@@ -21,6 +21,7 @@ getProperties hostname@"clam.kitenet.net" =
 	, standardSystem Apt.Unstable
 	-- Clam is a tor bridge.
 	, Tor.isBridge
+	, Apt.installed ["docker.io"]
 	-- This is not an important system so I don't want to need to 
 	-- manually upgrade it.
 	, Apt.unattendedUpgrades True
