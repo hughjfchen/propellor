@@ -31,6 +31,7 @@ srcLine l = case words l of
 	("deb":rest) -> unwords $ "deb-src" : rest
 	_ -> ""
 
+stdSections :: [Section]
 stdSections = ["main", "contrib", "non-free"]
 
 debCdn :: Suite -> [Line]

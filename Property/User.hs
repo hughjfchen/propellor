@@ -1,6 +1,5 @@
 module Property.User where
 
-import Data.List
 import System.Posix
 import Control.Applicative
 import Data.Maybe

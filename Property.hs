@@ -66,11 +66,8 @@ ensureProperty' (CmdProperty _ cmd params) = ifM (boolSystem cmd params)
 	)
 ensureProperty' (IOProperty _ a) = a
 
-ensureProperties :: [Property] -> IO [(Desc, Result)]
-ensureProperties ps = zip (map propertyDesc ps) <$> mapM ensureProperty ps
-
-defaultMain :: [Property] -> IO ()
-defaultMain ps = do
+ensureProperties :: [Property] -> IO ()
+ensureProperties ps = do
 	r <- ensure ps NoChange
 	case r of
 		FailedChange -> exitWith (ExitFailure 1)

@@ -1,6 +1,9 @@
-build: 
-#	ghc --make 
+build: dist/setup-config
+	cabal build
 	$(MAKE) tags
+
+dist/setup-config:
+	cabal configure
 
 clean:
 	rm -rf dist Setup tags

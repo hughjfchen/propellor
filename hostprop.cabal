@@ -1,0 +1,28 @@
+Name: hostprop
+Version: 0
+Cabal-Version: >= 1.6
+License: GPL
+Maintainer: Joey Hess <joey@kitenet.net>
+Author: Joey Hess
+Stability: Stable
+Copyright: 2014 Joey Hess
+License-File: GPL
+Build-Type: Simple
+Homepage: 
+Category: Utility
+Synopsis: property-based host configuration management
+Description:
+ TODO
+
+Executable hostprop
+  Main-Is: HostProp.hs
+  GHC-Options: -Wall
+  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
+   IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal
+
+  if (! os(windows))
+    Build-Depends: unix
+
+source-repository head
+  type: git
+  location: git://git.kitenet.net/hostprop.git
