@@ -18,13 +18,13 @@ getProperties :: HostName -> [Property]
 getProperties hostname@"clam.kitenet.net" =
 	[ cleanCloudAtCost hostname
 	, standardSystem Apt.Unstable
-	-- Clam is a tor bridge.
-	, Tor.isBridge
 	-- This is not an important system so I don't want to need to 
 	-- manually upgrade it.
 	, Apt.unattendedUpgrades True
+	-- Clam is a tor bridge.
+	, Tor.isBridge
 	-- Should come last as it reboots.
-	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
+	--, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
 	]
 -- add more hosts here...
 --getProperties "foo" =
