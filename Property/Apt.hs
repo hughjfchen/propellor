@@ -47,24 +47,31 @@ stdSourcesList = setSourcesList . debCdn
 setSourcesList :: [Line] -> Property
 setSourcesList ls = fileHasContent sourcesList ls `onChange` update
 
+runApt :: [CommandParam] -> Property
+runApt ps = cmdProperty' "apt-get" ps env
+  where
+	env =
+		[ ("DEBIAN_FRONTEND", "noninteractive")
+		, ("APT_LISTCHANGES_FRONTEND", "none")
+		]
+
 update :: Property
-update = cmdProperty "apt-get" [Param "update"]
+update = runApt [Param "update"]
 
 upgrade :: Property
-upgrade = cmdProperty "apt-get" [Params "-y safe-upgrade"]
+upgrade = runApt [Params "-y safe-upgrade"]
 
 type Package = String
 
 installed :: [Package] -> Property
 installed ps = check (isInstallable ps) go
   where
-	go = cmdProperty "apt-get" $ 
-		[Param "-y", Param "install"] ++ map Param ps
+	go = runApt $ [Param "-y", Param "install"] ++ map Param ps
 
 removed :: [Package] -> Property
 removed ps = check (or <$> isInstalled ps) go
   where
-	go = cmdProperty "apt-get" $ [Param "-y", Param "remove"] ++ map Param ps
+	go = runApt $ [Param "-y", Param "remove"] ++ map Param ps
 
 isInstallable :: [Package] -> IO Bool
 isInstallable ps = do
@@ -85,4 +92,4 @@ isInstalled ps = catMaybes . map parse . lines
 		| otherwise = Nothing
 
 autoRemove :: Property
-autoRemove = cmdProperty "apt-get" [Param "-y", Param "autoremove"]
+autoRemove = runApt [Param "-y", Param "autoremove"]

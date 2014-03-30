@@ -6,16 +6,17 @@ import Control.Monad
 import System.Console.ANSI
 import System.Exit
 
-import Utility.Tmp
+import Utility.Monad
 import Utility.Exception
 import Utility.SafeCommand
-import Utility.Monad
+import Utility.Tmp
+import Utility.Env
 
 -- Ensures that the system has some property. 
 -- Actions must be idempotent; will be run repeatedly.
 data Property
 	= FileProperty Desc FilePath ([Line] -> [Line])
-	| CmdProperty Desc String [CommandParam]
+	| CmdProperty Desc String [CommandParam] [(String, String)]
 	| IOProperty Desc (IO Result)
 
 data Result = NoChange | MadeChange | FailedChange
@@ -33,7 +34,7 @@ combineResult NoChange NoChange = NoChange
 
 propertyDesc :: Property -> Desc
 propertyDesc (FileProperty d _ _) = d
-propertyDesc (CmdProperty d _ _) = d
+propertyDesc (CmdProperty d _ _ _) = d
 propertyDesc (IOProperty d _) = d
 
 combineProperties :: Desc -> [Property] -> Property
@@ -59,10 +60,12 @@ ensureProperty' (FileProperty _ f a) = go =<< doesFileExist f
 			then noChange
 			else makeChange $ viaTmp writeFile f (unlines ls')
 	go False = makeChange $ writeFile f (unlines $ a [])
-ensureProperty' (CmdProperty _ cmd params) = ifM (boolSystem cmd params)
-	( return MadeChange
-	, return FailedChange
-	)
+ensureProperty' (CmdProperty _ cmd params env) = do
+	env' <- addEntries env <$> getEnvironment
+	ifM (boolSystemEnv cmd params (Just env'))
+		( return MadeChange
+		, return FailedChange
+		)
 ensureProperty' (IOProperty _ a) = a
 
 ensureProperties :: [Property] -> IO ()
@@ -96,7 +99,10 @@ noChange :: IO Result
 noChange = return NoChange
 
 cmdProperty :: String -> [CommandParam] -> Property
-cmdProperty cmd params = CmdProperty desc cmd params
+cmdProperty cmd params = cmdProperty' cmd params []
+
+cmdProperty' :: String -> [CommandParam] -> [(String, String)] -> Property
+cmdProperty' cmd params env = CmdProperty desc cmd params env
   where
   	desc = unwords $ cmd : map showp params
 	showp (Params s) = s
