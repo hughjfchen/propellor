@@ -23,7 +23,7 @@ installedFor user = check (not <$> hasGitDir user) $
 		ok <- boolSystem "git" [Param "clone", Param url, Param tmpdir]
 			<&&> (and <$> moveout tmpdir home)
 			<&&> (catchBoolIO $ removeDirectory tmpdir >> return True)
-			<&&> boolSystem "su" [Param "-c", Param "cd; bin/fixups", Param user]
+			<&&> boolSystem "su" [Param "-c", Param "cd; rm -rf .aptitude/ .bashrc .profile; mr checkout; bin/fixups", Param user]
 		return $ if ok then MadeChange else FailedChange
 	moveout tmpdir home = do
 		fs <- dirContents tmpdir
