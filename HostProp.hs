@@ -15,14 +15,34 @@ main = ensureProperties . getProperties =<< getHostName
  - or one specified on the command line is converted into a list of
  - Properties for that system. -}
 getProperties :: HostName -> [Property]
-getProperties "clam.kitenet.net" =
-	-- Clean up the system as installed by cloudatcost.com
+getProperties "clam.kitenet.net" = concat
+	[ cleanCloudAtCost
+	, standardSystem Apt.Unstable
+	-- Clam is a tor bridge.
+	, Tor.isBridge
+	-- This is not an important system so I don't want to need to 
+	-- manually upgrade it.
+	, Apt.unattendedUpgrades True
+	-- Should come last as it reboots.
+	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
+	]
+-- add more hosts here...
+--getProperties "foo" =
+getProperties h = error $ "Unknown host: " ++ h ++ " (perhaps you should specify the real hostname on the command line?)"
+
+-- Clean up the system as installed by cloudatcost.com
+cleanCloudAtCost :: [Property]
+cleanCloudAtCost = 
 	[ User.nuked "user"
 	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
 	, Hostname.set "clam.kitenet.net"
 	, Ssh.uniqueHostKeys
-	-- This is my standard system setup
-	, Apt.stdSourcesList Apt.Unstable `onChange` Apt.upgrade
+	]
+
+-- This is my standard system setup
+standardSystem :: Suite -> [Property]
+standardSystem suite = 
+	[ Apt.stdSourcesList suite `onChange` Apt.upgrade
 	, Apt.installed ["etckeeper"]
 	, Apt.installed ["ssh"]
 	, GitHome.installedFor "root"
@@ -35,16 +55,7 @@ getProperties "clam.kitenet.net" =
 	, Apt.installed ["vim"]
 	, User.nonsystem "joey"
 	, Apt.installed ["sudo"]
-	, lineInFile "/etc/sudoers" "joey ALL=(ALL:ALL) ALL"
+	-- nopasswd because no password is set up for joey.
+	, lineInFile "/etc/sudoers" "joey ALL=(ALL:ALL) NOPASSWD:ALL"
 	, GitHome.installedFor "joey"
-	-- Clam is a tor bridge.
-	, Tor.isBridge
-	-- This is not an important system so I don't want to need to 
-	-- manually upgrade it.
-	, Apt.unattendedUpgrades True
-	-- Should come last as it reboots.
-	, Apt.installed ["systemd-sysv"] `onChange` Reboot.scheduled "+10"
 	]
--- add more hosts here...
---getProperties "foo" =
-getProperties h = error $ "Unknown host: " ++ h ++ " (perhaps you should specify the real hostname on the command line?)"
