@@ -85,10 +85,10 @@ ensureProperties ps = do
 				putStrLn "failed"
 			NoChange -> do
 				setSGR [SetColor Foreground Dull Green]
-				putStrLn "(ok)"
+				putStrLn "unchanged"
 			MadeChange -> do
 				setSGR [SetColor Foreground Vivid Green]
-				putStrLn "(ok)"
+				putStrLn "ok"
 		setSGR []
 		ensure ls (combineResult r rs)
 
