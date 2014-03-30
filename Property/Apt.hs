@@ -59,19 +59,23 @@ runApt ps = cmdProperty' "apt-get" ps env
 
 update :: Property
 update = runApt [Param "update"]
+	`describe` "apt update"
 
 upgrade :: Property
 upgrade = runApt [Params "-y dist-upgrade"]
+	`describe` "apt dist-upgrade"
 
 type Package = String
 
 installed :: [Package] -> Property
 installed ps = check (isInstallable ps) go
+	`describe` (unwords $ "apt installed":ps)
   where
 	go = runApt $ [Param "-y", Param "install"] ++ map Param ps
 
 removed :: [Package] -> Property
 removed ps = check (or <$> isInstalled ps) go
+	`describe` (unwords $ "apt removed":ps)
   where
 	go = runApt $ [Param "-y", Param "remove"] ++ map Param ps
 
@@ -95,18 +99,24 @@ isInstalled ps = catMaybes . map parse . lines
 
 autoRemove :: Property
 autoRemove = runApt [Param "-y", Param "autoremove"]
+	`describe` "apt autoremove"
 
 unattendedUpgrades :: Bool -> Property
-unattendedUpgrades enabled = installed ["unattended-upgrades"]
+unattendedUpgrades enabled =
+	(if enabled then installed else removed) ["unattended-upgrades"]
 	`onChange` reConfigure "unattended-upgrades"
-		[("unattended-upgrades/enable_auto_updates"
-		 , "boolean"
-		 , if enabled then "true" else "false")]
+		[("unattended-upgrades/enable_auto_updates" , "boolean", v)]
+	`describe` ("unattended upgrades " ++ v)
+  where
+	v
+		| enabled = "true"
+		| otherwise = "false"
 
 {- Preseeds debconf values and reconfigures the package so it takes
  - effect. -}
 reConfigure :: Package -> [(String, String, String)] -> Property
 reConfigure package vals = reconfigure `requires` setselections
+	`describe` ("reconfigure " ++ package)
   where
 	setselections = Property "preseed" $ makeChange $
 		withHandle StdinHandle createProcessSuccess

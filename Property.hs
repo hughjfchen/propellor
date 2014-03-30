@@ -83,6 +83,9 @@ property `onChange` hook = Property (propertyDesc property) $ do
 requires :: Property -> Property -> Property
 x `requires` y = combineProperties (propertyDesc x) [y, x]
 
+describe :: Property -> Desc -> Property
+describe p d = p { propertyDesc = d }
+
 {- Makes a Property only be performed when a test succeeds. -}
 check :: IO Bool -> Property -> Property
 check c property = Property (propertyDesc property) $ ifM c

@@ -6,6 +6,7 @@ import qualified Property.Apt as Apt
 
 isBridge :: Property
 isBridge = setup `requires` Apt.installed ["tor"]
+	`describe` "tor bridge"
   where
 	setup = "/etc/tor/torrc" `File.hasContent`
 		[ "SocksPort 0"

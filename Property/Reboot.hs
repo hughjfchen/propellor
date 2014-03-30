@@ -4,3 +4,4 @@ import Common
 
 now :: Property
 now = cmdProperty "reboot" []
+	`describe` "reboot now"

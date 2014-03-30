@@ -45,10 +45,11 @@ standardSystem suite = propertyList "standard system"
 	, check (Ssh.hasAuthorizedKeys "root") $
 		User.lockedPassword "root"
 	, Apt.installed ["vim"]
-	, User.nonsystem "joey"
+	, User.sshAccountFor "joey"
 	, Apt.installed ["sudo"]
 	-- nopasswd because no password is set up for joey.
 	, "/etc/sudoers" `File.containsLine` "joey ALL=(ALL:ALL) NOPASSWD:ALL"
+		`describe` "sudoer joey"
 	, GitHome.installedFor "joey"
 	]
 
@@ -59,10 +60,10 @@ cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
 	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
 	, Hostname.set hostname
 	, Ssh.uniqueHostKeys
-	-- Work around for #612402
 	, "/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []
 		`onChange` cmdProperty "update-initramfs" [Param "-u"]
+		`describe` "work around grub/lvm boot bug #743126"
 	-- Cruft
 	, File.notPresent "/etc/rc.local"
 	, File.notPresent "/etc/init.d/S97-setup.sh"
