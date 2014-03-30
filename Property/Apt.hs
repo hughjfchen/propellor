@@ -7,6 +7,7 @@ import System.IO
 import Control.Monad
 
 import Property
+import qualified Property.File as File
 import Utility.SafeCommand
 import Utility.Process
 
@@ -47,7 +48,7 @@ stdSourcesList :: Suite -> Property
 stdSourcesList = setSourcesList . debCdn
 
 setSourcesList :: [Line] -> Property
-setSourcesList ls = fileHasContent sourcesList ls `onChange` update
+setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
 
 runApt :: [CommandParam] -> Property
 runApt ps = cmdProperty' "apt-get" ps env

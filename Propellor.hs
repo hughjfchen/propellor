@@ -1,5 +1,6 @@
 import Property
 import HostName
+import qualified Property.File as File
 import qualified Property.Apt as Apt
 import qualified Property.Ssh as Ssh
 import qualified Property.User as User
@@ -47,7 +48,7 @@ standardSystem suite = propertyList "standard system"
 	, User.nonsystem "joey"
 	, Apt.installed ["sudo"]
 	-- nopasswd because no password is set up for joey.
-	, lineInFile "/etc/sudoers" "joey ALL=(ALL:ALL) NOPASSWD:ALL"
+	, "/etc/sudoers" `File.containsLine` "joey ALL=(ALL:ALL) NOPASSWD:ALL"
 	, GitHome.installedFor "joey"
 	]
 

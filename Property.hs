@@ -127,25 +127,6 @@ cmdProperty' cmd params env = CmdProperty desc cmd params env
 	showp (Param s) = s
 	showp (File s) = s
 
-{- Replaces all the content of a file. -}
-fileHasContent :: FilePath -> [Line] -> Property
-fileHasContent f newcontent = FileProperty ("replace " ++ f)
-	f (\_oldcontent -> newcontent)
-
-{- Ensures that a line is present in a file, adding it to the end if not. -}
-lineInFile :: FilePath -> Line -> Property
-lineInFile f l = FileProperty (f ++ " contains:" ++ l) f go
-  where
-	go ls
-		| l `elem` ls = ls
-		| otherwise = ls++[l]
-
-{- Ensures that a line is not present in a file.
- - Note that the file is ensured to exist, so if it doesn't, an empty
- - file will be written. -}
-lineNotInFile :: FilePath -> Line -> Property
-lineNotInFile f l = FileProperty (f ++ " remove: " ++ l) f (filter (/= l))
-
 {- Makes a perhaps non-idempotent Property be idempotent by using a flag
  - file to indicate whether it has run before.
  - Use with caution. -}

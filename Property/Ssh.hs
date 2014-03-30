@@ -6,6 +6,7 @@ import System.FilePath
 
 import Property
 import Property.User
+import qualified Property.File as File
 import Utility.SafeCommand
 import Utility.Exception
 
@@ -18,8 +19,8 @@ sshdConfig = "/etc/ssh/sshd_config"
 
 setSshdConfig :: String -> Bool -> Property
 setSshdConfig setting allowed = combineProperties desc
-	[ lineNotInFile sshdConfig $ sshline (not allowed)
-	, lineInFile sshdConfig $ sshline allowed
+	[ sshdConfig `File.lacksLine` (sshline $ not allowed)
+	, sshdConfig `File.containsLine` (sshline allowed)
 	] `onChange` restartSshd
   where
 	desc = unwords [ "ssh config:", setting, sshBool allowed ]
