@@ -24,7 +24,10 @@ getProperties "clam" =
 	, GitHome.installedFor "root"
 	, check (Ssh.hasAuthorizedKeys "root") $
 		Ssh.passwordAuthentication False
+	, check (Ssh.hasAuthorizedKeys "root") $
+		User.lockedPassword "root"
 	, User.nonsystem "joey"
+	, User.nuked "user"
 	, Apt.installed ["sudo"]
 	, fileHasContent "/etc/sudoers" ["joey ALL=(ALL:ALL) ALL"]
 	, GitHome.installedFor "joey"

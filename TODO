@@ -3,3 +3,4 @@
   but only once despite many config changes being made to satisfy
   properties. onChange is a poor substitute.
 * Apt upgrade does not avoid apt-listchanges and debconf prompts.
+* I often seem to want to be able to combine Properties monadically.
