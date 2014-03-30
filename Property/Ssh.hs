@@ -12,12 +12,13 @@ sshdConfig :: FilePath
 sshdConfig = "/etc/ssh/sshd_config"
 
 setSshdConfig :: String -> Bool -> Property
-setSshdConfig setting allowed = combineProperties desc
+setSshdConfig setting allowed = combineProperties
 	[ sshdConfig `File.lacksLine` (sshline $ not allowed)
 	, sshdConfig `File.containsLine` (sshline allowed)
-	] `onChange` restartSshd
+	]
+	`onChange` restartSshd
+	`describe` unwords [ "ssh config:", setting, sshBool allowed ]
   where
-	desc = unwords [ "ssh config:", setting, sshBool allowed ]
 	sshline v = setting ++ " " ++ sshBool v
 
 permitRootLogin :: Bool -> Property

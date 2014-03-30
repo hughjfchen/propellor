@@ -64,7 +64,8 @@ cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
 		`onChange` cmdProperty "update-grub" []
 		`onChange` cmdProperty "update-initramfs" [Param "-u"]
 		`describe` "work around grub/lvm boot bug #743126"
-	-- Cruft
-	, File.notPresent "/etc/rc.local"
-	, File.notPresent "/etc/init.d/S97-setup.sh"
+	, combineProperties
+		[ File.notPresent "/etc/rc.local"
+		, File.notPresent "/etc/init.d/S97-setup.sh"
+		] `describe` "nuked cloudatcost cruft"
 	]
