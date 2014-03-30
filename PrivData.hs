@@ -30,6 +30,7 @@ withPrivData field a = maybe missing a =<< getPrivData field
   where
 	missing = do
 		hPutStrLn stderr $ "** Missing privdata " ++ show field
+		hFlush stderr
 		return FailedChange
 
 getPrivData :: PrivDataField -> IO (Maybe String)
