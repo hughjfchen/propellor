@@ -54,6 +54,7 @@ spin host = do
 	url <- getUrl
 	privdata <- gpgDecrypt (privDataFile host)
 	void $ boolSystem "git" [Param "commit", Param "-a", Param "-m", Param "propellor spin"]
+	void $ boolSystem "git" [Param "push"]
 	withHandle StdinHandle createProcessSuccess
 		(proc "ssh" ["root@"++host, bootstrap url]) $ \h -> do
 			hPutStr h $ unlines $ map (privDataMarker ++) $ lines privdata
@@ -79,6 +80,7 @@ boot props = do
 		. filter (privDataMarker `isPrefixOf`) 
 		. lines 
 		<$> getContents
+	makePrivDataDir
 	writeFileProtected privDataLocal (unlines privdata)
 	ensureProperties props
 

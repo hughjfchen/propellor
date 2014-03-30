@@ -39,11 +39,15 @@ getPrivData field = do
 
 setPrivData :: HostName -> PrivDataField -> String -> IO ()
 setPrivData host field value = do
+	makePrivDataDir
 	let f = privDataFile host
 	m <- fromMaybe M.empty . readish <$> gpgDecrypt f
 	let m' = M.insert field value m
 	gpgEncrypt f (show m')
 	void $ boolSystem "git" [Param "add", File f]
+
+makePrivDataDir :: IO ()
+makePrivDataDir = createDirectoryIfMissing False privDataDir
 
 privDataDir :: FilePath
 privDataDir = "privdata"
