@@ -1,12 +1,13 @@
 run: pull build
 	./propellor
 
+devel: build tags
+
 pull:
 	git pull
 
 build: deps dist/setup-config
 	cabal build || (cabal configure; cabal build)
-	$(MAKE) tags
 	ln -sf dist/build/propellor/propellor
 
 deps:
