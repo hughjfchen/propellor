@@ -7,6 +7,7 @@ import Data.Maybe
 import Property
 import Utility.SafeCommand
 import Utility.Exception
+import Utility.Process
 
 type UserName = String
 
@@ -25,10 +26,16 @@ nuked user = check (isJust <$> homedir user) $ cmdProperty "userdel"
 	]
 
 lockedPassword :: UserName -> Property
-lockedPassword user = cmdProperty "passwd"
+lockedPassword user = check (not <$> isLockedPassword user) $ cmdProperty "passwd"
 	[ Param "--lock"
 	, Param user
 	]
+
+isLockedPassword :: UserName -> IO Bool
+isLockedPassword user = parse . words <$> readProcess "passwd" ["-S", user]
+  where
+	parse (_:"L":_) = True
+	parse _ = False
 
 homedir :: UserName -> IO (Maybe FilePath)
 homedir user = catchMaybeIO $ homeDirectory <$> getUserEntryForName user
