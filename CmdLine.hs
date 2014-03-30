@@ -52,9 +52,9 @@ defaultMain getprops = go =<< processCmdLine
 spin :: HostName -> IO ()
 spin host = do
 	url <- getUrl
-	privdata <- gpgDecrypt (privDataFile host)
 	void $ boolSystem "git" [Param "commit", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
+	privdata <- gpgDecrypt (privDataFile host)
 	withHandle StdinHandle createProcessSuccess
 		(proc "ssh" ["root@"++host, bootstrap url]) $ \h -> do
 			hPutStr h $ unlines $ map (privDataMarker ++) $ lines privdata
