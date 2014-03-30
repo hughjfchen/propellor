@@ -29,7 +29,7 @@ getProperties "clam" =
 	, User.nonsystem "joey"
 	, User.nuked "user"
 	, Apt.installed ["sudo"]
-	, fileHasContent "/etc/sudoers" ["joey ALL=(ALL:ALL) ALL"]
+	, lineInfFile "/etc/sudoers" "joey ALL=(ALL:ALL) ALL"
 	, GitHome.installedFor "joey"
 	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
 	, Apt.installed ["tor"]
