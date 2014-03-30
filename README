@@ -1,9 +1,10 @@
 This is a work in progress configuration management system using Haskell
 and Git.
 
-The design is intentionally very bare bones: Propellor enures that
-the system it's run in satisfies a list of properties, taking action as
-necessary when a property is not yet met.
+Propellor enures that the system it's run in satisfies a list of
+properties, taking action as necessary when a property is not yet met.
+
+The design is intentionally very minimal.
 
 Propellor lives in a git repository, and so to set it up it's cloned
 to a system, and "make" can be used to pull down any new changes,
@@ -21,7 +22,6 @@ powerful, nicely idempotent, and easy to adapt to a system's special needs.
 Also avoided is any form of node classification. Ie, which hosts are part
 of which classes and share which configuration. It might be nice to use
 reclass[1], but then again a host is configured using simply haskell code,
-and it should be easy to factor out things like classes of hosts in an
-ad-hoc fashion.
+and so it's easy to factor out things like classes of hosts as desired.
 
 [1] http://reclass.pantsfullofunix.net/
