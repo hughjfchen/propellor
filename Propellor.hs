@@ -61,16 +61,15 @@ standardSystem suite = propertyList "standard system"
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: HostName -> Property
 cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
-	[ User.nuked "user"
-	, Hostname.set hostname
+	[ Hostname.set hostname
 	, Ssh.uniqueHostKeys
 	, "worked around grub/lvm boot bug #743126" ==>
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []
 		`onChange` cmdProperty "update-initramfs" [Param "-u"]
-	, "nuked cloudatcost cruft" ==>
-		combineProperties
-			[ File.notPresent "/etc/rc.local"
-			, File.notPresent "/etc/init.d/S97-setup.sh"
-			]
+	, "nuked cloudatcost cruft" ==> combineProperties
+		[ File.notPresent "/etc/rc.local"
+		, File.notPresent "/etc/init.d/S97-setup.sh"
+		, User.nuked "user" User.YesReallyDeleteHome
+		]
 	]

@@ -6,6 +6,8 @@ import Common
 
 type UserName = String
 
+data Eep = YesReallyDeleteHome
+
 sshAccountFor :: UserName -> Property
 sshAccountFor user = check (isNothing <$> homedir user) $ cmdProperty "adduser"
 	[ Param "--disabled-password"
@@ -15,8 +17,8 @@ sshAccountFor user = check (isNothing <$> homedir user) $ cmdProperty "adduser"
 	`describe` ("ssh account " ++ user)
 
 {- Removes user home directory!! Use with caution. -}
-nuked :: UserName -> Property
-nuked user = check (isJust <$> homedir user) $ cmdProperty "userdel"
+nuked :: UserName -> Eep -> Property
+nuked user _ = check (isJust <$> homedir user) $ cmdProperty "userdel"
 	[ Param "-r"
 	, Param user
 	]
