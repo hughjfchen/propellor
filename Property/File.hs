@@ -1,6 +1,9 @@
 module Property.File where
 
+import System.Directory
+
 import Property
+import Utility.Directory
 
 {- Replaces all the content of a file. -}
 hasContent :: FilePath -> [Line] -> Property
@@ -20,3 +23,8 @@ f `containsLine` l = FileProperty (f ++ " contains:" ++ l) f go
  - file will be written. -}
 lacksLine :: FilePath -> Line -> Property
 f `lacksLine` l = FileProperty (f ++ " remove: " ++ l) f (filter (/= l))
+
+{- Note: Does not remove symlinks or non-plain-files. -}
+notPresent :: FilePath -> Property
+notPresent f = check (doesFileExist f) $ IOProperty (f ++ " not present") $ 
+	makeChange $ nukeFile f

@@ -64,4 +64,7 @@ cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
 	, "/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []
 		`onChange` cmdProperty "update-initramfs" [Param "-u"]
+	-- Cruft
+	, File.notPresent "/etc/rc.local"
+	, File.notPresent "/etc/init.d/S97-setup.sh"
 	]
