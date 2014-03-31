@@ -103,8 +103,10 @@ pullFirst cmdline next = do
 	if oldsha == newsha
 		then next
 		else do
-			void $ boolSystem "make" [Param "build"]
-			void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
+			ifM (boolSystem "make" [Param "build"])
+				( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
+				, error "Propellor build failed!" 
+				)
 
 getCurrentGitSha1 :: String -> IO String
 getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
