@@ -9,6 +9,7 @@ import Data.Maybe
 import Control.Monad
 
 import Types
+import Property
 import Utility.Monad
 import Utility.PartialPrelude
 import Utility.Exception
@@ -29,8 +30,7 @@ withPrivData :: PrivDataField -> (String -> IO Result) -> IO Result
 withPrivData field a = maybe missing a =<< getPrivData field
   where
 	missing = do
-		hPutStrLn stderr $ "** Missing privdata " ++ show field
-		hFlush stderr
+		warningMessage $ "Missing privdata " ++ show field
 		return FailedChange
 
 getPrivData :: PrivDataField -> IO (Maybe String)

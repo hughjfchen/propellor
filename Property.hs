@@ -116,3 +116,10 @@ ensureProperties' ps = ensure ps NoChange
 				putStrLn "done"
 		setSGR []
 		ensure ls (combineResult r rs)
+
+warningMessage :: String -> IO ()
+warningMessage s = do
+	setSGR [SetColor Foreground Vivid Red]
+	putStrLn $ "** warning: " ++ s
+	setSGR []
+	hFlush stdout
