@@ -25,19 +25,19 @@ Description:
 
 Executable propellor
   Main-Is: config.hs
-  GHC-Options: -Wall
+  GHC-Options: -Wall -XPackageImports
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers
+   containers, dataenc
 
   if (! os(windows))
     Build-Depends: unix
 
 Library
-  GHC-Options: -Wall
+  GHC-Options: -Wall -XPackageImports
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers
+   containers, dataenc
 
   if (! os(windows))
     Build-Depends: unix
@@ -65,6 +65,7 @@ Library
     Propellor.Types
   Other-Modules:
     Utility.Applicative
+    Utility.Base64
     Utility.Data
     Utility.Directory
     Utility.Env

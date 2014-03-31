@@ -7,6 +7,7 @@ import System.Exit
 import Propellor
 import Utility.FileMode
 import Utility.SafeCommand
+import Utility.Base64
 
 data CmdLine
 	= Run HostName
@@ -67,27 +68,17 @@ spin host = do
 	void $ boolSystem "git" [Param "push"]
 	privdata <- gpgDecrypt (privDataFile host)
 	withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd url]) $ \(toh, fromh) -> do
-		hPutStrLn stderr "PRE-STATUS"
-		hFlush stderr
 		status <- getstatus fromh `catchIO` error "protocol error"
-		hPutStrLn stderr "POST-STATUS"
-		hFlush stderr
 		case status of
 			NeedKeyRing -> do
-				hPutStrLn stderr "SEND-KEYRING"
-				hFlush stderr
-				s <- readProcess "gpg" $ gpgopts ++ ["--export", "-a"]
+				s <- toB64 readFile keyring
 				hPutStrLn toh $ toMarked keyringMarker s
 			HaveKeyRing -> noop
-		hPutStrLn stderr "POST-KEYRING"
-		hFlush stderr
 		hPutStrLn toh $ toMarked privDataMarker privdata
-		hPutStrLn stderr "POST-PRIVDATA"
-		hFlush stderr
 		hFlush toh
 		hClose toh
 
-		-- Propigate remaining output.
+		-- Display remaining output.
 		void $ tryIO $ forever $
 			putStrLn =<< hGetLine fromh
 		hClose fromh
@@ -140,29 +131,13 @@ boot props = do
 	havering <- doesFileExist keyring
 	putStrLn $ toMarked statusMarker $ show $ if havering then HaveKeyRing else NeedKeyRing
 	hFlush stdout
-	hPutStrLn stderr "SENT STATUS"
-	hFlush stderr
 	reply <- getContents
-	hPutStrLn stderr $ "GOT >>" ++ reply ++ "<<"
-	hFlush stderr
 	makePrivDataDir
-	hPutStrLn stderr $ "DEBUG 1"
-	hFlush stderr
 	writeFileProtected privDataLocal $ fromMarked privDataMarker reply
-	hPutStrLn stderr $ "DEBUG 2"
-	hFlush stderr
-	let keyringarmored = fromMarked keyringMarker reply
-	hPutStrLn stderr $ "DEBUG 3"
-	hFlush stderr
-	unless (null keyringarmored) $ do
-		hPutStrLn stderr $ "DEBUG 4"
-		hFlush stderr
-		withHandle StdinHandle createProcessSuccess
-			(proc "gpg" $ gpgopts ++ ["--import", "-a"]) $ \h -> do
-				hPutStr h keyringarmored
-				hFlush h
-	hPutStrLn stderr $ "READY"
-	hFlush stderr
+	let keyringb64 = fromMarked keyringMarker reply
+	case fromB64Maybe keyringb64 of
+		Nothing -> noop
+		Just s -> writeFileProtected keyring s
 	ensureProperties props
 
 addKey :: String -> IO ()
