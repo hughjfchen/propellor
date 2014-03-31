@@ -1,6 +1,7 @@
 module Propellor.Types where
 
 import Data.Monoid
+import System.Console.ANSI
 
 type HostName = String
 type UserName = String
@@ -24,3 +25,15 @@ instance Monoid Result where
 	mappend MadeChange _ = MadeChange
 	mappend _ MadeChange = MadeChange
 	mappend NoChange NoChange = NoChange
+
+class ActionResult a where
+	getActionResult :: a -> (String, ColorIntensity, Color)
+
+instance ActionResult Bool where
+	getActionResult False = ("ok", Vivid, Red)
+	getActionResult True = ("failed", Vivid, Green)
+
+instance ActionResult Result where
+	getActionResult NoChange = ("unchanged", Dull, Green)
+	getActionResult MadeChange = ("done", Vivid, Green)
+	getActionResult FailedChange = ("failed", Vivid, Red)

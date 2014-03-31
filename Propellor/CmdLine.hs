@@ -38,15 +38,15 @@ processCmdLine = go =<< getArgs
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":h:f:[]) = case readish f of
 		Just pf -> return $ Set h pf
-		Nothing -> error $ "Unknown privdata field " ++ f
+		Nothing -> errorMessage $ "Unknown privdata field " ++ f
 	go ("--continue":s:[]) =case readish s of
 		Just cmdline -> return $ Continue cmdline
-		Nothing -> error "--continue serialization failure"
+		Nothing -> errorMessage "--continue serialization failure"
 	go (h:[]) = return $ Run h
 	go [] = do
 		s <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
 		if null s
-			then error "Cannot determine hostname! Pass it on the command line."
+			then errorMessage "Cannot determine hostname! Pass it on the command line."
 			else return $ Run s
 	go _ = usage
 
@@ -64,7 +64,7 @@ defaultMain getprops = go True =<< processCmdLine
 	withprops host a = maybe (unknownhost host) a (getprops host)
 
 unknownhost :: HostName -> IO a
-unknownhost h = error $ unwords
+unknownhost h = errorMessage $ unwords
 	[ "Unknown host:", h
 	, "(perhaps you should specify the real hostname on the command line?)"
 	]
@@ -96,7 +96,7 @@ updateFirst cmdline next = do
 			then do
 				putStrLn $ "git branch " ++ originbranch ++ " gpg signature verified; merging"
 				hFlush stdout
-			else error $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it!"
+			else errorMessage $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it!"
 	
 	oldsha <- getCurrentGitSha1 branchref
 	void $ boolSystem "git" [Param "merge", Param originbranch]
@@ -104,13 +104,10 @@ updateFirst cmdline next = do
 
 	if oldsha == newsha
 		then next
-		else do
-			putStrLn "Rebuilding propeller.."
-			hFlush stdout
-			ifM (boolSystem "make" [Param "build"])
-				( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
-				, error "Propellor build failed!" 
-				)
+		else ifM (actionMessage "Rebuilding propellor" $ boolSystem "make" [Param "build"])
+			( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
+			, errorMessage "Propellor build failed!" 
+			)
 
 getCurrentGitSha1 :: String -> IO String
 getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
@@ -131,7 +128,7 @@ spin host = do
 			void $ tryIO $ forever $
 				showremote =<< hGetLine fromh
 			hClose fromh
-		status <- getstatus fromh `catchIO` error "protocol error"
+		status <- getstatus fromh `catchIO` (const $ errorMessage "protocol error")
 		case status of
 			Ready -> finish
 			NeedGitClone -> do
@@ -166,22 +163,22 @@ spin host = do
 			Just status -> return status
 	
 	showremote s = putStrLn s
-	senddata toh f marker s = do
-		putStr $ "Sending " ++ f ++ " (" ++ show (length s) ++ " bytes) to " ++ host ++ "..."
-		hFlush stdout
-		hPutStrLn toh $ toMarked marker s
-		hFlush toh
-		putStrLn "done"
+	senddata toh f marker s = void $
+		actionMessage ("Sending " ++ f ++ " (" ++ show (length s) ++ " bytes) to " ++ host) $ do
+			hFlush stdout
+			hPutStrLn toh $ toMarked marker s
+			hFlush toh
+			return True
 
 sendGitClone :: HostName -> String -> IO ()
-sendGitClone host url = do
-	putStrLn $ "Pushing git repository to " ++ host
-	withTmpFile "gitbundle" $ \tmp _ -> do
+sendGitClone host url = void $ actionMessage ("Pushing git repository to " ++ host) $
+	withTmpFile "gitbundle" $ \tmp _ -> allM id
 		-- TODO: ssh connection caching, or better push method
 		-- with less connections.
-		void $ boolSystem "git" [Param "bundle", Param "create", Param "-2", File tmp, Param "HEAD"]
-		void $ boolSystem "scp" [File tmp, Param ("root@"++host++":"++remotebundle)]
-		void $ boolSystem "ssh" [Param ("root@"++host), Param unpackcmd]
+		[ boolSystem "git" [Param "bundle", Param "create", Param "-2", File tmp, Param "HEAD"]
+		, boolSystem "scp" [File tmp, Param ("root@"++host++":"++remotebundle)]
+		, boolSystem "ssh" [Param ("root@"++host), Param unpackcmd]
+		]
   where
 	remotebundle = "/usr/local/propellor.git"
 	unpackcmd = shellWrap $ intercalate " && "
@@ -265,10 +262,10 @@ localdir :: FilePath
 localdir = "/usr/local/propellor"
 
 getUrl :: IO String
-getUrl = fromMaybe nourl <$> getM get urls
+getUrl = maybe nourl return =<< getM get urls
   where
 	urls = ["remote.deploy.url", "remote.origin.url"]
-	nourl = error $ "Cannot find deploy url in " ++ show urls
+	nourl = errorMessage $ "Cannot find deploy url in " ++ show urls
 	get u = do
 		v <- catchMaybeIO $ 
 			takeWhile (/= '\n') 

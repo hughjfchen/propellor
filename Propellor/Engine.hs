@@ -1,11 +1,12 @@
 module Propellor.Engine where
 
-import System.Console.ANSI
 import System.Exit
 import System.IO
 import Data.Monoid
+import System.Console.ANSI
 
 import Propellor.Types
+import Propellor.Message
 import Utility.Exception
 
 ensureProperty :: Property -> IO Result
@@ -25,29 +26,5 @@ ensureProperties' ps = ensure ps NoChange
   where
 	ensure [] rs = return rs
 	ensure (l:ls) rs = do
-		setTitle $ propertyDesc l
-		hFlush stdout
-		r <- ensureProperty l
-		clearFromCursorToLineBeginning
-		setCursorColumn 0
-		putStr $ propertyDesc l ++ "... "
-		case r of
-			FailedChange -> do
-				setSGR [SetColor Foreground Vivid Red]
-				putStrLn "failed"
-			NoChange -> do
-				setSGR [SetColor Foreground Dull Green]
-				putStrLn "unchanged"
-			MadeChange -> do
-				setSGR [SetColor Foreground Vivid Green]
-				putStrLn "done"
-		setSGR []
-		hFlush stdout
+		r <- actionMessage (propertyDesc l) (ensureProperty l)
 		ensure ls (r <> rs)
-
-warningMessage :: String -> IO ()
-warningMessage s = do
-	setSGR [SetColor Foreground Vivid Red]
-	putStrLn $ "** warning: " ++ s
-	setSGR []
-	hFlush stdout

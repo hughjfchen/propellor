@@ -31,6 +31,7 @@ module Propellor (
 	, module Propellor.Property.Cmd
 	, module Propellor.PrivData
 	, module Propellor.Engine
+	, module Propellor.Message
 
 	, module X
 ) where
@@ -40,6 +41,7 @@ import Propellor.Property
 import Propellor.Engine
 import Propellor.Property.Cmd
 import Propellor.PrivData
+import Propellor.Message
 
 import Utility.PartialPrelude as X
 import Utility.Process as X

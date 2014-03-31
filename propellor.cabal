@@ -60,6 +60,7 @@ Library
     Propellor.Property.Tor
     Propellor.Property.User
     Propellor.CmdLine
+    Propellor.Message
     Propellor.PrivData
     Propellor.Engine
     Propellor.Types

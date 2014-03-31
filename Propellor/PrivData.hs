@@ -9,7 +9,7 @@ import Data.Maybe
 import Control.Monad
 
 import Propellor.Types
-import Propellor.Engine
+import Propellor.Message
 import Utility.Monad
 import Utility.PartialPrelude
 import Utility.Exception
