@@ -74,10 +74,10 @@ spin host = do
 		status <- getstatus fromh `catchIO` error "protocol error"
 		case status of
 			NeedKeyRing -> do
-				putStr $ "Sending " ++ keyring ++ " to " ++ host ++ "..."
-				hFlush stdout
 				s <- w82s . BL.unpack . B64.encode
 					<$> BL.readFile keyring
+				putStr $ "Sending " ++ keyring ++ " (" ++ show (BL.length s) ++ " bytes) to " ++ host ++ "..."
+				hFlush stdout
 				hPutStrLn toh $ toMarked keyringMarker s
 				hFlush toh
 				putStrLn "done"
@@ -148,10 +148,6 @@ boot props = do
 	putStrLn $ toMarked statusMarker $ show $ if havering then HaveKeyRing else NeedKeyRing
 	hFlush stdout
 	reply <- hGetContentsStrict stdin
-
-	hPutStrLn stderr $ show $ B64.decode . BL.pack . s2w8 . takeWhile (/= '\n')
-		<$> fromMarked keyringMarker reply
-	hFlush stderr
 
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
