@@ -75,9 +75,13 @@ spin host = do
 		case status of
 			Nothing -> error "protocol error"
 			Just NeedKeyRing -> do
+				hPutStrLn stderr "SEND-KEYRING"
+				hFlush stderr
 				s <- readProcess "gpg" $ gpgopts ++ ["--export", "-a"]
 				hPutStr toh $ toMarked keyringMarker s
 			Just HaveKeyRing -> noop
+		hPutStrLn stderr "POST-KEYRING"
+		hFlush stderr
 		hPutStr toh $ toMarked privDataMarker privdata
 		hFlush toh
 		hClose fromh
