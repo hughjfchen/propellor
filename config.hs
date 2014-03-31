@@ -42,8 +42,9 @@ getProperties hostname@"clam.kitenet.net" = Just
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
 	]
 getProperties "orca.kitenet.net" = Just
-	[ Docker.configured
+	[ standardSystem Apt.Unstable
 	, Apt.unattendedUpgrades True
+	, Docker.configured
 	]
 -- add more hosts here...
 --getProperties "foo" =
