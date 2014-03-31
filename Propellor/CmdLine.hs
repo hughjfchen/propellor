@@ -100,9 +100,13 @@ spin host = do
 		, "./propellor --boot " ++ host
 		]
 	getstatus :: Handle -> IO BootStrapStatus
-	getstatus h = maybe (getstatus h) return 
-		. (readish <=< fromMarked statusMarker)
-		=<< hGetLine h
+	getstatus h = do
+		l <- hGetLine h
+		case readish =<< fromMarked statusMarker l of
+			Nothing -> do
+				putStrLn l
+				getstatus h
+			Just status -> return status
 
 data BootStrapStatus = HaveKeyRing | NeedKeyRing
 	deriving (Read, Show, Eq)
