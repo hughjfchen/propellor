@@ -1,8 +1,7 @@
 module Propellor.Property.Cmd (
 	cmdProperty,
 	cmdProperty',
-	scriptProperty,
-	module Utility.SafeCommand
+	scriptProperty
 ) where
 
 import Control.Applicative
@@ -13,23 +12,26 @@ import Utility.Monad
 import Utility.SafeCommand
 import Utility.Env
 
-cmdProperty :: String -> [CommandParam] -> Property
+-- | A property that can be satisfied by running a command.
+--
+-- The command must exit 0 on success.
+cmdProperty :: String -> [String] -> Property
 cmdProperty cmd params = cmdProperty' cmd params []
 
-cmdProperty' :: String -> [CommandParam] -> [(String, String)] -> Property
+-- | A property that can be satisfied by running a command,
+-- with added environment.
+cmdProperty' :: String -> [String] -> [(String, String)] -> Property
 cmdProperty' cmd params env = Property desc $ do
 	env' <- addEntries env <$> getEnvironment
-	ifM (boolSystemEnv cmd params (Just env'))
+	ifM (boolSystemEnv cmd (map Param params) (Just env'))
 		( return MadeChange
 		, return FailedChange
 		)
   where
-  	desc = unwords $ cmd : map showp params
-	showp (Params s) = s
-	showp (Param s) = s
-	showp (File s) = s
+  	desc = unwords $ cmd : params
 
+-- | A property that can be satisfied by running a series of shell commands.
 scriptProperty :: [String] -> Property
-scriptProperty script = cmdProperty "sh" [Param "-c", Param shellcmd]
+scriptProperty script = cmdProperty "sh" ["-c", shellcmd]
   where
 	shellcmd = intercalate " ; " ("set -e" : script)

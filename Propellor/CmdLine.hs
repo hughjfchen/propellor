@@ -4,8 +4,9 @@ import System.Environment
 import Data.List
 import System.Exit
 
-import Propellor.Common
+import Propellor
 import Utility.FileMode
+import Utility.SafeCommand
 
 data CmdLine
 	= Run HostName

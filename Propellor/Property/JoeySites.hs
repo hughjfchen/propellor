@@ -3,7 +3,7 @@
 
 module Propellor.Property.JoeySites where
 
-import Propellor.Common
+import Propellor
 import qualified Propellor.Property.Apt as Apt
 
 oldUseNetshellBox :: Property

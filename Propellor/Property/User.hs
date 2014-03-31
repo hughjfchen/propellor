@@ -2,23 +2,23 @@ module Propellor.Property.User where
 
 import System.Posix
 
-import Propellor.Common
+import Propellor
 
 data Eep = YesReallyDeleteHome
 
 sshAccountFor :: UserName -> Property
 sshAccountFor user = check (isNothing <$> homedir user) $ cmdProperty "adduser"
-	[ Param "--disabled-password"
-	, Param "--gecos", Param ""
-	, Param user
+	[ "--disabled-password"
+	, "--gecos", ""
+	, user
 	]
 	`describe` ("ssh account " ++ user)
 
 {- | Removes user home directory!! Use with caution. -}
 nuked :: UserName -> Eep -> Property
 nuked user _ = check (isJust <$> homedir user) $ cmdProperty "userdel"
-	[ Param "-r"
-	, Param user
+	[ "-r"
+	, user
 	]
 	`describe` ("nuked user " ++ user)
 
@@ -38,8 +38,8 @@ hasPassword user = Property (user ++ " has password") $
 
 lockedPassword :: UserName -> Property
 lockedPassword user = check (not <$> isLockedPassword user) $ cmdProperty "passwd"
-	[ Param "--lock"
-	, Param user
+	[ "--lock"
+	, user
 	]
 	`describe` ("locked " ++ user ++ " password")
 

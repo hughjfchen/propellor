@@ -1,6 +1,6 @@
 module Propellor.Property.Tor where
 
-import Propellor.Common
+import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 
@@ -16,4 +16,4 @@ isBridge = setup `requires` Apt.installed ["tor"]
 		] `onChange` restartTor
 
 restartTor :: Property
-restartTor = cmdProperty "service" [Param "tor", Param "restart"]
+restartTor = cmdProperty "service" ["tor", "restart"]

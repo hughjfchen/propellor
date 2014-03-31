@@ -1,4 +1,4 @@
-import Propellor.Common
+import Propellor
 import Propellor.CmdLine
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
@@ -71,7 +71,7 @@ cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
 	, "worked around grub/lvm boot bug #743126" ==>
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []
-		`onChange` cmdProperty "update-initramfs" [Param "-u"]
+		`onChange` cmdProperty "update-initramfs" ["-u"]
 	, "nuked cloudatcost cruft" ==> combineProperties
 		[ File.notPresent "/etc/rc.local"
 		, File.notPresent "/etc/init.d/S97-setup.sh"

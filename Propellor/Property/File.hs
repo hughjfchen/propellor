@@ -1,6 +1,6 @@
 module Propellor.Property.File where
 
-import Propellor.Common
+import Propellor
 
 type Line = String
 

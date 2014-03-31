@@ -6,7 +6,7 @@ import Data.List
 import System.IO
 import Control.Monad
 
-import Propellor.Common
+import Propellor
 import qualified Propellor.Property.File as File
 import Propellor.Property.File (Line)
 
@@ -51,7 +51,7 @@ stdSourcesList suite = setSourcesList (debCdn suite)
 setSourcesList :: [Line] -> Property
 setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
 
-runApt :: [CommandParam] -> Property
+runApt :: [String] -> Property
 runApt ps = cmdProperty' "apt-get" ps env
   where
 	env =
@@ -60,11 +60,11 @@ runApt ps = cmdProperty' "apt-get" ps env
 		]
 
 update :: Property
-update = runApt [Param "update"]
+update = runApt ["update"]
 	`describe` "apt update"
 
 upgrade :: Property
-upgrade = runApt [Params "-y dist-upgrade"]
+upgrade = runApt ["-y", "dist-upgrade"]
 	`describe` "apt dist-upgrade"
 
 type Package = String
@@ -73,13 +73,13 @@ installed :: [Package] -> Property
 installed ps = check (isInstallable ps) go
 	`describe` (unwords $ "apt installed":ps)
   where
-	go = runApt $ [Param "-y", Param "install"] ++ map Param ps
+	go = runApt $ ["-y", "install"] ++ ps
 
 removed :: [Package] -> Property
 removed ps = check (or <$> isInstalled' ps) go
 	`describe` (unwords $ "apt removed":ps)
   where
-	go = runApt $ [Param "-y", Param "remove"] ++ map Param ps
+	go = runApt $ ["-y", "remove"] ++ ps
 
 isInstallable :: [Package] -> IO Bool
 isInstallable ps = do
@@ -89,10 +89,10 @@ isInstallable ps = do
 isInstalled :: Package -> IO Bool
 isInstalled p = (== [True]) <$> isInstalled' [p]
 
-{- | Note that the order of the returned list will not always
- - correspond to the order of the input list. The number of items may
- - even vary. If apt does not know about a package at all, it will not
- - be included in the result list. -}
+-- | Note that the order of the returned list will not always
+-- correspond to the order of the input list. The number of items may
+-- even vary. If apt does not know about a package at all, it will not
+-- be included in the result list.
 isInstalled' :: [Package] -> IO [Bool]
 isInstalled' ps = catMaybes . map parse . lines
 	<$> readProcess "apt-cache" ("policy":ps)
@@ -103,7 +103,7 @@ isInstalled' ps = catMaybes . map parse . lines
 		| otherwise = Nothing
 
 autoRemove :: Property
-autoRemove = runApt [Param "-y", Param "autoremove"]
+autoRemove = runApt ["-y", "autoremove"]
 	`describe` "apt autoremove"
 
 unattendedUpgrades :: Bool -> Property
@@ -117,8 +117,8 @@ unattendedUpgrades enabled =
 		| enabled = "true"
 		| otherwise = "false"
 
-{- | Preseeds debconf values and reconfigures the package so it takes
- - effect. -}
+-- | Preseeds debconf values and reconfigures the package so it takes
+-- effect.
 reConfigure :: Package -> [(String, String, String)] -> Property
 reConfigure package vals = reconfigure `requires` setselections
 	`describe` ("reconfigure " ++ package)
@@ -129,4 +129,4 @@ reConfigure package vals = reconfigure `requires` setselections
 				forM_ vals $ \(template, tmpltype, value) ->
 					hPutStrLn h $ unwords [package, template, tmpltype, value]
 				hClose h
-	reconfigure = cmdProperty "dpkg-reconfigure" [Param "-fnone", Param package]
+	reconfigure = cmdProperty "dpkg-reconfigure" ["-fnone", package]

@@ -1,6 +1,6 @@
 module Propellor.Property.Docker where
 
-import Propellor.Common
+import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 

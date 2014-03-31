@@ -1,6 +1,6 @@
 module Propellor.Property.Network where
 
-import Propellor.Common
+import Propellor
 import Propellor.Property.File
 
 interfaces :: FilePath
@@ -24,4 +24,4 @@ ipv6to4 = fileProperty "ipv6to4" go interfaces
 		]
 
 ifUp :: String -> Property
-ifUp iface = cmdProperty "ifup" [Param iface]
+ifUp iface = cmdProperty "ifup" [iface]

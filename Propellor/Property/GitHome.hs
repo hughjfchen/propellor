@@ -1,8 +1,9 @@
 module Propellor.Property.GitHome where
 
-import Propellor.Common
+import Propellor
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.User
+import Utility.SafeCommand
 
 {- | Clones Joey Hess's git home directory, and runs its fixups script. -}
 installedFor :: UserName -> Property

@@ -1,8 +1,9 @@
 module Propellor.Property.Ssh where
 
-import Propellor.Common
+import Propellor
 import qualified Propellor.Property.File as File
 import Propellor.Property.User
+import Utility.SafeCommand
 
 sshBool :: Bool -> String
 sshBool True = "yes"
@@ -35,7 +36,7 @@ hasAuthorizedKeys = go <=< homedir
 		(readFile $ home </> ".ssh" </> "authorized_keys")
 
 restartSshd :: Property
-restartSshd = cmdProperty "service" [Param "ssh", Param "restart"]
+restartSshd = cmdProperty "service" ["ssh", "restart"]
 
 {- | Blow away existing host keys and make new ones. Use a flag
  - file to prevent doing this more than once. -}
@@ -50,4 +51,4 @@ uniqueHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 			]
 		ensureProperty $
 			cmdProperty "/var/lib/dpkg/info/openssh-server.postinst"
-				[Param "configure"]
+				["configure"]

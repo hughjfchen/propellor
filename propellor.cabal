@@ -43,6 +43,7 @@ Library
     Build-Depends: unix
 
   Exposed-Modules:
+    Propellor
     Propellor.Property
     Propellor.Property.Apt
     Propellor.Property.Cmd
@@ -58,7 +59,6 @@ Library
     Propellor.Property.Tor
     Propellor.Property.User
     Propellor.CmdLine
-    Propellor.Common
     Propellor.PrivData
     Propellor.Types
   Other-Modules:
