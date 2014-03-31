@@ -67,7 +67,11 @@ spin host = do
 	void $ boolSystem "git" [Param "push"]
 	privdata <- gpgDecrypt (privDataFile host)
 	withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd url]) $ \(toh, fromh) -> do
+		hPutStrLn stderr "PRE-STATUS"
+		hFlush stderr
 		status <- readish . fromMarked statusMarker <$> hGetContents fromh
+		hPutStrLn stderr "POST-STATUS"
+		hFlush stderr
 		case status of
 			Nothing -> error "protocol error"
 			Just NeedKeyRing -> do
@@ -121,8 +125,12 @@ boot :: [Property] -> IO ()
 boot props = do
 	havering <- doesFileExist keyring
 	putStrLn $ toMarked statusMarker $ show $ if havering then HaveKeyRing else NeedKeyRing
+	hPutStrLn stderr "SENT STATUS"
+	hFlush stderr
 	hFlush stdout
 	reply <- getContents
+	hPutStrLn stderr $ "GOT " ++ reply
+	hFlush stderr
 	makePrivDataDir
 	writeFileProtected privDataLocal $ fromMarked privDataMarker reply
 	let keyringarmored = fromMarked keyringMarker reply
