@@ -17,7 +17,7 @@ dist/setup-config: propellor.cabal
 	cabal configure
 
 clean:
-	rm -rf dist Setup tags
+	rm -rf dist Setup tags propellor privdata/local
 	find -name \*.o -exec rm {} \;
 	find -name \*.hi -exec rm {} \;
 
