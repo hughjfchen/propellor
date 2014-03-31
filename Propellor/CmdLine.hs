@@ -166,9 +166,7 @@ spin host = do
 	showremote s = putStrLn s
 	senddata toh f marker s = void $
 		actionMessage ("Sending " ++ f ++ " (" ++ show (length s) ++ " bytes) to " ++ host) $ do
-			hFlush stdout
-			hPutStrLn toh $ toMarked marker s
-			hFlush toh
+			sendMarked toh marker s
 			return True
 
 sendGitClone :: HostName -> String -> IO ()
@@ -206,6 +204,13 @@ privDataMarker = "PRIVDATA "
 toMarked :: Marker -> String -> String
 toMarked marker = intercalate "\n" . map (marker ++) . lines
 
+sendMarked :: Handle -> Marker -> String -> IO ()
+sendMarked h marker s = do
+	-- Prefix string with newline because sometimes a
+	-- incomplete line is output.
+	hPutStrLn h ("\n" ++ toMarked marker s)
+	hFlush h
+
 fromMarked :: Marker -> Marked -> Maybe String
 fromMarked marker s
 	| null matches = Nothing
@@ -217,8 +222,7 @@ fromMarked marker s
 
 boot :: [Property] -> IO ()
 boot props = do
-	putStrLn $ toMarked statusMarker $ show Ready
-	hFlush stdout
+	sendMarked stdout statusMarker $ show Ready
 	reply <- hGetContentsStrict stdin
 
 	makePrivDataDir
