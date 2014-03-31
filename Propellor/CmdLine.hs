@@ -78,11 +78,11 @@ spin host = do
 				hPutStrLn stderr "SEND-KEYRING"
 				hFlush stderr
 				s <- readProcess "gpg" $ gpgopts ++ ["--export", "-a"]
-				hPutStr toh $ toMarked keyringMarker s
+				hPutStrLn toh $ toMarked keyringMarker s
 			Just HaveKeyRing -> noop
 		hPutStrLn stderr "POST-KEYRING"
 		hFlush stderr
-		hPutStr toh $ toMarked privDataMarker privdata
+		hPutStrLn toh $ toMarked privDataMarker privdata
 		hFlush toh
 		hClose fromh
 
