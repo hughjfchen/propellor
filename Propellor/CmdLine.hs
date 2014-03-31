@@ -142,17 +142,16 @@ spin host = do
 	user = "root@"++host
 
 	bootstrapcmd = shellWrap $ intercalate " && "
-		[ intercalate " ; "
-			[ "if [ ! -d " ++ localdir ++ " ]"
-			, "then " ++ intercalate " && "
-				[ "apt-get -y install git"
-				, "echo " ++ toMarked statusMarker (show NeedGitClone)
-				]
-			, "fi"
+		[ "if [ ! -d " ++ localdir ++ " ]"
+		, "then " ++ intercalate " && "
+			[ "apt-get -y install git"
+			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			]
-		, "cd " ++ localdir
-		, "make build"
-		, "./propellor --boot " ++ host
+		, "else " ++ intercalate " && "
+			[ "cd " ++ localdir
+			, "if [ ! -x ./propellor ]; then make build; fi"
+			, "./propellor --boot " ++ host
+			]
 		]
 
 	getstatus :: Handle -> IO BootStrapStatus
