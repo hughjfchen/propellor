@@ -26,7 +26,6 @@ Description:
 Executable propellor
   Main-Is: config.hs
   GHC-Options: -Wall
-  Extensions: PackageImports
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
    containers, base64-bytestring
@@ -36,7 +35,6 @@ Executable propellor
 
 Library
   GHC-Options: -Wall
-  Extensions: PackageImports
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
    containers, dataenc

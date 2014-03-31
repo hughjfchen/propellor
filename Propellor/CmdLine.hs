@@ -3,14 +3,10 @@ module Propellor.CmdLine where
 import System.Environment
 import Data.List
 import System.Exit
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Base64.Lazy as B64
-import Data.Bits.Utils
 
 import Propellor
 import Utility.FileMode
 import Utility.SafeCommand
-import Utility.Data
 
 data CmdLine
 	= Run HostName
@@ -83,12 +79,7 @@ spin host = do
 			hClose fromh
 		status <- getstatus fromh `catchIO` error "protocol error"
 		case status of
-			HaveKeyRing -> finish
-			NeedKeyRing -> do
-				d <- w82s . BL.unpack . B64.encode
-					<$> BL.readFile keyring
-				senddata toh keyring keyringMarker d
-				finish
+			Ready -> finish
 			NeedGitClone -> do
 				hClose toh
 				hClose fromh
@@ -148,7 +139,7 @@ sendGitClone host url = do
 		, "rm -f " ++ remotebundle
 		]
 
-data BootStrapStatus = HaveKeyRing | NeedKeyRing | NeedGitClone
+data BootStrapStatus = Ready | NeedGitClone
 	deriving (Read, Show, Eq)
 
 type Marker = String
@@ -156,9 +147,6 @@ type Marked = String
 
 statusMarker :: Marker
 statusMarker = "STATUS"
-
-keyringMarker :: Marker
-keyringMarker = "KEYRING"
 
 privDataMarker :: String
 privDataMarker = "PRIVDATA "
@@ -177,19 +165,13 @@ fromMarked marker s
 
 boot :: [Property] -> IO ()
 boot props = do
-	havering <- doesFileExist keyring
-	putStrLn $ toMarked statusMarker $ show $ if havering then HaveKeyRing else NeedKeyRing
+	putStrLn $ toMarked statusMarker $ show Ready
 	hFlush stdout
 	reply <- hGetContentsStrict stdin
 
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
 		fromMarked privDataMarker reply
-	case eitherToMaybe . B64.decode . BL.pack . s2w8 =<< fromMarked keyringMarker reply of
-		Nothing -> noop
-		Just d -> do
-			writeFileProtected keyring ""
-			BL.writeFile keyring d
 	ensureProperties props
 
 addKey :: String -> IO ()

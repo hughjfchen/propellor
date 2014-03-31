@@ -54,16 +54,12 @@ for available fields.
 
 It's often easiest for a remote host to use a git:// or http://
 url to its origin repository, rather than ssh://. So, to avoid a MITM
-attack, propellor checks that the top commit in the git repository is gpg
+attack, propellor checks that any commit it fetched from origin is gpg
 signed by a trusted gpg key, and refuses to deploy it otherwise.
 
 This is only done when privdata/keyring.gpg exists. To set it up:
 
 gpg --gen-key                 # only if you don't already have a gpg key
 propellor --add-key $MYKEYID
-
-The keyring.gpg can be checked into git, but to ensure that it's
-used from the beginning when bootstrapping, propellor --spin
-transfers it to the host using ssh.
 
 [1] http://reclass.pantsfullofunix.net/
