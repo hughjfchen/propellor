@@ -3,11 +3,14 @@ module Propellor.CmdLine where
 import System.Environment
 import Data.List
 import System.Exit
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Base64.Lazy as B64
+import Data.Bits.Utils
 
 import Propellor
 import Utility.FileMode
 import Utility.SafeCommand
-import Utility.Base64
+import Utility.Data
 
 data CmdLine
 	= Run HostName
@@ -73,7 +76,8 @@ spin host = do
 			NeedKeyRing -> do
 				putStr $ "Sending " ++ keyring ++ " to " ++ host ++ "..."
 				hFlush stdout
-				s <- toB64 <$> readFile keyring
+				s <- w82s . BL.unpack . B64.encode
+					<$> BL.readFile keyring
 				putStrLn $ show $ toMarked keyringMarker s
 				hFlush stdout
 				hPutStrLn toh $ toMarked keyringMarker s
@@ -153,8 +157,11 @@ boot props = do
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
 		fromMarked privDataMarker reply
-	maybe noop (writeFileProtected keyring) $ 
-		fromB64Maybe =<< fromMarked keyringMarker reply
+	case eitherToMaybe . B64.decode . BL.pack . s2w8 =<< fromMarked keyringMarker reply of
+		Nothing -> noop
+		Just d -> do
+			writeFileProtected keyring ""
+			BL.writeFile keyring d
 	ensureProperties props
 
 addKey :: String -> IO ()

@@ -29,7 +29,7 @@ Executable propellor
   Extensions: PackageImports
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, dataenc
+   containers, base64-bytestring
 
   if (! os(windows))
     Build-Depends: unix
@@ -67,7 +67,6 @@ Library
     Propellor.Types
   Other-Modules:
     Utility.Applicative
-    Utility.Base64
     Utility.Data
     Utility.Directory
     Utility.Env
