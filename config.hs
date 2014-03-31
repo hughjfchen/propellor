@@ -30,6 +30,7 @@ getProperties :: HostName -> Maybe [Property]
 getProperties hostname@"clam.kitenet.net" = Just
 	[ cleanCloudAtCost hostname
 	, standardSystem Apt.Unstable
+	, Apt.unattendedUpgrades True
 	, Network.ipv6to4
 	-- Clam is a tor bridge, and an olduse.net shellbox and other
 	-- fun stuff.
@@ -37,11 +38,12 @@ getProperties hostname@"clam.kitenet.net" = Just
 	, JoeySites.oldUseNetshellBox
 	, Docker.configured
 	, Apt.installed ["git-annex", "mtr"]
-	-- This is not an important system so I don't want to need to 
-	-- manually upgrade it.
-	, Apt.unattendedUpgrades True
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
+	]
+getProperties "orca" = Just
+	[ Docker.configured
+	, Apt.unattendedUpgrades True
 	]
 -- add more hosts here...
 --getProperties "foo" =
