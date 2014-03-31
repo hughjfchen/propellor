@@ -3,6 +3,7 @@ import CmdLine
 import qualified Property.File as File
 import qualified Property.Apt as Apt
 import qualified Property.Ssh as Ssh
+import qualified Property.Sudo as Sudo
 import qualified Property.User as User
 import qualified Property.Hostname as Hostname
 import qualified Property.Reboot as Reboot
@@ -48,11 +49,8 @@ standardSystem suite = propertyList "standard system"
 	, check (Ssh.hasAuthorizedKeys "root") $
 		Ssh.passwordAuthentication False
 	, User.sshAccountFor "joey"
-	, Apt.installed ["sudo"]
-	-- nopasswd because no password is set up for joey.
-	, "sudoer joey" ==>
-		"/etc/sudoers" `File.containsLine` "joey ALL=(ALL:ALL) NOPASSWD:ALL"
 	, User.hasSomePassword "joey"
+	, Sudo.enabledFor "joey"
 	, GitHome.installedFor "joey"
 	, Apt.installed ["vim", "screen"]
 	-- I use postfix, or no MTA.
