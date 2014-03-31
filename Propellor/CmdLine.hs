@@ -93,7 +93,9 @@ pullFirst cmdline next = do
 		nukeFile $ privDataDir </> "trustring.gpg"
 		nukeFile $ privDataDir </> "gpg.conf"
 		if s == "U\n" || s == "G\n"
-			then putStrLn $ "git branch " ++ originbranch ++ " gpg signature verified; merging"
+			then do
+				putStrLn $ "git branch " ++ originbranch ++ " gpg signature verified; merging"
+				hFlush stdout
 			else error $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it!"
 	
 	oldsha <- getCurrentGitSha1 branchref
@@ -103,6 +105,7 @@ pullFirst cmdline next = do
 	if oldsha == newsha
 		then next
 		else do
+			putStrLn "Rebuilding propeller.."
 			ifM (boolSystem "make" [Param "build"])
 				( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
 				, error "Propellor build failed!" 
