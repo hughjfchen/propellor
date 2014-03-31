@@ -74,7 +74,8 @@ spin host = do
 				putStr $ "Sending " ++ keyring ++ " to " ++ host ++ "..."
 				hFlush stdout
 				s <- toB64 <$> readFile keyring
-				putStrLn $ toMarked keyringMarker s
+				putStrLn $ show $ toMarked keyringMarker s
+				hFlush stdout
 				hPutStrLn toh $ toMarked keyringMarker s
 				hFlush toh
 				putStrLn "done"
