@@ -98,8 +98,6 @@ ensureProperties' ps = ensure ps NoChange
   where
 	ensure [] rs = return rs
 	ensure (l:ls) rs = do
-		putStr $ propertyDesc l ++ "... "
-		hFlush stdout
 		r <- ensureProperty l
 		clearFromCursorToLineBeginning
 		setCursorColumn 0
