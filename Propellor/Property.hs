@@ -2,13 +2,10 @@ module Propellor.Property where
 
 import System.Directory
 import Control.Monad
-import System.Console.ANSI
-import System.Exit
-import System.IO
 
 import Propellor.Types
+import Propellor.Engine
 import Utility.Monad
-import Utility.Exception
 
 makeChange :: IO () -> IO Result
 makeChange a = a >> return MadeChange
@@ -82,42 +79,3 @@ check c property = Property (propertyDesc property) $ ifM c
 	( ensureProperty property
 	, return NoChange
 	)
-
-ensureProperty :: Property -> IO Result
-ensureProperty = catchDefaultIO FailedChange . propertySatisfy
-
-ensureProperties :: [Property] -> IO ()
-ensureProperties ps = do
-	r <- ensureProperties' [propertyList "overall" ps]
-	case r of
-		FailedChange -> exitWith (ExitFailure 1)
-		_ -> exitWith ExitSuccess
-
-ensureProperties' :: [Property] -> IO Result
-ensureProperties' ps = ensure ps NoChange
-  where
-	ensure [] rs = return rs
-	ensure (l:ls) rs = do
-		r <- ensureProperty l
-		clearFromCursorToLineBeginning
-		setCursorColumn 0
-		putStr $ propertyDesc l ++ "... "
-		case r of
-			FailedChange -> do
-				setSGR [SetColor Foreground Vivid Red]
-				putStrLn "failed"
-			NoChange -> do
-				setSGR [SetColor Foreground Dull Green]
-				putStrLn "unchanged"
-			MadeChange -> do
-				setSGR [SetColor Foreground Vivid Green]
-				putStrLn "done"
-		setSGR []
-		ensure ls (combineResult r rs)
-
-warningMessage :: String -> IO ()
-warningMessage s = do
-	setSGR [SetColor Foreground Vivid Red]
-	putStrLn $ "** warning: " ++ s
-	setSGR []
-	hFlush stdout
