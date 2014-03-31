@@ -17,5 +17,5 @@ runPropellor times = "/etc/cron.d/propellor" `File.hasContent`
 	, ""
 	, times ++ "\troot\tcd " ++ localdir ++ " && nice ionice -c 3 chronic make"
 	]
-	`requires` Apt.installed ["moreutils"]
+	`requires` Apt.installed ["util-linux", "cron", "moreutils"]
 	`describe` "cronned propeller"
