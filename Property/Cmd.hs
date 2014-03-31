@@ -1,10 +1,12 @@
 module Property.Cmd (
 	cmdProperty,
 	cmdProperty',
+	scriptProperty,
 	module Utility.SafeCommand
 ) where
 
 import Control.Applicative
+import Data.List
 
 import Types
 import Utility.Monad
@@ -26,3 +28,8 @@ cmdProperty' cmd params env = Property desc $ do
 	showp (Params s) = s
 	showp (Param s) = s
 	showp (File s) = s
+
+scriptProperty :: [String] -> Property
+scriptProperty script = cmdProperty "sh" [Param "-c", Param shellcmd]
+  where
+	shellcmd = intercalate " && " script

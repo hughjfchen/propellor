@@ -76,22 +76,25 @@ installed ps = check (isInstallable ps) go
 	go = runApt $ [Param "-y", Param "install"] ++ map Param ps
 
 removed :: [Package] -> Property
-removed ps = check (or <$> isInstalled ps) go
+removed ps = check (or <$> isInstalled' ps) go
 	`describe` (unwords $ "apt removed":ps)
   where
 	go = runApt $ [Param "-y", Param "remove"] ++ map Param ps
 
 isInstallable :: [Package] -> IO Bool
 isInstallable ps = do
-	l <- isInstalled ps
+	l <- isInstalled' ps
 	return $ any (== False) l && not (null l)
+
+isInstalled :: Package -> IO Bool
+isInstalled p = (== [True]) <$> isInstalled' [p]
 
 {- Note that the order of the returned list will not always
  - correspond to the order of the input list. The number of items may
  - even vary. If apt does not know about a package at all, it will not
  - be included in the result list. -}
-isInstalled :: [Package] -> IO [Bool]
-isInstalled ps = catMaybes . map parse . lines
+isInstalled' :: [Package] -> IO [Bool]
+isInstalled' ps = catMaybes . map parse . lines
 	<$> readProcess "apt-cache" ("policy":ps)
   where
 	parse l

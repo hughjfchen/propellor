@@ -10,6 +10,7 @@ import qualified Property.Reboot as Reboot
 import qualified Property.Tor as Tor
 import qualified Property.Docker as Docker
 import qualified Property.GitHome as GitHome
+import qualified Property.JoeySites as JoeySites
 
 main :: IO ()
 main = defaultMain getProperties
@@ -21,8 +22,9 @@ getProperties :: HostName -> [Property]
 getProperties hostname@"clam.kitenet.net" =
 	[ cleanCloudAtCost hostname
 	, standardSystem Apt.Unstable
-	-- Clam is a tor bridge.
+	-- Clam is a tor bridge, and an olduse.net shellbox.
 	, Tor.isBridge
+	, JoeySites.oldUseNetshellBox
 	-- I play with docker on clam.
 	, Docker.configured
 	-- This is not an important system so I don't want to need to 
