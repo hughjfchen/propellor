@@ -9,7 +9,7 @@ The design is intentionally very minimal.
 Propellor lives in a git repository, and so to set it up it's cloned
 to a system, and "make" can be used to pull down any new changes,
 and compile and run propellor. This can be done by a cron job, or
-something can ssh in and run it.
+a local propellor on your laptop can ssh in and run it.
 
 Properties are defined using Haskell. Edit config.hs to get started.
 

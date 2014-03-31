@@ -11,7 +11,7 @@ build: deps dist/setup-config
 	ln -sf dist/build/propellor/propellor
 
 deps:
-	@if [ $$(whoami) = root ]; then apt-get -y install gpg ghc cabal-install libghc-missingh-dev libghc-ansi-terminal-dev libghc-ifelse-dev libghc-unix-compat-dev libghc-hslogger-dev; fi || true
+	@if [ $$(whoami) = root ]; then apt-get -y install gnupg ghc cabal-install libghc-missingh-dev libghc-ansi-terminal-dev libghc-ifelse-dev libghc-unix-compat-dev libghc-hslogger-dev; fi || true
 
 dist/setup-config: propellor.cabal
 	cabal configure
