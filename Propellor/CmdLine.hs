@@ -71,6 +71,7 @@ spin host = do
 		status <- getstatus fromh `catchIO` error "protocol error"
 		case status of
 			NeedKeyRing -> do
+				putStrLn $ "Sending " ++ keyring ++ " to " ++ host
 				s <- toB64 <$> readFile keyring
 				hPutStrLn toh $ toMarked keyringMarker s
 			HaveKeyRing -> noop
@@ -100,7 +101,7 @@ spin host = do
 		]
 	getstatus :: Handle -> IO BootStrapStatus
 	getstatus h = maybe (getstatus h) return 
-		. readish . fromMarked statusMarker
+		. (readish <=< fromMarked statusMarker)
 		=<< hGetLine h
 
 data BootStrapStatus = HaveKeyRing | NeedKeyRing
@@ -121,10 +122,13 @@ privDataMarker = "PRIVDATA "
 toMarked :: Marker -> String -> String
 toMarked marker = unlines . map (marker ++) . lines
 
-fromMarked :: Marker -> Marked -> String
-fromMarked marker = unlines . map (drop len) . filter (marker `isPrefixOf`) . lines
+fromMarked :: Marker -> Marked -> Maybe String
+fromMarked marker s
+	| null matches = Nothing
+	| otherwise = Just $ unlines $ map (drop len) matches
   where
 	len = length marker
+	matches = filter (marker `isPrefixOf`) $ lines s
 
 boot :: [Property] -> IO ()
 boot props = do
@@ -133,13 +137,14 @@ boot props = do
 	hFlush stdout
 	reply <- getContents
 
-	hPutStrLn stderr $ fromMarked keyringMarker reply
+	hPutStrLn stderr $ show $ fromMarked keyringMarker reply
 	hFlush stderr
 
 	makePrivDataDir
-	writeFileProtected privDataLocal $ fromMarked privDataMarker reply
-	maybe noop (writeFileProtected keyring) $ fromB64Maybe $
-		fromMarked keyringMarker reply
+	maybe noop (writeFileProtected privDataLocal) $
+		fromMarked privDataMarker reply
+	maybe noop (writeFileProtected keyring) $ 
+		fromB64Maybe =<< fromMarked keyringMarker reply
 	ensureProperties props
 
 addKey :: String -> IO ()
