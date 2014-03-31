@@ -71,7 +71,7 @@ spin host = do
 		status <- getstatus fromh `catchIO` error "protocol error"
 		case status of
 			NeedKeyRing -> do
-				s <- toB64 readFile keyring
+				s <- toB64 <$> readFile keyring
 				hPutStrLn toh $ toMarked keyringMarker s
 			HaveKeyRing -> noop
 		hPutStrLn toh $ toMarked privDataMarker privdata
