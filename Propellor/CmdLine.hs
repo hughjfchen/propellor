@@ -56,10 +56,11 @@ defaultMain getprops = go True =<< processCmdLine
 	go _ (Continue cmdline) = go False cmdline
 	go _ (Set host field) = setPrivData host field
 	go _ (AddKey keyid) = addKey keyid
-	go _ (Spin host) = withprops host $ const $ spin host
+	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
-	go _ (Run host) = withprops host $ ensureProperties
-	go _ (Boot host) = withprops host $ boot
+	go False (Spin host) = withprops host $ const $ spin host
+	go False (Run host) = withprops host $ ensureProperties
+	go False (Boot host) = withprops host $ boot
 
 	withprops host a = maybe (unknownhost host) a (getprops host)
 
@@ -68,6 +69,20 @@ unknownhost h = errorMessage $ unwords
 	[ "Unknown host:", h
 	, "(perhaps you should specify the real hostname on the command line?)"
 	]
+
+buildFirst :: CmdLine -> IO () -> IO ()
+buildFirst cmdline next = do
+	oldtime <- getmtime
+	ifM (actionMessage "Rebuilding propellor" $ boolSystem "make" [Param "build"])
+		( do
+			newtime <- getmtime
+			if newtime == oldtime
+				then next
+				else void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
+		, errorMessage "Propellor build failed!" 
+		)
+  where
+	getmtime = catchMaybeIO $ getModificationTime "propellor"
 
 updateFirst :: CmdLine -> IO () -> IO ()
 updateFirst cmdline next = do
