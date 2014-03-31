@@ -74,7 +74,8 @@ updateFirst cmdline next = do
 	branchref <- takeWhile (/= '\n') 
 		<$> readProcess "git" ["symbolic-ref", "HEAD"]
 	let originbranch = "origin" </> takeFileName branchref
-	void $ boolSystem "git" [Param "fetch"]
+
+	void $ actionMessage "Fetching" $ boolSystem "git" [Param "fetch"]
 	
 	whenM (doesFileExist keyring) $ do
 		{- To verify origin/master commit's signature, have to
@@ -128,7 +129,7 @@ spin host = do
 			void $ tryIO $ forever $
 				showremote =<< hGetLine fromh
 			hClose fromh
-		status <- getstatus fromh `catchIO` (const $ errorMessage "protocol error")
+		status <- getstatus fromh `catchIO` (const $ errorMessage "protocol error (perhaps the remote propellor failed to run?)")
 		case status of
 			Ready -> finish
 			NeedGitClone -> do

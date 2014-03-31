@@ -16,7 +16,6 @@ actionMessage desc a = do
 
 	let (msg, intensity, color) = getActionResult r
 	putStr $ desc ++ " ... "
-	showdesc
 	setSGR [SetColor Foreground intensity color]
 	putStrLn msg
 	setSGR []
