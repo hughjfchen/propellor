@@ -85,7 +85,7 @@ pullFirst next = do
 		nukeFile $ privDataDir </> "trustring.gpg"
 		nukeFile $ privDataDir </> "gpg.conf"
 		when (s /= "U\n" && s/= "G\n") $
-			error $ "git branch" ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it!"
+			error $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it!"
 	
 	void $ boolSystem "git" [Param "merge", Param originbranch]
 
