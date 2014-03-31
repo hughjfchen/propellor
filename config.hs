@@ -1,3 +1,6 @@
+{- This is the main configuration file for Propellor, and is used to build
+ - the propellor program. -}
+
 import Propellor
 import Propellor.CmdLine
 import qualified Propellor.Property.File as File
