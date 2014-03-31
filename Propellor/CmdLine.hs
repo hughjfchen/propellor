@@ -143,7 +143,7 @@ boot props = do
 	havering <- doesFileExist keyring
 	putStrLn $ toMarked statusMarker $ show $ if havering then HaveKeyRing else NeedKeyRing
 	hFlush stdout
-	reply <- getContents
+	reply <- hGetContentsStrict stdin
 
 	hPutStrLn stderr $ show $ fromMarked keyringMarker reply
 	hFlush stderr
