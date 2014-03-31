@@ -1,7 +1,7 @@
 module Property.Network where
 
 import Common
-import qualified Property.File as File
+import Property.File
 
 interfaces :: FilePath
 interfaces = "/etc/network/interfaces"
@@ -17,10 +17,11 @@ ipv6to4 = fileProperty "ipv6to4" go interfaces
 	stanza =
 		[ "# Automatically added by propeller"
 		, "iface sit0 inet6 static"
-		, "	address 2002:5044:5531::1"
-		, "	netmask 64"
-		, "	gateway ::192.88.99.1"
+		, "\taddress 2002:5044:5531::1"
+		, "\tnetmask 64"
+		, "\tgateway ::192.88.99.1"
 		, "# End automatically added by propeller"
+		]
 
 ifUp :: String -> Property
 ifUp iface = cmdProperty "ifup" [Param iface]

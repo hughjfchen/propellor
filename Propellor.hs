@@ -25,7 +25,7 @@ getProperties hostname@"clam.kitenet.net" =
 	, standardSystem Apt.Unstable
 	-- Clam is a tor bridge, and an olduse.net shellbox.
 	, Tor.isBridge
-	, ipv6to4
+	, Network.ipv6to4
 	, JoeySites.oldUseNetshellBox
 	-- I play with docker on clam.
 	, Docker.configured
