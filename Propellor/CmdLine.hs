@@ -133,6 +133,9 @@ boot props = do
 	hFlush stdout
 	reply <- getContents
 
+	hPutStrLn stderr $ fromMarked keyringMarker reply
+	hFlush stderr
+
 	makePrivDataDir
 	writeFileProtected privDataLocal $ fromMarked privDataMarker reply
 	maybe noop (writeFileProtected keyring) $ fromB64Maybe $
