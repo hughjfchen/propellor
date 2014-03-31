@@ -69,21 +69,22 @@ spin host = do
 	withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd url]) $ \(toh, fromh) -> do
 		hPutStrLn stderr "PRE-STATUS"
 		hFlush stderr
-		status <- readish . fromMarked statusMarker <$> hGetContents fromh
+		status <- getstatus fromh `catchIO` error "protocol error"
 		hPutStrLn stderr "POST-STATUS"
 		hFlush stderr
 		case status of
-			Nothing -> error "protocol error"
-			Just NeedKeyRing -> do
+			NeedKeyRing -> do
 				hPutStrLn stderr "SEND-KEYRING"
 				hFlush stderr
 				s <- readProcess "gpg" $ gpgopts ++ ["--export", "-a"]
 				hPutStrLn toh $ toMarked keyringMarker s
-			Just HaveKeyRing -> noop
+			HaveKeyRing -> noop
 		hPutStrLn stderr "POST-KEYRING"
 		hFlush stderr
 		hPutStrLn toh $ toMarked privDataMarker privdata
 		hFlush toh
+		void $ tryIO $ forever $
+			putStrLn =<< hGetLine fromh
 		hClose fromh
 
   where
@@ -101,6 +102,10 @@ spin host = do
 		, "make pull build"
 		, "./propellor --boot " ++ host
 		]
+	getstatus :: Handle -> IO BootStrapStatus
+	getstatus h = maybe (getstatus h) return 
+		. readish . fromMarked statusMarker
+		=<< hGetLine h
 
 data BootStrapStatus = HaveKeyRing | NeedKeyRing
 	deriving (Read, Show, Eq)
@@ -129,9 +134,9 @@ boot :: [Property] -> IO ()
 boot props = do
 	havering <- doesFileExist keyring
 	putStrLn $ toMarked statusMarker $ show $ if havering then HaveKeyRing else NeedKeyRing
+	hFlush stdout
 	hPutStrLn stderr "SENT STATUS"
 	hFlush stderr
-	hFlush stdout
 	reply <- getContents
 	hPutStrLn stderr $ "GOT " ++ reply
 	hFlush stderr
