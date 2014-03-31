@@ -24,7 +24,6 @@ getProperties hostname@"clam.kitenet.net" =
 	-- Clam is a tor bridge.
 	, Tor.isBridge
 	-- I play with docker on clam.
-	, Apt.installed ["docker.io"]
 	, Docker.configured
 	-- This is not an important system so I don't want to need to 
 	-- manually upgrade it.
