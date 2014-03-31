@@ -2,6 +2,7 @@ import Common
 import CmdLine
 import qualified Property.File as File
 import qualified Property.Apt as Apt
+import qualified Property.Network as Network
 import qualified Property.Ssh as Ssh
 import qualified Property.Sudo as Sudo
 import qualified Property.User as User
@@ -24,6 +25,7 @@ getProperties hostname@"clam.kitenet.net" =
 	, standardSystem Apt.Unstable
 	-- Clam is a tor bridge, and an olduse.net shellbox.
 	, Tor.isBridge
+	, ipv6to4
 	, JoeySites.oldUseNetshellBox
 	-- I play with docker on clam.
 	, Docker.configured
