@@ -30,11 +30,12 @@ getProperties hostname@"clam.kitenet.net" = Just
 	[ cleanCloudAtCost hostname
 	, standardSystem Apt.Unstable
 	, Network.ipv6to4
-	-- Clam is a tor bridge, and an olduse.net shellbox.
+	-- Clam is a tor bridge, and an olduse.net shellbox and other
+	-- fun stuff.
 	, Tor.isBridge
 	, JoeySites.oldUseNetshellBox
-	-- I play with docker on clam.
 	, Docker.configured
+	, Apt.installed ["git-annex"]
 	-- This is not an important system so I don't want to need to 
 	-- manually upgrade it.
 	, Apt.unattendedUpgrades True
