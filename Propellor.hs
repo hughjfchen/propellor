@@ -19,13 +19,13 @@ main = defaultMain getProperties
 {- This is where the system's HostName, either as returned by uname
  - or one specified on the command line, is converted into a list of
  - Properties for that system. -}
-getProperties :: HostName -> [Property]
-getProperties hostname@"clam.kitenet.net" =
+getProperties :: HostName -> Maybe [Property]
+getProperties hostname@"clam.kitenet.net" = Just
 	[ cleanCloudAtCost hostname
 	, standardSystem Apt.Unstable
+	, Network.ipv6to4
 	-- Clam is a tor bridge, and an olduse.net shellbox.
 	, Tor.isBridge
-	, Network.ipv6to4
 	, JoeySites.oldUseNetshellBox
 	-- I play with docker on clam.
 	, Docker.configured
@@ -37,10 +37,7 @@ getProperties hostname@"clam.kitenet.net" =
 	]
 -- add more hosts here...
 --getProperties "foo" =
-getProperties h = error $ unwords
-	[ "Unknown host:", h
-	, "(perhaps you should specify the real hostname on the command line?)"
-	]
+getProperties _ = Nothing
 
 -- This is my standard system setup
 standardSystem :: Apt.Suite -> Property

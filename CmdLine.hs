@@ -41,13 +41,19 @@ usage = do
 		]
 	exitFailure
 
-defaultMain :: (HostName -> [Property]) -> IO ()
+defaultMain :: (HostName -> Maybe [Property]) -> IO ()
 defaultMain getprops = go =<< processCmdLine
   where
-	go (Run host) = ensureProperties (getprops host)
+	go (Run host) = maybe (unknownhost host) ensureProperties (getprops host)
 	go (Spin host) = spin host
-	go (Boot host) = boot (getprops host)
+	go (Boot host) = maybe (unknownhost host) boot (getprops host)
 	go (Set host field) = setPrivData host field
+
+unknownhost :: HostName -> IO a
+unknownhost h = error $ unwords
+	[ "Unknown host:", h
+	, "(perhaps you should specify the real hostname on the command line?)"
+	]
 
 spin :: HostName -> IO ()
 spin host = do
