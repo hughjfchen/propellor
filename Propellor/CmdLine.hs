@@ -48,9 +48,9 @@ usage = do
 defaultMain :: (HostName -> Maybe [Property]) -> IO ()
 defaultMain getprops = go =<< processCmdLine
   where
-	go (Run host) = withprops host ensureProperties
-	go (Spin host) = withprops host (const $ spin host)
-	go (Boot host) = withprops host boot
+	go (Run host) = withprops host $ pullFirst . ensureProperties
+	go (Spin host) = withprops host $ const $ spin host
+	go (Boot host) = withprops host $ pullFirst . boot
 	go (Set host field) = setPrivData host field
 	go (AddKey keyid) = addKey keyid
 	withprops host a = maybe (unknownhost host) a (getprops host)
@@ -60,6 +60,36 @@ unknownhost h = error $ unwords
 	[ "Unknown host:", h
 	, "(perhaps you should specify the real hostname on the command line?)"
 	]
+
+pullFirst :: IO () -> IO ()
+pullFirst next = do
+	branchref <- takeWhile (/= '\n') 
+		<$> readProcess "git" ["symbolic-ref", "HEAD"]
+	let originbranch = "origin" </> takeFileName branchref
+	void $ boolSystem "git" [Param "fetch"]
+	
+	whenM (doesFileExist keyring) $ do
+		{- To verify origin/master commit's signature, have to
+		 - convince gpg to use our keyring. While running git log.
+		 - Which has no way to pass options to gpg.
+		 - Argh! -}
+		let gpgconf = privDataDir </> "gpg.conf"
+		writeFile gpgconf $ unlines
+			[ " keyring " ++ keyring
+			, "no-auto-check-trustdb"
+			]
+		-- gpg is picky about perms
+		modifyFileMode privDataDir (removeModes otherGroupModes)
+		s <- readProcessEnv "git" ["log", "-n", "1", "--format=%G?", originbranch]
+			(Just [("GNUPGHOME", privDataDir)])
+		nukeFile $ privDataDir </> "trustring.gpg"
+		nukeFile $ privDataDir </> "gpg.conf"
+		when (s /= "U\n" && s/= "G\n") $
+			error $ "git branch" ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it!"
+	
+	void $ boolSystem "git" [Param "merge", Param originbranch]
+
+	next
 
 spin :: HostName -> IO ()
 spin host = do

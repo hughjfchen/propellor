@@ -30,10 +30,7 @@ and so it's easy to factor out things like classes of hosts as desired.
 
 To bootstrap propellor on a new host, use: propellor --spin $host
 
-That clones the local git repository to the remote host (securely over ssh
-and without needing any central server!), if it doesn't already have
-a clone.
-
+That clones the git repository to the remote host. 
 The repository on the remote host will have its origin set to the local git
 repository's remote.origin.url (or remote.deploy.url if available).
 This way, when propellor is run on the remote host, it can contact
@@ -61,5 +58,9 @@ This is only done when privdata/keyring.gpg exists. To set it up:
 
 gpg --gen-key                 # only if you don't already have a gpg key
 propellor --add-key $MYKEYID
+
+In order to be secure from the beginning propellor --spin is used
+to bootstrap propellor on a new host, it transfers the local git repositry
+to the host over ssh.
 
 [1] http://reclass.pantsfullofunix.net/

@@ -1,10 +1,7 @@
-run: pull build
+run: build
 	./propellor
 
-devel: build tags
-
-pull:
-	git pull
+dev: build tags
 
 build: deps dist/setup-config
 	cabal build || (cabal configure; cabal build)
