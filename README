@@ -23,6 +23,8 @@ of which classes and share which configuration. It might be nice to use
 reclass[1], but then again a host is configured using simply haskell code,
 and so it's easy to factor out things like classes of hosts as desired.
 
+## bootstrapping and private data
+
 To bootstrap propellor on a new host, use: propellor --spin $host
 This looks up the git repository's remote.origin.url (or remote.deploy.url
 if available) and logs into the host, clones the url (if not already
@@ -39,12 +41,17 @@ in such a file, use: propellor --set $host $field
 The field name will be something like 'Password "root"'; see PrivData.hs
 for available fields.
 
-It's often easiest to deploy propellor to a host by cloning a git://
-or http:// repository. To avoid a MITM attack, propellor checks
-that the top commit in the git repository is gpg signed by a
-trusted key, and refuses to deploy it otherwise. This is only done if
-privdata/keyring.gpg exists. To generate it, make a gpg key and
-run something like:
+## using git://... securely
+
+It's often easiest to deploy propellor to a host by cloning a git:// or
+http:// repository rather than by cloning over ssh://. To avoid a MITM
+attack, propellor checks that the top commit in the git repository is gpg
+signed by a trusted gpg key, and refuses to deploy it otherwise. 
+
+This is only done when privdata/keyring.gpg exists. To set it up:
+
+gpg --gen-key                 # only if you don't already have a gpg key
+propellor --add-key $MYKEYID
 
 The keyring.gpg can be checked into git, but to ensure that it's
 used from the beginning when bootstrapping, propellor --spin

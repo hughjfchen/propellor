@@ -13,6 +13,7 @@ data CmdLine
 	| Spin HostName
 	| Boot HostName
 	| Set HostName PrivDataField
+	| AddKey String
 
 processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
@@ -20,6 +21,7 @@ processCmdLine = go =<< getArgs
   	go ("--help":_) = usage
   	go ("--spin":h:[]) = return $ Spin h
   	go ("--boot":h:[]) = return $ Boot h
+	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":h:f:[]) = case readish f of
 		Just pf -> return $ Set h pf
 		Nothing -> error $ "Unknown privdata field " ++ f
@@ -39,6 +41,7 @@ usage = do
 		, "  propellor hostname"
 		, "  propellor --spin hostname"
 		, "  propellor --set hostname field"
+		, "  propellor --add-key keyid"
 		]
 	exitFailure
 
@@ -49,6 +52,7 @@ defaultMain getprops = go =<< processCmdLine
 	go (Spin host) = spin host
 	go (Boot host) = maybe (unknownhost host) boot (getprops host)
 	go (Set host field) = setPrivData host field
+	go (AddKey keyid) = addKey keyid
 
 unknownhost :: HostName -> IO a
 unknownhost h = error $ unwords
@@ -59,15 +63,24 @@ unknownhost h = error $ unwords
 spin :: HostName -> IO ()
 spin host = do
 	url <- getUrl
-	void $ boolSystem "git" [Param "commit", Param "-a", Param "-m", Param "propellor spin"]
+	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
 	privdata <- gpgDecrypt (privDataFile host)
-	withHandle StdinHandle createProcessSuccess
-		(proc "ssh" ["root@"++host, bootstrap url]) $ \h -> do
-			hPutStr h $ unlines $ map (privDataMarker ++) $ lines privdata
-			hClose h
+	withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd url]) $ \(toh, fromh) -> do
+		status <- readish . fromMarked statusMarker <$> hGetContents fromh
+		case status of
+			Nothing -> error "protocol error"
+			Just NeedKeyRing -> do
+				s <- readProcess "gpg" $ gpgopts ++ ["--export", "-a"]
+				hPutStr toh $ toMarked keyringMarker s
+			Just HaveKeyRing -> noop
+		hPutStr toh $ toMarked privDataMarker privdata
+		hFlush toh
+		hClose fromh
+
   where
-	bootstrap url = shellWrap $ intercalate " && "
+	user = "root@"++host
+	bootstrapcmd url = shellWrap $ intercalate " && "
 		[ intercalate " ; "
 			[ "if [ ! -d " ++ localdir ++ " ]"
 			, "then " ++ intercalate " && "
@@ -81,15 +94,77 @@ spin host = do
 		, "./propellor --boot " ++ host
 		]
 
+data BootStrapStatus = HaveKeyRing | NeedKeyRing
+	deriving (Read, Show, Eq)
+
+type Marker = String
+type Marked = String
+
+statusMarker :: Marker
+statusMarker = "STATUS"
+
+keyringMarker :: Marker
+keyringMarker = "KEYRING"
+
+privDataMarker :: String
+privDataMarker = "PRIVDATA "
+
+toMarked :: Marker -> String -> String
+toMarked marker = unlines . map (marker ++) . lines
+
+fromMarked :: Marker -> Marked -> String
+fromMarked marker = unlines . map (drop len) . filter (marker `isPrefixOf`) . lines
+  where
+	len = length marker
+
 boot :: [Property] -> IO ()
 boot props = do
-	privdata <- map (drop $ length privDataMarker ) 
-		. filter (privDataMarker `isPrefixOf`) 
-		. lines 
-		<$> getContents
+	havering <- doesFileExist keyring
+	putStrLn $ toMarked statusMarker $ show $ if havering then HaveKeyRing else NeedKeyRing
+	hFlush stdout
+	reply <- getContents
 	makePrivDataDir
-	writeFileProtected privDataLocal (unlines privdata)
+	writeFileProtected privDataLocal $ fromMarked privDataMarker reply
+	let keyringarmored = fromMarked keyringMarker reply
+	unless (null keyringarmored) $
+		withHandle StdinHandle createProcessSuccess
+			(proc "gpg" $ gpgopts ++ ["--import", "-a"]) $ \h -> do
+				hPutStr h keyringarmored
+				hFlush h
 	ensureProperties props
+
+addKey :: String -> IO ()
+addKey keyid = exitBool =<< allM id [ gpg, gitadd, gitcommit ]
+  where
+	gpg = boolSystem "sh"
+		[ Param "-c"
+		, Param $ "gpg --export " ++ keyid ++ " | gpg " ++
+			unwords (gpgopts ++ ["--import"])
+		]
+	gitadd = boolSystem "git"
+		[ Param "add"
+		, File keyring
+		]
+	gitcommit = gitCommit
+		[ File keyring
+		, Param "-m"
+		, Param "propellor addkey"
+		]
+
+{- Automatically sign the commit if there'a a keyring. -}
+gitCommit :: [CommandParam] -> IO Bool
+gitCommit ps = do
+	k <- doesFileExist keyring
+	boolSystem "git" $ catMaybes $
+		[ Just (Param "commit")
+		, if k then Just (Param "--gpg-sign") else Nothing
+		] ++ map Just ps
+
+keyring :: FilePath
+keyring = privDataDir </> "keyring.gpg"
+
+gpgopts :: [String]
+gpgopts = ["--options", "/dev/null", "--no-default-keyring", "--keyring", keyring]
 
 localdir :: FilePath
 localdir = "/usr/local/propellor"

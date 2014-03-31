@@ -2,3 +2,4 @@ dist/*
 propellor
 tags
 privdata/local
+privdata/keyring.gpg~

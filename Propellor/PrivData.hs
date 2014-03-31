@@ -63,9 +63,6 @@ privDataFile host = privDataDir </> host ++ ".gpg"
 privDataLocal :: FilePath
 privDataLocal = privDataDir </> "local"
 
-privDataMarker :: String
-privDataMarker = "PRIVDATA "
-
 gpgDecrypt :: FilePath -> IO String
 gpgDecrypt f = ifM (doesFileExist f)
 	( readProcess "gpg" ["--decrypt", f]
