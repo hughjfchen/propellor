@@ -149,7 +149,7 @@ boot props = do
 	hFlush stdout
 	reply <- hGetContentsStrict stdin
 
-	hPutStrLn stderr $ show $ fromMarked keyringMarker reply
+	hPutStrLn stderr $ show $ B64.decode . BL.pack . s2w8 <$> fromMarked keyringMarker reply
 	hFlush stderr
 
 	makePrivDataDir
