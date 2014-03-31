@@ -32,4 +32,4 @@ cmdProperty' cmd params env = Property desc $ do
 scriptProperty :: [String] -> Property
 scriptProperty script = cmdProperty "sh" [Param "-c", Param shellcmd]
   where
-	shellcmd = intercalate " && " script
+	shellcmd = intercalate " ; " ("set -e" : script)
