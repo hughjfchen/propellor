@@ -47,6 +47,7 @@ Library
     Propellor.Property
     Propellor.Property.Apt
     Propellor.Property.Cmd
+    Propellor.Property.Cron
     Propellor.Property.Docker
     Propellor.Property.File
     Propellor.Property.GitHome

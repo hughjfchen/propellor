@@ -7,6 +7,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
 import qualified Propellor.Property.Ssh as Ssh
+import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
@@ -63,6 +64,7 @@ standardSystem suite = propertyList "standard system"
 	, Sudo.enabledFor "joey"
 	, GitHome.installedFor "joey"
 	, Apt.installed ["vim", "screen"]
+	, Cron.runPropellor "30 * * * *"
 	-- I use postfix, or no MTA.
 	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
 	]
