@@ -145,9 +145,17 @@ boot props = do
 	hPutStrLn stderr $ "GOT " ++ reply
 	hFlush stderr
 	makePrivDataDir
+	hPutStrLn stderr $ "DEBUG 1"
+	hFlush stderr
 	writeFileProtected privDataLocal $ fromMarked privDataMarker reply
+	hPutStrLn stderr $ "DEBUG 2"
+	hFlush stderr
 	let keyringarmored = fromMarked keyringMarker reply
-	unless (null keyringarmored) $
+	hPutStrLn stderr $ "DEBUG 3"
+	hFlush stderr
+	unless (null keyringarmored) $ do
+		hPutStrLn stderr $ "DEBUG 4"
+		hFlush stderr
 		withHandle StdinHandle createProcessSuccess
 			(proc "gpg" $ gpgopts ++ ["--import", "-a"]) $ \h -> do
 				hPutStr h keyringarmored
