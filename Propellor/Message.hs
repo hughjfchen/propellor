@@ -10,13 +10,12 @@ import Propellor.Types
 actionMessage :: ActionResult r => Desc -> IO r -> IO r
 actionMessage desc a = do
 	setTitle desc
-	showdesc
-	putStrLn "starting"
 	hFlush stdout
 
 	r <- a
 
 	let (msg, intensity, color) = getActionResult r
+	putStr $ desc ++ " ... "
 	showdesc
 	setSGR [SetColor Foreground intensity color]
 	putStrLn msg
@@ -24,8 +23,6 @@ actionMessage desc a = do
 	hFlush stdout
 
 	return r
-  where
-	showdesc = putStr $ desc ++ " ... "
 
 warningMessage :: String -> IO ()
 warningMessage s = do

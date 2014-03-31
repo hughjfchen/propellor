@@ -30,8 +30,8 @@ class ActionResult a where
 	getActionResult :: a -> (String, ColorIntensity, Color)
 
 instance ActionResult Bool where
-	getActionResult False = ("ok", Vivid, Red)
-	getActionResult True = ("failed", Vivid, Green)
+	getActionResult False = ("failed", Vivid, Red)
+	getActionResult True = ("ok", Vivid, Green)
 
 instance ActionResult Result where
 	getActionResult NoChange = ("unchanged", Dull, Green)
