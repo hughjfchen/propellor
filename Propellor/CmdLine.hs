@@ -52,11 +52,12 @@ usage = do
 defaultMain :: (HostName -> Maybe [Property]) -> IO ()
 defaultMain getprops = go =<< processCmdLine
   where
-	go (Run host) = maybe (unknownhost host) ensureProperties (getprops host)
-	go (Spin host) = spin host
-	go (Boot host) = maybe (unknownhost host) boot (getprops host)
+	go (Run host) = withprops host ensureProperties
+	go (Spin host) = withprops host (const $ spin host)
+	go (Boot host) = withprops host boot
 	go (Set host field) = setPrivData host field
 	go (AddKey keyid) = addKey keyid
+	withprops host a = maybe (unknownhost host) a (getprops host)
 
 unknownhost :: HostName -> IO a
 unknownhost h = error $ unwords
@@ -74,11 +75,10 @@ spin host = do
 		status <- getstatus fromh `catchIO` error "protocol error"
 		case status of
 			NeedKeyRing -> do
-				s <- w82s . BL.unpack . B64.encode
-					<$> BL.readFile keyring
-				putStr $ "Sending " ++ keyring ++ " (" ++ show (BL.length s) ++ " bytes) to " ++ host ++ "..."
+				d <- BL.readFile keyring
+				putStr $ "Sending " ++ keyring ++ " (" ++ show (BL.length d) ++ " bytes) to " ++ host ++ "..."
 				hFlush stdout
-				hPutStrLn toh $ toMarked keyringMarker s
+				hPutStrLn toh $ toMarked keyringMarker $ w82s $ BL.unpack $ B64.encode d
 				hFlush toh
 				putStrLn "done"
 			HaveKeyRing -> noop
