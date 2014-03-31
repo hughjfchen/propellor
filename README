@@ -28,9 +28,26 @@ and so it's easy to factor out things like classes of hosts as desired.
 
 ## quick start
 
-Clone propellor's git repository to your laptop (or whatever).
+1. Clone propellor's git repository to your laptop (or whatever).
+2. Run: sudo make deps # installs build dependencies
+3. Run: make build
+4. If you don't have a gpg private key, generate one: gpg --gen-key
+5. Run: ./propellor --add-key $KEYID
+7. Pick a host and run: ./propellor --spin $HOST
+8. Now you have a simple propellor deployment, but it doesn't do anything
+   to the host yet, besides installing propellor.
 
-
+   So, edit config.hs to configure the host (maybe start with a few simple
+   properties), and re-run step 7. Repeat until happy and move on to the
+   next host. :)
+9. To move beyond manually running propellor --spin against hosts
+   when you change configuration, add a property to your hosts
+   like: Cron.runPropellor "30 * * * *"
+   
+   Now they'll automatically update every 30 minutes, and you can
+   `git commit -S` and `git push` changes that affect any number of
+   hosts.
+10. Write some neat new properties and send patches to propellor@joeyh.name!
 
 ## security
 
