@@ -73,7 +73,7 @@ unknownhost h = errorMessage $ unwords
 buildFirst :: CmdLine -> IO () -> IO ()
 buildFirst cmdline next = do
 	oldtime <- getmtime
-	ifM (actionMessage "Rebuilding propellor" $ boolSystem "make" [Param "build"])
+	ifM (actionMessage "Propellor build" $ boolSystem "make" [Param "build"])
 		( do
 			newtime <- getmtime
 			if newtime == oldtime
@@ -90,7 +90,7 @@ updateFirst cmdline next = do
 		<$> readProcess "git" ["symbolic-ref", "HEAD"]
 	let originbranch = "origin" </> takeFileName branchref
 
-	void $ actionMessage "Fetching" $ boolSystem "git" [Param "fetch"]
+	void $ actionMessage "Git fetch" $ boolSystem "git" [Param "fetch"]
 	
 	whenM (doesFileExist keyring) $ do
 		{- To verify origin/master commit's signature, have to
@@ -120,7 +120,7 @@ updateFirst cmdline next = do
 
 	if oldsha == newsha
 		then next
-		else ifM (actionMessage "Rebuilding propellor" $ boolSystem "make" [Param "build"])
+		else ifM (actionMessage "Propellor build" $ boolSystem "make" [Param "build"])
 			( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
 			, errorMessage "Propellor build failed!" 
 			)

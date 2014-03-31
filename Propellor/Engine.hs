@@ -15,7 +15,7 @@ ensureProperty = catchDefaultIO FailedChange . propertySatisfy
 ensureProperties :: [Property] -> IO ()
 ensureProperties ps = do
 	r <- ensureProperties' [Property "overall" $ ensureProperties' ps]
-	setTitle "propellor done"
+	setTitle "propellor: done"
 	hFlush stdout
 	case r of
 		FailedChange -> exitWith (ExitFailure 1)

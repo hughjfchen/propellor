@@ -9,7 +9,7 @@ import Propellor.Types
 -- display.
 actionMessage :: ActionResult r => Desc -> IO r -> IO r
 actionMessage desc a = do
-	setTitle desc
+	setTitle $ "propellor: " ++ desc
 	hFlush stdout
 
 	r <- a
@@ -19,7 +19,7 @@ actionMessage desc a = do
 	setSGR [SetColor Foreground intensity color]
 	putStrLn msg
 	setSGR []
-	setTitle "Propellor running"
+	setTitle "propellor: running"
 	hFlush stdout
 
 	return r
