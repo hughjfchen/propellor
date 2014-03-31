@@ -8,7 +8,10 @@ import qualified Property.Apt as Apt
 import Property.User
 
 {- Allows a user to sudo. If the user has a password, sudo is configured
- - to require it. If not, NOPASSWORD is enabled for the user. -}
+ - to require it. If not, NOPASSWORD is enabled for the user.
+ -
+ - TOOD: Full sudoers file format parse.. 
+ -}
 enabledFor :: UserName -> Property
 enabledFor user = Property desc go `requires` Apt.installed ["sudo"]
   where
