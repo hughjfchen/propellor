@@ -149,7 +149,7 @@ spin host = do
 			]
 		, "else " ++ intercalate " && "
 			[ "cd " ++ localdir
-			, "if [ ! -x ./propellor ]; then make build; fi"
+			, "if ! test -x ./propellor; then make build; fi"
 			, "./propellor --boot " ++ host
 			]
 		]
