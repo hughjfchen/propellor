@@ -103,7 +103,7 @@ pullFirst cmdline next = do
 	newsha <- getCurrentGitSha1 branchref
 
 	if oldsha == newsha
-		then next
+		then error "unchanged"
 		else do
 			putStrLn "Rebuilding propeller.."
 			hFlush stdout
