@@ -41,7 +41,7 @@ getProperties hostname@"clam.kitenet.net" = Just
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
 	]
-getProperties "orca" = Just
+getProperties "orca.kitenet.net" = Just
 	[ Docker.configured
 	, Apt.unattendedUpgrades True
 	]
