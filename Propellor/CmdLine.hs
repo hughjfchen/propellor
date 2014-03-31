@@ -189,7 +189,7 @@ sendGitClone host url = void $ actionMessage ("Pushing git repository to " ++ ho
 	withTmpFile "gitbundle" $ \tmp _ -> allM id
 		-- TODO: ssh connection caching, or better push method
 		-- with less connections.
-		[ boolSystem "git" [Param "bundle", Param "create", Param "-2", File tmp, Param "HEAD"]
+		[ boolSystem "git" [Param "bundle", Param "create", File tmp, Param "HEAD"]
 		, boolSystem "scp" [File tmp, Param ("root@"++host++":"++remotebundle)]
 		, boolSystem "ssh" [Param ("root@"++host), Param unpackcmd]
 		]
