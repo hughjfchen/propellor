@@ -70,38 +70,47 @@ spin host = do
 	url <- getUrl
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
-	privdata <- gpgDecrypt (privDataFile host)
-	withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd url]) $ \(toh, fromh) -> do
+	go url =<< gpgDecrypt (privDataFile host)
+  where
+	go url privdata = withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd]) $ \(toh, fromh) -> do
+		let finish = do
+			senddata toh (privDataFile host) privDataMarker privdata
+			hClose toh
+			
+			-- Display remaining output.
+			void $ tryIO $ forever $
+				showremote =<< hGetLine fromh
+			hClose fromh
 		status <- getstatus fromh `catchIO` error "protocol error"
 		case status of
+			HaveKeyRing -> finish
 			NeedKeyRing -> do
 				d <- w82s . BL.unpack . B64.encode
 					<$> BL.readFile keyring
 				senddata toh keyring keyringMarker d
-			HaveKeyRing -> noop
-		senddata toh (privDataFile host) privDataMarker privdata
-		hClose toh
-
-		-- Display remaining output.
-		void $ tryIO $ forever $
-			showremote =<< hGetLine fromh
-		hClose fromh
-
-  where
+				finish
+			NeedGitClone -> do
+				hClose toh
+				hClose fromh
+				sendGitClone host url
+				go url privdata
+	
 	user = "root@"++host
-	bootstrapcmd url = shellWrap $ intercalate " && "
+
+	bootstrapcmd = shellWrap $ intercalate " && "
 		[ intercalate " ; "
 			[ "if [ ! -d " ++ localdir ++ " ]"
 			, "then " ++ intercalate " && "
 				[ "apt-get -y install git"
-				, "git clone " ++ url ++ " " ++ localdir
+				, "echo " ++ toMarked statusMarker (show NeedGitClone)
 				]
 			, "fi"
 			]
 		, "cd " ++ localdir
-		, "make pull build"
+		, "make build"
 		, "./propellor --boot " ++ host
 		]
+
 	getstatus :: Handle -> IO BootStrapStatus
 	getstatus h = do
 		l <- hGetLine h
@@ -110,6 +119,7 @@ spin host = do
 				showremote l
 				getstatus h
 			Just status -> return status
+	
 	showremote s = putStrLn s
 	senddata toh f marker s = do
 		putStr $ "Sending " ++ f ++ " (" ++ show (length s) ++ " bytes) to " ++ host ++ "..."
@@ -118,7 +128,27 @@ spin host = do
 		hFlush toh
 		putStrLn "done"
 
-data BootStrapStatus = HaveKeyRing | NeedKeyRing
+sendGitClone :: HostName -> String -> IO ()
+sendGitClone host url = do
+	putStrLn $ "Pushing git repository to " ++ host
+	withTmpFile "gitbundle" $ \tmp _ -> do
+		-- TODO: ssh connection caching, or better push method
+		-- with less connections.
+		void $ boolSystem "git" [Param "bundle", Param "create", File tmp, Param "HEAD"]
+		void $ boolSystem "scp" [File tmp, Param ("root@"++host++":"++remotebundle)]
+		void $ boolSystem "ssh" [Param ("root@"++host), Param unpackcmd]
+  where
+	remotebundle = "/usr/local/propellor.git"
+	unpackcmd = shellWrap $ intercalate " && "
+		[ "git clone " ++ remotebundle ++ " " ++ localdir
+		, "cd " ++ localdir
+		, "git checkout -b master"
+		, "git remote rm origin"
+		, "git remote add origin " ++ url
+		, "rm -f " ++ remotebundle
+		]
+
+data BootStrapStatus = HaveKeyRing | NeedKeyRing | NeedGitClone
 	deriving (Read, Show, Eq)
 
 type Marker = String
