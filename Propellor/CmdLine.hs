@@ -153,6 +153,7 @@ spin host = do
 			--, "if ! test -x ./propellor; then make build; fi"
 			, "./propellor --boot " ++ host
 			]
+		, "fi"
 		]
 
 	getstatus :: Handle -> IO BootStrapStatus
