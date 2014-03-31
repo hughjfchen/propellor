@@ -82,7 +82,11 @@ spin host = do
 		hPutStrLn stderr "POST-KEYRING"
 		hFlush stderr
 		hPutStrLn toh $ toMarked privDataMarker privdata
+		hPutStrLn stderr "POST-PRIVDATA"
+		hFlush stderr
 		hFlush toh
+
+		-- Propigate remaining output.
 		void $ tryIO $ forever $
 			putStrLn =<< hGetLine fromh
 		hClose fromh
@@ -148,6 +152,8 @@ boot props = do
 			(proc "gpg" $ gpgopts ++ ["--import", "-a"]) $ \h -> do
 				hPutStr h keyringarmored
 				hFlush h
+	hPutStrLn stderr $ "READY"
+	hFlush stderr
 	ensureProperties props
 
 addKey :: String -> IO ()
