@@ -75,15 +75,11 @@ spin host = do
 		status <- getstatus fromh `catchIO` error "protocol error"
 		case status of
 			NeedKeyRing -> do
-				d <- BL.readFile keyring
-				putStr $ "Sending " ++ keyring ++ " (" ++ show (BL.length d) ++ " bytes) to " ++ host ++ "..."
-				hFlush stdout
-				hPutStrLn toh $ toMarked keyringMarker $ w82s $ BL.unpack $ B64.encode d
-				hFlush toh
-				putStrLn "done"
+				d <- w82s . BL.unpack . B64.encode
+					<$> BL.readFile keyring
+				senddata toh keyring keyringMarker d
 			HaveKeyRing -> noop
-		hPutStrLn toh $ toMarked privDataMarker privdata
-		hFlush toh
+		senddata toh (privDataFile host) privDataMarker privdata
 		hClose toh
 
 		-- Display remaining output.
@@ -115,6 +111,12 @@ spin host = do
 				getstatus h
 			Just status -> return status
 	showremote s = putStrLn s
+	senddata toh f marker s = do
+		putStr $ "Sending " ++ f ++ " (" ++ show (length s) ++ " bytes) to " ++ host ++ "..."
+		hFlush stdout
+		hPutStrLn toh $ toMarked marker s
+		hFlush toh
+		putStrLn "done"
 
 data BootStrapStatus = HaveKeyRing | NeedKeyRing
 	deriving (Read, Show, Eq)
