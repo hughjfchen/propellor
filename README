@@ -39,4 +39,15 @@ in such a file, use: propellor --set $host $field
 The field name will be something like 'Password "root"'; see PrivData.hs
 for available fields.
 
+It's often easiest to deploy propellor to a host by cloning a git://
+or http:// repository. To avoid a MITM attack, propellor checks
+that the top commit in the git repository is gpg signed by a
+trusted key, and refuses to deploy it otherwise. This is only done if
+privdata/keyring.gpg exists. To generate it, make a gpg key and
+run something like:
+
+The keyring.gpg can be checked into git, but to ensure that it's
+used from the beginning when bootstrapping, propellor --spin
+transfers it to the host using ssh.
+
 [1] http://reclass.pantsfullofunix.net/
