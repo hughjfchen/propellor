@@ -14,25 +14,9 @@ data CmdLine
 	| Boot HostName
 	| Set HostName PrivDataField
 	| AddKey String
+	| Continue CmdLine
+  deriving (Read, Show, Eq)
 
-processCmdLine :: IO CmdLine
-processCmdLine = go =<< getArgs
-  where
-  	go ("--help":_) = usage
-  	go ("--spin":h:[]) = return $ Spin h
-  	go ("--boot":h:[]) = return $ Boot h
-	go ("--add-key":k:[]) = return $ AddKey k
-	go ("--set":h:f:[]) = case readish f of
-		Just pf -> return $ Set h pf
-		Nothing -> error $ "Unknown privdata field " ++ f
-	go (h:[]) = return $ Run h
-	go [] = do
-		s <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
-		if null s
-			then error "Cannot determine hostname! Pass it on the command line."
-			else return $ Run s
-	go _ = usage
-	
 usage :: IO a
 usage = do
 	putStrLn $ unlines 
@@ -45,14 +29,38 @@ usage = do
 		]
 	exitFailure
 
-defaultMain :: (HostName -> Maybe [Property]) -> IO ()
-defaultMain getprops = go =<< processCmdLine
+processCmdLine :: IO CmdLine
+processCmdLine = go =<< getArgs
   where
-	go (Run host) = withprops host $ pullFirst . ensureProperties
-	go (Spin host) = withprops host $ const $ spin host
-	go (Boot host) = withprops host $ pullFirst . boot
-	go (Set host field) = setPrivData host field
-	go (AddKey keyid) = addKey keyid
+  	go ("--help":_) = usage
+  	go ("--spin":h:[]) = return $ Spin h
+  	go ("--boot":h:[]) = return $ Boot h
+	go ("--add-key":k:[]) = return $ AddKey k
+	go ("--set":h:f:[]) = case readish f of
+		Just pf -> return $ Set h pf
+		Nothing -> error $ "Unknown privdata field " ++ f
+	go ("--continue":s:[]) =case readish s of
+		Just cmdline -> return $ Continue cmdline
+		Nothing -> error "--continue serialization failure"
+	go (h:[]) = return $ Run h
+	go [] = do
+		s <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
+		if null s
+			then error "Cannot determine hostname! Pass it on the command line."
+			else return $ Run s
+	go _ = usage
+
+defaultMain :: (HostName -> Maybe [Property]) -> IO ()
+defaultMain getprops = go True =<< processCmdLine
+  where
+	go _ (Continue cmdline) = go False cmdline
+	go _ (Set host field) = setPrivData host field
+	go _ (AddKey keyid) = addKey keyid
+	go _ (Spin host) = withprops host $ const $ spin host
+	go True cmdline = pullFirst cmdline $ go False cmdline
+	go _ (Run host) = withprops host $ ensureProperties
+	go _ (Boot host) = withprops host $ boot
+
 	withprops host a = maybe (unknownhost host) a (getprops host)
 
 unknownhost :: HostName -> IO a
@@ -61,8 +69,8 @@ unknownhost h = error $ unwords
 	, "(perhaps you should specify the real hostname on the command line?)"
 	]
 
-pullFirst :: IO () -> IO ()
-pullFirst next = do
+pullFirst :: CmdLine -> IO () -> IO ()
+pullFirst cmdline next = do
 	branchref <- takeWhile (/= '\n') 
 		<$> readProcess "git" ["symbolic-ref", "HEAD"]
 	let originbranch = "origin" </> takeFileName branchref
@@ -84,13 +92,22 @@ pullFirst next = do
 			(Just [("GNUPGHOME", privDataDir)])
 		nukeFile $ privDataDir </> "trustring.gpg"
 		nukeFile $ privDataDir </> "gpg.conf"
-		if s /= "U\n" && s/= "G\n"
-			then error $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it!"
-			else putStrLn "git branch " ++ originbranch ++ " gpg signature verified; merging"
+		if s == "U\n" || s == "G\n"
+			then putStrLn $ "git branch " ++ originbranch ++ " gpg signature verified; merging"
+			else error $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it!"
 	
+	oldsha <- getCurrentGitSha1
 	void $ boolSystem "git" [Param "merge", Param originbranch]
+	newsha <- getCurrentGitSha1
 
-	next
+	if oldsha == newsha
+		then next
+		else do
+			void $ boolSystem "make" [Param "build"]
+			void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
+
+getCurrentGitSha1 :: IO String
+getCurrentGitSha1 = readProcess "git" ["show-ref", "--hash", "HEAD"]
 
 spin :: HostName -> IO ()
 spin host = do
