@@ -85,6 +85,7 @@ spin host = do
 		hPutStrLn stderr "POST-PRIVDATA"
 		hFlush stderr
 		hFlush toh
+		hClose toh
 
 		-- Propigate remaining output.
 		void $ tryIO $ forever $
@@ -142,7 +143,7 @@ boot props = do
 	hPutStrLn stderr "SENT STATUS"
 	hFlush stderr
 	reply <- getContents
-	hPutStrLn stderr $ "GOT " ++ reply
+	hPutStrLn stderr $ "GOT >>" ++ reply ++ "<<"
 	hFlush stderr
 	makePrivDataDir
 	hPutStrLn stderr $ "DEBUG 1"
