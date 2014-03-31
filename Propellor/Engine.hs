@@ -23,6 +23,7 @@ ensureProperties' ps = ensure ps NoChange
 	ensure [] rs = return rs
 	ensure (l:ls) rs = do
 		setTitle $ propertyDesc l
+		hFlush stdout
 		r <- ensureProperty l
 		clearFromCursorToLineBeginning
 		setCursorColumn 0
@@ -38,6 +39,7 @@ ensureProperties' ps = ensure ps NoChange
 				setSGR [SetColor Foreground Vivid Green]
 				putStrLn "done"
 		setSGR []
+		hFlush stdout
 		ensure ls (combineResult r rs)
 
 warningMessage :: String -> IO ()

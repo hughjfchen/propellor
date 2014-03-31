@@ -35,7 +35,7 @@ getProperties hostname@"clam.kitenet.net" = Just
 	, Tor.isBridge
 	, JoeySites.oldUseNetshellBox
 	, Docker.configured
-	, Apt.installed ["git-annex"]
+	, Apt.installed ["git-annex", "mtr"]
 	-- This is not an important system so I don't want to need to 
 	-- manually upgrade it.
 	, Apt.unattendedUpgrades True
