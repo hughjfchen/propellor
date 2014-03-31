@@ -78,8 +78,6 @@ spin host = do
 				hFlush stdout
 				s <- w82s . BL.unpack . B64.encode
 					<$> BL.readFile keyring
-				putStrLn $ show $ toMarked keyringMarker s
-				hFlush stdout
 				hPutStrLn toh $ toMarked keyringMarker s
 				hFlush toh
 				putStrLn "done"
@@ -116,7 +114,7 @@ spin host = do
 				showremote l
 				getstatus h
 			Just status -> return status
-	showremote s = putStrLn $ host ++ ": " ++ s
+	showremote s = putStrLn s
 
 data BootStrapStatus = HaveKeyRing | NeedKeyRing
 	deriving (Read, Show, Eq)
