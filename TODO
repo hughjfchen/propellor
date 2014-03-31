@@ -3,3 +3,6 @@
   but only once despite many config changes being made to satisfy
   properties. onChange is a poor substitute.
 * I often seem to want to be able to combine Properties monadically.
+* --spin needs 4 ssh connections when bootstrapping a new host
+  that does not have the git repo yet. Should be possible to get that
+  down to 1.
