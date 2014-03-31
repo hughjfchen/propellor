@@ -22,6 +22,7 @@ ensureProperties' ps = ensure ps NoChange
   where
 	ensure [] rs = return rs
 	ensure (l:ls) rs = do
+		setTitle $ propertyDesc l
 		r <- ensureProperty l
 		clearFromCursorToLineBeginning
 		setCursorColumn 0
