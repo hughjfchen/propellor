@@ -106,7 +106,6 @@ updateFirst cmdline next = do
 		then next
 		else do
 			putStrLn "Rebuilding propeller.."
-			print (oldsha, newsha)
 			hFlush stdout
 			ifM (boolSystem "make" [Param "build"])
 				( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
@@ -180,7 +179,7 @@ sendGitClone host url = do
 	withTmpFile "gitbundle" $ \tmp _ -> do
 		-- TODO: ssh connection caching, or better push method
 		-- with less connections.
-		void $ boolSystem "git" [Param "bundle", Param "create", File tmp, Param "HEAD"]
+		void $ boolSystem "git" [Param "bundle", Param "create", Param "-2", File tmp, Param "HEAD"]
 		void $ boolSystem "scp" [File tmp, Param ("root@"++host++":"++remotebundle)]
 		void $ boolSystem "ssh" [Param ("root@"++host), Param unpackcmd]
   where
