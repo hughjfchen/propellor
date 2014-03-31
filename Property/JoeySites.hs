@@ -9,7 +9,7 @@ import qualified Property.Apt as Apt
 oldUseNetshellBox :: Property
 oldUseNetshellBox = check (not <$> Apt.isInstalled "oldusenet") $
 	propertyList ("olduse.net shellbox")
-		[ Apt.installed (words "build-essential debhelper git ghc libghc-strptime-dev libghc-hamlet-dev libghc-ifelse-dev libghc-hxt-dev libghc-utf8-string-dev libghc-missingh-dev libghc-sha-dev")
+		[ Apt.installed (words "build-essential devscripts debhelper git ghc libghc-strptime-dev libghc-hamlet-dev libghc-ifelse-dev libghc-hxt-dev libghc-utf8-string-dev libghc-missingh-dev libghc-sha-dev")
 			`describe` "olduse.net build deps"
 		, scriptProperty
 			[ "rm -rf /root/tmp/oldusenet" -- idenpotency
