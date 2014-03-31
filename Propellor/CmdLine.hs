@@ -106,6 +106,7 @@ pullFirst cmdline next = do
 		then next
 		else do
 			putStrLn "Rebuilding propeller.."
+			hFlush stdout
 			ifM (boolSystem "make" [Param "build"])
 				( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
 				, error "Propellor build failed!" 
