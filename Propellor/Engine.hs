@@ -3,6 +3,7 @@ module Propellor.Engine where
 import System.Console.ANSI
 import System.Exit
 import System.IO
+import Data.Monoid
 
 import Propellor.Types
 import Utility.Exception
@@ -42,7 +43,7 @@ ensureProperties' ps = ensure ps NoChange
 				putStrLn "done"
 		setSGR []
 		hFlush stdout
-		ensure ls (combineResult r rs)
+		ensure ls (r <> rs)
 
 warningMessage :: String -> IO ()
 warningMessage s = do

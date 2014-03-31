@@ -1,5 +1,7 @@
 module Propellor.Types where
 
+import Data.Monoid
+
 type HostName = String
 type UserName = String
 
@@ -14,9 +16,11 @@ type Desc = String
 data Result = NoChange | MadeChange | FailedChange
 	deriving (Show, Eq)
 
-combineResult :: Result -> Result -> Result
-combineResult FailedChange _ = FailedChange
-combineResult _ FailedChange = FailedChange
-combineResult MadeChange _ = MadeChange
-combineResult _ MadeChange = MadeChange
-combineResult NoChange NoChange = NoChange
+instance Monoid Result where
+	mempty = NoChange
+
+	mappend FailedChange _ = FailedChange
+	mappend _ FailedChange = FailedChange
+	mappend MadeChange _ = MadeChange
+	mappend _ MadeChange = MadeChange
+	mappend NoChange NoChange = NoChange

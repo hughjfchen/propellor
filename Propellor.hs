@@ -17,7 +17,7 @@
 -- > getProperties "example.com" = Just
 -- >    [ Apt.installed ["mydaemon"]
 -- >    , "/etc/mydaemon.conf" `File.containsLine` "secure=1"
--- >        `onChange` cmdProperty "service" ["mydaemon", "restart"]]
+-- >        `onChange` cmdProperty "service" ["mydaemon", "restart"]
 -- >    ]
 -- > getProperties _ = Nothing
 --
@@ -57,3 +57,4 @@ import Data.Maybe as X
 import Data.Either as X
 import Control.Applicative as X
 import Control.Monad as X
+import Data.Monoid as X
