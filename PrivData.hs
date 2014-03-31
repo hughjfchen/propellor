@@ -16,6 +16,7 @@ import Utility.Exception
 import Utility.Process
 import Utility.Tmp
 import Utility.SafeCommand
+import Utility.Misc
 
 {- Note that removing or changing field names will break the
  - serialized privdata files, so don't do that!
@@ -38,13 +39,16 @@ getPrivData field = do
 	m <- catchDefaultIO Nothing $ readish <$> readFile privDataLocal
 	return $ maybe Nothing (M.lookup field) m
 
-setPrivData :: HostName -> PrivDataField -> String -> IO ()
-setPrivData host field value = do
+setPrivData :: HostName -> PrivDataField -> IO ()
+setPrivData host field = do
+	putStrLn "Enter private data on stdin; ctrl-D when done:"
+	value <- hGetContentsStrict stdin
 	makePrivDataDir
 	let f = privDataFile host
 	m <- fromMaybe M.empty . readish <$> gpgDecrypt f
 	let m' = M.insert field value m
 	gpgEncrypt f (show m')
+	putStrLn "Private data set."
 	void $ boolSystem "git" [Param "add", File f]
 
 makePrivDataDir :: IO ()

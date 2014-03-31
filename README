@@ -35,7 +35,7 @@ for each host and be annoying.
 
 Instead, propellor --spin $host looks for a privdata/$host.gpg file and
 if found decrypts it and sends it to the host using ssh. To set a field
-in such a file, use: propellor --set $host $field $value
+in such a file, use: propellor --set $host $field
 The field name is will be something like 'Password "root"'; see PrivData.hs
 for available fields.
 

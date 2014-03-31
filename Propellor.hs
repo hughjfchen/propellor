@@ -8,6 +8,7 @@ import qualified Property.User as User
 import qualified Property.Hostname as Hostname
 import qualified Property.Reboot as Reboot
 import qualified Property.Tor as Tor
+import qualified Property.Docker as Docker
 import qualified Property.GitHome as GitHome
 
 main :: IO ()
@@ -22,7 +23,9 @@ getProperties hostname@"clam.kitenet.net" =
 	, standardSystem Apt.Unstable
 	-- Clam is a tor bridge.
 	, Tor.isBridge
+	-- I play with docker on clam.
 	, Apt.installed ["docker.io"]
+	, Docker.configured
 	-- This is not an important system so I don't want to need to 
 	-- manually upgrade it.
 	, Apt.unattendedUpgrades True

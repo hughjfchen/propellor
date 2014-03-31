@@ -11,7 +11,7 @@ data CmdLine
 	= Run HostName
 	| Spin HostName
 	| Boot HostName
-	| Set HostName PrivDataField String
+	| Set HostName PrivDataField
 
 processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
@@ -19,8 +19,8 @@ processCmdLine = go =<< getArgs
   	go ("--help":_) = usage
   	go ("--spin":h:[]) = return $ Spin h
   	go ("--boot":h:[]) = return $ Boot h
-	go ("--set":h:f:v:[]) = case readish f of
-		Just pf -> return $ Set h pf v
+	go ("--set":h:f:[]) = case readish f of
+		Just pf -> return $ Set h pf
 		Nothing -> error $ "Unknown privdata field " ++ f
 	go (h:[]) = return $ Run h
 	go [] = do
@@ -37,7 +37,7 @@ usage = do
 		, "  propellor"
 		, "  propellor hostname"
 		, "  propellor --spin hostname"
-		, "  propellor --set hostname field value"
+		, "  propellor --set hostname field"
 		]
 	exitFailure
 
@@ -47,7 +47,7 @@ defaultMain getprops = go =<< processCmdLine
 	go (Run host) = ensureProperties (getprops host)
 	go (Spin host) = spin host
 	go (Boot host) = boot (getprops host)
-	go (Set host field val) = setPrivData host field val
+	go (Set host field) = setPrivData host field
 
 spin :: HostName -> IO ()
 spin host = do
