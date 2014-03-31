@@ -19,6 +19,7 @@ actionMessage desc a = do
 	setSGR [SetColor Foreground intensity color]
 	putStrLn msg
 	setSGR []
+	setTitle "Propellor running"
 	hFlush stdout
 
 	return r
