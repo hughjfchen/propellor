@@ -17,7 +17,7 @@ oldUseNetshellBox = check (not <$> Apt.isInstalled "oldusenet") $
 			, "cd /root/tmp/oldusenet/source/"
 			, "dpkg-buildpackage -us -uc"
 			, "dpkg -i ../oldusenet*.deb || true"
-			, "apt-get -f install" -- dependencies
+			, "apt-get -fy install" -- dependencies
 			, "rm -rf /root/tmp/oldusenet"
 			] `describe` "olduse.net built"
 		]
