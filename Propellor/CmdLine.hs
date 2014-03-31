@@ -103,7 +103,7 @@ pullFirst cmdline next = do
 	newsha <- getCurrentGitSha1 branchref
 
 	if oldsha == newsha
-		then error "unchanged"
+		then next
 		else do
 			putStrLn "Rebuilding propeller.."
 			hFlush stdout
@@ -150,7 +150,7 @@ spin host = do
 			]
 		, "else " ++ intercalate " && "
 			[ "cd " ++ localdir
-			, "if ! test -x ./propellor; then make build; fi"
+			--, "if ! test -x ./propellor; then make build; fi"
 			, "./propellor --boot " ++ host
 			]
 		]
