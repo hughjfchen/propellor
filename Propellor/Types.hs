@@ -31,7 +31,7 @@ class ActionResult a where
 
 instance ActionResult Bool where
 	getActionResult False = ("failed", Vivid, Red)
-	getActionResult True = ("ok", Vivid, Green)
+	getActionResult True = ("ok", Dull, Green)
 
 instance ActionResult Result where
 	getActionResult NoChange = ("unchanged", Dull, Green)
