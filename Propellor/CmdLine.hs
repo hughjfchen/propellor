@@ -164,12 +164,13 @@ privDataMarker :: String
 privDataMarker = "PRIVDATA "
 
 toMarked :: Marker -> String -> String
-toMarked marker = unlines . map (marker ++) . lines
+toMarked marker = intercalate "\n" . map (marker ++) . lines
 
 fromMarked :: Marker -> Marked -> Maybe String
 fromMarked marker s
 	| null matches = Nothing
-	| otherwise = Just $ unlines $ map (drop len) matches
+	| otherwise = Just $ intercalate "\n" $
+		map (drop len) matches
   where
 	len = length marker
 	matches = filter (marker `isPrefixOf`) $ lines s
@@ -184,7 +185,7 @@ boot props = do
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
 		fromMarked privDataMarker reply
-	case eitherToMaybe . B64.decode . BL.pack . s2w8 . takeWhile (/= '\n') =<< fromMarked keyringMarker reply of
+	case eitherToMaybe . B64.decode . BL.pack . s2w8 =<< fromMarked keyringMarker reply of
 		Nothing -> noop
 		Just d -> do
 			writeFileProtected keyring ""
