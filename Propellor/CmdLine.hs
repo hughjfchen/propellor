@@ -81,7 +81,7 @@ spin host = do
 
 		-- Display remaining output.
 		void $ tryIO $ forever $
-			putStrLn =<< hGetLine fromh
+			showremote =<< hGetLine fromh
 		hClose fromh
 
   where
@@ -104,9 +104,10 @@ spin host = do
 		l <- hGetLine h
 		case readish =<< fromMarked statusMarker l of
 			Nothing -> do
-				putStrLn l
+				showremote l
 				getstatus h
 			Just status -> return status
+	showremote s = putStrLn $ host ++ ": " ++ s
 
 data BootStrapStatus = HaveKeyRing | NeedKeyRing
 	deriving (Read, Show, Eq)
