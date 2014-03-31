@@ -1,10 +1,10 @@
-module Property.GitHome where
+module Propellor.Property.GitHome where
 
-import Common
-import qualified Property.Apt as Apt
-import Property.User
+import Propellor.Common
+import qualified Propellor.Property.Apt as Apt
+import Propellor.Property.User
 
-{- Clones Joey Hess's git home directory, and runs its fixups script. -}
+{- | Clones Joey Hess's git home directory, and runs its fixups script. -}
 installedFor :: UserName -> Property
 installedFor user = check (not <$> hasGitDir user) $ 
 	Property ("githome " ++ user) (go =<< homedir user)

@@ -1,4 +1,4 @@
-module PrivData where
+module Propellor.PrivData where
 
 import qualified Data.Map as M
 import Control.Applicative
@@ -8,8 +8,8 @@ import System.Directory
 import Data.Maybe
 import Control.Monad
 
-import Types
-import Property
+import Propellor.Types
+import Propellor.Property
 import Utility.Monad
 import Utility.PartialPrelude
 import Utility.Exception
@@ -18,7 +18,7 @@ import Utility.Tmp
 import Utility.SafeCommand
 import Utility.Misc
 
-{- Note that removing or changing field names will break the
+{- | Note that removing or changing field names will break the
  - serialized privdata files, so don't do that!
  - It's fine to add new fields. -}
 data PrivDataField

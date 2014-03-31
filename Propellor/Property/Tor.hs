@@ -1,8 +1,8 @@
-module Property.Tor where
+module Propellor.Property.Tor where
 
-import Common
-import qualified Property.File as File
-import qualified Property.Apt as Apt
+import Propellor.Common
+import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Apt as Apt
 
 isBridge :: Property
 isBridge = setup `requires` Apt.installed ["tor"]

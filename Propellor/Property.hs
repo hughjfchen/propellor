@@ -1,4 +1,4 @@
-module Property where
+module Propellor.Property where
 
 import System.Directory
 import Control.Monad
@@ -6,7 +6,7 @@ import System.Console.ANSI
 import System.Exit
 import System.IO
 
-import Types
+import Propellor.Types
 import Utility.Monad
 import Utility.Exception
 
@@ -16,7 +16,7 @@ makeChange a = a >> return MadeChange
 noChange :: IO Result
 noChange = return NoChange
 
-{- Combines a list of properties, resulting in a single property
+{- | Combines a list of properties, resulting in a single property
  - that when run will run each property in the list in turn,
  - and print out the description of each as it's run. Does not stop
  - on failure; does propigate overall success/failure.
@@ -24,7 +24,7 @@ noChange = return NoChange
 propertyList :: Desc -> [Property] -> Property
 propertyList desc ps = Property desc $ ensureProperties' ps
 
-{- Combines a list of properties, resulting in one property that
+{- | Combines a list of properties, resulting in one property that
  - ensures each in turn, stopping on failure. -}
 combineProperties :: [Property] -> Property
 combineProperties ps = Property desc $ go ps NoChange
@@ -39,7 +39,7 @@ combineProperties ps = Property desc $ go ps NoChange
 		(p:_) -> propertyDesc p
 		_ -> "(empty)"
 
-{- Makes a perhaps non-idempotent Property be idempotent by using a flag
+{- | Makes a perhaps non-idempotent Property be idempotent by using a flag
  - file to indicate whether it has run before.
  - Use with caution. -}
 flagFile :: Property -> FilePath -> Property
@@ -53,7 +53,7 @@ flagFile property flagfile = Property (propertyDesc property) $
 			writeFile flagfile ""
 		return r
 
-{- Whenever a change has to be made for a Property, causes a hook
+{- | Whenever a change has to be made for a Property, causes a hook
  - Property to also be run, but not otherwise. -}
 onChange :: Property -> Property -> Property
 property `onChange` hook = Property (propertyDesc property) $ do
@@ -64,7 +64,7 @@ property `onChange` hook = Property (propertyDesc property) $ do
 			return $ combineResult r r'
 		_ -> return r
 
-{- Indicates that the first property can only be satisfied once
+{- | Indicates that the first property can only be satisfied once
  - the second is. -} 
 requires :: Property -> Property -> Property
 x `requires` y = combineProperties [y, x] `describe` propertyDesc x
@@ -76,7 +76,7 @@ describe p d = p { propertyDesc = d }
 (==>) = flip describe
 infixl 1 ==>
 
-{- Makes a Property only be performed when a test succeeds. -}
+{- | Makes a Property only be performed when a test succeeds. -}
 check :: IO Bool -> Property -> Property
 check c property = Property (propertyDesc property) $ ifM c
 	( ensureProperty property

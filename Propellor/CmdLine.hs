@@ -1,10 +1,10 @@
-module CmdLine where
+module Propellor.CmdLine where
 
 import System.Environment
 import Data.List
 import System.Exit
 
-import Common
+import Propellor.Common
 import Utility.FileMode
 
 data CmdLine

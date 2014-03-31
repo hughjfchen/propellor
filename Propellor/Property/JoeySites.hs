@@ -1,10 +1,10 @@
-{- Specific configuation for Joey Hess's sites. Probably not useful to
- - others except as an example. -}
+-- | Specific configuation for Joey Hess's sites. Probably not useful to
+-- others except as an example.
 
-module Property.JoeySites where
+module Propellor.Property.JoeySites where
 
-import Common
-import qualified Property.Apt as Apt
+import Propellor.Common
+import qualified Propellor.Property.Apt as Apt
 
 oldUseNetshellBox :: Property
 oldUseNetshellBox = check (not <$> Apt.isInstalled "oldusenet") $

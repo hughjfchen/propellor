@@ -1,8 +1,8 @@
-module Property.Ssh where
+module Propellor.Property.Ssh where
 
-import Common
-import qualified Property.File as File
-import Property.User
+import Propellor.Common
+import qualified Propellor.Property.File as File
+import Propellor.Property.User
 
 sshBool :: Bool -> String
 sshBool True = "yes"
@@ -37,7 +37,7 @@ hasAuthorizedKeys = go <=< homedir
 restartSshd :: Property
 restartSshd = cmdProperty "service" [Param "ssh", Param "restart"]
 
-{- Blow away existing host keys and make new ones. Use a flag
+{- | Blow away existing host keys and make new ones. Use a flag
  - file to prevent doing this more than once. -}
 uniqueHostKeys :: Property
 uniqueHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"

@@ -1,7 +1,7 @@
-module Property.Hostname where
+module Propellor.Property.Hostname where
 
-import Common
-import qualified Property.File as File
+import Propellor.Common
+import qualified Propellor.Property.File as File
 
 set :: HostName -> Property
 set hostname = "/etc/hostname" `File.hasContent` [hostname]

@@ -1,8 +1,8 @@
-module Property.User where
+module Propellor.Property.User where
 
 import System.Posix
 
-import Common
+import Propellor.Common
 
 data Eep = YesReallyDeleteHome
 
@@ -14,7 +14,7 @@ sshAccountFor user = check (isNothing <$> homedir user) $ cmdProperty "adduser"
 	]
 	`describe` ("ssh account " ++ user)
 
-{- Removes user home directory!! Use with caution. -}
+{- | Removes user home directory!! Use with caution. -}
 nuked :: UserName -> Eep -> Property
 nuked user _ = check (isJust <$> homedir user) $ cmdProperty "userdel"
 	[ Param "-r"
@@ -22,7 +22,7 @@ nuked user _ = check (isJust <$> homedir user) $ cmdProperty "userdel"
 	]
 	`describe` ("nuked user " ++ user)
 
-{- Only ensures that the user has some password set. It may or may
+{- | Only ensures that the user has some password set. It may or may
  - not be the password from the PrivData. -}
 hasSomePassword :: UserName -> Property
 hasSomePassword user = check ((/= HasPassword) <$> getPasswordStatus user) $

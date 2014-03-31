@@ -1,13 +1,13 @@
-module Property.Sudo where
+module Propellor.Property.Sudo where
 
 import Data.List
 
-import Common
-import Property.File
-import qualified Property.Apt as Apt
-import Property.User
+import Propellor.Common
+import Propellor.Property.File
+import qualified Propellor.Property.Apt as Apt
+import Propellor.Property.User
 
-{- Allows a user to sudo. If the user has a password, sudo is configured
+{- | Allows a user to sudo. If the user has a password, sudo is configured
  - to require it. If not, NOPASSWORD is enabled for the user.
  -
  - TOOD: Full sudoers file format parse.. 

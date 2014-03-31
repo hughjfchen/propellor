@@ -1,4 +1,4 @@
-module Property.Apt where
+module Propellor.Property.Apt where
 
 import Data.Maybe
 import Control.Applicative
@@ -6,9 +6,9 @@ import Data.List
 import System.IO
 import Control.Monad
 
-import Common
-import qualified Property.File as File
-import Property.File (Line)
+import Propellor.Common
+import qualified Propellor.Property.File as File
+import Propellor.Property.File (Line)
 
 sourcesList :: FilePath
 sourcesList = "/etc/apt/sources.list"
@@ -42,7 +42,7 @@ debCdn suite = [l, srcLine l]
   where
 	l = debLine suite "http://cdn.debian.net/debian" stdSections
 
-{- Makes sources.list have a standard content using the mirror CDN,
+{- | Makes sources.list have a standard content using the mirror CDN,
  - with a particular Suite. -}
 stdSourcesList :: Suite -> Property
 stdSourcesList suite = setSourcesList (debCdn suite)
@@ -89,7 +89,7 @@ isInstallable ps = do
 isInstalled :: Package -> IO Bool
 isInstalled p = (== [True]) <$> isInstalled' [p]
 
-{- Note that the order of the returned list will not always
+{- | Note that the order of the returned list will not always
  - correspond to the order of the input list. The number of items may
  - even vary. If apt does not know about a package at all, it will not
  - be included in the result list. -}
@@ -117,7 +117,7 @@ unattendedUpgrades enabled =
 		| enabled = "true"
 		| otherwise = "false"
 
-{- Preseeds debconf values and reconfigures the package so it takes
+{- | Preseeds debconf values and reconfigures the package so it takes
  - effect. -}
 reConfigure :: Package -> [(String, String, String)] -> Property
 reConfigure package vals = reconfigure `requires` setselections

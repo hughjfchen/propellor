@@ -1,11 +1,11 @@
-module Types where
+module Propellor.Types where
 
 type HostName = String
 type UserName = String
 
 data Property = Property
 	{ propertyDesc :: Desc
-	-- must be idempotent; may run repeatedly
+	-- | must be idempotent; may run repeatedly
 	, propertySatisfy :: IO Result
 	}
 

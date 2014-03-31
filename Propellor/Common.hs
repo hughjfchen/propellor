@@ -1,9 +1,9 @@
-module Common (module X) where
+module Propellor.Common (module X) where
 
-import Types as X
-import Property as X
-import Property.Cmd as X
-import PrivData as X
+import Propellor.Types as X
+import Propellor.Property as X
+import Propellor.Property.Cmd as X
+import Propellor.PrivData as X
 
 import Utility.PartialPrelude as X
 import Control.Applicative as X

@@ -1,4 +1,4 @@
-module Property.Cmd (
+module Propellor.Property.Cmd (
 	cmdProperty,
 	cmdProperty',
 	scriptProperty,
@@ -8,7 +8,7 @@ module Property.Cmd (
 import Control.Applicative
 import Data.List
 
-import Types
+import Propellor.Types
 import Utility.Monad
 import Utility.SafeCommand
 import Utility.Env

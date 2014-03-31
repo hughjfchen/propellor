@@ -1,12 +1,12 @@
-module Property.Network where
+module Propellor.Property.Network where
 
-import Common
-import Property.File
+import Propellor.Common
+import Propellor.Property.File
 
 interfaces :: FilePath
 interfaces = "/etc/network/interfaces"
 
--- 6to4 ipv6 connection, should work anywhere
+-- | 6to4 ipv6 connection, should work anywhere
 ipv6to4 :: Property
 ipv6to4 = fileProperty "ipv6to4" go interfaces
 	`onChange` ifUp "sit0"

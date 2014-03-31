@@ -1,24 +1,27 @@
-import Common
-import CmdLine
-import qualified Property.File as File
-import qualified Property.Apt as Apt
-import qualified Property.Network as Network
-import qualified Property.Ssh as Ssh
-import qualified Property.Sudo as Sudo
-import qualified Property.User as User
-import qualified Property.Hostname as Hostname
-import qualified Property.Reboot as Reboot
-import qualified Property.Tor as Tor
-import qualified Property.Docker as Docker
-import qualified Property.GitHome as GitHome
-import qualified Property.JoeySites as JoeySites
+import Propellor.Common
+import Propellor.CmdLine
+import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Network as Network
+import qualified Propellor.Property.Ssh as Ssh
+import qualified Propellor.Property.Sudo as Sudo
+import qualified Propellor.Property.User as User
+import qualified Propellor.Property.Hostname as Hostname
+import qualified Propellor.Property.Reboot as Reboot
+import qualified Propellor.Property.Tor as Tor
+import qualified Propellor.Property.Docker as Docker
+import qualified Propellor.Property.GitHome as GitHome
+import qualified Propellor.Property.JoeySites as JoeySites
 
 main :: IO ()
 main = defaultMain getProperties
 
-{- This is where the system's HostName, either as returned by uname
+{- | This is where the system's HostName, either as returned by uname
  - or one specified on the command line, is converted into a list of
- - Properties for that system. -}
+ - Properties for that system.
+ -
+ - Edit this to configure propellor!
+ -}
 getProperties :: HostName -> Maybe [Property]
 getProperties hostname@"clam.kitenet.net" = Just
 	[ cleanCloudAtCost hostname

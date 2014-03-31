@@ -11,9 +11,9 @@ to a system, and "make" can be used to pull down any new changes,
 and compile and run propellor. This can be done by a cron job, or
 something can ssh in and run it.
 
-Properties are defined using Haskell. Edit Propellor.hs
+Properties are defined using Haskell. Edit propellor.hs to get started.
 
-There is no special language as used in puppet, chef, ansible, etc, just
+There is no special language as used in puppet, chef, ansible, etc.. just
 the full power of Haskell. Hopefully that power can be put to good use in
 making declarative properties that are powerful, nicely idempotent, and
 easy to adapt to a system's special needs.
