@@ -19,8 +19,6 @@ getProperties :: HostName -> [Property]
 getProperties hostname@"clam.kitenet.net" =
 	[ cleanCloudAtCost hostname
 	, standardSystem Apt.Unstable
-	, User.hasPassword "root"
-	, User.hasPassword "joey"
 	-- Clam is a tor bridge.
 	, Tor.isBridge
 	, Apt.installed ["docker.io"]
@@ -44,19 +42,19 @@ standardSystem suite = propertyList "standard system"
 	, Apt.installed ["etckeeper"]
 	, Apt.installed ["ssh"]
 	, GitHome.installedFor "root"
+	, User.hasSomePassword "root"
 	-- Harden the system, but only once root's authorized_keys
 	-- is safely in place.
 	, check (Ssh.hasAuthorizedKeys "root") $
 		Ssh.passwordAuthentication False
-	, check (Ssh.hasAuthorizedKeys "root") $
-		User.lockedPassword "root"
-	, Apt.installed ["vim"]
 	, User.sshAccountFor "joey"
 	, Apt.installed ["sudo"]
 	-- nopasswd because no password is set up for joey.
 	, "sudoer joey" ==>
 		"/etc/sudoers" `File.containsLine` "joey ALL=(ALL:ALL) NOPASSWD:ALL"
+	, User.hasSomePassword "joey"
 	, GitHome.installedFor "joey"
+	, Apt.installed ["vim", "screen"]
 	-- I use postfix, or no MTA.
 	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
 	]
