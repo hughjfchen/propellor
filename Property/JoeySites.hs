@@ -12,7 +12,7 @@ oldUseNetshellBox = check (not <$> Apt.isInstalled "oldusenet") $
 		[ Apt.installed (words "build-essential debhelper git ghc libghc-strptime-dev libghc-hamlet-dev libghc-ifelse-dev libghc-hxt-dev libghc-utf8-string-dev libghc-missingh-dev libghc-sha-dev")
 			`describe` "olduse.net build deps"
 		, scriptProperty
-			[ "rm -f /root/tmp/oldusenet" -- idenpotency
+			[ "rm -rf /root/tmp/oldusenet" -- idenpotency
 			, "git clone git://olduse.net/ /root/tmp/oldusenet/source"
 			, "cd /root/tmp/oldusenet/source/"
 			, "dpkg-buildpackage -us -uc"
