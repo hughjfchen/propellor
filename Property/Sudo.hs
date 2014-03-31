@@ -21,7 +21,7 @@ enabledFor user = Property desc go `requires` Apt.installed ["sudo"]
 	desc = user ++ " is sudoer"
 	sudobaseline = user ++ " ALL=(ALL:ALL)"
 	sudoline True = sudobaseline ++ " NOPASSWD:ALL"
-	sudoline False = sudobaseline
+	sudoline False = sudobaseline ++ " ALL"
 	wanted locked l
 		| not (sudobaseline `isPrefixOf` l) = True
 		| "NOPASSWD" `isInfixOf` l = locked
