@@ -132,12 +132,11 @@ boot props = do
 	putStrLn $ toMarked statusMarker $ show $ if havering then HaveKeyRing else NeedKeyRing
 	hFlush stdout
 	reply <- getContents
+
 	makePrivDataDir
 	writeFileProtected privDataLocal $ fromMarked privDataMarker reply
-	let keyringb64 = fromMarked keyringMarker reply
-	case fromB64Maybe keyringb64 of
-		Nothing -> noop
-		Just s -> writeFileProtected keyring s
+	maybe noop (writeFileProtected keyring) $ fromB64Maybe $
+		fromMarked keyringMarker reply
 	ensureProperties props
 
 addKey :: String -> IO ()
