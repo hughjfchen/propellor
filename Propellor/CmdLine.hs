@@ -186,7 +186,7 @@ spin host = do
 
 sendGitClone :: HostName -> String -> IO ()
 sendGitClone host url = void $ actionMessage ("Pushing git repository to " ++ host) $
-	withTmpFile "gitbundle" $ \tmp _ -> allM id
+	withTmpFile "propellor.git." $ \tmp _ -> allM id
 		-- TODO: ssh connection caching, or better push method
 		-- with less connections.
 		[ boolSystem "git" [Param "bundle", Param "create", File tmp, Param "HEAD"]
