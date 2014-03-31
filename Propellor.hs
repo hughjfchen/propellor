@@ -1,11 +1,44 @@
--- | Pulls in lots of useful modules for building Properties.
+-- | Pulls in lots of useful modules for building and using Properties.
+--
+-- Propellor enures that the system it's run in satisfies a list of
+-- properties, taking action as necessary when a property is not yet met.
+--
+-- A simple propellor program example:
+--
+--
+--> import Propellor
+--> import Propellor.CmdLine
+--> import qualified Propellor.Property.File as File
+--> import qualified Propellor.Property.Apt as Apt
+--> 
+--> main :: IO ()
+--> main = defaultMain getProperties
+--> 
+--> getProperties :: HostName -> Maybe [Property]
+--> getProperties "example.com" = Just
+-->    [ Apt.installed ["mydaemon"]
+-->    , "/etc/mydaemon.conf" `File.containsLine` "secure=1"
+-->        `onChange` cmdProperty "service" ["mydaemon", "restart"]]
+-->    ]
+--> getProperties _ = Nothing
+--
+-- See config.hs for a more complete example, and clone Propellor's
+-- git repository for a deployable system using Propellor:
+-- git clone <git://git.kitenet.net/propellor>
 
-module Propellor (module X) where
+module Propellor (
+	  module Propellor.Types
+	, module Propellor.Property
+	, module Propellor.Property.Cmd
+	, module Propellor.PrivData
 
-import Propellor.Types as X
-import Propellor.Property as X
-import Propellor.Property.Cmd as X
-import Propellor.PrivData as X
+	, module X
+) where
+
+import Propellor.Types
+import Propellor.Property
+import Propellor.Property.Cmd
+import Propellor.PrivData
 
 import Utility.PartialPrelude as X
 import Utility.Process as X

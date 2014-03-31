@@ -18,9 +18,9 @@ import Utility.Tmp
 import Utility.SafeCommand
 import Utility.Misc
 
-{- | Note that removing or changing field names will break the
- - serialized privdata files, so don't do that!
- - It's fine to add new fields. -}
+-- | Note that removing or changing field names will break the
+-- serialized privdata files, so don't do that!
+-- It's fine to add new fields.
 data PrivDataField
 	= DockerAuthentication
 	| SshPrivKey UserName
