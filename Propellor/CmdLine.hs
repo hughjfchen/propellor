@@ -154,6 +154,8 @@ boot props = do
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
 		fromMarked privDataMarker reply
+	print $ eitherToMaybe . B64.decode . BL.pack . s2w8 =<< fromMarked keyringMarker reply
+	print $ B64.decode . BL.pack . s2w8 <$> fromMarked keyringMarker reply
 	case eitherToMaybe . B64.decode . BL.pack . s2w8 =<< fromMarked keyringMarker reply of
 		Nothing -> noop
 		Just d -> do
