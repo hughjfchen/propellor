@@ -142,7 +142,7 @@ spin host = do
 	
 	user = "root@"++host
 
-	bootstrapcmd = shellWrap $ intercalate " && "
+	bootstrapcmd = shellWrap $ intercalate " ; "
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then " ++ intercalate " && "
 			[ "apt-get -y install git"
