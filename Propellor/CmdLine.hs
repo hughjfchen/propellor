@@ -96,9 +96,9 @@ pullFirst cmdline next = do
 			then putStrLn $ "git branch " ++ originbranch ++ " gpg signature verified; merging"
 			else error $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it!"
 	
-	oldsha <- getCurrentGitSha1
+	oldsha <- getCurrentGitSha1 branchref
 	void $ boolSystem "git" [Param "merge", Param originbranch]
-	newsha <- getCurrentGitSha1
+	newsha <- getCurrentGitSha1 branchref
 
 	if oldsha == newsha
 		then next
@@ -106,8 +106,8 @@ pullFirst cmdline next = do
 			void $ boolSystem "make" [Param "build"]
 			void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
 
-getCurrentGitSha1 :: IO String
-getCurrentGitSha1 = readProcess "git" ["show-ref", "--hash", "HEAD"]
+getCurrentGitSha1 :: String -> IO String
+getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
 
 spin :: HostName -> IO ()
 spin host = do
