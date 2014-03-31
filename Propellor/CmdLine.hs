@@ -57,7 +57,7 @@ defaultMain getprops = go True =<< processCmdLine
 	go _ (Set host field) = setPrivData host field
 	go _ (AddKey keyid) = addKey keyid
 	go _ (Spin host) = withprops host $ const $ spin host
-	go True cmdline = pullFirst cmdline $ go False cmdline
+	go True cmdline = updateFirst cmdline $ go False cmdline
 	go _ (Run host) = withprops host $ ensureProperties
 	go _ (Boot host) = withprops host $ boot
 
@@ -69,8 +69,8 @@ unknownhost h = error $ unwords
 	, "(perhaps you should specify the real hostname on the command line?)"
 	]
 
-pullFirst :: CmdLine -> IO () -> IO ()
-pullFirst cmdline next = do
+updateFirst :: CmdLine -> IO () -> IO ()
+updateFirst cmdline next = do
 	branchref <- takeWhile (/= '\n') 
 		<$> readProcess "git" ["symbolic-ref", "HEAD"]
 	let originbranch = "origin" </> takeFileName branchref
@@ -106,6 +106,7 @@ pullFirst cmdline next = do
 		then next
 		else do
 			putStrLn "Rebuilding propeller.."
+			print (oldsha, newsha)
 			hFlush stdout
 			ifM (boolSystem "make" [Param "build"])
 				( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
