@@ -190,7 +190,7 @@ stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId 
 
 removeContainer :: ContainerId -> IO ()
 removeContainer cid = void $ catchMaybeIO $
-	readProcess "sh" [Param "-c", Param $ dockercmd ++ " rm " ++ fromContainerId cid ]
+	readProcess dockercmd ["rm", fromContainerId cid ]
 
 runContainer :: Image -> [RunParam] -> [String] -> IO Bool
 runContainer image ps cmd = boolSystem dockercmd $ map Param $
