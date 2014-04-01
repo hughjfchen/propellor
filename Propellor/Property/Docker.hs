@@ -72,14 +72,17 @@ containerProperties
 	-> (HostName -> Maybe [Property])
 containerProperties findcontainer = \h -> case toContainerId h of
 	Nothing -> Nothing
-	Just (ContainerId hn cn) ->
+	Just cid@(ContainerId hn cn) ->
 		case findcontainer hn cn of
 			Nothing -> Nothing
 			Just (Container _ cprops) -> 
-				Just $ fromContainerized cprops
+				Just $ map (containerDesc cid) $
+					fromContainerized cprops
 
-containerDesc :: ContainerId -> Desc -> Desc
-containerDesc cid d = "docker container " ++ fromContainerId cid ++ " " ++ d
+containerDesc :: ContainerId -> Property -> Property
+containerDesc cid p = p `describe` desc
+  where
+	desc = "docker container " ++ fromContainerId cid ++ " " ++ propertyDesc p
 
 -- | Ensures that a docker container is set up and running. The container
 -- has its own Properties which are handled by running propellor
@@ -91,7 +94,7 @@ hasContainer
 	-> Property
 hasContainer hn cn findcontainer = 
 	case findcontainer hn cn of
-		Nothing -> Property (containerDesc cid "") $ do
+		Nothing -> containerDesc cid $ Property "" $ do
 			warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
 			return FailedChange
 		Just (Container image containerprops) ->
@@ -102,7 +105,7 @@ hasContainer hn cn findcontainer =
   	cid = ContainerId hn cn
 
 runningContainer :: ContainerId -> Image -> [Containerized Property] -> Property
-runningContainer cid@(ContainerId hn cn) image containerprops = Property (containerDesc cid "running") $ do
+runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc cid $ Property "running" $ do
 	l <- listContainers RunningContainers
 	if cid `elem` l
 		then do
@@ -185,7 +188,7 @@ chain s = case readish s of
 -- being run. So, retry connections to the client for up to
 -- 1 minute.
 provisionContainer :: ContainerId -> Property
-provisionContainer cid = Property (containerDesc cid "provision") $
+provisionContainer cid = containerDesc cid $ Property "provision" $
 	simpleShClientRetry 60 (namedPipe cid) "./propellor" ["--continue", show params] (go Nothing)
   where
 	params = Chain $ fromContainerId cid
@@ -239,7 +242,7 @@ listContainers status =
 
 runProp :: String -> RunParam -> Containerized Property
 runProp field val = 
-	Containerized ["--" ++ param] (Property param (return NoChange))
+	Containerized ["--" ++ param] (Property (param) (return NoChange))
   where
 	param = field++"="++val
 
