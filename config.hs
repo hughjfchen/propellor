@@ -55,7 +55,7 @@ host _ = Nothing
 -- can vary by hostname where it's used, or be the same everywhere.
 container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
 container _ "webserver" = Just $ Docker.containerFrom "joeyh/debian-unstable"
-	[ Docker.publish "80:80"
+	[ Docker.publish "8080:80"
 	, Docker.volume "/var/www:/var/www"
 	, Docker.inside
 		[ serviceRunning "apache2"
