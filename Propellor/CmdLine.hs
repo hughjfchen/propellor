@@ -59,7 +59,9 @@ defaultMain getprops = do
 	go _ (Continue cmdline) = go False cmdline
 	go _ (Set host field) = setPrivData host field
 	go _ (AddKey keyid) = addKey keyid
-	go _ (Chain host) = withprops host $ print <=< ensureProperties'
+	go _ (Chain host) = withprops host $ \ps -> do
+		r <- ensureProperties' ps
+		putStrLn $ "\n" ++ show r
 	go _ (ChainDocker host) = Docker.chain host
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
