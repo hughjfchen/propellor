@@ -94,7 +94,7 @@ containerProperties findcontainer = \h -> case toContainerId h of
 containerDesc :: ContainerId -> Property -> Property
 containerDesc cid p = p `describe` desc
   where
-	desc = "docker container " ++ fromContainerId cid ++ " " ++ propertyDesc p
+	desc = "[" ++ fromContainerId cid ++ "] " ++ propertyDesc p
 
 -- | Ensures that a docker container is set up and running. The container
 -- has its own Properties which are handled by running propellor
