@@ -9,20 +9,9 @@ import System.Log.Handler (setFormatter, LogHandler)
 import System.Log.Handler.Simple
 
 import Propellor
-import Propellor.SimpleSh
+import qualified Propellor.Property.Docker as Docker
 import Utility.FileMode
 import Utility.SafeCommand
-
-data CmdLine
-	= Run HostName
-	| Spin HostName
-	| Boot HostName
-	| Set HostName PrivDataField
-	| AddKey String
-	| Continue CmdLine
-	| SimpleSh FilePath
-	| Chain HostName
-  deriving (Read, Show, Eq)
 
 usage :: IO a
 usage = do
@@ -49,7 +38,6 @@ processCmdLine = go =<< getArgs
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
-	go ("--simplesh":f:[]) = return $ SimpleSh f
   	go ("--chain":h:[]) = return $ Chain h
 	go (h:[])
 		| "--" `isPrefixOf` h = usage
@@ -71,8 +59,8 @@ defaultMain getprops = do
 	go _ (Continue cmdline) = go False cmdline
 	go _ (Set host field) = setPrivData host field
 	go _ (AddKey keyid) = addKey keyid
-	go _ (SimpleSh f) = simpleSh f
 	go _ (Chain host) = withprops host $ print <=< ensureProperties'
+	go _ (ChainDocker host) = Docker.chain host
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin host) = withprops host $ const $ spin host
@@ -295,9 +283,6 @@ keyring = privDataDir </> "keyring.gpg"
 
 gpgopts :: [String]
 gpgopts = ["--options", "/dev/null", "--no-default-keyring", "--keyring", keyring]
-
-localdir :: FilePath
-localdir = "/usr/local/propellor"
 
 getUrl :: IO String
 getUrl = maybe nourl return =<< getM get urls

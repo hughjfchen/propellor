@@ -3,7 +3,6 @@ module Propellor.Property.Cron where
 import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
-import Propellor.CmdLine
 
 type CronTimes = String
 

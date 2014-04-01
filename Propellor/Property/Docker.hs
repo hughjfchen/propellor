@@ -3,11 +3,13 @@
 module Propellor.Property.Docker where
 
 import Propellor
-import Propellor.CmdLine
 import Propellor.SimpleSh
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import Utility.SafeCommand
+import Utility.Path
+
+import Control.Concurrent.Async
 
 dockercmd :: String
 dockercmd = "docker.io"
@@ -76,6 +78,9 @@ containerProperties findcontainer = \h -> case toContainerId h of
 			Just (Container _ cprops) -> 
 				Just $ fromContainerized cprops
 
+containerDesc :: ContainerId -> Desc -> Desc
+containerDesc cid d = "docker container " ++ fromContainerId cid ++ " " ++ d
+
 -- | Ensures that a docker container is set up and running. The container
 -- has its own Properties which are handled by running propellor
 -- inside the container.
@@ -84,22 +89,20 @@ hasContainer
 	-> ContainerName
 	-> (HostName -> ContainerName -> Maybe (Container))
 	-> Property
-hasContainer hn cn findcontainer =
+hasContainer hn cn findcontainer = 
 	case findcontainer hn cn of
-		Nothing -> Property desc $ do
+		Nothing -> Property (containerDesc cid "") $ do
 			warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
 			return FailedChange
 		Just (Container image containerprops) ->
-			Property desc (provisionContainer cid)
-			`requires`
-			Property desc (ensureContainer cid image containerprops)
+			provisionContainer cid
+				`requires`
+			runningContainer cid image containerprops
   where
   	cid = ContainerId hn cn
 
-  	desc = "docker container " ++ fromContainerId cid
-
-ensureContainer :: ContainerId -> Image -> [Containerized Property] -> IO Result
-ensureContainer cid@(ContainerId hn cn) image containerprops = do
+runningContainer :: ContainerId -> Image -> [Containerized Property] -> Property
+runningContainer cid@(ContainerId hn cn) image containerprops = Property (containerDesc cid "running") $ do
 	l <- listContainers RunningContainers
 	if cid `elem` l
 		then do
@@ -123,11 +126,9 @@ ensureContainer cid@(ContainerId hn cn) image containerprops = do
 	-- is also started, so the user can attach and use it if desired.
 	startsimplesh = ["sh", "-c", "./propellor --simplesh " ++ namedPipe cid ++  " & bash -l"]
 
-	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $
-		pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
-	setrunningident = simpleShClient (namedPipe cid) "sh"
-		["-c", "echo '" ++ show ident ++ "' > " ++ propellorIdent]
-		(const noop)
+	getrunningident = catchDefaultIO Nothing $
+		simpleShClient (namedPipe cid) "cat" [propellorIdent] $
+			pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
 
 	runps = getRunParams $ containerprops ++
 		-- expose propellor directory inside the container
@@ -140,15 +141,55 @@ ensureContainer cid@(ContainerId hn cn) image containerprops = do
 		]
 	
 	go img = ifM (runContainer img (runps ++ ["-i", "-d", "-t"]) startsimplesh)
-		( do
-			setrunningident
-			return MadeChange
+		( return MadeChange
 		, return FailedChange
 		)
 
-provisionContainer :: ContainerId -> IO Result
-provisionContainer cid = do
-	simpleShClient (namedPipe cid) "./propellor" [show params] (go Nothing)
+-- | Two containers with the same ContainerIdent were started from
+-- the same base image (possibly a different version though), and
+-- with the same RunParams.
+data ContainerIdent = ContainerIdent Image HostName ContainerName [RunParam]
+	deriving (Read, Show, Eq)
+
+-- | The ContainerIdent of a container is written to
+-- /.propellor-ident inside it. This can be checked to see if
+-- the container has the same ident later.
+propellorIdent :: FilePath
+propellorIdent = "/.propellor-ident"
+
+-- | Named pipe used for communication with the container.
+namedPipe :: ContainerId -> FilePath
+namedPipe cid = "docker/" ++ fromContainerId cid
+
+-- | Called when propellor is running inside a docker container.
+-- The string should be the container's ContainerIdent.
+--
+-- Fork a thread to run the SimpleSh server in the background.
+-- In the foreground, run an interactive bash (or sh) shell,
+-- so that the user can interact with it when attached to the container.
+chain :: String -> IO ()
+chain s = case readish s of
+	Nothing -> error $ "Invalid ContainerId: " ++ s
+	Just ident@(ContainerIdent _image hn cn _rp) -> do
+		let cid = ContainerId hn cn
+		writeFile propellorIdent (show ident)
+		t <- async $ simpleSh $ namedPipe cid
+		void $ ifM (inPath "bash")
+			( boolSystem "bash" [Param "-l"]
+			, boolSystem "/bin/sh" []
+			)
+		wait t
+
+-- | Once a container is running, propellor can be run inside
+-- it to provision it.
+--
+-- Note that there is a race here, between the simplesh
+-- server starting up in the container, and this property
+-- being run. So, retry connections to the client for up to
+-- 1 minute.
+provisionContainer :: ContainerId -> Property
+provisionContainer cid = Property (containerDesc cid "provision") $
+	simpleShClientRetry 60 (namedPipe cid) "./propellor" [show params] (go Nothing)
   where
 	params = Chain $ fromContainerId cid
 
@@ -168,22 +209,6 @@ provisionContainer cid = do
 
 	ret lastline = return $ fromMaybe FailedChange $
 		readish =<< lastline
-
--- | Two containers with the same ContainerIdent were started from
--- the same base image (possibly a different version though), and
--- with the same RunParams.
-data ContainerIdent = ContainerIdent Image HostName ContainerName [RunParam]
-	deriving (Read, Show, Eq)
-
--- | The ContainerIdent of a container is written to
--- /.propellor-ident inside it. This can be checked to see if
--- the container has the same ident later.
-propellorIdent :: FilePath
-propellorIdent = "/.propellor-ident"
-
--- | Named pipe used for communication with the container.
-namedPipe :: ContainerId -> FilePath
-namedPipe cid = "docker/" ++ fromContainerId cid
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]

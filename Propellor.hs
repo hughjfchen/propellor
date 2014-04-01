@@ -32,6 +32,7 @@ module Propellor (
 	, module Propellor.PrivData
 	, module Propellor.Engine
 	, module Propellor.Message
+	, localdir
 
 	, module X
 ) where
@@ -61,3 +62,7 @@ import Control.Applicative as X
 import Control.Monad as X
 import Data.Monoid as X
 import Control.Monad.IfElse as X
+
+-- | This is where propellor installs itself when deploying a host.
+localdir :: FilePath
+localdir = "/usr/local/propellor"

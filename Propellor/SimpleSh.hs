@@ -12,6 +12,8 @@ import System.Process (std_in, std_out, std_err)
 import System.Exit
 
 import Propellor
+import Utility.FileMode
+import Utility.ThreadScheduler
 
 data Cmd = Cmd String [String]
 	deriving (Read, Show)
@@ -22,7 +24,9 @@ data Resp = StdoutLine String | StderrLine String | Done ExitCode
 simpleSh :: FilePath -> IO ()
 simpleSh namedpipe = do
 	nukeFile namedpipe
-	createDirectoryIfMissing True (takeDirectory namedpipe)
+	let dir = takeDirectory namedpipe
+	createDirectoryIfMissing True dir
+	modifyFileMode dir (removeModes otherGroupModes)
 	s <- socket AF_UNIX Stream defaultProtocol
 	bind s (SockAddrUnix namedpipe)
 	listen s 2
@@ -72,6 +76,20 @@ simpleShClient namedpipe cmd params handler = do
 	hPutStrLn h $ show $ Cmd cmd params
 	resps <- catMaybes . map readish . lines <$> hGetContents h
 	hClose h `after` handler resps
+
+simpleShClientRetry :: Int -> FilePath -> String -> [String] -> ([Resp] -> IO a) -> IO a
+simpleShClientRetry retries namedpipe cmd params handler = go retries
+  where
+	run = simpleShClient namedpipe cmd params handler
+	go n
+		| n < 1 = run
+		| otherwise = do
+			v <- tryIO run
+			case v of
+				Right r -> return r
+				Left _ -> do
+					threadDelaySeconds (Seconds 1)
+					go (n - 1)
 
 getStdout :: Resp -> Maybe String
 getStdout (StdoutLine s) = Just s

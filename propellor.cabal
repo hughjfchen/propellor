@@ -75,11 +75,14 @@ Library
     Utility.FileSystemEncoding
     Utility.Misc
     Utility.Monad
+    Utility.Path
     Utility.PartialPrelude
     Utility.PosixFiles
     Utility.Process
     Utility.SafeCommand
+    Utility.ThreadScheduler
     Utility.Tmp
+    Utility.UserInfo
 
 source-repository head
   type: git

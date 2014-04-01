@@ -37,3 +37,23 @@ instance ActionResult Result where
 	getActionResult NoChange = ("unchanged", Dull, Green)
 	getActionResult MadeChange = ("done", Vivid, Green)
 	getActionResult FailedChange = ("failed", Vivid, Red)
+
+data CmdLine
+	= Run HostName
+	| Spin HostName
+	| Boot HostName
+	| Set HostName PrivDataField
+	| AddKey String
+	| Continue CmdLine
+	| Chain HostName
+	| ChainDocker HostName
+  deriving (Read, Show, Eq)
+
+-- | Note that removing or changing field names will break the
+-- serialized privdata files, so don't do that!
+-- It's fine to add new fields.
+data PrivDataField
+	= DockerAuthentication
+	| SshPrivKey UserName
+	| Password UserName
+	deriving (Read, Show, Ord, Eq)
