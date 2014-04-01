@@ -18,7 +18,7 @@ builder :: Architecture -> CronTimes -> Property
 builder arch crontimes = combineProperties "gitannexbuilder"
 	[ Apt.stdSourcesList Unstable
 	, Apt.buildDep ["git-annex"]
-	, Apt.installed ["git", "rsync", "moreutils", 
+	, Apt.installed ["git", "rsync", "moreutils", "ca-certificates",
 		"liblockfile-simple-perl", "cabal-install"]
 	, serviceRunning "cron" `requires` Apt.installed ["cron"]
 	, User.accountFor builduser
@@ -29,7 +29,7 @@ builder arch crontimes = combineProperties "gitannexbuilder"
 		, "git clone https://git-annex.branchable.com/ build"
 		]
 		`describe` "gitbuilder setup"
-	, Cron.niceJob "gitannexbuilder" crontimes builduser "~/gitbuilder" "./autobuild"
+	, Cron.niceJob "gitannexbuilder" crontimes builduser "~/gitbuilder" "git pull ; ./autobuild"
 	, check (lacksdir $ builddir </> "git-annex") $ userScriptProperty builduser
 		[ "cd gitbuilder"
 		, "git clone https://git-annex.branchable.com/ git-annex"
