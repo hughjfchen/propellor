@@ -45,3 +45,4 @@ scriptProperty script = cmdProperty "sh" ["-c", shellcmd]
 serviceRunning :: String -> Property
 serviceRunning svc = scriptProperty
 	["service " ++ shellEscape svc ++ " start >/dev/null 2>&1 || true"]
+	`describe` ("running " ++ svc)
