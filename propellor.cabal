@@ -11,7 +11,7 @@ Build-Type: Simple
 Homepage: http://joeyh.name/code/propellor/
 Category: Utility
 Extra-Source-Files:
-  README
+  README.md
   TODO
   CHANGELOG
   Makefile
@@ -53,15 +53,16 @@ Library
     Propellor.Property.Cron
     Propellor.Property.Docker
     Propellor.Property.File
-    Propellor.Property.GitHome
-    Propellor.Property.Hostname
-    Propellor.Property.JoeySites
     Propellor.Property.Network
     Propellor.Property.Reboot
     Propellor.Property.Ssh
     Propellor.Property.Sudo
     Propellor.Property.Tor
     Propellor.Property.User
+    Propellor.Property.SiteSpecific.GitHome
+    Propellor.Property.SiteSpecific.Hostname
+    Propellor.Property.SiteSpcecific.JoeySites
+    Propellor.Property.SiteSpcecific.GitAnnexBuilder
     Propellor.CmdLine
     Propellor.Message
     Propellor.PrivData
