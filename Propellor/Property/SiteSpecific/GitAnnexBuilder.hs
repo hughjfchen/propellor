@@ -23,7 +23,7 @@ builder arch crontimes = combineProperties "gitannexbuilder"
 	, serviceRunning "cron" `requires` Apt.installed ["cron"]
 	, User.accountFor builduser
 	, check (lacksdir builddir) $ userScriptProperty builduser
-		[ "git clone https://github.com/joeyh/gitbuilder/"
+		[ "git clone https://github.com/joeyh/gitbuilder.git"
 		, "cd gitbuilder"
 		, "git checkout " ++ map toLower (show arch)
 		, "git clone https://git-annex.branchable.com/ build"
