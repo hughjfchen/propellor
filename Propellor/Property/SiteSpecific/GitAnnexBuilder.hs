@@ -26,12 +26,11 @@ builder arch crontimes = combineProperties "gitannexbuilder"
 		[ "git clone git://git.kitenet.net/gitannexbuilder " ++ builddir
 		, "cd " ++ builddir
 		, "git checkout " ++ map toLower (show arch)
-		, "git clone git://git-annex.branchable.com/ build"
 		]
 		`describe` "gitbuilder setup"
 	, check (lacksdir $ builddir </> "git-annex") $ userScriptProperty builduser
 		[ "cd " ++ builddir
-		, "git clone https://git-annex.branchable.com/ git-annex"
+		, "git clone git://git-annex.branchable.com/ build"
 		]
 	, Cron.niceJob "gitannexbuilder" crontimes builduser ("~/" ++ builddir) "git pull ; ./autobuild"
 	-- The builduser account does not have a password set,
