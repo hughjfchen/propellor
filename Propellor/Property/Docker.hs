@@ -42,7 +42,8 @@ fromContainerized l = map get l
 type Image = String
 
 -- | A short descriptive name for a container.
--- Should not contain whitespace or other unusual characters.
+-- Should not contain whitespace or other unusual characters,
+-- only [a-zA-Z0-9_.-] are allowed
 type ContainerName = String
 
 -- | A container is identified by its name, and the host
@@ -51,13 +52,13 @@ data ContainerId = ContainerId HostName ContainerName
 	deriving (Read, Show, Eq)
 
 toContainerId :: String -> Maybe ContainerId
-toContainerId s = case separate (== '@') s of
+toContainerId s = case separate (== '.') s of
 	(cn, hn)
 		| null hn || null cn -> Nothing
 		| otherwise -> Just $ ContainerId hn cn
 
 fromContainerId :: ContainerId -> String
-fromContainerId (ContainerId hn cn) = cn++"@"++hn
+fromContainerId (ContainerId hn cn) = cn++"."++hn
 
 data Container = Container Image [Containerized Property]
 
