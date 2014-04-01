@@ -121,11 +121,6 @@ runningContainer cid@(ContainerId hn cn) image containerprops = Property (contai
   where
 	ident = ContainerIdent image hn cn runps
 
-	-- Start the simplesh server that will be used by propellor
-	-- to run commands in the container. An interactive shell
-	-- is also started, so the user can attach and use it if desired.
-	startsimplesh = ["sh", "-c", "./propellor --simplesh " ++ namedPipe cid ++  " & bash -l"]
-
 	getrunningident = catchDefaultIO Nothing $
 		simpleShClient (namedPipe cid) "cat" [propellorIdent] $
 			pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
@@ -140,7 +135,9 @@ runningContainer cid@(ContainerId hn cn) image containerprops = Property (contai
 		, workdir localdir
 		]
 	
-	go img = ifM (runContainer img (runps ++ ["-i", "-d", "-t"]) startsimplesh)
+	chaincmd = ["./propellor", show $ ChainDocker $ show ident]
+
+	go img = ifM (runContainer img (runps ++ ["-i", "-d", "-t"]) chaincmd)
 		( return MadeChange
 		, return FailedChange
 		)
