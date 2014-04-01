@@ -28,7 +28,7 @@ Executable propellor
   GHC-Options: -Wall
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers
+   containers, network, async
 
   if (! os(windows))
     Build-Depends: unix
@@ -37,7 +37,7 @@ Library
   GHC-Options: -Wall
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, dataenc
+   containers, network, async
 
   if (! os(windows))
     Build-Depends: unix
@@ -63,6 +63,7 @@ Library
     Propellor.Message
     Propellor.PrivData
     Propellor.Engine
+    Propellor.SimpleSh
     Propellor.Types
   Other-Modules:
     Utility.Applicative
