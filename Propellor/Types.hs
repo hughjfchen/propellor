@@ -26,6 +26,24 @@ instance Monoid Result where
 	mappend _ MadeChange = MadeChange
 	mappend NoChange NoChange = NoChange
 
+-- | High level descritption of a operating system.
+data System = System Distribution Architecture
+	deriving (Show)
+
+data Distribution
+	= Debian DebianSuite
+	| Ubuntu Release
+	deriving (Show)
+
+data DebianSuite = Experimental | Unstable | Testing | Stable | DebianRelease Release
+	deriving (Show)
+
+type Release = String
+
+data Architecture = Amd64 | I386 | Armel
+	deriving (Show)
+
+-- | Results of actions, with color.
 class ActionResult a where
 	getActionResult :: a -> (String, ColorIntensity, Color)
 

@@ -16,16 +16,14 @@ sourcesList = "/etc/apt/sources.list"
 type Url = String
 type Section = String
 
-data Suite = Stable | Testing | Unstable | Experimental
-	deriving Show
-
-showSuite :: Suite -> String
+showSuite :: DebianSuite -> String
 showSuite Stable = "stable"
 showSuite Testing = "testing"
 showSuite Unstable = "unstable"
 showSuite Experimental = "experimental"
+showSuite (DebianRelease r) = r
 
-debLine :: Suite -> Url -> [Section] -> Line
+debLine :: DebianSuite -> Url -> [Section] -> Line
 debLine suite mirror sections = unwords $
 	["deb", mirror, showSuite suite] ++ sections
 
@@ -37,14 +35,14 @@ srcLine l = case words l of
 stdSections :: [Section]
 stdSections = ["main", "contrib", "non-free"]
 
-debCdn :: Suite -> [Line]
+debCdn :: DebianSuite -> [Line]
 debCdn suite = [l, srcLine l]
   where
 	l = debLine suite "http://cdn.debian.net/debian" stdSections
 
 {- | Makes sources.list have a standard content using the mirror CDN,
- - with a particular Suite. -}
-stdSourcesList :: Suite -> Property
+ - with a particular DebianSuite. -}
+stdSourcesList :: DebianSuite -> Property
 stdSourcesList suite = setSourcesList (debCdn suite)
 	`describe` ("standard sources.list for " ++ show suite)
 
@@ -80,6 +78,12 @@ removed ps = check (or <$> isInstalled' ps) go
 	`describe` (unwords $ "apt removed":ps)
   where
 	go = runApt $ ["-y", "remove"] ++ ps
+
+buildDep :: [Package] -> Property
+buildDep ps = check (isInstallable ps) go
+	`describe` (unwords $ "apt build-dep":ps)
+  where
+	go = runApt $ ["-y", "build-dep"] ++ ps
 
 isInstallable :: [Package] -> IO Bool
 isInstallable ps = do

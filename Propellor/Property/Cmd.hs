@@ -2,6 +2,7 @@ module Propellor.Property.Cmd (
 	cmdProperty,
 	cmdProperty',
 	scriptProperty,
+	userScriptProperty,
 	serviceRunning,
 ) where
 
@@ -38,6 +39,13 @@ scriptProperty :: [String] -> Property
 scriptProperty script = cmdProperty "sh" ["-c", shellcmd]
   where
 	shellcmd = intercalate " ; " ("set -e" : script)
+
+-- | A property that can satisfied by running a series of shell commands,
+-- as user (staring in their home directory).
+userScriptProperty :: UserName -> [String] -> Property
+userScriptProperty user script = cmdProperty "su" ["-c", shellcmd, user]
+  where
+	shellcmd = intercalate " ; " ("set -e" : "cd" : script)
 
 -- | Ensures that a service is running.
 --

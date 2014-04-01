@@ -6,15 +6,15 @@ import Propellor
 
 data Eep = YesReallyDeleteHome
 
-sshAccountFor :: UserName -> Property
-sshAccountFor user = check (isNothing <$> homedir user) $ cmdProperty "adduser"
+accountFor :: UserName -> Property
+accountFor user = check (isNothing <$> homedir user) $ cmdProperty "adduser"
 	[ "--disabled-password"
 	, "--gecos", ""
 	, user
 	]
 	`describe` ("ssh account " ++ user)
 
-{- | Removes user home directory!! Use with caution. -}
+-- | Removes user home directory!! Use with caution.
 nuked :: UserName -> Eep -> Property
 nuked user _ = check (isJust <$> homedir user) $ cmdProperty "userdel"
 	[ "-r"
@@ -22,8 +22,8 @@ nuked user _ = check (isJust <$> homedir user) $ cmdProperty "userdel"
 	]
 	`describe` ("nuked user " ++ user)
 
-{- | Only ensures that the user has some password set. It may or may
- - not be the password from the PrivData. -}
+-- | Only ensures that the user has some password set. It may or may
+-- not be the password from the PrivData.
 hasSomePassword :: UserName -> Property
 hasSomePassword user = check ((/= HasPassword) <$> getPasswordStatus user) $
 	hasPassword user

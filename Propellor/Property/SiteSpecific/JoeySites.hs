@@ -1,7 +1,7 @@
 -- | Specific configuation for Joey Hess's sites. Probably not useful to
 -- others except as an example.
 
-module Propellor.Property.JoeySites where
+module Propellor.Property.SiteSpecific.JoeySites where
 
 import Propellor
 import qualified Propellor.Property.Apt as Apt

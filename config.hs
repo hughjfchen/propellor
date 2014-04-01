@@ -14,8 +14,9 @@ import qualified Propellor.Property.Hostname as Hostname
 import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Docker as Docker
-import qualified Propellor.Property.GitHome as GitHome
-import qualified Propellor.Property.JoeySites as JoeySites
+import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
+import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
+import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 
 main :: IO ()
 main = defaultMain [host, Docker.containerProperties container]
@@ -28,7 +29,7 @@ main = defaultMain [host, Docker.containerProperties container]
 host :: HostName -> Maybe [Property]
 host hostname@"clam.kitenet.net" = Just
 	[ cleanCloudAtCost hostname
-	, standardSystem Apt.Unstable
+	, standardSystem Unstable
 	, Apt.unattendedUpgrades True
 	, Network.ipv6to4
 	-- Clam is a tor bridge, and an olduse.net shellbox and other
@@ -37,15 +38,16 @@ host hostname@"clam.kitenet.net" = Just
 	, JoeySites.oldUseNetshellBox
 	, Docker.configured
 	, File.dirExists "/var/www"
-	, Docker.hasContainer hostname "webserver" container
+	, Docker.docked container hostname "webserver"
 	, Apt.installed ["git-annex", "mtr"]
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
 	]
-host "orca.kitenet.net" = Just
-	[ standardSystem Apt.Unstable
+host hostname@"orca.kitenet.net" = Just
+	[ standardSystem Unstable
 	, Apt.unattendedUpgrades True
 	, Docker.configured
+	, Docker.docked container hostname "git-annex-amd64-builder"
 	]
 -- add more hosts here...
 --host "foo.example.com" =
@@ -54,7 +56,8 @@ host _ = Nothing
 -- | This is where Docker containers are set up. A container
 -- can vary by hostname where it's used, or be the same everywhere.
 container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
-container _ "webserver" = Just $ Docker.containerFrom "joeyh/debian-unstable"
+container _ "webserver" = Just $ Docker.containerFrom
+	(image $ System (Debian Unstable) Amd64)
 	[ Docker.publish "8080:80"
 	, Docker.volume "/var/www:/var/www"
 	, Docker.inside
@@ -62,10 +65,21 @@ container _ "webserver" = Just $ Docker.containerFrom "joeyh/debian-unstable"
 			`requires` Apt.installed ["apache2"]
 		]
 	]
+container _ "git-annex-amd64-builder" = Just $ Docker.containerFrom
+	(image $ System (Debian Unstable) Amd64)
+	[ Docker.inside [ GitAnnexBuilder.builder "amd64" "30 * * * *" ] ]
 container _ _ = Nothing
 
+-- | Docker images I prefer to use.
+-- Edit as suites you, or delete this function and just put the image names
+-- above.
+image :: System -> Docker.Image
+image (System (Debian Unstable) Amd64) = "joeyh/debian-unstable"
+image (System (Debian Unstable) I386) = "joeyh/debian-i386"
+image _ = "debian"
+
 -- This is my standard system setup
-standardSystem :: Apt.Suite -> Property
+standardSystem :: DebianSuite -> Property
 standardSystem suite = propertyList "standard system"
 	[ Apt.stdSourcesList suite `onChange` Apt.upgrade
 	, Apt.installed ["etckeeper"]
@@ -76,7 +90,7 @@ standardSystem suite = propertyList "standard system"
 	-- is safely in place.
 	, check (Ssh.hasAuthorizedKeys "root") $
 		Ssh.passwordAuthentication False
-	, User.sshAccountFor "joey"
+	, User.accountFor "joey"
 	, User.hasSomePassword "joey"
 	, Sudo.enabledFor "joey"
 	, GitHome.installedFor "joey"

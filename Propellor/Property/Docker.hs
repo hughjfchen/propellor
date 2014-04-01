@@ -99,12 +99,12 @@ containerDesc cid p = p `describe` desc
 -- | Ensures that a docker container is set up and running. The container
 -- has its own Properties which are handled by running propellor
 -- inside the container.
-hasContainer
-	:: HostName
+docked
+	:: (HostName -> ContainerName -> Maybe (Container))
+	-> HostName
 	-> ContainerName
-	-> (HostName -> ContainerName -> Maybe (Container))
 	-> Property
-hasContainer hn cn findcontainer = 
+docked findcontainer hn cn = 
 	case findcontainer hn cn of
 		Nothing -> containerDesc cid $ Property "" $ do
 			warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
