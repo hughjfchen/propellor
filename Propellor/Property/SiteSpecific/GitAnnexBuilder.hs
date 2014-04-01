@@ -23,17 +23,17 @@ builder arch crontimes = combineProperties "gitannexbuilder"
 	, serviceRunning "cron" `requires` Apt.installed ["cron"]
 	, User.accountFor builduser
 	, check (lacksdir builddir) $ userScriptProperty builduser
-		[ "git clone git://git.kitenet.net/gitannexbuilder"
-		, "cd gitbuilder"
+		[ "git clone git://git.kitenet.net/gitannexbuilder " ++ builddir
+		, "cd " ++ builddir
 		, "git checkout " ++ map toLower (show arch)
 		, "git clone git://git-annex.branchable.com/ build"
 		]
 		`describe` "gitbuilder setup"
-	, Cron.niceJob "gitannexbuilder" crontimes builduser "~/gitbuilder" "git pull ; ./autobuild"
 	, check (lacksdir $ builddir </> "git-annex") $ userScriptProperty builduser
-		[ "cd gitbuilder"
+		[ "cd " ++ builddir
 		, "git clone https://git-annex.branchable.com/ git-annex"
 		]
+	, Cron.niceJob "gitannexbuilder" crontimes builduser ("~/" ++ builddir) "git pull ; ./autobuild"
 	-- The builduser account does not have a password set,
 	-- instead use the password privdata to hold the rsync server
 	-- password used to upload the built image.
