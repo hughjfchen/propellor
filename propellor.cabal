@@ -13,7 +13,9 @@ Category: Utility
 Extra-Source-Files:
   README
   TODO
+  CHANGELOG
   Makefile
+  debian/changelog
 Synopsis: property-based host configuration management in haskell
 Description:
  Propellor enures that the system it's run in satisfies a list of
