@@ -4,7 +4,7 @@ run: build
 dev: build tags
 
 build: deps dist/setup-config
-	cabal build || (cabal configure; cabal build)
+	if ! cabal build; then cabal configure; cabal build; fi
 	ln -sf dist/build/propellor/propellor
 
 deps:

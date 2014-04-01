@@ -38,3 +38,8 @@ fileProperty desc a f = Property desc $ go =<< doesFileExist f
 			then noChange
 			else makeChange $ viaTmp writeFile f (unlines ls')
 	go False = makeChange $ writeFile f (unlines $ a [])
+
+-- | Ensures a directory exists.
+dirExists :: FilePath -> Property
+dirExists d = check (doesDirectoryExist d) $ Property (d ++ " exists") $
+	makeChange $ createDirectoryIfMissing True d

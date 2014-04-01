@@ -1,7 +1,8 @@
 module Propellor.Property.Cmd (
 	cmdProperty,
 	cmdProperty',
-	scriptProperty
+	scriptProperty,
+	serviceRunning,
 ) where
 
 import Control.Applicative
@@ -35,3 +36,12 @@ scriptProperty :: [String] -> Property
 scriptProperty script = cmdProperty "sh" ["-c", shellcmd]
   where
 	shellcmd = intercalate " ; " ("set -e" : script)
+
+-- | Ensures that a service is running.
+--
+-- Note that due to the general poor state of init scripts, the best
+-- we can do is try to start the service, and if it fails, assume
+-- this means it's already running.
+serviceRunning :: String -> Property
+serviceRunning svc = scriptProperty
+	["service " ++ shellEscape svc ++ " start >/dev/null 2>&1 || true"]

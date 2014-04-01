@@ -50,7 +50,7 @@ processCmdLine = go =<< getArgs
 			else return $ Run s
 	go _ = usage
 
-defaultMain :: (HostName -> Maybe [Property]) -> IO ()
+defaultMain :: [HostName -> Maybe [Property]] -> IO ()
 defaultMain getprops = go True =<< processCmdLine
   where
 	go _ (Continue cmdline) = go False cmdline
@@ -62,7 +62,8 @@ defaultMain getprops = go True =<< processCmdLine
 	go False (Run host) = withprops host $ ensureProperties
 	go False (Boot host) = withprops host $ boot
 
-	withprops host a = maybe (unknownhost host) a (getprops host)
+	withprops host a = maybe (unknownhost host) a $
+		headMaybe $ catMaybes $ map (\get -> get host) getprops
 
 unknownhost :: HostName -> IO a
 unknownhost h = errorMessage $ unwords

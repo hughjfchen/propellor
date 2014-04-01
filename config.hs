@@ -1,5 +1,5 @@
-{- This is the main configuration file for Propellor, and is used to build
- - the propellor program. -}
+-- | This is the main configuration file for Propellor, and is used to build
+-- the propellor program.
 
 import Propellor
 import Propellor.CmdLine
@@ -18,16 +18,15 @@ import qualified Propellor.Property.GitHome as GitHome
 import qualified Propellor.Property.JoeySites as JoeySites
 
 main :: IO ()
-main = defaultMain getProperties
+main = defaultMain [host, Docker.containerProperties container]
 
-{- | This is where the system's HostName, either as returned by uname
- - or one specified on the command line, is converted into a list of
- - Properties for that system.
- -
- - Edit this to configure propellor!
- -}
-getProperties :: HostName -> Maybe [Property]
-getProperties hostname@"clam.kitenet.net" = Just
+-- | This is where the system's HostName, either as returned by uname
+-- or one specified on the command line, is converted into a list of
+-- Properties for that system.
+--
+-- Edit this to configure propellor!
+host :: HostName -> Maybe [Property]
+host hostname@"clam.kitenet.net" = Just
 	[ cleanCloudAtCost hostname
 	, standardSystem Apt.Unstable
 	, Apt.unattendedUpgrades True
@@ -37,18 +36,31 @@ getProperties hostname@"clam.kitenet.net" = Just
 	, Tor.isBridge
 	, JoeySites.oldUseNetshellBox
 	, Docker.configured
+	, File.dirExists "/var/www"
+	, Docker.hasContainer hostname "webserver" container
 	, Apt.installed ["git-annex", "mtr"]
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
 	]
-getProperties "orca.kitenet.net" = Just
+host "orca.kitenet.net" = Just
 	[ standardSystem Apt.Unstable
 	, Apt.unattendedUpgrades True
 	, Docker.configured
 	]
 -- add more hosts here...
---getProperties "foo" =
-getProperties _ = Nothing
+--host "foo.example.com" =
+host _ = Nothing
+
+-- | This is where Docker containers are set up. A container
+-- can vary by hostname where it's used, or be the same everywhere.
+container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
+container _ "webserver" = Just $ Docker.containerFromImage "debian"
+	[ Docker.publish "80:80"
+	, Docker.volume "/var/www:/var/www"
+	, Docker.inside $ serviceRunning "apache2"
+		`requires` Apt.installed ["apache2"]
+	]
+container _ _ = Nothing
 
 -- This is my standard system setup
 standardSystem :: Apt.Suite -> Property

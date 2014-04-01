@@ -15,7 +15,7 @@ data Property = Property
 type Desc = String
 
 data Result = NoChange | MadeChange | FailedChange
-	deriving (Show, Eq)
+	deriving (Read, Show, Eq)
 
 instance Monoid Result where
 	mempty = NoChange
