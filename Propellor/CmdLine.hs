@@ -1,8 +1,12 @@
 module Propellor.CmdLine where
 
-import System.Environment
+import System.Environment (getArgs)
 import Data.List
 import System.Exit
+import System.Log.Logger
+import System.Log.Formatter
+import System.Log.Handler (setFormatter, LogHandler)
+import System.Log.Handler.Simple
 
 import Propellor
 import Propellor.SimpleSh
@@ -47,7 +51,9 @@ processCmdLine = go =<< getArgs
 		Nothing -> errorMessage "--continue serialization failure"
 	go ("--simplesh":f:[]) = return $ SimpleSh f
   	go ("--chain":h:[]) = return $ Chain h
-	go (h:[]) = return $ Run h
+	go (h:[])
+		| "--" `isPrefixOf` h = usage
+		| otherwise = return $ Run h
 	go [] = do
 		s <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
 		if null s
@@ -56,7 +62,11 @@ processCmdLine = go =<< getArgs
 	go _ = usage
 
 defaultMain :: [HostName -> Maybe [Property]] -> IO ()
-defaultMain getprops = go True =<< processCmdLine
+defaultMain getprops = do
+	checkDebugMode
+	cmdline <- processCmdLine
+	debug ["command line: ", show cmdline]
+	go True cmdline
   where
 	go _ (Continue cmdline) = go False cmdline
 	go _ (Set host field) = setPrivData host field
@@ -301,3 +311,15 @@ getUrl = maybe nourl return =<< getM get urls
 		return $ case v of
 			Just url | not (null url) -> Just url
 			_ -> Nothing
+
+checkDebugMode :: IO ()
+checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
+  where
+	go (Just s)
+		| s == "1" = do
+			f <- setFormatter
+				<$> streamHandler stderr DEBUG
+				<*> pure (simpleLogFormatter "[$time] $msg")
+			updateGlobalLogger rootLoggerName $ 
+				setLevel DEBUG .  setHandlers [f]
+	go _ = noop

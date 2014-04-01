@@ -211,8 +211,11 @@ runProp field val = Containerized [param] (Property param (return NoChange))
 	param = field++"="++val
 
 -- | Lift a Property to run inside the container.
-inside :: Property -> Containerized Property
-inside p = Containerized [] p
+inside1 :: Property -> Containerized Property
+inside1 = Containerized []
+
+inside :: [Property] -> Containerized Property
+inside = Containerized [] . combineProperties
 
 -- | Set custom dns server for container.
 dns :: String -> Containerized Property

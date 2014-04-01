@@ -87,4 +87,9 @@ To securely store private data, use: propellor --set $host $field
 The field name will be something like 'Password "root"'; see PrivData.hs
 for available fields.
 
+## debugging
+
+Set PROPELLOR_DEBUG=1 to make propellor print out all the commands it runs
+and anything other debug messages Properties choose to.
+
 [1] http://reclass.pantsfullofunix.net/

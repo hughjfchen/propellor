@@ -57,8 +57,10 @@ container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
 container _ "webserver" = Just $ Docker.containerFromImage "debian"
 	[ Docker.publish "80:80"
 	, Docker.volume "/var/www:/var/www"
-	, Docker.inside $ serviceRunning "apache2"
-		`requires` Apt.installed ["apache2"]
+	, Docker.inside
+		[ serviceRunning "apache2"
+			`requires` Apt.installed ["apache2"]
+		]
 	]
 container _ _ = Nothing
 
