@@ -33,7 +33,7 @@ getPrivData field = do
 setPrivData :: HostName -> PrivDataField -> IO ()
 setPrivData host field = do
 	putStrLn "Enter private data on stdin; ctrl-D when done:"
-	value <- hGetContentsStrict stdin
+	value <- chomp <$> hGetContentsStrict stdin
 	makePrivDataDir
 	let f = privDataFile host
 	m <- fromMaybe M.empty . readish <$> gpgDecrypt f
@@ -41,6 +41,10 @@ setPrivData host field = do
 	gpgEncrypt f (show m')
 	putStrLn "Private data set."
 	void $ boolSystem "git" [Param "add", File f]
+  where
+	chomp s
+		| end s == "\n" = chomp (beginning s)
+		| otherwise = s
 
 makePrivDataDir :: IO ()
 makePrivDataDir = createDirectoryIfMissing False privDataDir
