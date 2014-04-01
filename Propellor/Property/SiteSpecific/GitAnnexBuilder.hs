@@ -28,7 +28,7 @@ builder arch crontimes = combineProperties "gitannexbuilder"
 		, "git checkout " ++ map toLower (show arch)
 		]
 		`describe` "gitbuilder setup"
-	, check (lacksdir $ builddir </> "git-annex") $ userScriptProperty builduser
+	, check (lacksdir $ builddir </> "build") $ userScriptProperty builduser
 		[ "cd " ++ builddir
 		, "git clone git://git-annex.branchable.com/ build"
 		]
