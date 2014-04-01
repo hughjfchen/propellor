@@ -189,16 +189,18 @@ chain s = case readish s of
 -- 1 minute.
 provisionContainer :: ContainerId -> Property
 provisionContainer cid = containerDesc cid $ Property "provision" $
-	simpleShClientRetry 60 (namedPipe cid) "./propellor" ["--continue", show params] (go Nothing)
+	simpleShClientRetry 60 (namedPipe cid) "./propellor" params (go Nothing)
   where
-	params = Chain $ fromContainerId cid
+	params = ["--continue", show $ Chain $ fromContainerId cid]
 
 	go lastline (v:rest) = case v of
 		StdoutLine s -> do
+			debug ["stdout: ", s]
 			maybe noop putStrLn lastline
 			hFlush stdout
 			go (Just s) rest
 		StderrLine s -> do
+			debug ["stderr: ", s]
 			maybe noop putStrLn lastline
 			hFlush stdout
 			hPutStrLn stderr s
