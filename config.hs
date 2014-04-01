@@ -54,7 +54,7 @@ host _ = Nothing
 -- | This is where Docker containers are set up. A container
 -- can vary by hostname where it's used, or be the same everywhere.
 container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
-container _ "webserver" = Just $ Docker.containerFromImage "debian"
+container _ "webserver" = Just $ Docker.containerFrom "joeyh/debian-unstable"
 	[ Docker.publish "80:80"
 	, Docker.volume "/var/www:/var/www"
 	, Docker.inside

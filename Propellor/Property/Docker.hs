@@ -61,8 +61,8 @@ fromContainerId (ContainerId hn cn) = cn++"@"++hn
 
 data Container = Container Image [Containerized Property]
 
-containerFromImage :: Image -> [Containerized Property] -> Container
-containerFromImage = Container
+containerFrom :: Image -> [Containerized Property] -> Container
+containerFrom = Container
 
 containerProperties
 	:: (HostName -> ContainerName -> Maybe (Container))
