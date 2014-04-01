@@ -195,12 +195,12 @@ provisionContainer cid = containerDesc cid $ Property "provision" $
 
 	go lastline (v:rest) = case v of
 		StdoutLine s -> do
-			debug ["stdout: ", s]
+			debug ["stdout: ", show s]
 			maybe noop putStrLn lastline
 			hFlush stdout
 			go (Just s) rest
 		StderrLine s -> do
-			debug ["stderr: ", s]
+			debug ["stderr: ", show s]
 			maybe noop putStrLn lastline
 			hFlush stdout
 			hPutStrLn stderr s
