@@ -57,7 +57,7 @@ simpleSh namedpipe = do
 			=<< catchMaybeIO (writeChan chan . t =<< hGetLine from)
 		void $ concurrently
 			(mkreader StdoutLine outh)
-			(mkreader StderrLine outh)
+			(mkreader StderrLine errh)
 
 		writeChan chan . Done =<< waitForProcess pid
 
