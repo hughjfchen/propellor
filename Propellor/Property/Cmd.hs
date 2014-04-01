@@ -5,10 +5,12 @@ module Propellor.Property.Cmd (
 	serviceRunning,
 ) where
 
+import Control.Monad
 import Control.Applicative
 import Data.List
 
 import Propellor.Types
+import Propellor.Engine
 import Utility.Monad
 import Utility.SafeCommand
 import Utility.Env
@@ -43,6 +45,7 @@ scriptProperty script = cmdProperty "sh" ["-c", shellcmd]
 -- we can do is try to start the service, and if it fails, assume
 -- this means it's already running.
 serviceRunning :: String -> Property
-serviceRunning svc = scriptProperty
-	["service " ++ shellEscape svc ++ " start >/dev/null 2>&1 || true"]
-	`describe` ("running " ++ svc)
+serviceRunning svc = Property ("running " ++ svc) $ do
+	void $ ensureProperty $
+		scriptProperty ["service " ++ shellEscape svc ++ " start >/dev/null 2>&1 || true"]
+	return NoChange
