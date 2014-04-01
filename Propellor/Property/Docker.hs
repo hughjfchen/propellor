@@ -186,7 +186,7 @@ chain s = case readish s of
 -- 1 minute.
 provisionContainer :: ContainerId -> Property
 provisionContainer cid = Property (containerDesc cid "provision") $
-	simpleShClientRetry 60 (namedPipe cid) "./propellor" [show params] (go Nothing)
+	simpleShClientRetry 60 (namedPipe cid) "./propellor" ["--continue", show params] (go Nothing)
   where
 	params = Chain $ fromContainerId cid
 
