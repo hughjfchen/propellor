@@ -12,7 +12,7 @@ accountFor user = check (isNothing <$> homedir user) $ cmdProperty "adduser"
 	, "--gecos", ""
 	, user
 	]
-	`describe` ("ssh account " ++ user)
+	`describe` ("account for " ++ user)
 
 -- | Removes user home directory!! Use with caution.
 nuked :: UserName -> Eep -> Property
