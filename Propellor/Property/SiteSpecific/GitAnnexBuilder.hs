@@ -15,17 +15,24 @@ builddir = "gitbuilder"
 
 builder :: Arch -> CronTimes -> Property
 builder arch crontimes = combineProperties
-	[ Apt.buildDep ["git-annex"]
+	[ Apt.stdSourcesList Unstable
+	, Apt.buildDep ["git-annex"]
 	, Apt.installed ["git", "rsync", "liblockfile-simple-perl"]
 	, serviceRunning "cron" `requires` Apt.installed ["cron"]
 	, User.accountFor builduser
-	, check (not <$> hasbuilddir) $ userScriptProperty builduser
+	, check (lacksdir builddir) $ userScriptProperty builduser
 		[ "cabal update"
 		, "git clone https://github.com/joeyh/gitbuilder/"
-		, "cd gitbuilder && git checkout " ++ arch
+		, "cd gitbuilder"
+		, "git checkout " ++ arch
+		, "git clone https://git-annex.branchable.com/ git-annex"
 		, "echo '"++crontimes++" cd gitbuilder/autobuild' | crontab -"
 		]
 		`describe` "gitbuilder setup"
+	, check (lacksdir $ builddir </> "git-annex") $ userScriptProperty builduser
+		[ "cd gitbuilder"
+		, "git clone https://git-annex.branchable.com/ git-annex"
+		]
 	-- The builduser account does not have a password set,
 	-- instead use the password privdata to hold the rsync server
 	-- password used to upload the built image.
@@ -40,6 +47,6 @@ builder arch crontimes = combineProperties
 	]
   where
   	homedir = fromMaybe ("/home/" ++ builduser) <$> User.homedir builduser
-	hasbuilddir = do
-		d <- homedir
-		doesDirectoryExist (d </> builddir)
+	lacksdir d = do
+		h <- homedir
+		not <$> doesDirectoryExist (h </> d)
