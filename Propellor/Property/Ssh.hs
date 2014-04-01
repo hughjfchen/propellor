@@ -13,7 +13,7 @@ sshdConfig :: FilePath
 sshdConfig = "/etc/ssh/sshd_config"
 
 setSshdConfig :: String -> Bool -> Property
-setSshdConfig setting allowed = combineProperties
+setSshdConfig setting allowed = combineProperties "sshd config"
 	[ sshdConfig `File.lacksLine` (sshline $ not allowed)
 	, sshdConfig `File.containsLine` (sshline allowed)
 	]

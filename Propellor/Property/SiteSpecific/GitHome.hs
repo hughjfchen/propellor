@@ -14,7 +14,7 @@ installedFor user = check (not <$> hasGitDir user) $
  	go Nothing = noChange
 	go (Just home) = do
 		let tmpdir = home </> "githome"
-		ensureProperty $ combineProperties
+		ensureProperty $ combineProperties "githome setup"
 			[ userScriptProperty user ["git clone " ++ url ++ " " ++ tmpdir]
 			, Property "moveout" $ makeChange $ void $
 				moveout tmpdir home

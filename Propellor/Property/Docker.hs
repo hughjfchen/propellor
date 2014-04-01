@@ -266,7 +266,7 @@ inside1 :: Property -> Containerized Property
 inside1 = Containerized []
 
 inside :: [Property] -> Containerized Property
-inside = Containerized [] . combineProperties
+inside = Containerized [] . combineProperties "provision"
 
 -- | Set custom dns server for container.
 dns :: String -> Containerized Property

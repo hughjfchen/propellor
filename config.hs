@@ -109,7 +109,7 @@ cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []
 		`onChange` cmdProperty "update-initramfs" ["-u"]
-	, "nuked cloudatcost cruft" ==> combineProperties
+	, combineProperties "nuked cloudatcost cruft"
 		[ File.notPresent "/etc/rc.local"
 		, File.notPresent "/etc/init.d/S97-setup.sh"
 		, User.nuked "user" User.YesReallyDeleteHome

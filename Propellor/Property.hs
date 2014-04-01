@@ -23,8 +23,8 @@ propertyList desc ps = Property desc $ ensureProperties' ps
 
 -- | Combines a list of properties, resulting in one property that
 -- ensures each in turn, stopping on failure.
-combineProperties :: [Property] -> Property
-combineProperties ps = Property desc $ go ps NoChange
+combineProperties :: Desc -> [Property] -> Property
+combineProperties desc ps = Property desc $ go ps NoChange
   where
   	go [] rs = return rs
 	go (l:ls) rs = do
@@ -32,9 +32,6 @@ combineProperties ps = Property desc $ go ps NoChange
 		case r of
 			FailedChange -> return FailedChange
 			_ -> go ls (r <> rs)
-	desc = case ps of
-		(p:_) -> propertyDesc p
-		_ -> "(empty)"
 
 -- | Makes a perhaps non-idempotent Property be idempotent by using a flag
 -- file to indicate whether it has run before.
@@ -64,7 +61,7 @@ property `onChange` hook = Property (propertyDesc property) $ do
 -- | Indicates that the first property can only be satisfied once
 -- the second is.
 requires :: Property -> Property -> Property
-x `requires` y = combineProperties [y, x] `describe` propertyDesc x
+x `requires` y = combineProperties (propertyDesc x) [y, x]
 
 describe :: Property -> Desc -> Property
 describe p d = p { propertyDesc = d }

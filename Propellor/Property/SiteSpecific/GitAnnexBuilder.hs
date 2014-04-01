@@ -14,7 +14,7 @@ builddir :: FilePath
 builddir = "gitbuilder"
 
 builder :: Arch -> CronTimes -> Property
-builder arch crontimes = combineProperties
+builder arch crontimes = combineProperties "gitannexbuilder"
 	[ Apt.stdSourcesList Unstable
 	, Apt.buildDep ["git-annex"]
 	, Apt.installed ["git", "rsync", "liblockfile-simple-perl", "cabal"]
