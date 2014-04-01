@@ -67,7 +67,7 @@ container _ "webserver" = Just $ Docker.containerFrom
 	]
 container _ "git-annex-amd64-builder" = Just $ Docker.containerFrom
 	(image $ System (Debian Unstable) Amd64)
-	[ Docker.inside [ GitAnnexBuilder.builder "amd64" "30 * * * *" ] ]
+	[ Docker.inside [ GitAnnexBuilder.builder Amd64 "15 * * * *" ] ]
 container _ _ = Nothing
 
 -- | Docker images I prefer to use.
