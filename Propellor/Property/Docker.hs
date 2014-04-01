@@ -121,7 +121,7 @@ ensureContainer cid@(ContainerId hn cn) image containerprops = do
 	-- Start the simplesh server that will be used by propellor
 	-- to run commands in the container. An interactive shell
 	-- is also started, so the user can attach and use it if desired.
-	startsimplesh = ["sh", "-c", "./propellor --simplesh " ++ namedPipe cid ++  " & ; bash -l"]
+	startsimplesh = ["sh", "-c", "./propellor --simplesh " ++ namedPipe cid ++  " & bash -l"]
 
 	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $
 		pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
