@@ -185,12 +185,13 @@ chain s = case readish s of
 	Just ident@(ContainerIdent _image hn cn _rp) -> do
 		let cid = ContainerId hn cn
 		writeFile propellorIdent (show ident)
-		t <- async $ simpleSh $ namedPipe cid
-		void $ ifM (inPath "bash")
-			( boolSystem "bash" [Param "-l"]
-			, boolSystem "/bin/sh" []
-			)
-		wait t
+		void $ async $ simpleSh $ namedPipe cid
+		forever $ do
+			void $ ifM (inPath "bash")
+				( boolSystem "bash" [Param "-l"]
+				, boolSystem "/bin/sh" []
+				)
+			putStrLn "Container is still running. Press ^P^Q to detach."
 
 -- | Once a container is running, propellor can be run inside
 -- it to provision it.
