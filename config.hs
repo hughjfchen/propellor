@@ -97,7 +97,7 @@ standardSystem suite = propertyList "standard system"
 	, User.hasSomePassword "joey"
 	, Sudo.enabledFor "joey"
 	, GitHome.installedFor "joey"
-	, Apt.installed ["vim", "screen"]
+	, Apt.installed ["vim", "screen", "less"]
 	, Cron.runPropellor "30 * * * *"
 	-- I use postfix, or no MTA.
 	, Apt.removed ["exim4"] `onChange` Apt.autoRemove

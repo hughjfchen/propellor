@@ -19,7 +19,7 @@ builder arch crontimes = combineProperties "gitannexbuilder"
 	[ Apt.stdSourcesList Unstable
 	, Apt.buildDep ["git-annex"]
 	, Apt.installed ["git", "rsync", "moreutils", "ca-certificates",
-		"liblockfile-simple-perl", "cabal-install"]
+		"liblockfile-simple-perl", "cabal-install", "vim", "less"]
 	, serviceRunning "cron" `requires` Apt.installed ["cron"]
 	, User.accountFor builduser
 	, check (lacksdir builddir) $ userScriptProperty builduser
