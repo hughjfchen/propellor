@@ -22,6 +22,7 @@ data Resp = StdoutLine String | StderrLine String | Done ExitCode
 simpleSh :: FilePath -> IO ()
 simpleSh namedpipe = do
 	nukeFile namedpipe
+	createDirectoryIfMissing True (takeDirectory namedpipe)
 	s <- socket AF_UNIX Stream defaultProtocol
 	bind s (SockAddrUnix namedpipe)
 	listen s 2
@@ -71,3 +72,7 @@ simpleShClient namedpipe cmd params handler = do
 	hPutStrLn h $ show $ Cmd cmd params
 	resps <- catMaybes . map readish . lines <$> hGetContents h
 	hClose h `after` handler resps
+
+getStdout :: Resp -> Maybe String
+getStdout (StdoutLine s) = Just s
+getStdout _ = Nothing

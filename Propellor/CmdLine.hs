@@ -17,6 +17,7 @@ data CmdLine
 	| AddKey String
 	| Continue CmdLine
 	| SimpleSh FilePath
+	| Chain HostName
   deriving (Read, Show, Eq)
 
 usage :: IO a
@@ -45,6 +46,7 @@ processCmdLine = go =<< getArgs
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
 	go ("--simplesh":f:[]) = return $ SimpleSh f
+  	go ("--chain":h:[]) = return $ Chain h
 	go (h:[]) = return $ Run h
 	go [] = do
 		s <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
@@ -60,6 +62,7 @@ defaultMain getprops = go True =<< processCmdLine
 	go _ (Set host field) = setPrivData host field
 	go _ (AddKey keyid) = addKey keyid
 	go _ (SimpleSh f) = simpleSh f
+	go _ (Chain host) = withprops host $ print <=< ensureProperties'
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin host) = withprops host $ const $ spin host

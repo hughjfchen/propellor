@@ -4,6 +4,7 @@ module Propellor.Property.Docker where
 
 import Propellor
 import Propellor.CmdLine
+import Propellor.SimpleSh
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import Utility.SafeCommand
@@ -40,6 +41,8 @@ fromContainerized l = map get l
 -- | A docker image, that can be used to run a container.
 type Image = String
 
+-- | A short descriptive name for a container.
+-- Should not contain whitespace or other unusual characters.
 type ContainerName = String
 
 -- | A container is identified by its name, and the host
@@ -86,56 +89,83 @@ hasContainer hn cn findcontainer =
 			warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
 			return FailedChange
 		Just (Container image containerprops) ->
-			running image containerprops
+			Property desc (provisionContainer cid)
+			`requires`
+			Property desc (ensureContainer cid image containerprops)
   where
   	cid = ContainerId hn cn
 
   	desc = "docker container " ++ fromContainerId cid
 
-	-- Start the container, if it's not already running.
-	running image containerprops = Property desc $ do
-		let runps = getRunParams $ containerprops ++
-			-- expose propellor directory inside the container
-			[ volume (localdir++":"++localdir)
-			-- name the container in a predictable way so we
-			-- and the user can easily find it later
-			, name (fromContainerId cid)
-			-- cd to propellor directory
-			, workdir localdir
-			]
-		let ident = ContainerIdent image cid runps
-		let runit img = ifM (runContainer cid img runps ident)
-			( do
-				r <- runinside
-				return $ MadeChange <> r
-			, return FailedChange
-			)
-		l <- listRunningContainers
-		if cid `elem` l
-			then do
-				runningident <- readish <$> readContainerCommand cid "cat" ["/.propeller-ident"]
-				if runningident == Just ident
-					then runinside
-					else do
-						void $ stopContainer cid
-						oldimage <- fromMaybe image <$> commitContainer cid
-						removeContainer cid
-						runit oldimage
-			else do
-				removeContainer cid
-				runit image
+ensureContainer :: ContainerId -> Image -> [Containerized Property] -> IO Result
+ensureContainer cid image containerprops = do
+	l <- listRunningContainers
+	if cid `elem` l
+		then do
+			runningident <- getrunningident
+			if runningident == Just ident
+				then return NoChange
+				else do
+					void $ stopContainer cid
+					oldimage <- fromMaybe image <$> commitContainer cid
+					removeContainer cid
+					go oldimage
+		else do
+			removeContainer cid
+			go image
+  where
+	ident = ContainerIdent image cid runps
 
-	-- Use propellor binary exposed inside the container
-	-- (assumes libc compatablity), and run it, passing it the
-	-- container@hostname so it knows what to do.
-	-- Read its Result code and propigate
-	runinside :: IO Result
-	runinside = fromMaybe FailedChange . readish
-		<$> readContainerCommand cid "./propellor" [show params]
-	  where
-	  	-- Using Continue avoids auto-update of the binary inside
-		-- the container.
-		params = Continue $ Run $ fromContainerId cid
+	-- Start the simplesh server that will be used by propellor
+	-- to run commands in the container. An interactive shell
+	-- is also started, so the user can attach and use it if desired.
+	startsimplesh = "sh -c './propellor --simplesh " ++ namedPipe cid ++  " & ; bash -l'"
+
+	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $
+		pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
+	setrunningident = simpleShClient (namedPipe cid) "sh"
+		["-c", "echo '" ++ show ident ++ "' > " ++ propellorIdent]
+		(const noop)
+
+	runps = getRunParams $ containerprops ++
+		-- expose propellor directory inside the container
+		[ volume (localdir++":"++localdir)
+		-- name the container in a predictable way so we
+		-- and the user can easily find it later
+		, name (fromContainerId cid)
+		-- cd to propellor directory
+		, workdir localdir
+		]
+	
+	go img = ifM (runContainer img (runps ++ ["-d", "-t"]) startsimplesh)
+		( do
+			setrunningident
+			return MadeChange
+		, return FailedChange
+		)
+
+provisionContainer :: ContainerId -> IO Result
+provisionContainer cid = do
+	simpleShClient (namedPipe cid) "./propellor" [show params] (go Nothing)
+  where
+	params = Chain $ fromContainerId cid
+
+	go lastline (v:rest) = case v of
+		StdoutLine s -> do
+			maybe noop putStrLn lastline
+			hFlush stdout
+			go (Just s) rest
+		StderrLine s -> do
+			maybe noop putStrLn lastline
+			hFlush stdout
+			hPutStrLn stderr s
+			hFlush stderr
+			go Nothing rest
+		Done _ -> ret lastline
+	go lastline [] = ret lastline
+
+	ret lastline = return $ fromMaybe FailedChange $
+		readish =<< lastline
 
 -- | Two containers with the same ContainerIdent were started from
 -- the same base image (possibly a different version though), and
@@ -144,10 +174,14 @@ data ContainerIdent = ContainerIdent Image ContainerId [RunParam]
 	deriving (Read, Show, Eq)
 
 -- | The ContainerIdent of a container is written to
--- /.propeller-ident inside it. This can be checked to see if
+-- /.propellor-ident inside it. This can be checked to see if
 -- the container has the same ident later.
-propellerIdent :: FilePath
-propellerIdent = "/.propeller-ident"
+propellorIdent :: FilePath
+propellorIdent = "/.propellor-ident"
+
+-- | Named pipe used for communication with the container.
+namedPipe :: ContainerId -> FilePath
+namedPipe cid = "docker/" ++ fromContainerId cid
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]
@@ -156,32 +190,20 @@ removeContainer :: ContainerId -> IO ()
 removeContainer cid = void $ boolSystem "sh"
 	[Param "-c", Param $ dockercmd ++ " rm " ++ fromContainerId cid ]
 
-runContainer :: ContainerId -> Image -> [RunParam] -> ContainerIdent -> IO Bool
-runContainer cid image ps ident = do
-	ok <- boolSystem dockercmd undefined
-	when ok $
-		void $ readContainerCommand cid "sh"
-			["-c", "echo '" ++ show ident ++ "' > " ++ propellerIdent]
-	return ok
-
--- | Runs a command inside the container.
-readContainerCommand :: ContainerId -> String -> [String] -> IO String
-readContainerCommand cid command params = undefined
+runContainer :: Image -> [RunParam] -> String -> IO Bool
+runContainer image ps cmd = boolSystem dockercmd $ map Param $
+	"run" : (ps ++ [image, cmd])
 
 commitContainer :: ContainerId -> IO (Maybe Image)
 commitContainer cid = catchMaybeIO $
-	readProcess dockercmd ["commit", fromContainerId cid]
+	takeWhile (/= '\n') 
+		<$> readProcess dockercmd ["commit", fromContainerId cid]
 
 -- | Only lists propellor managed containers.
 listRunningContainers :: IO [ContainerId]
-listRunningContainers = undefined -- docker.io ps
-
--- | Only lists propellor managed containers.
-listContainers :: IO [ContainerId]
-listContainers = undefined
-
-listImages :: IO [ContainerId]
-listImages = undefined -- docker.io images --no-trunc
+listRunningContainers = 
+	catMaybes . map readish . catMaybes . map (lastMaybe . words) . lines
+		<$> readProcess dockercmd ["ps", "--no-trunc"]
 
 runProp :: String -> RunParam -> Containerized Property
 runProp field val = Containerized [param] (Property param (return NoChange))
