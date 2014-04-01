@@ -49,7 +49,7 @@ type ContainerName = String
 -- | A container is identified by its name, and the host
 -- on which it's deployed.
 data ContainerId = ContainerId HostName ContainerName
-	deriving (Read, Show, Eq)
+	deriving (Eq)
 
 toContainerId :: String -> Maybe ContainerId
 toContainerId s = case separate (== '.') s of
@@ -99,8 +99,8 @@ hasContainer hn cn findcontainer =
   	desc = "docker container " ++ fromContainerId cid
 
 ensureContainer :: ContainerId -> Image -> [Containerized Property] -> IO Result
-ensureContainer cid image containerprops = do
-	l <- listContainers Running
+ensureContainer cid@(ContainerId hn cn) image containerprops = do
+	l <- listContainers RunningContainers
 	if cid `elem` l
 		then do
 			runningident <- getrunningident
@@ -112,11 +112,11 @@ ensureContainer cid image containerprops = do
 					removeContainer cid
 					go oldimage
 		else do
-			whenM (elem cid <$> listContainers Stopped) $
+			whenM (elem cid <$> listContainers AllContainers) $
 				removeContainer cid
 			go image
   where
-	ident = ContainerIdent image cid runps
+	ident = ContainerIdent image hn cn runps
 
 	-- Start the simplesh server that will be used by propellor
 	-- to run commands in the container. An interactive shell
@@ -172,7 +172,7 @@ provisionContainer cid = do
 -- | Two containers with the same ContainerIdent were started from
 -- the same base image (possibly a different version though), and
 -- with the same RunParams.
-data ContainerIdent = ContainerIdent Image ContainerId [RunParam]
+data ContainerIdent = ContainerIdent Image HostName ContainerName [RunParam]
 	deriving (Read, Show, Eq)
 
 -- | The ContainerIdent of a container is written to
@@ -201,17 +201,17 @@ commitContainer cid = catchMaybeIO $
 	takeWhile (/= '\n') 
 		<$> readProcess dockercmd ["commit", fromContainerId cid]
 
-data ContainerStatus = Running | Stopped
+data ContainerFilter = RunningContainers | AllContainers
 	deriving (Eq)
 
 -- | Only lists propellor managed containers.
-listContainers :: ContainerStatus -> IO [ContainerId]
+listContainers :: ContainerFilter -> IO [ContainerId]
 listContainers status = 
-	catMaybes . map readish . catMaybes . map (lastMaybe . words) . lines
+	catMaybes . map toContainerId . catMaybes . map (lastMaybe . words) . lines
 		<$> readProcess dockercmd ps
   where
 	ps
-		| status == Stopped = baseps ++ ["--all"]
+		| status == AllContainers = baseps ++ ["--all"]
 		| otherwise = baseps
 	baseps = ["ps", "--no-trunc"]
 
