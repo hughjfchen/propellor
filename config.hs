@@ -1,5 +1,8 @@
 -- | This is the main configuration file for Propellor, and is used to build
 -- the propellor program.
+--
+-- This is the live config file used by propellor's author.
+-- For a simpler starting point, see config.hs.simple.
 
 import Propellor
 import Propellor.CmdLine

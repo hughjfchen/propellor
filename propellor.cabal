@@ -17,6 +17,7 @@ Extra-Source-Files:
   Makefile
   debian/changelog
   debian/README
+  config.hs.simple
 Synopsis: property-based host configuration management in haskell
 Description:
  Propellor enures that the system it's run in satisfies a list of
