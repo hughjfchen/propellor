@@ -99,7 +99,7 @@ hasContainer hn cn findcontainer =
 
 ensureContainer :: ContainerId -> Image -> [Containerized Property] -> IO Result
 ensureContainer cid image containerprops = do
-	l <- listRunningContainers
+	l <- listContainers Running
 	if cid `elem` l
 		then do
 			runningident <- getrunningident
@@ -111,7 +111,8 @@ ensureContainer cid image containerprops = do
 					removeContainer cid
 					go oldimage
 		else do
-			removeContainer cid
+			whenM (elem cid <$> listContainers Stopped) $
+				removeContainer cid
 			go image
   where
 	ident = ContainerIdent image cid runps
@@ -199,14 +200,23 @@ commitContainer cid = catchMaybeIO $
 	takeWhile (/= '\n') 
 		<$> readProcess dockercmd ["commit", fromContainerId cid]
 
+data ContainerStatus = Running | Stopped
+	deriving (Eq)
+
 -- | Only lists propellor managed containers.
-listRunningContainers :: IO [ContainerId]
-listRunningContainers = 
+listContainers :: ContainerStatus -> IO [ContainerId]
+listContainers status = 
 	catMaybes . map readish . catMaybes . map (lastMaybe . words) . lines
-		<$> readProcess dockercmd ["ps", "--no-trunc"]
+		<$> readProcess dockercmd ps
+  where
+	ps
+		| status == Stopped = baseps ++ ["--all"]
+		| otherwise = baseps
+	baseps = ["ps", "--no-trunc"]
 
 runProp :: String -> RunParam -> Containerized Property
-runProp field val = Containerized [param] (Property param (return NoChange))
+runProp field val = 
+	Containerized ["--" ++ param] (Property param (return NoChange))
   where
 	param = field++"="++val
 
