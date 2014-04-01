@@ -1,5 +1,17 @@
 {-# LANGUAGE RankNTypes #-}
 
+-- | Docker support for propellor
+--
+-- The existance of a docker container is just another Property of a system,
+-- which propellor can set up. See config.hs for an example.
+--
+-- Note that propellor provisions a container by running itself, inside the
+-- container. Currently, to avoid the overhead of building propellor
+-- inside the container, the binary from outside is reused inside. 
+-- So, the libraries that propellor is linked against need to be available
+-- in the container with compatable versions. This can cause a problem
+-- if eg, mixing Debian stable and unstable.
+
 module Propellor.Property.Docker where
 
 import Propellor
