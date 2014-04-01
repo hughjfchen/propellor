@@ -17,12 +17,11 @@ builder :: Arch -> CronTimes -> Property
 builder arch crontimes = combineProperties
 	[ Apt.stdSourcesList Unstable
 	, Apt.buildDep ["git-annex"]
-	, Apt.installed ["git", "rsync", "liblockfile-simple-perl"]
+	, Apt.installed ["git", "rsync", "liblockfile-simple-perl", "cabal"]
 	, serviceRunning "cron" `requires` Apt.installed ["cron"]
 	, User.accountFor builduser
 	, check (lacksdir builddir) $ userScriptProperty builduser
-		[ "cabal update"
-		, "git clone https://github.com/joeyh/gitbuilder/"
+		[ "git clone https://github.com/joeyh/gitbuilder/"
 		, "cd gitbuilder"
 		, "git checkout " ++ arch
 		, "git clone https://git-annex.branchable.com/ git-annex"
