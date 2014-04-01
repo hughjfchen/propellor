@@ -41,5 +41,5 @@ fileProperty desc a f = Property desc $ go =<< doesFileExist f
 
 -- | Ensures a directory exists.
 dirExists :: FilePath -> Property
-dirExists d = check (doesDirectoryExist d) $ Property (d ++ " exists") $
+dirExists d = check (not <$> doesDirectoryExist d) $ Property (d ++ " exists") $
 	makeChange $ createDirectoryIfMissing True d
