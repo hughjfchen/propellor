@@ -55,7 +55,7 @@ docked findc hn cn = findContainer findc hn cn $
 		    teardown = 
 			Property ("undocked " ++ fromContainerId cid) $
 				report <$> mapM id
-					[ stopContainer cid
+					[ stopContainerIfRunning cid
 					, removeContainer cid
 					, removeImage image
 					]
@@ -336,6 +336,12 @@ provisionContainer cid = containerDesc cid $ Property "provision" $ do
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]
+
+stopContainerIfRunning :: ContainerId -> IO Bool
+stopContainerIfRunning cid = ifM (elem cid <$> listContainers RunningContainers)
+	( stopContainer cid
+	, return True
+	)
 
 removeContainer :: ContainerId -> IO Bool
 removeContainer cid = catchBoolIO $
