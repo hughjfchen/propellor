@@ -123,7 +123,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	if cid `elem` l
 		then do
 			runningident <- getrunningident
-			if runningident == Just ident
+			if ident2id <$> runningident == Just (ident2id ident)
 				then return NoChange
 				else do
 					void $ stopContainer cid
@@ -161,6 +161,9 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 -- with the same RunParams.
 data ContainerIdent = ContainerIdent Image HostName ContainerName [RunParam]
 	deriving (Read, Show, Eq)
+
+ident2id :: ContainerIdent -> ContainerId
+ident2id (ContainerIdent _ hn cn _) = ContainerId hn cn
 
 -- | The ContainerIdent of a container is written to
 -- /.propellor-ident inside it. This can be checked to see if
