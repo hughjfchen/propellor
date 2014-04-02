@@ -53,7 +53,7 @@ host hostname@"orca.kitenet.net" = Just $ props
 	& standardSystem Unstable
 	& Apt.unattendedUpgrades
 	& Docker.configured
-	& Docker.docked container hostname "amd64-git-annex-builder"
+	& revert (Docker.docked container hostname "amd64-git-annex-builder")
 	& revert (Docker.docked container hostname "i386-git-annex-builder")
 	& Docker.garbageCollected
 -- add more hosts here...
