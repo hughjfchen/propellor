@@ -342,7 +342,7 @@ listContainers status =
 	baseps = ["ps", "--no-trunc"]
 
 listImages :: IO [Image]
-listImages = lines <$> readProcess dockercmd ["--all", "--quiet"]
+listImages = lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
 runProp :: String -> RunParam -> Containerized Property
 runProp field val = 
