@@ -22,6 +22,7 @@ import Utility.SafeCommand
 import Utility.Path
 
 import Control.Concurrent.Async
+import System.Posix.Directory
 
 dockercmd :: String
 dockercmd = "docker.io"
@@ -146,8 +147,6 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 		-- name the container in a predictable way so we
 		-- and the user can easily find it later
 		, name (fromContainerId cid)
-		-- cd to propellor directory
-		, workdir localdir
 		]
 	
 	chaincmd = ["./propellor", "--continue", show $ ChainDocker $ show ident]
@@ -183,6 +182,7 @@ chain :: String -> IO ()
 chain s = case readish s of
 	Nothing -> error $ "Invalid ContainerId: " ++ s
 	Just ident@(ContainerIdent _image hn cn _rp) -> do
+		changeWorkingDirectory localdir
 		let cid = ContainerId hn cn
 		writeFile propellorIdent (show ident)
 		void $ async $ simpleSh $ namedPipe cid
@@ -294,7 +294,6 @@ volume :: String -> Containerized Property
 volume = runProp "volume"
 
 -- | Work dir inside the container. 
--- Must contain ./propellor! (Normally set automatically.)
 workdir :: String -> Containerized Property
 workdir = runProp "workdir"
 
