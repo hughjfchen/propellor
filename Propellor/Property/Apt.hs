@@ -53,7 +53,7 @@ kernelOrg = binandsrc "http://mirrors.kernel.org/debian"
  - kernel.org.
  -}
 stdSourcesList :: DebianSuite -> Property
-stdSourcesList suite = setSourcesList (debCdn suite)
+stdSourcesList suite = setSourcesList (debCdn suite ++ kernelOrg suite)
 	`describe` ("standard sources.list for " ++ show suite)
 
 setSourcesList :: [Line] -> Property
