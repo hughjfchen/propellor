@@ -64,7 +64,7 @@ type ContainerName = String
 -- | A container is identified by its name, and the host
 -- on which it's deployed.
 data ContainerId = ContainerId HostName ContainerName
-	deriving (Eq)
+	deriving (Eq, Read, Show)
 
 toContainerId :: String -> Maybe ContainerId
 toContainerId s = case separate (== '.') s of
@@ -123,7 +123,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	if cid `elem` l
 		then do
 			runningident <- getrunningident
-			if ident2id <$> runningident == Just (ident2id ident)
+			if (ident2id <$> runningident) == Just (ident2id ident)
 				then return NoChange
 				else do
 					void $ stopContainer cid
@@ -149,12 +149,15 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 		, name (fromContainerId cid)
 		]
 	
-	chaincmd = [localdir </> "propellor", "--continue", show $ ChainDocker $ show ident]
+	chaincmd = [localdir </> "propellor", "--docker", show cid]
 
-	go img = ifM (runContainer img (runps ++ ["-i", "-d", "-t"]) chaincmd)
-		( return MadeChange
-		, return FailedChange
-		)
+	go img = do
+		createDirectoryIfMissing True (takeDirectory $ identFile cid)
+		writeFile (identFile cid) (show ident)
+		ifM (runContainer img (runps ++ ["-i", "-d", "-t"]) chaincmd)
+			( return MadeChange
+			, return FailedChange
+			)
 
 -- | Two containers with the same ContainerIdent were started from
 -- the same base image (possibly a different version though), and
@@ -175,8 +178,15 @@ propellorIdent = "/.propellor-ident"
 namedPipe :: ContainerId -> FilePath
 namedPipe cid = "docker/" ++ fromContainerId cid
 
+identFile :: ContainerId -> FilePath
+identFile cid = "docker/" ++ fromContainerId cid ++ ".ident"
+
+readIdentFile :: ContainerId -> IO ContainerIdent
+readIdentFile cid = fromMaybe (error "bad ident in identFile")
+	. readish <$> readFile (identFile cid)
+
 -- | Called when propellor is running inside a docker container.
--- The string should be the container's ContainerIdent.
+-- The string should be the container's ContainerId.
 --
 -- Fork a thread to run the SimpleSh server in the background.
 -- In the foreground, run an interactive bash (or sh) shell,
@@ -184,10 +194,9 @@ namedPipe cid = "docker/" ++ fromContainerId cid
 chain :: String -> IO ()
 chain s = case readish s of
 	Nothing -> error $ "Invalid ContainerId: " ++ s
-	Just ident@(ContainerIdent _image hn cn _rp) -> do
+	Just cid -> do
 		changeWorkingDirectory localdir
-		let cid = ContainerId hn cn
-		writeFile propellorIdent (show ident)
+		writeFile propellorIdent . show =<< readIdentFile cid
 		void $ async $ simpleSh $ namedPipe cid
 		forever $ do
 			void $ ifM (inPath "bash")

@@ -39,6 +39,7 @@ processCmdLine = go =<< getArgs
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
   	go ("--chain":h:[]) = return $ Chain h
+	go ("--docker":h:[]) = return $ Docker h
 	go (h:[])
 		| "--" `isPrefixOf` h = usage
 		| otherwise = return $ Run h
@@ -62,7 +63,7 @@ defaultMain getprops = do
 	go _ (Chain host) = withprops host $ \ps -> do
 		r <- ensureProperties' ps
 		putStrLn $ "\n" ++ show r
-	go _ (ChainDocker host) = Docker.chain host
+	go _ (Docker host) = Docker.chain host
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin host) = withprops host $ const $ spin host

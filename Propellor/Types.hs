@@ -64,7 +64,7 @@ data CmdLine
 	| AddKey String
 	| Continue CmdLine
 	| Chain HostName
-	| ChainDocker HostName
+	| Docker HostName
   deriving (Read, Show, Eq)
 
 -- | Note that removing or changing field names will break the
