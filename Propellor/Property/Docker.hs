@@ -52,6 +52,8 @@ docked findc hn cn = findContainer findc hn cn $
 		let setup = provisionContainer cid
 				`requires`
 			runningContainer cid image containerprops
+				`requires`
+			installed
 		    teardown = 
 			Property ("undocked " ++ fromContainerId cid) $
 				report <$> mapM id
