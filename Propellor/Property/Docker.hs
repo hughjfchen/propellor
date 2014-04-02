@@ -39,33 +39,27 @@ installed = Apt.installed ["docker.io"]
 -- | Ensures that a docker container is set up and running. The container
 -- has its own Properties which are handled by running propellor
 -- inside the container.
+--
+-- Reverting this property ensures that the container is stopped and
+-- removed.
 docked
 	:: (HostName -> ContainerName -> Maybe (Container))
 	-> HostName
 	-> ContainerName
-	-> Property
+	-> RevertableProperty
 docked findc hn cn = findContainer findc hn cn $
 	\(Container image containerprops) ->
-		provisionContainer cid
-			`requires`
-		runningContainer cid image containerprops
-  where
-  	cid = ContainerId hn cn
-
--- | Ensures that a docker container is no longer running.
-unDocked
-	:: (HostName -> ContainerName -> Maybe (Container))
-	-> HostName
-	-> ContainerName
-	-> Property
-unDocked findc hn cn = findContainer findc hn cn $
-	\(Container image _containerprops) ->
-		Property ("undocked " ++ fromContainerId cid) $
-			report <$> mapM id
-				[ stopContainer cid
-				, removeContainer cid
-				, removeImage image
-				]
+		let setup = provisionContainer cid
+				`requires`
+			runningContainer cid image containerprops
+		    teardown = 
+			Property ("undocked " ++ fromContainerId cid) $
+				report <$> mapM id
+					[ stopContainer cid
+					, removeContainer cid
+					, removeImage image
+					]
+		in RevertableProperty setup teardown
   where
   	cid = ContainerId hn cn
 
@@ -73,15 +67,16 @@ findContainer
 	:: (HostName -> ContainerName -> Maybe (Container))
 	-> HostName
 	-> ContainerName
-	-> (Container -> Property)
-	-> Property
+	-> (Container -> RevertableProperty)
+	-> RevertableProperty
 findContainer findc hn cn mk = case findc hn cn of
-	Nothing -> containerDesc (ContainerId hn cn) $ Property "" $ do
-		warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
-		return FailedChange
+	Nothing -> RevertableProperty cantfind cantfind
 	Just container -> mk container
   where
   	cid = ContainerId hn cn
+	cantfind = containerDesc (ContainerId hn cn) $ Property "" $ do
+		warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
+		return FailedChange
 
 -- | Causes *any* docker images that are not in use by running containers to
 -- be deleted. And deletes any containers that propellor has set up

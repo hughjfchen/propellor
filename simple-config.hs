@@ -23,19 +23,18 @@ main = defaultMain [host, Docker.containerProperties container]
 --
 -- Edit this to configure propellor!
 host :: HostName -> Maybe [Property]
-host hostname@"mybox.example.com" = Just
-	[ Apt.stdSourcesList Unstable
+host hostname@"mybox.example.com" = Just $ props
+	& Apt.stdSourcesList Unstable
 		`onChange` Apt.upgrade
-	, Apt.unattendedUpgrades True
-	, Apt.installed ["etckeeper"]
-	, Apt.installed ["ssh"]
-	, User.hasSomePassword "root"
-	, Network.ipv6to4
-	, Docker.docked container hostname "webserver"
+	& Apt.unattendedUpgrades
+	& Apt.installed ["etckeeper"]
+	& Apt.installed ["ssh"]
+	& User.hasSomePassword "root"
+	& Network.ipv6to4
+	& Docker.docked container hostname "webserver"
 		`requires` File.dirExists "/var/www"
-	, Docker.garbageCollected
-	, Cron.runPropellor "30 * * * *"
-	]
+	& Docker.garbageCollected
+	& Cron.runPropellor "30 * * * *"
 -- add more hosts here...
 --host "foo.example.com" =
 host _ = Nothing
@@ -44,12 +43,10 @@ host _ = Nothing
 -- can vary by hostname where it's used, or be the same everywhere.
 container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
 container _ "webserver" = Just $ Docker.containerFrom "joeyh/debian-unstable"
-	(image $ System (Debian Unstable) "amd64")
 	[ Docker.publish "80:80"
 	, Docker.volume "/var/www:/var/www"
-	, Docker.inside
-		[ serviceRunning "apache2"
+	, Docker.inside $ props
+		& serviceRunning "apache2"
 			`requires` Apt.installed ["apache2"]
-		]
 	]
 container _ _ = Nothing

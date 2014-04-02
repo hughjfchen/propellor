@@ -12,6 +12,33 @@ data Property = Property
 	, propertySatisfy :: IO Result
 	}
 
+data RevertableProperty = RevertableProperty Property Property
+
+class IsProp p where
+	-- | Sets description.
+	describe :: p -> Desc -> p
+	toProp :: p -> Property
+	-- | Indicates that the first property can only be satisfied
+	-- once the second one is.
+	requires :: p -> Property -> p
+
+instance IsProp Property where
+	describe p d = p { propertyDesc = d }
+	toProp p = p
+	x `requires` y = Property (propertyDesc x) $ do
+		r <- propertySatisfy y
+		case r of
+			FailedChange -> return FailedChange
+			_ -> propertySatisfy x
+
+instance IsProp RevertableProperty where
+	-- | Sets the description of both sides.
+	describe (RevertableProperty p1 p2) d = 
+		RevertableProperty (describe p1 d) (describe p2 ("not " ++ d))
+	toProp (RevertableProperty p1 _) = p1
+	(RevertableProperty p1 p2) `requires` y =
+		RevertableProperty (p1 `requires` y) p2
+
 type Desc = String
 
 data Result = NoChange | MadeChange | FailedChange
@@ -74,3 +101,5 @@ data PrivDataField
 	| SshPrivKey UserName
 	| Password UserName
 	deriving (Read, Show, Ord, Eq)
+
+

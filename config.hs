@@ -2,7 +2,7 @@
 -- the propellor program.
 --
 -- This is the live config file used by propellor's author.
--- For a simpler starting point, see config.hs.simple.
+-- For a simpler starting point, see simple-config.hs
 
 import Propellor
 import Propellor.CmdLine
@@ -31,33 +31,31 @@ main = defaultMain [host, Docker.containerProperties container]
 --
 -- Edit this to configure propellor!
 host :: HostName -> Maybe [Property]
-host hostname@"clam.kitenet.net" = Just
-	[ cleanCloudAtCost hostname
-	, standardSystem Unstable
-	, Apt.unattendedUpgrades True
-	, Network.ipv6to4
+host hostname@"clam.kitenet.net" = Just $ props
+	& cleanCloudAtCost hostname
+	& standardSystem Unstable
+	& Apt.unattendedUpgrades
+	& Network.ipv6to4
+	& Apt.installed ["git-annex", "mtr"]
 	-- Clam is a tor bridge, and an olduse.net shellbox and other
 	-- fun stuff.
-	, Tor.isBridge
-	, JoeySites.oldUseNetshellBox
-	, Docker.configured
-	, File.dirExists "/var/www"
-	--, Docker.docked container hostname "webserver"
-	, Docker.garbageCollected
-	, Docker.unDocked container hostname "amd64-git-annex-builder"
-	, Apt.installed ["git-annex", "mtr"]
+	& Tor.isBridge
+	& JoeySites.oldUseNetshellBox
+	& Docker.configured
+	& File.dirExists "/var/www"
+	& revert (Docker.docked container hostname "webserver")
+	& revert (Docker.docked container hostname "amd64-git-annex-builder")
+	& Docker.garbageCollected
 	-- Should come last as it reboots.
-	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
-	]
-host hostname@"orca.kitenet.net" = Just
-	[ Hostname.set hostname
-	, standardSystem Unstable
-	, Apt.unattendedUpgrades True
-	, Docker.configured
-	, Docker.unDocked container hostname "amd64-git-annex-builder"
-	, Docker.unDocked container hostname "i386-git-annex-builder"
-	, Docker.garbageCollected
-	]
+	& Apt.installed ["systemd-sysv"] `onChange` Reboot.now
+host hostname@"orca.kitenet.net" = Just $ props
+	& Hostname.set hostname
+	& standardSystem Unstable
+	& Apt.unattendedUpgrades
+	& Docker.configured
+	& revert (Docker.docked container hostname "amd64-git-annex-builder")
+	& revert (Docker.docked container hostname "i386-git-annex-builder")
+	& Docker.garbageCollected
 -- add more hosts here...
 --host "foo.example.com" =
 host _ = Nothing
@@ -70,16 +68,15 @@ container _host name
 		(image $ System (Debian Unstable) "amd64")
 		[ Docker.publish "8080:80"
 		, Docker.volume "/var/www:/var/www"
-		, Docker.inside
-			[ serviceRunning "apache2"
+		, Docker.inside $ props
+			& serviceRunning "apache2"
 				`requires` Apt.installed ["apache2"]
-			]
 		]
 	| "-git-annex-builder" `isSuffixOf` name =
 		let arch = takeWhile (/= '-') name
 		in Just $ Docker.containerFrom
 			(image $ System (Debian Unstable) arch)
-			[ Docker.inside [ GitAnnexBuilder.builder arch "15 * * * *" ] ]
+			[ Docker.inside $ props & GitAnnexBuilder.builder arch "15 * * * *" ]
 	| otherwise = Nothing
 
 -- | Docker images I prefer to use.

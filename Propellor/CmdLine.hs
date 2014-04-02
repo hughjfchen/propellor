@@ -245,14 +245,14 @@ fromMarked marker s
 	matches = filter (marker `isPrefixOf`) $ lines s
 
 boot :: [Property] -> IO ()
-boot props = do
+boot ps = do
 	sendMarked stdout statusMarker $ show Ready
 	reply <- hGetContentsStrict stdin
 
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
 		fromMarked privDataMarker reply
-	ensureProperties props
+	ensureProperties ps
 
 addKey :: String -> IO ()
 addKey keyid = exitBool =<< allM id [ gpg, gitadd, gitcommit ]

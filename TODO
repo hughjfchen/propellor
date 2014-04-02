@@ -6,9 +6,6 @@
 * --spin needs 4 ssh connections when bootstrapping a new host
   that does not have the git repo yet. Should be possible to get that
   down to 1.
-* Make a way to express that a Property can be reverted (ie, installing a
-  packages reverses to removing it). Then `reverted property` can be
-  used to disable old properties.
 * Currently only Debian and derivatives are supported by most Properties.
   One way to improve that would be to parameterize Properties with a
   Distribution witness.

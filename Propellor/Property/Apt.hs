@@ -129,16 +129,18 @@ autoRemove :: Property
 autoRemove = runApt ["-y", "autoremove"]
 	`describe` "apt autoremove"
 
-unattendedUpgrades :: Bool -> Property
-unattendedUpgrades enabled =
-	(if enabled then installed else removed) ["unattended-upgrades"]
-	`onChange` reConfigure "unattended-upgrades"
-		[("unattended-upgrades/enable_auto_updates" , "boolean", v)]
-	`describe` ("unattended upgrades " ++ v)
+-- | Enables unattended upgrades. Revert to disable.
+unattendedUpgrades :: RevertableProperty
+unattendedUpgrades = RevertableProperty (go True) (go False)
   where
-	v
-		| enabled = "true"
-		| otherwise = "false"
+	go enabled = (if enabled then installed else removed) ["unattended-upgrades"]
+		`onChange` reConfigure "unattended-upgrades"
+			[("unattended-upgrades/enable_auto_updates" , "boolean", v)]
+		`describe` ("unattended upgrades " ++ v)
+	  where
+		v
+			| enabled = "true"
+			| otherwise = "false"
 
 -- | Preseeds debconf values and reconfigures the package so it takes
 -- effect.

@@ -58,14 +58,6 @@ property `onChange` hook = Property (propertyDesc property) $ do
 			return $ r <> r'
 		_ -> return r
 
--- | Indicates that the first property can only be satisfied once
--- the second is.
-requires :: Property -> Property -> Property
-x `requires` y = combineProperties (propertyDesc x) [y, x]
-
-describe :: Property -> Desc -> Property
-describe p d = p { propertyDesc = d }
-
 (==>) :: Desc -> Property -> Property
 (==>) = flip describe
 infixl 1 ==>
@@ -76,3 +68,17 @@ check c property = Property (propertyDesc property) $ ifM c
 	( ensureProperty property
 	, return NoChange
 	)
+
+-- | Undoes the effect of a property.
+revert :: RevertableProperty -> RevertableProperty
+revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
+
+-- | Starts a list of Properties
+props :: [Property]
+props = []
+
+-- | Adds a property to the list.
+-- Can add both Properties and RevertableProperties.
+(&) :: IsProp p => [Property] -> p -> [Property]
+ps & p = toProp p : ps
+infixl 1 &
