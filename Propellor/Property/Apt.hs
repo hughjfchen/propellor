@@ -78,7 +78,7 @@ upgrade = runApt ["-y", "dist-upgrade"]
 type Package = String
 
 installed :: [Package] -> Property
-installed ps = check (isInstallable ps) go
+installed ps = robustly $ check (isInstallable ps) go
 	`describe` (unwords $ "apt installed":ps)
   where
 	go = runApt $ ["-y", "install"] ++ ps
@@ -90,10 +90,19 @@ removed ps = check (or <$> isInstalled' ps) go
 	go = runApt $ ["-y", "remove"] ++ ps
 
 buildDep :: [Package] -> Property
-buildDep ps = check (isInstallable ps) go
+buildDep ps = robustly go
 	`describe` (unwords $ "apt build-dep":ps)
   where
 	go = runApt $ ["-y", "build-dep"] ++ ps
+
+{- Package installation may fail becuse the archive has changed.
+ - Run an update in that case and retry. -}
+robustly :: Property -> Property
+robustly p = Property (propertyDesc p) $ do
+	r <- ensureProperty p
+	if r == FailedChange
+		then ensureProperty $ p `requires` update
+		else return r
 
 isInstallable :: [Package] -> IO Bool
 isInstallable ps = do
