@@ -1,4 +1,4 @@
-propellor (0.2) UNRELEASED; urgency=low
+propellor (0.2) unstable; urgency=low
 
   * Added support for provisioning Docker containers.
   * Bootstrap deployment now pushes the git repo to the remote host
@@ -13,4 +13,4 @@ propellor (0.2) UNRELEASED; urgency=low
   * New syntactic sugar for building a list of properties, including
     revertable properties.
 
- -- Joey Hess <joeyh@debian.org>  Tue, 01 Apr 2014 15:05:00 -0400
+ -- Joey Hess <joeyh@debian.org>  Wed, 02 Apr 2014 13:57:42 -0400
