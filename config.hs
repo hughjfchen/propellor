@@ -44,6 +44,7 @@ host hostname@"clam.kitenet.net" = Just
 	, File.dirExists "/var/www"
 	--, Docker.docked container hostname "webserver"
 	, Docker.garbageCollected
+	, Docker.docked container hostname "amd64-git-annex-builder"
 	, Apt.installed ["git-annex", "mtr"]
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
