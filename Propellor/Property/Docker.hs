@@ -54,13 +54,12 @@ docked findc hn cn = findContainer findc hn cn $
 			runningContainer cid image containerprops
 				`requires`
 			installed
-		    teardown = 
-			Property ("undocked " ++ fromContainerId cid) $
-				report <$> mapM id
-					[ stopContainerIfRunning cid
-					, removeContainer cid
-					, removeImage image
-					]
+		    teardown = Property ("undocked " ++ fromContainerId cid) $
+			report <$> mapM id
+				[ stopContainerIfRunning cid
+				, removeContainer cid
+				, removeImage image
+				]
 		in RevertableProperty setup teardown
   where
   	cid = ContainerId hn cn
