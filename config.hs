@@ -41,7 +41,7 @@ host hostname@"clam.kitenet.net" = Just
 	, JoeySites.oldUseNetshellBox
 	, Docker.configured
 	, File.dirExists "/var/www"
-	, Docker.docked container hostname "webserver"
+	--, Docker.docked container hostname "webserver"
 	, Docker.garbageCollected
 	, Apt.installed ["git-annex", "mtr"]
 	-- Should come last as it reboots.
@@ -52,6 +52,7 @@ host hostname@"orca.kitenet.net" = Just
 	, Apt.unattendedUpgrades True
 	, Docker.configured
 	, Docker.docked container hostname "git-annex-amd64-builder"
+	, Docker.garbageCollected
 	]
 -- add more hosts here...
 --host "foo.example.com" =
