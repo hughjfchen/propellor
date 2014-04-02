@@ -80,5 +80,5 @@ props = []
 -- | Adds a property to the list.
 -- Can add both Properties and RevertableProperties.
 (&) :: IsProp p => [Property] -> p -> [Property]
-ps & p = toProp p : ps
+ps & p = ps ++ [toProp p]
 infixl 1 &
