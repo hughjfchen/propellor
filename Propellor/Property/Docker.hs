@@ -44,15 +44,42 @@ docked
 	-> HostName
 	-> ContainerName
 	-> Property
-docked findcontainer hn cn = 
-	case findcontainer hn cn of
-		Nothing -> containerDesc cid $ Property "" $ do
-			warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
-			return FailedChange
-		Just (Container image containerprops) ->
-			provisionContainer cid
-				`requires`
-			runningContainer cid image containerprops
+docked findc hn cn = findContainer findc hn cn $
+	\(Container image containerprops) ->
+		provisionContainer cid
+			`requires`
+		runningContainer cid image containerprops
+  where
+  	cid = ContainerId hn cn
+
+-- | Ensures that a docker container is no longer running.
+unDocked
+	:: (HostName -> ContainerName -> Maybe (Container))
+	-> HostName
+	-> ContainerName
+	-> Property
+unDocked findc hn cn = findContainer findc hn cn $
+	\(Container image _containerprops) ->
+		Property ("undocked " ++ fromContainerId cid) $
+			report <$> mapM id
+				[ stopContainer cid
+				, removeContainer cid
+				, removeImage image
+				]
+  where
+  	cid = ContainerId hn cn
+
+findContainer
+	:: (HostName -> ContainerName -> Maybe (Container))
+	-> HostName
+	-> ContainerName
+	-> (Container -> Property)
+	-> Property
+findContainer findc hn cn mk = case findc hn cn of
+	Nothing -> containerDesc (ContainerId hn cn) $ Property "" $ do
+		warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
+		return FailedChange
+	Just container -> mk container
   where
   	cid = ContainerId hn cn
 
@@ -72,9 +99,6 @@ garbageCollected = propertyList "docker garbage collected"
 		report <$> (mapM removeContainer =<< listContainers AllContainers)
 	gcimages = Property "docker images garbage collected" $ do
 		report <$> (mapM removeImage =<< listImages)
-	report rmed
-		| or rmed = MadeChange
-		| otherwise = NoChange
 
 -- | Pass to defaultMain to add docker containers.
 -- You need to provide the function mapping from
@@ -392,3 +416,9 @@ readIdentFile cid = fromMaybe (error "bad ident in identFile")
 
 dockercmd :: String
 dockercmd = "docker.io"
+
+report :: [Bool] -> Result
+report rmed
+	| or rmed = MadeChange
+	| otherwise = NoChange
+

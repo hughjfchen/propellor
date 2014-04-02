@@ -48,10 +48,10 @@ class ActionResult a where
 
 instance ActionResult Bool where
 	getActionResult False = ("failed", Vivid, Red)
-	getActionResult True = ("ok", Dull, Green)
+	getActionResult True = ("done", Dull, Green)
 
 instance ActionResult Result where
-	getActionResult NoChange = ("unchanged", Dull, Green)
+	getActionResult NoChange = ("ok", Dull, Green)
 	getActionResult MadeChange = ("done", Vivid, Green)
 	getActionResult FailedChange = ("failed", Vivid, Red)
 

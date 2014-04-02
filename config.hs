@@ -44,7 +44,7 @@ host hostname@"clam.kitenet.net" = Just
 	, File.dirExists "/var/www"
 	--, Docker.docked container hostname "webserver"
 	, Docker.garbageCollected
-	, Docker.docked container hostname "amd64-git-annex-builder"
+	, Docker.unDocked container hostname "amd64-git-annex-builder"
 	, Apt.installed ["git-annex", "mtr"]
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
@@ -54,8 +54,8 @@ host hostname@"orca.kitenet.net" = Just
 	, standardSystem Unstable
 	, Apt.unattendedUpgrades True
 	, Docker.configured
-	, Docker.docked container hostname "amd64-git-annex-builder"
-	, Docker.docked container hostname "i386-git-annex-builder"
+	, Docker.unDocked container hostname "amd64-git-annex-builder"
+	, Docker.unDocked container hostname "i386-git-annex-builder"
 	, Docker.garbageCollected
 	]
 -- add more hosts here...
