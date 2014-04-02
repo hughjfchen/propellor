@@ -230,14 +230,12 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 			if (ident2id <$> runningident) == Just (ident2id ident)
 				then return NoChange
 				else do
-					clearProvisionedFlag cid
 					void $ stopContainer cid
 					oldimage <- fromMaybe image <$> commitContainer cid
 					void $ removeContainer cid
 					go oldimage
 		else do
 			whenM (elem cid <$> listContainers AllContainers) $ do
-				clearProvisionedFlag cid
 				void $ removeContainer cid
 			go image
   where
@@ -258,6 +256,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	chaincmd = [localdir </> "propellor", "--docker", fromContainerId cid]
 
 	go img = do
+		clearProvisionedFlag cid
 		createDirectoryIfMissing True (takeDirectory $ identFile cid)
 		writeFile (identFile cid) (show ident)
 		ifM (runContainer img (runps ++ ["-i", "-d", "-t"]) chaincmd)
