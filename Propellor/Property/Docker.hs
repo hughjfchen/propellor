@@ -149,7 +149,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 		, name (fromContainerId cid)
 		]
 	
-	chaincmd = ["./propellor", "--continue", show $ ChainDocker $ show ident]
+	chaincmd = [localdir </> "propellor", "--continue", show $ ChainDocker $ show ident]
 
 	go img = ifM (runContainer img (runps ++ ["-i", "-d", "-t"]) chaincmd)
 		( return MadeChange
