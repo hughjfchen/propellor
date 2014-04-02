@@ -23,6 +23,7 @@ import Utility.Path
 
 import Control.Concurrent.Async
 import System.Posix.Directory
+import Data.List
 
 -- | Configures docker with an authentication file, so that images can be
 -- pushed to index.docker.io.
@@ -177,13 +178,21 @@ ident2id :: ContainerIdent -> ContainerId
 ident2id (ContainerIdent _ hn cn _) = ContainerId hn cn
 
 toContainerId :: String -> Maybe ContainerId
-toContainerId s = case separate (== '.') s of
-	(cn, hn)
-		| null hn || null cn -> Nothing
-		| otherwise -> Just $ ContainerId hn cn
+toContainerId s
+	| myContainerSuffix `isSuffixOf` s = case separate (== '.') (desuffix s) of
+		(cn, hn)
+			| null hn || null cn -> Nothing
+			| otherwise -> Just $ ContainerId hn cn
+	| otherwise = Nothing
+  where
+	desuffix = reverse . drop len . reverse
+	len = length myContainerSuffix
 
 fromContainerId :: ContainerId -> String
-fromContainerId (ContainerId hn cn) = cn++"."++hn
+fromContainerId (ContainerId hn cn) = cn++"."++hn++myContainerSuffix
+
+myContainerSuffix :: String
+myContainerSuffix = ".propellor"
 
 containerFrom :: Image -> [Containerized Property] -> Container
 containerFrom = Container
