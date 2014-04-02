@@ -76,7 +76,7 @@ container _host name
 		let arch = takeWhile (/= '-') name
 		in Just $ Docker.containerFrom
 			(image $ System (Debian Unstable) arch)
-			[ Docker.inside $ props & GitAnnexBuilder.builder arch "15 * * * *" ]
+			[ Docker.inside $ props & GitAnnexBuilder.builder arch "15 * * * *" True ]
 	| otherwise = Nothing
 
 -- | Docker images I prefer to use.

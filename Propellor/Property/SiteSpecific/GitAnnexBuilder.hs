@@ -12,8 +12,8 @@ builduser = "builder"
 builddir :: FilePath
 builddir = "gitbuilder"
 
-builder :: Architecture -> CronTimes -> Property
-builder arch crontimes = combineProperties "gitannexbuilder"
+builder :: Architecture -> CronTimes -> Bool -> Property
+builder arch crontimes rsyncupload = combineProperties "gitannexbuilder"
 	[ Apt.stdSourcesList Unstable
 	, Apt.buildDep ["git-annex"]
 	, Apt.installed ["git", "rsync", "moreutils", "ca-certificates",
@@ -38,11 +38,17 @@ builder arch crontimes = combineProperties "gitannexbuilder"
 	, Property "rsync password" $ do
 		d <- homedir
 		let f = d </> "rsyncpassword"
-		withPrivData (Password builduser) $ \p -> do
-			oldp <- catchDefaultIO "" $ readFileStrict f
-			if p /= oldp
-				then makeChange $ writeFile f p
-				else noChange
+		if rsyncupload 
+			then withPrivData (Password builduser) $ \p -> do
+				oldp <- catchDefaultIO "" $ readFileStrict f
+				if p /= oldp
+					then makeChange $ writeFile f p
+					else noChange
+			else do
+				ifM (doesFileExist f)
+					( noChange
+					, makeChange $ writeFile f "no password configured"
+					)
 	]
   where
   	homedir = fromMaybe ("/home/" ++ builduser) <$> User.homedir builduser
