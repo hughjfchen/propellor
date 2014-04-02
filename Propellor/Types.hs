@@ -40,8 +40,7 @@ data DebianSuite = Experimental | Unstable | Testing | Stable | DebianRelease Re
 
 type Release = String
 
-data Architecture = Amd64 | I386 | Armel
-	deriving (Show)
+type Architecture = String
 
 -- | Results of actions, with color.
 class ActionResult a where

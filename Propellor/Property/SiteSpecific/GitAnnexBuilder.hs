@@ -6,8 +6,6 @@ import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Cron as Cron
 import Propellor.Property.Cron (CronTimes)
 
-import Data.Char
-
 builduser :: UserName
 builduser = "builder"
 
@@ -26,7 +24,7 @@ builder arch crontimes = combineProperties "gitannexbuilder"
 	, check (lacksdir builddir) $ userScriptProperty builduser
 		[ "git clone git://git.kitenet.net/gitannexbuilder " ++ builddir
 		, "cd " ++ builddir
-		, "git checkout " ++ map toLower (show arch)
+		, "git checkout " ++ arch
 		]
 		`describe` "gitbuilder setup"
 	, check (lacksdir $ builddir </> "build") $ userScriptProperty builduser

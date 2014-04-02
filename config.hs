@@ -20,6 +20,7 @@ import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
+import Data.List
 
 main :: IO ()
 main = defaultMain [host, Docker.containerProperties container]
@@ -48,10 +49,12 @@ host hostname@"clam.kitenet.net" = Just
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
 	]
 host hostname@"orca.kitenet.net" = Just
-	[ standardSystem Unstable
+	[ Hostname.set hostname
+	, standardSystem Unstable
 	, Apt.unattendedUpgrades True
 	, Docker.configured
-	, Docker.docked container hostname "git-annex-amd64-builder"
+	, Docker.docked container hostname "amd64-git-annex-builder"
+	, Docker.docked container hostname "i386-git-annex-builder"
 	, Docker.garbageCollected
 	]
 -- add more hosts here...
@@ -61,26 +64,29 @@ host _ = Nothing
 -- | This is where Docker containers are set up. A container
 -- can vary by hostname where it's used, or be the same everywhere.
 container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
-container _ "webserver" = Just $ Docker.containerFrom
-	(image $ System (Debian Unstable) Amd64)
-	[ Docker.publish "8080:80"
-	, Docker.volume "/var/www:/var/www"
-	, Docker.inside
-		[ serviceRunning "apache2"
-			`requires` Apt.installed ["apache2"]
+container _host name
+	| name == "webserver" = Just $ Docker.containerFrom
+		(image $ System (Debian Unstable) "amd64")
+		[ Docker.publish "8080:80"
+		, Docker.volume "/var/www:/var/www"
+		, Docker.inside
+			[ serviceRunning "apache2"
+				`requires` Apt.installed ["apache2"]
+			]
 		]
-	]
-container _ "git-annex-amd64-builder" = Just $ Docker.containerFrom
-	(image $ System (Debian Unstable) Amd64)
-	[ Docker.inside [ GitAnnexBuilder.builder Amd64 "15 * * * *" ] ]
-container _ _ = Nothing
+	| "-git-annex-builder" `isSuffixOf` name =
+		let arch = takeWhile (/= '-') name
+		in Just $ Docker.containerFrom
+			(image $ System (Debian Unstable) arch)
+			[ Docker.inside [ GitAnnexBuilder.builder arch "15 * * * *" ] ]
+	| otherwise = Nothing
 
 -- | Docker images I prefer to use.
 -- Edit as suites you, or delete this function and just put the image names
 -- above.
 image :: System -> Docker.Image
-image (System (Debian Unstable) Amd64) = "joeyh/debian-unstable"
-image (System (Debian Unstable) I386) = "joeyh/debian-i386"
+image (System (Debian Unstable) "amd64") = "joeyh/debian-unstable"
+image (System (Debian Unstable) "i386") = "joeyh/debian-unstable-i386"
 image _ = "debian"
 
 -- This is my standard system setup
