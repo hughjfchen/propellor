@@ -24,9 +24,6 @@ import Utility.Path
 import Control.Concurrent.Async
 import System.Posix.Directory
 
-dockercmd :: String
-dockercmd = "docker.io"
-
 -- | Configures docker with an authentication file, so that images can be
 -- pushed to index.docker.io.
 configured :: Property
@@ -37,65 +34,6 @@ configured = Property "docker configured" go `requires` installed
 
 installed :: Property
 installed = Apt.installed ["docker.io"]
-
--- | Parameters to pass to `docker run` when creating a container.
-type RunParam = String
-
-data Containerized a = Containerized [RunParam] a
-
-getRunParams :: [Containerized a] -> [RunParam]
-getRunParams l = concatMap get l
-  where
-	get (Containerized ps _) = ps
-
-fromContainerized :: forall a. [Containerized a] -> [a]
-fromContainerized l = map get l
-  where
-	get (Containerized _ a) = a
-
--- | A docker image, that can be used to run a container.
-type Image = String
-
--- | A short descriptive name for a container.
--- Should not contain whitespace or other unusual characters,
--- only [a-zA-Z0-9_.-] are allowed
-type ContainerName = String
-
--- | A container is identified by its name, and the host
--- on which it's deployed.
-data ContainerId = ContainerId HostName ContainerName
-	deriving (Eq, Read, Show)
-
-toContainerId :: String -> Maybe ContainerId
-toContainerId s = case separate (== '.') s of
-	(cn, hn)
-		| null hn || null cn -> Nothing
-		| otherwise -> Just $ ContainerId hn cn
-
-fromContainerId :: ContainerId -> String
-fromContainerId (ContainerId hn cn) = cn++"."++hn
-
-data Container = Container Image [Containerized Property]
-
-containerFrom :: Image -> [Containerized Property] -> Container
-containerFrom = Container
-
-containerProperties
-	:: (HostName -> ContainerName -> Maybe (Container))
-	-> (HostName -> Maybe [Property])
-containerProperties findcontainer = \h -> case toContainerId h of
-	Nothing -> Nothing
-	Just cid@(ContainerId hn cn) ->
-		case findcontainer hn cn of
-			Nothing -> Nothing
-			Just (Container _ cprops) -> 
-				Just $ map (containerDesc cid) $
-					fromContainerized cprops
-
-containerDesc :: ContainerId -> Property -> Property
-containerDesc cid p = p `describe` desc
-  where
-	desc = "[" ++ fromContainerId cid ++ "] " ++ propertyDesc p
 
 -- | Ensures that a docker container is set up and running. The container
 -- has its own Properties which are handled by running propellor
@@ -117,6 +55,124 @@ docked findcontainer hn cn =
   where
   	cid = ContainerId hn cn
 
+-- | Pass to defaultMain to add docker containers.
+-- You need to provide the function mapping from
+-- HostName and ContainerName to the Container to use.
+containerProperties
+	:: (HostName -> ContainerName -> Maybe (Container))
+	-> (HostName -> Maybe [Property])
+containerProperties findcontainer = \h -> case toContainerId h of
+	Nothing -> Nothing
+	Just cid@(ContainerId hn cn) ->
+		case findcontainer hn cn of
+			Nothing -> Nothing
+			Just (Container _ cprops) -> 
+				Just $ map (containerDesc cid) $
+					fromContainerized cprops
+
+-- | This type is used to configure a docker container.
+-- It has an image, and a list of Properties, but these
+-- properties are Containerized; they can specify
+-- things about the container's configuration, in
+-- addition to properties of the system inside the
+-- container.
+data Container = Container Image [Containerized Property]
+
+data Containerized a = Containerized [RunParam] a
+
+-- | Parameters to pass to `docker run` when creating a container.
+type RunParam = String
+
+-- | A docker image, that can be used to run a container.
+type Image = String
+
+-- | A short descriptive name for a container.
+-- Should not contain whitespace or other unusual characters,
+-- only [a-zA-Z0-9_.-] are allowed
+type ContainerName = String
+
+-- | Lift a Property to apply inside a container.
+inside1 :: Property -> Containerized Property
+inside1 = Containerized []
+
+inside :: [Property] -> Containerized Property
+inside = Containerized [] . combineProperties "provision"
+
+-- | Set custom dns server for container.
+dns :: String -> Containerized Property
+dns = runProp "dns"
+
+-- | Set container host name.
+hostname :: String -> Containerized Property
+hostname = runProp "hostname"
+
+-- | Set name for container. (Normally done automatically.)
+name :: String -> Containerized Property
+name = runProp "name"
+
+-- | Publish a container's port to the host
+-- (format: ip:hostPort:containerPort | ip::containerPort | hostPort:containerPort)
+publish :: String -> Containerized Property
+publish = runProp "publish"
+
+-- | Username or UID for container.
+user :: String -> Containerized Property
+user = runProp "user"
+
+-- | Bind mount a volume
+volume :: String -> Containerized Property
+volume = runProp "volume"
+
+-- | Work dir inside the container. 
+workdir :: String -> Containerized Property
+workdir = runProp "workdir"
+
+-- | Memory limit for container.
+--Format: <number><optional unit>, where unit = b, k, m or g
+memory :: String -> Containerized Property
+memory = runProp "memory"
+
+-- | A container is identified by its name, and the host
+-- on which it's deployed.
+data ContainerId = ContainerId HostName ContainerName
+	deriving (Eq, Read, Show)
+
+-- | Two containers with the same ContainerIdent were started from
+-- the same base image (possibly a different version though), and
+-- with the same RunParams.
+data ContainerIdent = ContainerIdent Image HostName ContainerName [RunParam]
+	deriving (Read, Show, Eq)
+
+getRunParams :: [Containerized a] -> [RunParam]
+getRunParams l = concatMap get l
+  where
+	get (Containerized ps _) = ps
+
+fromContainerized :: forall a. [Containerized a] -> [a]
+fromContainerized l = map get l
+  where
+	get (Containerized _ a) = a
+
+ident2id :: ContainerIdent -> ContainerId
+ident2id (ContainerIdent _ hn cn _) = ContainerId hn cn
+
+toContainerId :: String -> Maybe ContainerId
+toContainerId s = case separate (== '.') s of
+	(cn, hn)
+		| null hn || null cn -> Nothing
+		| otherwise -> Just $ ContainerId hn cn
+
+fromContainerId :: ContainerId -> String
+fromContainerId (ContainerId hn cn) = cn++"."++hn
+
+containerFrom :: Image -> [Containerized Property] -> Container
+containerFrom = Container
+
+containerDesc :: ContainerId -> Property -> Property
+containerDesc cid p = p `describe` desc
+  where
+	desc = "[" ++ fromContainerId cid ++ "] " ++ propertyDesc p
+
 runningContainer :: ContainerId -> Image -> [Containerized Property] -> Property
 runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc cid $ Property "running" $ do
 	l <- listContainers RunningContainers
@@ -126,12 +182,14 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 			if (ident2id <$> runningident) == Just (ident2id ident)
 				then return NoChange
 				else do
+					clearProvisionedFlag cid
 					void $ stopContainer cid
 					oldimage <- fromMaybe image <$> commitContainer cid
 					removeContainer cid
 					go oldimage
 		else do
-			whenM (elem cid <$> listContainers AllContainers) $
+			whenM (elem cid <$> listContainers AllContainers) $ do
+				clearProvisionedFlag cid
 				removeContainer cid
 			go image
   where
@@ -159,44 +217,33 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 			, return FailedChange
 			)
 
--- | Two containers with the same ContainerIdent were started from
--- the same base image (possibly a different version though), and
--- with the same RunParams.
-data ContainerIdent = ContainerIdent Image HostName ContainerName [RunParam]
-	deriving (Read, Show, Eq)
-
-ident2id :: ContainerIdent -> ContainerId
-ident2id (ContainerIdent _ hn cn _) = ContainerId hn cn
-
--- | The ContainerIdent of a container is written to
--- /.propellor-ident inside it. This can be checked to see if
--- the container has the same ident later.
-propellorIdent :: FilePath
-propellorIdent = "/.propellor-ident"
-
--- | Named pipe used for communication with the container.
-namedPipe :: ContainerId -> FilePath
-namedPipe cid = "docker/" ++ fromContainerId cid
-
-identFile :: ContainerId -> FilePath
-identFile cid = "docker/" ++ fromContainerId cid ++ ".ident"
-
-readIdentFile :: ContainerId -> IO ContainerIdent
-readIdentFile cid = fromMaybe (error "bad ident in identFile")
-	. readish <$> readFile (identFile cid)
-
 -- | Called when propellor is running inside a docker container.
 -- The string should be the container's ContainerId.
 --
 -- Fork a thread to run the SimpleSh server in the background.
 -- In the foreground, run an interactive bash (or sh) shell,
 -- so that the user can interact with it when attached to the container.
+--
+-- When the system reboots, docker restarts the container, and this is run
+-- again. So, to make the necessary services get started on boot, this needs
+-- to provision the container then. However, if the container is already
+-- being provisioned by the calling propellor, it would be redundant and
+-- problimatic to also provisoon it here.
+--
+-- The solution is a flag file. If the flag file exists, then the container
+-- was already provisioned. So, it must be a reboot, and time to provision
+-- again. If the flag file doesn't exist, don't provision here.
 chain :: String -> IO ()
 chain s = case readish s of
 	Nothing -> error $ "Invalid ContainerId: " ++ s
 	Just cid -> do
 		changeWorkingDirectory localdir
 		writeFile propellorIdent . show =<< readIdentFile cid
+		-- Run boot provisioning before starting simpleSh,
+		-- to avoid ever provisioning twice at the same time.
+		whenM (checkProvisionedFlag cid) $
+			unlessM (boolSystem "./propellor" [Param "--continue", Param $ show $ Chain $ fromContainerId cid]) $
+				warningMessage "Boot provision failed!"
 		void $ async $ simpleSh $ namedPipe cid
 		forever $ do
 			void $ ifM (inPath "bash")
@@ -213,8 +260,11 @@ chain s = case readish s of
 -- being run. So, retry connections to the client for up to
 -- 1 minute.
 provisionContainer :: ContainerId -> Property
-provisionContainer cid = containerDesc cid $ Property "provision" $
-	simpleShClientRetry 60 (namedPipe cid) "./propellor" params (go Nothing)
+provisionContainer cid = containerDesc cid $ Property "provision" $ do
+	r <- simpleShClientRetry 60 (namedPipe cid) "./propellor" params (go Nothing)
+	when (r /= FailedChange) $
+		setProvisionedFlag cid 
+	return r
   where
 	params = ["--continue", show $ Chain $ fromContainerId cid]
 
@@ -273,43 +323,36 @@ runProp field val =
   where
 	param = field++"="++val
 
--- | Lift a Property to run inside the container.
-inside1 :: Property -> Containerized Property
-inside1 = Containerized []
+-- | The ContainerIdent of a container is written to
+-- /.propellor-ident inside it. This can be checked to see if
+-- the container has the same ident later.
+propellorIdent :: FilePath
+propellorIdent = "/.propellor-ident"
 
-inside :: [Property] -> Containerized Property
-inside = Containerized [] . combineProperties "provision"
+-- | Named pipe used for communication with the container.
+namedPipe :: ContainerId -> FilePath
+namedPipe cid = "docker/" ++ fromContainerId cid
 
--- | Set custom dns server for container.
-dns :: String -> Containerized Property
-dns = runProp "dns"
+provisionedFlag :: ContainerId -> FilePath
+provisionedFlag cid = "docker/" ++ fromContainerId cid ++ ".provisioned"
 
--- | Set container host name.
-hostname :: String -> Containerized Property
-hostname = runProp "hostname"
+clearProvisionedFlag :: ContainerId -> IO ()
+clearProvisionedFlag = nukeFile . provisionedFlag
 
--- | Set name for container. (Normally done automatically.)
-name :: String -> Containerized Property
-name = runProp "name"
+setProvisionedFlag :: ContainerId -> IO ()
+setProvisionedFlag cid = do
+	createDirectoryIfMissing True (takeDirectory (provisionedFlag cid))
+	writeFile (provisionedFlag cid) "1"
 
--- | Publish a container's port to the host
--- (format: ip:hostPort:containerPort | ip::containerPort | hostPort:containerPort)
-publish :: String -> Containerized Property
-publish = runProp "publish"
+checkProvisionedFlag :: ContainerId -> IO Bool
+checkProvisionedFlag = doesFileExist . provisionedFlag
 
--- | Username or UID for container.
-user :: String -> Containerized Property
-user = runProp "user"
+identFile :: ContainerId -> FilePath
+identFile cid = "docker/" ++ fromContainerId cid ++ ".ident"
 
--- | Bind mount a volume
-volume :: String -> Containerized Property
-volume = runProp "volume"
+readIdentFile :: ContainerId -> IO ContainerIdent
+readIdentFile cid = fromMaybe (error "bad ident in identFile")
+	. readish <$> readFile (identFile cid)
 
--- | Work dir inside the container. 
-workdir :: String -> Containerized Property
-workdir = runProp "workdir"
-
--- | Memory limit for container.
---Format: <number><optional unit>, where unit = b, k, m or g
-memory :: String -> Containerized Property
-memory = runProp "memory"
+dockercmd :: String
+dockercmd = "docker.io"
