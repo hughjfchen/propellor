@@ -234,7 +234,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 -- was already provisioned. So, it must be a reboot, and time to provision
 -- again. If the flag file doesn't exist, don't provision here.
 chain :: String -> IO ()
-chain s = case readish s of
+chain s = case toContainerId s of
 	Nothing -> error $ "Invalid ContainerId: " ++ s
 	Just cid -> do
 		changeWorkingDirectory localdir
