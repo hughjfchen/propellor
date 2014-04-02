@@ -55,6 +55,26 @@ docked findcontainer hn cn =
   where
   	cid = ContainerId hn cn
 
+-- | Causes *any* docker images that are not in use by running containers to
+-- be deleted. And deletes any containers that propellor has set up
+-- before that are not currently running. Does not delete any containers
+-- that were not set up using propellor.
+--
+-- Generally, should come after the properties for the desired containers.
+garbageCollected :: Property
+garbageCollected = propertyList "docker garbage collected"
+	[ gccontainers
+	, gcimages
+	]
+  where
+	gccontainers = Property "docker containers garbage collected" $
+		report <$> (mapM removeContainer =<< listContainers AllContainers)
+	gcimages = Property "docker images garbage collected" $ do
+		report <$> (mapM removeImage =<< listImages)
+	report rmed
+		| or rmed = MadeChange
+		| otherwise = NoChange
+
 -- | Pass to defaultMain to add docker containers.
 -- You need to provide the function mapping from
 -- HostName and ContainerName to the Container to use.
@@ -185,12 +205,12 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 					clearProvisionedFlag cid
 					void $ stopContainer cid
 					oldimage <- fromMaybe image <$> commitContainer cid
-					removeContainer cid
+					void $ removeContainer cid
 					go oldimage
 		else do
 			whenM (elem cid <$> listContainers AllContainers) $ do
 				clearProvisionedFlag cid
-				removeContainer cid
+				void $ removeContainer cid
 			go image
   where
 	ident = ContainerIdent image hn cn runps
@@ -290,9 +310,13 @@ provisionContainer cid = containerDesc cid $ Property "provision" $ do
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]
 
-removeContainer :: ContainerId -> IO ()
-removeContainer cid = void $ catchMaybeIO $
-	readProcess dockercmd ["rm", fromContainerId cid ]
+removeContainer :: ContainerId -> IO Bool
+removeContainer cid = catchBoolIO $
+	snd <$> processTranscript dockercmd ["rm", fromContainerId cid ] Nothing
+
+removeImage :: Image -> IO Bool
+removeImage image = catchBoolIO $
+	snd <$> processTranscript dockercmd ["rmi", image ] Nothing
 
 runContainer :: Image -> [RunParam] -> [String] -> IO Bool
 runContainer image ps cmd = boolSystem dockercmd $ map Param $
@@ -316,6 +340,9 @@ listContainers status =
 		| status == AllContainers = baseps ++ ["--all"]
 		| otherwise = baseps
 	baseps = ["ps", "--no-trunc"]
+
+listImages :: IO [Image]
+listImages = lines <$> readProcess dockercmd ["--all", "--quiet"]
 
 runProp :: String -> RunParam -> Containerized Property
 runProp field val = 

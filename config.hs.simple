@@ -33,6 +33,7 @@ host hostname@"mybox.example.com" = Just
 	, Network.ipv6to4
 	, Docker.docked container hostname "webserver"
 		`requires` File.dirExists "/var/www"
+	, Docker.garbageCollected
 	, Cron.runPropellor "30 * * * *"
 	]
 -- add more hosts here...

@@ -42,6 +42,7 @@ host hostname@"clam.kitenet.net" = Just
 	, Docker.configured
 	, File.dirExists "/var/www"
 	, Docker.docked container hostname "webserver"
+	, Docker.garbageCollected
 	, Apt.installed ["git-annex", "mtr"]
 	-- Should come last as it reboots.
 	, Apt.installed ["systemd-sysv"] `onChange` Reboot.now
