@@ -35,13 +35,23 @@ srcLine l = case words l of
 stdSections :: [Section]
 stdSections = ["main", "contrib", "non-free"]
 
-debCdn :: DebianSuite -> [Line]
-debCdn suite = [l, srcLine l]
+binandsrc :: String -> DebianSuite -> [Line]
+binandsrc url suite = [l, srcLine l]
   where
-	l = debLine suite "http://cdn.debian.net/debian" stdSections
+	l = debLine suite url stdSections
+
+debCdn :: DebianSuite -> [Line]
+debCdn = binandsrc "http://cdn.debian.net/debian"
+
+kernelOrg :: DebianSuite -> [Line]
+kernelOrg = binandsrc "http://mirrors.kernel.org/debian"
 
 {- | Makes sources.list have a standard content using the mirror CDN,
- - with a particular DebianSuite. -}
+ - with a particular DebianSuite.
+ -
+ - Since the CDN is sometimes unreliable, also adds backup lines using
+ - kernel.org.
+ -}
 stdSourcesList :: DebianSuite -> Property
 stdSourcesList suite = setSourcesList (debCdn suite)
 	`describe` ("standard sources.list for " ++ show suite)
