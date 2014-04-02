@@ -207,7 +207,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 		, name (fromContainerId cid)
 		]
 	
-	chaincmd = [localdir </> "propellor", "--docker", show cid]
+	chaincmd = [localdir </> "propellor", "--docker", fromContainerId cid]
 
 	go img = do
 		createDirectoryIfMissing True (takeDirectory $ identFile cid)
