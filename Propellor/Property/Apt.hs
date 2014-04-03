@@ -89,7 +89,7 @@ installed' params ps = robustly $ check (isInstallable ps) go
 
 -- | Minimal install of package, without recommends.
 installedMin :: [Package] -> Property
-installedMin = installed' ["--no-install-recommends"]
+installedMin = installed' ["--no-install-recommends", "-y"]
 
 removed :: [Package] -> Property
 removed ps = check (or <$> isInstalled' ps) go
