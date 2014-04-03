@@ -27,9 +27,8 @@ main = defaultMain [host, Docker.containerProperties container]
 --
 -- Edit this to configure propellor!
 host :: HostName -> Maybe [Property]
+-- Clam is a tor bridge, and an olduse.net shellbox and other fun stuff.
 host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
-	-- Clam is a tor bridge, and an olduse.net shellbox and other
-	-- fun stuff.
 	& cleanCloudAtCost hostname
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
@@ -41,8 +40,8 @@ host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
 	! Docker.docked container hostname "webserver"
 	! Docker.docked container hostname "amd64-git-annex-builder"
 	& Docker.garbageCollected
+-- Orca is the main git-annex build box.
 host hostname@"orca.kitenet.net" = standardSystem Unstable $ props
-	-- Orca is the main git-annex build box.
 	& Hostname.set hostname
 	& Apt.unattendedUpgrades
 	& Docker.configured
@@ -50,6 +49,10 @@ host hostname@"orca.kitenet.net" = standardSystem Unstable $ props
 	& Docker.docked container hostname "amd64-git-annex-builder"
 	! Docker.docked container hostname "i386-git-annex-builder"
 	& Docker.garbageCollected
+-- My laptop
+host _hostname@"darkstar.kitenet.net" = Just $ props
+	& Docker.configured
+	
 -- add more hosts here...
 --host "foo.example.com" =
 host _ = Nothing
