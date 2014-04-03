@@ -7,6 +7,7 @@ import System.Log.Logger
 import System.Log.Formatter
 import System.Log.Handler (setFormatter, LogHandler)
 import System.Log.Handler.Simple
+import System.PosixCompat
 
 import Propellor
 import qualified Propellor.Property.Docker as Docker
@@ -67,11 +68,23 @@ defaultMain getprops = do
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin host) = withprops host $ const $ spin host
-	go False (Run host) = withprops host $ ensureProperties
+	go False cmdline@(Run host) = withprops host $
+		asRoot cmdline . ensureProperties
 	go False (Boot host) = withprops host $ boot
 
 	withprops host a = maybe (unknownhost host) a $
 		headMaybe $ catMaybes $ map (\get -> get host) getprops
+
+asRoot :: CmdLine -> IO a -> IO a
+asRoot cmdline a = ifM ((==) 0 <$> getRealUserID)
+	( a
+	, do
+		hPutStrLn stderr "Need to be root to provision the local host! Running sudo propellor..."
+		hFlush stderr
+		(_, _, _, pid) <- createProcess $
+			proc "sudo" ["./propellor", show (Continue cmdline)]
+		exitWith =<< waitForProcess pid
+	)
 
 unknownhost :: HostName -> IO a
 unknownhost h = errorMessage $ unlines
@@ -106,7 +119,7 @@ updateFirst cmdline next = do
 	void $ actionMessage "Git fetch" $ boolSystem "git" [Param "fetch"]
 	
 	whenM (doesFileExist keyring) $ do
-		{- To verify origin/master commit's signature, have to
+		{- To verify origin branch commit's signature, have to
 		 - convince gpg to use our keyring. While running git log.
 		 - Which has no way to pass options to gpg.
 		 - Argh! -}
@@ -147,10 +160,9 @@ spin host = do
 	url <- getUrl
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
-	branch <- getCurrentBranch
-	go url branch =<< gpgDecrypt (privDataFile host)
+	go url =<< gpgDecrypt (privDataFile host)
   where
-	go url branch privdata = withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd branch]) $ \(toh, fromh) -> do
+	go url privdata = withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let finish = do
 			senddata toh (privDataFile host) privDataMarker privdata
 			hClose toh
@@ -166,11 +178,11 @@ spin host = do
 				hClose toh
 				hClose fromh
 				sendGitClone host url
-				go url branch privdata
+				go url privdata
 	
 	user = "root@"++host
 
-	bootstrapcmd branch = shellWrap $ intercalate " ; "
+	bootstrapcmd = shellWrap $ intercalate " ; "
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then " ++ intercalate " && "
 			[ "apt-get -y install git"
@@ -178,8 +190,6 @@ spin host = do
 			]
 		, "else " ++ intercalate " && "
 			[ "cd " ++ localdir
-			, "git checkout -b " ++ branch
-			, "git branch --set-upstream-to=origin/" ++ branch ++ " " ++ branch
 			, "if ! test -x ./propellor; then make build; fi"
 			, "./propellor --boot " ++ host
 			]
@@ -202,23 +212,28 @@ spin host = do
 			return True
 
 sendGitClone :: HostName -> String -> IO ()
-sendGitClone host url = void $ actionMessage ("Pushing git repository to " ++ host) $
+sendGitClone host url = void $ actionMessage ("Pushing git repository to " ++ host) $ do
+	branch <- getCurrentBranch
 	withTmpFile "propellor.git" $ \tmp _ -> allM id
 		-- TODO: ssh connection caching, or better push method
 		-- with less connections.
 		[ boolSystem "git" [Param "bundle", Param "create", File tmp, Param "HEAD"]
 		, boolSystem "scp" [File tmp, Param ("root@"++host++":"++remotebundle)]
-		, boolSystem "ssh" [Param ("root@"++host), Param unpackcmd]
+		, boolSystem "ssh" [Param ("root@"++host), Param $ unpackcmd branch]
 		]
   where
 	remotebundle = "/usr/local/propellor.git"
-	unpackcmd = shellWrap $ intercalate " && "
+	unpackcmd branch = shellWrap $ intercalate " && "
 		[ "git clone " ++ remotebundle ++ " " ++ localdir
 		, "cd " ++ localdir
-		, "git checkout -b master"
+		, "git checkout -b " ++ branch
 		, "git remote rm origin"
-		, "git remote add origin " ++ url
 		, "rm -f " ++ remotebundle
+		, "git remote add origin " ++ url
+		-- same as --set-upstream-to, except origin branch
+		-- has not been pulled yet
+		, "git config branch."++branch++".remote origin"
+		, "git config branch."++branch++".merge refs/heads/"++branch
 		]
 
 data BootStrapStatus = Ready | NeedGitClone

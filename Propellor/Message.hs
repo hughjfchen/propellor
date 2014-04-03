@@ -35,7 +35,7 @@ warningMessage s = do
 errorMessage :: String -> IO a
 errorMessage s = do
 	warningMessage s
-	error "Propellor failed!"
+	error "Cannot continue!"
 
 -- | Causes a debug message to be displayed when PROPELLOR_DEBUG=1
 debug :: [String] -> IO ()
