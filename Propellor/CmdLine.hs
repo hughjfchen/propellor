@@ -74,9 +74,10 @@ defaultMain getprops = do
 		headMaybe $ catMaybes $ map (\get -> get host) getprops
 
 unknownhost :: HostName -> IO a
-unknownhost h = errorMessage $ unwords
-	[ "Unknown host:", h
-	, "(perhaps you should specify the real hostname on the command line?)"
+unknownhost h = errorMessage $ unlines
+	[ "Unknown host: " ++ h
+	, "(Perhaps you should specify the real hostname on the command line?)"
+	, "(Or, edit propellor's config.hs to configure this host)"
 	]
 
 buildFirst :: CmdLine -> IO () -> IO ()

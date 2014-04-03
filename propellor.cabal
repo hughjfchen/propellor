@@ -1,5 +1,5 @@
 Name: propellor
-Version: 0.2.0
+Version: 0.2.1
 Cabal-Version: >= 1.6
 License: GPL
 Maintainer: Joey Hess <joey@kitenet.net>
@@ -14,20 +14,35 @@ Extra-Source-Files:
   README.md
   TODO
   CHANGELOG
+  simple-config.hs
   Makefile
   debian/changelog
-  debian/README
-  simple-config.hs
+  debian/README.Debian
+  debian/propellor.1
+  debian/compat
+  debian/control
+  debian/copyright
+  debian/rules
+  debian/lintian-overrides
+  .gitignore
 Synopsis: property-based host configuration management in haskell
 Description:
  Propellor enures that the system it's run in satisfies a list of
  properties, taking action as necessary when a property is not yet met.
  .
- While Propellor can be installed from hackage, to customize and use it
- you should fork its git repository and modify it from there:
-   git clone git://git.kitenet.net/propellor
+ It is configured using haskell.
 
 Executable propellor
+  Main-Is: propellor.hs
+  GHC-Options: -Wall
+  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
+   IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
+   containers, network, async
+  
+  if (! os(windows))
+    Build-Depends: unix
+
+Executable config
   Main-Is: config.hs
   GHC-Options: -Wall -threaded
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
@@ -38,7 +53,7 @@ Executable propellor
     Build-Depends: unix
 
 Library
-  GHC-Options: -Wall -threaded
+  GHC-Options: -Wall
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
    containers, network, async
