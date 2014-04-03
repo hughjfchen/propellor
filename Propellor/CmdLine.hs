@@ -94,11 +94,14 @@ buildFirst cmdline next = do
   where
 	getmtime = catchMaybeIO $ getModificationTime "propellor"
 
+getCurrentBranch :: IO String
+getCurrentBranch = takeWhile (/= '\n') 
+	<$> readProcess "git" ["symbolic-ref", "--short", "HEAD"]
+
 updateFirst :: CmdLine -> IO () -> IO ()
 updateFirst cmdline next = do
-	branchref <- takeWhile (/= '\n') 
-		<$> readProcess "git" ["symbolic-ref", "HEAD"]
-	let originbranch = "origin" </> takeFileName branchref
+	branchref <- getCurrentBranch
+	let originbranch = "origin" </> branchref
 
 	void $ actionMessage "Git fetch" $ boolSystem "git" [Param "fetch"]
 	
@@ -144,9 +147,10 @@ spin host = do
 	url <- getUrl
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
-	go url =<< gpgDecrypt (privDataFile host)
+	branch <- getCurrentBranch
+	go url branch =<< gpgDecrypt (privDataFile host)
   where
-	go url privdata = withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd]) $ \(toh, fromh) -> do
+	go url branch privdata = withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd branch]) $ \(toh, fromh) -> do
 		let finish = do
 			senddata toh (privDataFile host) privDataMarker privdata
 			hClose toh
@@ -166,7 +170,7 @@ spin host = do
 	
 	user = "root@"++host
 
-	bootstrapcmd = shellWrap $ intercalate " ; "
+	bootstrapcmd branch = shellWrap $ intercalate " ; "
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then " ++ intercalate " && "
 			[ "apt-get -y install git"
@@ -174,6 +178,8 @@ spin host = do
 			]
 		, "else " ++ intercalate " && "
 			[ "cd " ++ localdir
+			, "git checkout -b " ++ branch
+			, "git branch --set-upstream-to=origin/" ++ branch ++ " " ++ branch
 			, "if ! test -x ./propellor; then make build; fi"
 			, "./propellor --boot " ++ host
 			]
