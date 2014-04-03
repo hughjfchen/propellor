@@ -107,7 +107,7 @@ buildDep ps = robustly go
 -- in the specifed directory, with a dummy package also
 -- installed so that autoRemove won't remove them.
 buildDepIn :: FilePath -> Property
-buildDepIn dir = go `requires` installedMin ["devscripts"]
+buildDepIn dir = go `requires` installedMin ["devscripts", "equivs"]
   where
 	go = cmdProperty' "sh" ["-c", "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --remove"]
 			noninteractiveEnv
