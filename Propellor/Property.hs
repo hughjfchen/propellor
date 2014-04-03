@@ -88,3 +88,8 @@ props = []
 (&) :: IsProp p => [Property] -> p -> [Property]
 ps & p = ps ++ [toProp p]
 infixl 1 &
+
+-- | Adds a property to the list in reverted form.
+(!) :: [Property] -> RevertableProperty -> [Property]
+ps ! p = ps ++ [toProp $ revert p]
+infixl 1 !

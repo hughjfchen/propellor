@@ -43,8 +43,8 @@ host hostname@"clam.kitenet.net" = Just $ props
 	& JoeySites.oldUseNetshellBox
 	& Docker.configured
 	& File.dirExists "/var/www"
-	& revert (Docker.docked container hostname "webserver")
-	& revert (Docker.docked container hostname "amd64-git-annex-builder")
+	! Docker.docked container hostname "webserver"
+	! Docker.docked container hostname "amd64-git-annex-builder"
 	& Docker.garbageCollected
 	-- Should come last as it reboots.
 	& Apt.installed ["systemd-sysv"] `onChange` Reboot.now
@@ -53,8 +53,8 @@ host hostname@"orca.kitenet.net" = Just $ props
 	& standardSystem Unstable
 	& Apt.unattendedUpgrades
 	& Docker.configured
-	& Docker.docked container hostname "amd64-git-annex-builder"
-	& revert (Docker.docked container hostname "i386-git-annex-builder")
+	! Docker.docked container hostname "amd64-git-annex-builder"
+	! Docker.docked container hostname "i386-git-annex-builder"
 	& Docker.garbageCollected
 -- add more hosts here...
 --host "foo.example.com" =
