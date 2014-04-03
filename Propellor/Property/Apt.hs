@@ -109,7 +109,7 @@ buildDep ps = robustly go
 buildDepIn :: FilePath -> Property
 buildDepIn dir = go `requires` installedMin ["devscripts", "equivs"]
   where
-	go = cmdProperty' "sh" ["-c", "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --remove"]
+	go = cmdProperty' "sh" ["-c", "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"]
 			noninteractiveEnv
 
 -- | Package installation may fail becuse the archive has changed.
