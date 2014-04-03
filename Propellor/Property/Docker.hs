@@ -54,12 +54,14 @@ docked findc hn cn = findContainer findc hn cn $
 			runningContainer cid image containerprops
 				`requires`
 			installed
-		    teardown = Property ("undocked " ++ fromContainerId cid) $
-			report <$> mapM id
-				[ stopContainerIfRunning cid
-				, removeContainer cid
-				, removeImage image
-				]
+		    teardown = combineProperties ("undocked " ++ fromContainerId cid)
+		    	[ stoppedContainer cid
+			, Property ("cleaned up " ++ fromContainerId cid) $
+				report <$> mapM id
+					[ removeContainer cid
+					, removeImage image
+					]
+			]
 		in RevertableProperty setup teardown
   where
   	cid = ContainerId hn cn
@@ -260,10 +262,9 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 		clearProvisionedFlag cid
 		createDirectoryIfMissing True (takeDirectory $ identFile cid)
 		writeFile (identFile cid) (show ident)
-		ifM (runContainer img (runps ++ ["-i", "-d", "-t"]) chaincmd)
-			( return MadeChange
-			, return FailedChange
-			)
+		ensureProperty $ boolProperty "run" $ runContainer img
+			(runps ++ ["-i", "-d", "-t"])
+			chaincmd
 
 -- | Called when propellor is running inside a docker container.
 -- The string should be the container's ContainerId.
@@ -338,11 +339,14 @@ provisionContainer cid = containerDesc cid $ Property "provision" $ do
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]
 
-stopContainerIfRunning :: ContainerId -> IO Bool
-stopContainerIfRunning cid = ifM (elem cid <$> listContainers RunningContainers)
-	( stopContainer cid
-	, return True
-	)
+stoppedContainer :: ContainerId -> Property
+stoppedContainer cid = containerDesc cid $ Property desc $ 
+	ifM (elem cid <$> listContainers RunningContainers)
+		( ensureProperty $ boolProperty desc $ stopContainer cid
+		, return NoChange
+		)
+  where
+	desc = "stopped"
 
 removeContainer :: ContainerId -> IO Bool
 removeContainer cid = catchBoolIO $

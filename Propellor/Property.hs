@@ -69,6 +69,12 @@ check c property = Property (propertyDesc property) $ ifM c
 	, return NoChange
 	)
 
+boolProperty :: Desc -> IO Bool -> Property
+boolProperty desc a = Property desc $ ifM a
+	( return MadeChange
+	, return FailedChange
+	)
+
 -- | Undoes the effect of a property.
 revert :: RevertableProperty -> RevertableProperty
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
