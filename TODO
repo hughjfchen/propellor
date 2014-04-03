@@ -2,7 +2,6 @@
   run it once for the whole. For example, may want to restart apache,
   but only once despite many config changes being made to satisfy
   properties. onChange is a poor substitute.
-* I often seem to want to be able to combine Properties monadically.
 * --spin needs 4 ssh connections when bootstrapping a new host
   that does not have the git repo yet. Should be possible to get that
   down to 1.
@@ -12,7 +11,4 @@
 * Display of docker container properties is a bit wonky. It always
   says they are unchanged even when they changed and triggered a
   reprovision.
-* Nothing brings up docker containers on boot. Although the next time
-  propellor runs it will notice if a container is done, and fix it.
-  Should propellor be run on boot? Or should provisioning a container
-  install a systemd service file to start it?
+* Should properties be a tree rather than a list?

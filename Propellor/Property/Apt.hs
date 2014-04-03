@@ -84,6 +84,10 @@ installed ps = robustly $ check (isInstallable ps) go
   where
 	go = runApt $ ["-y", "install"] ++ ps
 
+-- | Minimal install of package, without recommends.
+installedMin :: [Package] -> Property
+installedMin ps = installed ("--no-install-recommends" : ps)
+
 removed :: [Package] -> Property
 removed ps = check (or <$> isInstalled' ps) go
 	`describe` (unwords $ "apt removed":ps)
@@ -100,7 +104,7 @@ buildDep ps = robustly go
 -- in the specifed directory, with a dummy package also
 -- installed so that autoRemove won't remove them.
 buildDepIn :: FilePath -> Property
-buildDepIn dir = go `requires` installed ["devscripts"]
+buildDepIn dir = go `requires` installedMin ["devscripts"]
   where
 	go = cmdProperty' "sh" ["-c", "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --remove"]
 			noninteractiveEnv
