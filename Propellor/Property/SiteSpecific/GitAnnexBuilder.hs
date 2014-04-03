@@ -17,8 +17,7 @@ builder arch crontimes rsyncupload = combineProperties "gitannexbuilder"
 	[ Apt.stdSourcesList Unstable
 	, Apt.buildDep ["git-annex"]
 	, Apt.installed ["git", "rsync", "moreutils", "ca-certificates",
-		"liblockfile-simple-perl", "cabal-install", "vim", "less",
-		"libghc-fdo-notify-dev"]
+		"liblockfile-simple-perl", "cabal-install", "vim", "less"]
 	, serviceRunning "cron" `requires` Apt.installed ["cron"]
 	, User.accountFor builduser
 	, check (lacksdir builddir) $ userScriptProperty builduser
@@ -31,6 +30,9 @@ builder arch crontimes rsyncupload = combineProperties "gitannexbuilder"
 		[ "cd " ++ builddir
 		, "git clone git://git-annex.branchable.com/ build"
 		]
+	, Property "git-annex source build deps installed" $ do
+		d <- homedir
+		ensureProperty $ Apt.buildDepIn (d </> builddir </> "build")
 	, Cron.niceJob "gitannexbuilder" crontimes builduser ("~/" ++ builddir) "git pull ; ./autobuild"
 	-- The builduser account does not have a password set,
 	-- instead use the password privdata to hold the rsync server

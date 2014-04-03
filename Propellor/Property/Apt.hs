@@ -60,9 +60,10 @@ setSourcesList :: [Line] -> Property
 setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
 
 runApt :: [String] -> Property
-runApt ps = cmdProperty' "apt-get" ps env
-  where
-	env =
+runApt ps = cmdProperty' "apt-get" ps noninteractiveEnv
+
+noninteractiveEnv :: [(String, String)]
+noninteractiveEnv =
 		[ ("DEBIAN_FRONTEND", "noninteractive")
 		, ("APT_LISTCHANGES_FRONTEND", "none")
 		]
@@ -95,8 +96,17 @@ buildDep ps = robustly go
   where
 	go = runApt $ ["-y", "build-dep"] ++ ps
 
-{- Package installation may fail becuse the archive has changed.
- - Run an update in that case and retry. -}
+-- | Installs the build deps for the source package unpacked
+-- in the specifed directory, with a dummy package also
+-- installed so that autoRemove won't remove them.
+buildDepIn :: FilePath -> Property
+buildDepIn dir = go `requires` installed ["devscripts"]
+  where
+	go = cmdProperty' "sh" ["-c", "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --remove"]
+			noninteractiveEnv
+
+-- | Package installation may fail becuse the archive has changed.
+-- Run an update in that case and retry. -}
 robustly :: Property -> Property
 robustly p = Property (propertyDesc p) $ do
 	r <- ensureProperty p
