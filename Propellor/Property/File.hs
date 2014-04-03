@@ -19,7 +19,7 @@ f `containsLine` l = fileProperty (f ++ " contains:" ++ l) go f
 
 -- | Ensures that a line is not present in a file.
 -- Note that the file is ensured to exist, so if it doesn't, an empty
--- file will be written. -}
+-- file will be written.
 lacksLine :: FilePath -> Line -> Property
 f `lacksLine` l = fileProperty (f ++ " remove: " ++ l) (filter (/= l)) f
 

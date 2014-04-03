@@ -41,7 +41,7 @@ scriptProperty script = cmdProperty "sh" ["-c", shellcmd]
 	shellcmd = intercalate " ; " ("set -e" : script)
 
 -- | A property that can satisfied by running a series of shell commands,
--- as user (staring in their home directory).
+-- as user (cd'd to their home directory).
 userScriptProperty :: UserName -> [String] -> Property
 userScriptProperty user script = cmdProperty "su" ["-c", shellcmd, user]
   where

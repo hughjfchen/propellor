@@ -23,5 +23,7 @@ ipv6to4 = fileProperty "ipv6to4" go interfaces
 		, "# End automatically added by propeller"
 		]
 
-ifUp :: String -> Property
+type Interface = String
+
+ifUp :: Interface -> Property
 ifUp iface = cmdProperty "ifup" [iface]

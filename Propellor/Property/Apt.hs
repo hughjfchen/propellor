@@ -46,12 +46,11 @@ debCdn = binandsrc "http://cdn.debian.net/debian"
 kernelOrg :: DebianSuite -> [Line]
 kernelOrg = binandsrc "http://mirrors.kernel.org/debian"
 
-{- | Makes sources.list have a standard content using the mirror CDN,
- - with a particular DebianSuite.
- -
- - Since the CDN is sometimes unreliable, also adds backup lines using
- - kernel.org.
- -}
+-- | Makes sources.list have a standard content using the mirror CDN,
+-- with a particular DebianSuite.
+--
+-- Since the CDN is sometimes unreliable, also adds backup lines using
+-- kernel.org.
 stdSourcesList :: DebianSuite -> Property
 stdSourcesList suite = setSourcesList (debCdn suite ++ kernelOrg suite)
 	`describe` ("standard sources.list for " ++ show suite)
@@ -113,7 +112,7 @@ buildDepIn dir = go `requires` installedMin ["devscripts", "equivs"]
 			noninteractiveEnv
 
 -- | Package installation may fail becuse the archive has changed.
--- Run an update in that case and retry. -}
+-- Run an update in that case and retry.
 robustly :: Property -> Property
 robustly p = Property (propertyDesc p) $ do
 	r <- ensureProperty p

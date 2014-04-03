@@ -1,4 +1,11 @@
-module Propellor.Property.Ssh where
+module Propellor.Property.Ssh (
+	setSshdConfig,
+	permitRootLogin,
+	passwordAuthentication,
+	hasAuthorizedKeys,
+	restartSshd,
+	uniqueHostKeys
+) where
 
 import Propellor
 import qualified Propellor.Property.File as File
@@ -38,8 +45,9 @@ hasAuthorizedKeys = go <=< homedir
 restartSshd :: Property
 restartSshd = cmdProperty "service" ["ssh", "restart"]
 
-{- | Blow away existing host keys and make new ones. Use a flag
- - file to prevent doing this more than once. -}
+-- | Blows away existing host keys and make new ones.
+-- Useful for systems installed from an image that might reuse host keys.
+-- A flag file is used to only ever do this once.
 uniqueHostKeys :: Property
 uniqueHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 	`onChange` restartSshd
