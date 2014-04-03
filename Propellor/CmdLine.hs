@@ -116,7 +116,8 @@ updateFirst cmdline next = do
 		modifyFileMode privDataDir (removeModes otherGroupModes)
 		s <- readProcessEnv "git" ["log", "-n", "1", "--format=%G?", originbranch]
 			(Just [("GNUPGHOME", privDataDir)])
-		nukeFile $ privDataDir </> "trustring.gpg"
+		nukeFile $ privDataDir </> "trustdb.gpg"
+		nukeFile $ privDataDir </> "pubring.gpg"
 		nukeFile $ privDataDir </> "gpg.conf"
 		if s == "U\n" || s == "G\n"
 			then do
