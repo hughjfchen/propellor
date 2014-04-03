@@ -31,14 +31,13 @@ main = defaultMain [host, Docker.containerProperties container]
 --
 -- Edit this to configure propellor!
 host :: HostName -> Maybe [Property]
-host hostname@"clam.kitenet.net" = Just $ props
+host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
+	-- Clam is a tor bridge, and an olduse.net shellbox and other
+	-- fun stuff.
 	& cleanCloudAtCost hostname
-	& standardSystem Unstable
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
 	& Apt.installed ["git-annex", "mtr"]
-	-- Clam is a tor bridge, and an olduse.net shellbox and other
-	-- fun stuff.
 	& Tor.isBridge
 	& JoeySites.oldUseNetshellBox
 	& Docker.configured
@@ -46,11 +45,9 @@ host hostname@"clam.kitenet.net" = Just $ props
 	! Docker.docked container hostname "webserver"
 	! Docker.docked container hostname "amd64-git-annex-builder"
 	& Docker.garbageCollected
-	-- Should come last as it reboots.
-	& Apt.installed ["systemd-sysv"] `onChange` Reboot.now
-host hostname@"orca.kitenet.net" = Just $ props
+host hostname@"orca.kitenet.net" = standardSystem Unstable $ props
+	-- Orca is the main git-annex build box.
 	& Hostname.set hostname
-	& standardSystem Unstable
 	& Apt.unattendedUpgrades
 	& Docker.configured
 	& Apt.buildDep ["git-annex"]
@@ -89,26 +86,30 @@ image (System (Debian Unstable) "i386") = "joeyh/debian-unstable-i386"
 image _ = "debian"
 
 -- This is my standard system setup
-standardSystem :: DebianSuite -> Property
-standardSystem suite = propertyList "standard system"
-	[ Apt.stdSourcesList suite `onChange` Apt.upgrade
-	, Apt.installed ["etckeeper"]
-	, Apt.installed ["ssh"]
-	, GitHome.installedFor "root"
-	, User.hasSomePassword "root"
-	-- Harden the system, but only once root's authorized_keys
-	-- is safely in place.
-	, check (Ssh.hasAuthorizedKeys "root") $
-		Ssh.passwordAuthentication False
-	, User.accountFor "joey"
-	, User.hasSomePassword "joey"
-	, Sudo.enabledFor "joey"
-	, GitHome.installedFor "joey"
-	, Apt.installed ["vim", "screen", "less"]
-	, Cron.runPropellor "30 * * * *"
-	-- I use postfix, or no MTA.
-	, Apt.removed ["exim4"] `onChange` Apt.autoRemove
-	]
+standardSystem :: DebianSuite -> [Property] -> Maybe [Property]
+standardSystem suite customprops = Just $
+	standardprops : customprops ++ [endprops]
+  where
+	standardprops = propertyList "standard system" $ props
+		& Apt.stdSourcesList suite `onChange` Apt.upgrade
+		& Apt.installed ["etckeeper"]
+		& Apt.installed ["ssh"]
+		& GitHome.installedFor "root"
+		& User.hasSomePassword "root"
+		-- Harden the system, but only once root's authorized_keys
+		-- is safely in place.
+		& check (Ssh.hasAuthorizedKeys "root")
+			(Ssh.passwordAuthentication False)
+		& User.accountFor "joey"
+		& User.hasSomePassword "joey"
+		& Sudo.enabledFor "joey"
+		& GitHome.installedFor "joey"
+		& Apt.installed ["vim", "screen", "less"]
+		& Cron.runPropellor "30 * * * *"
+		-- I use postfix, or no MTA.
+		& Apt.removed ["exim4"] `onChange` Apt.autoRemove
+	-- May reboot, so comes last.
+	endprops = Apt.installed ["systemd-sysv"] `onChange` Reboot.now
 
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: HostName -> Property
