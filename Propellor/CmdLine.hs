@@ -68,23 +68,14 @@ defaultMain getprops = do
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin host) = withprops host $ const $ spin host
-	go False cmdline@(Run host) = withprops host $
-		asRoot cmdline . ensureProperties
+	go False (Run host) = ifM ((==) 0 <$> getRealUserID)
+		( withprops host ensureProperties
+		, go True (Spin host)
+		)
 	go False (Boot host) = withprops host $ boot
 
 	withprops host a = maybe (unknownhost host) a $
 		headMaybe $ catMaybes $ map (\get -> get host) getprops
-
-asRoot :: CmdLine -> IO a -> IO a
-asRoot cmdline a = ifM ((==) 0 <$> getRealUserID)
-	( a
-	, do
-		hPutStrLn stderr "Need to be root to provision the local host! Running sudo propellor..."
-		hFlush stderr
-		(_, _, _, pid) <- createProcess $
-			proc "sudo" ["./propellor", show (Continue cmdline)]
-		exitWith =<< waitForProcess pid
-	)
 
 unknownhost :: HostName -> IO a
 unknownhost h = errorMessage $ unlines
