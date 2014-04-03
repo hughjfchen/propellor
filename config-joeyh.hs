@@ -36,8 +36,6 @@ host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
 	& Tor.isBridge
 	& JoeySites.oldUseNetshellBox
 	& Docker.configured
-	& File.dirExists "/var/www"
-	! Docker.docked container hostname "webserver"
 	! Docker.docked container hostname "amd64-git-annex-builder"
 	& Docker.garbageCollected
 -- Orca is the main git-annex build box.
@@ -47,7 +45,7 @@ host hostname@"orca.kitenet.net" = standardSystem Unstable $ props
 	& Docker.configured
 	& Apt.buildDep ["git-annex"]
 	& Docker.docked container hostname "amd64-git-annex-builder"
-	& Docker.docked container hostname "i386-git-annex-builder"
+	! Docker.docked container hostname "i386-git-annex-builder"
 	& Docker.garbageCollected
 -- My laptop
 host _hostname@"darkstar.kitenet.net" = Just $ props
