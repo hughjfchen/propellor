@@ -166,7 +166,7 @@ spin host = do
 				hClose toh
 				hClose fromh
 				sendGitClone host url
-				go url privdata
+				go url branch privdata
 	
 	user = "root@"++host
 
