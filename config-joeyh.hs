@@ -36,8 +36,6 @@ host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
 	& Tor.isBridge
 	& JoeySites.oldUseNetshellBox
 	& Docker.configured
-	& File.dirExists "/var/www"
-	! Docker.docked container hostname "webserver"
 	! Docker.docked container hostname "amd64-git-annex-builder"
 	& Docker.garbageCollected
 -- Orca is the main git-annex build box.
