@@ -31,8 +31,8 @@ host hostname@"mybox.example.com" = Just $ props
 	& Apt.installed ["ssh"]
 	& User.hasSomePassword "root"
 	& Network.ipv6to4
+	& File.dirExists "/var/www"
 	& Docker.docked container hostname "webserver"
-		`requires` File.dirExists "/var/www"
 	& Docker.garbageCollected
 	& Cron.runPropellor "30 * * * *"
 -- add more hosts here...
