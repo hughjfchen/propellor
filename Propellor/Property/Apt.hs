@@ -79,14 +79,17 @@ upgrade = runApt ["-y", "dist-upgrade"]
 type Package = String
 
 installed :: [Package] -> Property
-installed ps = robustly $ check (isInstallable ps) go
+installed = installed' ["-y"]
+
+installed' :: [String] -> [Package] -> Property
+installed' params ps = robustly $ check (isInstallable ps) go
 	`describe` (unwords $ "apt installed":ps)
   where
-	go = runApt $ ["-y", "install"] ++ ps
+	go = runApt $ params ++ ["install"] ++ ps
 
 -- | Minimal install of package, without recommends.
 installedMin :: [Package] -> Property
-installedMin ps = installed ("--no-install-recommends" : ps)
+installedMin = installed' ["--no-install-recommends"]
 
 removed :: [Package] -> Property
 removed ps = check (or <$> isInstalled' ps) go
