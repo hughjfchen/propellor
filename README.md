@@ -15,6 +15,7 @@ or a remote host can be triggered to update by running propellor on your
 laptop: propellor --spin $host
 
 Properties are defined using Haskell. Edit config.hs to get started.
+For API documentation, see <http://hackage.haskell.org/package/propellor/>
 
 There is no special language as used in puppet, chef, ansible, etc.. just
 the full power of Haskell. Hopefully that power can be put to good use in
