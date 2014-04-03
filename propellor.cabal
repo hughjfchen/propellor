@@ -14,7 +14,8 @@ Extra-Source-Files:
   README.md
   TODO
   CHANGELOG
-  simple-config.hs
+  config-simple.hs
+  config-joeyh.hs
   Makefile
   debian/changelog
   debian/README.Debian
