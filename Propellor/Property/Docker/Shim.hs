@@ -36,7 +36,7 @@ setup propellorbin dest = do
 	let shim = file propellorbin dest
 	writeFile shim $ unlines
 		[ "#!/bin/sh"
-		, "set GCONV_PATH=" ++ shellEscape gconvdir
+		, "GCONV_PATH=" ++ shellEscape gconvdir
 		, "export GCONV_PATH"
 		, "exec " ++ unwords (map shellEscape $ linker : linkerparams) ++ 
 			" " ++ shellEscape propellorbin ++ " \"$@\""
