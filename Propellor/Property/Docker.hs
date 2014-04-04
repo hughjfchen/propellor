@@ -224,7 +224,6 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	if cid `elem` l
 		then do
 			runningident <- getrunningident
-			print (runningident, ident2id <$> runningident, ident, ident2id ident)
 			if (ident2id <$> runningident) == Just (ident2id ident)
 				then return NoChange
 				else do
@@ -240,8 +239,10 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	ident = ContainerIdent image hn cn runps
 
 	getrunningident = catchDefaultIO Nothing $
-		simpleShClient (namedPipe cid) "cat" [propellorIdent] $
-			pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
+		simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \vs -> do
+			print vs
+			-- pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
+			return Nothing
 
 	runps = getRunParams $ containerprops ++
 		-- expose propellor directory inside the container
