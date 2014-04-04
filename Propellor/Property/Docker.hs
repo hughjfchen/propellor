@@ -246,8 +246,9 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 		go oldimage
 
 	getrunningident :: IO (Maybe ContainerIdent)
-	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $
-		return . extractident
+	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \rs -> do
+		print (extractident rs)
+		return $ extractident rs
 
 	extractident :: [Resp] -> Maybe ContainerIdent
 	extractident = headMaybe . catMaybes . map (readish :: String -> Maybe ContainerIdent) . catMaybes . map getStdout
