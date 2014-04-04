@@ -12,7 +12,6 @@ import qualified Propellor.Property.File as File
 set :: HostName -> Property
 set hostname = propertyList desc go
 	`onChange` cmdProperty "hostname" [host]
-	`describe` desc
   where
 	desc = "hostname " ++ hostname
 	(host, domain) = separate (== '.') hostname
