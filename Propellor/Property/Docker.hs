@@ -227,6 +227,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 			-- parameters of the container differ and it must
 			-- be restarted.
 			runningident <- getrunningident
+			print runningident
 			if runningident == Just ident
 				then return NoChange
 				else do
