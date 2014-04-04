@@ -1,3 +1,10 @@
+propellor (0.2.3) UNRELEASED; urgency=medium
+
+  * docker: Fix laziness bug that caused running containers to be
+    unnecessarily stopped and committed.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 04 Apr 2014 15:58:03 -0400
+
 propellor (0.2.2) unstable; urgency=medium
 
   * Now supports provisioning docker containers with architecture/libraries

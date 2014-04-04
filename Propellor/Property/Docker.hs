@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, BangPatterns #-}
 
 -- | Docker support for propellor
 --
@@ -227,7 +227,6 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 			-- parameters of the container differ and it must
 			-- be restarted.
 			runningident <- getrunningident
-			print runningident
 			if runningident == Just ident
 				then return NoChange
 				else do
@@ -247,11 +246,11 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 
 	getrunningident :: IO (Maybe ContainerIdent)
 	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \rs -> do
-		print (extractident rs)
-		return $ extractident rs
+		let !v = extractident rs
+		return v
 
 	extractident :: [Resp] -> Maybe ContainerIdent
-	extractident = headMaybe . catMaybes . map (readish :: String -> Maybe ContainerIdent) . catMaybes . map getStdout
+	extractident = headMaybe . catMaybes . map readish . catMaybes . map getStdout
 
 	runps = getRunParams $ containerprops ++
 		-- expose propellor directory inside the container
