@@ -1,1 +1,1 @@
-Propellor/Config/Joey.hs
+config-joey.hs
