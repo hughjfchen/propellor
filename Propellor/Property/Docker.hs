@@ -241,9 +241,10 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	ident = ContainerIdent image hn cn runps
 
 	getrunningident :: IO (Maybe ContainerIdent)
-	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \rs -> do
-		print (rs, extractident rs)
-		return $ extractident rs
+	getrunningident = catchDefaultIO Nothing $
+		simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \rs -> do
+			print (rs, extractident rs)
+			return $ extractident rs
 
 	extractident :: [Resp] -> Maybe ContainerIdent
 	extractident = headMaybe . catMaybes . map (readish :: String -> Maybe ContainerIdent) . catMaybes . map getStdout
