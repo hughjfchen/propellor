@@ -76,7 +76,7 @@ defaultMain getprops = do
 		( onlyProcess $ withprops host ensureProperties
 		, go True (Spin host)
 		)
-	go False (Boot host) = withprops host $ boot
+	go False (Boot host) = onlyProcess $ withprops host $ boot
 
 	withprops host a = maybe (unknownhost host) a $
 		headMaybe $ catMaybes $ map (\get -> get host) getprops
