@@ -243,9 +243,14 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	ident = ContainerIdent image hn cn runps
 
 	getrunningident :: IO (Maybe ContainerIdent)
-	getrunningident = catchDefaultIO Nothing $
-		simpleShClient (namedPipe cid) "cat" [propellorIdent] $
-			pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
+	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \vs -> do
+		let l = (extractident) vs
+		print l
+		print vs
+		return l
+
+	extractident :: [Resp] -> Maybe ContainerIdent
+	extractident = headMaybe . catMaybes . map readish . catMaybes . map getStdout
 
 	runps = getRunParams $ containerprops ++
 		-- expose propellor directory inside the container
