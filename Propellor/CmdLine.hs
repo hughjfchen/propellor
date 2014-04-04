@@ -11,6 +11,7 @@ import System.PosixCompat
 
 import Propellor
 import qualified Propellor.Property.Docker as Docker
+import qualified Propellor.Property.Docker.Shim as DockerShim
 import Utility.FileMode
 import Utility.SafeCommand
 
@@ -53,6 +54,7 @@ processCmdLine = go =<< getArgs
 
 defaultMain :: [HostName -> Maybe [Property]] -> IO ()
 defaultMain getprops = do
+	DockerShim.cleanEnv
 	checkDebugMode
 	cmdline <- processCmdLine
 	debug ["command line: ", show cmdline]
