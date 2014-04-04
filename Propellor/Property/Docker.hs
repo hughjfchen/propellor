@@ -223,8 +223,12 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	l <- listContainers RunningContainers
 	if cid `elem` l
 		then do
+			-- Check if the ident has changed; if so the
+			-- parameters of the container differ and it must
+			-- be restarted.
 			runningident <- getrunningident
-			if (ident2id <$> runningident) == Just (ident2id ident)
+			print runningident
+			if runningident == Just ident
 				then return NoChange
 				else do
 					void $ stopContainer cid
@@ -238,11 +242,10 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
   where
 	ident = ContainerIdent image hn cn runps
 
+	getrunningident :: IO (Maybe ContainerIdent)
 	getrunningident = catchDefaultIO Nothing $
-		simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \vs -> do
-			print vs
-			-- pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
-			return Nothing
+		simpleShClient (namedPipe cid) "cat" [propellorIdent] $
+			pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
 
 	runps = getRunParams $ containerprops ++
 		-- expose propellor directory inside the container
