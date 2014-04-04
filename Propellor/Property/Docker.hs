@@ -295,22 +295,22 @@ chain s = case toContainerId s of
 	Just cid -> do
 		changeWorkingDirectory localdir
 		writeFile propellorIdent . show =<< readIdentFile cid
-		gogo reapzombies
 		-- Run boot provisioning before starting simpleSh,
 		-- to avoid ever provisioning twice at the same time.
 		whenM (checkProvisionedFlag cid) $ do
 			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain $ fromContainerId cid]) $
 				warningMessage "Boot provision failed!"
-		gogo $ simpleSh $ namedPipe cid
-		forever $ do
+		void $ async $ job reapzombies
+		void $ async $ job $ simpleSh $ namedPipe cid
+		job $ do
 			void $ ifM (inPath "bash")
 				( boolSystem "bash" [Param "-l"]
 				, boolSystem "/bin/sh" []
 				)
 			putStrLn "Container is still running. Press ^P^Q to detach."
   where
-	gogo =  void . async . forever . void . tryIO
+	job = forever . void . tryIO
 	reapzombies = void $ getAnyProcessStatus True False
 
 -- | Once a container is running, propellor can be run inside
