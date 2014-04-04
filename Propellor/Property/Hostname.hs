@@ -10,7 +10,7 @@ import qualified Propellor.Property.File as File
 -- with an entry for 127.0.1.1, which is standard at least on Debian
 -- to set the FDQN (127.0.0.1 is localhost).
 set :: HostName -> Property
-set hostname = propertyList desc go
+set hostname = combineProperties desc go
 	`onChange` cmdProperty "hostname" [host]
   where
 	desc = "hostname " ++ hostname
