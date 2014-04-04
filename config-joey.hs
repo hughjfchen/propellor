@@ -16,8 +16,6 @@ import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
--- Only imported to make sure it continues to build.
-import qualified Propellor.Config.Simple ()
 import Data.List
 
 main :: IO ()
