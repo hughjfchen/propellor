@@ -236,15 +236,24 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 					oldimage <- fromMaybe image <$> commitContainer cid
 					void $ removeContainer cid
 					go oldimage
-		else go image
+		else do
+			ifM (elem cid <$> listContainers AllContainers)
+				( do
+					-- Contaner may be stopped, or
+					-- may not exist.
+					void $ stopContainer cid
+					oldimage <- fromMaybe image <$> commitContainer cid
+					void $ removeContainer cid
+					go oldimage
+				, go image
+				)
   where
 	ident = ContainerIdent image hn cn runps
 
 	getrunningident :: IO (Maybe ContainerIdent)
-	getrunningident = catchDefaultIO Nothing $
-		simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \rs -> do
-			print (rs, extractident rs)
-			return $ extractident rs
+	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \rs -> do
+		print (rs, extractident rs)
+		return $ extractident rs
 
 	extractident :: [Resp] -> Maybe ContainerIdent
 	extractident = headMaybe . catMaybes . map (readish :: String -> Maybe ContainerIdent) . catMaybes . map getStdout
