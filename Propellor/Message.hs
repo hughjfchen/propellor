@@ -15,21 +15,25 @@ actionMessage desc a = do
 
 	r <- a
 
+	setTitle "propellor: running"
 	let (msg, intensity, color) = getActionResult r
 	putStr $ desc ++ " ... "
-	setSGR [SetColor Foreground intensity color]
-	putStrLn msg
-	setSGR []
-	setTitle "propellor: running"
+	colorLine intensity color msg
 	hFlush stdout
 
 	return r
 
 warningMessage :: String -> IO ()
-warningMessage s = do
-	setSGR [SetColor Foreground Vivid Red]
-	putStrLn $ "** warning: " ++ s
+warningMessage s = colorLine Vivid Red $ "** warning: " ++ s
+
+colorLine :: ColorIntensity -> Color -> String -> IO ()
+colorLine intensity color msg = do
+	setSGR [SetColor Foreground intensity color]
+	putStr msg
 	setSGR []
+	-- Note this comes after the color is reset, so that
+	-- the color set and reset happen in the same line.
+	putStrLn ""
 	hFlush stdout
 
 errorMessage :: String -> IO a

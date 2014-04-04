@@ -10,13 +10,15 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
-import qualified Propellor.Property.Reboot as Reboot
+--import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 import Data.List
+-- Only imported to make sure it continues to build.
+import qualified ConfigSimple as Simple
 
 main :: IO ()
 main = defaultMain [host, Docker.containerProperties container]
@@ -45,7 +47,7 @@ host hostname@"orca.kitenet.net" = standardSystem Unstable $ props
 	& Docker.configured
 	& Apt.buildDep ["git-annex"]
 	& Docker.docked container hostname "amd64-git-annex-builder"
-	! Docker.docked container hostname "i386-git-annex-builder"
+	& Docker.docked container hostname "i386-git-annex-builder"
 	& Docker.garbageCollected
 -- My laptop
 host _hostname@"darkstar.kitenet.net" = Just $ props
@@ -75,17 +77,14 @@ container _host name
 	| otherwise = Nothing
 
 -- | Docker images I prefer to use.
--- Edit as suites you, or delete this function and just put the image names
--- above.
 image :: System -> Docker.Image
-image (System (Debian Unstable) "amd64") = "joeyh/debian-unstable"
-image (System (Debian Unstable) "i386") = "joeyh/debian-unstable-i386"
-image _ = "debian"
+image (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
+image _ = "debian-stable-official" -- does not currently exist!
 
 -- This is my standard system setup
 standardSystem :: DebianSuite -> [Property] -> Maybe [Property]
 standardSystem suite customprops = Just $
-	standardprops : customprops ++ [endprops]
+	standardprops : customprops ++ endprops
   where
 	standardprops = propertyList "standard system" $ props
 		& Apt.stdSourcesList suite `onChange` Apt.upgrade
@@ -104,9 +103,11 @@ standardSystem suite customprops = Just $
 		& Apt.installed ["vim", "screen", "less"]
 		& Cron.runPropellor "30 * * * *"
 		-- I use postfix, or no MTA.
-		& Apt.removed ["exim4"] `onChange` Apt.autoRemove
-	-- May reboot, so comes last.
-	endprops = Apt.installed ["systemd-sysv"] `onChange` Reboot.now
+		& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
+			`onChange` Apt.autoRemove
+	-- May reboot, so comes last
+	-- Currently not enable due to #726375 
+	endprops = [] -- [Apt.installed ["systemd-sysv"] `onChange` Reboot.now]
 
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: HostName -> Property

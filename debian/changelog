@@ -1,3 +1,12 @@
+propellor (0.2.2) unstable; urgency=medium
+
+  * Now supports provisioning docker containers with architecture/libraries
+    that do not match the host.
+  * Fixed a bug that caused file modes to be set to 600 when propellor
+    modified the file (did not affect newly created files).
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 04 Apr 2014 01:07:32 -0400
+
 propellor (0.2.1) unstable; urgency=medium
 
   * First release with Debian package.

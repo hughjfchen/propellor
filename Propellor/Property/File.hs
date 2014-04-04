@@ -2,6 +2,8 @@ module Propellor.Property.File where
 
 import Propellor
 
+import System.Posix.Files
+
 type Line = String
 
 -- | Replaces all the content of a file.
@@ -32,12 +34,18 @@ fileProperty :: Desc -> ([Line] -> [Line]) -> FilePath -> Property
 fileProperty desc a f = Property desc $ go =<< doesFileExist f
   where
 	go True = do
-		ls <- lines <$> catchDefaultIO [] (readFile f)
+		ls <- lines <$> readFile f
 		let ls' = a ls
 		if ls' == ls
 			then noChange
-			else makeChange $ viaTmp writeFile f (unlines ls')
+			else makeChange $ viaTmp updatefile f (unlines ls')
 	go False = makeChange $ writeFile f (unlines $ a [])
+
+	-- viaTmp makes the temp file mode 600.
+	-- Replicate the original file mode before moving it into place.
+	updatefile f' content = do
+		writeFile f' content
+		getFileStatus f >>= setFileMode f' . fileMode
 
 -- | Ensures a directory exists.
 dirExists :: FilePath -> Property

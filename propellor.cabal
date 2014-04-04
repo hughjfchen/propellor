@@ -1,5 +1,5 @@
 Name: propellor
-Version: 0.2.1
+Version: 0.2.2
 Cabal-Version: >= 1.6
 License: GPL
 Maintainer: Joey Hess <joey@kitenet.net>
@@ -14,8 +14,6 @@ Extra-Source-Files:
   README.md
   TODO
   CHANGELOG
-  config-simple.hs
-  config-joeyh.hs
   Makefile
   debian/changelog
   debian/README.Debian
@@ -64,6 +62,8 @@ Library
 
   Exposed-Modules:
     Propellor
+    Propellor.Config.Simple
+    Propellor.Config.Joey
     Propellor.Property
     Propellor.Property.Apt
     Propellor.Property.Cmd
@@ -87,6 +87,7 @@ Library
   Other-Modules:
     Propellor.CmdLine
     Propellor.SimpleSh
+    Propellor.Property.Docker.Shim
     Utility.Applicative
     Utility.Data
     Utility.Directory
@@ -94,6 +95,7 @@ Library
     Utility.Exception
     Utility.FileMode
     Utility.FileSystemEncoding
+    Utility.LinuxMkLibs
     Utility.Misc
     Utility.Monad
     Utility.Path
