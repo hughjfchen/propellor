@@ -64,8 +64,6 @@ Library
 
   Exposed-Modules:
     Propellor
-    Propellor.Config.Simple
-    Propellor.Config.Joey
     Propellor.Property
     Propellor.Property.Apt
     Propellor.Property.Cmd
