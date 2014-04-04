@@ -233,22 +233,18 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 				else do
 					error "container parameters changed"
 					void $ stopContainer cid
-					oldimage <- fromMaybe image <$> commitContainer cid
-					void $ removeContainer cid
-					go oldimage
-		else do
-			ifM (elem cid <$> listContainers AllContainers)
-				( do
-					-- Contaner may be stopped, or
-					-- may not exist.
-					void $ stopContainer cid
-					oldimage <- fromMaybe image <$> commitContainer cid
-					void $ removeContainer cid
-					go oldimage
-				, go image
-				)
+					restartcontainer
+		else ifM (elem cid <$> listContainers AllContainers)
+			( restartcontainer
+			, go image
+			)
   where
 	ident = ContainerIdent image hn cn runps
+
+	restartcontainer = do
+		oldimage <- fromMaybe image <$> commitContainer cid
+		void $ removeContainer cid
+		go oldimage
 
 	getrunningident :: IO (Maybe ContainerIdent)
 	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \rs -> do
