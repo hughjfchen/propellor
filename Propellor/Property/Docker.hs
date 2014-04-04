@@ -231,7 +231,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 			if runningident == Just ident
 				then return NoChange
 				else do
-					print ["container parameters changed"]
+					error "container parameters changed"
 					void $ stopContainer cid
 					oldimage <- fromMaybe image <$> commitContainer cid
 					void $ removeContainer cid
@@ -248,7 +248,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 		return . extractident
 
 	extractident :: [Resp] -> Maybe ContainerIdent
-	extractident = headMaybe . catMaybes . map readish . catMaybes . map getStdout
+	extractident = headMaybe . catMaybes . map (readish :: String -> Maybe ContainerIdent) . catMaybes . map getStdout
 
 	runps = getRunParams $ containerprops ++
 		-- expose propellor directory inside the container
