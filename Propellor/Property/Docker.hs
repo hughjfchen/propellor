@@ -224,6 +224,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	if cid `elem` l
 		then do
 			runningident <- getrunningident
+			print (runningident, ident2id <$> runningident, ident, ident2id ident)
 			if (ident2id <$> runningident) == Just (ident2id ident)
 				then return NoChange
 				else do
