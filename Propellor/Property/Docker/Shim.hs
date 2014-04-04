@@ -40,7 +40,7 @@ setup propellorbin dest = do
 	return shim
 
 file :: FilePath -> FilePath -> FilePath
-file propellorbin dest = dest </> propellorbin
+file propellorbin dest = dest </> takeFileName propellorbin
 
 installFile :: FilePath -> FilePath -> IO ()
 installFile top f = do

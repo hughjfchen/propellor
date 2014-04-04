@@ -10,3 +10,5 @@ set :: HostName -> Property
 set hostname = "/etc/hostname" `File.hasContent` [hostname]
 	`onChange` cmdProperty "hostname" [hostname]
 	`describe` ("hostname " ++ hostname)
+  where
+	(host, domain) = separate (== '.') hostname
