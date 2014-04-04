@@ -1,5 +1,7 @@
 -- |  This is the live config file used by propellor's author.
 
+module Propellor.Config.Joey where
+
 import Propellor
 import Propellor.CmdLine
 import qualified Propellor.Property.File as File
@@ -16,9 +18,9 @@ import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
-import Data.List
 -- Only imported to make sure it continues to build.
-import qualified ConfigSimple as Simple
+import qualified Propellor.Config.Simple ()
+import Data.List
 
 main :: IO ()
 main = defaultMain [host, Docker.containerProperties container]
