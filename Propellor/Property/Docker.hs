@@ -230,7 +230,6 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 			if runningident == Just ident
 				then return NoChange
 				else do
-					print "stopping!"
 					void $ stopContainer cid
 					restartcontainer
 		else ifM (elem cid <$> listContainers AllContainers)
