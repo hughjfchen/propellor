@@ -85,7 +85,7 @@ image _ = "debian"
 -- This is my standard system setup
 standardSystem :: DebianSuite -> [Property] -> Maybe [Property]
 standardSystem suite customprops = Just $
-	standardprops : customprops ++ [endprops]
+	standardprops : customprops ++ endprops
   where
 	standardprops = propertyList "standard system" $ props
 		& Apt.stdSourcesList suite `onChange` Apt.upgrade
@@ -104,9 +104,11 @@ standardSystem suite customprops = Just $
 		& Apt.installed ["vim", "screen", "less"]
 		& Cron.runPropellor "30 * * * *"
 		-- I use postfix, or no MTA.
-		& Apt.removed ["exim4"] `onChange` Apt.autoRemove
-	-- May reboot, so comes last.
-	endprops = Apt.installed ["systemd-sysv"] `onChange` Reboot.now
+		& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
+			`onChange` Apt.autoRemove
+	-- May reboot, so comes last
+	-- Currently not enable due to #726375 
+	endprops = [] -- [Apt.installed ["systemd-sysv"] `onChange` Reboot.now]
 
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: HostName -> Property
