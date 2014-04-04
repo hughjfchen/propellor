@@ -1,7 +1,5 @@
 -- |  This is the live config file used by propellor's author.
 
-module Propellor.Config.Joey where
-
 import Propellor
 import Propellor.CmdLine
 import qualified Propellor.Property.File as File

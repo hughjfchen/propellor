@@ -1,1 +1,1 @@
-Propellor/Config/Simple.hs
+config-simple.hs
