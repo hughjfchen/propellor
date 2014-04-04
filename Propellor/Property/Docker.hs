@@ -253,7 +253,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	go img = do
 		clearProvisionedFlag cid
 		createDirectoryIfMissing True (takeDirectory $ identFile cid)
-		shim <- Shim.setup "./propellor" (localdir </> shimdir cid)
+		shim <- Shim.setup (localdir </> "propellor") (localdir </> shimdir cid)
 		writeFile (identFile cid) (show ident)
 		ensureProperty $ boolProperty "run" $ runContainer img
 			(runps ++ ["-i", "-d", "-t"])
@@ -284,7 +284,7 @@ chain s = case toContainerId s of
 		-- Run boot provisioning before starting simpleSh,
 		-- to avoid ever provisioning twice at the same time.
 		whenM (checkProvisionedFlag cid) $ do
-			let shim = Shim.file "./propellor" (localdir </> shimdir cid)
+			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain $ fromContainerId cid]) $
 				warningMessage "Boot provision failed!"
 		void $ async $ simpleSh $ namedPipe cid
@@ -304,7 +304,7 @@ chain s = case toContainerId s of
 -- 1 minute.
 provisionContainer :: ContainerId -> Property
 provisionContainer cid = containerDesc cid $ Property "provision" $ do
-	let shim = Shim.file "./propellor" (localdir </> shimdir cid)
+	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 	r <- simpleShClientRetry 60 (namedPipe cid) shim params (go Nothing)
 	when (r /= FailedChange) $
 		setProvisionedFlag cid 
