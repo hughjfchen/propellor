@@ -227,11 +227,9 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 			-- parameters of the container differ and it must
 			-- be restarted.
 			runningident <- getrunningident
-			print runningident
 			if runningident == Just ident
 				then return NoChange
 				else do
-					error "container parameters changed"
 					void $ stopContainer cid
 					restartcontainer
 		else ifM (elem cid <$> listContainers AllContainers)
@@ -247,9 +245,8 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 		go oldimage
 
 	getrunningident :: IO (Maybe ContainerIdent)
-	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \rs -> do
-		print (rs, extractident rs)
-		return $ extractident rs
+	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $
+		return . extractident
 
 	extractident :: [Resp] -> Maybe ContainerIdent
 	extractident = headMaybe . catMaybes . map (readish :: String -> Maybe ContainerIdent) . catMaybes . map getStdout
