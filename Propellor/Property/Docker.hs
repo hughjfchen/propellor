@@ -231,7 +231,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 			if runningident == Just ident
 				then return NoChange
 				else do
-					print "container parameters changed"
+					debug ["container parameters changed"]
 					void $ stopContainer cid
 					oldimage <- fromMaybe image <$> commitContainer cid
 					void $ removeContainer cid
@@ -244,11 +244,8 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	ident = ContainerIdent image hn cn runps
 
 	getrunningident :: IO (Maybe ContainerIdent)
-	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \vs -> do
-		let l = (extractident) vs
-		print l
-		print vs
-		return l
+	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $
+		return . extractident
 
 	extractident :: [Resp] -> Maybe ContainerIdent
 	extractident = headMaybe . catMaybes . map readish . catMaybes . map getStdout
