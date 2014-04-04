@@ -231,6 +231,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 			if runningident == Just ident
 				then return NoChange
 				else do
+					print "container parameters changed"
 					void $ stopContainer cid
 					oldimage <- fromMaybe image <$> commitContainer cid
 					void $ removeContainer cid
