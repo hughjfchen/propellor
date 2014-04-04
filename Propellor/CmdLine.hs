@@ -85,9 +85,9 @@ onlyProcess :: IO a -> IO a
 onlyProcess a = bracket lock unlock (const a)
   where
 	lock = do
-		l <- openFd lockfile ReadWrite Nothing defaultFileFlags
+		l <- createFile lockfile stdFileMode
 		setLock l (WriteLock, AbsoluteSeek, 0, 0)
-			`catchIO` (const alreadyrunning)
+			`catchIO` const alreadyrunning
 		return l
 	unlock = closeFd
 	alreadyrunning = error "Propellor is already running on this host!"
