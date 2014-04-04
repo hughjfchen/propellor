@@ -4,13 +4,6 @@
 --
 -- The existance of a docker container is just another Property of a system,
 -- which propellor can set up. See config.hs for an example.
---
--- Note that propellor provisions a container by running itself, inside the
--- container. Currently, to avoid the overhead of building propellor
--- inside the container, the binary from outside is reused inside. 
--- So, the libraries that propellor is linked against need to be available
--- in the container with compatable versions. This can cause a problem
--- if eg, mixing Debian stable and unstable.
 
 module Propellor.Property.Docker where
 
@@ -18,6 +11,7 @@ import Propellor
 import Propellor.SimpleSh
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Docker.Shim as Shim
 import Utility.SafeCommand
 import Utility.Path
 
@@ -256,15 +250,14 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 		, name (fromContainerId cid)
 		]
 	
-	chaincmd = [localdir </> "propellor", "--docker", fromContainerId cid]
-
 	go img = do
 		clearProvisionedFlag cid
 		createDirectoryIfMissing True (takeDirectory $ identFile cid)
+		shim <- Shim.setup "./propellor" (localdir </> shimdir cid)
 		writeFile (identFile cid) (show ident)
 		ensureProperty $ boolProperty "run" $ runContainer img
 			(runps ++ ["-i", "-d", "-t"])
-			chaincmd
+			[shim, "--docker", fromContainerId cid]
 
 -- | Called when propellor is running inside a docker container.
 -- The string should be the container's ContainerId.
@@ -290,8 +283,9 @@ chain s = case toContainerId s of
 		writeFile propellorIdent . show =<< readIdentFile cid
 		-- Run boot provisioning before starting simpleSh,
 		-- to avoid ever provisioning twice at the same time.
-		whenM (checkProvisionedFlag cid) $
-			unlessM (boolSystem "./propellor" [Param "--continue", Param $ show $ Chain $ fromContainerId cid]) $
+		whenM (checkProvisionedFlag cid) $ do
+			let shim = Shim.file "./propellor" (localdir </> shimdir cid)
+			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain $ fromContainerId cid]) $
 				warningMessage "Boot provision failed!"
 		void $ async $ simpleSh $ namedPipe cid
 		forever $ do
@@ -310,7 +304,8 @@ chain s = case toContainerId s of
 -- 1 minute.
 provisionContainer :: ContainerId -> Property
 provisionContainer cid = containerDesc cid $ Property "provision" $ do
-	r <- simpleShClientRetry 60 (namedPipe cid) "./propellor" params (go Nothing)
+	let shim = Shim.file "./propellor" (localdir </> shimdir cid)
+	r <- simpleShClientRetry 60 (namedPipe cid) shim params (go Nothing)
 	when (r /= FailedChange) $
 		setProvisionedFlag cid 
 	return r
@@ -342,11 +337,17 @@ stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId 
 stoppedContainer :: ContainerId -> Property
 stoppedContainer cid = containerDesc cid $ Property desc $ 
 	ifM (elem cid <$> listContainers RunningContainers)
-		( ensureProperty $ boolProperty desc $ stopContainer cid
+		( cleanup `after` ensureProperty 
+			(boolProperty desc $ stopContainer cid)
 		, return NoChange
 		)
   where
 	desc = "stopped"
+	cleanup = do
+		nukeFile $ namedPipe cid
+		nukeFile $ identFile cid
+		removeDirectoryRecursive $ shimdir cid
+		clearProvisionedFlag cid
 
 removeContainer :: ContainerId -> IO Bool
 removeContainer cid = catchBoolIO $
@@ -396,10 +397,10 @@ propellorIdent = "/.propellor-ident"
 
 -- | Named pipe used for communication with the container.
 namedPipe :: ContainerId -> FilePath
-namedPipe cid = "docker/" ++ fromContainerId cid
+namedPipe cid = "docker" </> fromContainerId cid
 
 provisionedFlag :: ContainerId -> FilePath
-provisionedFlag cid = "docker/" ++ fromContainerId cid ++ ".provisioned"
+provisionedFlag cid = "docker" </> fromContainerId cid ++ ".provisioned"
 
 clearProvisionedFlag :: ContainerId -> IO ()
 clearProvisionedFlag = nukeFile . provisionedFlag
@@ -412,8 +413,11 @@ setProvisionedFlag cid = do
 checkProvisionedFlag :: ContainerId -> IO Bool
 checkProvisionedFlag = doesFileExist . provisionedFlag
 
+shimdir :: ContainerId -> FilePath
+shimdir cid = "docker" </> fromContainerId cid ++ ".shim"
+
 identFile :: ContainerId -> FilePath
-identFile cid = "docker/" ++ fromContainerId cid ++ ".ident"
+identFile cid = "docker" </> fromContainerId cid ++ ".ident"
 
 readIdentFile :: ContainerId -> IO ContainerIdent
 readIdentFile cid = fromMaybe (error "bad ident in identFile")

@@ -87,6 +87,7 @@ Library
   Other-Modules:
     Propellor.CmdLine
     Propellor.SimpleSh
+    Propellor.Property.Docker.Shim
     Utility.Applicative
     Utility.Data
     Utility.Directory
@@ -94,6 +95,7 @@ Library
     Utility.Exception
     Utility.FileMode
     Utility.FileSystemEncoding
+    Utility.LinuxMkLibs
     Utility.Misc
     Utility.Monad
     Utility.Path
