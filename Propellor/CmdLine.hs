@@ -8,6 +8,8 @@ import System.Log.Formatter
 import System.Log.Handler (setFormatter, LogHandler)
 import System.Log.Handler.Simple
 import System.PosixCompat
+import Control.Exception (bracket)
+import System.Posix.IO
 
 import Propellor
 import qualified Propellor.Property.Docker as Docker
@@ -71,13 +73,25 @@ defaultMain getprops = do
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin host) = withprops host $ const $ spin host
 	go False (Run host) = ifM ((==) 0 <$> getRealUserID)
-		( withprops host ensureProperties
+		( onlyProcess $ withprops host ensureProperties
 		, go True (Spin host)
 		)
 	go False (Boot host) = withprops host $ boot
 
 	withprops host a = maybe (unknownhost host) a $
 		headMaybe $ catMaybes $ map (\get -> get host) getprops
+
+onlyProcess :: IO a -> IO a
+onlyProcess a = bracket lock unlock (const a)
+  where
+	lock = do
+		l <- openFd lockfile ReadWrite Nothing defaultFileFlags
+		setLock l (WriteLock, AbsoluteSeek, 0, 0)
+			`catchIO` (const alreadyrunning)
+		return l
+	unlock = closeFd
+	alreadyrunning = error "Propellor is already running on this host!"
+	lockfile = localdir </> ".lock"
 
 unknownhost :: HostName -> IO a
 unknownhost h = errorMessage $ unlines
