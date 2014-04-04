@@ -29,10 +29,15 @@ setup propellorbin dest = do
 	let linker = (dest ++) $ 
 		fromMaybe (error "cannot find ld-linux linker") $
 			headMaybe $ filter ("ld-linux" `isInfixOf`) libs'
+	let gconvdir = (dest ++) $ parentDir $
+		fromMaybe (error "cannot find gconv directory") $
+			headMaybe $ filter ("/gconv/" `isInfixOf`) glibclibs
 	let linkerparams = ["--library-path", intercalate ":" libdirs ]
 	let shim = file propellorbin dest
 	writeFile shim $ unlines
 		[ "#!/bin/sh"
+		, "set GCONV_PATH=" ++ shellEscape gconvdir
+		, "export GCONV_PATH"
 		, "exec " ++ unwords (map shellEscape $ linker : linkerparams) ++ 
 			" " ++ shellEscape propellorbin ++ " \"$@\""
 		]
