@@ -17,6 +17,8 @@ import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 import Data.List
+-- Only imported to make sure it continues to build.
+import qualified ConfigSimple as Simple
 
 main :: IO ()
 main = defaultMain [host, Docker.containerProperties container]
@@ -75,12 +77,9 @@ container _host name
 	| otherwise = Nothing
 
 -- | Docker images I prefer to use.
--- Edit as suites you, or delete this function and just put the image names
--- above.
 image :: System -> Docker.Image
-image (System (Debian Unstable) "amd64") = "joeyh/debian-unstable"
-image (System (Debian Unstable) "i386") = "joeyh/debian-unstable-i386"
-image _ = "debian"
+image (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
+image _ = "debian-stable-official" -- does not currently exist!
 
 -- This is my standard system setup
 standardSystem :: DebianSuite -> [Property] -> Maybe [Property]

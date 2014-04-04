@@ -12,3 +12,5 @@
   says they are unchanged even when they changed and triggered a
   reprovision.
 * Should properties be a tree rather than a list?
+* Only make docker garbage collection run once a day or something
+  to avoid GC after a temp fail.
