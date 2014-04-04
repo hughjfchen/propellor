@@ -17,6 +17,7 @@ import Utility.Path
 
 import Control.Concurrent.Async
 import System.Posix.Directory
+import System.Posix.Process
 import Data.List
 
 -- | Configures docker with an authentication file, so that images can be
@@ -272,6 +273,9 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 -- | Called when propellor is running inside a docker container.
 -- The string should be the container's ContainerId.
 --
+-- This process is effectively init inside the container.
+-- It even needs to wait on zombie processes!
+--
 -- Fork a thread to run the SimpleSh server in the background.
 -- In the foreground, run an interactive bash (or sh) shell,
 -- so that the user can interact with it when attached to the container.
@@ -291,19 +295,23 @@ chain s = case toContainerId s of
 	Just cid -> do
 		changeWorkingDirectory localdir
 		writeFile propellorIdent . show =<< readIdentFile cid
+		gogo reapzombies
 		-- Run boot provisioning before starting simpleSh,
 		-- to avoid ever provisioning twice at the same time.
 		whenM (checkProvisionedFlag cid) $ do
 			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain $ fromContainerId cid]) $
 				warningMessage "Boot provision failed!"
-		void $ async $ simpleSh $ namedPipe cid
+		gogo $ simpleSh $ namedPipe cid
 		forever $ do
 			void $ ifM (inPath "bash")
 				( boolSystem "bash" [Param "-l"]
 				, boolSystem "/bin/sh" []
 				)
 			putStrLn "Container is still running. Press ^P^Q to detach."
+  where
+	gogo =  void . async . forever . void . tryIO
+	reapzombies = void $ getAnyProcessStatus True False
 
 -- | Once a container is running, propellor can be run inside
 -- it to provision it.
@@ -335,7 +343,7 @@ provisionContainer cid = containerDesc cid $ Property "provision" $ do
 			hPutStrLn stderr s
 			hFlush stderr
 			go Nothing rest
-		Done _ -> ret lastline
+		Done -> ret lastline
 	go lastline [] = ret lastline
 
 	ret lastline = return $ fromMaybe FailedChange $
