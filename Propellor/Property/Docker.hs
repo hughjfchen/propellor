@@ -304,7 +304,7 @@ chain s = case toContainerId s of
 		void $ async $ job reapzombies
 		void $ async $ job $ simpleSh $ namedPipe cid
 		job $ do
-			void $ ifM (inPath "bash")
+			void $ tryIO $ ifM (inPath "bash")
 				( boolSystem "bash" [Param "-l"]
 				, boolSystem "/bin/sh" []
 				)
