@@ -236,10 +236,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 					oldimage <- fromMaybe image <$> commitContainer cid
 					void $ removeContainer cid
 					go oldimage
-		else do
-			whenM (elem cid <$> listContainers AllContainers) $ do
-				void $ removeContainer cid
-			go image
+		else go image
   where
 	ident = ContainerIdent image hn cn runps
 
