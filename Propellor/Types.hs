@@ -100,6 +100,7 @@ data PrivDataField
 	= DockerAuthentication
 	| SshPrivKey UserName
 	| Password UserName
+	| PrivFile FilePath
 	deriving (Read, Show, Ord, Eq)
 
 

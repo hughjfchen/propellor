@@ -11,6 +11,13 @@ hasContent :: FilePath -> [Line] -> Property
 f `hasContent` newcontent = fileProperty ("replace " ++ f)
 	(\_oldcontent -> newcontent) f
 
+-- | Ensures a file has contents that comes from PrivData.
+-- Note: Does not do anything with the permissions of the file to prevent
+-- it from being seen.
+hasPrivContent :: FilePath -> Property
+hasPrivContent f = Property ("privcontent " ++ f) $
+	withPrivData (PrivFile f) (\v -> ensureProperty $ f `hasContent` lines v)
+
 -- | Ensures that a line is present in a file, adding it to the end if not.
 containsLine :: FilePath -> Line -> Property
 f `containsLine` l = fileProperty (f ++ " contains:" ++ l) go f

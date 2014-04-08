@@ -12,6 +12,7 @@ import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
 --import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.Tor as Tor
+import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
@@ -35,6 +36,7 @@ host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
 	& Apt.installed ["git-annex", "mtr"]
 	& Tor.isBridge
 	& JoeySites.oldUseNetshellBox
+	& Docker.docked container hostname "openid-provider"
 	& Docker.configured
 	& Docker.garbageCollected
 -- Orca is the main git-annex build box.
@@ -59,7 +61,8 @@ host _ = Nothing
 -- | This is where Docker containers are set up. A container
 -- can vary by hostname where it's used, or be the same everywhere.
 container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
-container _host name
+container _parenthost name
+	-- Simple web server, publishing the outside host's /var/www
 	| name == "webserver" = Just $ Docker.containerFrom
 		(image $ System (Debian Unstable) "amd64")
 		[ Docker.publish "8080:80"
@@ -67,6 +70,14 @@ container _host name
 		, Docker.inside $ props
 			& serviceRunning "apache2"
 				`requires` Apt.installed ["apache2"]
+		]
+	-- My own openid provider. Uses php, so containerized for security
+	-- and administrative sanity.
+	| name == "openid-provider" = Just $ Docker.containerFrom
+		(image $ System (Debian Stable) "amd64")
+		[ Docker.publish "8081:80"
+		, Docker.inside $ props
+			& OpenId.providerFor ["joey", "liw"]
 		]
 	
 	-- armel builder has a companion container that run amd64 and
@@ -96,6 +107,7 @@ container _host name
 -- | Docker images I prefer to use.
 image :: System -> Docker.Image
 image (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
+image (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
 image _ = "debian-stable-official" -- does not currently exist!
 
 -- This is my standard system setup
