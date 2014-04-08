@@ -3,16 +3,12 @@ module Propellor.Property.Cmd (
 	cmdProperty',
 	scriptProperty,
 	userScriptProperty,
-	serviceRunning,
-	serviceRestarted,
 ) where
 
-import Control.Monad
 import Control.Applicative
 import Data.List
 
 import Propellor.Types
-import Propellor.Engine
 import Utility.Monad
 import Utility.SafeCommand
 import Utility.Env
@@ -47,22 +43,3 @@ userScriptProperty :: UserName -> [String] -> Property
 userScriptProperty user script = cmdProperty "su" ["-c", shellcmd, user]
   where
 	shellcmd = intercalate " ; " ("set -e" : "cd" : script)
-
-type ServiceName = String
-
--- | Ensures that a service is running.
---
--- Note that due to the general poor state of init scripts, the best
--- we can do is try to start the service, and if it fails, assume
--- this means it's already running.
-serviceRunning :: ServiceName -> Property
-serviceRunning svc = Property ("running " ++ svc) $ do
-	void $ ensureProperty $
-		scriptProperty ["service " ++ shellEscape svc ++ " start >/dev/null 2>&1 || true"]
-	return NoChange
-
-serviceRestarted :: ServiceName -> Property
-serviceRestarted svc = Property ("restarted " ++ svc) $ do
-	void $ ensureProperty $
-		scriptProperty ["service " ++ shellEscape svc ++ " restart >/dev/null 2>&1 || true"]
-	return NoChange

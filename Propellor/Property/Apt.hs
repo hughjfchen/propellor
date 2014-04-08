@@ -8,6 +8,7 @@ import Control.Monad
 
 import Propellor
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Service as Service
 import Propellor.Property.File (Line)
 
 sourcesList :: FilePath
@@ -149,9 +150,7 @@ autoRemove = runApt ["-y", "autoremove"]
 unattendedUpgrades :: RevertableProperty
 unattendedUpgrades = RevertableProperty enable disable
   where
-	enable = setup True
-		`before` installed ["cron"]
-		`before` serviceRunning "cron"
+	enable = setup True `before` Service.running "cron"
 	disable = setup False
 
 	setup enabled = (if enabled then installed else removed) ["unattended-upgrades"]
@@ -176,3 +175,10 @@ reConfigure package vals = reconfigure `requires` setselections
 					hPutStrLn h $ unwords [package, template, tmpltype, value]
 				hClose h
 	reconfigure = cmdProperty "dpkg-reconfigure" ["-fnone", package]
+
+-- | Ensures that a service is installed and running.
+--
+-- Assumes that there is a 1:1 mapping between service names and apt
+-- package names.
+serviceInstalledRunning :: Package -> Property
+serviceInstalledRunning svc = Service.running svc `requires` installed [svc]

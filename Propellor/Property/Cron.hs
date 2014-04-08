@@ -18,8 +18,7 @@ job desc times user cddir command = ("/etc/cron.d/" ++ desc) `File.hasContent`
 	, ""
 	, times ++ "\t" ++ user ++ "\t" ++ "cd " ++ cddir ++ " && " ++ command
 	]
-	`requires` Apt.installed ["cron"]
-	`requires` serviceRunning "cron"
+	`requires` Apt.serviceInstalledRunning "cron"
 	`describe` ("cronned " ++ desc)
 
 -- | Installs a cron job, and runs it niced and ioniced.

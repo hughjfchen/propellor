@@ -68,8 +68,7 @@ container _parenthost name
 		[ Docker.publish "8080:80"
 		, Docker.volume "/var/www:/var/www"
 		, Docker.inside $ props
-			& serviceRunning "apache2"
-				`requires` Apt.installed ["apache2"]
+			& Apt.serviceInstalledRunning "apache2"
 			& Apt.unattendedUpgrades
 		]
 

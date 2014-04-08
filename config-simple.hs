@@ -47,7 +47,6 @@ container _ "webserver" = Just $ Docker.containerFrom "joeyh/debian-unstable"
 	[ Docker.publish "80:80"
 	, Docker.volume "/var/www:/var/www"
 	, Docker.inside $ props
-		& serviceRunning "apache2"
-			`requires` Apt.installed ["apache2"]
+		& Apt.serviceInstalledRunning "apache2"
 	]
 container _ _ = Nothing

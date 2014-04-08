@@ -24,7 +24,7 @@ builder arch crontimes rsyncupload = combineProperties "gitannexbuilder"
 	, Apt.buildDep ["git-annex"]
 	, Apt.installed ["git", "rsync", "moreutils", "ca-certificates",
 		"liblockfile-simple-perl", "cabal-install", "vim", "less"]
-	, serviceRunning "cron" `requires` Apt.installed ["cron"]
+	, Apt.serviceInstalledRunning "cron"
 	, User.accountFor builduser
 	, check (not <$> doesDirectoryExist gitbuilderdir) $ userScriptProperty builduser
 		[ "git clone git://git.kitenet.net/gitannexbuilder " ++ gitbuilderdir

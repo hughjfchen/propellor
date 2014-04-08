@@ -3,15 +3,15 @@ module Propellor.Property.OpenId where
 import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Service as Service
 
 import Data.List
 
 providerFor :: [UserName] -> String -> Property
 providerFor users baseurl = propertyList desc $
-	[ serviceRunning "apache2"
-		`requires` Apt.installed ["apache2"]
+	[ Apt.serviceInstalledRunning "apache2"
 	, Apt.installed ["simpleid"]
-		`onChange` serviceRestarted "apache2"
+		`onChange` Service.restarted "apache2"
 	, File.fileProperty desc
 		(map setbaseurl) "/etc/simpleid/config.inc"
 	] ++ map identfile users
