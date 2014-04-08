@@ -6,13 +6,13 @@ import qualified Propellor.Property.Apt as Apt
 
 import Data.List
 
-providerFor :: [UserName] -> HostName -> Property
-providerFor users hostname = propertyList ("openid provider") $
+providerFor :: [UserName] -> String -> Property
+providerFor users baseurl = propertyList ("openid provider") $
 	[ serviceRunning "apache2"
 		`requires` Apt.installed ["apache2"]
 	, Apt.installed ["simpleid"]
 		`onChange` serviceRestarted "apache2"
-	, File.fileProperty ("simpleid host " ++ hostname)
+	, File.fileProperty ("simpleid host " ++ baseurl)
 		(map setbaseurl) "/etc/simpleid/config.inc"
 	] ++ map identfile users
   where
@@ -20,5 +20,5 @@ providerFor users hostname = propertyList ("openid provider") $
 		[ "/var/lib/simpleid/identities/", u, ".identity" ]
 	setbaseurl l
 		| "SIMPLEID_BASE_URL" `isInfixOf` l = 
-			"define('SIMPLEID_BASE_URL', 'http://"++hostname++"/simpleid');"
+			"define('SIMPLEID_BASE_URL', 'http://"++baseurl++"/simpleid');"
 		| otherwise = l
