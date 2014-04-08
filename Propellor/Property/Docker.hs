@@ -157,9 +157,17 @@ publish = runProp "publish"
 user :: String -> Containerized Property
 user = runProp "user"
 
--- | Bind mount a volume
+-- | Mount a volume
+-- Create a bind mount with: [host-dir]:[container-dir]:[rw|ro]
+-- With just a directory, creates a volume in the container.
 volume :: String -> Containerized Property
 volume = runProp "volume"
+
+-- | Mount a volume from the specified container into the current
+-- container.
+volumes_from :: ContainerName -> Containerized Property
+volumes_from cn = genProp "volumes-rom" $ \hn ->
+	fromContainerId (ContainerId hn cn)
 
 -- | Work dir inside the container. 
 workdir :: String -> Containerized Property
