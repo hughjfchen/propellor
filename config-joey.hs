@@ -77,6 +77,7 @@ container _parenthost name
 		(image $ System (Debian Stable) "amd64")
 		[ Docker.publish "8081:80"
 		, Docker.inside $ props
+			& Apt.stdSourcesList Stable `onChange` Apt.upgrade
 			& OpenId.providerFor ["joey", "liw"]
 		]
 	
