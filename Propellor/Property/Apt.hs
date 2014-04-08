@@ -149,7 +149,9 @@ autoRemove = runApt ["-y", "autoremove"]
 unattendedUpgrades :: RevertableProperty
 unattendedUpgrades = RevertableProperty enable disable
   where
-	enable = setup True `before` installed ["cron"]
+	enable = setup True
+		`before` installed ["cron"]
+		`before` serviceRunning "cron"
 	disable = setup False
 
 	setup enabled = (if enabled then installed else removed) ["unattended-upgrades"]
