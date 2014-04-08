@@ -9,7 +9,6 @@ import Network.Socket
 import Control.Concurrent.Chan
 import Control.Concurrent.Async
 import System.Process (std_in, std_out, std_err)
-import System.Exit
 
 import Propellor
 import Utility.FileMode
@@ -18,7 +17,7 @@ import Utility.ThreadScheduler
 data Cmd = Cmd String [String]
 	deriving (Read, Show)
 
-data Resp = StdoutLine String | StderrLine String | Done ExitCode
+data Resp = StdoutLine String | StderrLine String | Done
 	deriving (Read, Show)
 
 simpleSh :: FilePath -> IO ()
@@ -49,7 +48,7 @@ simpleSh namedpipe = do
 			v <- readChan chan
 			hPutStrLn h (show v)
 			case v of
-				Done _ -> noop
+				Done -> noop
 				_ -> runwriter
 		writer <- async runwriter
 
@@ -58,8 +57,10 @@ simpleSh namedpipe = do
 		void $ concurrently
 			(mkreader StdoutLine outh)
 			(mkreader StderrLine errh)
+		
+		void $ tryIO $ waitForProcess pid
 
-		writeChan chan . Done =<< waitForProcess pid
+		writeChan chan Done
 
 		wait writer
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, BangPatterns #-}
 
 -- | Docker support for propellor
 --
@@ -17,6 +17,7 @@ import Utility.Path
 
 import Control.Concurrent.Async
 import System.Posix.Directory
+import System.Posix.Process
 import Data.List
 import Data.List.Utils
 
@@ -166,7 +167,7 @@ volume = runProp "volume"
 -- | Mount a volume from the specified container into the current
 -- container.
 volumes_from :: ContainerName -> Containerized Property
-volumes_from cn = genProp "volumes-rom" $ \hn ->
+volumes_from cn = genProp "volumes-from" $ \hn ->
 	fromContainerId (ContainerId hn cn)
 
 -- | Work dir inside the container. 
@@ -241,24 +242,34 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	l <- listContainers RunningContainers
 	if cid `elem` l
 		then do
+			-- Check if the ident has changed; if so the
+			-- parameters of the container differ and it must
+			-- be restarted.
 			runningident <- getrunningident
-			if (ident2id <$> runningident) == Just (ident2id ident)
+			if runningident == Just ident
 				then return NoChange
 				else do
 					void $ stopContainer cid
-					oldimage <- fromMaybe image <$> commitContainer cid
-					void $ removeContainer cid
-					go oldimage
-		else do
-			whenM (elem cid <$> listContainers AllContainers) $ do
-				void $ removeContainer cid
-			go image
+					restartcontainer
+		else ifM (elem cid <$> listContainers AllContainers)
+			( restartcontainer
+			, go image
+			)
   where
 	ident = ContainerIdent image hn cn runps
 
-	getrunningident = catchDefaultIO Nothing $
-		simpleShClient (namedPipe cid) "cat" [propellorIdent] $
-			pure . headMaybe . catMaybes . map readish . catMaybes . map getStdout
+	restartcontainer = do
+		oldimage <- fromMaybe image <$> commitContainer cid
+		void $ removeContainer cid
+		go oldimage
+
+	getrunningident :: IO (Maybe ContainerIdent)
+	getrunningident = simpleShClient (namedPipe cid) "cat" [propellorIdent] $ \rs -> do
+		let !v = extractident rs
+		return v
+
+	extractident :: [Resp] -> Maybe ContainerIdent
+	extractident = headMaybe . catMaybes . map readish . catMaybes . map getStdout
 
 	runps = getRunParams hn $ containerprops ++
 		-- expose propellor directory inside the container
@@ -279,6 +290,9 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 
 -- | Called when propellor is running inside a docker container.
 -- The string should be the container's ContainerId.
+--
+-- This process is effectively init inside the container.
+-- It even needs to wait on zombie processes!
 --
 -- Fork a thread to run the SimpleSh server in the background.
 -- In the foreground, run an interactive bash (or sh) shell,
@@ -305,13 +319,17 @@ chain s = case toContainerId s of
 			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain $ fromContainerId cid]) $
 				warningMessage "Boot provision failed!"
-		void $ async $ simpleSh $ namedPipe cid
-		forever $ do
-			void $ ifM (inPath "bash")
+		void $ async $ job reapzombies
+		void $ async $ job $ simpleSh $ namedPipe cid
+		job $ do
+			void $ tryIO $ ifM (inPath "bash")
 				( boolSystem "bash" [Param "-l"]
 				, boolSystem "/bin/sh" []
 				)
 			putStrLn "Container is still running. Press ^P^Q to detach."
+  where
+	job = forever . void . tryIO
+	reapzombies = void $ getAnyProcessStatus True False
 
 -- | Once a container is running, propellor can be run inside
 -- it to provision it.
@@ -343,7 +361,7 @@ provisionContainer cid = containerDesc cid $ Property "provision" $ do
 			hPutStrLn stderr s
 			hFlush stderr
 			go Nothing rest
-		Done _ -> ret lastline
+		Done -> ret lastline
 	go lastline [] = ret lastline
 
 	ret lastline = return $ fromMaybe FailedChange $

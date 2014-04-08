@@ -1,3 +1,12 @@
+propellor (0.2.3) UNRELEASED; urgency=medium
+
+  * docker: Fix laziness bug that caused running containers to be
+    unnecessarily stopped and committed.
+  * Add locking so only one propellor can run at a time on a host.
+  * docker: When running as effective init inside container, wait on zombies.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 04 Apr 2014 15:58:03 -0400
+
 propellor (0.2.2) unstable; urgency=medium
 
   * Now supports provisioning docker containers with architecture/libraries

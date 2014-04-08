@@ -3,7 +3,7 @@
 --
 -- Note: This is currently Debian specific, due to glibcLibs.
 
-module Propellor.Property.Docker.Shim (setup, file) where
+module Propellor.Property.Docker.Shim (setup, cleanEnv, file) where
 
 import Propellor
 import Utility.LinuxMkLibs
@@ -43,6 +43,9 @@ setup propellorbin dest = do
 		]
 	modifyFileMode shim (addModes executeModes)
 	return shim
+
+cleanEnv :: IO ()
+cleanEnv = void $ unsetEnv "GCONV_PATH"
 
 file :: FilePath -> FilePath -> FilePath
 file propellorbin dest = dest </> takeFileName propellorbin
