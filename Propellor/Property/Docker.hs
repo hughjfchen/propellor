@@ -18,6 +18,7 @@ import Utility.Path
 import Control.Concurrent.Async
 import System.Posix.Directory
 import Data.List
+import Data.List.Utils
 
 -- | Configures docker with an authentication file, so that images can be
 -- pushed to index.docker.io.
@@ -372,7 +373,8 @@ data ContainerFilter = RunningContainers | AllContainers
 -- | Only lists propellor managed containers.
 listContainers :: ContainerFilter -> IO [ContainerId]
 listContainers status = 
-	catMaybes . map toContainerId . catMaybes . map (lastMaybe . words) . lines
+	catMaybes . map toContainerId . concat . map (split ",")
+		. catMaybes . map (lastMaybe . words) . lines
 		<$> readProcess dockercmd ps
   where
 	ps
