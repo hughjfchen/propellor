@@ -63,24 +63,20 @@ host _ = Nothing
 container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
 container _parenthost name
 	-- Simple web server, publishing the outside host's /var/www
-	| name == "webserver" = Just $ Docker.containerFrom
-		(image $ System (Debian Unstable) "amd64")
+	| name == "webserver" = Just $ standardContainer Stable "amd64"
 		[ Docker.publish "8080:80"
 		, Docker.volume "/var/www:/var/www"
 		, Docker.inside $ props
 			& Apt.serviceInstalledRunning "apache2"
-			& Apt.unattendedUpgrades
 		]
 
 	-- My own openid provider. Uses php, so containerized for security
 	-- and administrative sanity.
-	| name == "openid-provider" = Just $ Docker.containerFrom
-		(image $ System (Debian Stable) "amd64")
+	| name == "openid-provider" = Just $ standardContainer Stable "amd64"
 		[ Docker.publish "8081:80"
 		, Docker.inside $ props
-			& Apt.stdSourcesList Stable
-			& Apt.unattendedUpgrades
-			& OpenId.providerFor ["joey", "liw"] "openid.kitenet.net:8081"
+			& OpenId.providerFor ["joey", "liw"]
+				"openid.kitenet.net:8081"
 		]
 	
 	-- armel builder has a companion container that run amd64 and
@@ -146,6 +142,15 @@ standardSystem suite customprops = Just $
 	-- May reboot, so comes last
 	-- Currently not enable due to #726375 
 	endprops = [] -- [Apt.installed ["systemd-sysv"] `onChange` Reboot.now]
+
+-- This is my standard container setup.
+standardContainer :: DebianSuite -> Architecture -> [Docker.Containerized Property] -> Docker.Container
+standardContainer suite arch ps = Docker.containerFrom
+	(image $ System (Debian suite) arch) $
+	[ Docker.inside $ props
+		& Apt.stdSourcesList suite
+		& Apt.unattendedUpgrades
+	] ++ ps
 
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: HostName -> Property
