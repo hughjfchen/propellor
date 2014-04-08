@@ -81,8 +81,7 @@ container parenthost name
 		, Docker.inside $ props
 			& Apt.stdSourcesList Stable
 			& Apt.unattendedUpgrades
-			& OpenId.providerFor ["joey", "liw"]
-				(parenthost++":8081")
+			& OpenId.providerFor ["joey", "liw"] "openid.kitenet.net:8081"
 		]
 	
 	-- armel builder has a companion container that run amd64 and
