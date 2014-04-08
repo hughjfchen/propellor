@@ -95,7 +95,7 @@ onlyProcess a = bracket lock unlock (const a)
 
 unknownhost :: HostName -> IO a
 unknownhost h = errorMessage $ unlines
-	[ "Unknown host: " ++ h
+	[ "Propellor does not know about host: " ++ h
 	, "(Perhaps you should specify the real hostname on the command line?)"
 	, "(Or, edit propellor's config.hs to configure this host)"
 	]
