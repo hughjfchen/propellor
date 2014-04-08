@@ -117,7 +117,7 @@ containerProperties findcontainer = \h -> case toContainerId h of
 -- container.
 data Container = Container Image [Containerized Property]
 
-data Containerized a = Containerized [RunParam] a
+data Containerized a = Containerized [HostName -> RunParam] a
 
 -- | Parameters to pass to `docker run` when creating a container.
 type RunParam = String
@@ -171,6 +171,15 @@ workdir = runProp "workdir"
 memory :: String -> Containerized Property
 memory = runProp "memory"
 
+-- | Link with another container on the same host.
+link :: ContainerName -> ContainerAlias -> Containerized Property
+link linkwith alias = genProp "link" $ \hn ->
+	fromContainerId (ContainerId hn linkwith) ++ ":" ++ alias
+
+-- | A short alias for a linked container.
+-- Each container has its own alias namespace.
+type ContainerAlias = String
+
 -- | A container is identified by its name, and the host
 -- on which it's deployed.
 data ContainerId = ContainerId HostName ContainerName
@@ -182,10 +191,10 @@ data ContainerId = ContainerId HostName ContainerName
 data ContainerIdent = ContainerIdent Image HostName ContainerName [RunParam]
 	deriving (Read, Show, Eq)
 
-getRunParams :: [Containerized a] -> [RunParam]
-getRunParams l = concatMap get l
+getRunParams :: HostName -> [Containerized a] -> [RunParam]
+getRunParams hn l = concatMap get l
   where
-	get (Containerized ps _) = ps
+	get (Containerized ps _) = map (\a -> a hn ) ps
 
 fromContainerized :: forall a. [Containerized a] -> [a]
 fromContainerized l = map get l
@@ -254,7 +263,7 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	extractident :: [Resp] -> Maybe ContainerIdent
 	extractident = headMaybe . catMaybes . map readish . catMaybes . map getStdout
 
-	runps = getRunParams $ containerprops ++
+	runps = getRunParams hn $ containerprops ++
 		-- expose propellor directory inside the container
 		[ volume (localdir++":"++localdir)
 		-- name the container in a predictable way so we
@@ -404,10 +413,16 @@ listImages :: IO [Image]
 listImages = lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
 runProp :: String -> RunParam -> Containerized Property
-runProp field val = 
-	Containerized ["--" ++ param] (Property (param) (return NoChange))
+runProp field val = Containerized
+	[\_ -> "--" ++ param]
+	(Property (param) (return NoChange))
   where
 	param = field++"="++val
+
+genProp :: String -> (HostName -> RunParam) -> Containerized Property
+genProp field mkval = Containerized
+	[\h -> "--" ++ field ++ "=" ++ mkval h]
+	(Property field (return NoChange))
 
 -- | The ContainerIdent of a container is written to
 -- /.propellor-ident inside it. This can be checked to see if
