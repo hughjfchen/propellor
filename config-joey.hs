@@ -71,6 +71,7 @@ container _parenthost name
 			& serviceRunning "apache2"
 				`requires` Apt.installed ["apache2"]
 		]
+
 	-- My own openid provider. Uses php, so containerized for security
 	-- and administrative sanity.
 	| name == "openid-provider" = Just $ Docker.containerFrom
