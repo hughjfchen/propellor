@@ -167,7 +167,7 @@ volume = runProp "volume"
 -- | Mount a volume from the specified container into the current
 -- container.
 volumes_from :: ContainerName -> Containerized Property
-volumes_from cn = genProp "volumes-rom" $ \hn ->
+volumes_from cn = genProp "volumes-from" $ \hn ->
 	fromContainerId (ContainerId hn cn)
 
 -- | Work dir inside the container. 
