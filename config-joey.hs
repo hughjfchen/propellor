@@ -61,7 +61,7 @@ host _ = Nothing
 -- | This is where Docker containers are set up. A container
 -- can vary by hostname where it's used, or be the same everywhere.
 container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
-container _parenthost name
+container parenthost name
 	-- Simple web server, publishing the outside host's /var/www
 	| name == "webserver" = Just $ Docker.containerFrom
 		(image $ System (Debian Unstable) "amd64")
@@ -70,6 +70,7 @@ container _parenthost name
 		, Docker.inside $ props
 			& serviceRunning "apache2"
 				`requires` Apt.installed ["apache2"]
+			& Apt.unattendedUpgrades
 		]
 
 	-- My own openid provider. Uses php, so containerized for security
@@ -78,8 +79,9 @@ container _parenthost name
 		(image $ System (Debian Stable) "amd64")
 		[ Docker.publish "8081:80"
 		, Docker.inside $ props
-			& Apt.stdSourcesList Stable `onChange` Apt.upgrade
-			& OpenId.providerFor ["joey", "liw"]
+			& Apt.stdSourcesList Stable
+			& Apt.unattendedUpgrades
+			& OpenId.providerFor ["joey", "liw"] parenthost
 		]
 	
 	-- armel builder has a companion container that run amd64 and
@@ -89,6 +91,8 @@ container _parenthost name
 	| name == "armel-git-annex-builder-companion" = Just $ Docker.containerFrom
 		(image $ System (Debian Unstable) "amd64")
 		[ Docker.volume GitAnnexBuilder.homedir
+		, Docker.inside $ props
+			& Apt.unattendedUpgrades
 		]
 	| name == "armel-git-annex-builder" = Just $ Docker.containerFrom
 		(image $ System (Debian Unstable) "armel")
@@ -96,13 +100,17 @@ container _parenthost name
 		, Docker.volumes_from (name ++ "-companion")
 		, Docker.inside $ props
 --			& GitAnnexBuilder.builder "armel" "15 * * * *" True
+			& Apt.unattendedUpgrades
 		]
 	
 	| "-git-annex-builder" `isSuffixOf` name =
 		let arch = takeWhile (/= '-') name
 		in Just $ Docker.containerFrom
 			(image $ System (Debian Unstable) arch)
-			[ Docker.inside $ props & GitAnnexBuilder.builder arch "15 * * * *" True ]
+			[ Docker.inside $ props
+				& GitAnnexBuilder.builder arch "15 * * * *" True
+				& Apt.unattendedUpgrades
+			]
 	
 	| otherwise = Nothing
 
