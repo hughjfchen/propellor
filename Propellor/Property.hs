@@ -33,6 +33,16 @@ combineProperties desc ps = Property desc $ go ps NoChange
 			FailedChange -> return FailedChange
 			_ -> go ls (r <> rs)
 
+-- | Combines together two properties, resulting in one property
+-- that ensures the first, and if the first succeeds, ensures the second.
+-- The property uses the description of the first property.
+before :: Property -> Property -> Property
+p1 `before` p2 = Property (propertyDesc p1) $ do
+	r <- ensureProperty p1
+	case r of
+		FailedChange -> return FailedChange
+		_ -> ensureProperty p2
+
 -- | Makes a perhaps non-idempotent Property be idempotent by using a flag
 -- file to indicate whether it has run before.
 -- Use with caution.

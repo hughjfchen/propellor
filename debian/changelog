@@ -1,6 +1,8 @@
 propellor (0.2.4) UNRELEASED; urgency=medium
 
   * ipv6to4: Ensure interface is brought up automatically on boot.
+  * Enabling unattended upgrades now ensures that cron is installed and
+    running to perform them.
 
  -- Joey Hess <joeyh@debian.org>  Tue, 08 Apr 2014 18:07:12 -0400
 

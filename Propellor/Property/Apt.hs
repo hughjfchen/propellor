@@ -147,9 +147,12 @@ autoRemove = runApt ["-y", "autoremove"]
 
 -- | Enables unattended upgrades. Revert to disable.
 unattendedUpgrades :: RevertableProperty
-unattendedUpgrades = RevertableProperty (go True) (go False)
+unattendedUpgrades = RevertableProperty enable disable
   where
-	go enabled = (if enabled then installed else removed) ["unattended-upgrades"]
+	enable = setup True `before` installed ["cron"]
+	disable = setup False
+
+	setup enabled = (if enabled then installed else removed) ["unattended-upgrades"]
 		`onChange` reConfigure "unattended-upgrades"
 			[("unattended-upgrades/enable_auto_updates" , "boolean", v)]
 		`describe` ("unattended upgrades " ++ v)
