@@ -45,7 +45,8 @@ host hostname@"orca.kitenet.net" = standardSystem Unstable $ props
 	& Apt.buildDep ["git-annex"]
 	& Docker.docked container hostname "amd64-git-annex-builder"
 	& Docker.docked container hostname "i386-git-annex-builder"
-	-- ! Docker.docked container hostname "armel-git-annex-builder"
+	& Docker.docked container hostname "armel-git-annex-builder-companion"
+	& Docker.docked container hostname "armel-git-annex-builder"
 	& Docker.garbageCollected
 -- My laptop
 host _hostname@"darkstar.kitenet.net" = Just $ props
@@ -67,11 +68,29 @@ container _host name
 			& serviceRunning "apache2"
 				`requires` Apt.installed ["apache2"]
 		]
+	
+	-- armel builder has a companion container that run amd64 and
+	-- runs the build first to get TH splices. They share a home
+	-- directory, and need to have the same versions of all haskell
+	-- libraries installed.
+	| name == "armel-git-annex-builder-companion" = Just $ Docker.containerFrom
+		(image $ System (Debian Unstable) "amd64")
+		[ Docker.volume GitAnnexBuilder.homedir
+		]
+	| name == "armel-git-annex-builder" = Just $ Docker.containerFrom
+		(image $ System (Debian Unstable) "armel")
+		[ Docker.link (name ++ "-companion") "companion"
+		, Docker.volumes_from (name ++ "-companion")
+		, Docker.inside $ props
+--			& GitAnnexBuilder.builder "armel" "15 * * * *" True
+		]
+	
 	| "-git-annex-builder" `isSuffixOf` name =
 		let arch = takeWhile (/= '-') name
 		in Just $ Docker.containerFrom
 			(image $ System (Debian Unstable) arch)
 			[ Docker.inside $ props & GitAnnexBuilder.builder arch "15 * * * *" True ]
+	
 	| otherwise = Nothing
 
 -- | Docker images I prefer to use.

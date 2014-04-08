@@ -9,8 +9,14 @@ import Propellor.Property.Cron (CronTimes)
 builduser :: UserName
 builduser = "builder"
 
+homedir :: FilePath
+homedir = "/home/builder"
+
+gitbuilderdir :: FilePath
+gitbuilderdir = homedir </> "gitbuilder"
+
 builddir :: FilePath
-builddir = "gitbuilder"
+builddir = gitbuilderdir </> "build"
 
 builder :: Architecture -> CronTimes -> Bool -> Property
 builder arch crontimes rsyncupload = combineProperties "gitannexbuilder"
@@ -20,26 +26,22 @@ builder arch crontimes rsyncupload = combineProperties "gitannexbuilder"
 		"liblockfile-simple-perl", "cabal-install", "vim", "less"]
 	, serviceRunning "cron" `requires` Apt.installed ["cron"]
 	, User.accountFor builduser
-	, check (lacksdir builddir) $ userScriptProperty builduser
-		[ "git clone git://git.kitenet.net/gitannexbuilder " ++ builddir
-		, "cd " ++ builddir
+	, check (not <$> doesDirectoryExist gitbuilderdir) $ userScriptProperty builduser
+		[ "git clone git://git.kitenet.net/gitannexbuilder " ++ gitbuilderdir
+		, "cd " ++ gitbuilderdir
 		, "git checkout " ++ arch
 		]
 		`describe` "gitbuilder setup"
-	, check (lacksdir $ builddir </> "build") $ userScriptProperty builduser
-		[ "cd " ++ builddir
-		, "git clone git://git-annex.branchable.com/ build"
+	, check (not <$> doesDirectoryExist builddir) $ userScriptProperty builduser
+		[ "git clone git://git-annex.branchable.com/ " ++ builddir
 		]
-	, Property "git-annex source build deps installed" $ do
-		d <- homedir
-		ensureProperty $ Apt.buildDepIn (d </> builddir </> "build")
-	, Cron.niceJob "gitannexbuilder" crontimes builduser ("~/" ++ builddir) "git pull ; ./autobuild"
+	, "git-annex source build deps installed" ==> Apt.buildDepIn builddir
+	, Cron.niceJob "gitannexbuilder" crontimes builduser gitbuilderdir "git pull ; ./autobuild"
 	-- The builduser account does not have a password set,
 	-- instead use the password privdata to hold the rsync server
 	-- password used to upload the built image.
 	, Property "rsync password" $ do
-		d <- homedir
-		let f = d </> "rsyncpassword"
+		let f = homedir </> "rsyncpassword"
 		if rsyncupload 
 			then withPrivData (Password builduser) $ \p -> do
 				oldp <- catchDefaultIO "" $ readFileStrict f
@@ -52,8 +54,3 @@ builder arch crontimes rsyncupload = combineProperties "gitannexbuilder"
 					, makeChange $ writeFile f "no password configured"
 					)
 	]
-  where
-  	homedir = fromMaybe ("/home/" ++ builduser) <$> User.homedir builduser
-	lacksdir d = do
-		h <- homedir
-		not <$> doesDirectoryExist (h </> d)
