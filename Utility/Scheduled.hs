@@ -49,9 +49,9 @@ data Recurrance
 	| Weekly (Maybe WeekDay)
 	| Monthly (Maybe MonthDay)
 	| Yearly (Maybe YearDay)
+	| Divisible Int Recurrance
 	-- ^ Days, Weeks, or Months of the year evenly divisible by a number.
 	-- (Divisible Year is years evenly divisible by a number.)
-	| Divisible Int Recurrance
   deriving (Eq, Read, Show, Ord)
 
 type WeekDay = Int

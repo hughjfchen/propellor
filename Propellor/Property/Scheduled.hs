@@ -1,5 +1,6 @@
 module Propellor.Property.Scheduled
 	( period
+	, periodParse
 	, Recurrance(..)
 	, WeekDay
 	, MonthDay
@@ -31,7 +32,15 @@ period prop recurrance = Property desc $ do
 		else noChange
   where
 	schedule = Schedule recurrance AnyTime
-	desc = propertyDesc prop ++ " (period " ++ show recurrance ++ ")"
+	desc = propertyDesc prop ++ " (period " ++ fromRecurrance recurrance ++ ")"
+
+-- | Like period, but parse a human-friendly string.
+periodParse :: Property -> String -> Property
+periodParse prop s = case toRecurrance s of
+	Just recurrance -> period prop recurrance
+	Nothing -> Property "periodParse" $ do
+		warningMessage $ "failed periodParse: " ++ s
+		noChange
 
 lastCheckedFile :: FilePath
 lastCheckedFile = localdir </> ".lastchecked"
