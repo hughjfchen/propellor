@@ -143,7 +143,7 @@ standardSystem suite customprops = Just $
 	-- Currently not enable due to #726375 
 	endprops = [] -- [Apt.installed ["systemd-sysv"] `onChange` Reboot.now]
 
--- This is my standard container setup.
+-- This is my standard container setup, featuring automatic upgrades.
 standardContainer :: DebianSuite -> Architecture -> [Docker.Containerized Property] -> Docker.Container
 standardContainer suite arch ps = Docker.containerFrom
 	(image $ System (Debian suite) arch) $
