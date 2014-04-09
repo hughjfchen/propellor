@@ -23,6 +23,7 @@ withPrivData field a = maybe missing a =<< getPrivData field
   where
 	missing = do
 		warningMessage $ "Missing privdata " ++ show field
+		putStrLn $ "Fix this by running: propellor --set $hostname '" ++ show field ++ "'"
 		return FailedChange
 
 getPrivData :: PrivDataField -> IO (Maybe String)

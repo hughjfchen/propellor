@@ -3,6 +3,7 @@
 
 import Propellor
 import Propellor.CmdLine
+import Propellor.Property.Scheduled
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
@@ -34,7 +35,7 @@ host hostname@"mybox.example.com" = Just $ props
 	& Network.ipv6to4
 	& File.dirExists "/var/www"
 	& Docker.docked container hostname "webserver"
-	& Docker.garbageCollected
+	& Docker.garbageCollected `period` Daily
 	& Cron.runPropellor "30 * * * *"
 -- add more hosts here...
 --host "foo.example.com" =

@@ -2,6 +2,7 @@
 
 import Propellor
 import Propellor.CmdLine
+import Propellor.Property.Scheduled
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
@@ -38,21 +39,22 @@ host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
 	& JoeySites.oldUseNetshellBox
 	& Docker.docked container hostname "openid-provider"
 	& Docker.configured
-	& Docker.garbageCollected
+	& Docker.garbageCollected `period` Daily
 -- Orca is the main git-annex build box.
 host hostname@"orca.kitenet.net" = standardSystem Unstable $ props
 	& Hostname.set hostname
 	& Apt.unattendedUpgrades
 	& Docker.configured
-	& Apt.buildDep ["git-annex"]
+	& Apt.buildDep ["git-annex"] `period` Daily
 	& Docker.docked container hostname "amd64-git-annex-builder"
 	& Docker.docked container hostname "i386-git-annex-builder"
 	! Docker.docked container hostname "armel-git-annex-builder-companion"
 	! Docker.docked container hostname "armel-git-annex-builder"
-	& Docker.garbageCollected
+	& Docker.garbageCollected `period` Daily
 -- My laptop
 host _hostname@"darkstar.kitenet.net" = Just $ props
 	& Docker.configured
+	& Apt.buildDep ["git-annex"] `period` Daily
 	
 -- add more hosts here...
 --host "foo.example.com" =

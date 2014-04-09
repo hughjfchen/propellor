@@ -38,7 +38,7 @@ Executable propellor
   GHC-Options: -Wall
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async
+   containers, network, async, time, QuickCheck
   
   if (! os(windows))
     Build-Depends: unix
@@ -48,7 +48,7 @@ Executable config
   GHC-Options: -Wall -threaded
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async
+   containers, network, async, time, QuickCheck
 
   if (! os(windows))
     Build-Depends: unix
@@ -57,7 +57,7 @@ Library
   GHC-Options: -Wall
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async
+   containers, network, async, time, QuickCheck
 
   if (! os(windows))
     Build-Depends: unix
@@ -73,6 +73,8 @@ Library
     Propellor.Property.File
     Propellor.Property.Network
     Propellor.Property.Reboot
+    Propellor.Property.Scheduled
+    Propellor.Property.Service
     Propellor.Property.Ssh
     Propellor.Property.Sudo
     Propellor.Property.Tor
@@ -103,9 +105,11 @@ Library
     Utility.PosixFiles
     Utility.Process
     Utility.SafeCommand
+    Utility.Scheduled
     Utility.ThreadScheduler
     Utility.Tmp
     Utility.UserInfo
+    Utility.QuickCheck
 
 source-repository head
   type: git
