@@ -38,6 +38,7 @@ host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
 	& Tor.isBridge
 	& JoeySites.oldUseNetshellBox
 	& Docker.docked container hostname "openid-provider"
+		`requires` Apt.installed ["ntp"]
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
 -- Orca is the main git-annex build box.
