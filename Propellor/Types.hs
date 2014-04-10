@@ -4,6 +4,7 @@ import Data.Monoid
 import System.Console.ANSI
 
 type HostName = String
+type GroupName = String
 type UserName = String
 
 data Property = Property

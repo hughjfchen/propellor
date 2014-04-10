@@ -58,3 +58,13 @@ fileProperty desc a f = Property desc $ go =<< doesFileExist f
 dirExists :: FilePath -> Property
 dirExists d = check (not <$> doesDirectoryExist d) $ Property (d ++ " exists") $
 	makeChange $ createDirectoryIfMissing True d
+
+-- | Ensures that a file/dir has the specified owner and group.
+ownerGroup :: FilePath -> UserName -> GroupName -> Property
+ownerGroup f owner group = Property (f ++ " owner " ++ og) $ do
+	r <- ensureProperty $ cmdProperty "chown" [og, f]
+	if r == FailedChange
+		then return r
+		else noChange
+  where
+	og = owner ++ ":" ++ group

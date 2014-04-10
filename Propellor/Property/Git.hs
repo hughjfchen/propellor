@@ -22,7 +22,8 @@ daemonRunning exportdir = RevertableProperty setup unsetup
 		`requires`
 		Apt.serviceInstalledRunning "openbsd-inetd"
 		`onChange`
-		Service.reloaded "openbsd-inetd"
+		Service.running "openbsd-inetd"
+		`describe` ("git-daemon exporting " ++ exportdir)
 	unsetup = lacksLine conf (mkl "tcp4")
 		`requires`
 		lacksLine conf (mkl "tcp6")

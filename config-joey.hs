@@ -67,6 +67,7 @@ host hostname@"diatom.kitenet.net" = Just $ props
 	& Apt.installed ["git", "git-annex", "rsync"]
 	& Apt.buildDep ["git-annex"] `period` Daily
 	& Git.daemonRunning "/srv/git"
+	& File.ownerGroup "/srv/git" "joey" "joey"
 	-- git repos restore (how?)
 	-- kgb installation and setup
 	-- ssh keys for branchable and github repo hooks
