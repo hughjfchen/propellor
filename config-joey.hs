@@ -11,7 +11,7 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
---import qualified Propellor.Property.Reboot as Reboot
+import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
@@ -30,8 +30,9 @@ main = defaultMain [host, Docker.containerProperties container]
 -- Edit this to configure propellor!
 host :: HostName -> Maybe [Property]
 -- Clam is a tor bridge, and an olduse.net shellbox and other fun stuff.
-host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
+host hostname@"clam.kitenet.net" = Just $ withSystemd $ props
 	& cleanCloudAtCost hostname
+	& standardSystem Unstable
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
 	& Apt.installed ["git-annex", "mtr"]
@@ -42,7 +43,8 @@ host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
 -- Orca is the main git-annex build box.
-host hostname@"orca.kitenet.net" = standardSystem Unstable $ props
+host hostname@"orca.kitenet.net" = Just $ props -- no systemd due to #726375
+	& standardSystem Unstable
 	& Hostname.set hostname
 	& Apt.unattendedUpgrades
 	& Docker.configured
@@ -52,6 +54,16 @@ host hostname@"orca.kitenet.net" = standardSystem Unstable $ props
 	! Docker.docked container hostname "armel-git-annex-builder-companion"
 	! Docker.docked container hostname "armel-git-annex-builder"
 	& Docker.garbageCollected `period` Daily
+-- Diatom is my downloads and git repos server, and secondary dns server.
+host hostname@"diatom.kitenet.net" = Just $ withSystemd $ props
+	& standardSystem Stable
+	& Hostname.set hostname
+	& Apt.unattendedUpgrades
+	& Apt.serviceInstalledRunning "apache2"
+	& Apt.serviceInstalledRunning "bind9"
+	& Apt.serviceInstalledRunning "ntp"
+	& Apt.installed ["git", "git-annex"]
+	& Apt.buildDep ["git-annex"] `period` Daily
 -- My laptop
 host _hostname@"darkstar.kitenet.net" = Just $ props
 	& Docker.configured
@@ -119,32 +131,30 @@ image (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
 image _ = "debian-stable-official" -- does not currently exist!
 
 -- This is my standard system setup
-standardSystem :: DebianSuite -> [Property] -> Maybe [Property]
-standardSystem suite customprops = Just $
-	standardprops : customprops ++ endprops
-  where
-	standardprops = propertyList "standard system" $ props
-		& Apt.stdSourcesList suite `onChange` Apt.upgrade
-		& Apt.installed ["etckeeper"]
-		& Apt.installed ["ssh"]
-		& GitHome.installedFor "root"
-		& User.hasSomePassword "root"
-		-- Harden the system, but only once root's authorized_keys
-		-- is safely in place.
-		& check (Ssh.hasAuthorizedKeys "root")
-			(Ssh.passwordAuthentication False)
-		& User.accountFor "joey"
-		& User.hasSomePassword "joey"
-		& Sudo.enabledFor "joey"
-		& GitHome.installedFor "joey"
-		& Apt.installed ["vim", "screen", "less"]
-		& Cron.runPropellor "30 * * * *"
-		-- I use postfix, or no MTA.
-		& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
-			`onChange` Apt.autoRemove
-	-- May reboot, so comes last
-	-- Currently not enable due to #726375 
-	endprops = [] -- [Apt.installed ["systemd-sysv"] `onChange` Reboot.now]
+standardSystem :: DebianSuite -> Property
+standardSystem suite = propertyList "standard system" $ props
+	& Apt.stdSourcesList suite `onChange` Apt.upgrade
+	& Apt.installed ["etckeeper"]
+	& Apt.installed ["ssh"]
+	& GitHome.installedFor "root"
+	& User.hasSomePassword "root"
+	-- Harden the system, but only once root's authorized_keys
+	-- is safely in place.
+	& check (Ssh.hasAuthorizedKeys "root")
+		(Ssh.passwordAuthentication False)
+	& User.accountFor "joey"
+	& User.hasSomePassword "joey"
+	& Sudo.enabledFor "joey"
+	& GitHome.installedFor "joey"
+	& Apt.installed ["vim", "screen", "less"]
+	& Cron.runPropellor "30 * * * *"
+	-- I use postfix, or no MTA.
+	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
+		`onChange` Apt.autoRemove
+
+withSystemd :: [Property] -> [Property]
+withSystemd props = props ++ 
+	[Apt.installed ["systemd-sysv"] `onChange` Reboot.now]
 
 -- This is my standard container setup, featuring automatic upgrades.
 standardContainer :: DebianSuite -> Architecture -> [Docker.Containerized Property] -> Docker.Container
