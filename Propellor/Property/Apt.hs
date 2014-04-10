@@ -47,13 +47,22 @@ debCdn = binandsrc "http://cdn.debian.net/debian"
 kernelOrg :: DebianSuite -> [Line]
 kernelOrg = binandsrc "http://mirrors.kernel.org/debian"
 
+-- | Only available for Stable and Testing
+securityUpdates :: DebianSuite -> [Line]
+securityUpdates suite
+	| suite == Stable || suite == Testing =
+		let l = "deb http://security.debian.org/ " ++ showSuite suite ++ "/updates " ++ unwords stdSections
+		in [l, srcLine l]
+	| otherwise = []
+
 -- | Makes sources.list have a standard content using the mirror CDN,
 -- with a particular DebianSuite.
 --
 -- Since the CDN is sometimes unreliable, also adds backup lines using
 -- kernel.org.
 stdSourcesList :: DebianSuite -> Property
-stdSourcesList suite = setSourcesList (debCdn suite ++ kernelOrg suite)
+stdSourcesList suite = setSourcesList
+	(debCdn suite ++ kernelOrg suite ++ securityUpdates suite)
 	`describe` ("standard sources.list for " ++ show suite)
 
 setSourcesList :: [Line] -> Property

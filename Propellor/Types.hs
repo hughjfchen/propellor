@@ -63,7 +63,7 @@ data Distribution
 	deriving (Show)
 
 data DebianSuite = Experimental | Unstable | Testing | Stable | DebianRelease Release
-	deriving (Show)
+	deriving (Show, Eq)
 
 type Release = String
 
