@@ -3,14 +3,17 @@ module Propellor.Property.Hostname where
 import Propellor
 import qualified Propellor.Property.File as File
 
--- | Sets the hostname. Configures both /etc/hostname and the current
--- hostname.
+-- | Ensures that the hostname is set to the HostAttr value.
+-- Configures both /etc/hostname and the current hostname.
 --
--- When provided with a FQDN, also configures /etc/hosts,
+-- When the hostname is a FQDN, also configures /etc/hosts,
 -- with an entry for 127.0.1.1, which is standard at least on Debian
 -- to set the FDQN (127.0.0.1 is localhost).
-set :: HostName -> Property
-set hostname = combineProperties desc go
+sane :: Property
+sane = Property ("sane hostname") (ensureProperty . setTo =<< getHostName)
+
+setTo :: HostName -> Property
+setTo hostname = combineProperties desc go
 	`onChange` cmdProperty "hostname" [host]
   where
 	desc = "hostname " ++ hostname

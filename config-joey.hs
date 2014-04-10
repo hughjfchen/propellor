@@ -32,35 +32,35 @@ main = defaultMain [host, Docker.containerProperties container]
 -- Edit this to configure propellor!
 host :: HostName -> Maybe [Property]
 -- Clam is a tor bridge, and an olduse.net shellbox and other fun stuff.
-host hostname@"clam.kitenet.net" = Just $ withSystemd $ props
-	& cleanCloudAtCost hostname
+host "clam.kitenet.net" = Just $ withSystemd $ props
+	& cleanCloudAtCost
 	& standardSystem Unstable
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
 	& Apt.installed ["git-annex", "mtr"]
 	& Tor.isBridge
 	& JoeySites.oldUseNetshellBox
-	& Docker.docked container hostname "openid-provider"
+	& Docker.docked container "openid-provider"
 		`requires` Apt.installed ["ntp"]
-	& Docker.docked container hostname "ancient-kitenet"
+	& Docker.docked container "ancient-kitenet"
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
 -- Orca is the main git-annex build box.
-host hostname@"orca.kitenet.net" = Just $ props -- no systemd due to #726375
+host "orca.kitenet.net" = Just $ props -- no systemd due to #726375
 	& standardSystem Unstable
-	& Hostname.set hostname
+	& Hostname.sane
 	& Apt.unattendedUpgrades
 	& Docker.configured
 	& Apt.buildDep ["git-annex"] `period` Daily
-	& Docker.docked container hostname "amd64-git-annex-builder"
-	& Docker.docked container hostname "i386-git-annex-builder"
-	! Docker.docked container hostname "armel-git-annex-builder-companion"
-	! Docker.docked container hostname "armel-git-annex-builder"
+	& Docker.docked container "amd64-git-annex-builder"
+	& Docker.docked container "i386-git-annex-builder"
+	! Docker.docked container "armel-git-annex-builder-companion"
+	! Docker.docked container "armel-git-annex-builder"
 	& Docker.garbageCollected `period` Daily
 -- Diatom is my downloads and git repos server, and secondary dns server.
-host hostname@"diatom.kitenet.net" = Just $ props
+host "diatom.kitenet.net" = Just $ props
 	& standardSystem Stable
-	& Hostname.set hostname
+	& Hostname.sane
 	& Apt.unattendedUpgrades
 	& Apt.serviceInstalledRunning "ntp"
 	& Dns.zones myDnsSecondary
@@ -78,7 +78,7 @@ host hostname@"diatom.kitenet.net" = Just $ props
 	-- gitweb
 	-- downloads.kitenet.net setup (including ssh key to turtle)
 -- My laptop
-host _hostname@"darkstar.kitenet.net" = Just $ props
+host "darkstar.kitenet.net" = Just $ props
 	& Docker.configured
 	& Apt.buildDep ["git-annex"] `period` Daily
 	
@@ -192,9 +192,9 @@ standardContainer suite arch ps = Docker.containerFrom
 	] ++ ps
 
 -- Clean up a system as installed by cloudatcost.com
-cleanCloudAtCost :: HostName -> Property
-cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
-	[ Hostname.set hostname
+cleanCloudAtCost :: Property
+cleanCloudAtCost = propertyList "cloudatcost cleanup"
+	[ Hostname.sane
 	, Ssh.uniqueHostKeys
 	, "worked around grub/lvm boot bug #743126" ==>
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"

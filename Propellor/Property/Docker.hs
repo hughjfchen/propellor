@@ -40,36 +40,40 @@ installed = Apt.installed ["docker.io"]
 -- removed.
 docked
 	:: (HostName -> ContainerName -> Maybe (Container))
-	-> HostName
 	-> ContainerName
 	-> RevertableProperty
-docked findc hn cn = findContainer findc hn cn $
-	\(Container image containerprops) ->
-		let setup = provisionContainer cid
-				`requires`
-			runningContainer cid image containerprops
-				`requires`
-			installed
-		    teardown = combineProperties ("undocked " ++ fromContainerId cid)
-		    	[ stoppedContainer cid
+docked findc cn = RevertableProperty (go "docked" setup) (go "undocked" teardown)
+  where
+	go desc a = Property (desc ++ " " ++ cn) $ do
+		hn <- getHostName
+  		let cid = ContainerId hn cn
+		ensureProperties [findContainer findc hn cn $ a cid]
+
+	setup cid (Container image containerprops) =
+		provisionContainer cid
+			`requires`
+		runningContainer cid image containerprops
+			`requires`
+		installed
+
+	teardown cid (Container image _) =
+		combineProperties ("undocked " ++ fromContainerId cid)
+			[ stoppedContainer cid
 			, Property ("cleaned up " ++ fromContainerId cid) $
 				liftIO $ report <$> mapM id
 					[ removeContainer cid
 					, removeImage image
 					]
 			]
-		in RevertableProperty setup teardown
-  where
-  	cid = ContainerId hn cn
 
 findContainer
 	:: (HostName -> ContainerName -> Maybe (Container))
 	-> HostName
 	-> ContainerName
-	-> (Container -> RevertableProperty)
-	-> RevertableProperty
+	-> (Container -> Property)
+	-> Property
 findContainer findc hn cn mk = case findc hn cn of
-	Nothing -> RevertableProperty cantfind cantfind
+	Nothing -> cantfind
 	Just container -> mk container
   where
   	cid = ContainerId hn cn

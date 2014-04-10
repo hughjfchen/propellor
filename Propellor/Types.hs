@@ -27,7 +27,7 @@ data RevertableProperty = RevertableProperty Property Property
 
 -- | Propellor's monad provides read-only access to attributes of the
 -- system.
-newtype Propellor a = Propellor { runWithHostAttr :: ReaderT HostAttr IO a }
+newtype Propellor p = Propellor { runWithHostAttr :: ReaderT HostAttr IO p }
 	deriving
 		( Monad
 		, Functor

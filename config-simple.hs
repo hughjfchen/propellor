@@ -25,7 +25,7 @@ main = defaultMain [host, Docker.containerProperties container]
 --
 -- Edit this to configure propellor!
 host :: HostName -> Maybe [Property]
-host hostname@"mybox.example.com" = Just $ props
+host "mybox.example.com" = Just $ props
 	& Apt.stdSourcesList Unstable
 		`onChange` Apt.upgrade
 	& Apt.unattendedUpgrades
@@ -34,7 +34,7 @@ host hostname@"mybox.example.com" = Just $ props
 	& User.hasSomePassword "root"
 	& Network.ipv6to4
 	& File.dirExists "/var/www"
-	& Docker.docked container hostname "webserver"
+	& Docker.docked container "webserver"
 	& Docker.garbageCollected `period` Daily
 	& Cron.runPropellor "30 * * * *"
 -- add more hosts here...
