@@ -115,7 +115,7 @@ container _parenthost name
 			& scriptProperty 
 				[ "cd /var/"
 				, "rm -rf www"
-				, "git clone git://git.kitenet.net/git/kitewiki www"
+				, "git clone git://git.kitenet.net/kitewiki www"
 				, "git checkout remotes/origin/old-kitenet.net"
 				] `flagFile` "/var/www/blastfromthepast.html"
 		]
