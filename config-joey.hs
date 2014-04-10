@@ -42,7 +42,7 @@ host hostname@"clam.kitenet.net" = Just $ withSystemd $ props
 	& JoeySites.oldUseNetshellBox
 	& Docker.docked container hostname "openid-provider"
 		`requires` Apt.installed ["ntp"]
-	& Docker.docked container hostname "ancient.kitenet.net"
+	& Docker.docked container hostname "ancient-kitenet"
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
 -- Orca is the main git-annex build box.
@@ -107,7 +107,7 @@ container _parenthost name
 				"openid.kitenet.net:8081"
 		]
 	
-	| name == "ancient.kitenet.net" = Just $ standardContainer Stable "amd64"
+	| name == "ancient-kitenet" = Just $ standardContainer Stable "amd64"
 		[ Docker.publish "1994:80"
 		, Docker.inside $ props
 			& Apt.serviceInstalledRunning "apache2"
