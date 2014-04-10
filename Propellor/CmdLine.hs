@@ -16,6 +16,7 @@ import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Docker.Shim as DockerShim
 import Utility.FileMode
 import Utility.SafeCommand
+import Utility.UserInfo
 
 usage :: IO a
 usage = do
@@ -167,9 +168,10 @@ spin host = do
 	url <- getUrl
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
-	go url =<< gpgDecrypt (privDataFile host)
+	cacheparams <- toCommand <$> sshCachingParams host
+	go cacheparams url =<< gpgDecrypt (privDataFile host)
   where
-	go url privdata = withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd]) $ \(toh, fromh) -> do
+	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let finish = do
 			senddata toh (privDataFile host) privDataMarker privdata
 			hClose toh
@@ -185,7 +187,7 @@ spin host = do
 				hClose toh
 				hClose fromh
 				sendGitClone host url
-				go url privdata
+				go cacheparams url privdata
 	
 	user = "root@"++host
 
@@ -221,12 +223,11 @@ spin host = do
 sendGitClone :: HostName -> String -> IO ()
 sendGitClone host url = void $ actionMessage ("Pushing git repository to " ++ host) $ do
 	branch <- getCurrentBranch
+	cacheparams <- sshCachingParams host
 	withTmpFile "propellor.git" $ \tmp _ -> allM id
-		-- TODO: ssh connection caching, or better push method
-		-- with less connections.
 		[ boolSystem "git" [Param "bundle", Param "create", File tmp, Param "HEAD"]
-		, boolSystem "scp" [File tmp, Param ("root@"++host++":"++remotebundle)]
-		, boolSystem "ssh" [Param ("root@"++host), Param $ unpackcmd branch]
+		, boolSystem "scp" $ cacheparams ++ [File tmp, Param ("root@"++host++":"++remotebundle)]
+		, boolSystem "ssh" $ cacheparams ++ [Param ("root@"++host), Param $ unpackcmd branch]
 		]
   where
 	remotebundle = "/usr/local/propellor.git"
@@ -341,3 +342,15 @@ checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
 			updateGlobalLogger rootLoggerName $ 
 				setLevel DEBUG .  setHandlers [f]
 	go _ = noop
+
+-- Parameters can be passed to both ssh and scp.
+sshCachingParams :: HostName -> IO [CommandParam]
+sshCachingParams hostname = do
+	home <- myHomeDir
+	let cachedir = home </> ".ssh" </> "propellor"
+	createDirectoryIfMissing False cachedir
+	let socketfile = cachedir </> hostname ++ ".sock"
+	return
+		[ Param "-o", Param ("ControlPath=" ++ socketfile)
+		, Params "-o ControlMaster=auto -o ControlPersist=yes"
+		]

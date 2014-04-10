@@ -2,9 +2,6 @@
   run it once for the whole. For example, may want to restart apache,
   but only once despite many config changes being made to satisfy
   properties. onChange is a poor substitute.
-* --spin needs 4 ssh connections when bootstrapping a new host
-  that does not have the git repo yet. Should be possible to get that
-  down to 1.
 * Currently only Debian and derivatives are supported by most Properties.
   One way to improve that would be to parameterize Properties with a
   Distribution witness.

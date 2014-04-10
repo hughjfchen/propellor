@@ -7,6 +7,7 @@ propellor (0.2.4) UNRELEASED; urgency=medium
   * Fix bootstrapping of dependencies.
   * Fix compilation on Debian stable.
   * Include security updates in sources.list for stable and testing.
+  * Use ssh connection caching, especially when bootstrapping.
 
  -- Joey Hess <joeyh@debian.org>  Tue, 08 Apr 2014 18:07:12 -0400
 
