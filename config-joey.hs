@@ -153,8 +153,7 @@ standardSystem suite = propertyList "standard system" $ props
 		`onChange` Apt.autoRemove
 
 withSystemd :: [Property] -> [Property]
-withSystemd props = props ++ 
-	[Apt.installed ["systemd-sysv"] `onChange` Reboot.now]
+withSystemd ps = ps ++ [Apt.installed ["systemd-sysv"] `onChange` Reboot.now]
 
 -- This is my standard container setup, featuring automatic upgrades.
 standardContainer :: DebianSuite -> Architecture -> [Docker.Containerized Property] -> Docker.Container
