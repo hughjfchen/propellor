@@ -27,7 +27,7 @@ simpleSh namedpipe = do
 	createDirectoryIfMissing True dir
 	modifyFileMode dir (removeModes otherGroupModes)
 	s <- socket AF_UNIX Stream defaultProtocol
-	bind s (SockAddrUnix namedpipe)
+	bindSocket s (SockAddrUnix namedpipe)
 	listen s 2
 	forever $ do
 		(client, _addr) <- accept s
