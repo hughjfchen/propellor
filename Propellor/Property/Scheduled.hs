@@ -21,7 +21,6 @@ import qualified Data.Map as M
 period :: Property -> Recurrance -> Property
 period prop recurrance = Property desc $ do
 	lasttime <- getLastChecked (propertyDesc prop)
-	print lasttime
 	nexttime <- fmap startTime <$> nextTime schedule lasttime
 	t <- localNow
 	if Just t >= nexttime

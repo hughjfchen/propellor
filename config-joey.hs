@@ -42,6 +42,7 @@ host hostname@"clam.kitenet.net" = Just $ withSystemd $ props
 	& JoeySites.oldUseNetshellBox
 	& Docker.docked container hostname "openid-provider"
 		`requires` Apt.installed ["ntp"]
+	& Docker.docked container hostname "ancient.kitenet.net"
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
 -- Orca is the main git-annex build box.
@@ -69,6 +70,9 @@ host hostname@"diatom.kitenet.net" = Just $ props
 	& Git.daemonRunning "/srv/git"
 	& File.ownerGroup "/srv/git" "joey" "joey"
 	-- git repos restore (how?)
+	-- family annex needs family members to have accounts,
+	--     ssh host key etc.. finesse?
+	--   (also should upgrade git-annex-shell for it..)
 	-- kgb installation and setup
 	-- ssh keys for branchable and github repo hooks
 	-- gitweb
@@ -101,6 +105,19 @@ container _parenthost name
 		, Docker.inside $ props
 			& OpenId.providerFor ["joey", "liw"]
 				"openid.kitenet.net:8081"
+		]
+	
+	| name == "ancient.kitenet.net" = Just $ standardContainer Stable "amd64"
+		[ Docker.publish "1994:80"
+		, Docker.inside $ props
+			& Apt.serviceInstalledRunning "apache2"
+			& Apt.installed ["git"]
+			& scriptProperty 
+				[ "cd /var/"
+				, "rm -rf www"
+				, "git clone git://git.kitenet.net/git/kitewiki www"
+				, "git checkout remotes/origin/old-kitenet.net"
+				] `flagFile` "/var/www/blastfromthepast.html"
 		]
 	
 	-- armel builder has a companion container that run amd64 and

@@ -3,6 +3,7 @@ module Propellor.Property where
 import System.Directory
 import Control.Monad
 import Data.Monoid
+import Control.Monad.IfElse
 
 import Propellor.Types
 import Propellor.Engine
@@ -54,7 +55,8 @@ flagFile property flagfile = Property (propertyDesc property) $
 	go False = do
 		r <- ensureProperty property
 		when (r == MadeChange) $
-			writeFile flagfile ""
+			unlessM (doesFileExist flagfile) $
+				writeFile flagfile ""
 		return r
 
 --- | Whenever a change has to be made for a Property, causes a hook
