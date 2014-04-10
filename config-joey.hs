@@ -13,6 +13,7 @@ import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
 import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.Tor as Tor
+import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
@@ -61,6 +62,7 @@ host hostname@"diatom.kitenet.net" = Just $ props
 	& Apt.unattendedUpgrades
 	& Apt.serviceInstalledRunning "ntp"
 	& Apt.serviceInstalledRunning "bind9"
+	& Dns.zones myDnsSecondary
 	& Apt.serviceInstalledRunning "apache2"
 	& Apt.serviceInstalledRunning "git-daemon-sysvinit"
 	& Apt.installed ["git", "git-annex", "rsync"]
@@ -180,3 +182,15 @@ cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
 		, User.nuked "user" User.YesReallyDeleteHome
 		]
 	]
+
+myDnsSecondary :: [Dns.Zone]
+myDnsSecondary =
+	[ Dns.secondary "kitenet.net" master
+	, Dns.secondary "joeyh.name" master
+	, Dns.secondary "ikiwiki.info" master
+	, Dns.secondary "olduse.net" master
+	, Dns.secondary "branchable.com" branchablemaster
+	]
+  where
+	master = ["80.68.85.49", "2001:41c8:125:49::10"] -- wren
+	branchablemaster = ["66.228.46.55", "2600:3c03::f03c:91ff:fedf:c0e5"]
