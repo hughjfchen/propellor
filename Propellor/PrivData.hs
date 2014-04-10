@@ -1,3 +1,5 @@
+{-# LANGUAGE PackageImports #-}
+
 module Propellor.PrivData where
 
 import qualified Data.Map as M
@@ -7,6 +9,7 @@ import System.IO
 import System.Directory
 import Data.Maybe
 import Control.Monad
+import "mtl" Control.Monad.Reader
 
 import Propellor.Types
 import Propellor.Message
@@ -18,13 +21,15 @@ import Utility.Tmp
 import Utility.SafeCommand
 import Utility.Misc
 
-withPrivData :: PrivDataField -> (String -> IO Result) -> IO Result
-withPrivData field a = maybe missing a =<< getPrivData field
+withPrivData :: PrivDataField -> (String -> Propellor Result) -> Propellor Result
+withPrivData field a = maybe missing a =<< liftIO (getPrivData field)
   where
 	missing = do
-		warningMessage $ "Missing privdata " ++ show field
-		putStrLn $ "Fix this by running: propellor --set $hostname '" ++ show field ++ "'"
-		return FailedChange
+		host <- getHostName
+		liftIO $ do
+			warningMessage $ "Missing privdata " ++ show field
+			putStrLn $ "Fix this by running: propellor --set "++host++" '" ++ show field ++ "'"
+			return FailedChange
 
 getPrivData :: PrivDataField -> IO (Maybe String)
 getPrivData field = do

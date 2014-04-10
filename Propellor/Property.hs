@@ -1,18 +1,21 @@
+{-# LANGUAGE PackageImports #-}
+
 module Propellor.Property where
 
 import System.Directory
 import Control.Monad
 import Data.Monoid
 import Control.Monad.IfElse
+import "mtl" Control.Monad.Reader
 
 import Propellor.Types
 import Propellor.Engine
 import Utility.Monad
 
-makeChange :: IO () -> IO Result
-makeChange a = a >> return MadeChange
+makeChange :: IO () -> Propellor Result
+makeChange a = liftIO a >> return MadeChange
 
-noChange :: IO Result
+noChange :: Propellor Result
 noChange = return NoChange
 
 -- | Combines a list of properties, resulting in a single property
@@ -20,7 +23,7 @@ noChange = return NoChange
 -- and print out the description of each as it's run. Does not stop
 -- on failure; does propigate overall success/failure.
 propertyList :: Desc -> [Property] -> Property
-propertyList desc ps = Property desc $ ensureProperties' ps
+propertyList desc ps = Property desc $ ensureProperties ps
 
 -- | Combines a list of properties, resulting in one property that
 -- ensures each in turn, stopping on failure.
@@ -49,12 +52,12 @@ p1 `before` p2 = Property (propertyDesc p1) $ do
 -- Use with caution.
 flagFile :: Property -> FilePath -> Property
 flagFile property flagfile = Property (propertyDesc property) $
-	go =<< doesFileExist flagfile
+	go =<< liftIO (doesFileExist flagfile)
   where
 	go True = return NoChange
 	go False = do
 		r <- ensureProperty property
-		when (r == MadeChange) $
+		when (r == MadeChange) $ liftIO $ 
 			unlessM (doesFileExist flagfile) $
 				writeFile flagfile ""
 		return r
@@ -76,13 +79,13 @@ infixl 1 ==>
 
 -- | Makes a Property only be performed when a test succeeds.
 check :: IO Bool -> Property -> Property
-check c property = Property (propertyDesc property) $ ifM c
+check c property = Property (propertyDesc property) $ ifM (liftIO c)
 	( ensureProperty property
 	, return NoChange
 	)
 
 boolProperty :: Desc -> IO Bool -> Property
-boolProperty desc a = Property desc $ ifM a
+boolProperty desc a = Property desc $ ifM (liftIO a)
 	( return MadeChange
 	, return FailedChange
 	)

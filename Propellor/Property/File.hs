@@ -38,10 +38,10 @@ notPresent f = check (doesFileExist f) $ Property (f ++ " not present") $
 	makeChange $ nukeFile f
 
 fileProperty :: Desc -> ([Line] -> [Line]) -> FilePath -> Property
-fileProperty desc a f = Property desc $ go =<< doesFileExist f
+fileProperty desc a f = Property desc $ go =<< liftIO (doesFileExist f)
   where
 	go True = do
-		ls <- lines <$> readFile f
+		ls <- liftIO $ lines <$> readFile f
 		let ls' = a ls
 		if ls' == ls
 			then noChange

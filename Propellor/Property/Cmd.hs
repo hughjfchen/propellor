@@ -1,3 +1,5 @@
+{-# LANGUAGE PackageImports #-}
+
 module Propellor.Property.Cmd (
 	cmdProperty,
 	cmdProperty',
@@ -7,6 +9,7 @@ module Propellor.Property.Cmd (
 
 import Control.Applicative
 import Data.List
+import "mtl" Control.Monad.Reader
 
 import Propellor.Types
 import Utility.Monad
@@ -22,7 +25,7 @@ cmdProperty cmd params = cmdProperty' cmd params []
 -- | A property that can be satisfied by running a command,
 -- with added environment.
 cmdProperty' :: String -> [String] -> [(String, String)] -> Property
-cmdProperty' cmd params env = Property desc $ do
+cmdProperty' cmd params env = Property desc $ liftIO $ do
 	env' <- addEntries env <$> getEnvironment
 	ifM (boolSystemEnv cmd (map Param params) (Just env'))
 		( return MadeChange

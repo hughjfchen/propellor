@@ -1,4 +1,4 @@
-propellor (0.2.4) UNRELEASED; urgency=medium
+propellor (0.3.0) UNRELEASED; urgency=medium
 
   * ipv6to4: Ensure interface is brought up automatically on boot.
   * Enabling unattended upgrades now ensures that cron is installed and
@@ -8,6 +8,8 @@ propellor (0.2.4) UNRELEASED; urgency=medium
   * Fix compilation on Debian stable.
   * Include security updates in sources.list for stable and testing.
   * Use ssh connection caching, especially when bootstrapping.
+  * Properties now run in a Propellor monad, which provides access to
+    attributes of the host.
 
  -- Joey Hess <joeyh@debian.org>  Tue, 08 Apr 2014 18:07:12 -0400
 

@@ -20,13 +20,13 @@ import qualified Data.Map as M
 -- last run.
 period :: Property -> Recurrance -> Property
 period prop recurrance = Property desc $ do
-	lasttime <- getLastChecked (propertyDesc prop)
-	nexttime <- fmap startTime <$> nextTime schedule lasttime
-	t <- localNow
+	lasttime <- liftIO $ getLastChecked (propertyDesc prop)
+	nexttime <- liftIO $ fmap startTime <$> nextTime schedule lasttime
+	t <- liftIO localNow
 	if Just t >= nexttime
 		then do
 			r <- ensureProperty prop
-			setLastChecked t (propertyDesc prop)
+			liftIO $ setLastChecked t (propertyDesc prop)
 			return r
 		else noChange
   where
@@ -38,7 +38,7 @@ periodParse :: Property -> String -> Property
 periodParse prop s = case toRecurrance s of
 	Just recurrance -> period prop recurrance
 	Nothing -> Property "periodParse" $ do
-		warningMessage $ "failed periodParse: " ++ s
+		liftIO $ warningMessage $ "failed periodParse: " ++ s
 		noChange
 
 lastCheckedFile :: FilePath

@@ -1,3 +1,5 @@
+{-# LANGUAGE PackageImports #-}
+
 -- | Pulls in lots of useful modules for building and using Properties.
 -- 
 -- Propellor enures that the system it's run in satisfies a list of
@@ -31,6 +33,7 @@ module Propellor (
 	, module Propellor.Property.Cmd
 	, module Propellor.PrivData
 	, module Propellor.Engine
+	, module Propellor.Exception
 	, module Propellor.Message
 	, localdir
 
@@ -43,6 +46,7 @@ import Propellor.Engine
 import Propellor.Property.Cmd
 import Propellor.PrivData
 import Propellor.Message
+import Propellor.Exception
 
 import Utility.PartialPrelude as X
 import Utility.Process as X
@@ -62,6 +66,7 @@ import Control.Applicative as X
 import Control.Monad as X
 import Data.Monoid as X
 import Control.Monad.IfElse as X
+import "mtl" Control.Monad.Reader as X
 
 -- | This is where propellor installs itself when deploying a host.
 localdir :: FilePath

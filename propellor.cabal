@@ -1,5 +1,5 @@
 Name: propellor
-Version: 0.2.3
+Version: 0.3.0
 Cabal-Version: >= 1.6
 License: GPL
 Maintainer: Joey Hess <joey@kitenet.net>
@@ -38,7 +38,8 @@ Executable propellor
   GHC-Options: -Wall
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async, time, QuickCheck
+   containers, network, async, time, QuickCheck, mtl,
+   MonadCatchIO-transformers
   
   if (! os(windows))
     Build-Depends: unix
@@ -48,7 +49,8 @@ Executable config
   GHC-Options: -Wall -threaded
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async, time, QuickCheck
+   containers, network, async, time, QuickCheck, mtl,
+   MonadCatchIO-transformers
 
   if (! os(windows))
     Build-Depends: unix
@@ -57,7 +59,8 @@ Library
   GHC-Options: -Wall
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async, time, QuickCheck
+   containers, network, async, time, QuickCheck, mtl,
+   MonadCatchIO-transformers
 
   if (! os(windows))
     Build-Depends: unix
@@ -88,6 +91,7 @@ Library
     Propellor.Message
     Propellor.PrivData
     Propellor.Engine
+    Propellor.Exception
     Propellor.Types
   Other-Modules:
     Propellor.CmdLine

@@ -53,7 +53,7 @@ docked findc hn cn = findContainer findc hn cn $
 		    teardown = combineProperties ("undocked " ++ fromContainerId cid)
 		    	[ stoppedContainer cid
 			, Property ("cleaned up " ++ fromContainerId cid) $
-				report <$> mapM id
+				liftIO $ report <$> mapM id
 					[ removeContainer cid
 					, removeImage image
 					]
@@ -74,7 +74,7 @@ findContainer findc hn cn mk = case findc hn cn of
   where
   	cid = ContainerId hn cn
 	cantfind = containerDesc (ContainerId hn cn) $ Property "" $ do
-		warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
+		liftIO $ warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
 		return FailedChange
 
 -- | Causes *any* docker images that are not in use by running containers to
@@ -90,9 +90,9 @@ garbageCollected = propertyList "docker garbage collected"
 	]
   where
 	gccontainers = Property "docker containers garbage collected" $
-		report <$> (mapM removeContainer =<< listContainers AllContainers)
+		liftIO $ report <$> (mapM removeContainer =<< listContainers AllContainers)
 	gcimages = Property "docker images garbage collected" $ do
-		report <$> (mapM removeImage =<< listImages)
+		liftIO $ report <$> (mapM removeImage =<< listImages)
 
 -- | Pass to defaultMain to add docker containers.
 -- You need to provide the function mapping from
@@ -239,19 +239,19 @@ containerDesc cid p = p `describe` desc
 
 runningContainer :: ContainerId -> Image -> [Containerized Property] -> Property
 runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc cid $ Property "running" $ do
-	l <- listContainers RunningContainers
+	l <- liftIO $ listContainers RunningContainers
 	if cid `elem` l
 		then do
 			-- Check if the ident has changed; if so the
 			-- parameters of the container differ and it must
 			-- be restarted.
-			runningident <- getrunningident
+			runningident <- liftIO $ getrunningident
 			if runningident == Just ident
-				then return NoChange
+				then noChange
 				else do
-					void $ stopContainer cid
+					void $ liftIO $ stopContainer cid
 					restartcontainer
-		else ifM (elem cid <$> listContainers AllContainers)
+		else ifM (liftIO $ elem cid <$> listContainers AllContainers)
 			( restartcontainer
 			, go image
 			)
@@ -259,8 +259,8 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	ident = ContainerIdent image hn cn runps
 
 	restartcontainer = do
-		oldimage <- fromMaybe image <$> commitContainer cid
-		void $ removeContainer cid
+		oldimage <- liftIO $ fromMaybe image <$> commitContainer cid
+		void $ liftIO $ removeContainer cid
 		go oldimage
 
 	getrunningident :: IO (Maybe ContainerIdent)
@@ -280,10 +280,11 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 		]
 	
 	go img = do
-		clearProvisionedFlag cid
-		createDirectoryIfMissing True (takeDirectory $ identFile cid)
-		shim <- Shim.setup (localdir </> "propellor") (localdir </> shimdir cid)
-		writeFile (identFile cid) (show ident)
+		liftIO $ do
+			clearProvisionedFlag cid
+			createDirectoryIfMissing True (takeDirectory $ identFile cid)
+		shim <- liftIO $ Shim.setup (localdir </> "propellor") (localdir </> shimdir cid)
+		liftIO $ writeFile (identFile cid) (show ident)
 		ensureProperty $ boolProperty "run" $ runContainer img
 			(runps ++ ["-i", "-d", "-t"])
 			[shim, "--docker", fromContainerId cid]
@@ -339,7 +340,7 @@ chain s = case toContainerId s of
 -- being run. So, retry connections to the client for up to
 -- 1 minute.
 provisionContainer :: ContainerId -> Property
-provisionContainer cid = containerDesc cid $ Property "provision" $ do
+provisionContainer cid = containerDesc cid $ Property "provision" $ liftIO $ do
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 	r <- simpleShClientRetry 60 (namedPipe cid) shim params (go Nothing)
 	when (r /= FailedChange) $
@@ -372,8 +373,8 @@ stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId 
 
 stoppedContainer :: ContainerId -> Property
 stoppedContainer cid = containerDesc cid $ Property desc $ 
-	ifM (elem cid <$> listContainers RunningContainers)
-		( cleanup `after` ensureProperty 
+	ifM (liftIO $ elem cid <$> listContainers RunningContainers)
+		( liftIO cleanup `after` ensureProperty 
 			(boolProperty desc $ stopContainer cid)
 		, return NoChange
 		)

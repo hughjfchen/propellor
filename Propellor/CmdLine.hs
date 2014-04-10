@@ -66,21 +66,23 @@ defaultMain getprops = do
 	go _ (Continue cmdline) = go False cmdline
 	go _ (Set host field) = setPrivData host field
 	go _ (AddKey keyid) = addKey keyid
-	go _ (Chain host) = withprops host $ \ps -> do
-		r <- ensureProperties' ps
+	go _ (Chain host) = withprops host $ \hostattr ps -> do
+		r <- runPropellor hostattr $ ensureProperties ps
 		putStrLn $ "\n" ++ show r
 	go _ (Docker host) = Docker.chain host
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
-	go False (Spin host) = withprops host $ const $ spin host
+	go False (Spin host) = withprops host $ const . const $ spin host
 	go False (Run host) = ifM ((==) 0 <$> getRealUserID)
-		( onlyProcess $ withprops host ensureProperties
+		( onlyProcess $ withprops host mainProperties
 		, go True (Spin host)
 		)
 	go False (Boot host) = onlyProcess $ withprops host $ boot
 
-	withprops host a = maybe (unknownhost host) a $
+	withprops host a = maybe (unknownhost host) (a hostattr) $
 		headMaybe $ catMaybes $ map (\get -> get host) getprops
+	  where
+		hostattr = mkHostAttr host
 
 onlyProcess :: IO a -> IO a
 onlyProcess a = bracket lock unlock (const a)
@@ -275,15 +277,15 @@ fromMarked marker s
 	len = length marker
 	matches = filter (marker `isPrefixOf`) $ lines s
 
-boot :: [Property] -> IO ()
-boot ps = do
+boot :: HostAttr -> [Property] -> IO ()
+boot hostattr ps = do
 	sendMarked stdout statusMarker $ show Ready
 	reply <- hGetContentsStrict stdin
 
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
 		fromMarked privDataMarker reply
-	ensureProperties ps
+	mainProperties hostattr ps
 
 addKey :: String -> IO ()
 addKey keyid = exitBool =<< allM id [ gpg, gitadd, gitcommit ]

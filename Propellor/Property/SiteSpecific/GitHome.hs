@@ -8,7 +8,7 @@ import Utility.SafeCommand
 -- | Clones Joey Hess's git home directory, and runs its fixups script.
 installedFor :: UserName -> Property
 installedFor user = check (not <$> hasGitDir user) $ 
-	Property ("githome " ++ user) (go =<< homedir user)
+	Property ("githome " ++ user) (go =<< liftIO (homedir user))
 		`requires` Apt.installed ["git"]
   where
  	go Nothing = noChange
