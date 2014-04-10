@@ -9,7 +9,7 @@ import Utility.SafeCommand
 installedFor :: UserName -> Property
 installedFor user = check (not <$> hasGitDir user) $ 
 	Property ("githome " ++ user) (go =<< homedir user)
-		`requires` Apt.installed ["git", "myrepos"]
+		`requires` Apt.installed ["git"]
   where
  	go Nothing = noChange
 	go (Just home) = do
@@ -20,7 +20,7 @@ installedFor user = check (not <$> hasGitDir user) $
 				moveout tmpdir home
 			, Property "rmdir" $ makeChange $ void $
 				catchMaybeIO $ removeDirectory tmpdir
-			, userScriptProperty user ["rm -rf .aptitude/ .bashrc .profile; mr checkout; bin/fixups"]
+			, userScriptProperty user ["rm -rf .aptitude/ .bashrc .profile; bin/mr checkout; bin/fixups"]
 			]
 	moveout tmpdir home = do
 		fs <- dirContents tmpdir
