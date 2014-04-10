@@ -194,7 +194,7 @@ spin host = do
 	bootstrapcmd = shellWrap $ intercalate " ; "
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then " ++ intercalate " && "
-			[ "apt-get --no-recommends --no-upgrade -y install git make"
+			[ "apt-get --no-install-recommends --no-upgrade -y install git make"
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			]
 		, "else " ++ intercalate " && "
