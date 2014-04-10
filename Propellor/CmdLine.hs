@@ -126,7 +126,7 @@ updateFirst cmdline next = do
 
 	void $ actionMessage "Git fetch" $ boolSystem "git" [Param "fetch"]
 	
-	whenM (doesFileExist keyring) $ do
+	whenM (doesFileExist keyring <&&> pure False) $ do
 		{- To verify origin branch commit's signature, have to
 		 - convince gpg to use our keyring. While running git log.
 		 - Which has no way to pass options to gpg.
