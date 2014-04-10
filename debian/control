@@ -11,6 +11,8 @@ Build-Depends:
 	libghc-unix-compat-dev,
 	libghc-ansi-terminal-dev,
 	libghc-ifelse-dev,
+	libghc-mtl-dev,
+	libghc-monadcatchio-transformers-dev,
 Maintainer: Joey Hess <joeyh@debian.org>
 Standards-Version: 3.9.5
 Vcs-Git: git://git.kitenet.net/propellor
@@ -28,6 +30,8 @@ Depends: ${misc:Depends}, ${shlibs:Depends},
 	libghc-unix-compat-dev,
 	libghc-ansi-terminal-dev,
 	libghc-ifelse-dev,
+	libghc-mtl-dev,
+	libghc-monadcatchio-transformers-dev,
 	git,
 Description: property-based host configuration management in haskell
  Propellor enures that the system it's run in satisfies a list of
