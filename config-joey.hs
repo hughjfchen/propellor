@@ -55,7 +55,7 @@ host hostname@"orca.kitenet.net" = Just $ props -- no systemd due to #726375
 	! Docker.docked container hostname "armel-git-annex-builder"
 	& Docker.garbageCollected `period` Daily
 -- Diatom is my downloads and git repos server, and secondary dns server.
-host hostname@"diatom.kitenet.net" = Just $ withSystemd $ props
+host hostname@"diatom.kitenet.net" = Just $ props
 	& standardSystem Stable
 	& Hostname.set hostname
 	& Apt.unattendedUpgrades
