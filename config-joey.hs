@@ -59,10 +59,11 @@ host hostname@"diatom.kitenet.net" = Just $ props
 	& standardSystem Stable
 	& Hostname.set hostname
 	& Apt.unattendedUpgrades
-	& Apt.serviceInstalledRunning "apache2"
-	& Apt.serviceInstalledRunning "bind9"
 	& Apt.serviceInstalledRunning "ntp"
-	& Apt.installed ["git", "git-annex"]
+	& Apt.serviceInstalledRunning "bind9"
+	& Apt.serviceInstalledRunning "apache2"
+	& Apt.serviceInstalledRunning "git-daemon-sysvinit"
+	& Apt.installed ["git", "git-annex", "rsync"]
 	& Apt.buildDep ["git-annex"] `period` Daily
 -- My laptop
 host _hostname@"darkstar.kitenet.net" = Just $ props
