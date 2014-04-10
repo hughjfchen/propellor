@@ -72,6 +72,7 @@ Library
     Propellor.Property.Dns
     Propellor.Property.Docker
     Propellor.Property.File
+    Propellor.Property.Git
     Propellor.Property.Network
     Propellor.Property.OpenId
     Propellor.Property.Reboot

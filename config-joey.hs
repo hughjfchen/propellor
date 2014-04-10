@@ -16,6 +16,7 @@ import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
+import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -61,12 +62,16 @@ host hostname@"diatom.kitenet.net" = Just $ props
 	& Hostname.set hostname
 	& Apt.unattendedUpgrades
 	& Apt.serviceInstalledRunning "ntp"
-	& Apt.serviceInstalledRunning "bind9"
 	& Dns.zones myDnsSecondary
 	& Apt.serviceInstalledRunning "apache2"
-	& Apt.serviceInstalledRunning "git-daemon-sysvinit"
 	& Apt.installed ["git", "git-annex", "rsync"]
 	& Apt.buildDep ["git-annex"] `period` Daily
+	& Git.daemonRunning "/srv/git"
+	-- git repos restore (how?)
+	-- kgb installation and setup
+	-- ssh keys for branchable and github repo hooks
+	-- gitweb
+	-- downloads.kitenet.net setup (including ssh key to turtle)
 -- My laptop
 host _hostname@"darkstar.kitenet.net" = Just $ props
 	& Docker.configured
