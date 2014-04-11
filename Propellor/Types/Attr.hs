@@ -21,6 +21,14 @@ instance Eq Attr where
 		  in simpl x == simpl y
 		]
 
+instance Show Attr where
+	show a = unlines
+		[ "hostname " ++ _hostname a
+		, "cnames " ++ show (_cnames a)
+		, "docker image " ++ show (_dockerImage a)
+		, "docker run params " ++ show (map (\a -> a "") (_dockerRunParams a))
+		]
+
 newAttr :: HostName -> Attr
 newAttr hn = Attr hn S.empty Nothing []
 
