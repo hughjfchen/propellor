@@ -10,7 +10,6 @@ import "mtl" Control.Monad.Reader
 
 import Propellor.Types
 import Propellor.Types.Attr
-import Propellor.Attr
 import Propellor.Engine
 import Utility.Monad
 
@@ -108,13 +107,13 @@ host hn = Host [] (\_ -> newAttr hn)
 -- | Adds a property to a Host
 -- Can add Properties, RevertableProperties, and AttrProperties
 (&) :: IsProp p => Host -> p -> Host
-(Host ps as) & p = Host (ps ++ [toProp p]) (as . getAttr p)
+(Host ps as) & p = Host (ps ++ [toProp p]) (getAttr p . as)
 
 infixl 1 &
 
 -- | Adds a property to the Host in reverted form.
 (!) :: Host -> RevertableProperty -> Host
-(Host ps as) ! p = Host (ps ++ [toProp q]) (as . getAttr q)
+(Host ps as) ! p = Host (ps ++ [toProp q]) (getAttr q . as)
   where
 	q = revert p
 
