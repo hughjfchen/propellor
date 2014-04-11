@@ -29,9 +29,8 @@ hosts =
 		& Apt.buildDep ["git-annex"] `period` Daily
 
 	-- Nothing super-important lives here.
-	, host "clam.kitenet.net"
-		-- & cleanCloudAtCost
-		& standardSystem Unstable
+	, standardSystem "clam.kitenet.net" Unstable
+		& cleanCloudAtCost
 		& Apt.unattendedUpgrades
 		& Network.ipv6to4
 		& Tor.isBridge
@@ -40,18 +39,17 @@ hosts =
 		& JoeySites.oldUseNetShellBox
 
 		& cname "openid.kitenet.net"
-		-- & Docker.docked hosts "openid-provider"
-		-- 	`requires` Apt.installed ["ntp"]
+		& Docker.docked hosts "openid-provider"
+		 	`requires` Apt.installed ["ntp"]
 
 		& cname "ancient.kitenet.net"
-		-- & Docker.docked hosts "ancient-kitenet"
+		& Docker.docked hosts "ancient-kitenet"
 
-		-- & Docker.garbageCollected `period` Daily
+		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
 	
 	-- Orca is the main git-annex build box.
-	, host "orca.kitenet.net"
-		& standardSystem Unstable
+	, standardSystem "orca.kitenet.net" Unstable
 		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Docker.configured
@@ -63,8 +61,7 @@ hosts =
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
 	-- Important stuff that needs not too much memory or CPU.
-  	, host "diatom.kitenet.net"
-		& standardSystem Stable
+  	, standardSystem "diatom.kitenet.net" Stable
 		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
@@ -137,9 +134,9 @@ gitAnnexBuilder arch buildminute = Docker.container (arch ++ "-git-annex-builder
 	& GitAnnexBuilder.builder arch (show buildminute ++ " * * * *") True
 	& Apt.unattendedUpgrades
 
--- This is my standard system setup
-standardSystem :: DebianSuite -> Property
-standardSystem suite = template "standard system" $ props
+-- This is my standard system setup.
+standardSystem :: HostName -> DebianSuite -> Host
+standardSystem hn suite = host hn
 	& Apt.stdSourcesList suite `onChange` Apt.upgrade
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]

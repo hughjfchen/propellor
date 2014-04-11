@@ -119,23 +119,3 @@ infixl 1 &
 	q = revert p
 
 infixl 1 !
-
--- | Makes a propertyList of a set of properties, using the same syntax
--- used by `host`.
---
--- > template "my template" $ props
--- 	& someproperty
--- 	! oldproperty
---
--- Note that none of the properties can define Attrs, because
--- they will not propigate out to the host that this is added to.
---
--- Unfortunately, this is not currently enforced at the type level, so
--- attempting to set an Attr in here will be run time error.
-template :: Desc -> Host -> Property
-template desc h@(Host ps _)
-	| hostAttr h == hostAttr props = propertyList desc ps
-	| otherwise = error $ desc ++ ": template contains Attr"
-
-props :: Host
-props = Host [] (\_ -> hostnameless)
