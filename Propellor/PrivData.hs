@@ -22,6 +22,9 @@ import Utility.Tmp
 import Utility.SafeCommand
 import Utility.Misc
 
+-- | When the specified PrivDataField is available on the host Propellor
+-- is provisioning, it provies the data to the action. Otherwise, it prints
+-- a message to help the user make the necessary private data available.
 withPrivData :: PrivDataField -> (String -> Propellor Result) -> Propellor Result
 withPrivData field a = maybe missing a =<< liftIO (getPrivData field)
   where
