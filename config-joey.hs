@@ -27,6 +27,9 @@ hosts =
 	[ host "darkstar.kitenet.net"
 		& Docker.configured
 		& Apt.buildDep ["git-annex"] `period` Daily
+		& propertyList "foo"
+			[ Hostname.sane
+			]
 
 	-- Nothing super-important lives here.
 	, host "clam.kitenet.net"
