@@ -26,7 +26,7 @@ instance Show Attr where
 		[ "hostname " ++ _hostname a
 		, "cnames " ++ show (_cnames a)
 		, "docker image " ++ show (_dockerImage a)
-		, "docker run params " ++ show (map (\a -> a "") (_dockerRunParams a))
+		, "docker run params " ++ show (map (\mk -> mk "") (_dockerRunParams a))
 		]
 
 newAttr :: HostName -> Attr
