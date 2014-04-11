@@ -27,9 +27,6 @@ hosts =
 	[ host "darkstar.kitenet.net"
 		& Docker.configured
 		& Apt.buildDep ["git-annex"] `period` Daily
-		& propertyList "foo"
-			[ Hostname.sane
-			]
 
 	-- Nothing super-important lives here.
 	, host "clam.kitenet.net"
@@ -179,8 +176,8 @@ image _ = "debian-stable-official" -- does not currently exist!
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: Property
 cleanCloudAtCost = propertyList "cloudatcost cleanup"
-	[ Hostname.sane
-	, Ssh.uniqueHostKeys
+	-- [ Hostname.sane
+	[ Ssh.uniqueHostKeys
 	, "worked around grub/lvm boot bug #743126" ==>
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []
