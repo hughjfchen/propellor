@@ -1,7 +1,33 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ExistentialQuantification #-}
 
-module Propellor.Types where
+module Propellor.Types
+	( Host(..)
+	, Attr
+	, HostName
+	, UserName
+	, GroupName
+	, Propellor(..)
+	, Property(..)
+	, RevertableProperty(..)
+	, AttrProperty(..)
+	, IsProp
+	, describe
+	, toProp
+	, getAttr
+	, requires
+	, Desc
+	, Result(..)
+	, System(..)
+	, Distribution(..)
+	, DebianSuite(..)
+	, Release
+	, Architecture
+	, ActionResult(..)
+	, CmdLine(..)
+	, PrivDataField(..)
+	) where
 
 import Data.Monoid
 import Control.Applicative
@@ -9,11 +35,26 @@ import System.Console.ANSI
 import "mtl" Control.Monad.Reader
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 
-type HostName = String
-type GroupName = String
-type UserName = String
+import Propellor.Types.Attr
 
--- | The core data type of Propellor, this reprecents a property
+data Host = Host [Property] (Attr -> Attr)
+
+type UserName = String
+type GroupName = String
+
+-- | Propellor's monad provides read-only access to attributes of the
+-- system.
+newtype Propellor p = Propellor { runWithAttr :: ReaderT Attr IO p }
+	deriving
+		( Monad
+		, Functor
+		, Applicative
+		, MonadReader Attr 
+		, MonadIO
+		, MonadCatchIO
+		)
+
+-- | The core data type of Propellor, this represents a property
 -- that the system should have, and an action to ensure it has the
 -- property.
 data Property = Property
@@ -25,28 +66,8 @@ data Property = Property
 -- | A property that can be reverted.
 data RevertableProperty = RevertableProperty Property Property
 
--- | Propellor's monad provides read-only access to attributes of the
--- system.
-newtype Propellor p = Propellor { runWithHostAttr :: ReaderT HostAttr IO p }
-	deriving
-		( Monad
-		, Functor
-		, Applicative
-		, MonadReader HostAttr 
-		, MonadIO
-		, MonadCatchIO
-		)
-
--- | The attributes of a system. For example, its hostname.
-newtype HostAttr = HostAttr
-	{ _hostname :: HostName
-	}
-
-mkHostAttr :: HostName -> HostAttr
-mkHostAttr = HostAttr 
-
-getHostName :: Propellor HostName
-getHostName = asks _hostname
+-- | A property that affects the Attr.
+data AttrProperty = forall p. IsProp p => AttrProperty p (Attr -> Attr)
 
 class IsProp p where
 	-- | Sets description.
@@ -55,6 +76,7 @@ class IsProp p where
 	-- | Indicates that the first property can only be satisfied
 	-- once the second one is.
 	requires :: p -> Property -> p
+	getAttr :: p -> (Attr -> Attr)
 
 instance IsProp Property where
 	describe p d = p { propertyDesc = d }
@@ -64,6 +86,7 @@ instance IsProp Property where
 		case r of
 			FailedChange -> return FailedChange
 			_ -> propertySatisfy x
+	getAttr _ = id
 
 instance IsProp RevertableProperty where
 	-- | Sets the description of both sides.
@@ -72,6 +95,13 @@ instance IsProp RevertableProperty where
 	toProp (RevertableProperty p1 _) = p1
 	(RevertableProperty p1 p2) `requires` y =
 		RevertableProperty (p1 `requires` y) p2
+	getAttr _ = id
+
+instance IsProp AttrProperty where
+	describe (AttrProperty p a) d = AttrProperty (describe p d) a
+	toProp (AttrProperty p _) = toProp p
+	(AttrProperty p a) `requires` y = AttrProperty (p `requires` y) a
+	getAttr (AttrProperty _ a) = a
 
 type Desc = String
 

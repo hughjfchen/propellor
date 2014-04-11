@@ -9,6 +9,8 @@ import Control.Monad.IfElse
 import "mtl" Control.Monad.Reader
 
 import Propellor.Types
+import Propellor.Types.Attr
+import Propellor.Attr
 import Propellor.Engine
 import Utility.Monad
 
@@ -94,17 +96,46 @@ boolProperty desc a = Property desc $ ifM (liftIO a)
 revert :: RevertableProperty -> RevertableProperty
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
--- | Starts a list of Properties
-props :: [Property]
-props = []
+-- | Starts accumulating the properties of a Host.
+--
+-- > host "example.com"
+-- > 	& someproperty
+-- > 	! oldproperty
+-- > 	& otherproperty
+host :: HostName -> Host
+host hn = Host [] (\_ -> newAttr hn)
 
--- | Adds a property to the list.
--- Can add both Properties and RevertableProperties.
-(&) :: IsProp p => [Property] -> p -> [Property]
-ps & p = ps ++ [toProp p]
+-- | Adds a property to a Host
+-- Can add Properties, RevertableProperties, and AttrProperties
+(&) :: IsProp p => Host -> p -> Host
+(Host ps as) & p = Host (ps ++ [toProp p]) (as . getAttr p)
+
 infixl 1 &
 
--- | Adds a property to the list in reverted form.
-(!) :: [Property] -> RevertableProperty -> [Property]
-ps ! p = ps ++ [toProp $ revert p]
+-- | Adds a property to the Host in reverted form.
+(!) :: Host -> RevertableProperty -> Host
+(Host ps as) ! p = Host (ps ++ [toProp q]) (as . getAttr q)
+  where
+	q = revert p
+
 infixl 1 !
+
+-- | Makes a propertyList of a set of properties, using the same syntax
+-- used by `host`.
+--
+-- > template "my template" $ props
+-- 	& someproperty
+-- 	! oldproperty
+--
+-- Note that none of the properties can define Attrs, because
+-- they will not propigate out to the host that this is added to.
+--
+-- Unfortunately, this is not currently enforced at the type level, so
+-- attempting to set an Attr in here will be run time error.
+template :: Desc -> Host -> Property
+template desc h@(Host ps _)
+	| hostAttr h == hostAttr props = propertyList desc ps
+	| otherwise = error $ desc ++ ": template contains Attr"
+
+props :: Host
+props = Host [] (\_ -> hostnameless)

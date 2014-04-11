@@ -180,8 +180,8 @@ reConfigure package vals = reconfigure `requires` setselections
 	setselections = Property "preseed" $ makeChange $
 		withHandle StdinHandle createProcessSuccess
 			(proc "debconf-set-selections" []) $ \h -> do
-				forM_ vals $ \(template, tmpltype, value) ->
-					hPutStrLn h $ unwords [package, template, tmpltype, value]
+				forM_ vals $ \(tmpl, tmpltype, value) ->
+					hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
 				hClose h
 	reconfigure = cmdProperty "dpkg-reconfigure" ["-fnone", package]
 

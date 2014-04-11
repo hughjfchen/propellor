@@ -2,8 +2,9 @@
 
 -- | Pulls in lots of useful modules for building and using Properties.
 -- 
--- Propellor enures that the system it's run in satisfies a list of
--- properties, taking action as necessary when a property is not yet met.
+-- When propellor runs on a Host, it ensures that its list of Properties
+-- is satisfied, taking action as necessary when a Property is not
+-- currently satisfied.
 --
 -- A simple propellor program example:
 --
@@ -13,15 +14,16 @@
 -- > import qualified Propellor.Property.Apt as Apt
 -- > 
 -- > main :: IO ()
--- > main = defaultMain getProperties
+-- > main = defaultMain hosts
 -- > 
--- > getProperties :: HostName -> Maybe [Property]
--- > getProperties "example.com" = Just
--- >    [ Apt.installed ["mydaemon"]
--- >    , "/etc/mydaemon.conf" `File.containsLine` "secure=1"
--- >        `onChange` cmdProperty "service" ["mydaemon", "restart"]
--- >    ]
--- > getProperties _ = Nothing
+-- > hosts :: [Host]
+-- > hosts =
+-- >   [ host "example.com"
+-- >     & Apt.installed ["mydaemon"]
+-- >     & "/etc/mydaemon.conf" `File.containsLine` "secure=1"
+-- >       `onChange` cmdProperty "service" ["mydaemon", "restart"]
+-- >     ! Apt.installed ["unwantedpackage"]
+-- >   ]
 --
 -- See config.hs for a more complete example, and clone Propellor's
 -- git repository for a deployable system using Propellor:
@@ -31,6 +33,7 @@ module Propellor (
 	  module Propellor.Types
 	, module Propellor.Property
 	, module Propellor.Property.Cmd
+	, module Propellor.Attr
 	, module Propellor.PrivData
 	, module Propellor.Engine
 	, module Propellor.Exception
@@ -47,6 +50,7 @@ import Propellor.Property.Cmd
 import Propellor.PrivData
 import Propellor.Message
 import Propellor.Exception
+import Propellor.Attr
 
 import Utility.PartialPrelude as X
 import Utility.Process as X

@@ -3,8 +3,8 @@
   but only once despite many config changes being made to satisfy
   properties. onChange is a poor substitute.
 * Currently only Debian and derivatives are supported by most Properties.
-  One way to improve that would be to parameterize Properties with a
-  Distribution witness.
+  This could be improved by making the Distribution of the system part
+  of its HostAttr.
 * Display of docker container properties is a bit wonky. It always
   says they are unchanged even when they changed and triggered a
   reprovision.

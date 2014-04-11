@@ -12,12 +12,12 @@ import Propellor.Types
 import Propellor.Message
 import Propellor.Exception
 
-runPropellor :: HostAttr -> Propellor a -> IO a
-runPropellor hostattr a = runReaderT (runWithHostAttr a) hostattr
+runPropellor :: Attr -> Propellor a -> IO a
+runPropellor attr a = runReaderT (runWithAttr a) attr
 
-mainProperties :: HostAttr -> [Property] -> IO ()
-mainProperties hostattr ps = do
-	r <- runPropellor hostattr $
+mainProperties :: Attr -> [Property] -> IO ()
+mainProperties attr ps = do
+	r <- runPropellor attr $
 		ensureProperties [Property "overall" $ ensureProperties ps]
 	setTitle "propellor: done"
 	hFlush stdout

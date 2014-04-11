@@ -13,14 +13,14 @@ sane :: Property
 sane = Property ("sane hostname") (ensureProperty . setTo =<< getHostName)
 
 setTo :: HostName -> Property
-setTo hostname = combineProperties desc go
-	`onChange` cmdProperty "hostname" [host]
+setTo hn = combineProperties desc go
+	`onChange` cmdProperty "hostname" [basehost]
   where
-	desc = "hostname " ++ hostname
-	(host, domain) = separate (== '.') hostname
+	desc = "hostname " ++ hn
+	(basehost, domain) = separate (== '.') hn
 
 	go = catMaybes
-		[ Just $ "/etc/hostname" `File.hasContent` [host]
+		[ Just $ "/etc/hostname" `File.hasContent` [basehost]
 		, if null domain
 			then Nothing 
 			else Just $ File.fileProperty desc
@@ -28,7 +28,7 @@ setTo hostname = combineProperties desc go
 		]
 	
 	hostip = "127.0.1.1"
-	hostline = hostip ++ "\t" ++ hostname ++ " " ++ host
+	hostline = hostip ++ "\t" ++ hn ++ " " ++ basehost
 
 	addhostline ls = hostline : filter (not . hashostip) ls
 	hashostip l = headMaybe (words l) == Just hostip

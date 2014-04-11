@@ -12,6 +12,7 @@ import Control.Monad
 import "mtl" Control.Monad.Reader
 
 import Propellor.Types
+import Propellor.Attr
 import Propellor.Message
 import Utility.Monad
 import Utility.PartialPrelude

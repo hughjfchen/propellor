@@ -20,76 +20,68 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
-import Data.List
 
-main :: IO ()
-main = defaultMain [host, Docker.containerProperties container]
-
--- | This is where the system's HostName, either as returned by uname
--- or one specified on the command line, is converted into a list of
--- Properties for that system.
---
--- Edit this to configure propellor!
-host :: HostName -> Maybe [Property]
--- Clam is a tor bridge, and an olduse.net shellbox and other fun stuff.
-host "clam.kitenet.net" = Just $ withSystemd $ props
-	& cleanCloudAtCost
-	& standardSystem Unstable
-	& Apt.unattendedUpgrades
-	& Network.ipv6to4
-	& Apt.installed ["git-annex", "mtr"]
-	& Tor.isBridge
-	& JoeySites.oldUseNetshellBox
-	& Docker.docked container "openid-provider"
-		`requires` Apt.installed ["ntp"]
-	& Docker.docked container "ancient-kitenet"
-	& Docker.configured
-	& Docker.garbageCollected `period` Daily
--- Orca is the main git-annex build box.
-host "orca.kitenet.net" = Just $ props -- no systemd due to #726375
-	& standardSystem Unstable
-	& Hostname.sane
-	& Apt.unattendedUpgrades
-	& Docker.configured
-	& Apt.buildDep ["git-annex"] `period` Daily
-	& Docker.docked container "amd64-git-annex-builder"
-	& Docker.docked container "i386-git-annex-builder"
-	! Docker.docked container "armel-git-annex-builder-companion"
-	! Docker.docked container "armel-git-annex-builder"
-	& Docker.garbageCollected `period` Daily
--- Diatom is my downloads and git repos server, and secondary dns server.
-host "diatom.kitenet.net" = Just $ props
-	& standardSystem Stable
-	& Hostname.sane
-	& Apt.unattendedUpgrades
-	& Apt.serviceInstalledRunning "ntp"
-	& Dns.zones myDnsSecondary
-	& Apt.serviceInstalledRunning "apache2"
-	& Apt.installed ["git", "git-annex", "rsync"]
-	& Apt.buildDep ["git-annex"] `period` Daily
-	& Git.daemonRunning "/srv/git"
-	& File.ownerGroup "/srv/git" "joey" "joey"
-	-- git repos restore (how?)
-	-- family annex needs family members to have accounts,
-	--     ssh host key etc.. finesse?
-	--   (also should upgrade git-annex-shell for it..)
-	-- kgb installation and setup
-	-- ssh keys for branchable and github repo hooks
-	-- gitweb
-	-- downloads.kitenet.net setup (including ssh key to turtle)
--- My laptop
-host "darkstar.kitenet.net" = Just $ props
-	& Docker.configured
-	& Apt.buildDep ["git-annex"] `period` Daily
-	
--- add more hosts here...
---host "foo.example.com" =
-host _ = Nothing
+hosts :: [Host]
+hosts =
+	[ host "clam.kitenet.net"
+		& cleanCloudAtCost
+		& standardSystem Unstable
+		& Apt.unattendedUpgrades
+		& Network.ipv6to4
+		& Tor.isBridge
+		& Docker.configured
+		& cname "shell.olduse.net"
+			`requires` JoeySites.oldUseNetShellBox
+		& "openid.kitenet.net"
+			`cnameFor` Docker.docked container
+			`requires` Apt.installed ["ntp"]
+		& "ancient.kitenet.net"
+			`cnameFor` Docker.docked container
+		& Docker.garbageCollected `period` Daily
+		& Apt.installed ["git-annex", "mtr", "screen"]
+	-- Orca is the main git-annex build box.
+	, host "orca.kitenet.net"
+		& standardSystem Unstable
+		& Hostname.sane
+		& Apt.unattendedUpgrades
+		& Docker.configured
+		& Docker.docked container "amd64-git-annex-builder"
+		& Docker.docked container "i386-git-annex-builder"
+		! Docker.docked container "armel-git-annex-builder-companion"
+		! Docker.docked container "armel-git-annex-builder"
+		& Docker.garbageCollected `period` Daily
+		& Apt.buildDep ["git-annex"] `period` Daily
+	-- Important stuff that needs not too much memory or CPU.
+  	, host "diatom.kitenet.net"
+		& standardSystem Stable
+		& Hostname.sane
+		& Apt.unattendedUpgrades
+		& Apt.serviceInstalledRunning "ntp"
+		& Dns.zones myDnsSecondary
+		& Apt.serviceInstalledRunning "apache2"
+		& Apt.installed ["git", "git-annex", "rsync"]
+		& Apt.buildDep ["git-annex"] `period` Daily
+		& Git.daemonRunning "/srv/git"
+		& File.ownerGroup "/srv/git" "joey" "joey"
+		-- git repos restore (how?)
+		-- family annex needs family members to have accounts,
+		--     ssh host key etc.. finesse?
+		--   (also should upgrade git-annex-shell for it..)
+		-- kgb installation and setup
+		-- ssh keys for branchable and github repo hooks
+		-- gitweb
+		-- downloads.kitenet.net setup (including ssh key to turtle)
+	-- My laptop
+	, host "darkstar.kitenet.net"
+		& Docker.configured
+		& Apt.buildDep ["git-annex"] `period` Daily
+	]
 
 -- | This is where Docker containers are set up. A container
 -- can vary by hostname where it's used, or be the same everywhere.
 container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
 container _parenthost name
+{-
 	-- Simple web server, publishing the outside host's /var/www
 	| name == "webserver" = Just $ standardContainer Stable "amd64"
 		[ Docker.publish "8080:80"
@@ -148,7 +140,7 @@ container _parenthost name
 				& GitAnnexBuilder.builder arch "15 * * * *" True
 				& Apt.unattendedUpgrades
 			]
-	
+-}
 	| otherwise = Nothing
 
 -- | Docker images I prefer to use.
@@ -159,7 +151,7 @@ image _ = "debian-stable-official" -- does not currently exist!
 
 -- This is my standard system setup
 standardSystem :: DebianSuite -> Property
-standardSystem suite = propertyList "standard system" $ props
+standardSystem suite = template "standard system" $ props
 	& Apt.stdSourcesList suite `onChange` Apt.upgrade
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
@@ -179,9 +171,7 @@ standardSystem suite = propertyList "standard system" $ props
 	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
 		`onChange` Apt.autoRemove
 
-withSystemd :: [Property] -> [Property]
-withSystemd ps = ps ++ [Apt.installed ["systemd-sysv"] `onChange` Reboot.now]
-
+{-
 -- This is my standard container setup, featuring automatic upgrades.
 standardContainer :: DebianSuite -> Architecture -> [Docker.Containerized Property] -> Docker.Container
 standardContainer suite arch ps = Docker.containerFrom
@@ -190,6 +180,7 @@ standardContainer suite arch ps = Docker.containerFrom
 		& Apt.stdSourcesList suite
 		& Apt.unattendedUpgrades
 	] ++ ps
+-}
 
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: Property
@@ -218,3 +209,6 @@ myDnsSecondary =
   where
 	master = ["80.68.85.49", "2001:41c8:125:49::10"] -- wren
 	branchablemaster = ["66.228.46.55", "2600:3c03::f03c:91ff:fedf:c0e5"]
+
+main :: IO ()
+main = defaultMain hosts --, Docker.containerProperties container]
