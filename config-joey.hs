@@ -31,7 +31,7 @@ hosts =
 	-- Nothing super-important lives here.
 	, host "clam.kitenet.net"
 		-- & cleanCloudAtCost
-		-- & standardSystem Unstable
+		& standardSystem Unstable
 		& Apt.unattendedUpgrades
 		& Network.ipv6to4
 		& Tor.isBridge
