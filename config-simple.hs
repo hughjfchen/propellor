@@ -16,38 +16,32 @@ import qualified Propellor.Property.User as User
 --import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Docker as Docker
 
-main :: IO ()
-main = defaultMain [host, Docker.containerProperties container]
-
--- | This is where the system's HostName, either as returned by uname
--- or one specified on the command line, is converted into a list of
--- Properties for that system.
---
+-- The hosts propellor knows about.
 -- Edit this to configure propellor!
-host :: HostName -> Maybe [Property]
-host "mybox.example.com" = Just $ props
-	& Apt.stdSourcesList Unstable
-		`onChange` Apt.upgrade
-	& Apt.unattendedUpgrades
-	& Apt.installed ["etckeeper"]
-	& Apt.installed ["ssh"]
-	& User.hasSomePassword "root"
-	& Network.ipv6to4
-	& File.dirExists "/var/www"
-	& Docker.docked container "webserver"
-	& Docker.garbageCollected `period` Daily
-	& Cron.runPropellor "30 * * * *"
--- add more hosts here...
---host "foo.example.com" =
-host _ = Nothing
+hosts :: [Host]
+hosts =
+	[ host "mybox.example.com"
+		& Apt.stdSourcesList Unstable
+			`onChange` Apt.upgrade
+		& Apt.unattendedUpgrades
+		& Apt.installed ["etckeeper"]
+		& Apt.installed ["ssh"]
+		& User.hasSomePassword "root"
+		& Network.ipv6to4
+		& File.dirExists "/var/www"
+		& Docker.docked hosts "webserver"
+		& Docker.garbageCollected `period` Daily
+		& Cron.runPropellor "30 * * * *"
 
--- | This is where Docker containers are set up. A container
--- can vary by hostname where it's used, or be the same everywhere.
-container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
-container _ "webserver" = Just $ Docker.containerFrom "joeyh/debian-unstable"
-	[ Docker.publish "80:80"
-	, Docker.volume "/var/www:/var/www"
-	, Docker.inside $ props
+	-- A generic webserver in a Docker container.
+	, Docker.container "webserver" "joeyh/debian-unstable"
+		& Docker.publish "80:80"
+		& Docker.volume "/var/www:/var/www"
 		& Apt.serviceInstalledRunning "apache2"
+
+	-- add more hosts here...
+	--, host "foo.example.com" = ...
 	]
-container _ _ = Nothing
+
+main :: IO ()
+main = defaultMain hosts

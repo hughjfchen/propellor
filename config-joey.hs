@@ -11,7 +11,7 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
-import qualified Propellor.Property.Reboot as Reboot
+--import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
@@ -23,7 +23,13 @@ import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 
 hosts :: [Host]
 hosts =
-	[ host "clam.kitenet.net"
+	-- My laptop
+	[ host "darkstar.kitenet.net"
+		& Docker.configured
+		& Apt.buildDep ["git-annex"] `period` Daily
+
+	-- Nothing super-important lives here.
+	, host "clam.kitenet.net"
 		& cleanCloudAtCost
 		& standardSystem Unstable
 		& Apt.unattendedUpgrades
@@ -31,26 +37,31 @@ hosts =
 		& Tor.isBridge
 		& Docker.configured
 		& cname "shell.olduse.net"
-			`requires` JoeySites.oldUseNetShellBox
-		& "openid.kitenet.net"
-			`cnameFor` Docker.docked container
+		& JoeySites.oldUseNetShellBox
+
+		& cname "openid.kitenet.net"
+		& Docker.docked hosts "openid-provider"
 			`requires` Apt.installed ["ntp"]
-		& "ancient.kitenet.net"
-			`cnameFor` Docker.docked container
+
+		& cname "ancient.kitenet.net"
+		& Docker.docked hosts "ancient-kitenet"
+
 		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
+	
 	-- Orca is the main git-annex build box.
 	, host "orca.kitenet.net"
 		& standardSystem Unstable
 		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Docker.configured
-		& Docker.docked container "amd64-git-annex-builder"
-		& Docker.docked container "i386-git-annex-builder"
-		! Docker.docked container "armel-git-annex-builder-companion"
-		! Docker.docked container "armel-git-annex-builder"
+		& Docker.docked hosts "amd64-git-annex-builder"
+		& Docker.docked hosts "i386-git-annex-builder"
+		! Docker.docked hosts "armel-git-annex-builder-companion"
+		! Docker.docked hosts "armel-git-annex-builder"
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
+	
 	-- Important stuff that needs not too much memory or CPU.
   	, host "diatom.kitenet.net"
 		& standardSystem Stable
@@ -71,83 +82,60 @@ hosts =
 		-- ssh keys for branchable and github repo hooks
 		-- gitweb
 		-- downloads.kitenet.net setup (including ssh key to turtle)
-	-- My laptop
-	, host "darkstar.kitenet.net"
-		& Docker.configured
-		& Apt.buildDep ["git-annex"] `period` Daily
-	]
 
--- | This is where Docker containers are set up. A container
--- can vary by hostname where it's used, or be the same everywhere.
-container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
-container _parenthost name
-{-
+	--------------------------------------------------------------------
+	--  Docker Containers  ----------------------------------- \o/ -----
+	--------------------------------------------------------------------
+
 	-- Simple web server, publishing the outside host's /var/www
-	| name == "webserver" = Just $ standardContainer Stable "amd64"
-		[ Docker.publish "8080:80"
-		, Docker.volume "/var/www:/var/www"
-		, Docker.inside $ props
-			& Apt.serviceInstalledRunning "apache2"
-		]
+	, standardContainer "webserver" Stable "amd64"
+		& Docker.publish "8080:80"
+		& Docker.volume "/var/www:/var/www"
+		& Apt.serviceInstalledRunning "apache2"
 
 	-- My own openid provider. Uses php, so containerized for security
 	-- and administrative sanity.
-	| name == "openid-provider" = Just $ standardContainer Stable "amd64"
-		[ Docker.publish "8081:80"
-		, Docker.inside $ props
-			& OpenId.providerFor ["joey", "liw"]
-				"openid.kitenet.net:8081"
-		]
+	, standardContainer "openid-provider" Stable "amd64"
+		& Docker.publish "8081:80"
+		& OpenId.providerFor ["joey", "liw"]
+			"openid.kitenet.net:8081"
 	
-	| name == "ancient-kitenet" = Just $ standardContainer Stable "amd64"
-		[ Docker.publish "1994:80"
-		, Docker.inside $ props
-			& Apt.serviceInstalledRunning "apache2"
-			& Apt.installed ["git"]
-			& scriptProperty 
-				[ "cd /var/"
-				, "rm -rf www"
-				, "git clone git://git.kitenet.net/kitewiki www"
-				, "cd www"
-				, "git checkout remotes/origin/old-kitenet.net"
-				] `flagFile` "/var/www/blastfromthepast.html"
-		]
+	, standardContainer "ancient-kitenet" Stable "amd64"
+		& Docker.publish "1994:80"
+		& Apt.serviceInstalledRunning "apache2"
+		& Apt.installed ["git"]
+		& scriptProperty 
+			[ "cd /var/"
+			, "rm -rf www"
+			, "git clone git://git.kitenet.net/kitewiki www"
+			, "cd www"
+			, "git checkout remotes/origin/old-kitenet.net"
+			] `flagFile` "/var/www/blastfromthepast.html"
 	
+	-- git-annex autobuilder containers
+	, gitAnnexBuilder "amd64" 15
+	, gitAnnexBuilder "i386" 45
 	-- armel builder has a companion container that run amd64 and
 	-- runs the build first to get TH splices. They share a home
 	-- directory, and need to have the same versions of all haskell
 	-- libraries installed.
-	| name == "armel-git-annex-builder-companion" = Just $ Docker.containerFrom
+	, Docker.container "armel-git-annex-builder-companion"
 		(image $ System (Debian Unstable) "amd64")
-		[ Docker.volume GitAnnexBuilder.homedir
-		, Docker.inside $ props
-			& Apt.unattendedUpgrades
-		]
-	| name == "armel-git-annex-builder" = Just $ Docker.containerFrom
+		& Docker.volume GitAnnexBuilder.homedir
+		& Apt.unattendedUpgrades
+	, Docker.container "armel-git-annex-builder"
 		(image $ System (Debian Unstable) "armel")
-		[ Docker.link (name ++ "-companion") "companion"
-		, Docker.volumes_from (name ++ "-companion")
-		, Docker.inside $ props
---			& GitAnnexBuilder.builder "armel" "15 * * * *" True
-			& Apt.unattendedUpgrades
-		]
-	
-	| "-git-annex-builder" `isSuffixOf` name =
-		let arch = takeWhile (/= '-') name
-		in Just $ Docker.containerFrom
-			(image $ System (Debian Unstable) arch)
-			[ Docker.inside $ props
-				& GitAnnexBuilder.builder arch "15 * * * *" True
-				& Apt.unattendedUpgrades
-			]
--}
-	| otherwise = Nothing
+		& Docker.link "armel-git-annex-builder-companion" "companion"
+		& Docker.volumes_from "armel-git-annex-builder-companion"
+--		& GitAnnexBuilder.builder "armel" "15 * * * *" True
+		& Apt.unattendedUpgrades
+	]
 
--- | Docker images I prefer to use.
-image :: System -> Docker.Image
-image (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
-image (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
-image _ = "debian-stable-official" -- does not currently exist!
+gitAnnexBuilder :: Architecture -> Int -> Host
+gitAnnexBuilder arch buildminute = Docker.container (arch ++ "-git-annex-builder")
+	(image $ System (Debian Unstable) arch)
+	& GitAnnexBuilder.builder arch (show buildminute ++ " * * * *") True
+	& Apt.unattendedUpgrades
 
 -- This is my standard system setup
 standardSystem :: DebianSuite -> Property
@@ -171,16 +159,19 @@ standardSystem suite = template "standard system" $ props
 	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
 		`onChange` Apt.autoRemove
 
-{-
 -- This is my standard container setup, featuring automatic upgrades.
-standardContainer :: DebianSuite -> Architecture -> [Docker.Containerized Property] -> Docker.Container
-standardContainer suite arch ps = Docker.containerFrom
-	(image $ System (Debian suite) arch) $
-	[ Docker.inside $ props
-		& Apt.stdSourcesList suite
-		& Apt.unattendedUpgrades
-	] ++ ps
--}
+standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
+standardContainer name suite arch = Docker.container name (image system)
+	& Apt.stdSourcesList suite
+	& Apt.unattendedUpgrades
+  where
+	system = System (Debian suite) arch
+
+-- | Docker images I prefer to use.
+image :: System -> Docker.Image
+image (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
+image (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
+image _ = "debian-stable-official" -- does not currently exist!
 
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: Property
