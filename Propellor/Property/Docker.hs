@@ -219,7 +219,7 @@ fromContainerId :: ContainerId -> String
 fromContainerId (ContainerId hn cn) = cn++"."++hn++myContainerSuffix
 
 containerHostName :: ContainerId -> HostName
-containerHostName (ContainerId _ cn) = cn
+containerHostName (ContainerId _ cn) = cn2hn cn
 
 myContainerSuffix :: String
 myContainerSuffix = ".propellor"
