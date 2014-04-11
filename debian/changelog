@@ -1,0 +1,57 @@
+propellor (0.3.0) unstable; urgency=medium
+
+  * ipv6to4: Ensure interface is brought up automatically on boot.
+  * Enabling unattended upgrades now ensures that cron is installed and
+    running to perform them.
+  * Properties can be scheduled to only be checked after a given time period.
+  * Fix bootstrapping of dependencies.
+  * Fix compilation on Debian stable.
+  * Include security updates in sources.list for stable and testing.
+  * Use ssh connection caching, especially when bootstrapping.
+  * Properties now run in a Propellor monad, which provides access to
+    attributes of the host.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 11 Apr 2014 01:19:05 -0400
+
+propellor (0.2.3) unstable; urgency=medium
+
+  * docker: Fix laziness bug that caused running containers to be
+    unnecessarily stopped and committed.
+  * Add locking so only one propellor can run at a time on a host.
+  * docker: When running as effective init inside container, wait on zombies.
+  * docker: Added support for configuring shared volumes and linked
+    containers.
+
+ -- Joey Hess <joeyh@debian.org>  Tue, 08 Apr 2014 02:07:37 -0400
+
+propellor (0.2.2) unstable; urgency=medium
+
+  * Now supports provisioning docker containers with architecture/libraries
+    that do not match the host.
+  * Fixed a bug that caused file modes to be set to 600 when propellor
+    modified the file (did not affect newly created files).
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 04 Apr 2014 01:07:32 -0400
+
+propellor (0.2.1) unstable; urgency=medium
+
+  * First release with Debian package.
+
+ -- Joey Hess <joeyh@debian.org>  Thu, 03 Apr 2014 01:43:14 -0400
+
+propellor (0.2.0) unstable; urgency=low
+
+  * Added support for provisioning Docker containers.
+  * Bootstrap deployment now pushes the git repo to the remote host
+    over ssh, securely.
+  * propellor --add-key configures a gpg key, and makes propellor refuse
+    to pull commits from git repositories not signed with that key.
+    This allows propellor to be securely used with public, non-encrypted
+    git repositories without the possibility of MITM.
+  * Added support for type-safe reversions. Only some properties can be
+    reverted; the type checker will tell you if you try something that won't
+    work.
+  * New syntactic sugar for building a list of properties, including
+    revertable properties.
+
+ -- Joey Hess <joeyh@debian.org>  Wed, 02 Apr 2014 13:57:42 -0400
