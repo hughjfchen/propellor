@@ -40,13 +40,13 @@ hosts =
 		& JoeySites.oldUseNetShellBox
 
 		& cname "openid.kitenet.net"
-		& Docker.docked hosts "openid-provider"
-			`requires` Apt.installed ["ntp"]
+		-- & Docker.docked hosts "openid-provider"
+		-- 	`requires` Apt.installed ["ntp"]
 
 		& cname "ancient.kitenet.net"
-		& Docker.docked hosts "ancient-kitenet"
+		-- & Docker.docked hosts "ancient-kitenet"
 
-		& Docker.garbageCollected `period` Daily
+		-- & Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
 	
 	-- Orca is the main git-annex build box.
@@ -176,8 +176,8 @@ image _ = "debian-stable-official" -- does not currently exist!
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: Property
 cleanCloudAtCost = propertyList "cloudatcost cleanup"
-	-- [ Hostname.sane
-	[ Ssh.uniqueHostKeys
+	[ Hostname.sane
+	, Ssh.uniqueHostKeys
 	, "worked around grub/lvm boot bug #743126" ==>
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []
