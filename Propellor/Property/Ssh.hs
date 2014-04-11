@@ -53,7 +53,7 @@ uniqueHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 	`onChange` restartSshd
   where
 	prop = Property "ssh unique host keys" $ do
-		void $ boolSystem "sh"
+		void $ liftIO $ boolSystem "sh"
 			[ Param "-c"
 			, Param "rm -f /etc/ssh/ssh_host_*"
 			]

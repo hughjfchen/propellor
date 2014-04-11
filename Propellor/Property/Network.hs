@@ -20,6 +20,7 @@ ipv6to4 = fileProperty "ipv6to4" go interfaces
 		, "\taddress 2002:5044:5531::1"
 		, "\tnetmask 64"
 		, "\tgateway ::192.88.99.1"
+		, "auto sit0"
 		, "# End automatically added by propeller"
 		]
 

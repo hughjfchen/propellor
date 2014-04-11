@@ -10,7 +10,8 @@ build: dist/setup-config
 	ln -sf dist/build/config/config propellor
 
 deps:
-	@if [ $$(whoami) = root ]; then apt-get -y install gnupg ghc cabal-install libghc-missingh-dev libghc-ansi-terminal-dev libghc-ifelse-dev libghc-unix-compat-dev libghc-hslogger-dev libghc-network-dev libghc-async-dev; fi || true
+	@if [ $$(whoami) = root ]; then apt-get --no-upgrade --no-install-recommends -y install gnupg ghc cabal-install libghc-missingh-dev libghc-ansi-terminal-dev libghc-ifelse-dev libghc-unix-compat-dev libghc-hslogger-dev libghc-network-dev libghc-quickcheck2-dev libghc-mtl-dev libghc-monadcatchio-transformers-dev; fi || true
+	@if [ $$(whoami) = root ]; then apt-get --no-upgrade --no-install-recommends -y install libghc-async-dev || cabal update; cabal install async; fi || true
 
 dist/setup-config: propellor.cabal
 	if [ "$(CABAL)" = ./Setup ]; then ghc --make Setup; fi

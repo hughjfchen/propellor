@@ -1,30 +1,35 @@
+{-# LANGUAGE PackageImports #-}
+
 module Propellor.Message where
 
 import System.Console.ANSI
 import System.IO
 import System.Log.Logger
+import "mtl" Control.Monad.Reader
 
 import Propellor.Types
 
 -- | Shows a message while performing an action, with a colored status
 -- display.
-actionMessage :: ActionResult r => Desc -> IO r -> IO r
+actionMessage :: (MonadIO m, ActionResult r) => Desc -> m r -> m r
 actionMessage desc a = do
-	setTitle $ "propellor: " ++ desc
-	hFlush stdout
+	liftIO $ do
+		setTitle $ "propellor: " ++ desc
+		hFlush stdout
 
 	r <- a
 
-	setTitle "propellor: running"
-	let (msg, intensity, color) = getActionResult r
-	putStr $ desc ++ " ... "
-	colorLine intensity color msg
-	hFlush stdout
+	liftIO $ do
+		setTitle "propellor: running"
+		let (msg, intensity, color) = getActionResult r
+		putStr $ desc ++ " ... "
+		colorLine intensity color msg
+		hFlush stdout
 
 	return r
 
-warningMessage :: String -> IO ()
-warningMessage s = colorLine Vivid Red $ "** warning: " ++ s
+warningMessage :: MonadIO m => String -> m ()
+warningMessage s = liftIO $ colorLine Vivid Red $ "** warning: " ++ s
 
 colorLine :: ColorIntensity -> Color -> String -> IO ()
 colorLine intensity color msg = do

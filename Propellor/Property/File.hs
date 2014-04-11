@@ -11,6 +11,13 @@ hasContent :: FilePath -> [Line] -> Property
 f `hasContent` newcontent = fileProperty ("replace " ++ f)
 	(\_oldcontent -> newcontent) f
 
+-- | Ensures a file has contents that comes from PrivData.
+-- Note: Does not do anything with the permissions of the file to prevent
+-- it from being seen.
+hasPrivContent :: FilePath -> Property
+hasPrivContent f = Property ("privcontent " ++ f) $
+	withPrivData (PrivFile f) (\v -> ensureProperty $ f `hasContent` lines v)
+
 -- | Ensures that a line is present in a file, adding it to the end if not.
 containsLine :: FilePath -> Line -> Property
 f `containsLine` l = fileProperty (f ++ " contains:" ++ l) go f
@@ -31,10 +38,10 @@ notPresent f = check (doesFileExist f) $ Property (f ++ " not present") $
 	makeChange $ nukeFile f
 
 fileProperty :: Desc -> ([Line] -> [Line]) -> FilePath -> Property
-fileProperty desc a f = Property desc $ go =<< doesFileExist f
+fileProperty desc a f = Property desc $ go =<< liftIO (doesFileExist f)
   where
 	go True = do
-		ls <- lines <$> readFile f
+		ls <- liftIO $ lines <$> readFile f
 		let ls' = a ls
 		if ls' == ls
 			then noChange
@@ -51,3 +58,13 @@ fileProperty desc a f = Property desc $ go =<< doesFileExist f
 dirExists :: FilePath -> Property
 dirExists d = check (not <$> doesDirectoryExist d) $ Property (d ++ " exists") $
 	makeChange $ createDirectoryIfMissing True d
+
+-- | Ensures that a file/dir has the specified owner and group.
+ownerGroup :: FilePath -> UserName -> GroupName -> Property
+ownerGroup f owner group = Property (f ++ " owner " ++ og) $ do
+	r <- ensureProperty $ cmdProperty "chown" [og, f]
+	if r == FailedChange
+		then return r
+		else noChange
+  where
+	og = owner ++ ":" ++ group

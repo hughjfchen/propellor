@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes, BangPatterns #-}
+{-# LANGUAGE BangPatterns #-}
 
 -- | Docker support for propellor
 --
@@ -9,6 +9,7 @@ module Propellor.Property.Docker where
 
 import Propellor
 import Propellor.SimpleSh
+import Propellor.Types.Attr
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Docker.Shim as Shim
@@ -32,6 +33,25 @@ configured = Property "docker configured" go `requires` installed
 installed :: Property
 installed = Apt.installed ["docker.io"]
 
+-- | A short descriptive name for a container.
+-- Should not contain whitespace or other unusual characters,
+-- only [a-zA-Z0-9_-] are allowed
+type ContainerName = String
+
+-- | Starts accumulating the properties of a Docker container.
+--
+-- > container "web-server" "debian"
+-- >    & publish "80:80"
+-- >    & Apt.installed {"apache2"]
+-- >    & ...
+container :: ContainerName -> Image -> Host
+container cn image = Host [] (\_ -> attr)
+  where
+	attr = (newAttr (cn2hn cn)) { _dockerImage = Just image }
+
+cn2hn :: ContainerName -> HostName
+cn2hn cn = cn ++ ".docker"
+
 -- | Ensures that a docker container is set up and running. The container
 -- has its own Properties which are handled by running propellor
 -- inside the container.
@@ -39,43 +59,60 @@ installed = Apt.installed ["docker.io"]
 -- Reverting this property ensures that the container is stopped and
 -- removed.
 docked
-	:: (HostName -> ContainerName -> Maybe (Container))
-	-> HostName
+	:: [Host]
 	-> ContainerName
 	-> RevertableProperty
-docked findc hn cn = findContainer findc hn cn $
-	\(Container image containerprops) ->
-		let setup = provisionContainer cid
-				`requires`
-			runningContainer cid image containerprops
-				`requires`
-			installed
-		    teardown = combineProperties ("undocked " ++ fromContainerId cid)
-		    	[ stoppedContainer cid
+docked hosts cn = RevertableProperty (go "docked" setup) (go "undocked" teardown)
+  where
+	go desc a = Property (desc ++ " " ++ cn) $ do
+		hn <- getHostName
+  		let cid = ContainerId hn cn
+		ensureProperties [findContainer hosts cid cn $ a cid]
+
+	setup cid (Container image runparams) =
+		provisionContainer cid
+			`requires`
+		runningContainer cid image runparams
+			`requires`
+		installed
+
+	teardown cid (Container image _runparams) =
+		combineProperties ("undocked " ++ fromContainerId cid)
+			[ stoppedContainer cid
 			, Property ("cleaned up " ++ fromContainerId cid) $
-				report <$> mapM id
+				liftIO $ report <$> mapM id
 					[ removeContainer cid
 					, removeImage image
 					]
 			]
-		in RevertableProperty setup teardown
-  where
-  	cid = ContainerId hn cn
 
 findContainer
-	:: (HostName -> ContainerName -> Maybe (Container))
-	-> HostName
+	:: [Host]
+	-> ContainerId
 	-> ContainerName
-	-> (Container -> RevertableProperty)
-	-> RevertableProperty
-findContainer findc hn cn mk = case findc hn cn of
-	Nothing -> RevertableProperty cantfind cantfind
-	Just container -> mk container
+	-> (Container -> Property)
+	-> Property
+findContainer hosts cid cn mk = case findHost hosts (cn2hn cn) of
+	Nothing -> cantfind
+	Just h -> maybe cantfind mk (mkContainer cid h)
   where
-  	cid = ContainerId hn cn
-	cantfind = containerDesc (ContainerId hn cn) $ Property "" $ do
-		warningMessage $ "missing definition for docker container \"" ++ fromContainerId cid
+	cantfind = containerDesc cid $ Property "" $ do
+		liftIO $ warningMessage $
+			"missing definition for docker container \"" ++ cn2hn cn
 		return FailedChange
+
+mkContainer :: ContainerId -> Host -> Maybe Container
+mkContainer cid@(ContainerId hn _cn) h = Container
+	<$> _dockerImage attr
+	<*> pure (map (\a -> a hn) (_dockerRunParams attr))
+  where
+	attr = hostAttr h'
+  	h' = h
+		-- expose propellor directory inside the container
+		& volume (localdir++":"++localdir)
+		-- name the container in a predictable way so we
+		-- and the user can easily find it later
+		& name (fromContainerId cid)
 
 -- | Causes *any* docker images that are not in use by running containers to
 -- be deleted. And deletes any containers that propellor has set up
@@ -90,34 +127,11 @@ garbageCollected = propertyList "docker garbage collected"
 	]
   where
 	gccontainers = Property "docker containers garbage collected" $
-		report <$> (mapM removeContainer =<< listContainers AllContainers)
+		liftIO $ report <$> (mapM removeContainer =<< listContainers AllContainers)
 	gcimages = Property "docker images garbage collected" $ do
-		report <$> (mapM removeImage =<< listImages)
+		liftIO $ report <$> (mapM removeImage =<< listImages)
 
--- | Pass to defaultMain to add docker containers.
--- You need to provide the function mapping from
--- HostName and ContainerName to the Container to use.
-containerProperties
-	:: (HostName -> ContainerName -> Maybe (Container))
-	-> (HostName -> Maybe [Property])
-containerProperties findcontainer = \h -> case toContainerId h of
-	Nothing -> Nothing
-	Just cid@(ContainerId hn cn) ->
-		case findcontainer hn cn of
-			Nothing -> Nothing
-			Just (Container _ cprops) -> 
-				Just $ map (containerDesc cid) $
-					fromContainerized cprops
-
--- | This type is used to configure a docker container.
--- It has an image, and a list of Properties, but these
--- properties are Containerized; they can specify
--- things about the container's configuration, in
--- addition to properties of the system inside the
--- container.
-data Container = Container Image [Containerized Property]
-
-data Containerized a = Containerized [HostName -> RunParam] a
+data Container = Container Image [RunParam]
 
 -- | Parameters to pass to `docker run` when creating a container.
 type RunParam = String
@@ -125,62 +139,50 @@ type RunParam = String
 -- | A docker image, that can be used to run a container.
 type Image = String
 
--- | A short descriptive name for a container.
--- Should not contain whitespace or other unusual characters,
--- only [a-zA-Z0-9_.-] are allowed
-type ContainerName = String
-
--- | Lift a Property to apply inside a container.
-inside1 :: Property -> Containerized Property
-inside1 = Containerized []
-
-inside :: [Property] -> Containerized Property
-inside = Containerized [] . combineProperties "provision"
-
 -- | Set custom dns server for container.
-dns :: String -> Containerized Property
+dns :: String -> AttrProperty
 dns = runProp "dns"
 
 -- | Set container host name.
-hostname :: String -> Containerized Property
+hostname :: String -> AttrProperty
 hostname = runProp "hostname"
 
 -- | Set name for container. (Normally done automatically.)
-name :: String -> Containerized Property
+name :: String -> AttrProperty
 name = runProp "name"
 
 -- | Publish a container's port to the host
 -- (format: ip:hostPort:containerPort | ip::containerPort | hostPort:containerPort)
-publish :: String -> Containerized Property
+publish :: String -> AttrProperty
 publish = runProp "publish"
 
 -- | Username or UID for container.
-user :: String -> Containerized Property
+user :: String -> AttrProperty
 user = runProp "user"
 
 -- | Mount a volume
 -- Create a bind mount with: [host-dir]:[container-dir]:[rw|ro]
 -- With just a directory, creates a volume in the container.
-volume :: String -> Containerized Property
+volume :: String -> AttrProperty
 volume = runProp "volume"
 
 -- | Mount a volume from the specified container into the current
 -- container.
-volumes_from :: ContainerName -> Containerized Property
+volumes_from :: ContainerName -> AttrProperty
 volumes_from cn = genProp "volumes-from" $ \hn ->
 	fromContainerId (ContainerId hn cn)
 
 -- | Work dir inside the container. 
-workdir :: String -> Containerized Property
+workdir :: String -> AttrProperty
 workdir = runProp "workdir"
 
 -- | Memory limit for container.
 --Format: <number><optional unit>, where unit = b, k, m or g
-memory :: String -> Containerized Property
+memory :: String -> AttrProperty
 memory = runProp "memory"
 
 -- | Link with another container on the same host.
-link :: ContainerName -> ContainerAlias -> Containerized Property
+link :: ContainerName -> ContainerAlias -> AttrProperty
 link linkwith alias = genProp "link" $ \hn ->
 	fromContainerId (ContainerId hn linkwith) ++ ":" ++ alias
 
@@ -199,16 +201,6 @@ data ContainerId = ContainerId HostName ContainerName
 data ContainerIdent = ContainerIdent Image HostName ContainerName [RunParam]
 	deriving (Read, Show, Eq)
 
-getRunParams :: HostName -> [Containerized a] -> [RunParam]
-getRunParams hn l = concatMap get l
-  where
-	get (Containerized ps _) = map (\a -> a hn ) ps
-
-fromContainerized :: forall a. [Containerized a] -> [a]
-fromContainerized l = map get l
-  where
-	get (Containerized _ a) = a
-
 ident2id :: ContainerIdent -> ContainerId
 ident2id (ContainerIdent _ hn cn _) = ContainerId hn cn
 
@@ -226,32 +218,32 @@ toContainerId s
 fromContainerId :: ContainerId -> String
 fromContainerId (ContainerId hn cn) = cn++"."++hn++myContainerSuffix
 
+containerHostName :: ContainerId -> HostName
+containerHostName (ContainerId _ cn) = cn2hn cn
+
 myContainerSuffix :: String
 myContainerSuffix = ".propellor"
-
-containerFrom :: Image -> [Containerized Property] -> Container
-containerFrom = Container
 
 containerDesc :: ContainerId -> Property -> Property
 containerDesc cid p = p `describe` desc
   where
 	desc = "[" ++ fromContainerId cid ++ "] " ++ propertyDesc p
 
-runningContainer :: ContainerId -> Image -> [Containerized Property] -> Property
-runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc cid $ Property "running" $ do
-	l <- listContainers RunningContainers
+runningContainer :: ContainerId -> Image -> [RunParam] -> Property
+runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ Property "running" $ do
+	l <- liftIO $ listContainers RunningContainers
 	if cid `elem` l
 		then do
 			-- Check if the ident has changed; if so the
 			-- parameters of the container differ and it must
 			-- be restarted.
-			runningident <- getrunningident
+			runningident <- liftIO $ getrunningident
 			if runningident == Just ident
-				then return NoChange
+				then noChange
 				else do
-					void $ stopContainer cid
+					void $ liftIO $ stopContainer cid
 					restartcontainer
-		else ifM (elem cid <$> listContainers AllContainers)
+		else ifM (liftIO $ elem cid <$> listContainers AllContainers)
 			( restartcontainer
 			, go image
 			)
@@ -259,8 +251,8 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	ident = ContainerIdent image hn cn runps
 
 	restartcontainer = do
-		oldimage <- fromMaybe image <$> commitContainer cid
-		void $ removeContainer cid
+		oldimage <- liftIO $ fromMaybe image <$> commitContainer cid
+		void $ liftIO $ removeContainer cid
 		go oldimage
 
 	getrunningident :: IO (Maybe ContainerIdent)
@@ -271,19 +263,12 @@ runningContainer cid@(ContainerId hn cn) image containerprops = containerDesc ci
 	extractident :: [Resp] -> Maybe ContainerIdent
 	extractident = headMaybe . catMaybes . map readish . catMaybes . map getStdout
 
-	runps = getRunParams hn $ containerprops ++
-		-- expose propellor directory inside the container
-		[ volume (localdir++":"++localdir)
-		-- name the container in a predictable way so we
-		-- and the user can easily find it later
-		, name (fromContainerId cid)
-		]
-	
 	go img = do
-		clearProvisionedFlag cid
-		createDirectoryIfMissing True (takeDirectory $ identFile cid)
-		shim <- Shim.setup (localdir </> "propellor") (localdir </> shimdir cid)
-		writeFile (identFile cid) (show ident)
+		liftIO $ do
+			clearProvisionedFlag cid
+			createDirectoryIfMissing True (takeDirectory $ identFile cid)
+		shim <- liftIO $ Shim.setup (localdir </> "propellor") (localdir </> shimdir cid)
+		liftIO $ writeFile (identFile cid) (show ident)
 		ensureProperty $ boolProperty "run" $ runContainer img
 			(runps ++ ["-i", "-d", "-t"])
 			[shim, "--docker", fromContainerId cid]
@@ -317,7 +302,7 @@ chain s = case toContainerId s of
 		-- to avoid ever provisioning twice at the same time.
 		whenM (checkProvisionedFlag cid) $ do
 			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
-			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain $ fromContainerId cid]) $
+			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain $ containerHostName cid]) $
 				warningMessage "Boot provision failed!"
 		void $ async $ job reapzombies
 		void $ async $ job $ simpleSh $ namedPipe cid
@@ -339,14 +324,14 @@ chain s = case toContainerId s of
 -- being run. So, retry connections to the client for up to
 -- 1 minute.
 provisionContainer :: ContainerId -> Property
-provisionContainer cid = containerDesc cid $ Property "provision" $ do
+provisionContainer cid = containerDesc cid $ Property "provision" $ liftIO $ do
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 	r <- simpleShClientRetry 60 (namedPipe cid) shim params (go Nothing)
 	when (r /= FailedChange) $
 		setProvisionedFlag cid 
 	return r
   where
-	params = ["--continue", show $ Chain $ fromContainerId cid]
+	params = ["--continue", show $ Chain $ containerHostName cid]
 
 	go lastline (v:rest) = case v of
 		StdoutLine s -> do
@@ -372,8 +357,8 @@ stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId 
 
 stoppedContainer :: ContainerId -> Property
 stoppedContainer cid = containerDesc cid $ Property desc $ 
-	ifM (elem cid <$> listContainers RunningContainers)
-		( cleanup `after` ensureProperty 
+	ifM (liftIO $ elem cid <$> listContainers RunningContainers)
+		( liftIO cleanup `after` ensureProperty 
 			(boolProperty desc $ stopContainer cid)
 		, return NoChange
 		)
@@ -420,17 +405,18 @@ listContainers status =
 listImages :: IO [Image]
 listImages = lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
-runProp :: String -> RunParam -> Containerized Property
-runProp field val = Containerized
-	[\_ -> "--" ++ param]
-	(Property (param) (return NoChange))
+runProp :: String -> RunParam -> AttrProperty
+runProp field val = AttrProperty prop $ \attr ->
+	attr { _dockerRunParams = _dockerRunParams attr ++ [\_ -> "--"++param] }
   where
 	param = field++"="++val
+	prop = Property (param) (return NoChange)
 
-genProp :: String -> (HostName -> RunParam) -> Containerized Property
-genProp field mkval = Containerized
-	[\h -> "--" ++ field ++ "=" ++ mkval h]
-	(Property field (return NoChange))
+genProp :: String -> (HostName -> RunParam) -> AttrProperty
+genProp field mkval = AttrProperty prop $ \attr ->
+	attr { _dockerRunParams = _dockerRunParams attr ++ [\hn -> "--"++field++"=" ++ mkval hn] }
+  where
+	prop = Property field (return NoChange)
 
 -- | The ContainerIdent of a container is written to
 -- /.propellor-ident inside it. This can be checked to see if

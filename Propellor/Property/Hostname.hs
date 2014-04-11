@@ -3,21 +3,24 @@ module Propellor.Property.Hostname where
 import Propellor
 import qualified Propellor.Property.File as File
 
--- | Sets the hostname. Configures both /etc/hostname and the current
--- hostname.
+-- | Ensures that the hostname is set to the HostAttr value.
+-- Configures both /etc/hostname and the current hostname.
 --
--- When provided with a FQDN, also configures /etc/hosts,
+-- When the hostname is a FQDN, also configures /etc/hosts,
 -- with an entry for 127.0.1.1, which is standard at least on Debian
 -- to set the FDQN (127.0.0.1 is localhost).
-set :: HostName -> Property
-set hostname = combineProperties desc go
-	`onChange` cmdProperty "hostname" [host]
+sane :: Property
+sane = Property ("sane hostname") (ensureProperty . setTo =<< getHostName)
+
+setTo :: HostName -> Property
+setTo hn = combineProperties desc go
+	`onChange` cmdProperty "hostname" [basehost]
   where
-	desc = "hostname " ++ hostname
-	(host, domain) = separate (== '.') hostname
+	desc = "hostname " ++ hn
+	(basehost, domain) = separate (== '.') hn
 
 	go = catMaybes
-		[ Just $ "/etc/hostname" `File.hasContent` [host]
+		[ Just $ "/etc/hostname" `File.hasContent` [basehost]
 		, if null domain
 			then Nothing 
 			else Just $ File.fileProperty desc
@@ -25,7 +28,7 @@ set hostname = combineProperties desc go
 		]
 	
 	hostip = "127.0.1.1"
-	hostline = hostip ++ "\t" ++ hostname ++ " " ++ host
+	hostline = hostip ++ "\t" ++ hn ++ " " ++ basehost
 
 	addhostline ls = hostline : filter (not . hashostip) ls
 	hashostip l = headMaybe (words l) == Just hostip

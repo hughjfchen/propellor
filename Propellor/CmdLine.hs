@@ -16,6 +16,7 @@ import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Docker.Shim as DockerShim
 import Utility.FileMode
 import Utility.SafeCommand
+import Utility.UserInfo
 
 usage :: IO a
 usage = do
@@ -54,8 +55,8 @@ processCmdLine = go =<< getArgs
 			else return $ Run s
 	go _ = usage
 
-defaultMain :: [HostName -> Maybe [Property]] -> IO ()
-defaultMain getprops = do
+defaultMain :: [Host] -> IO ()
+defaultMain hostlist = do
 	DockerShim.cleanEnv
 	checkDebugMode
 	cmdline <- processCmdLine
@@ -63,23 +64,26 @@ defaultMain getprops = do
 	go True cmdline
   where
 	go _ (Continue cmdline) = go False cmdline
-	go _ (Set host field) = setPrivData host field
+	go _ (Set hn field) = setPrivData hn field
 	go _ (AddKey keyid) = addKey keyid
-	go _ (Chain host) = withprops host $ \ps -> do
-		r <- ensureProperties' ps
+	go _ (Chain hn) = withprops hn $ \attr ps -> do
+		r <- runPropellor attr $ ensureProperties ps
 		putStrLn $ "\n" ++ show r
-	go _ (Docker host) = Docker.chain host
+	go _ (Docker hn) = Docker.chain hn
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
-	go False (Spin host) = withprops host $ const $ spin host
-	go False (Run host) = ifM ((==) 0 <$> getRealUserID)
-		( onlyProcess $ withprops host ensureProperties
-		, go True (Spin host)
+	go False (Spin hn) = withprops hn $ const . const $ spin hn
+	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
+		( onlyProcess $ withprops hn mainProperties
+		, go True (Spin hn)
 		)
-	go False (Boot host) = onlyProcess $ withprops host $ boot
+	go False (Boot hn) = onlyProcess $ withprops hn boot
 
-	withprops host a = maybe (unknownhost host) a $
-		headMaybe $ catMaybes $ map (\get -> get host) getprops
+	withprops :: HostName -> (Attr -> [Property] -> IO ()) -> IO ()
+	withprops hn a = maybe
+		(unknownhost hn)
+		(\h -> a (hostAttr h) (hostProperties h))
+		(findHost hostlist hn)
 
 onlyProcess :: IO a -> IO a
 onlyProcess a = bracket lock unlock (const a)
@@ -95,7 +99,7 @@ onlyProcess a = bracket lock unlock (const a)
 
 unknownhost :: HostName -> IO a
 unknownhost h = errorMessage $ unlines
-	[ "Unknown host: " ++ h
+	[ "Propellor does not know about host: " ++ h
 	, "(Perhaps you should specify the real hostname on the command line?)"
 	, "(Or, edit propellor's config.hs to configure this host)"
 	]
@@ -163,15 +167,16 @@ getCurrentGitSha1 :: String -> IO String
 getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
 
 spin :: HostName -> IO ()
-spin host = do
+spin hn = do
 	url <- getUrl
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
-	go url =<< gpgDecrypt (privDataFile host)
+	cacheparams <- toCommand <$> sshCachingParams hn
+	go cacheparams url =<< gpgDecrypt (privDataFile hn)
   where
-	go url privdata = withBothHandles createProcessSuccess (proc "ssh" [user, bootstrapcmd]) $ \(toh, fromh) -> do
+	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let finish = do
-			senddata toh (privDataFile host) privDataMarker privdata
+			senddata toh (privDataFile hn) privDataMarker privdata
 			hClose toh
 			
 			-- Display remaining output.
@@ -184,21 +189,21 @@ spin host = do
 			NeedGitClone -> do
 				hClose toh
 				hClose fromh
-				sendGitClone host url
-				go url privdata
+				sendGitClone hn url
+				go cacheparams url privdata
 	
-	user = "root@"++host
+	user = "root@"++hn
 
 	bootstrapcmd = shellWrap $ intercalate " ; "
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then " ++ intercalate " && "
-			[ "apt-get -y install git"
+			[ "apt-get --no-install-recommends --no-upgrade -y install git make"
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			]
 		, "else " ++ intercalate " && "
 			[ "cd " ++ localdir
-			, "if ! test -x ./propellor; then make build; fi"
-			, "./propellor --boot " ++ host
+			, "if ! test -x ./propellor; then make deps build; fi"
+			, "./propellor --boot " ++ hn
 			]
 		, "fi"
 		]
@@ -214,19 +219,18 @@ spin host = do
 	
 	showremote s = putStrLn s
 	senddata toh f marker s = void $
-		actionMessage ("Sending " ++ f ++ " (" ++ show (length s) ++ " bytes) to " ++ host) $ do
+		actionMessage ("Sending " ++ f ++ " (" ++ show (length s) ++ " bytes) to " ++ hn) $ do
 			sendMarked toh marker s
 			return True
 
 sendGitClone :: HostName -> String -> IO ()
-sendGitClone host url = void $ actionMessage ("Pushing git repository to " ++ host) $ do
+sendGitClone hn url = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
 	branch <- getCurrentBranch
+	cacheparams <- sshCachingParams hn
 	withTmpFile "propellor.git" $ \tmp _ -> allM id
-		-- TODO: ssh connection caching, or better push method
-		-- with less connections.
 		[ boolSystem "git" [Param "bundle", Param "create", File tmp, Param "HEAD"]
-		, boolSystem "scp" [File tmp, Param ("root@"++host++":"++remotebundle)]
-		, boolSystem "ssh" [Param ("root@"++host), Param $ unpackcmd branch]
+		, boolSystem "scp" $ cacheparams ++ [File tmp, Param ("root@"++hn++":"++remotebundle)]
+		, boolSystem "ssh" $ cacheparams ++ [Param ("root@"++hn), Param $ unpackcmd branch]
 		]
   where
 	remotebundle = "/usr/local/propellor.git"
@@ -274,15 +278,15 @@ fromMarked marker s
 	len = length marker
 	matches = filter (marker `isPrefixOf`) $ lines s
 
-boot :: [Property] -> IO ()
-boot ps = do
+boot :: Attr -> [Property] -> IO ()
+boot attr ps = do
 	sendMarked stdout statusMarker $ show Ready
 	reply <- hGetContentsStrict stdin
 
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
 		fromMarked privDataMarker reply
-	ensureProperties ps
+	mainProperties attr ps
 
 addKey :: String -> IO ()
 addKey keyid = exitBool =<< allM id [ gpg, gitadd, gitcommit ]
@@ -341,3 +345,15 @@ checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
 			updateGlobalLogger rootLoggerName $ 
 				setLevel DEBUG .  setHandlers [f]
 	go _ = noop
+
+-- Parameters can be passed to both ssh and scp.
+sshCachingParams :: HostName -> IO [CommandParam]
+sshCachingParams hn = do
+	home <- myHomeDir
+	let cachedir = home </> ".ssh" </> "propellor"
+	createDirectoryIfMissing False cachedir
+	let socketfile = cachedir </> hn ++ ".sock"
+	return
+		[ Param "-o", Param ("ControlPath=" ++ socketfile)
+		, Params "-o ControlMaster=auto -o ControlPersist=yes"
+		]

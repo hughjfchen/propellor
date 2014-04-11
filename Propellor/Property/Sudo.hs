@@ -13,7 +13,7 @@ enabledFor :: UserName -> Property
 enabledFor user = Property desc go `requires` Apt.installed ["sudo"]
   where
 	go = do
-		locked <- isLockedPassword user
+		locked <- liftIO $ isLockedPassword user
 		ensureProperty $
 			fileProperty desc
 				(modify locked . filter (wanted locked))

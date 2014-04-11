@@ -2,6 +2,7 @@
 
 import Propellor
 import Propellor.CmdLine
+import Propellor.Property.Scheduled
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
@@ -12,124 +13,167 @@ import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
 --import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.Tor as Tor
+import qualified Propellor.Property.Dns as Dns
+import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
+import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
-import Data.List
 
-main :: IO ()
-main = defaultMain [host, Docker.containerProperties container]
+hosts :: [Host]
+hosts =
+	-- My laptop
+	[ host "darkstar.kitenet.net"
+		& Docker.configured
+		& Apt.buildDep ["git-annex"] `period` Daily
 
--- | This is where the system's HostName, either as returned by uname
--- or one specified on the command line, is converted into a list of
--- Properties for that system.
---
--- Edit this to configure propellor!
-host :: HostName -> Maybe [Property]
--- Clam is a tor bridge, and an olduse.net shellbox and other fun stuff.
-host hostname@"clam.kitenet.net" = standardSystem Unstable $ props
-	& cleanCloudAtCost hostname
-	& Apt.unattendedUpgrades
-	& Network.ipv6to4
-	& Apt.installed ["git-annex", "mtr"]
-	& Tor.isBridge
-	& JoeySites.oldUseNetshellBox
-	& Docker.configured
-	& Docker.garbageCollected
--- Orca is the main git-annex build box.
-host hostname@"orca.kitenet.net" = standardSystem Unstable $ props
-	& Hostname.set hostname
-	& Apt.unattendedUpgrades
-	& Docker.configured
-	& Apt.buildDep ["git-annex"]
-	& Docker.docked container hostname "amd64-git-annex-builder"
-	& Docker.docked container hostname "i386-git-annex-builder"
-	& Docker.docked container hostname "armel-git-annex-builder-companion"
-	& Docker.docked container hostname "armel-git-annex-builder"
-	& Docker.garbageCollected
--- My laptop
-host _hostname@"darkstar.kitenet.net" = Just $ props
-	& Docker.configured
+	-- Nothing super-important lives here.
+	, standardSystem "clam.kitenet.net" Unstable
+		& cleanCloudAtCost
+		& Apt.unattendedUpgrades
+		& Network.ipv6to4
+		& Tor.isBridge
+		& Docker.configured
+		& cname "shell.olduse.net"
+		& JoeySites.oldUseNetShellBox
+
+		& cname "openid.kitenet.net"
+		& Docker.docked hosts "openid-provider"
+		 	`requires` Apt.installed ["ntp"]
+
+		& cname "ancient.kitenet.net"
+		& Docker.docked hosts "ancient-kitenet"
+
+		& Docker.garbageCollected `period` Daily
+		& Apt.installed ["git-annex", "mtr", "screen"]
 	
--- add more hosts here...
---host "foo.example.com" =
-host _ = Nothing
-
--- | This is where Docker containers are set up. A container
--- can vary by hostname where it's used, or be the same everywhere.
-container :: HostName -> Docker.ContainerName -> Maybe (Docker.Container)
-container _host name
-	| name == "webserver" = Just $ Docker.containerFrom
-		(image $ System (Debian Unstable) "amd64")
-		[ Docker.publish "8080:80"
-		, Docker.volume "/var/www:/var/www"
-		, Docker.inside $ props
-			& serviceRunning "apache2"
-				`requires` Apt.installed ["apache2"]
-		]
+	-- Orca is the main git-annex build box.
+	, standardSystem "orca.kitenet.net" Unstable
+		& Hostname.sane
+		& Apt.unattendedUpgrades
+		& Docker.configured
+		& Docker.docked hosts "amd64-git-annex-builder"
+		& Docker.docked hosts "i386-git-annex-builder"
+		! Docker.docked hosts "armel-git-annex-builder-companion"
+		! Docker.docked hosts "armel-git-annex-builder"
+		& Docker.garbageCollected `period` Daily
+		& Apt.buildDep ["git-annex"] `period` Daily
 	
+	-- Important stuff that needs not too much memory or CPU.
+  	, standardSystem "diatom.kitenet.net" Stable
+		& Hostname.sane
+		& Apt.unattendedUpgrades
+		& Apt.serviceInstalledRunning "ntp"
+		& Dns.zones myDnsSecondary
+		& Apt.serviceInstalledRunning "apache2"
+		& Apt.installed ["git", "git-annex", "rsync"]
+		& Apt.buildDep ["git-annex"] `period` Daily
+		& Git.daemonRunning "/srv/git"
+		& File.ownerGroup "/srv/git" "joey" "joey"
+		-- git repos restore (how?)
+		-- family annex needs family members to have accounts,
+		--     ssh host key etc.. finesse?
+		--   (also should upgrade git-annex-shell for it..)
+		-- kgb installation and setup
+		-- ssh keys for branchable and github repo hooks
+		-- gitweb
+		-- downloads.kitenet.net setup (including ssh key to turtle)
+
+	--------------------------------------------------------------------
+	--  Docker Containers  ----------------------------------- \o/ -----
+	--------------------------------------------------------------------
+
+	-- Simple web server, publishing the outside host's /var/www
+	, standardContainer "webserver" Stable "amd64"
+		& Docker.publish "8080:80"
+		& Docker.volume "/var/www:/var/www"
+		& Apt.serviceInstalledRunning "apache2"
+
+	-- My own openid provider. Uses php, so containerized for security
+	-- and administrative sanity.
+	, standardContainer "openid-provider" Stable "amd64"
+		& Docker.publish "8081:80"
+		& OpenId.providerFor ["joey", "liw"]
+			"openid.kitenet.net:8081"
+	
+	, standardContainer "ancient-kitenet" Stable "amd64"
+		& Docker.publish "1994:80"
+		& Apt.serviceInstalledRunning "apache2"
+		& Apt.installed ["git"]
+		& scriptProperty 
+			[ "cd /var/"
+			, "rm -rf www"
+			, "git clone git://git.kitenet.net/kitewiki www"
+			, "cd www"
+			, "git checkout remotes/origin/old-kitenet.net"
+			] `flagFile` "/var/www/blastfromthepast.html"
+	
+	-- git-annex autobuilder containers
+	, gitAnnexBuilder "amd64" 15
+	, gitAnnexBuilder "i386" 45
 	-- armel builder has a companion container that run amd64 and
 	-- runs the build first to get TH splices. They share a home
 	-- directory, and need to have the same versions of all haskell
 	-- libraries installed.
-	| name == "armel-git-annex-builder-companion" = Just $ Docker.containerFrom
+	, Docker.container "armel-git-annex-builder-companion"
 		(image $ System (Debian Unstable) "amd64")
-		[ Docker.volume GitAnnexBuilder.homedir
-		]
-	| name == "armel-git-annex-builder" = Just $ Docker.containerFrom
+		& Docker.volume GitAnnexBuilder.homedir
+		& Apt.unattendedUpgrades
+	, Docker.container "armel-git-annex-builder"
 		(image $ System (Debian Unstable) "armel")
-		[ Docker.link (name ++ "-companion") "companion"
-		, Docker.volumes_from (name ++ "-companion")
-		, Docker.inside $ props
---			& GitAnnexBuilder.builder "armel" "15 * * * *" True
-		]
-	
-	| "-git-annex-builder" `isSuffixOf` name =
-		let arch = takeWhile (/= '-') name
-		in Just $ Docker.containerFrom
-			(image $ System (Debian Unstable) arch)
-			[ Docker.inside $ props & GitAnnexBuilder.builder arch "15 * * * *" True ]
-	
-	| otherwise = Nothing
+		& Docker.link "armel-git-annex-builder-companion" "companion"
+		& Docker.volumes_from "armel-git-annex-builder-companion"
+--		& GitAnnexBuilder.builder "armel" "15 * * * *" True
+		& Apt.unattendedUpgrades
+	]
+
+gitAnnexBuilder :: Architecture -> Int -> Host
+gitAnnexBuilder arch buildminute = Docker.container (arch ++ "-git-annex-builder")
+	(image $ System (Debian Unstable) arch)
+	& GitAnnexBuilder.builder arch (show buildminute ++ " * * * *") True
+	& Apt.unattendedUpgrades
+
+-- This is my standard system setup.
+standardSystem :: HostName -> DebianSuite -> Host
+standardSystem hn suite = host hn
+	& Apt.stdSourcesList suite `onChange` Apt.upgrade
+	& Apt.installed ["etckeeper"]
+	& Apt.installed ["ssh"]
+	& GitHome.installedFor "root"
+	& User.hasSomePassword "root"
+	-- Harden the system, but only once root's authorized_keys
+	-- is safely in place.
+	& check (Ssh.hasAuthorizedKeys "root")
+		(Ssh.passwordAuthentication False)
+	& User.accountFor "joey"
+	& User.hasSomePassword "joey"
+	& Sudo.enabledFor "joey"
+	& GitHome.installedFor "joey"
+	& Apt.installed ["vim", "screen", "less"]
+	& Cron.runPropellor "30 * * * *"
+	-- I use postfix, or no MTA.
+	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
+		`onChange` Apt.autoRemove
+
+-- This is my standard container setup, featuring automatic upgrades.
+standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
+standardContainer name suite arch = Docker.container name (image system)
+	& Apt.stdSourcesList suite
+	& Apt.unattendedUpgrades
+  where
+	system = System (Debian suite) arch
 
 -- | Docker images I prefer to use.
 image :: System -> Docker.Image
 image (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
+image (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
 image _ = "debian-stable-official" -- does not currently exist!
 
--- This is my standard system setup
-standardSystem :: DebianSuite -> [Property] -> Maybe [Property]
-standardSystem suite customprops = Just $
-	standardprops : customprops ++ endprops
-  where
-	standardprops = propertyList "standard system" $ props
-		& Apt.stdSourcesList suite `onChange` Apt.upgrade
-		& Apt.installed ["etckeeper"]
-		& Apt.installed ["ssh"]
-		& GitHome.installedFor "root"
-		& User.hasSomePassword "root"
-		-- Harden the system, but only once root's authorized_keys
-		-- is safely in place.
-		& check (Ssh.hasAuthorizedKeys "root")
-			(Ssh.passwordAuthentication False)
-		& User.accountFor "joey"
-		& User.hasSomePassword "joey"
-		& Sudo.enabledFor "joey"
-		& GitHome.installedFor "joey"
-		& Apt.installed ["vim", "screen", "less"]
-		& Cron.runPropellor "30 * * * *"
-		-- I use postfix, or no MTA.
-		& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
-			`onChange` Apt.autoRemove
-	-- May reboot, so comes last
-	-- Currently not enable due to #726375 
-	endprops = [] -- [Apt.installed ["systemd-sysv"] `onChange` Reboot.now]
-
 -- Clean up a system as installed by cloudatcost.com
-cleanCloudAtCost :: HostName -> Property
-cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
-	[ Hostname.set hostname
+cleanCloudAtCost :: Property
+cleanCloudAtCost = propertyList "cloudatcost cleanup"
+	[ Hostname.sane
 	, Ssh.uniqueHostKeys
 	, "worked around grub/lvm boot bug #743126" ==>
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
@@ -141,3 +185,18 @@ cleanCloudAtCost hostname = propertyList "cloudatcost cleanup"
 		, User.nuked "user" User.YesReallyDeleteHome
 		]
 	]
+
+myDnsSecondary :: [Dns.Zone]
+myDnsSecondary =
+	[ Dns.secondary "kitenet.net" master
+	, Dns.secondary "joeyh.name" master
+	, Dns.secondary "ikiwiki.info" master
+	, Dns.secondary "olduse.net" master
+	, Dns.secondary "branchable.com" branchablemaster
+	]
+  where
+	master = ["80.68.85.49", "2001:41c8:125:49::10"] -- wren
+	branchablemaster = ["66.228.46.55", "2600:3c03::f03c:91ff:fedf:c0e5"]
+
+main :: IO ()
+main = defaultMain hosts --, Docker.containerProperties container]

@@ -8,6 +8,7 @@ import Control.Monad
 
 import Propellor
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Service as Service
 import Propellor.Property.File (Line)
 
 sourcesList :: FilePath
@@ -46,13 +47,22 @@ debCdn = binandsrc "http://cdn.debian.net/debian"
 kernelOrg :: DebianSuite -> [Line]
 kernelOrg = binandsrc "http://mirrors.kernel.org/debian"
 
+-- | Only available for Stable and Testing
+securityUpdates :: DebianSuite -> [Line]
+securityUpdates suite
+	| suite == Stable || suite == Testing =
+		let l = "deb http://security.debian.org/ " ++ showSuite suite ++ "/updates " ++ unwords stdSections
+		in [l, srcLine l]
+	| otherwise = []
+
 -- | Makes sources.list have a standard content using the mirror CDN,
 -- with a particular DebianSuite.
 --
 -- Since the CDN is sometimes unreliable, also adds backup lines using
 -- kernel.org.
 stdSourcesList :: DebianSuite -> Property
-stdSourcesList suite = setSourcesList (debCdn suite ++ kernelOrg suite)
+stdSourcesList suite = setSourcesList
+	(debCdn suite ++ kernelOrg suite ++ securityUpdates suite)
 	`describe` ("standard sources.list for " ++ show suite)
 
 setSourcesList :: [Line] -> Property
@@ -147,9 +157,12 @@ autoRemove = runApt ["-y", "autoremove"]
 
 -- | Enables unattended upgrades. Revert to disable.
 unattendedUpgrades :: RevertableProperty
-unattendedUpgrades = RevertableProperty (go True) (go False)
+unattendedUpgrades = RevertableProperty enable disable
   where
-	go enabled = (if enabled then installed else removed) ["unattended-upgrades"]
+	enable = setup True `before` Service.running "cron"
+	disable = setup False
+
+	setup enabled = (if enabled then installed else removed) ["unattended-upgrades"]
 		`onChange` reConfigure "unattended-upgrades"
 			[("unattended-upgrades/enable_auto_updates" , "boolean", v)]
 		`describe` ("unattended upgrades " ++ v)
@@ -167,7 +180,14 @@ reConfigure package vals = reconfigure `requires` setselections
 	setselections = Property "preseed" $ makeChange $
 		withHandle StdinHandle createProcessSuccess
 			(proc "debconf-set-selections" []) $ \h -> do
-				forM_ vals $ \(template, tmpltype, value) ->
-					hPutStrLn h $ unwords [package, template, tmpltype, value]
+				forM_ vals $ \(tmpl, tmpltype, value) ->
+					hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
 				hClose h
 	reconfigure = cmdProperty "dpkg-reconfigure" ["-fnone", package]
+
+-- | Ensures that a service is installed and running.
+--
+-- Assumes that there is a 1:1 mapping between service names and apt
+-- package names.
+serviceInstalledRunning :: Package -> Property
+serviceInstalledRunning svc = Service.running svc `requires` installed [svc]

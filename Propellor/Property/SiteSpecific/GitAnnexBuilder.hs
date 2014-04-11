@@ -24,7 +24,7 @@ builder arch crontimes rsyncupload = combineProperties "gitannexbuilder"
 	, Apt.buildDep ["git-annex"]
 	, Apt.installed ["git", "rsync", "moreutils", "ca-certificates",
 		"liblockfile-simple-perl", "cabal-install", "vim", "less"]
-	, serviceRunning "cron" `requires` Apt.installed ["cron"]
+	, Apt.serviceInstalledRunning "cron"
 	, User.accountFor builduser
 	, check (not <$> doesDirectoryExist gitbuilderdir) $ userScriptProperty builduser
 		[ "git clone git://git.kitenet.net/gitannexbuilder " ++ gitbuilderdir
@@ -44,12 +44,13 @@ builder arch crontimes rsyncupload = combineProperties "gitannexbuilder"
 		let f = homedir </> "rsyncpassword"
 		if rsyncupload 
 			then withPrivData (Password builduser) $ \p -> do
-				oldp <- catchDefaultIO "" $ readFileStrict f
+				oldp <- liftIO $ catchDefaultIO "" $
+					readFileStrict f
 				if p /= oldp
 					then makeChange $ writeFile f p
 					else noChange
 			else do
-				ifM (doesFileExist f)
+				ifM (liftIO $ doesFileExist f)
 					( noChange
 					, makeChange $ writeFile f "no password configured"
 					)
