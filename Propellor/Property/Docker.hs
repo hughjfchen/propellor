@@ -218,6 +218,9 @@ toContainerId s
 fromContainerId :: ContainerId -> String
 fromContainerId (ContainerId hn cn) = cn++"."++hn++myContainerSuffix
 
+containerHostName :: ContainerId -> HostName
+containerHostName (ContainerId _ cn) = cn
+
 myContainerSuffix :: String
 myContainerSuffix = ".propellor"
 
@@ -299,7 +302,7 @@ chain s = case toContainerId s of
 		-- to avoid ever provisioning twice at the same time.
 		whenM (checkProvisionedFlag cid) $ do
 			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
-			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain $ fromContainerId cid]) $
+			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain $ containerHostName cid]) $
 				warningMessage "Boot provision failed!"
 		void $ async $ job reapzombies
 		void $ async $ job $ simpleSh $ namedPipe cid
@@ -328,7 +331,7 @@ provisionContainer cid = containerDesc cid $ Property "provision" $ liftIO $ do
 		setProvisionedFlag cid 
 	return r
   where
-	params = ["--continue", show $ Chain $ fromContainerId cid]
+	params = ["--continue", show $ Chain $ containerHostName cid]
 
 	go lastline (v:rest) = case v of
 		StdoutLine s -> do
