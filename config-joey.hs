@@ -71,7 +71,7 @@ hosts =
 		& Apt.buildDep ["git-annex"] `period` Daily
 		& Git.daemonRunning "/srv/git"
 		& File.ownerGroup "/srv/git" "joey" "joey"
-		-- git repos restore (how?)
+		-- git repos restore (how?) (also make backups!)
 		-- family annex needs family members to have accounts,
 		--     ssh host key etc.. finesse?
 		--   (also should upgrade git-annex-shell for it..)
@@ -80,8 +80,11 @@ hosts =
 		-- gitweb
 		-- downloads.kitenet.net setup (including ssh key to turtle)
 
-	--------------------------------------------------------------------
-	--  Docker Containers  ----------------------------------- \o/ -----
+
+             -----      -----     ----             ::.
+	------------------------------------ (\./)  .-""-. -----------\o/---
+	--- Docker     ---------------------- `\'-'`      \ ----------------
+	--- containers ------------------------ '.___,_^__/ ----------------
 	--------------------------------------------------------------------
 
 	-- Simple web server, publishing the outside host's /var/www
