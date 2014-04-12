@@ -105,6 +105,7 @@ host :: HostName -> Host
 host hn = Host [] (\_ -> newAttr hn)
 
 -- | Adds a property to a Host
+--
 -- Can add Properties, RevertableProperties, and AttrProperties
 (&) :: IsProp p => Host -> p -> Host
 (Host ps as) & p = Host (ps ++ [toProp p]) (getAttr p . as)

@@ -61,7 +61,7 @@ setLastChecked time desc = do
 readLastChecked :: IO (M.Map Desc LocalTime)
 readLastChecked = fromMaybe M.empty <$> catchDefaultIO Nothing go
   where
-	go = readish <$> readFile lastCheckedFile
+	go = readish <$> readFileStrict lastCheckedFile
 
 writeLastChecked :: M.Map Desc LocalTime -> IO ()
 writeLastChecked = writeFile lastCheckedFile . show

@@ -1,3 +1,9 @@
+propellor (0.3.1) UNRELEASED; urgency=medium
+
+  * Merge scheduler bug fix from git-annex.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 11 Apr 2014 15:00:11 -0400
+
 propellor (0.3.0) unstable; urgency=medium
 
   * ipv6to4: Ensure interface is brought up automatically on boot.
