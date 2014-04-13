@@ -24,6 +24,11 @@ hasPrivContent f = Property desc $ withPrivData (PrivFile f) $ \privcontent ->
   where
 	desc = "privcontent " ++ f
 
+-- | Leaves the file world-readable.
+hasPrivContentExposed :: FilePath -> Property
+hasPrivContentExposed f = hasPrivContent f `onChange`
+	mode f (combineModes (ownerWriteMode:readModes))
+
 -- | Ensures that a line is present in a file, adding it to the end if not.
 containsLine :: FilePath -> Line -> Property
 f `containsLine` l = fileProperty (f ++ " contains:" ++ l) go f

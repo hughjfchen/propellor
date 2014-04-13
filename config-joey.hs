@@ -85,18 +85,15 @@ hosts =
 			`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 			`requires` Ssh.authorizedKeys "family"
 			`requires` User.accountFor "family"
-		& Apt.installed ["git", "git-annex", "rsync", "kgb-client"]
+		& Apt.installed ["git", "git-annex", "rsync", "kgb-client-git"]
 		& Git.daemonRunning "/srv/git"
 		-- ssh keys for branchable and github repo hooks
 		-- TODO: upgrade to newer git-annex-shell for notification
 		-- gitweb
 
 		& cname "kgb.kitenet.net"
-		& Apt.serviceInstalledRunning "kgb-bot"
-		& File.hasPrivContent "/etc/kgb-bot/kgb.conf"
-		& File.hasPrivContent "/etc/kgb-bot/kgb-client.conf"
-		& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
-			`onChange` Service.running "kgb-bot"
+		& Docker.docked hosts "kgb-server"
+		& File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf"
 	
 		& cname "downloads.kitenet.net"
 		& Apt.buildDep ["git-annex"] `period` Daily
@@ -127,7 +124,18 @@ hosts =
 		& Docker.publish "8081:80"
 		& OpenId.providerFor ["joey", "liw"]
 			"openid.kitenet.net:8081"
+
+	-- The kgb irc bot, in a container for security and because I need
+	-- features not in the stable version.
+	, standardContainer "kgb-server" Unstable "amd64"
+		& Docker.publish "9999:9999"
+		& Apt.serviceInstalledRunning "kgb-bot"
+		& File.hasPrivContent "/etc/kgb-bot/kgb.conf"
+		& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
+			`describe` "kgb bot enabled"
+			`onChange` Service.running "kgb-bot"
 	
+	-- Exhibit: kite's 90's website.
 	, standardContainer "ancient-kitenet" Stable "amd64"
 		& Docker.publish "1994:80"
 		& Apt.serviceInstalledRunning "apache2"
