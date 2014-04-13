@@ -107,7 +107,8 @@ installedBackport ps = withOS desc $ \o -> case o of
 	Nothing -> error "cannot install backports; os not declared"
 	(Just (System (Debian suite) _))
 		| isStable suite -> 
-			ensureProperty $ installed' ["-t", backportSuite, "-y"] ps
+			ensureProperty $ runApt $ 
+				["install", "-t", backportSuite, "-y"] ++ ps
 	_ -> error $ "backports not supported on " ++ show o
   where
 	desc = (unwords $ "apt installed backport":ps)
