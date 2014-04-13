@@ -174,7 +174,7 @@ spin hn = do
 	cacheparams <- toCommand <$> sshCachingParams hn
 	go cacheparams url =<< gpgDecrypt (privDataFile hn)
   where
-	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ ["-t", user, bootstrapcmd]) $ \(toh, fromh) -> do
+	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let finish = do
 			senddata toh (privDataFile hn) privDataMarker privdata
 			hClose toh

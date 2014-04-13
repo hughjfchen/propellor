@@ -81,7 +81,7 @@ hosts =
 		& JoeySites.gitServer hosts
 	
 		& cname "downloads.kitenet.net"
-		& JoeySites.annexWebSite "/srv/git/download.git"
+		& JoeySites.annexWebSite "/srv/git/downloads.git"
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
