@@ -70,6 +70,8 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 		, "$feature{'snapshot'}{'default'} = [];"
 		]
 		`describe` "gitweb configured"
+	-- Repos push on to github.
+	, Ssh.knownHost hosts "github.com" "joey"
 	-- I keep the website used for gitweb checked into git..
 	, Git.cloned "root" "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
 	, website "git.kitenet.net"
