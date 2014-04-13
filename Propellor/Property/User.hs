@@ -7,7 +7,7 @@ import Propellor
 data Eep = YesReallyDeleteHome
 
 accountFor :: UserName -> Property
-accountFor user = check (isNothing <$> homedir user) $ cmdProperty "adduser"
+accountFor user = check (isNothing <$> catchMaybeIO (homedir user)) $ cmdProperty "adduser"
 	[ "--disabled-password"
 	, "--gecos", ""
 	, user
@@ -16,7 +16,7 @@ accountFor user = check (isNothing <$> homedir user) $ cmdProperty "adduser"
 
 -- | Removes user home directory!! Use with caution.
 nuked :: UserName -> Eep -> Property
-nuked user _ = check (isJust <$> homedir user) $ cmdProperty "userdel"
+nuked user _ = check (isJust <$> catchMaybeIO (homedir user)) $ cmdProperty "userdel"
 	[ "-r"
 	, user
 	]
@@ -57,5 +57,5 @@ getPasswordStatus user = parse . words <$> readProcess "passwd" ["-S", user]
 isLockedPassword :: UserName -> IO Bool
 isLockedPassword user = (== LockedPassword) <$> getPasswordStatus user
 
-homedir :: UserName -> IO (Maybe FilePath)
-homedir user = catchMaybeIO $ homeDirectory <$> getUserEntryForName user
+homedir :: UserName -> IO FilePath
+homedir user = homeDirectory <$> getUserEntryForName user

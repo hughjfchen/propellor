@@ -5,10 +5,20 @@ import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
 import Utility.SafeCommand
 
+import Data.List
+
 installed :: Property
 installed = Apt.installed ["obnam"]
 
 type ObnamParam = String
+
+-- | An obnam repository can be used by multiple clients. Obnam uses
+-- locking to allow only one client to write at a time. Since stale lock
+-- files can prevent backups from happening, it's more robust, if you know
+-- a repository has only one client, to force the lock before starting a
+-- backup. Using OnlyClient allows propellor to do so when running obnam.
+data NumClients = OnlyClient | MultipleClients
+	deriving (Eq)
 
 -- | Installs a cron job that causes a given directory to be backed
 -- up, by running obnam with some parameters.
@@ -23,25 +33,32 @@ type ObnamParam = String
 -- up securely. For example: 
 --
 -- >	& Obnam.backup "/srv/git" "33 3 * * *"
--- >		[ "--repository=2318@usw-s002.rsync.net:mygitrepos.obnam"
+-- >		[ "--repository=sftp://2318@usw-s002.rsync.net/~/mygitrepos.obnam"
 -- >		, "--encrypt-with=1B169BE1"
--- >		]
+-- >		] Obnam.OnlyClient
 -- >		`requires` Gpg.keyImported "1B169BE1" "root"
 -- >		`requires` Ssh.keyImported SshRsa "root"
 --
 -- How awesome is that?
-backup :: FilePath -> Cron.CronTimes -> [ObnamParam] -> Property
-backup dir crontimes params = cronjob `describe` desc
+backup :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property
+backup dir crontimes params numclients = cronjob `describe` desc
 	`requires` restored dir params
-	`requires` installed
   where
 	desc = dir ++ " backed up by obnam"
 	cronjob = Cron.niceJob ("obnam_backup" ++ dir) crontimes "root" "/" $
-		unwords $
-			[ "obnam"
-			, "backup"
-			, shellEscape dir
-			] ++ map shellEscape params
+		intercalate ";" $ catMaybes
+			[ if numclients == OnlyClient
+				then Just $ unwords $
+					[ "obnam"
+					, "force-lock"
+					] ++ map shellEscape params
+				else Nothing
+			, Just $ unwords $
+				[ "obnam"
+				, "backup"
+				, shellEscape dir
+				] ++ map shellEscape params
+			]
 
 -- | Restores a directory from an obnam backup.
 --

@@ -8,6 +8,7 @@ import Propellor.Types.Attr
 import "mtl" Control.Monad.Reader
 import qualified Data.Set as S
 import qualified Data.Map as M
+import Control.Applicative
 
 pureAttrProperty :: Desc -> (Attr -> Attr) -> AttrProperty 
 pureAttrProperty desc = AttrProperty $ Property ("has " ++ desc)
@@ -31,6 +32,13 @@ cnameFor domain mkp =
 addCName :: HostName -> Attr -> Attr
 addCName domain d = d { _cnames = S.insert domain (_cnames d) }
 
+sshPubKey :: String -> AttrProperty
+sshPubKey k = pureAttrProperty ("ssh pubkey known") $
+	\d -> d { _sshPubKey = Just k }
+
+getSshPubKey :: Propellor (Maybe String)
+getSshPubKey = asks _sshPubKey
+
 hostnameless :: Attr
 hostnameless = newAttr (error "hostname Attr not specified")
 
@@ -45,3 +53,12 @@ hostMap l = M.fromList $ zip (map (_hostname . hostAttr) l) l
 
 findHost :: [Host] -> HostName -> Maybe Host
 findHost l hn = M.lookup hn (hostMap l)
+
+-- | Lifts an action into a different host.
+--
+-- For example, `fromHost hosts "otherhost" getSshPubKey`
+fromHost :: [Host] -> HostName -> Propellor a -> Propellor (Maybe a)
+fromHost l hn getter = case findHost l hn of
+	Nothing -> return Nothing
+	Just h -> liftIO $ Just <$>
+		runReaderT (runWithAttr getter) (hostAttr h)

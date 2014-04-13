@@ -5,7 +5,8 @@ module Propellor.Property.Ssh (
 	hasAuthorizedKeys,
 	restartSshd,
 	uniqueHostKeys,
-	keyImported
+	keyImported,
+	knownHost,
 ) where
 
 import Propellor
@@ -39,12 +40,20 @@ permitRootLogin = setSshdConfig "PermitRootLogin"
 passwordAuthentication :: Bool -> Property
 passwordAuthentication = setSshdConfig "PasswordAuthentication"
 
+dotDir :: UserName -> IO FilePath
+dotDir user = do
+	h <- homedir user
+	return $ h </> ".ssh"
+
+dotFile :: FilePath -> UserName -> IO FilePath
+dotFile f user = do
+	d <- dotDir user
+	return $ d </> f
+
 hasAuthorizedKeys :: UserName -> IO Bool
-hasAuthorizedKeys = go <=< homedir
+hasAuthorizedKeys = go <=< dotFile "authorized_keys"
   where
-	go Nothing = return False
-	go (Just home) = not . null <$> catchDefaultIO ""
-		(readFile $ home </> ".ssh" </> "authorized_keys")
+	go f = not . null <$> catchDefaultIO "" (readFile f)
 
 restartSshd :: Property
 restartSshd = cmdProperty "service" ["ssh", "restart"]
@@ -87,3 +96,19 @@ keyImported keytype user = propertyList desc
 				SshRsa -> "rsa"
 				SshDsa -> "dsa"
 			++ ext
+
+-- | Puts some host's ssh public key into the known_hosts file for a user.
+knownHost :: [Host] -> HostName -> UserName -> Property
+knownHost hosts hn user = Property desc $
+	go =<< fromHost hosts hn getSshPubKey
+  where
+	desc = user ++ " knows ssh key for " ++ hn
+	go (Just (Just k)) = do
+		f <- liftIO $ dotFile "known_hosts" user
+		ensureProperty $ propertyList desc
+			[ File.dirExists (takeDirectory f)
+			, f `File.containsLine` (hn ++ " " ++ k)
+			]
+	go _ = do
+		warningMessage $ "no configred sshPubKey for " ++ hn
+		return FailedChange
