@@ -76,6 +76,7 @@ hosts =
 		& Obnam.backup "/srv/git" "33 3 * * *"
 			[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net.obnam"
 			, "--encrypt-with=1B169BE1"
+			, "--client-name=wren"
 			] Obnam.OnlyClient
 			`requires` Gpg.keyImported "1B169BE1" "root"
 			`requires` Ssh.keyImported SshRsa "root"
