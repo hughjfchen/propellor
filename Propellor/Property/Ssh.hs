@@ -4,13 +4,17 @@ module Propellor.Property.Ssh (
 	passwordAuthentication,
 	hasAuthorizedKeys,
 	restartSshd,
-	uniqueHostKeys
+	uniqueHostKeys,
+	keyImported
 ) where
 
 import Propellor
 import qualified Propellor.Property.File as File
 import Propellor.Property.User
 import Utility.SafeCommand
+import Utility.FileMode
+
+import System.PosixCompat
 
 sshBool :: Bool -> String
 sshBool True = "yes"
@@ -60,3 +64,24 @@ uniqueHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 		ensureProperty $
 			cmdProperty "/var/lib/dpkg/info/openssh-server.postinst"
 				["configure"]
+
+-- | Sets up a user with a ssh private key from the site's privdata.
+--
+-- The ssh public key (.pub) is not installed. Ssh does not use it.
+keyImported :: SshKeyType -> UserName -> Property
+keyImported keytype user = Property desc install
+  where
+	desc = user ++ " has ssh key"
+	install = do
+		f <- liftIO keyfile
+		ifM (liftIO $ doesFileExist f)
+			( noChange
+			, withPrivData (SshKey keytype user) $ \key -> makeChange $
+				writeFileProtected f key
+			)
+	keyfile = do
+		home <- homeDirectory <$> getUserEntryForName user
+		return $ home </> ".ssh" </> "id_" ++ 
+			case keytype of
+				SshRsa -> "rsa"
+				SshDsa -> "dsa"

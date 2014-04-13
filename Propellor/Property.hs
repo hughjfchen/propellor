@@ -12,6 +12,7 @@ import Propellor.Types
 import Propellor.Types.Attr
 import Propellor.Engine
 import Utility.Monad
+import System.FilePath
 
 makeChange :: IO () -> Propellor Result
 makeChange a = liftIO a >> return MadeChange
@@ -52,14 +53,19 @@ p1 `before` p2 = Property (propertyDesc p1) $ do
 -- file to indicate whether it has run before.
 -- Use with caution.
 flagFile :: Property -> FilePath -> Property
-flagFile property flagfile = Property (propertyDesc property) $
-	go =<< liftIO (doesFileExist flagfile)
+flagFile property = flagFile' property . return
+
+flagFile' :: Property -> IO FilePath -> Property
+flagFile' property getflagfile = Property (propertyDesc property) $ do
+	flagfile <- liftIO getflagfile
+	go flagfile =<< liftIO (doesFileExist flagfile)
   where
-	go True = return NoChange
-	go False = do
+	go _ True = return NoChange
+	go flagfile False = do
 		r <- ensureProperty property
 		when (r == MadeChange) $ liftIO $ 
-			unlessM (doesFileExist flagfile) $
+			unlessM (doesFileExist flagfile) $ do
+				createDirectoryIfMissing True (takeDirectory flagfile)
 				writeFile flagfile ""
 		return r
 

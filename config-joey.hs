@@ -17,6 +17,7 @@ import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
+import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -71,6 +72,8 @@ hosts =
 		& Apt.buildDep ["git-annex"] `period` Daily
 		& Git.daemonRunning "/srv/git"
 		& File.ownerGroup "/srv/git" "joey" "joey"
+		& Gpg.keyImported "git.kitenet.net obnam backup key" "root"
+		& Ssh.keyImported SshRsa "root"
 		-- git repos restore (how?) (also make backups!)
 		-- family annex needs family members to have accounts,
 		--     ssh host key etc.. finesse?
@@ -80,13 +83,13 @@ hosts =
 		-- gitweb
 		-- downloads.kitenet.net setup (including ssh key to turtle)
 
-  --'                        __|II|      ,.
-----                      __|II|II|__   (  \_,/\
------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-
---------------------- |      [Docker]       / ----------------------
---------------------- :                    / -----------------------
----------------------- \____, o          ,' ------------------------
------------------------ '--,___________,'  -------------------------
+	    --'                        __|II|      ,.
+	  ----                      __|II|II|__   (  \_,/\
+	 ------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-
+	----------------------- |      [Docker]       / ----------------------
+	----------------------- :                    / -----------------------
+	------------------------ \____, o          ,' ------------------------
+	------------------------- '--,___________,'  -------------------------
 
 	-- Simple web server, publishing the outside host's /var/www
 	, standardContainer "webserver" Stable "amd64"

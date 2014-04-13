@@ -65,7 +65,7 @@ cloned :: UserName -> RepoUrl -> FilePath -> Maybe Branch -> Property
 cloned owner url dir mbranch = check originurl (Property desc checkout)
 	`requires` installed
   where
-	desc = "git cloned " ++ url ++ " " ++ dir
+	desc = "git cloned " ++ url ++ " to " ++ dir
 	gitconfig = dir </> ".git/config"
 	originurl = ifM (doesFileExist gitconfig)
 		( do

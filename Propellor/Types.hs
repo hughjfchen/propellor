@@ -27,6 +27,8 @@ module Propellor.Types
 	, ActionResult(..)
 	, CmdLine(..)
 	, PrivDataField(..)
+	, GpgKeyId
+	, SshKeyType(..)
 	) where
 
 import Data.Monoid
@@ -162,9 +164,13 @@ data CmdLine
 -- It's fine to add new fields.
 data PrivDataField
 	= DockerAuthentication
-	| SshPrivKey UserName
+	| SshKey SshKeyType UserName
 	| Password UserName
 	| PrivFile FilePath
+	| GpgKey GpgKeyId
 	deriving (Read, Show, Ord, Eq)
 
+type GpgKeyId = String
 
+data SshKeyType = SshRsa | SshDsa
+	deriving (Read, Show, Ord, Eq)
