@@ -5,6 +5,7 @@ import Propellor.CmdLine
 import Propellor.Property.Scheduled
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Network as Network
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Cron as Cron
@@ -94,6 +95,8 @@ hosts =
 		& Apt.serviceInstalledRunning "kgb-bot"
 		& File.hasPrivContent "/etc/kgb-bot/kgb.conf"
 		& File.hasPrivContent "/etc/kgb-bot/kgb-client.conf"
+		& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
+			`onChange` Service.running "kgb-bot"
 	
 		& cname "downloads.kitenet.net"
 		& Apt.buildDep ["git-annex"] `period` Daily
