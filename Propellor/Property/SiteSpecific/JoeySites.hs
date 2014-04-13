@@ -54,7 +54,7 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 		]
 		`describe` "gitweb configured"
 	-- I keep the website used for gitweb checked into git..
-	, Git.cloned "joey" "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
+	, Git.cloned "root" "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
 	, website "git.kitenet.net"
 	, website "git.joeyh.name"
 	-- ssh keys for branchable and github repo hooks
