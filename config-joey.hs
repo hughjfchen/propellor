@@ -17,6 +17,7 @@ import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
+import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -90,8 +91,9 @@ hosts =
 		& Apt.installed ["rsync"]
 		& File.hasPrivContent "/etc/rsyncd.conf"
 		& File.hasPrivContent "/etc/rsyncd.secrets"
-		& "/etc/default/rsync" `File.containsLine` ""
+		& "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
 			`describe` "rsync server enabled"
+			`onChange` Service.running "rsync"
 
 		& cname "tmp.kitenet.net"
 		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"
