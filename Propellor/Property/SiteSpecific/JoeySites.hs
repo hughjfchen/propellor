@@ -58,7 +58,6 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 	, website "git.kitenet.net"
 	, website "git.joeyh.name"
 	, toProp $ Apache.modEnabled "cgi"
-	-- ssh keys for branchable and github repo hooks
 	-- TODO: upgrade to newer git-annex-shell for notification
 	]
   where
