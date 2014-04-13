@@ -43,7 +43,8 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 		`requires` Ssh.authorizedKeys "family"
 		`requires` User.accountFor "family"
-	, Apt.installed ["git", "git-annex", "rsync", "kgb-client-git", "gitweb"]
+	, Apt.installed ["git", "rsync", "kgb-client-git", "gitweb"]
+	, Apt.installedBackport ["git-annex"]
 	, File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf"
 	, toProp $ Git.daemonRunning "/srv/git"
 	, "/etc/gitweb.conf" `File.containsLines`
@@ -58,7 +59,6 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 	, website "git.kitenet.net"
 	, website "git.joeyh.name"
 	, toProp $ Apache.modEnabled "cgi"
-	-- TODO: upgrade to newer git-annex-shell for notification
 	]
   where
 	website hn = toProp $ Apache.siteEnabled hn (gitapacheconf hn)

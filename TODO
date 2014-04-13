@@ -2,9 +2,6 @@
   run it once for the whole. For example, may want to restart apache,
   but only once despite many config changes being made to satisfy
   properties. onChange is a poor substitute.
-* Currently only Debian and derivatives are supported by most Properties.
-  This could be improved by making the Distribution of the system part
-  of its HostAttr.
 * Display of docker container properties is a bit wonky. It always
   says they are unchanged even when they changed and triggered a
   reprovision.
@@ -18,3 +15,7 @@
 * There is no way for a property of a docker container to require
   some property be met outside the container. For example, some servers
   need ntp installed for a good date source.
+* Attributes can only be set in the top level property list for a Host.
+  If an attribute is set inside a propertyList, it won't propigate out.
+  Fix this. Probably the fix involves combining AttrProperty into Property.
+  Then propertyList can gather the attributes from its list.
