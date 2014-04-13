@@ -6,7 +6,6 @@ import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
 
 import Data.List
-import System.Posix.Files
 
 providerFor :: [UserName] -> String -> Property
 providerFor users baseurl = propertyList desc $

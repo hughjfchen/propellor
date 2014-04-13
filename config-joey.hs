@@ -48,6 +48,11 @@ hosts =
 		& cname "ancient.kitenet.net"
 		& Docker.docked hosts "ancient-kitenet"
 
+		-- I'd rather this container were on diatom, but
+		-- docker.io is not available in stable.
+		& cname "kgb.kitenet.net"
+		& Docker.docked hosts "kgb-server"
+
 		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
 	
@@ -86,14 +91,11 @@ hosts =
 			`requires` Ssh.authorizedKeys "family"
 			`requires` User.accountFor "family"
 		& Apt.installed ["git", "git-annex", "rsync", "kgb-client-git"]
+		& File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf"
 		& Git.daemonRunning "/srv/git"
 		-- ssh keys for branchable and github repo hooks
 		-- TODO: upgrade to newer git-annex-shell for notification
 		-- gitweb
-
-		& cname "kgb.kitenet.net"
-		& Docker.docked hosts "kgb-server"
-		& File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf"
 	
 		& cname "downloads.kitenet.net"
 		& Apt.buildDep ["git-annex"] `period` Daily
