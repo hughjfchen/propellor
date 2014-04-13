@@ -74,7 +74,7 @@ hosts =
 		& Apt.serviceInstalledRunning "ntp"
 		& Dns.zones myDnsSecondary
 		& Apt.serviceInstalledRunning "apache2"
-		& File.ownerGroup "/srv" "joey" "joey"
+		& File.ownerGroup "/srv/web" "joey" "joey"
 
 		& cname "git.kitenet.net"
 		& cname "git.joeyh.name"
