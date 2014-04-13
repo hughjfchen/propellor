@@ -24,9 +24,12 @@ showSuite Unstable = "unstable"
 showSuite Experimental = "experimental"
 showSuite (DebianRelease r) = r
 
-debLine :: DebianSuite -> Url -> [Section] -> Line
+backportSuite :: DebianSuite -> String
+backportSuite suite = showSuite suite ++ "-backports"
+
+debLine :: String -> Url -> [Section] -> Line
 debLine suite mirror sections = unwords $
-	["deb", mirror, showSuite suite] ++ sections
+	["deb", mirror, suite] ++ sections
 
 srcLine :: Line -> Line
 srcLine l = case words l of
@@ -37,9 +40,12 @@ stdSections :: [Section]
 stdSections = ["main", "contrib", "non-free"]
 
 binandsrc :: String -> DebianSuite -> [Line]
-binandsrc url suite = [l, srcLine l]
+binandsrc url suite
+	| suite == Stable = [l, srcLine l, bl, srcLine bl]
+	| otherwise = [l, srcLine l]
   where
-	l = debLine suite url stdSections
+	l = debLine (showSuite suite) url stdSections
+	bl = debLine (backportSuite suite) url stdSections
 
 debCdn :: DebianSuite -> [Line]
 debCdn = binandsrc "http://cdn.debian.net/debian"
@@ -62,7 +68,7 @@ securityUpdates suite
 -- kernel.org.
 stdSourcesList :: DebianSuite -> Property
 stdSourcesList suite = setSourcesList
-	(debCdn suite ++ kernelOrg suite ++ securityUpdates suite)
+	(concatMap (\gen -> gen suite) [debCdn, kernelOrg, securityUpdates])
 	`describe` ("standard sources.list for " ++ show suite)
 
 setSourcesList :: [Line] -> Property
@@ -95,6 +101,15 @@ installed' params ps = robustly $ check (isInstallable ps) go
 	`describe` (unwords $ "apt installed":ps)
   where
 	go = runApt $ params ++ ["install"] ++ ps
+
+installedBackport :: [Package] -> Property
+installedBackport ps = withOS desc $ \o -> case o of
+	(Just (System (Debian suite) _)) -> 
+		ensureProperty $ installed' ["-t", backportSuite suite, "-y"] ps
+	Nothing -> error "cannot install backports; os not declared"
+	_ -> error $ "backports not supported on " ++ show o
+  where
+	desc = (unwords $ "apt installed backport":ps)
 
 -- | Minimal install of package, without recommends.
 installedMin :: [Package] -> Property

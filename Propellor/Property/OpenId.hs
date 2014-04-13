@@ -12,7 +12,7 @@ providerFor users baseurl = propertyList desc $
 	[ Apt.serviceInstalledRunning "apache2"
 	, Apt.installed ["simpleid"]
 		`onChange` Service.restarted "apache2"
-	, File.fileProperty desc
+	, File.fileProperty (desc ++ " configured")
 		(map setbaseurl) "/etc/simpleid/config.inc"
 	] ++ map identfile users
   where

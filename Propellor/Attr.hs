@@ -22,7 +22,7 @@ getHostName :: Propellor HostName
 getHostName = asks _hostname
 
 os :: System -> AttrProperty
-os system = pureAttrProperty ("OS " ++ show system) $
+os system = pureAttrProperty ("Operating " ++ show system) $
 	\d -> d { _os = Just system }
 
 getOS :: Propellor (Maybe System)
