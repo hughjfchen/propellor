@@ -104,14 +104,8 @@ hosts =
 	, standardContainer "ancient-kitenet" Stable "amd64"
 		& Docker.publish "1994:80"
 		& Apt.serviceInstalledRunning "apache2"
-		& Apt.installed ["git"]
-		& scriptProperty 
-			[ "cd /var/"
-			, "rm -rf www"
-			, "git clone git://git.kitenet.net/kitewiki www"
-			, "cd www"
-			, "git checkout remotes/origin/old-kitenet.net"
-			] `flagFile` "/var/www/blastfromthepast.html"
+		& Git.cloned "root" "git://git.kitenet.net/kitewiki" "/var/www"
+			(Just "remotes/origin/old-kitenet.net")
 	
 	-- git-annex autobuilder containers
 	, gitAnnexBuilder "amd64" 15

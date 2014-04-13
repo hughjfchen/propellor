@@ -4,6 +4,7 @@ import Propellor
 import Propellor.Property.File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
+import Utility.SafeCommand
 
 import Data.List
 
@@ -46,3 +47,38 @@ daemonRunning exportdir = RevertableProperty setup unsetup
 		, "--base-path=" ++ exportdir
 		, exportdir
 		]
+
+installed :: Property
+installed = Apt.installed ["git"]
+
+type RepoUrl = String
+
+type Branch = String
+
+-- | Specified git repository is cloned to the specified directory.
+--
+-- If the firectory exists with some other content, it will be recursively
+-- deleted.
+--
+-- A branch can be specified, to check out.
+cloned :: UserName -> RepoUrl -> FilePath -> Maybe Branch -> Property
+cloned owner url dir mbranch = check originurl (Property desc checkout)
+	`requires` installed
+  where
+	desc = "git cloned " ++ url ++ " " ++ dir
+	gitconfig = dir </> ".git/config"
+	originurl = ifM (doesFileExist gitconfig)
+		( do
+			v <- catchDefaultIO Nothing $ headMaybe . lines <$>
+				readProcess "git" ["config", "--file", gitconfig, "remote.origin.url"]
+			return (v /= Just url)
+		, return True
+		)
+	checkout = do
+		liftIO $ whenM (doesDirectoryExist dir) $
+			removeDirectoryRecursive dir
+		ensureProperty $ userScriptProperty owner $ catMaybes
+			[ Just $ "git clone " ++ shellEscape url ++ " " ++ shellEscape dir
+			, Just $ "cd " ++ shellEscape dir
+			, ("git checkout " ++) <$> mbranch
+			]
