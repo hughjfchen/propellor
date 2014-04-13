@@ -87,7 +87,11 @@ type AnnexUUID = String
 annexWebSite :: [Host] -> Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] -> Property
 annexWebSite hosts origin hn uuid remotes = Git.cloned "joey" origin dir Nothing
 	`onChange` setup
-	`onChange` toProp (Apache.siteEnabled hn $ annexwebsiteconf hn)
+	`onChange` setupapache
+	`requires` File.hasPrivContent "/etc/ssl/certs/web.pem"
+	`requires` File.hasPrivContent "/etc/ssl/private/web.pem"
+	`requires` File.hasPrivContent "/etc/ssl/certs/startssl.pem"
+	`requires` toProp (Apache.modEnabled "ssl")
   where
 	dir = "/srv/web/" ++ hn
 	setup = userScriptProperty "joey" setupscript
@@ -100,6 +104,7 @@ annexWebSite hosts origin hn uuid remotes = Git.cloned "joey" origin dir Nothing
 		[ "git annex get"
 		]
 	addremote (name, url) = "git remote add " ++ shellEscape name ++ " " ++ shellEscape url
+	setupapache = toProp (Apache.siteEnabled hn $ annexwebsiteconf hn)
 
 annexwebsiteconf :: HostName -> Apache.ConfigFile
 annexwebsiteconf hn = stanza 80 False ++ stanza 443 True
