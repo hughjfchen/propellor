@@ -91,7 +91,7 @@ hosts =
 		-- gitweb
 
 		& cname "kgb.kitenet.net"
-		& Apt.serviceInstalledRunning "kbg-bot"
+		& Apt.serviceInstalledRunning "kgb-bot"
 		& File.hasPrivContent "/etc/kgb-bot/kgb.conf"
 		& File.hasPrivContent "/etc/kgb-bot/kgb-client.conf"
 	
