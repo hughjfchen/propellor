@@ -84,12 +84,15 @@ hostKey keytype = propertyList desc
 	[ Property desc (install writeFile (SshPubKey keytype "") ".pub")
 	, Property desc (install writeFileProtected (SshPrivKey keytype "") "")
 	]
+	`onChange` restartSshd
   where
  	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
 	install writer p ext = withPrivData p $ \key -> do
 		let f = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++ ext
-		void $ liftIO $ writer f key
-		noChange
+		s <- liftIO $ readFileStrict f
+		if s == key
+			then noChange
+			else makeChange $ writer f key
 
 -- | Sets up a user with a ssh private key and public key pair
 -- from the site's PrivData.
