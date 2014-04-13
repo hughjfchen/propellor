@@ -85,7 +85,7 @@ hostKey keytype = propertyList desc
 	, Property desc (install writeFileProtected (SshPrivKey keytype "") "")
 	]
   where
- 	desc = "known ssh host key"
+ 	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
 	install writer p ext = withPrivData p $ \key -> do
 		let f = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "key" ++ ext
 		void $ liftIO $ writer f key
@@ -99,7 +99,7 @@ keyImported keytype user = propertyList desc
 	, Property desc (install writeFileProtected (SshPrivKey keytype user) "")
 	]
   where
-	desc = user ++ " has ssh key"
+	desc = user ++ " has ssh key (" ++ fromKeyType keytype ++ ")"
 	install writer p ext = do
 		f <- liftIO $ keyfile ext
 		ifM (liftIO $ doesFileExist f)
@@ -136,5 +136,6 @@ authorizedKeys :: UserName -> Property
 authorizedKeys user = Property (user ++ " has authorized_keys") $
 	withPrivData (SshAuthorizedKeys user) $ \v -> liftIO $ do
 		f <- liftIO $ dotFile "authorized_keys" user
+		createDirectoryIfMissing True (takeDirectory f)
 		writeFileProtected f v
 		return NoChange
