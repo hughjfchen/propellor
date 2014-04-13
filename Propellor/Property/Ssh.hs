@@ -80,7 +80,7 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 -- 
 -- (Uses a null username for host keys.)
 hostKey :: SshKeyType -> Property
-hostKey keytype = propertyList desc
+hostKey keytype = combineProperties desc
 	[ Property desc (install writeFile (SshPubKey keytype "") ".pub")
 	, Property desc (install writeFileProtected (SshPrivKey keytype "") "")
 	]
@@ -97,7 +97,7 @@ hostKey keytype = propertyList desc
 -- | Sets up a user with a ssh private key and public key pair
 -- from the site's PrivData.
 keyImported :: SshKeyType -> UserName -> Property
-keyImported keytype user = propertyList desc
+keyImported keytype user = combineProperties desc
 	[ Property desc (install writeFile (SshPubKey keytype user) ".pub")
 	, Property desc (install writeFileProtected (SshPrivKey keytype user) "")
 	]

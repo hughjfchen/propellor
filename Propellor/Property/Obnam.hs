@@ -72,7 +72,9 @@ restored dir params = Property (dir ++ " restored by obnam") go
 	`requires` installed
   where
 	go = ifM (liftIO needsRestore)
-		( liftIO restore
+		( do
+			warningMessage $ dir ++ " is empty/missing; restoring from backup ..."
+			liftIO restore
 		, noChange
 		)
 
