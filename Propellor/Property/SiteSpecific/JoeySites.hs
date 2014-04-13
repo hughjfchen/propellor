@@ -13,6 +13,7 @@ import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Apache as Apache
+import Utility.SafeCommand
 
 oldUseNetShellBox :: Property
 oldUseNetShellBox = check (not <$> Apt.isInstalled "oldusenet") $
@@ -29,6 +30,21 @@ oldUseNetShellBox = check (not <$> Apt.isInstalled "oldusenet") $
 			, "rm -rf /root/tmp/oldusenet"
 			] `describe` "olduse.net built"
 		]
+
+kgbServer :: Property
+kgbServer = withOS desc $ \o -> case o of
+	(Just (System (Debian Unstable) _)) ->
+		ensureProperty $ propertyList desc
+			[ Apt.serviceInstalledRunning "kgb-bot"
+			, File.hasPrivContent "/etc/kgb-bot/kgb.conf"
+				`onChange` Service.restarted "kgb-bot"
+			, "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
+				`describe` "kgb bot enabled"
+				`onChange` Service.running "kgb-bot"
+			]
+	_ -> error "kgb server needs Debian unstable (for kgb-bot 1.31+)"
+  where
+	desc = "kgb.kitenet.net setup"
 
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property
@@ -62,6 +78,69 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 	]
   where
 	website hn = toProp $ Apache.siteEnabled hn (gitapacheconf hn)
+
+type AnnexUUID = String
+
+-- | A website, with files coming from a git-annex repository.
+annexWebSite :: Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] -> Property
+annexWebSite origin hn uuid remotes = Git.cloned "joey" origin dir Nothing
+	`onChange` setup
+	`onChange` toProp (Apache.siteEnabled hn $ annexwebsiteconf hn)
+  where
+	dir = "/srv/web/" ++ hn
+	setup = userScriptProperty "joey" $
+		[ "cd " ++ shellEscape dir
+		, "git config annex.uuid " ++ shellEscape uuid
+		] ++ map addremote remotes ++
+		[ "git annex get"
+		]
+	addremote (name, url) = "git remote add " ++ shellEscape name ++ " " ++ shellEscape url
+
+annexwebsiteconf :: HostName -> Apache.ConfigFile
+annexwebsiteconf hn = stanza 80 False ++ stanza 443 True
+  where
+  	stanza :: Int -> Bool -> Apache.ConfigFile
+	stanza port withssl = catMaybes
+		[ Just $ "<VirtualHost *:"++show port++">"
+		, Just $ "  ServerAdmin joey@kitenet.net"
+		, Just $ ""
+		, Just $ "  ServerName "++hn++":"++show port
+		, Just $ "  ServerAlias www."++hn
+		, Just $ ""
+		, ssl  $ "  SSLEngine on"
+		, ssl  $ "  SSLCertificateFile /etc/ssl/certs/web.pem"
+		, ssl  $ "  SSLCertificateKeyFile /etc/ssl/private/web.pem"
+		, ssl  $ "  SSLCertificateChainFile /etc/ssl/certs/startssl.pem"
+		, Just $ ""
+		, Just $ "  DocumentRoot /srv/web/"++hn
+		, Just $ "  <Directory /srv/web/"++hn++">"
+		, Just $ "    Options FollowSymLinks"
+		, Just $ "    AllowOverride None"
+		, Just $ "  </Directory>"
+		, Just $ "  <Directory /srv/web/"++hn++">"
+		, Just $ "    Options Indexes FollowSymLinks ExecCGI"
+		, Just $ "    AllowOverride None"
+		, Just $ "    Order allow,deny"
+		, Just $ "    allow from all"
+		, Just $ "  </Directory>"
+		, Just $ ""
+		, Just $ "  ErrorLog /var/log/apache2/error.log"
+		, Just $ "  LogLevel warn"
+		, Just $ "  CustomLog /var/log/apache2/access.log combined"
+		, Just $ "  ServerSignature On"
+		, Just $ "  "
+		, Just $ "  <Directory \"/usr/share/apache2/icons\">"
+		, Just $ "      Options Indexes MultiViews"
+		, Just $ "      AllowOverride None"
+		, Just $ "      Order allow,deny"
+		, Just $ "      Allow from all"
+		, Just $ "  </Directory>"
+		, Just $ "</VirtualHost>"
+		]
+	  where
+	  	ssl l
+			| withssl = Just l
+			| otherwise = Nothing
 
 gitapacheconf :: HostName -> Apache.ConfigFile
 gitapacheconf hn =
@@ -103,18 +182,3 @@ gitapacheconf hn =
 	, "  </Directory>"
 	, "</VirtualHost>"
 	]
-
-kgbServer :: Property
-kgbServer = withOS desc $ \o -> case o of
-	(Just (System (Debian Unstable) _)) ->
-		ensureProperty $ propertyList desc
-			[ Apt.serviceInstalledRunning "kgb-bot"
-			, File.hasPrivContent "/etc/kgb-bot/kgb.conf"
-				`onChange` Service.restarted "kgb-bot"
-			, "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
-				`describe` "kgb bot enabled"
-				`onChange` Service.running "kgb-bot"
-			]
-	_ -> error "kgb server needs Debian unstable (for kgb-bot 1.31+)"
-  where
-	desc = "kgb.kitenet.net setup"

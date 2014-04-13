@@ -74,14 +74,26 @@ hosts =
 		& Apt.serviceInstalledRunning "ntp"
 		& Dns.zones myDnsSecondary
 		& Apt.serviceInstalledRunning "apache2"
+		& File.ownerGroup "/srv" "joey" "joey"
 
 		& cname "git.kitenet.net"
 		& cname "git.joeyh.name"
 		& JoeySites.gitServer hosts
 	
 		& cname "downloads.kitenet.net"
+		& JoeySites.annexWebSite "/srv/git/download.git"
+			"downloads.kitenet.net"
+			"840760dc-08f0-11e2-8c61-576b7e66acfd"
+			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
 		& Apt.buildDep ["git-annex"] `period` Daily
-		-- downloads.kitenet.net setup (including ssh key to turtle)
+
+		& cname "tmp.kitenet.net"
+		& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
+			"tmp.kitenet.net"
+			"274ce1ca-1226-11e2-bcbd-eb57078e31b1"
+			[]
+		
+		& Apt.installed ["ntop"]
 
 	-- I don't run this system, so only relevant property is its
 	-- public key.
