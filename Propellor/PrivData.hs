@@ -8,6 +8,7 @@ import System.FilePath
 import System.IO
 import System.Directory
 import Data.Maybe
+import Data.List
 import Control.Monad
 import "mtl" Control.Monad.Reader
 
@@ -30,9 +31,12 @@ withPrivData field a = maybe missing a =<< liftIO (getPrivData field)
   where
 	missing = do
 		host <- getHostName
+		let host' = if ".docker" `isSuffixOf` host
+			then "$parent_host"
+			else host
 		liftIO $ do
 			warningMessage $ "Missing privdata " ++ show field
-			putStrLn $ "Fix this by running: propellor --set "++host++" '" ++ show field ++ "'"
+			putStrLn $ "Fix this by running: propellor --set "++host'++" '" ++ show field ++ "'"
 			return FailedChange
 
 getPrivData :: PrivDataField -> IO (Maybe String)
