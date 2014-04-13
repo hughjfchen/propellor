@@ -48,11 +48,15 @@ hosts =
 		& cname "ancient.kitenet.net"
 		& Docker.docked hosts "ancient-kitenet"
 
-		-- I'd rather this container were on diatom, but
-		-- docker.io is not available in stable.
+		-- I'd rather this were on diatom, but I use features
+		-- not available in stable.
 		& cname "kgb.kitenet.net"
-		& Docker.docked hosts "kgb-server"
-
+		& Apt.serviceInstalledRunning "kgb-bot"
+		& File.hasPrivContent "/etc/kgb-bot/kgb.conf"
+			`onChange` Service.restarted "kgb-bot"
+		& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
+			`describe` "kgb bot enabled"
+			`onChange` Service.running "kgb-bot"
 		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
 	
@@ -127,16 +131,6 @@ hosts =
 		& OpenId.providerFor ["joey", "liw"]
 			"openid.kitenet.net:8081"
 
-	-- The kgb irc bot, in a container for security and because I need
-	-- features not in the stable version.
-	, standardContainer "kgb-server" Unstable "amd64"
-		& Docker.publish "9999:9999"
-		& Apt.serviceInstalledRunning "kgb-bot"
-		& File.hasPrivContent "/etc/kgb-bot/kgb.conf"
-		& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
-			`describe` "kgb bot enabled"
-			`onChange` Service.running "kgb-bot"
-	
 	-- Exhibit: kite's 90's website.
 	, standardContainer "ancient-kitenet" Stable "amd64"
 		& Docker.publish "1994:80"
