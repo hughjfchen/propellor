@@ -80,6 +80,9 @@ cloned owner url dir mbranch = check originurl (Property desc checkout)
 				removeDirectoryRecursive dir
 			createDirectoryIfMissing True (takeDirectory dir)
 		ensureProperty $ userScriptProperty owner $ catMaybes
+			-- The </dev/null fixes an intermittent
+			-- "fatal: read error: Bad file descriptor"
+			-- when run across ssh with propellor --spin
 			[ Just $ "git clone " ++ shellEscape url ++ " " ++ shellEscape dir ++ " < /dev/null"
 			, Just $ "cd " ++ shellEscape dir
 			, ("git checkout " ++) <$> mbranch
