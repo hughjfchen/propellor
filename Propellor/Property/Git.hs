@@ -80,7 +80,7 @@ cloned owner url dir mbranch = check originurl (Property desc checkout)
 				removeDirectoryRecursive dir
 			createDirectoryIfMissing True (takeDirectory dir)
 		ensureProperty $ userScriptProperty owner $ catMaybes
-			[ Just $ "git clone " ++ shellEscape url ++ " " ++ shellEscape dir
+			[ Just $ "git clone " ++ shellEscape url ++ " " ++ shellEscape dir ++ " < /dev/null"
 			, Just $ "cd " ++ shellEscape dir
 			, ("git checkout " ++) <$> mbranch
 			]
