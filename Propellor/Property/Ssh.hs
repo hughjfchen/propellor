@@ -66,22 +66,24 @@ uniqueHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 				["configure"]
 
 -- | Sets up a user with a ssh private key from the site's privdata.
---
--- The ssh public key (.pub) is not installed. Ssh does not use it.
 keyImported :: SshKeyType -> UserName -> Property
-keyImported keytype user = Property desc install
+keyImported keytype user = propertyList desc
+	[ Property desc (install (SshPubKey keytype user) ".pub")
+	, Property desc (install (SshPrivKey keytype user) "")
+	]
   where
 	desc = user ++ " has ssh key"
-	install = do
-		f <- liftIO keyfile
+	install p ext = do
+		f <- liftIO $ keyfile ext
 		ifM (liftIO $ doesFileExist f)
 			( noChange
-			, withPrivData (SshKey keytype user) $ \key -> makeChange $
+			, withPrivData p $ \key -> makeChange $
 				writeFileProtected f key
 			)
-	keyfile = do
+	keyfile ext = do
 		home <- homeDirectory <$> getUserEntryForName user
-		return $ home </> ".ssh" </> "id_" ++ 
-			case keytype of
+		return $ home </> ".ssh" </> "id_"
+			++ case keytype of
 				SshRsa -> "rsa"
 				SshDsa -> "dsa"
+			++ ext

@@ -164,7 +164,8 @@ data CmdLine
 -- It's fine to add new fields.
 data PrivDataField
 	= DockerAuthentication
-	| SshKey SshKeyType UserName
+	| SshPubKey SshKeyType UserName
+	| SshPrivKey SshKeyType UserName
 	| Password UserName
 	| PrivFile FilePath
 	| GpgKey GpgKeyId
