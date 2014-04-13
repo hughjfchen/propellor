@@ -29,7 +29,7 @@ hosts =
 		& Apt.buildDep ["git-annex"] `period` Daily
 
 	-- Nothing super-important lives here.
-	, standardSystem "clam.kitenet.net" Unstable
+	, standardSystem "clam.kitenet.net" Unstable "amd64"
 		& cleanCloudAtCost
 		& Apt.unattendedUpgrades
 		& Network.ipv6to4
@@ -53,7 +53,7 @@ hosts =
 		& Apt.installed ["git-annex", "mtr", "screen"]
 	
 	-- Orca is the main git-annex build box.
-	, standardSystem "orca.kitenet.net" Unstable
+	, standardSystem "orca.kitenet.net" Unstable "amd64"
 		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Docker.configured
@@ -65,7 +65,7 @@ hosts =
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
 	-- Important stuff that needs not too much memory or CPU.
-  	, standardSystem "diatom.kitenet.net" Stable
+  	, standardSystem "diatom.kitenet.net" Stable "amd64"
 		& Hostname.sane
 		& Ssh.hostKey SshDsa
 		& Ssh.hostKey SshRsa
@@ -142,8 +142,9 @@ gitAnnexBuilder arch buildminute = Docker.container (arch ++ "-git-annex-builder
 	& Apt.unattendedUpgrades
 
 -- This is my standard system setup.
-standardSystem :: HostName -> DebianSuite -> Host
-standardSystem hn suite = host hn
+standardSystem :: HostName -> DebianSuite -> Architecture -> Host
+standardSystem hn suite arch = host hn
+	& os (System (Debian suite) arch)
 	& Apt.stdSourcesList suite `onChange` Apt.upgrade
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
@@ -166,6 +167,7 @@ standardSystem hn suite = host hn
 -- This is my standard container setup, featuring automatic upgrades.
 standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
 standardContainer name suite arch = Docker.container name (image system)
+	& os (System (Debian suite) arch)
 	& Apt.stdSourcesList suite
 	& Apt.unattendedUpgrades
   where

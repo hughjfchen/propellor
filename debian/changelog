@@ -4,6 +4,8 @@ propellor (0.3.1) UNRELEASED; urgency=medium
   * Support for provisioning hosts with ssh and gpg keys.
   * Obnam support.
   * Apache support.
+  * Properties can now be satisfied differently on different operating
+    systems.
 
  -- Joey Hess <joeyh@debian.org>  Fri, 11 Apr 2014 15:00:11 -0400
 

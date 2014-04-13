@@ -97,6 +97,7 @@ Library
     Propellor.Engine
     Propellor.Exception
     Propellor.Types
+    Propellor.Types.OS
   Other-Modules:
     Propellor.Types.Attr
     Propellor.CmdLine

@@ -21,6 +21,13 @@ hostname name = pureAttrProperty ("hostname " ++ name) $
 getHostName :: Propellor HostName
 getHostName = asks _hostname
 
+os :: System -> AttrProperty
+os system = pureAttrProperty ("OS " ++ show system) $
+	\d -> d { _os = Just system }
+
+getOS :: Propellor (Maybe System)
+getOS = asks _os
+
 cname :: Domain -> AttrProperty
 cname domain = pureAttrProperty ("cname " ++ domain) (addCName domain)
 

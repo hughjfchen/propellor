@@ -10,6 +10,7 @@ import "mtl" Control.Monad.Reader
 
 import Propellor.Types
 import Propellor.Types.Attr
+import Propellor.Attr
 import Propellor.Engine
 import Utility.Monad
 import System.FilePath
@@ -90,6 +91,13 @@ check c property = Property (propertyDesc property) $ ifM (liftIO c)
 	( ensureProperty property
 	, return NoChange
 	)
+
+-- | Makes a property that is satisfied differently depending on the host's
+-- operating system. 
+--
+-- Note that the operating system may not be declared for some hosts.
+withOS :: Desc -> (Maybe System -> Propellor Result) -> Property
+withOS desc a = Property desc $ a =<< getOS
 
 boolProperty :: Desc -> IO Bool -> Property
 boolProperty desc a = Property desc $ ifM (liftIO a)
