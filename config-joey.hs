@@ -81,21 +81,24 @@ hosts =
 		& JoeySites.gitServer hosts
 	
 		& cname "downloads.kitenet.net"
-		& JoeySites.annexWebSite "/srv/git/downloads.git"
+		& JoeySites.annexWebSite hosts "/srv/git/downloads.git"
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
 		& Apt.buildDep ["git-annex"] `period` Daily
 
 		& cname "tmp.kitenet.net"
-		& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
+		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"
 			"tmp.kitenet.net"
-			"274ce1ca-1226-11e2-bcbd-eb57078e31b1"
+			"26fd6e38-1226-11e2-a75f-ff007033bdba"
 			[]
 		
 		& Apt.installed ["ntop"]
 
-	-- Systems I don't run, but do want to track their public keys.
+	-- Systems I don't manage with propellor,
+	-- but do want to track their public keys.
+	, host "turtle.kitenet.net"
+		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
 	, host "usw-s002.rsync.net"
 		& sshPubKey "ssh-dss AAAAB3NzaC1kc3MAAAEBAI6ZsoW8a+Zl6NqUf9a4xXSMcV1akJHDEKKBzlI2YZo9gb9YoCf5p9oby8THUSgfh4kse7LJeY7Nb64NR6Y/X7I2/QzbE1HGGl5mMwB6LeUcJ74T3TQAlNEZkGt/MOIVLolJHk049hC09zLpkUDtX8K0t1yaCirC9SxDGLTCLEhvU9+vVdVrdQlKZ9wpLUNbdAzvbra+O/IVvExxDZ9WCHrnfNA8ddVZIGEWMqsoNgiuCxiXpi8qL+noghsSQNFTXwo7W2Vp9zj1JkCt3GtSz5IzEpARQaXEAWNEM0n1nJ686YUOhou64iRM8bPC1lp3QXvvZNgj3m+QHhIempx+de8AAAAVAKB5vUDaZOg14gRn7Bp81ja/ik+RAAABACPH/bPbW912x1NxNiikzGR6clLh+bLpIp8Qie3J7DwOr8oC1QOKjNDK+UgQ7mDQEgr4nGjNKSvpDi4c1QCw4sbLqQgx1y2VhT0SmUPHf5NQFldRQyR/jcevSSwOBxszz3aq9AwHiv9OWaO3XY18suXPouiuPTpIcZwc2BLDNHFnDURQeGEtmgqj6gZLIkTY0iw7q9Tj5FOyl4AkvEJC5B4CSzaWgey93Wqn1Imt7KI8+H9lApMKziVL1q+K7xAuNkGmx5YOSNlE6rKAPtsIPHZGxR7dch0GURv2jhh0NQYvBRn3ukCjuIO5gx56HLgilq59/o50zZ4NcT7iASF76TcAAAEAC6YxX7rrs8pp13W4YGiJHwFvIO1yXLGOdqu66JM0plO4J1ItV1AQcazOXLiliny3p2/W+wXZZKd5HIRt52YafCA8YNyMk/sF7JcTR4d4z9CfKaAxh0UpzKiAk+0j/Wu3iPoTOsyt7N0j1+dIyrFodY2sKKuBMT4TQ0yqQpbC+IDQv2i1IlZAPneYGfd5MIGygs2QMfaMQ1jWAKJvEO0vstZ7GB6nDAcg4in3ZiBHtomx3PL5w+zg48S4Ed69BiFXLZ1f6MnjpUOP75pD4MP6toS0rgK9b93xCrEQLgm4oD/7TCHHBo2xR7wwcsN2OddtwWsEM2QgOkt/jdCAoVCqwQ=="
 	, host "github.com" 

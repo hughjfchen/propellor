@@ -84,13 +84,16 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 type AnnexUUID = String
 
 -- | A website, with files coming from a git-annex repository.
-annexWebSite :: Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] -> Property
-annexWebSite origin hn uuid remotes = Git.cloned "joey" origin dir Nothing
+annexWebSite :: [Host] -> Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] -> Property
+annexWebSite hosts origin hn uuid remotes = Git.cloned "joey" origin dir Nothing
 	`onChange` setup
 	`onChange` toProp (Apache.siteEnabled hn $ annexwebsiteconf hn)
   where
 	dir = "/srv/web/" ++ hn
-	setup = userScriptProperty "joey" $
+	setup = userScriptProperty "joey" setupscript
+		`requires` Ssh.keyImported SshRsa "joey"
+		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "joey"
+	setupscript = 
 		[ "cd " ++ shellEscape dir
 		, "git config annex.uuid " ++ shellEscape uuid
 		] ++ map addremote remotes ++
