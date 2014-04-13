@@ -5,7 +5,6 @@ import Propellor.CmdLine
 import Propellor.Property.Scheduled
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
-import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Network as Network
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Cron as Cron
@@ -18,8 +17,6 @@ import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
-import qualified Propellor.Property.Gpg as Gpg
-import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -48,15 +45,10 @@ hosts =
 		& cname "ancient.kitenet.net"
 		& Docker.docked hosts "ancient-kitenet"
 
-		-- I'd rather this were on diatom, but I use features
-		-- not available in stable.
+		-- I'd rather this were on diatom, but it needs unstable.
 		& cname "kgb.kitenet.net"
-		& Apt.serviceInstalledRunning "kgb-bot"
-		& File.hasPrivContent "/etc/kgb-bot/kgb.conf"
-			`onChange` Service.restarted "kgb-bot"
-		& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
-			`describe` "kgb bot enabled"
-			`onChange` Service.running "kgb-bot"
+		& JoeySites.kgbServer
+
 		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
 	
@@ -75,31 +67,17 @@ hosts =
 	-- Important stuff that needs not too much memory or CPU.
   	, standardSystem "diatom.kitenet.net" Stable
 		& Hostname.sane
+		& Ssh.hostKey SshDsa
+		& Ssh.hostKey SshRsa
+		& Ssh.hostKey SshEcdsa
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Dns.zones myDnsSecondary
 		& Apt.serviceInstalledRunning "apache2"
 
 		& cname "git.kitenet.net"
-		& Ssh.hostKey SshDsa
-		& Ssh.hostKey SshRsa
-		& Ssh.hostKey SshEcdsa
-		& Obnam.backup "/srv/git" "33 3 * * *"
-			[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
-			, "--encrypt-with=1B169BE1"
-			, "--client-name=wren"
-			] Obnam.OnlyClient
-			`requires` Gpg.keyImported "1B169BE1" "root"
-			`requires` Ssh.keyImported SshRsa "root"
-			`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
-			`requires` Ssh.authorizedKeys "family"
-			`requires` User.accountFor "family"
-		& Apt.installed ["git", "git-annex", "rsync", "kgb-client-git"]
-		& File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf"
-		& Git.daemonRunning "/srv/git"
-		-- ssh keys for branchable and github repo hooks
-		-- TODO: upgrade to newer git-annex-shell for notification
-		-- gitweb
+		& cname "git.joeyh.name"
+		& JoeySites.gitServer hosts
 	
 		& cname "downloads.kitenet.net"
 		& Apt.buildDep ["git-annex"] `period` Daily

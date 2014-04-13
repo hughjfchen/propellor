@@ -31,11 +31,14 @@ hasPrivContentExposed f = hasPrivContent f `onChange`
 
 -- | Ensures that a line is present in a file, adding it to the end if not.
 containsLine :: FilePath -> Line -> Property
-f `containsLine` l = fileProperty (f ++ " contains:" ++ l) go f
+f `containsLine` l = f `containsLines` [l]
+
+containsLines :: FilePath -> [Line] -> Property
+f `containsLines` l = fileProperty (f ++ " contains:" ++ show l) go f
   where
 	go ls
-		| l `elem` ls = ls
-		| otherwise = ls++[l]
+		| all (`elem` ls) l = ls
+		| otherwise = ls++l
 
 -- | Ensures that a line is not present in a file.
 -- Note that the file is ensured to exist, so if it doesn't, an empty
