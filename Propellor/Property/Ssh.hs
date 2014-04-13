@@ -107,8 +107,12 @@ keyImported keytype user = combineProperties desc
 		f <- liftIO $ keyfile ext
 		ifM (liftIO $ doesFileExist f)
 			( noChange
-			, withPrivData p $ \key -> makeChange $
-				writer f key
+			, ensureProperty $ combineProperties desc
+				[ Property desc $ 
+					withPrivData p $ \key -> makeChange $
+						writer f key
+				, File.ownerGroup f user user
+				]
 			)
 	keyfile ext = do
 		home <- homeDirectory <$> getUserEntryForName user
@@ -130,6 +134,7 @@ knownHost hosts hn user = Property desc $
 		ensureProperty $ combineProperties desc
 			[ File.dirExists (takeDirectory f)
 			, f `File.containsLine` (hn ++ " " ++ k)
+			, File.ownerGroup f user user
 			]
 	go _ = do
 		warningMessage $ "no configred sshPubKey for " ++ hn
@@ -138,8 +143,9 @@ knownHost hosts hn user = Property desc $
 -- | Makes a user have authorized_keys from the PrivData
 authorizedKeys :: UserName -> Property
 authorizedKeys user = Property (user ++ " has authorized_keys") $
-	withPrivData (SshAuthorizedKeys user) $ \v -> liftIO $ do
+	withPrivData (SshAuthorizedKeys user) $ \v -> do
 		f <- liftIO $ dotFile "authorized_keys" user
-		createDirectoryIfMissing True (takeDirectory f)
-		writeFileProtected f v
-		return NoChange
+		liftIO $ do
+			createDirectoryIfMissing True (takeDirectory f)
+			writeFileProtected f v
+		ensureProperty $ File.ownerGroup f user user
