@@ -18,6 +18,7 @@ import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Gpg as Gpg
+import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -72,8 +73,13 @@ hosts =
 		& Apt.buildDep ["git-annex"] `period` Daily
 		& Git.daemonRunning "/srv/git"
 		& File.ownerGroup "/srv/git" "joey" "joey"
-		& Gpg.keyImported "git.kitenet.net obnam backup key" "root"
-		& Ssh.keyImported SshRsa "root"
+		& Obnam.backup "/srv/git" "33 3 * * *"
+			[ "--repository=2318@usw-s002.rsync.net:git.kitenet.net"
+			, "--encrypt-with=1B169BE1"
+			]
+			`requires` Gpg.keyImported "1B169BE1" "root"
+			`requires` Ssh.keyImported SshRsa "root"
+
 		-- git repos restore (how?) (also make backups!)
 		-- family annex needs family members to have accounts,
 		--     ssh host key etc.. finesse?
