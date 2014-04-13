@@ -53,11 +53,12 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 		, "$feature{'snapshot'}{'default'} = [];"
 		]
 		`describe` "gitweb configured"
+	-- I keep the website used for gitweb checked into git..
+	, Git.cloned "joey" "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
 	, website "git.kitenet.net"
 	, website "git.joeyh.name"
 	-- ssh keys for branchable and github repo hooks
 	-- TODO: upgrade to newer git-annex-shell for notification
-	-- gitweb
 	]
   where
 	website hn = toProp $ Apache.siteEnabled hn (gitapacheconf hn)
