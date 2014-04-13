@@ -73,6 +73,7 @@ hosts =
 		& cname "git.kitenet.net"
 		& Ssh.hostKey SshDsa
 		& Ssh.hostKey SshRsa
+		& Ssh.hostKey SshEcdsa
 		& Obnam.backup "/srv/git" "33 3 * * *"
 			[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
 			, "--encrypt-with=1B169BE1"
@@ -83,15 +84,20 @@ hosts =
 			`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 			`requires` Ssh.authorizedKeys "family"
 			`requires` User.accountFor "family"
-		& Apt.installed ["git", "git-annex", "rsync"]
+		& Apt.installed ["git", "git-annex", "rsync", "kgb-client"]
 		& Git.daemonRunning "/srv/git"
-		-- copy wren's ssh host key
-		-- TODO: upgrade to newer git-annex-shell for notification
-		-- kgb installation and setup
 		-- ssh keys for branchable and github repo hooks
+		-- TODO: upgrade to newer git-annex-shell for notification
 		-- gitweb
-		-- downloads.kitenet.net setup (including ssh key to turtle)
+
+		& cname "kgb.kitenet.net"
+		& Apt.serviceInstalledRunning "kbg-bot"
+		& File.hasPrivContent "/etc/kgb-bot/kgb.conf"
+		& File.hasPrivContent "/etc/kgb-bot/kgb-client.conf"
+	
+		& cname "downloads.kitenet.net"
 		& Apt.buildDep ["git-annex"] `period` Daily
+		-- downloads.kitenet.net setup (including ssh key to turtle)
 
 	-- I don't run this system, so only relevant property is its
 	-- public key.

@@ -117,6 +117,7 @@ keyImported keytype user = combineProperties desc
 fromKeyType :: SshKeyType -> String
 fromKeyType SshRsa = "rsa"
 fromKeyType SshDsa = "dsa"
+fromKeyType SshEcdsa = "ecdsa"
 
 -- | Puts some host's ssh public key into the known_hosts file for a user.
 knownHost :: [Host] -> HostName -> UserName -> Property
