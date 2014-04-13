@@ -88,8 +88,8 @@ hosts =
 		& Apt.buildDep ["git-annex"] `period` Daily
 		-- rsync server for git-annex autobuilders
 		& Apt.installed ["rsync"]
-		& hasPrivContent "/etc/rsyncd.conf"
-		& hasPrivContent "/etc/rsyncd.secrets"
+		& File.hasPrivContent "/etc/rsyncd.conf"
+		& File.hasPrivContent "/etc/rsyncd.secrets"
 		& "/etc/default/rsync" `File.containsLine` ""
 			`describe` "rsync server enabled"
 
