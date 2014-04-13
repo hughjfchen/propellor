@@ -24,8 +24,8 @@ showSuite Unstable = "unstable"
 showSuite Experimental = "experimental"
 showSuite (DebianRelease r) = r
 
-backportSuite :: DebianSuite -> String
-backportSuite suite = showSuite suite ++ "-backports"
+backportSuite :: String
+backportSuite = showSuite stableRelease ++ "-backports"
 
 debLine :: String -> Url -> [Section] -> Line
 debLine suite mirror sections = unwords $
@@ -41,11 +41,11 @@ stdSections = ["main", "contrib", "non-free"]
 
 binandsrc :: String -> DebianSuite -> [Line]
 binandsrc url suite
-	| suite == Stable = [l, srcLine l, bl, srcLine bl]
+	| isStable suite = [l, srcLine l, bl, srcLine bl]
 	| otherwise = [l, srcLine l]
   where
 	l = debLine (showSuite suite) url stdSections
-	bl = debLine (backportSuite suite) url stdSections
+	bl = debLine backportSuite url stdSections
 
 debCdn :: DebianSuite -> [Line]
 debCdn = binandsrc "http://cdn.debian.net/debian"
@@ -56,7 +56,7 @@ kernelOrg = binandsrc "http://mirrors.kernel.org/debian"
 -- | Only available for Stable and Testing
 securityUpdates :: DebianSuite -> [Line]
 securityUpdates suite
-	| suite == Stable || suite == Testing =
+	| isStable suite || suite == Testing =
 		let l = "deb http://security.debian.org/ " ++ showSuite suite ++ "/updates " ++ unwords stdSections
 		in [l, srcLine l]
 	| otherwise = []
@@ -104,9 +104,10 @@ installed' params ps = robustly $ check (isInstallable ps) go
 
 installedBackport :: [Package] -> Property
 installedBackport ps = withOS desc $ \o -> case o of
-	(Just (System (Debian suite) _)) -> 
-		ensureProperty $ installed' ["-t", backportSuite suite, "-y"] ps
 	Nothing -> error "cannot install backports; os not declared"
+	(Just (System (Debian suite) _))
+		| isStable suite -> 
+			ensureProperty $ installed' ["-t", backportSuite, "-y"] ps
 	_ -> error $ "backports not supported on " ++ show o
   where
 	desc = (unwords $ "apt installed backport":ps)

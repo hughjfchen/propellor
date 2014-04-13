@@ -15,5 +15,12 @@ data Distribution
 data DebianSuite = Experimental | Unstable | Testing | Stable | DebianRelease Release
 	deriving (Show, Eq)
 
+-- | The release that currently corresponds to stable.
+stableRelease :: DebianSuite
+stableRelease = DebianRelease "wheezy"
+
+isStable :: DebianSuite -> Bool
+isStable s = s == Stable || s == stableRelease
+
 type Release = String
 type Architecture = String

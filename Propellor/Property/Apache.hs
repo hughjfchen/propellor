@@ -11,10 +11,12 @@ siteEnabled :: HostName -> ConfigFile -> RevertableProperty
 siteEnabled hn cf = RevertableProperty enable disable
   where
 	enable = cmdProperty "a2ensite" ["--quiet", hn]
+		`describe` ("apache site enabled " ++ hn)
 		`requires` siteAvailable hn cf
 		`requires` installed
 		`onChange` reloaded
 	disable = File.notPresent (siteCfg hn)
+		`describe` ("apache site disabled " ++ hn)
 		`onChange` cmdProperty "a2dissite" ["--quiet", hn]
 		`requires` installed
 		`onChange` reloaded
@@ -29,9 +31,11 @@ modEnabled :: String -> RevertableProperty
 modEnabled modname = RevertableProperty enable disable
   where
 	enable = cmdProperty "a2enmod" ["--quiet", modname]
+		`describe` ("apache module enabled " ++ modname)
 		`requires` installed
 		`onChange` reloaded
 	disable = cmdProperty "a2dismod" ["--quiet", modname]
+		`describe` ("apache module disabled " ++ modname)
 		`requires` installed
 		`onChange` reloaded
 

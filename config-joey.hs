@@ -86,6 +86,12 @@ hosts =
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
 		& Apt.buildDep ["git-annex"] `period` Daily
+		-- rsync server for git-annex autobuilders
+		& Apt.installed ["rsync"]
+		& hasPrivContent "/etc/rsyncd.conf"
+		& hasPrivContent "/etc/rsyncd.secrets"
+		& "/etc/default/rsync" `File.containsLine` ""
+			`describe` "rsync server enabled"
 
 		& cname "tmp.kitenet.net"
 		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"
