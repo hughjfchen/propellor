@@ -69,10 +69,10 @@ hosts =
 		& Apt.serviceInstalledRunning "ntp"
 		& Dns.zones myDnsSecondary
 		& Apt.serviceInstalledRunning "apache2"
-		& Apt.installed ["git", "git-annex", "rsync"]
-		& Apt.buildDep ["git-annex"] `period` Daily
-		& Git.daemonRunning "/srv/git"
-		& File.ownerGroup "/srv/git" "joey" "joey"
+
+		& cname "git.kitenet.net"
+		& Ssh.hostKey SshDsa
+		& Ssh.hostKey SshRsa
 		& Obnam.backup "/srv/git" "33 3 * * *"
 			[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net.obnam"
 			, "--encrypt-with=1B169BE1"
@@ -80,13 +80,17 @@ hosts =
 			`requires` Gpg.keyImported "1B169BE1" "root"
 			`requires` Ssh.keyImported SshRsa "root"
 			`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
-		-- family annex needs family members to have accounts,
-		--     ssh host key etc.. finesse?
-		--   (also should upgrade git-annex-shell for it..)
+			`requires` Ssh.authorizedKeys "family"
+			`requires` User.accountFor "family"
+		& Apt.installed ["git", "git-annex", "rsync"]
+		& Git.daemonRunning "/srv/git"
+		-- copy wren's ssh host key
+		-- TODO: upgrade to newer git-annex-shell for notification
 		-- kgb installation and setup
 		-- ssh keys for branchable and github repo hooks
 		-- gitweb
 		-- downloads.kitenet.net setup (including ssh key to turtle)
+		& Apt.buildDep ["git-annex"] `period` Daily
 
 	-- I don't run this system, but tell propellor its public key.
 	, host "usw-s002.rsync.net"
@@ -184,7 +188,7 @@ image _ = "debian-stable-official" -- does not currently exist!
 cleanCloudAtCost :: Property
 cleanCloudAtCost = propertyList "cloudatcost cleanup"
 	[ Hostname.sane
-	, Ssh.uniqueHostKeys
+	, Ssh.randomHostKeys
 	, "worked around grub/lvm boot bug #743126" ==>
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []

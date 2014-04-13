@@ -4,9 +4,11 @@ module Propellor.Property.Ssh (
 	passwordAuthentication,
 	hasAuthorizedKeys,
 	restartSshd,
-	uniqueHostKeys,
+	randomHostKeys,
+	hostKey,
 	keyImported,
 	knownHost,
+	authorizedKeys
 ) where
 
 import Propellor
@@ -61,11 +63,11 @@ restartSshd = cmdProperty "service" ["ssh", "restart"]
 -- | Blows away existing host keys and make new ones.
 -- Useful for systems installed from an image that might reuse host keys.
 -- A flag file is used to only ever do this once.
-uniqueHostKeys :: Property
-uniqueHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
+randomHostKeys :: Property
+randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 	`onChange` restartSshd
   where
-	prop = Property "ssh unique host keys" $ do
+	prop = Property "ssh random host keys" $ do
 		void $ liftIO $ boolSystem "sh"
 			[ Param "-c"
 			, Param "rm -f /etc/ssh/ssh_host_*"
@@ -74,28 +76,44 @@ uniqueHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 			cmdProperty "/var/lib/dpkg/info/openssh-server.postinst"
 				["configure"]
 
--- | Sets up a user with a ssh private key from the site's privdata.
+-- | Sets ssh host keys from the site's PrivData.
+-- 
+-- (Uses a null username for host keys.)
+hostKey :: SshKeyType -> Property
+hostKey keytype = propertyList desc
+	[ Property desc (install writeFile (SshPubKey keytype "") ".pub")
+	, Property desc (install writeFileProtected (SshPrivKey keytype "") "")
+	]
+  where
+ 	desc = "known ssh host key"
+	install writer p ext = withPrivData p $ \key -> do
+		let f = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "key" ++ ext
+		void $ liftIO $ writer f key
+		noChange
+
+-- | Sets up a user with a ssh private key and public key pair
+-- from the site's PrivData.
 keyImported :: SshKeyType -> UserName -> Property
 keyImported keytype user = propertyList desc
-	[ Property desc (install (SshPubKey keytype user) ".pub")
-	, Property desc (install (SshPrivKey keytype user) "")
+	[ Property desc (install writeFile (SshPubKey keytype user) ".pub")
+	, Property desc (install writeFileProtected (SshPrivKey keytype user) "")
 	]
   where
 	desc = user ++ " has ssh key"
-	install p ext = do
+	install writer p ext = do
 		f <- liftIO $ keyfile ext
 		ifM (liftIO $ doesFileExist f)
 			( noChange
 			, withPrivData p $ \key -> makeChange $
-				writeFileProtected f key
+				writer f key
 			)
 	keyfile ext = do
 		home <- homeDirectory <$> getUserEntryForName user
-		return $ home </> ".ssh" </> "id_"
-			++ case keytype of
-				SshRsa -> "rsa"
-				SshDsa -> "dsa"
-			++ ext
+		return $ home </> ".ssh" </> "id_" ++ fromKeyType keytype ++ ext
+
+fromKeyType :: SshKeyType -> String
+fromKeyType SshRsa = "rsa"
+fromKeyType SshDsa = "dsa"
 
 -- | Puts some host's ssh public key into the known_hosts file for a user.
 knownHost :: [Host] -> HostName -> UserName -> Property
@@ -112,3 +130,11 @@ knownHost hosts hn user = Property desc $
 	go _ = do
 		warningMessage $ "no configred sshPubKey for " ++ hn
 		return FailedChange
+
+-- | Makes a user have authorized_keys from the PrivData
+authorizedKeys :: UserName -> Property
+authorizedKeys user = Property (user ++ " has authorized_keys") $
+	withPrivData (SshAuthorizedKeys user) $ \v -> liftIO $ do
+		f <- liftIO $ dotFile "authorized_keys" user
+		writeFileProtected f v
+		return NoChange

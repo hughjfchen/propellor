@@ -166,6 +166,7 @@ data PrivDataField
 	= DockerAuthentication
 	| SshPubKey SshKeyType UserName
 	| SshPrivKey SshKeyType UserName
+	| SshAuthorizedKeys UserName
 	| Password UserName
 	| PrivFile FilePath
 	| GpgKey GpgKeyId
