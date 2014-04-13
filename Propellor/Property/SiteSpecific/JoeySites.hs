@@ -104,14 +104,17 @@ gitapacheconf hn =
 	, "</VirtualHost>"
 	]
 
--- Note: needs debian unstable for new kgb
 kgbServer :: Property
-kgbServer = propertyList "kgb.kitenet.net setup"
-	[ Apt.serviceInstalledRunning "kgb-bot"
-	, File.hasPrivContent "/etc/kgb-bot/kgb.conf"
-		`onChange` Service.restarted "kgb-bot"
-	, "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
-		`describe` "kgb bot enabled"
-		`onChange` Service.running "kgb-bot"
-	]
-
+kgbServer = withOS desc $ \o -> case o of
+	(Just (System (Debian Unstable) _)) ->
+		ensureProperty $ propertyList desc
+			[ Apt.serviceInstalledRunning "kgb-bot"
+			, File.hasPrivContent "/etc/kgb-bot/kgb.conf"
+				`onChange` Service.restarted "kgb-bot"
+			, "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
+				`describe` "kgb bot enabled"
+				`onChange` Service.running "kgb-bot"
+			]
+	_ -> error "kgb server needs Debian unstable (for kgb-bot 1.31+)"
+  where
+	desc = "kgb.kitenet.net setup"
