@@ -87,7 +87,7 @@ hostKey keytype = propertyList desc
   where
  	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
 	install writer p ext = withPrivData p $ \key -> do
-		let f = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "key" ++ ext
+		let f = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++ ext
 		void $ liftIO $ writer f key
 		noChange
 
@@ -123,7 +123,7 @@ knownHost hosts hn user = Property desc $
 	desc = user ++ " knows ssh key for " ++ hn
 	go (Just (Just k)) = do
 		f <- liftIO $ dotFile "known_hosts" user
-		ensureProperty $ propertyList desc
+		ensureProperty $ combineProperties desc
 			[ File.dirExists (takeDirectory f)
 			, f `File.containsLine` (hn ++ " " ++ k)
 			]
