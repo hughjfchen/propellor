@@ -23,8 +23,13 @@ import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 
-hosts :: [Host]
-hosts =
+
+                      --     _         ______`|                          ,-.__ 
+ {- Propellor          --  /   \___-=O`/|O`/__|                         (____.'
+    Deployed -}         -- \          / | /    )             _.-"-._
+                        --  `/-==__ _/__|/__=-|             (       \_
+hosts :: [Host]        --   *             \ | |              '--------'
+hosts =               --                  (o)  `
 	-- My laptop
 	[ host "darkstar.kitenet.net"
 		& Docker.configured
@@ -238,4 +243,19 @@ myDnsSecondary =
 	branchablemaster = ["66.228.46.55", "2600:3c03::f03c:91ff:fedf:c0e5"]
 
 main :: IO ()
-main = defaultMain hosts --, Docker.containerProperties container]
+main = defaultMain hosts
+
+
+
+                          --                                o
+                          --             ___                 o              o
+                       {-----\          / o \              ___o            o
+                       {      \    __   \   /   _        (X___>--         __o
+  _____________________{ ______\___  \__/ | \__/ \____                  |X__>
+ <                                  \___//|\\___/\     \____________   _
+  \                                  ___/ | \___    # #             \ (-)
+   \    O      O      O             #     |     \ #                 >=)
+    \______________________________# #   /       #__________________/ (-}
+
+
+
