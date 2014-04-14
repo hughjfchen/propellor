@@ -192,10 +192,11 @@ annexRsyncServer = combineProperties "rsync server for git-annex autobuilders"
 twitRss :: Property
 twitRss = combineProperties "twitter rss"
 	[ Git.cloned "joey" "git://git.kitenet.net/twitrss.git" dir Nothing
-	, check (doesFileExist $ dir </> "twitRss") $ userScriptProperty "joey"
-		[ "cd " ++ dir
-		, "ghc --make twitRss" 
-		]
+	, check (not <$> doesFileExist (dir </> "twitRss")) $
+		userScriptProperty "joey"
+			[ "cd " ++ dir
+			, "ghc --make twitRss" 
+			]
 	]
   where
 	dir = "/srv/web/tmp.kitenet.net/twitrss"
