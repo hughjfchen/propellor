@@ -81,6 +81,7 @@ Library
     Propellor.Property.Network
     Propellor.Property.Obnam
     Propellor.Property.OpenId
+    Propellor.Property.Postfix
     Propellor.Property.Reboot
     Propellor.Property.Scheduled
     Propellor.Property.Service

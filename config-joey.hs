@@ -18,6 +18,7 @@ import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Apache as Apache
+import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -40,7 +41,9 @@ hosts =               --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Network.ipv6to4
 		& Tor.isBridge
+		& Postfix.satellite
 		& Docker.configured
+
 		& cname "shell.olduse.net"
 		& JoeySites.oldUseNetShellBox
 
@@ -62,6 +65,7 @@ hosts =               --                  (o)  `
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
 		& Hostname.sane
 		& Apt.unattendedUpgrades
+		& Postfix.satellite
 		& Docker.configured
 		& Docker.docked hosts "amd64-git-annex-builder"
 		& Docker.docked hosts "i386-git-annex-builder"
@@ -79,8 +83,7 @@ hosts =               --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Dns.zones myDnsSecondary
-
-		& Apt.serviceInstalledRunning "postfix"
+		& Postfix.satellite
 	
 		& Apt.serviceInstalledRunning "apache2"
 		& File.hasPrivContent "/etc/ssl/certs/web.pem"
