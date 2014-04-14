@@ -169,3 +169,20 @@ mainhttpscert True =
 	, "  SSLCertificateKeyFile /etc/ssl/private/web.pem"
 	, "  SSLCertificateChainFile /etc/ssl/certs/startssl.pem"
 	]
+		
+
+annexRsyncServer :: Property
+annexRsyncServer = combineProperties "rsync server for git-annex autobuilders"
+	[ Apt.installed ["rsync"]
+	, File.hasPrivContent "/etc/rsyncd.conf"
+	, File.hasPrivContent "/etc/rsyncd.secrets"
+	, "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
+			`onChange` Service.running "rsync"
+	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
+	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-mavericks"
+	]
+  where
+	endpoint d = combineProperties ("endpoint " ++ d)
+		[ File.dirExists d
+		, File.ownerGroup d "joey" "joey"
+		]
