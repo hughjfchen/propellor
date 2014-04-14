@@ -201,6 +201,7 @@ twitRss = combineProperties "twitter rss"
 				[ "libghc-xml-dev"
 				, "libghc-feed-dev"
 				, "libghc-http-conduit-dev"
+				, "libghc-tagsoup-dev"
 				]
 	]
   where
