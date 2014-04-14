@@ -5,7 +5,6 @@ import Control.Applicative
 import Data.List
 import System.IO
 import Control.Monad
-import System.Process (env)
 
 import Propellor
 import qualified Propellor.Property.File as File
@@ -196,13 +195,12 @@ reConfigure package vals = reconfigure `requires` setselections
 	`describe` ("reconfigure " ++ package)
   where
 	setselections = Property "preseed" $ makeChange $
-		withHandle StdinHandle createProcessSuccess p $ \h -> do
-			forM_ vals $ \(tmpl, tmpltype, value) ->
-				hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
-			hClose h
-	reconfigure = cmdProperty "dpkg-reconfigure" ["-fnone", package]
-	p = (proc "debconf-set-selections" [])
-		{ env = Just noninteractiveEnv }
+		withHandle StdinHandle createProcessSuccess
+			(proc "debconf-set-selections" []) $ \h -> do
+				forM_ vals $ \(tmpl, tmpltype, value) ->
+					hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
+				hClose h
+	reconfigure = cmdProperty' "dpkg-reconfigure" ["-fnone", package] noninteractiveEnv
 
 -- | Ensures that a service is installed and running.
 --
