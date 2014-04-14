@@ -205,11 +205,11 @@ twitRss = combineProperties "twitter rss"
 				, "libghc-http-conduit-dev"
 				, "libghc-tagsoup-dev"
 				]
-	, feed "http://twitter.com/search/realtime?q=git-annex" "git-annex-twitter.rss"
-	, feed "http://twitter.com/search/realtime?q=olduse+OR+git-annex+OR+debhelper+OR+etckeeper+OR+ikiwiki+-ashley_ikiwiki" "twittergrep.rss"
+	, feed "http://twitter.com/search/realtime?q=git-annex" "git-annex-twitter"
+	, feed "http://twitter.com/search/realtime?q=olduse+OR+git-annex+OR+debhelper+OR+etckeeper+OR+ikiwiki+-ashley_ikiwiki" "twittergrep"
 	]
   where
 	dir = "/srv/web/tmp.kitenet.net/twitrss"
 	crontime = "15 * * * *"
-	feed url file = Cron.job "twitter rss cron job" crontime "joey" dir $
-		"./twitRss " ++ shellEscape url ++ " > ../" ++ shellEscape file
+	feed url desc = Cron.job desc crontime "joey" dir $
+		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
