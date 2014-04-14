@@ -2,11 +2,6 @@ module Propellor.Property.Postfix where
 
 import Propellor
 import qualified Propellor.Property.Apt as Apt
-import Propellor.Property.User
-import Utility.SafeCommand
-import Utility.FileMode
-
-import System.PosixCompat
 
 installed :: Property
 installed = Apt.serviceInstalledRunning "postfix"
@@ -18,9 +13,13 @@ installed = Apt.serviceInstalledRunning "postfix"
 -- futher coniguration/keys. But this should be enough to get cron job
 -- mail flowing to a place where it will be seen.
 satellite :: Property
-satellite = Apt.reConfigure "postfix"
-	[ ("postfix/main_mailer_type", "select", "Satellite system")
-	, ("postfix/destinations", "string", "")
-	]
-	`describe` "postfix satellite system"
-	`requires` installed
+satellite = setup `requires` installed
+  where
+	setup = Property "postfix satellite system" $ do
+		hn <- getHostName
+		ensureProperty $ Apt.reConfigure "postfix"
+			[ ("postfix/main_mailer_type", "select", "Satellite system")
+			, ("postfix/root_address", "string", "root")
+			, ("postfix/destinations", "string", " ")
+			, ("postfix/mailname", "string", hn)
+			]

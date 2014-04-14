@@ -6,8 +6,6 @@ import qualified Propellor.Property.File as File
 -- | Ensures that the hostname is set to the HostAttr value.
 -- Configures /etc/hostname and the current hostname.
 --
--- When the hostname is a FQDN, also configures /etc/mailname
--- with the domain part.
 -- A FQDN also configures /etc/hosts, with an entry for 127.0.1.1, which is
 -- standard at least on Debian to set the FDQN (127.0.0.1 is localhost).
 sane :: Property
@@ -26,9 +24,6 @@ setTo hn = combineProperties desc go
 			then Nothing 
 			else Just $ File.fileProperty desc
 				addhostline "/etc/hosts"
-		, if null domain
-			then Nothing
-			else Just $ "/etc/mailname" `File.hasContent` [domain]
 		]
 	
 	hostip = "127.0.1.1"
