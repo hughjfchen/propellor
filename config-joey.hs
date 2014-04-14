@@ -17,19 +17,26 @@ import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
+import qualified Propellor.Property.Apache as Apache
+import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 
-hosts :: [Host]
-hosts =
+
+                      --     _         ______`|                          ,-.__ 
+ {- Propellor          --  /   \___-=O`/|O`/__|                         (____.'
+    Deployed -}         -- \          / | /    )             _.-"-._
+                        --  `/-==__ _/__|/__=-|             (       \_
+hosts :: [Host]        --   *             \ | |              '--------'
+hosts =               --                  (o)  `
 	-- My laptop
 	[ host "darkstar.kitenet.net"
 		& Docker.configured
 		& Apt.buildDep ["git-annex"] `period` Daily
 
 	-- Nothing super-important lives here.
-	, standardSystem "clam.kitenet.net" Unstable
+	, standardSystem "clam.kitenet.net" Unstable "amd64"
 		& cleanCloudAtCost
 		& Apt.unattendedUpgrades
 		& Network.ipv6to4
@@ -45,11 +52,15 @@ hosts =
 		& cname "ancient.kitenet.net"
 		& Docker.docked hosts "ancient-kitenet"
 
+		-- I'd rather this were on diatom, but it needs unstable.
+		& cname "kgb.kitenet.net"
+		& JoeySites.kgbServer
+
 		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
 	
 	-- Orca is the main git-annex build box.
-	, standardSystem "orca.kitenet.net" Unstable
+	, standardSystem "orca.kitenet.net" Unstable "amd64"
 		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Docker.configured
@@ -61,32 +72,64 @@ hosts =
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
 	-- Important stuff that needs not too much memory or CPU.
-  	, standardSystem "diatom.kitenet.net" Stable
+  	, standardSystem "diatom.kitenet.net" Stable "amd64"
 		& Hostname.sane
+		& Ssh.hostKey SshDsa
+		& Ssh.hostKey SshRsa
+		& Ssh.hostKey SshEcdsa
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Dns.zones myDnsSecondary
+	
 		& Apt.serviceInstalledRunning "apache2"
-		& Apt.installed ["git", "git-annex", "rsync"]
-		& Apt.buildDep ["git-annex"] `period` Daily
-		& Git.daemonRunning "/srv/git"
-		& File.ownerGroup "/srv/git" "joey" "joey"
-		-- git repos restore (how?) (also make backups!)
-		-- family annex needs family members to have accounts,
-		--     ssh host key etc.. finesse?
-		--   (also should upgrade git-annex-shell for it..)
-		-- kgb installation and setup
-		-- ssh keys for branchable and github repo hooks
-		-- gitweb
-		-- downloads.kitenet.net setup (including ssh key to turtle)
+		& File.hasPrivContent "/etc/ssl/certs/web.pem"
+		& File.hasPrivContent "/etc/ssl/private/web.pem"
+		& File.hasPrivContent "/etc/ssl/certs/startssl.pem"
+		& Apache.modEnabled "ssl"
+		& Apache.multiSSL
+		& File.ownerGroup "/srv/web" "joey" "joey"
 
-  --'                        __|II|      ,.
-----                      __|II|II|__   (  \_,/\
------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-
---------------------- |      [Docker]       / ----------------------
---------------------- :                    / -----------------------
----------------------- \____, o          ,' ------------------------
------------------------ '--,___________,'  -------------------------
+		& cname "git.kitenet.net"
+		& cname "git.joeyh.name"
+		& JoeySites.gitServer hosts
+	
+		& cname "downloads.kitenet.net"
+		& JoeySites.annexWebSite hosts "/srv/git/downloads.git"
+			"downloads.kitenet.net"
+			"840760dc-08f0-11e2-8c61-576b7e66acfd"
+			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
+		-- rsync server for git-annex autobuilders
+		& Apt.installed ["rsync"]
+		& File.hasPrivContent "/etc/rsyncd.conf"
+		& File.hasPrivContent "/etc/rsyncd.secrets"
+		& "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
+			`describe` "rsync server enabled"
+			`onChange` Service.running "rsync"
+
+		& cname "tmp.kitenet.net"
+		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"
+			"tmp.kitenet.net"
+			"26fd6e38-1226-11e2-a75f-ff007033bdba"
+			[]
+		
+		& Apt.installed ["ntop"]
+
+	-- Systems I don't manage with propellor,
+	-- but do want to track their public keys.
+	, host "turtle.kitenet.net"
+		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
+	, host "usw-s002.rsync.net"
+		& sshPubKey "ssh-dss AAAAB3NzaC1kc3MAAAEBAI6ZsoW8a+Zl6NqUf9a4xXSMcV1akJHDEKKBzlI2YZo9gb9YoCf5p9oby8THUSgfh4kse7LJeY7Nb64NR6Y/X7I2/QzbE1HGGl5mMwB6LeUcJ74T3TQAlNEZkGt/MOIVLolJHk049hC09zLpkUDtX8K0t1yaCirC9SxDGLTCLEhvU9+vVdVrdQlKZ9wpLUNbdAzvbra+O/IVvExxDZ9WCHrnfNA8ddVZIGEWMqsoNgiuCxiXpi8qL+noghsSQNFTXwo7W2Vp9zj1JkCt3GtSz5IzEpARQaXEAWNEM0n1nJ686YUOhou64iRM8bPC1lp3QXvvZNgj3m+QHhIempx+de8AAAAVAKB5vUDaZOg14gRn7Bp81ja/ik+RAAABACPH/bPbW912x1NxNiikzGR6clLh+bLpIp8Qie3J7DwOr8oC1QOKjNDK+UgQ7mDQEgr4nGjNKSvpDi4c1QCw4sbLqQgx1y2VhT0SmUPHf5NQFldRQyR/jcevSSwOBxszz3aq9AwHiv9OWaO3XY18suXPouiuPTpIcZwc2BLDNHFnDURQeGEtmgqj6gZLIkTY0iw7q9Tj5FOyl4AkvEJC5B4CSzaWgey93Wqn1Imt7KI8+H9lApMKziVL1q+K7xAuNkGmx5YOSNlE6rKAPtsIPHZGxR7dch0GURv2jhh0NQYvBRn3ukCjuIO5gx56HLgilq59/o50zZ4NcT7iASF76TcAAAEAC6YxX7rrs8pp13W4YGiJHwFvIO1yXLGOdqu66JM0plO4J1ItV1AQcazOXLiliny3p2/W+wXZZKd5HIRt52YafCA8YNyMk/sF7JcTR4d4z9CfKaAxh0UpzKiAk+0j/Wu3iPoTOsyt7N0j1+dIyrFodY2sKKuBMT4TQ0yqQpbC+IDQv2i1IlZAPneYGfd5MIGygs2QMfaMQ1jWAKJvEO0vstZ7GB6nDAcg4in3ZiBHtomx3PL5w+zg48S4Ed69BiFXLZ1f6MnjpUOP75pD4MP6toS0rgK9b93xCrEQLgm4oD/7TCHHBo2xR7wwcsN2OddtwWsEM2QgOkt/jdCAoVCqwQ=="
+	, host "github.com" 
+		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+
+	    --'                        __|II|      ,.
+	  ----                      __|II|II|__   (  \_,/\
+	 ------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-
+	----------------------- |      [Docker]       / ----------------------
+	----------------------- :                    / -----------------------
+	------------------------ \____, o          ,' ------------------------
+	------------------------- '--,___________,'  -------------------------
 
 	-- Simple web server, publishing the outside host's /var/www
 	, standardContainer "webserver" Stable "amd64"
@@ -100,18 +143,13 @@ hosts =
 		& Docker.publish "8081:80"
 		& OpenId.providerFor ["joey", "liw"]
 			"openid.kitenet.net:8081"
-	
+
+	-- Exhibit: kite's 90's website.
 	, standardContainer "ancient-kitenet" Stable "amd64"
 		& Docker.publish "1994:80"
 		& Apt.serviceInstalledRunning "apache2"
-		& Apt.installed ["git"]
-		& scriptProperty 
-			[ "cd /var/"
-			, "rm -rf www"
-			, "git clone git://git.kitenet.net/kitewiki www"
-			, "cd www"
-			, "git checkout remotes/origin/old-kitenet.net"
-			] `flagFile` "/var/www/blastfromthepast.html"
+		& Git.cloned "root" "git://git.kitenet.net/kitewiki" "/var/www"
+			(Just "remotes/origin/old-kitenet.net")
 	
 	-- git-annex autobuilder containers
 	, gitAnnexBuilder "amd64" 15
@@ -139,8 +177,9 @@ gitAnnexBuilder arch buildminute = Docker.container (arch ++ "-git-annex-builder
 	& Apt.unattendedUpgrades
 
 -- This is my standard system setup.
-standardSystem :: HostName -> DebianSuite -> Host
-standardSystem hn suite = host hn
+standardSystem :: HostName -> DebianSuite -> Architecture -> Host
+standardSystem hn suite arch = host hn
+	& os (System (Debian suite) arch)
 	& Apt.stdSourcesList suite `onChange` Apt.upgrade
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
@@ -163,6 +202,7 @@ standardSystem hn suite = host hn
 -- This is my standard container setup, featuring automatic upgrades.
 standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
 standardContainer name suite arch = Docker.container name (image system)
+	& os (System (Debian suite) arch)
 	& Apt.stdSourcesList suite
 	& Apt.unattendedUpgrades
   where
@@ -178,7 +218,7 @@ image _ = "debian-stable-official" -- does not currently exist!
 cleanCloudAtCost :: Property
 cleanCloudAtCost = propertyList "cloudatcost cleanup"
 	[ Hostname.sane
-	, Ssh.uniqueHostKeys
+	, Ssh.randomHostKeys
 	, "worked around grub/lvm boot bug #743126" ==>
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []
@@ -203,4 +243,19 @@ myDnsSecondary =
 	branchablemaster = ["66.228.46.55", "2600:3c03::f03c:91ff:fedf:c0e5"]
 
 main :: IO ()
-main = defaultMain hosts --, Docker.containerProperties container]
+main = defaultMain hosts
+
+
+
+                          --                                o
+                          --             ___                 o              o
+                       {-----\          / o \              ___o            o
+                       {      \    __   \   /   _        (X___>--         __o
+  _____________________{ ______\___  \__/ | \__/ \____                  |X__>
+ <                                  \___//|\\___/\     \____________   _
+  \                                  ___/ | \___    # #             \ (-)
+   \    O      O      O             #     |     \ #                 >=)
+    \______________________________# #   /       #__________________/ (-}
+
+
+

@@ -10,8 +10,10 @@ import "mtl" Control.Monad.Reader
 
 import Propellor.Types
 import Propellor.Types.Attr
+import Propellor.Attr
 import Propellor.Engine
 import Utility.Monad
+import System.FilePath
 
 makeChange :: IO () -> Propellor Result
 makeChange a = liftIO a >> return MadeChange
@@ -52,14 +54,19 @@ p1 `before` p2 = Property (propertyDesc p1) $ do
 -- file to indicate whether it has run before.
 -- Use with caution.
 flagFile :: Property -> FilePath -> Property
-flagFile property flagfile = Property (propertyDesc property) $
-	go =<< liftIO (doesFileExist flagfile)
+flagFile property = flagFile' property . return
+
+flagFile' :: Property -> IO FilePath -> Property
+flagFile' property getflagfile = Property (propertyDesc property) $ do
+	flagfile <- liftIO getflagfile
+	go flagfile =<< liftIO (doesFileExist flagfile)
   where
-	go True = return NoChange
-	go False = do
+	go _ True = return NoChange
+	go flagfile False = do
 		r <- ensureProperty property
 		when (r == MadeChange) $ liftIO $ 
-			unlessM (doesFileExist flagfile) $
+			unlessM (doesFileExist flagfile) $ do
+				createDirectoryIfMissing True (takeDirectory flagfile)
 				writeFile flagfile ""
 		return r
 
@@ -84,6 +91,13 @@ check c property = Property (propertyDesc property) $ ifM (liftIO c)
 	( ensureProperty property
 	, return NoChange
 	)
+
+-- | Makes a property that is satisfied differently depending on the host's
+-- operating system. 
+--
+-- Note that the operating system may not be declared for some hosts.
+withOS :: Desc -> (Maybe System -> Propellor Result) -> Property
+withOS desc a = Property desc $ a =<< getOS
 
 boolProperty :: Desc -> IO Bool -> Property
 boolProperty desc a = Property desc $ ifM (liftIO a)

@@ -6,8 +6,6 @@ module Propellor.Types
 	( Host(..)
 	, Attr
 	, HostName
-	, UserName
-	, GroupName
 	, Propellor(..)
 	, Property(..)
 	, RevertableProperty(..)
@@ -19,14 +17,12 @@ module Propellor.Types
 	, requires
 	, Desc
 	, Result(..)
-	, System(..)
-	, Distribution(..)
-	, DebianSuite(..)
-	, Release
-	, Architecture
 	, ActionResult(..)
 	, CmdLine(..)
 	, PrivDataField(..)
+	, GpgKeyId
+	, SshKeyType(..)
+	, module Propellor.Types.OS
 	) where
 
 import Data.Monoid
@@ -36,11 +32,9 @@ import "mtl" Control.Monad.Reader
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 
 import Propellor.Types.Attr
+import Propellor.Types.OS
 
 data Host = Host [Property] (Attr -> Attr)
-
-type UserName = String
-type GroupName = String
 
 -- | Propellor's monad provides read-only access to attributes of the
 -- system.
@@ -117,22 +111,6 @@ instance Monoid Result where
 	mappend _ MadeChange = MadeChange
 	mappend NoChange NoChange = NoChange
 
--- | High level descritption of a operating system.
-data System = System Distribution Architecture
-	deriving (Show)
-
-data Distribution
-	= Debian DebianSuite
-	| Ubuntu Release
-	deriving (Show)
-
-data DebianSuite = Experimental | Unstable | Testing | Stable | DebianRelease Release
-	deriving (Show, Eq)
-
-type Release = String
-
-type Architecture = String
-
 -- | Results of actions, with color.
 class ActionResult a where
 	getActionResult :: a -> (String, ColorIntensity, Color)
@@ -162,9 +140,15 @@ data CmdLine
 -- It's fine to add new fields.
 data PrivDataField
 	= DockerAuthentication
-	| SshPrivKey UserName
+	| SshPubKey SshKeyType UserName
+	| SshPrivKey SshKeyType UserName
+	| SshAuthorizedKeys UserName
 	| Password UserName
 	| PrivFile FilePath
+	| GpgKey GpgKeyId
 	deriving (Read, Show, Ord, Eq)
 
+type GpgKeyId = String
 
+data SshKeyType = SshRsa | SshDsa | SshEcdsa
+	deriving (Read, Show, Ord, Eq)

@@ -12,15 +12,18 @@ providerFor users baseurl = propertyList desc $
 	[ Apt.serviceInstalledRunning "apache2"
 	, Apt.installed ["simpleid"]
 		`onChange` Service.restarted "apache2"
-	, File.fileProperty desc
+	, File.fileProperty (desc ++ " configured")
 		(map setbaseurl) "/etc/simpleid/config.inc"
 	] ++ map identfile users
   where
-	identfile u = File.hasPrivContent $ concat
-		[ "/var/lib/simpleid/identities/", u, ".identity" ]
 	url = "http://"++baseurl++"/simpleid"
 	desc = "openid provider " ++ url
 	setbaseurl l
 		| "SIMPLEID_BASE_URL" `isInfixOf` l = 
 			"define('SIMPLEID_BASE_URL', '"++url++"');"
 		| otherwise = l
+	
+	-- the identitites directory controls access, so open up
+	-- file mode
+	identfile u = File.hasPrivContentExposed $
+		concat $ [ "/var/lib/simpleid/identities/", u, ".identity" ]

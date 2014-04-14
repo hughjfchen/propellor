@@ -11,8 +11,7 @@ installedFor user = check (not <$> hasGitDir user) $
 	Property ("githome " ++ user) (go =<< liftIO (homedir user))
 		`requires` Apt.installed ["git"]
   where
- 	go Nothing = noChange
-	go (Just home) = do
+	go home = do
 		let tmpdir = home </> "githome"
 		ensureProperty $ combineProperties "githome setup"
 			[ userScriptProperty user ["git clone " ++ url ++ " " ++ tmpdir]
@@ -32,5 +31,4 @@ url = "git://git.kitenet.net/joey/home"
 hasGitDir :: UserName -> IO Bool
 hasGitDir user = go =<< homedir user
   where
-	go Nothing = return False
-	go (Just home) = doesDirectoryExist (home </> ".git")
+	go home = doesDirectoryExist (home </> ".git")

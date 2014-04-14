@@ -68,6 +68,7 @@ Library
   Exposed-Modules:
     Propellor
     Propellor.Property
+    Propellor.Property.Apache
     Propellor.Property.Apt
     Propellor.Property.Cmd
     Propellor.Property.Hostname
@@ -76,7 +77,9 @@ Library
     Propellor.Property.Docker
     Propellor.Property.File
     Propellor.Property.Git
+    Propellor.Property.Gpg
     Propellor.Property.Network
+    Propellor.Property.Obnam
     Propellor.Property.OpenId
     Propellor.Property.Reboot
     Propellor.Property.Scheduled
@@ -94,6 +97,7 @@ Library
     Propellor.Engine
     Propellor.Exception
     Propellor.Types
+    Propellor.Types.OS
   Other-Modules:
     Propellor.Types.Attr
     Propellor.CmdLine

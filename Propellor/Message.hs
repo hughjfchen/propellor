@@ -29,7 +29,7 @@ actionMessage desc a = do
 	return r
 
 warningMessage :: MonadIO m => String -> m ()
-warningMessage s = liftIO $ colorLine Vivid Red $ "** warning: " ++ s
+warningMessage s = liftIO $ colorLine Vivid Magenta $ "** warning: " ++ s
 
 colorLine :: ColorIntensity -> Color -> String -> IO ()
 colorLine intensity color msg = do
@@ -43,7 +43,7 @@ colorLine intensity color msg = do
 
 errorMessage :: String -> IO a
 errorMessage s = do
-	warningMessage s
+	liftIO $ colorLine Vivid Red $ "** error: " ++ s
 	error "Cannot continue!"
 
 -- | Causes a debug message to be displayed when PROPELLOR_DEBUG=1
