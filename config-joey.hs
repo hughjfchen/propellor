@@ -17,6 +17,7 @@ import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
+import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
@@ -74,7 +75,12 @@ hosts =
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Dns.zones myDnsSecondary
+	
 		& Apt.serviceInstalledRunning "apache2"
+		& File.hasPrivContent "/etc/ssl/certs/web.pem"
+		& File.hasPrivContent "/etc/ssl/private/web.pem"
+		& File.hasPrivContent "/etc/ssl/certs/startssl.pem"
+		& Apache.modEnabled "ssl"
 		& File.ownerGroup "/srv/web" "joey" "joey"
 
 		& cname "git.kitenet.net"

@@ -79,7 +79,21 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 	, toProp $ Apache.modEnabled "cgi"
 	]
   where
-	website hn = toProp $ Apache.siteEnabled hn (gitapacheconf hn)
+	website hn = toProp $ Apache.siteEnabled hn $ apachecfg hn True
+		[ "  DocumentRoot /srv/web/git.kitenet.net/"
+		, "  <Directory /srv/web/git.kitenet.net/>"
+		, "    Options Indexes ExecCGI FollowSymlinks"
+		, "    AllowOverride None"
+		, "    AddHandler cgi-script .cgi"
+		, "    DirectoryIndex index.cgi"
+		, "  </Directory>"
+		, ""
+		, "  ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/"
+		, "  <Directory /usr/lib/cgi-bin>"
+		, "    SetHandler cgi-script"
+		, "    Options ExecCGI"
+		, "  </Directory>"
+		]
 
 type AnnexUUID = String
 
@@ -88,10 +102,6 @@ annexWebSite :: [Host] -> Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.
 annexWebSite hosts origin hn uuid remotes = Git.cloned "joey" origin dir Nothing
 	`onChange` setup
 	`onChange` setupapache
-	`requires` File.hasPrivContent "/etc/ssl/certs/web.pem"
-	`requires` File.hasPrivContent "/etc/ssl/private/web.pem"
-	`requires` File.hasPrivContent "/etc/ssl/certs/startssl.pem"
-	`requires` toProp (Apache.modEnabled "ssl")
   where
 	dir = "/srv/web/" ++ hn
 	setup = userScriptProperty "joey" setupscript
@@ -104,91 +114,56 @@ annexWebSite hosts origin hn uuid remotes = Git.cloned "joey" origin dir Nothing
 		[ "git annex get"
 		]
 	addremote (name, url) = "git remote add " ++ shellEscape name ++ " " ++ shellEscape url
-	setupapache = toProp (Apache.siteEnabled hn $ annexwebsiteconf hn)
+	setupapache = toProp $ Apache.siteEnabled hn $ apachecfg hn True $ 
+		[ "  ServerAlias www."++hn
+		, ""
+		, "  DocumentRoot /srv/web/"++hn
+		, "  <Directory /srv/web/"++hn++">"
+		, "    Options FollowSymLinks"
+		, "    AllowOverride None"
+		, "  </Directory>"
+		, "  <Directory /srv/web/"++hn++">"
+		, "    Options Indexes FollowSymLinks ExecCGI"
+		, "    AllowOverride None"
+		, "    Order allow,deny"
+		, "    allow from all"
+		, "  </Directory>"
+		]
 
-annexwebsiteconf :: HostName -> Apache.ConfigFile
-annexwebsiteconf hn = stanza 80 False ++ stanza 443 True
+apachecfg :: HostName -> Bool -> Apache.ConfigFile -> Apache.ConfigFile
+apachecfg hn withssl middle
+	| withssl = vhost False ++ vhost True
+	| otherwise = vhost False
   where
-  	stanza :: Int -> Bool -> Apache.ConfigFile
-	stanza port withssl = catMaybes
-		[ Just $ "<VirtualHost *:"++show port++">"
-		, Just $ "  ServerAdmin joey@kitenet.net"
-		, Just $ ""
-		, Just $ "  ServerName "++hn++":"++show port
-		, Just $ "  ServerAlias www."++hn
-		, Just $ ""
-		, ssl  $ "  SSLEngine on"
-		, ssl  $ "  SSLCertificateFile /etc/ssl/certs/web.pem"
-		, ssl  $ "  SSLCertificateKeyFile /etc/ssl/private/web.pem"
-		, ssl  $ "  SSLCertificateChainFile /etc/ssl/certs/startssl.pem"
-		, Just $ ""
-		, Just $ "  DocumentRoot /srv/web/"++hn
-		, Just $ "  <Directory /srv/web/"++hn++">"
-		, Just $ "    Options FollowSymLinks"
-		, Just $ "    AllowOverride None"
-		, Just $ "  </Directory>"
-		, Just $ "  <Directory /srv/web/"++hn++">"
-		, Just $ "    Options Indexes FollowSymLinks ExecCGI"
-		, Just $ "    AllowOverride None"
-		, Just $ "    Order allow,deny"
-		, Just $ "    allow from all"
-		, Just $ "  </Directory>"
-		, Just $ ""
-		, Just $ "  ErrorLog /var/log/apache2/error.log"
-		, Just $ "  LogLevel warn"
-		, Just $ "  CustomLog /var/log/apache2/access.log combined"
-		, Just $ "  ServerSignature On"
-		, Just $ "  "
-		, Just $ "  <Directory \"/usr/share/apache2/icons\">"
-		, Just $ "      Options Indexes MultiViews"
-		, Just $ "      AllowOverride None"
-		, Just $ "      Order allow,deny"
-		, Just $ "      Allow from all"
-		, Just $ "  </Directory>"
-		, Just $ "</VirtualHost>"
+	vhost ssl = 
+		[ "<VirtualHost *:"++show port++">"
+		, "  ServerAdmin grue@joeyh.name"
+		, "  ServerName "++hn++":"++show port
+		]
+		++ mainhttpscert ssl
+		++ middle ++
+		[ ""
+		, "  ErrorLog /var/log/apache2/error.log"
+		, "  LogLevel warn"
+		, "  CustomLog /var/log/apache2/access.log combined"
+		, "  ServerSignature On"
+		, "  "
+		, "  <Directory \"/usr/share/apache2/icons\">"
+		, "      Options Indexes MultiViews"
+		, "      AllowOverride None"
+		, "      Order allow,deny"
+		, "      Allow from all"
+		, "  </Directory>"
+		, "</VirtualHost>"
 		]
 	  where
-	  	ssl l
-			| withssl = Just l
-			| otherwise = Nothing
+		port = if ssl then 443 else 80 :: Int
 
-gitapacheconf :: HostName -> Apache.ConfigFile
-gitapacheconf hn =
-	[ "<VirtualHost *:80>"
-	, "  ServerAdmin joey@kitenet.net"
-	, ""
-	, "  ServerName " ++ hn ++ ":80"
-	, ""
-	, "  DocumentRoot /srv/web/git.kitenet.net/"
-	, "  <Directory /srv/web/git.kitenet.net/>"
-	, "    Options Indexes ExecCGI FollowSymlinks"
-	, "    AllowOverride None"
-	, "    AddHandler cgi-script .cgi"
-	, "    DirectoryIndex index.cgi"
-	, "  </Directory>"
-	, ""
-	, "  ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/"
-	, "  <Directory /usr/lib/cgi-bin>"
-	, "    SetHandler cgi-script"
-	, "    Options ExecCGI"
-	, "  </Directory>"
-	, ""
-	, "  ErrorLog /var/log/apache2/error.log"
-	, "  LogLevel warn"
-	, "  CustomLog /var/log/apache2/access.log combined"
-	, ""
-	, "  # Possible values include: debug, info, notice, warn, error, crit,"
-	, "  # alert, emerg."
-	, "  LogLevel warn"
-	, ""
-	, "  CustomLog /var/log/apache2/access.log combined"
-	, "  ServerSignature On"
-	, "  "
-	, "  <Directory \"/usr/share/apache2/icons\">"
-	, "      Options Indexes MultiViews"
-	, "      AllowOverride None"
-	, "      Order allow,deny"
-	, "      Allow from all"
-	, "  </Directory>"
-	, "</VirtualHost>"
+mainhttpscert :: Bool -> Apache.ConfigFile
+mainhttpscert False = []
+mainhttpscert True = 
+	[ "  SSLEngine on"
+	, "  SSLCertificateFile /etc/ssl/certs/web.pem"
+	, "  SSLCertificateKeyFile /etc/ssl/private/web.pem"
+	, "  SSLCertificateChainFile /etc/ssl/certs/startssl.pem"
 	]
