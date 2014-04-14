@@ -104,6 +104,7 @@ hosts =               --                  (o)  `
 			"tmp.kitenet.net"
 			"26fd6e38-1226-11e2-a75f-ff007033bdba"
 			[]
+		& JoeySites.twitRss
 		
 		& Apt.installed ["ntop"]
 
