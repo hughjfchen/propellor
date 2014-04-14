@@ -65,7 +65,7 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 	, toProp $ Git.daemonRunning "/srv/git"
 	, "/etc/gitweb.conf" `File.containsLines`
 		[ "$projectroot = '/srv/git';"
-		, "@git_base_url_list = ('git://git.kitenet.net', 'http://git.kitenet.net/git', 'ssh://git.kitenet.net/srv/git');"
+		, "@git_base_url_list = ('git://git.kitenet.net', 'http://git.kitenet.net/git', 'https://git.kitenet.net/git', 'ssh://git.kitenet.net/srv/git');"
 		, "# disable snapshot download; overloads server"
 		, "$feature{'snapshot'}{'default'} = [];"
 		]
@@ -99,9 +99,11 @@ type AnnexUUID = String
 
 -- | A website, with files coming from a git-annex repository.
 annexWebSite :: [Host] -> Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] -> Property
-annexWebSite hosts origin hn uuid remotes = Git.cloned "joey" origin dir Nothing
-	`onChange` setup
-	`onChange` setupapache
+annexWebSite hosts origin hn uuid remotes = propertyList (hn ++" website using git-annex")
+	[ Git.cloned "joey" origin dir Nothing
+		`onChange` setup
+	, setupapache
+	]
   where
 	dir = "/srv/web/" ++ hn
 	setup = userScriptProperty "joey" setupscript

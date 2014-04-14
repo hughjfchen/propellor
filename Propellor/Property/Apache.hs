@@ -50,3 +50,13 @@ restarted = cmdProperty "service" ["apache2", "restart"]
 
 reloaded :: Property
 reloaded = Service.reloaded "apache2"
+
+-- | Configure apache to use SNI to differentiate between
+-- https hosts.
+multiSSL :: Property
+multiSSL = "/etc/apache2/conf.d/ssl" `File.hasContent`
+	[ "NameVirtualHost *:443"
+	, "SSLStrictSNIVHostCheck off"
+	]
+	`describe` "apache SNI enabled"
+	`onChange` reloaded

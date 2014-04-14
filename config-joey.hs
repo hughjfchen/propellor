@@ -81,6 +81,7 @@ hosts =
 		& File.hasPrivContent "/etc/ssl/private/web.pem"
 		& File.hasPrivContent "/etc/ssl/certs/startssl.pem"
 		& Apache.modEnabled "ssl"
+		& Apache.multiSSL
 		& File.ownerGroup "/srv/web" "joey" "joey"
 
 		& cname "git.kitenet.net"
