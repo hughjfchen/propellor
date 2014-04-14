@@ -200,6 +200,7 @@ twitRss = combineProperties "twitter rss"
 			`requires` Apt.installed
 				[ "libghc-xml-dev"
 				, "libghc-feed-dev"
+				, "libghc-http-conduit-dev"
 				]
 	]
   where
