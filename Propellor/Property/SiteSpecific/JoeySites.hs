@@ -9,6 +9,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Git as Git
+import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Obnam as Obnam
@@ -189,6 +190,7 @@ annexRsyncServer = combineProperties "rsync server for git-annex autobuilders"
 		, File.ownerGroup d "joey" "joey"
 		]
 
+-- Twitter, you kill us.
 twitRss :: Property
 twitRss = combineProperties "twitter rss"
 	[ Git.cloned "joey" "git://git.kitenet.net/twitrss.git" dir Nothing
@@ -203,6 +205,11 @@ twitRss = combineProperties "twitter rss"
 				, "libghc-http-conduit-dev"
 				, "libghc-tagsoup-dev"
 				]
+	, feed "http://twitter.com/search/realtime?q=git-annex" "git-annex-twitter.rss"
+	, feed "http://twitter.com/search/realtime?q=olduse+OR+git-annex+OR+debhelper+OR+etckeeper+OR+ikiwiki+-ashley_ikiwiki" "twittergrep.rss"
 	]
   where
 	dir = "/srv/web/tmp.kitenet.net/twitrss"
+	crontime = "15 * * * *"
+	feed url file = Cron.job "twitter rss cron job" crontime "joey" dir $
+		"./twitRss " ++ shellEscape url ++ " > ../" ++ shellEscape file
