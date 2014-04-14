@@ -79,6 +79,8 @@ hosts =               --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Dns.zones myDnsSecondary
+
+		& Apt.serviceInstalledRunning "postfix"
 	
 		& Apt.serviceInstalledRunning "apache2"
 		& File.hasPrivContent "/etc/ssl/certs/web.pem"
