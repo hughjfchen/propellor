@@ -127,6 +127,8 @@ annexWebSite hosts origin hn uuid remotes = propertyList (hn ++" website using g
 		, "  <Directory /srv/web/"++hn++">"
 		, "    Options Indexes FollowSymLinks ExecCGI"
 		, "    AllowOverride None"
+		, "    AddHandler cgi-script .cgi"
+		, "    DirectoryIndex index.cgi"
 		, "    Order allow,deny"
 		, "    allow from all"
 		, "  </Directory>"
