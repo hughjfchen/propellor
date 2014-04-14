@@ -4,6 +4,7 @@ propellor (0.3.1) UNRELEASED; urgency=medium
   * Support for provisioning hosts with ssh and gpg keys.
   * Obnam support.
   * Apache support.
+  * Postfix satellite system support.
   * Properties can now be satisfied differently on different operating
     systems.
   * Standard apt configuration for stable now includes backports.
