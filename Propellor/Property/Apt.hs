@@ -103,7 +103,7 @@ installed' params ps = robustly $ check (isInstallable ps) go
 	go = runApt $ params ++ ["install"] ++ ps
 
 installedBackport :: [Package] -> Property
-installedBackport ps = withOS desc $ \o -> case o of
+installedBackport ps = trivial $ withOS desc $ \o -> case o of
 	Nothing -> error "cannot install backports; os not declared"
 	(Just (System (Debian suite) _))
 		| isStable suite -> 
