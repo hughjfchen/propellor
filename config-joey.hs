@@ -93,7 +93,6 @@ hosts =
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
-		& Apt.buildDep ["git-annex"] `period` Daily
 		-- rsync server for git-annex autobuilders
 		& Apt.installed ["rsync"]
 		& File.hasPrivContent "/etc/rsyncd.conf"
