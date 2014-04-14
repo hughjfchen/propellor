@@ -197,6 +197,7 @@ twitRss = combineProperties "twitter rss"
 			[ "cd " ++ dir
 			, "ghc --make twitRss" 
 			]
+			`requires` Apt.installed ["libghc-xml-dev"]
 	]
   where
 	dir = "/srv/web/tmp.kitenet.net/twitrss"
