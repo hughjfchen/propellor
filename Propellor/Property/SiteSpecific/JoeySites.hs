@@ -202,7 +202,6 @@ twitRss = combineProperties "twitter rss"
 			`requires` Apt.installed
 				[ "libghc-xml-dev"
 				, "libghc-feed-dev"
-				, "libghc-http-conduit-dev"
 				, "libghc-tagsoup-dev"
 				]
 	, feed "http://twitter.com/search/realtime?q=git-annex" "git-annex-twitter"
