@@ -92,6 +92,19 @@ check c property = Property (propertyDesc property) $ ifM (liftIO c)
 	, return NoChange
 	)
 
+-- | Marks a Property as trivial. It can only return FailedChange or
+-- NoChange. 
+--
+-- Useful when it's just as expensive to check if a change needs
+-- to be made as it is to just idempotently assure the property is
+-- satisfied. For example, chmodding a file.
+trivial :: Property -> Property
+trivial p = Property (propertyDesc p) $ do
+	r <- ensureProperty p
+	if r == MadeChange
+		then return NoChange
+		else return r
+
 -- | Makes a property that is satisfied differently depending on the host's
 -- operating system. 
 --

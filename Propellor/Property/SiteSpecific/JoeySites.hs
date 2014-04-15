@@ -9,6 +9,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Git as Git
+import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Obnam as Obnam
@@ -127,6 +128,8 @@ annexWebSite hosts origin hn uuid remotes = propertyList (hn ++" website using g
 		, "  <Directory /srv/web/"++hn++">"
 		, "    Options Indexes FollowSymLinks ExecCGI"
 		, "    AllowOverride None"
+		, "    AddHandler cgi-script .cgi"
+		, "    DirectoryIndex index.html index.cgi"
 		, "    Order allow,deny"
 		, "    allow from all"
 		, "  </Directory>"
@@ -169,3 +172,43 @@ mainhttpscert True =
 	, "  SSLCertificateKeyFile /etc/ssl/private/web.pem"
 	, "  SSLCertificateChainFile /etc/ssl/certs/startssl.pem"
 	]
+		
+
+annexRsyncServer :: Property
+annexRsyncServer = combineProperties "rsync server for git-annex autobuilders"
+	[ Apt.installed ["rsync"]
+	, File.hasPrivContent "/etc/rsyncd.conf"
+	, File.hasPrivContent "/etc/rsyncd.secrets"
+	, "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
+			`onChange` Service.running "rsync"
+	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
+	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-mavericks"
+	]
+  where
+	endpoint d = combineProperties ("endpoint " ++ d)
+		[ File.dirExists d
+		, File.ownerGroup d "joey" "joey"
+		]
+
+-- Twitter, you kill us.
+twitRss :: Property
+twitRss = combineProperties "twitter rss"
+	[ Git.cloned "joey" "git://git.kitenet.net/twitrss.git" dir Nothing
+	, check (not <$> doesFileExist (dir </> "twitRss")) $
+		userScriptProperty "joey"
+			[ "cd " ++ dir
+			, "ghc --make twitRss" 
+			]
+			`requires` Apt.installed
+				[ "libghc-xml-dev"
+				, "libghc-feed-dev"
+				, "libghc-tagsoup-dev"
+				]
+	, feed "http://twitter.com/search/realtime?q=git-annex" "git-annex-twitter"
+	, feed "http://twitter.com/search/realtime?q=olduse+OR+git-annex+OR+debhelper+OR+etckeeper+OR+ikiwiki+-ashley_ikiwiki" "twittergrep"
+	]
+  where
+	dir = "/srv/web/tmp.kitenet.net/twitrss"
+	crontime = "15 * * * *"
+	feed url desc = Cron.job desc crontime "joey" dir $
+		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")

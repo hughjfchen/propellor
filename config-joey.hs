@@ -18,7 +18,7 @@ import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Apache as Apache
-import qualified Propellor.Property.Service as Service
+import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -41,7 +41,9 @@ hosts =               --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Network.ipv6to4
 		& Tor.isBridge
+		& Postfix.satellite
 		& Docker.configured
+
 		& cname "shell.olduse.net"
 		& JoeySites.oldUseNetShellBox
 
@@ -63,6 +65,7 @@ hosts =               --                  (o)  `
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
 		& Hostname.sane
 		& Apt.unattendedUpgrades
+		& Postfix.satellite
 		& Docker.configured
 		& Docker.docked hosts "amd64-git-annex-builder"
 		& Docker.docked hosts "i386-git-annex-builder"
@@ -80,6 +83,7 @@ hosts =               --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Dns.zones myDnsSecondary
+		& Postfix.satellite
 	
 		& Apt.serviceInstalledRunning "apache2"
 		& File.hasPrivContent "/etc/ssl/certs/web.pem"
@@ -98,19 +102,14 @@ hosts =               --                  (o)  `
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
-		-- rsync server for git-annex autobuilders
-		& Apt.installed ["rsync"]
-		& File.hasPrivContent "/etc/rsyncd.conf"
-		& File.hasPrivContent "/etc/rsyncd.secrets"
-		& "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
-			`describe` "rsync server enabled"
-			`onChange` Service.running "rsync"
+		& JoeySites.annexRsyncServer
 
 		& cname "tmp.kitenet.net"
 		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"
 			"tmp.kitenet.net"
 			"26fd6e38-1226-11e2-a75f-ff007033bdba"
 			[]
+		& JoeySites.twitRss
 		
 		& Apt.installed ["ntop"]
 

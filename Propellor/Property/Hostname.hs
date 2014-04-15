@@ -4,11 +4,10 @@ import Propellor
 import qualified Propellor.Property.File as File
 
 -- | Ensures that the hostname is set to the HostAttr value.
--- Configures both /etc/hostname and the current hostname.
+-- Configures /etc/hostname and the current hostname.
 --
--- When the hostname is a FQDN, also configures /etc/hosts,
--- with an entry for 127.0.1.1, which is standard at least on Debian
--- to set the FDQN (127.0.0.1 is localhost).
+-- A FQDN also configures /etc/hosts, with an entry for 127.0.1.1, which is
+-- standard at least on Debian to set the FDQN (127.0.0.1 is localhost).
 sane :: Property
 sane = Property ("sane hostname") (ensureProperty . setTo =<< getHostName)
 

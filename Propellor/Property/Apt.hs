@@ -103,7 +103,7 @@ installed' params ps = robustly $ check (isInstallable ps) go
 	go = runApt $ params ++ ["install"] ++ ps
 
 installedBackport :: [Package] -> Property
-installedBackport ps = withOS desc $ \o -> case o of
+installedBackport ps = trivial $ withOS desc $ \o -> case o of
 	Nothing -> error "cannot install backports; os not declared"
 	(Just (System (Debian suite) _))
 		| isStable suite -> 
@@ -200,7 +200,7 @@ reConfigure package vals = reconfigure `requires` setselections
 				forM_ vals $ \(tmpl, tmpltype, value) ->
 					hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
 				hClose h
-	reconfigure = cmdProperty "dpkg-reconfigure" ["-fnone", package]
+	reconfigure = cmdProperty' "dpkg-reconfigure" ["-fnone", package] noninteractiveEnv
 
 -- | Ensures that a service is installed and running.
 --
