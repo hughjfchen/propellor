@@ -150,5 +150,5 @@ data PrivDataField
 
 type GpgKeyId = String
 
-data SshKeyType = SshRsa | SshDsa | SshEcdsa
+data SshKeyType = SshRsa | SshDsa | SshEcdsa | SshEd25519
 	deriving (Read, Show, Ord, Eq)
