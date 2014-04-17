@@ -46,7 +46,7 @@ backup dir crontimes params numclients = cronjob `describe` desc
   where
 	desc = dir ++ " backed up by obnam"
 	cronjob = Cron.niceJob ("obnam_backup" ++ dir) crontimes "root" "/" $
-		intercalate ";" $ catMaybes
+		intercalate ";" $ map flockcmd $ catMaybes
 			[ if numclients == OnlyClient
 				then Just $ unwords $
 					[ "obnam"
@@ -59,6 +59,7 @@ backup dir crontimes params numclients = cronjob `describe` desc
 				, shellEscape dir
 				] ++ map shellEscape params
 			]
+	flockcmd cmd = "flock -n " ++ shellEscape dir ++ " " ++ cmd
 
 -- | Restores a directory from an obnam backup.
 --
