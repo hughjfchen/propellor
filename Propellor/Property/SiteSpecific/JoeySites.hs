@@ -52,13 +52,13 @@ gitServer :: [Host] -> Property
 gitServer hosts = propertyList "git.kitenet.net setup"
 	[ Obnam.latestVersion
 	, Obnam.backup "/srv/git" "33 3 * * *"
-		[ "--repository=sftp://joey@turtle.kitenet.net/~/lib/backup/git.kitenet.net.obnam"
+		[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
 		, "--encrypt-with=1B169BE1"
 		, "--client-name=wren"
 		] Obnam.OnlyClient
 		`requires` Gpg.keyImported "1B169BE1" "root"
 		`requires` Ssh.keyImported SshRsa "root"
-		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "root"
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 		`requires` Ssh.authorizedKeys "family"
 		`requires` User.accountFor "family"
 	, Apt.installed ["git", "rsync", "kgb-client-git", "gitweb"]
