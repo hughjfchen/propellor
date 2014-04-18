@@ -60,6 +60,10 @@ data Record
 	| TXT String
 	deriving (Read, Show, Eq, Ord)
 
+getIPAddr :: Record -> Maybe IPAddr
+getIPAddr (Address addr) = Just addr
+getIPAddr _ = Nothing
+
 -- | Bind serial numbers are unsigned, 32 bit integers.
 type SerialNumber = CInt
 

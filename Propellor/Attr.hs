@@ -9,6 +9,7 @@ import Propellor.Types.Dns
 import "mtl" Control.Monad.Reader
 import qualified Data.Set as S
 import qualified Data.Map as M
+import Data.Maybe
 import Control.Applicative
 
 pureAttrProperty :: Desc -> SetAttr -> Property 
@@ -28,6 +29,20 @@ os system = pureAttrProperty ("Operating " ++ show system) $
 getOS :: Propellor (Maybe System)
 getOS = asks _os
 
+-- | Indidate that a host has an A record in the DNS.
+--
+-- TODO check at run time if the host really has this address.
+-- (Can't change the host's address, but as a sanity check.)
+ipv4 :: String -> Property
+ipv4 addr = pureAttrProperty ("ipv4 " ++ addr)
+	(addDNS $ Address $ IPv4 addr)
+
+-- | Indidate that a host has an AAAA record in the DNS.
+ipv6 :: String -> Property
+ipv6 addr = pureAttrProperty ("ipv6 " ++ addr)
+	(addDNS $ Address $ IPv6 addr)
+
+-- | Indicate that a host has a CNAME pointing at it in the DNS.
 cname :: Domain -> Property
 cname domain = pureAttrProperty ("cname " ++ domain)
 	(addDNS $ CNAME $ AbsDomain domain)
@@ -61,6 +76,11 @@ hostMap l = M.fromList $ zip (map (_hostname . hostAttr) l) l
 
 findHost :: [Host] -> HostName -> Maybe Host
 findHost l hn = M.lookup hn (hostMap l)
+
+getAddresses :: HostName -> [Host] -> [IPAddr]
+getAddresses hn hosts = case hostAttr <$> findHost hosts hn of
+	Nothing -> []
+	Just attr -> mapMaybe getIPAddr $ S.toList $ _dns attr
 
 -- | Lifts an action into a different host.
 --
