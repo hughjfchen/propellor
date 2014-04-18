@@ -25,7 +25,7 @@ job desc times user cddir command = cronjobfile `File.hasContent`
 	, ""
 	, times ++ "\t" ++ user ++ "\t"
 		++ "flock -n " ++ shellEscape cronjobfile
-		++ " -c sh -c " ++ shellEscape cmdline
+		++ " sh -c " ++ shellEscape cmdline
 	]
 	`requires` Apt.serviceInstalledRunning "cron"
 	`describe` ("cronned " ++ desc)
