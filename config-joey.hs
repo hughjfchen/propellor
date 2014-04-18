@@ -225,7 +225,7 @@ cleanCloudAtCost = propertyList "cloudatcost cleanup"
 		]
 	]
 
-myDnsSecondary :: [Dns.Zone]
+myDnsSecondary :: [Dns.NamedConf]
 myDnsSecondary =
 	[ Dns.secondary "kitenet.net" master
 	, Dns.secondary "joeyh.name" master

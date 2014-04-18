@@ -133,8 +133,8 @@ rValue (TXT s) = [q] ++ filter (/= q) s ++ [q]
 --
 -- * Always be larger than the passed SerialNumber
 -- * Always be larger than the serial number in the Zone record.
-nextSerial :: Zone -> SerialNumber -> Zone
-nextSerial (Zone soa l) oldserial = Zone soa' l
+nextSerialNumber :: Zone -> SerialNumber -> Zone
+nextSerialNumber (Zone soa l) oldserial = Zone soa' l
   where
 	soa' = soa { sSerial = succ $ max (sSerial soa) oldserial }
 
@@ -152,7 +152,7 @@ nextSerial (Zone soa l) oldserial = Zone soa' l
 writeZoneFile :: Zone -> FilePath -> IO ()
 writeZoneFile z f = do
 	oldserial <- nextZoneFileSerialNumber f
-	let z'@(Zone soa' _) = nextSerial z oldserial
+	let z'@(Zone soa' _) = nextSerialNumber z oldserial
 	writeFile f (genZoneFile z')
 	writeFile (zoneSerialFile f) (show $ sSerial soa')
 
