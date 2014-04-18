@@ -111,6 +111,9 @@ hosts =               --                  (o)  `
 			[]
 		& JoeySites.twitRss
 		
+		& cname "nntp.olduse.net"
+		& JoeySites.oldUseNetServer hosts
+		
 		& Apt.installed ["ntop"]
 
 
