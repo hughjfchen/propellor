@@ -8,8 +8,8 @@ module Propellor.Types
 	, HostName
 	, Propellor(..)
 	, Property(..)
+	, property
 	, RevertableProperty(..)
-	, AttrProperty(..)
 	, IsProp
 	, describe
 	, toProp
@@ -53,15 +53,17 @@ newtype Propellor p = Propellor { runWithAttr :: ReaderT Attr IO p }
 -- property.
 data Property = Property
 	{ propertyDesc :: Desc
-	-- | must be idempotent; may run repeatedly
 	, propertySatisfy :: Propellor Result
+	-- ^ must be idempotent; may run repeatedly
+	, propertyAttr :: Attr -> Attr
+	-- ^ a property can affect the overall Attr
 	}
+
+property :: Desc -> Propellor Result -> Property
+property d s = Property d s id
 
 -- | A property that can be reverted.
 data RevertableProperty = RevertableProperty Property Property
-
--- | A property that affects the Attr.
-data AttrProperty = forall p. IsProp p => AttrProperty p (Attr -> Attr)
 
 class IsProp p where
 	-- | Sets description.
@@ -75,12 +77,16 @@ class IsProp p where
 instance IsProp Property where
 	describe p d = p { propertyDesc = d }
 	toProp p = p
-	x `requires` y = Property (propertyDesc x) $ do
-		r <- propertySatisfy y
-		case r of
-			FailedChange -> return FailedChange
-			_ -> propertySatisfy x
-	getAttr _ = id
+	getAttr = propertyAttr
+	x `requires` y = Property (propertyDesc x) satisfy attr
+	  where
+	  	attr = propertyAttr x . propertyAttr y
+		satisfy = do
+			r <- propertySatisfy y
+			case r of
+				FailedChange -> return FailedChange
+				_ -> propertySatisfy x
+			
 
 instance IsProp RevertableProperty where
 	-- | Sets the description of both sides.
@@ -89,13 +95,8 @@ instance IsProp RevertableProperty where
 	toProp (RevertableProperty p1 _) = p1
 	(RevertableProperty p1 p2) `requires` y =
 		RevertableProperty (p1 `requires` y) p2
-	getAttr _ = id
-
-instance IsProp AttrProperty where
-	describe (AttrProperty p a) d = AttrProperty (describe p d) a
-	toProp (AttrProperty p _) = toProp p
-	(AttrProperty p a) `requires` y = AttrProperty (p `requires` y) a
-	getAttr (AttrProperty _ a) = a
+	-- | Gets the Attr of the currently active side.
+	getAttr (RevertableProperty p1 _p2) = getAttr p1
 
 type Desc = String
 

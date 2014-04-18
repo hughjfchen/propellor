@@ -19,7 +19,7 @@ import qualified Data.Map as M
 -- This uses the description of the Property to keep track of when it was
 -- last run.
 period :: Property -> Recurrance -> Property
-period prop recurrance = Property desc $ do
+period prop recurrance = property desc $ do
 	lasttime <- liftIO $ getLastChecked (propertyDesc prop)
 	nexttime <- liftIO $ fmap startTime <$> nextTime schedule lasttime
 	t <- liftIO localNow
@@ -37,7 +37,7 @@ period prop recurrance = Property desc $ do
 periodParse :: Property -> String -> Property
 periodParse prop s = case toRecurrance s of
 	Just recurrance -> period prop recurrance
-	Nothing -> Property "periodParse" $ do
+	Nothing -> property "periodParse" $ do
 		liftIO $ warningMessage $ "failed periodParse: " ++ s
 		noChange
 

@@ -8,16 +8,16 @@ import Utility.SafeCommand
 -- | Clones Joey Hess's git home directory, and runs its fixups script.
 installedFor :: UserName -> Property
 installedFor user = check (not <$> hasGitDir user) $ 
-	Property ("githome " ++ user) (go =<< liftIO (homedir user))
+	property ("githome " ++ user) (go =<< liftIO (homedir user))
 		`requires` Apt.installed ["git"]
   where
 	go home = do
 		let tmpdir = home </> "githome"
 		ensureProperty $ combineProperties "githome setup"
 			[ userScriptProperty user ["git clone " ++ url ++ " " ++ tmpdir]
-			, Property "moveout" $ makeChange $ void $
+			, property "moveout" $ makeChange $ void $
 				moveout tmpdir home
-			, Property "rmdir" $ makeChange $ void $
+			, property "rmdir" $ makeChange $ void $
 				catchMaybeIO $ removeDirectory tmpdir
 			, userScriptProperty user ["rm -rf .aptitude/ .bashrc .profile; bin/mr checkout; bin/fixups"]
 			]

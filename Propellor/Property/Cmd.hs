@@ -25,7 +25,7 @@ cmdProperty cmd params = cmdProperty' cmd params []
 -- | A property that can be satisfied by running a command,
 -- with added environment.
 cmdProperty' :: String -> [String] -> [(String, String)] -> Property
-cmdProperty' cmd params env = Property desc $ liftIO $ do
+cmdProperty' cmd params env = property desc $ liftIO $ do
 	env' <- addEntries env <$> getEnvironment
 	ifM (boolSystemEnv cmd (map Param params) (Just env'))
 		( return MadeChange

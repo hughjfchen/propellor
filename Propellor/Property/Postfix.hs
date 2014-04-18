@@ -15,7 +15,7 @@ installed = Apt.serviceInstalledRunning "postfix"
 satellite :: Property
 satellite = setup `requires` installed
   where
-	setup = trivial $ Property "postfix satellite system" $ do
+	setup = trivial $ property "postfix satellite system" $ do
 		hn <- getHostName
 		ensureProperty $ Apt.reConfigure "postfix"
 			[ ("postfix/main_mailer_type", "select", "Satellite system")

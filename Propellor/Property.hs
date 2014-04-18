@@ -26,12 +26,12 @@ noChange = return NoChange
 -- and print out the description of each as it's run. Does not stop
 -- on failure; does propigate overall success/failure.
 propertyList :: Desc -> [Property] -> Property
-propertyList desc ps = Property desc $ ensureProperties ps
+propertyList desc ps = property desc $ ensureProperties ps
 
 -- | Combines a list of properties, resulting in one property that
 -- ensures each in turn, stopping on failure.
 combineProperties :: Desc -> [Property] -> Property
-combineProperties desc ps = Property desc $ go ps NoChange
+combineProperties desc ps = property desc $ go ps NoChange
   where
   	go [] rs = return rs
 	go (l:ls) rs = do
@@ -44,7 +44,7 @@ combineProperties desc ps = Property desc $ go ps NoChange
 -- that ensures the first, and if the first succeeds, ensures the second.
 -- The property uses the description of the first property.
 before :: Property -> Property -> Property
-p1 `before` p2 = Property (propertyDesc p1) $ do
+p1 `before` p2 = property (propertyDesc p1) $ do
 	r <- ensureProperty p1
 	case r of
 		FailedChange -> return FailedChange
@@ -54,16 +54,16 @@ p1 `before` p2 = Property (propertyDesc p1) $ do
 -- file to indicate whether it has run before.
 -- Use with caution.
 flagFile :: Property -> FilePath -> Property
-flagFile property = flagFile' property . return
+flagFile p = flagFile' p . return
 
 flagFile' :: Property -> IO FilePath -> Property
-flagFile' property getflagfile = Property (propertyDesc property) $ do
+flagFile' p getflagfile = property (propertyDesc p) $ do
 	flagfile <- liftIO getflagfile
 	go flagfile =<< liftIO (doesFileExist flagfile)
   where
 	go _ True = return NoChange
 	go flagfile False = do
-		r <- ensureProperty property
+		r <- ensureProperty p
 		when (r == MadeChange) $ liftIO $ 
 			unlessM (doesFileExist flagfile) $ do
 				createDirectoryIfMissing True (takeDirectory flagfile)
@@ -73,8 +73,8 @@ flagFile' property getflagfile = Property (propertyDesc property) $ do
 --- | Whenever a change has to be made for a Property, causes a hook
 -- Property to also be run, but not otherwise.
 onChange :: Property -> Property -> Property
-property `onChange` hook = Property (propertyDesc property) $ do
-	r <- ensureProperty property
+p `onChange` hook = property (propertyDesc p) $ do
+	r <- ensureProperty p
 	case r of
 		MadeChange -> do
 			r' <- ensureProperty hook
@@ -87,8 +87,8 @@ infixl 1 ==>
 
 -- | Makes a Property only be performed when a test succeeds.
 check :: IO Bool -> Property -> Property
-check c property = Property (propertyDesc property) $ ifM (liftIO c)
-	( ensureProperty property
+check c p = property (propertyDesc p) $ ifM (liftIO c)
+	( ensureProperty p
 	, return NoChange
 	)
 
@@ -99,7 +99,7 @@ check c property = Property (propertyDesc property) $ ifM (liftIO c)
 -- to be made as it is to just idempotently assure the property is
 -- satisfied. For example, chmodding a file.
 trivial :: Property -> Property
-trivial p = Property (propertyDesc p) $ do
+trivial p = property (propertyDesc p) $ do
 	r <- ensureProperty p
 	if r == MadeChange
 		then return NoChange
@@ -110,10 +110,10 @@ trivial p = Property (propertyDesc p) $ do
 --
 -- Note that the operating system may not be declared for some hosts.
 withOS :: Desc -> (Maybe System -> Propellor Result) -> Property
-withOS desc a = Property desc $ a =<< getOS
+withOS desc a = property desc $ a =<< getOS
 
 boolProperty :: Desc -> IO Bool -> Property
-boolProperty desc a = Property desc $ ifM (liftIO a)
+boolProperty desc a = property desc $ ifM (liftIO a)
 	( return MadeChange
 	, return FailedChange
 	)

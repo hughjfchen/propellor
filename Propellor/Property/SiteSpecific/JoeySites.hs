@@ -30,7 +30,7 @@ oldUseNetServer hosts = propertyList ("olduse.net server")
 		`requires` Ssh.keyImported SshRsa "root"
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 	, check (not . isSymbolicLink <$> getSymbolicLinkStatus newsspool) $
-		Property "olduse.net spool in place" $ makeChange $ do
+		property "olduse.net spool in place" $ makeChange $ do
 			removeDirectoryRecursive newsspool
 			createSymbolicLink (datadir </> "news") newsspool
 	, Apt.installed ["leafnode"]

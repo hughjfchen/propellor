@@ -40,7 +40,7 @@ builder arch crontimes rsyncupload = combineProperties "gitannexbuilder"
 	-- The builduser account does not have a password set,
 	-- instead use the password privdata to hold the rsync server
 	-- password used to upload the built image.
-	, Property "rsync password" $ do
+	, property "rsync password" $ do
 		let f = homedir </> "rsyncpassword"
 		if rsyncupload 
 			then withPrivData (Password builduser) $ \p -> do

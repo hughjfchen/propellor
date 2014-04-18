@@ -10,36 +10,35 @@ import qualified Data.Set as S
 import qualified Data.Map as M
 import Control.Applicative
 
-pureAttrProperty :: Desc -> (Attr -> Attr) -> AttrProperty 
-pureAttrProperty desc = AttrProperty $ Property ("has " ++ desc)
-	(return NoChange)
+pureAttrProperty :: Desc -> (Attr -> Attr) -> Property 
+pureAttrProperty desc = Property ("has " ++ desc) (return NoChange)
 
-hostname :: HostName -> AttrProperty
+hostname :: HostName -> Property
 hostname name = pureAttrProperty ("hostname " ++ name) $
 	\d -> d { _hostname = name }
 
 getHostName :: Propellor HostName
 getHostName = asks _hostname
 
-os :: System -> AttrProperty
+os :: System -> Property
 os system = pureAttrProperty ("Operating " ++ show system) $
 	\d -> d { _os = Just system }
 
 getOS :: Propellor (Maybe System)
 getOS = asks _os
 
-cname :: Domain -> AttrProperty
+cname :: Domain -> Property
 cname domain = pureAttrProperty ("cname " ++ domain) (addCName domain)
 
-cnameFor :: IsProp p => Domain -> (Domain -> p) -> AttrProperty
+cnameFor :: Domain -> (Domain -> Property) -> Property
 cnameFor domain mkp =
 	let p = mkp domain
-	in AttrProperty p (addCName domain)
+	in p { propertyAttr = propertyAttr p . addCName domain }
 
 addCName :: HostName -> Attr -> Attr
 addCName domain d = d { _cnames = S.insert domain (_cnames d) }
 
-sshPubKey :: String -> AttrProperty
+sshPubKey :: String -> Property
 sshPubKey k = pureAttrProperty ("ssh pubkey known") $
 	\d -> d { _sshPubKey = Just k }
 

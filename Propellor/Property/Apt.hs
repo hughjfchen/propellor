@@ -157,7 +157,7 @@ buildDepIn dir = go `requires` installedMin ["devscripts", "equivs"]
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
 robustly :: Property -> Property
-robustly p = Property (propertyDesc p) $ do
+robustly p = property (propertyDesc p) $ do
 	r <- ensureProperty p
 	if r == FailedChange
 		then ensureProperty $ p `requires` update
@@ -210,7 +210,7 @@ reConfigure :: Package -> [(String, String, String)] -> Property
 reConfigure package vals = reconfigure `requires` setselections
 	`describe` ("reconfigure " ++ package)
   where
-	setselections = Property "preseed" $ makeChange $
+	setselections = property "preseed" $ makeChange $
 		withHandle StdinHandle createProcessSuccess
 			(proc "debconf-set-selections" []) $ \h -> do
 				forM_ vals $ \(tmpl, tmpltype, value) ->
@@ -236,7 +236,7 @@ trustsKey k = RevertableProperty trust untrust
 	desc = "apt trusts key " ++ keyname k
 	f = "/etc/apt/trusted.gpg.d" </> keyname k ++ ".gpg"
 	untrust = File.notPresent f
-	trust = check (not <$> doesFileExist f) $ Property desc $ makeChange $ do
+	trust = check (not <$> doesFileExist f) $ property desc $ makeChange $ do
 		withHandle StdinHandle createProcessSuccess
 			(proc "gpg" ["--no-default-keyring", "--keyring", f, "--import", "-"]) $ \h -> do
 				hPutStr h (pubkey k)

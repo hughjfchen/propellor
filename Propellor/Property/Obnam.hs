@@ -65,7 +65,7 @@ backup dir crontimes params numclients = cronjob `describe` desc
 -- The restore is performed atomically; restoring to a temp directory
 -- and then moving it to the directory.
 restored :: FilePath -> [ObnamParam] -> Property
-restored dir params = Property (dir ++ " restored by obnam") go
+restored dir params = property (dir ++ " restored by obnam") go
 	`requires` installed
   where
 	go = ifM (liftIO needsRestore)

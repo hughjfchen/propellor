@@ -21,7 +21,7 @@ installed = Apt.installed ["gnupg"]
 -- The GpgKeyId does not have to be a numeric id; it can just as easily
 -- be a description of the key.
 keyImported :: GpgKeyId -> UserName -> Property
-keyImported keyid user = flagFile' (Property desc go) genflag
+keyImported keyid user = flagFile' (property desc go) genflag
 	`requires` installed
   where
 	desc = user ++ " has gpg key " ++ show keyid

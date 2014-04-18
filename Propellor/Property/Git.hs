@@ -62,7 +62,7 @@ type Branch = String
 --
 -- A branch can be specified, to check out.
 cloned :: UserName -> RepoUrl -> FilePath -> Maybe Branch -> Property
-cloned owner url dir mbranch = check originurl (Property desc checkout)
+cloned owner url dir mbranch = check originurl (property desc checkout)
 	`requires` installed
   where
 	desc = "git cloned " ++ url ++ " to " ++ dir
