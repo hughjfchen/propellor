@@ -171,7 +171,8 @@ gitAnnexBuilder arch buildminute = Docker.container (arch ++ "-git-annex-builder
 standardSystem :: HostName -> DebianSuite -> Architecture -> Host
 standardSystem hn suite arch = host hn
 	& os (System (Debian suite) arch)
-	& Apt.stdSourcesList suite `onChange` Apt.upgrade
+	& Apt.stdSourcesList suite
+		`onChange` Apt.upgrade
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
 	& GitHome.installedFor "root"
