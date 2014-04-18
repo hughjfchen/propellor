@@ -71,6 +71,10 @@ securityUpdates suite
 stdSourcesList :: DebianSuite -> Property
 stdSourcesList suite = stdSourcesList' suite []
 
+-- | Adds additional sources.list generators.
+--
+-- Note that if a Property needs to enable an apt source, it's better
+-- to do so via a separate file in /etc/apt/sources.list.d/
 stdSourcesList' :: DebianSuite -> [SourcesGenerator] -> Property
 stdSourcesList' suite more = setSourcesList
 	(concatMap (\gen -> gen suite) generators)
@@ -80,6 +84,11 @@ stdSourcesList' suite more = setSourcesList
 
 setSourcesList :: [Line] -> Property
 setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
+
+setSourcesListD :: [Line] -> FilePath -> Property
+setSourcesListD ls basename = f `File.hasContent` ls `onChange` update
+  where
+	f = "/etc/apt/sources.list.d/" ++ basename
 
 runApt :: [String] -> Property
 runApt ps = cmdProperty' "apt-get" ps noninteractiveEnv

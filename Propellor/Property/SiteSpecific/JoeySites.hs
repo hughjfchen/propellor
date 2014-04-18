@@ -50,7 +50,8 @@ kgbServer = withOS desc $ \o -> case o of
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property
 gitServer hosts = propertyList "git.kitenet.net setup"
-	[ Obnam.backup "/srv/git" "33 3 * * *"
+	[ Obnam.latestVersion
+	, Obnam.backup "/srv/git" "33 3 * * *"
 		[ "--repository=sftp://joey@turtle.kitenet.net/~/lib/backup/git.kitenet.net.obnam"
 		, "--encrypt-with=1B169BE1"
 		, "--client-name=wren"
