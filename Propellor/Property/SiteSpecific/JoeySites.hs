@@ -42,6 +42,7 @@ oldUseNetServer hosts = propertyList ("olduse.net server")
 		, "allowSTRANGERS = 42" -- lets anyone connect
 		, "nopost = 1" -- no new posting (just gather them)
 		]
+	, "/etc/hosts.deny" `File.lacksLine` "leafnode: ALL"
 	, Apt.serviceInstalledRunning "openbsd-inetd"
 	, File.notPresent "/etc/cron.daily/leafnode"
 	, File.notPresent "/etc/cron.d/leafnode"
