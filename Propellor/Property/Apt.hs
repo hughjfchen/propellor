@@ -88,7 +88,7 @@ setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
 setSourcesListD :: [Line] -> FilePath -> Property
 setSourcesListD ls basename = f `File.hasContent` ls `onChange` update
   where
-	f = "/etc/apt/sources.list.d/" ++ basename
+	f = "/etc/apt/sources.list.d/" ++ basename ++ ".list"
 
 runApt :: [String] -> Property
 runApt ps = cmdProperty' "apt-get" ps noninteractiveEnv
