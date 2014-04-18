@@ -82,7 +82,7 @@ hosts =               --                  (o)  `
 		& Ssh.hostKey SshEcdsa
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
-		& Dns.zones myDnsSecondary
+		& Dns.servingZones myDnsSecondary
 		& Postfix.satellite
 	
 		& Apt.serviceInstalledRunning "apache2"
@@ -234,8 +234,8 @@ myDnsSecondary =
 	, Dns.secondary "branchable.com" branchablemaster
 	]
   where
-	master = ["80.68.85.49", "2001:41c8:125:49::10"] -- wren
-	branchablemaster = ["66.228.46.55", "2600:3c03::f03c:91ff:fedf:c0e5"]
+	master = [Dns.IPv4 "80.68.85.49", Dns.IPv6 "2001:41c8:125:49::10"] -- wren
+	branchablemaster = [Dns.IPv4 "66.228.46.55", Dns.IPv6 "2600:3c03::f03c:91ff:fedf:c0e5"]
 
 main :: IO ()
 main = defaultMain hosts

@@ -99,6 +99,7 @@ Library
     Propellor.Exception
     Propellor.Types
     Propellor.Types.OS
+    Propellor.Types.Dns
   Other-Modules:
     Propellor.Types.Attr
     Propellor.CmdLine

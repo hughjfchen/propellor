@@ -4,6 +4,7 @@ module Propellor.Attr where
 
 import Propellor.Types
 import Propellor.Types.Attr
+import Propellor.Types.Dns
 
 import "mtl" Control.Monad.Reader
 import qualified Data.Set as S
@@ -28,15 +29,16 @@ getOS :: Propellor (Maybe System)
 getOS = asks _os
 
 cname :: Domain -> Property
-cname domain = pureAttrProperty ("cname " ++ domain) (addCName domain)
+cname domain = pureAttrProperty ("cname " ++ domain)
+	(addDNS $ CNAME $ AbsDomain domain)
 
 cnameFor :: Domain -> (Domain -> Property) -> Property
 cnameFor domain mkp =
 	let p = mkp domain
-	in p { propertyAttr = propertyAttr p . addCName domain }
+	in p { propertyAttr = propertyAttr p . addDNS (CNAME $ AbsDomain domain) }
 
-addCName :: HostName -> SetAttr
-addCName domain d = d { _cnames = S.insert domain (_cnames d) }
+addDNS :: Record -> SetAttr
+addDNS record d = d { _dns = S.insert record (_dns d) }
 
 sshPubKey :: String -> Property
 sshPubKey k = pureAttrProperty ("ssh pubkey known") $

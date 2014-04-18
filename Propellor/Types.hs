@@ -5,7 +5,6 @@
 module Propellor.Types
 	( Host(..)
 	, Attr
-	, HostName
 	, Propellor(..)
 	, Property(..)
 	, RevertableProperty(..)
