@@ -17,6 +17,8 @@ sourcesList = "/etc/apt/sources.list"
 type Url = String
 type Section = String
 
+type SourcesGenerator = DebianSuite -> [Line]
+
 showSuite :: DebianSuite -> String
 showSuite Stable = "stable"
 showSuite Testing = "testing"
@@ -39,7 +41,7 @@ srcLine l = case words l of
 stdSections :: [Section]
 stdSections = ["main", "contrib", "non-free"]
 
-binandsrc :: String -> DebianSuite -> [Line]
+binandsrc :: String -> SourcesGenerator
 binandsrc url suite
 	| isStable suite = [l, srcLine l, bl, srcLine bl]
 	| otherwise = [l, srcLine l]
@@ -47,14 +49,14 @@ binandsrc url suite
 	l = debLine (showSuite suite) url stdSections
 	bl = debLine backportSuite url stdSections
 
-debCdn :: DebianSuite -> [Line]
+debCdn :: SourcesGenerator
 debCdn = binandsrc "http://cdn.debian.net/debian"
 
-kernelOrg :: DebianSuite -> [Line]
+kernelOrg :: SourcesGenerator
 kernelOrg = binandsrc "http://mirrors.kernel.org/debian"
 
 -- | Only available for Stable and Testing
-securityUpdates :: DebianSuite -> [Line]
+securityUpdates :: SourcesGenerator
 securityUpdates suite
 	| isStable suite || suite == Testing =
 		let l = "deb http://security.debian.org/ " ++ showSuite suite ++ "/updates " ++ unwords stdSections
@@ -67,9 +69,14 @@ securityUpdates suite
 -- Since the CDN is sometimes unreliable, also adds backup lines using
 -- kernel.org.
 stdSourcesList :: DebianSuite -> Property
-stdSourcesList suite = setSourcesList
-	(concatMap (\gen -> gen suite) [debCdn, kernelOrg, securityUpdates])
+stdSourcesList suite = stdSourcesList' suite []
+
+stdSourcesList' :: DebianSuite -> [SourcesGenerator] -> Property
+stdSourcesList' suite more = setSourcesList
+	(concatMap (\gen -> gen suite) generators)
 	`describe` ("standard sources.list for " ++ show suite)
+  where
+	generators = [debCdn, kernelOrg, securityUpdates] ++ more
 
 setSourcesList :: [Line] -> Property
 setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
@@ -208,3 +215,21 @@ reConfigure package vals = reconfigure `requires` setselections
 -- package names.
 serviceInstalledRunning :: Package -> Property
 serviceInstalledRunning svc = Service.running svc `requires` installed [svc]
+
+data AptKey = AptKey
+	{ keyname :: String
+	, pubkey :: String
+	}
+
+trustsKey :: AptKey -> RevertableProperty
+trustsKey k = RevertableProperty trust untrust
+  where
+	desc = "apt trusts key " ++ keyname k
+	f = "/etc/apt/trusted.gpg.d" </> keyname k ++ ".gpg"
+	untrust = File.notPresent f
+	trust = check (not <$> doesFileExist f) $ Property desc $ makeChange $ do
+		withHandle StdinHandle createProcessSuccess
+			(proc "gpg" ["--no-default-keyring", "--keyring", f, "--import", "-"]) $ \h -> do
+				hPutStr h (pubkey k)
+				hClose h
+		nukeFile $ f ++ "~" -- gpg dropping

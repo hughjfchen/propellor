@@ -19,6 +19,7 @@ import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
+import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -171,7 +172,10 @@ gitAnnexBuilder arch buildminute = Docker.container (arch ++ "-git-annex-builder
 standardSystem :: HostName -> DebianSuite -> Architecture -> Host
 standardSystem hn suite arch = host hn
 	& os (System (Debian suite) arch)
-	& Apt.stdSourcesList suite `onChange` Apt.upgrade
+	& Apt.trustsKey Obnam.aptKey
+	& Apt.stdSourcesList' suite
+		[ Obnam.aptSources ]
+		`onChange` Apt.upgrade
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
 	& GitHome.installedFor "root"
