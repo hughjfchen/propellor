@@ -1,4 +1,4 @@
-#!/usr/bin/make -f
+#!/bin/false -f
 
 # Avoid using cabal, as it writes to $HOME
 export CABAL=./Setup
