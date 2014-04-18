@@ -57,7 +57,9 @@ oldUseNetServer hosts = propertyList ("olduse.net server")
 		, "  <Directory " ++ datadir ++ "/>"
 		, "    Options Indexes FollowSymlinks"
 		, "    AllowOverride None"
-		, "    Require all granted"
+		-- I had this in the file before.
+		-- This may be needed by a newer version of apache?
+		--, "    Require all granted"
 		, "  </Directory>"
 		]
 	]
