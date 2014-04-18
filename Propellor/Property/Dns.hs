@@ -77,18 +77,33 @@ data Zone = Zone
 
 -- | Every domain has a SOA record, which is big and complicated.
 data SOA = SOA
-	{ sRoot :: BindDomain
+	{ sDomain :: BindDomain
+	-- ^ Typically ns1.your.domain
 	, sSerial :: SerialNumber
-	 -- ^ The most important parameter is the serial number,
-	 -- which must increase after each change.
-	 , sRefresh :: Integer
-	 , sRetry :: Integer
-	 , sExpire :: Integer
-	 , sTTL :: Integer
-	 , sRecord :: [Record]
-	 -- ^ Records for the root of the domain. Typically NS, A, TXT
-	 }
-	 deriving (Read, Show, Eq)
+	-- ^ The most important parameter is the serial number,
+	-- which must increase after each change.
+	, sRefresh :: Integer
+	, sRetry :: Integer
+	, sExpire :: Integer
+	, sTTL :: Integer
+	, sRecord :: [Record]
+	-- ^ Records for the root of the domain. Typically NS, A, TXT
+	}
+	deriving (Read, Show, Eq)
+
+-- |  Generates a SOA with some fairly sane numbers in it.
+mkSOA :: Domain -> [Record] -> SOA
+mkSOA d rs = SOA
+	{ sDomain = AbsDomain d
+	, sSerial = 1
+	, sRefresh = hours 4
+	, sRetry = hours 1
+	, sExpire = 2419200 -- 4 weeks
+	, sTTL = hours 8
+	, sRecord = rs
+	}
+  where
+	hours n = n * 60 * 60
 
 -- | Types of DNS records.
 --
@@ -232,7 +247,7 @@ genSOA soa = unlines $
 			[ dValue SOADomain 
 			, "IN"
 			, "SOA"
-			, dValue (sRoot soa)
+			, dValue (sDomain soa)
 			, "root"
 			, "("
 			]
