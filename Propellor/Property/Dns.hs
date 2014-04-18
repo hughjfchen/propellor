@@ -7,6 +7,9 @@ import qualified Propellor.Property.Service as Service
 import Utility.Applicative
 
 import Data.List
+import Data.Time.Clock.POSIX
+import Data.Time.Format
+import Foreign.C.Types
 
 namedconf :: FilePath
 namedconf = "/etc/bind/named.conf.local"
@@ -66,7 +69,11 @@ zones zs = hasContent namedconf (concatMap zoneStanza zs)
 	`onChange` Service.reloaded "bind9"
 
 -- | Represents a bind 9 zone file.
-data Zone = Zone SOA [(HostName, Record)]
+data Zone = Zone
+	{ zSOA :: SOA
+	, zHosts :: [(HostName, Record)]
+	}
+	deriving (Read, Show, Eq)
 
 -- | Every domain has a SOA record, which is big and complicated.
 data SOA = SOA
@@ -81,6 +88,7 @@ data SOA = SOA
 	 , sRecord :: [Record]
 	 -- ^ Records for the root of the domain. Typically NS, A, TXT
 	 }
+	 deriving (Read, Show, Eq)
 
 -- | Types of DNS records.
 --
@@ -92,11 +100,13 @@ data Record
 	| MX Int BindDomain
 	| NS BindDomain
 	| TXT String
+	deriving (Read, Show, Eq)
 
 type Ipv4 = String
 type Ipv6 = String
 
-type SerialNumber = Integer
+-- | Bind serial numbers are unsigned, 32 bit integers.
+type SerialNumber = CInt
 
 -- | Domains in the zone file must end with a period if they are absolute.
 --
@@ -105,6 +115,7 @@ type SerialNumber = Integer
 --
 -- The SOADomain refers to the root SOA record.
 data BindDomain = RelDomain Domain | AbsDomain Domain | SOADomain
+	deriving (Read, Show, Eq)
 
 dValue :: BindDomain -> String
 dValue (RelDomain d) = d
@@ -127,7 +138,7 @@ rValue (MX pri d) = show pri ++ " " ++ dValue d
 rValue (NS d) = dValue d
 rValue (TXT s) = [q] ++ filter (/= q) s ++ [q]
   where
-	q = '\"'
+	q = '"'
 
 -- | Adjusts the serial number of the zone to 
 --
@@ -138,36 +149,59 @@ nextSerialNumber (Zone soa l) oldserial = Zone soa' l
   where
 	soa' = soa { sSerial = succ $ max (sSerial soa) oldserial }
 
+incrSerialNumber :: Zone -> Zone
+incrSerialNumber (Zone soa l) = Zone soa' l
+  where
+	soa' = soa { sSerial = succ (sSerial soa) }
+
+-- | Propellor uses a serial number derived from the current date and time.
+--
+-- This ensures that, even if zone files are being generated on
+-- multiple hosts, the serial numbers will not get out of sync between
+-- them.
+--
+-- Since serial numbers are limited to 32 bits, the number of seconds
+-- since the epoch is divided by 5. This will work until the year 2650,
+-- at which point this stupid limit had better have been increased to
+-- 128 bits. If we didn't divide by 5, it would only work up to 2106!
+--
+-- Dividing by 5 means that this number only changes once every 5 seconds.
+-- If propellor is running more often than once every 5 seconds, you're
+-- doing something wrong.
+currentSerialNumber :: IO SerialNumber
+currentSerialNumber = calc <$> getPOSIXTime
+  where
+	calc t = floor (t / 5)
+
 -- | Write a Zone out to a to a file.
 --
 -- The serial number that is written to the file comes from larger of the
 -- Zone's SOA serial number, and the last serial number used in the file.
 -- This ensures that serial number always increases, while also letting
 -- a Zone contain an existing serial number, which may be quite large.
---
--- TODO: This increases the serial number when propellor is running on the
--- same host and generating its zone there, but what if the DNS host is
--- changed? We'd then want to remember the actual serial number and
--- propigate it to the new DNS host.
 writeZoneFile :: Zone -> FilePath -> IO ()
 writeZoneFile z f = do
 	oldserial <- nextZoneFileSerialNumber f
-	let z'@(Zone soa' _) = nextSerialNumber z oldserial
+	let z' = nextSerialNumber z oldserial
 	writeFile f (genZoneFile z')
-	writeFile (zoneSerialFile f) (show $ sSerial soa')
+	writeZonePropellorFile f z'
 
--- | Next to the zone file, is a ".serial" file, which contains
--- the SOA Serial number of that zone. This saves the bother of parsing
--- this horrible format.
-zoneSerialFile :: FilePath -> FilePath
-zoneSerialFile f = f ++ ".serial"
+-- | Next to the zone file, is a ".propellor" file, which contains
+-- the serialized Zone. This saves the bother of parsing
+-- the horrible bind zone file format.
+zonePropellorFile :: FilePath -> FilePath
+zonePropellorFile f = f ++ ".serial"
 
 nextZoneFileSerialNumber :: FilePath -> IO SerialNumber
-nextZoneFileSerialNumber = maybe 1 (+1) <$$> readZoneSerialFile
+nextZoneFileSerialNumber = maybe 1 (sSerial . zSOA . incrSerialNumber)
+	<$$> readZonePropellorFile
 
-readZoneSerialFile :: FilePath -> IO (Maybe SerialNumber)
-readZoneSerialFile f = catchDefaultIO Nothing $
-	readish <$> readFile (zoneSerialFile f)
+writeZonePropellorFile :: FilePath -> Zone -> IO ()
+writeZonePropellorFile f z = writeFile (zonePropellorFile f) (show z)
+
+readZonePropellorFile :: FilePath -> IO (Maybe Zone)
+readZonePropellorFile f = catchDefaultIO Nothing $
+	readish <$> readFile (zonePropellorFile f)
 
 -- | Generating a zone file.
 genZoneFile :: Zone -> String
