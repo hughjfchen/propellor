@@ -157,8 +157,8 @@ buildDepIn dir = go `requires` installedMin ["devscripts", "equivs"]
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
 robustly :: Property -> Property
-robustly p = property (propertyDesc p) $ do
-	r <- ensureProperty p
+robustly p = adjustProperty p $ \satisfy -> do
+	r <- satisfy
 	if r == FailedChange
 		then ensureProperty $ p `requires` update
 		else return r

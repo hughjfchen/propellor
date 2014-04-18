@@ -8,12 +8,11 @@ module Propellor.Types
 	, HostName
 	, Propellor(..)
 	, Property(..)
-	, property
 	, RevertableProperty(..)
 	, IsProp
 	, describe
 	, toProp
-	, getAttr
+	, setAttr
 	, requires
 	, Desc
 	, Result(..)
@@ -34,7 +33,7 @@ import "MonadCatchIO-transformers" Control.Monad.CatchIO
 import Propellor.Types.Attr
 import Propellor.Types.OS
 
-data Host = Host [Property] (Attr -> Attr)
+data Host = Host [Property] SetAttr
 
 -- | Propellor's monad provides read-only access to attributes of the
 -- system.
@@ -55,12 +54,9 @@ data Property = Property
 	{ propertyDesc :: Desc
 	, propertySatisfy :: Propellor Result
 	-- ^ must be idempotent; may run repeatedly
-	, propertyAttr :: Attr -> Attr
+	, propertyAttr :: SetAttr
 	-- ^ a property can affect the overall Attr
 	}
-
-property :: Desc -> Propellor Result -> Property
-property d s = Property d s id
 
 -- | A property that can be reverted.
 data RevertableProperty = RevertableProperty Property Property
@@ -72,12 +68,12 @@ class IsProp p where
 	-- | Indicates that the first property can only be satisfied
 	-- once the second one is.
 	requires :: p -> Property -> p
-	getAttr :: p -> (Attr -> Attr)
+	setAttr :: p -> SetAttr
 
 instance IsProp Property where
 	describe p d = p { propertyDesc = d }
 	toProp p = p
-	getAttr = propertyAttr
+	setAttr = propertyAttr
 	x `requires` y = Property (propertyDesc x) satisfy attr
 	  where
 	  	attr = propertyAttr x . propertyAttr y
@@ -95,8 +91,8 @@ instance IsProp RevertableProperty where
 	toProp (RevertableProperty p1 _) = p1
 	(RevertableProperty p1 p2) `requires` y =
 		RevertableProperty (p1 `requires` y) p2
-	-- | Gets the Attr of the currently active side.
-	getAttr (RevertableProperty p1 _p2) = getAttr p1
+	-- | Return the SetAttr of the currently active side.
+	setAttr (RevertableProperty p1 _p2) = setAttr p1
 
 type Desc = String
 

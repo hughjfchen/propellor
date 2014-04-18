@@ -12,6 +12,7 @@ import Data.List
 import "mtl" Control.Monad.Reader
 
 import Propellor.Types
+import Propellor.Property
 import Utility.Monad
 import Utility.SafeCommand
 import Utility.Env

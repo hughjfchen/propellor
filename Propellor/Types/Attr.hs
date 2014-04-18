@@ -42,3 +42,5 @@ newAttr hn = Attr hn S.empty Nothing Nothing Nothing []
 
 type HostName = String
 type Domain = String
+
+type SetAttr = Attr -> Attr

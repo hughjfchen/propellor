@@ -15,7 +15,5 @@
 * There is no way for a property of a docker container to require
   some property be met outside the container. For example, some servers
   need ntp installed for a good date source.
-* Attributes can only be set in the top level property list for a Host.
-  If an attribute is set inside a propertyList, it won't propigate out.
-  Fix this. Probably the fix involves combining AttrProperty into Property.
-  Then propertyList can gather the attributes from its list.
+* Docking a container in a host should add to the host any cnames that
+  are assigned to the container.

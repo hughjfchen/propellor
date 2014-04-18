@@ -10,7 +10,7 @@ import qualified Data.Set as S
 import qualified Data.Map as M
 import Control.Applicative
 
-pureAttrProperty :: Desc -> (Attr -> Attr) -> Property 
+pureAttrProperty :: Desc -> SetAttr -> Property 
 pureAttrProperty desc = Property ("has " ++ desc) (return NoChange)
 
 hostname :: HostName -> Property
@@ -35,7 +35,7 @@ cnameFor domain mkp =
 	let p = mkp domain
 	in p { propertyAttr = propertyAttr p . addCName domain }
 
-addCName :: HostName -> Attr -> Attr
+addCName :: HostName -> SetAttr
 addCName domain d = d { _cnames = S.insert domain (_cnames d) }
 
 sshPubKey :: String -> Property
