@@ -2,7 +2,7 @@ module Propellor.Types.Dns where
 
 import Propellor.Types.OS (HostName)
 
-import Foreign.C.Types
+import Data.Word
 
 type Domain = String
 
@@ -65,7 +65,7 @@ getIPAddr (Address addr) = Just addr
 getIPAddr _ = Nothing
 
 -- | Bind serial numbers are unsigned, 32 bit integers.
-type SerialNumber = CInt
+type SerialNumber = Word32
 
 -- | Domains in the zone file must end with a period if they are absolute.
 --

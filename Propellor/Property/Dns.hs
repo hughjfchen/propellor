@@ -3,12 +3,10 @@ module Propellor.Property.Dns (
 	secondary,
 	servingZones,
 	mkSOA,
-	nextSerialNumber,
-	incrSerialNumber,
-	currentSerialNumber,
 	writeZoneFile,
-	genZoneFile,
-	genSOA,
+	nextSerialNumber,
+	adjustSerialNumber,
+	serialNumberOffset,
 ) where
 
 import Propellor
@@ -19,7 +17,6 @@ import qualified Propellor.Property.Service as Service
 import Utility.Applicative
 
 import Data.List
-import Data.Time.Clock.POSIX
 
 namedconf :: FilePath
 namedconf = "/etc/bind/named.conf.local"
@@ -64,10 +61,18 @@ servingZones zs = hasContent namedconf (concatMap confStanza zs)
 	`onChange` Service.reloaded "bind9"
 
 -- |  Generates a SOA with some fairly sane numbers in it.
-mkSOA :: Domain -> [Record] -> SOA
-mkSOA d rs = SOA
+--
+-- The SerialNumber can be whatever serial number was used by the domain
+-- before propellor started managing it. Or 0 if the domain has only ever
+-- been managed by propellor.
+--
+-- You do not need to increment the SerialNumber when making changes!
+-- Propellor will automatically add the number of commits in the git
+-- repository to the SerialNumber.
+mkSOA :: Domain -> SerialNumber -> [Record] -> SOA
+mkSOA d sn rs = SOA
 	{ sDomain = AbsDomain d
-	, sSerial = 1
+	, sSerial = sn
 	, sRefresh = hours 4
 	, sRetry = hours 1
 	, sExpire = 2419200 -- 4 weeks
@@ -102,47 +107,33 @@ rValue (TXT s) = [q] ++ filter (/= q) s ++ [q]
 
 -- | Adjusts the serial number of the zone to 
 --
--- * Always be larger than the passed SerialNumber
 -- * Always be larger than the serial number in the Zone record.
+-- * Always be larger than the passed SerialNumber
 nextSerialNumber :: Zone -> SerialNumber -> Zone
-nextSerialNumber (Zone soa l) oldserial = Zone soa' l
-  where
-	soa' = soa { sSerial = succ $ max (sSerial soa) oldserial }
+nextSerialNumber z serial = adjustSerialNumber z $ \sn -> succ $ max sn serial
 
-incrSerialNumber :: Zone -> Zone
-incrSerialNumber (Zone soa l) = Zone soa' l
+adjustSerialNumber :: Zone -> (SerialNumber -> SerialNumber) -> Zone
+adjustSerialNumber (Zone soa l) f = Zone soa' l
   where
-	soa' = soa { sSerial = succ (sSerial soa) }
+	soa' = soa { sSerial = f (sSerial soa) }
 
--- | Propellor uses a serial number derived from the current date and time.
---
--- This ensures that, even if zone files are being generated on
--- multiple hosts, the serial numbers will not get out of sync between
--- them.
---
--- Since serial numbers are limited to 32 bits, the number of seconds
--- since the epoch is divided by 5. This will work until the year 2650,
--- at which point this stupid limit had better have been increased to
--- 128 bits. If we didn't divide by 5, it would only work up to 2106!
---
--- Dividing by 5 means that this number only changes once every 5 seconds.
--- If propellor is running more often than once every 5 seconds, you're
--- doing something wrong.
-currentSerialNumber :: IO SerialNumber
-currentSerialNumber = calc <$> getPOSIXTime
-  where
-	calc t = floor (t / 5)
+-- | Count the number of git commits made to the current branch.
+serialNumberOffset :: IO SerialNumber
+serialNumberOffset = fromIntegral . length . lines
+	<$> readProcess "git" ["log", "--pretty=%H"]
 
 -- | Write a Zone out to a to a file.
 --
--- The serial number that is written to the file comes from larger of the
--- Zone's SOA serial number, and the last serial number used in the file.
--- This ensures that serial number always increases, while also letting
--- a Zone contain an existing serial number, which may be quite large.
+-- The serial number in the Zone automatically has the serialNumberOffset
+-- added to it. Also, just in case, the old serial number used in the zone
+-- file is checked, and if it is somehow larger, its succ is used.
 writeZoneFile :: Zone -> FilePath -> IO ()
 writeZoneFile z f = do
-	oldserial <- nextZoneFileSerialNumber f
-	let z' = nextSerialNumber z oldserial
+	oldserial <- oldZoneFileSerialNumber f
+	offset <- serialNumberOffset
+	let z' = nextSerialNumber
+		(adjustSerialNumber z (+ offset))
+		(succ oldserial)
 	writeFile f (genZoneFile z')
 	writeZonePropellorFile f z'
 
@@ -152,9 +143,8 @@ writeZoneFile z f = do
 zonePropellorFile :: FilePath -> FilePath
 zonePropellorFile f = f ++ ".serial"
 
-nextZoneFileSerialNumber :: FilePath -> IO SerialNumber
-nextZoneFileSerialNumber = maybe 1 (sSerial . zSOA . incrSerialNumber)
-	<$$> readZonePropellorFile
+oldZoneFileSerialNumber :: FilePath -> IO SerialNumber
+oldZoneFileSerialNumber = maybe 0 (sSerial . zSOA) <$$> readZonePropellorFile
 
 writeZonePropellorFile :: FilePath -> Zone -> IO ()
 writeZonePropellorFile f z = writeFile (zonePropellorFile f) (show z)
@@ -210,3 +200,9 @@ genSOA soa = unlines $
 com :: String -> String
 com s = "; " ++ s
 
+-- | Generates a Zone for a particular Domain from the DNS properies of all
+-- hosts that propellor knows about that are in that Domain.
+genZone :: [Host] -> Domain -> SOA -> Zone
+genZone hosts domain soa = Zone soa zhosts
+  where
+	zhosts = undefined -- TODO
