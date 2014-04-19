@@ -22,11 +22,6 @@ the full power of Haskell. Hopefully that power can be put to good use in
 making declarative properties that are powerful, nicely idempotent, and
 easy to adapt to a system's special needs.
 
-Also avoided is any form of node classification. Ie, which hosts are part
-of which classes and share which configuration. It might be nice to use
-reclass[1], but then again a host is configured using simply haskell code,
-and so it's easy to factor out things like classes of hosts as desired.
-
 ## quick start
 
 1. Get propellor installed
@@ -101,5 +96,3 @@ for available fields.
 
 Set `PROPELLOR_DEBUG=1` to make propellor print out all the commands it runs
 and any other debug messages that Properties choose to emit.
-
-[1] http://reclass.pantsfullofunix.net/
