@@ -245,7 +245,7 @@ writeZonePropellorFile f z = writeFile (zonePropellorFile f) (show z)
 
 readZonePropellorFile :: FilePath -> IO (Maybe Zone)
 readZonePropellorFile f = catchDefaultIO Nothing $
-	readish <$> readFile (zonePropellorFile f)
+	readish <$> readFileStrict (zonePropellorFile f)
 
 -- | Generating a zone file.
 genZoneFile :: Zone -> String
