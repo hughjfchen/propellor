@@ -2,8 +2,11 @@
 
 [[!sidebar content="""
 [[install]]  
-[API documentation](hackage.haskell.org/package/propellor)
+[API documentation](http://hackage.haskell.org/package/propellor)
+[sample config file](http://git.joeyh.name/?p=propellor.git;a=blob;f=config-joey.hs)
 [[todo]]
 """]]
+
+[[!toc]]
 
 [[!inline raw=yes README.mdwn]]
