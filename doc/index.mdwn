@@ -1,0 +1,8 @@
+[[!meta title="propellor: property-based host configuration management in haskell"]]
+
+[[!sidebar content="""
+[[install]]  
+[[todo]]
+"""]]
+
+[[!inline raw=yes README.mdwn]]
