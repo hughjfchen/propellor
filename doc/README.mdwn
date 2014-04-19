@@ -8,11 +8,6 @@ in `~/.propellor/` on your development machine. Propellor clones the
 repository to each host it manages, in a 
 [secure](http://propellor.branchable.com/security/) way.
 
-To trigger propellor to run on a host, run `propellor --spin $host`.
-Or run `/usr/local/propellor/propellor` on the host. Or use the
-[runPropellor property](http://hackage.haskell.org/package/propellor-0.4.0/docs/Propellor-Property-Cron.html)
-to have Propellor set up a cron job.
-
 Properties are defined using Haskell. Edit `~/.propellor/config.hs`
 to get started. There is fairly complete 
 [API documentation](http://hackage.haskell.org/package/propellor/),
