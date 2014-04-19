@@ -2,6 +2,7 @@ module Propellor.Property.Dns (
 	module Propellor.Types.Dns,
 	primary,
 	secondary,
+	secondaryFor,
 	mkSOA,
 	rootAddressesFrom,
 	writeZoneFile,
@@ -71,10 +72,23 @@ primary hosts domain soa rs = withwarnings (check needupdate baseprop)
 
 -- | Secondary dns server for a domain.
 --
+-- The primary server is determined by looking at the properties of other
+-- hosts to find which one is configured as the primary.
+--
 -- Note that if a host is declared to be a primary and a secondary dns
 -- server for the same domain, the primary server config always wins.
-secondary :: [Host] -> Domain -> HostName -> Property
-secondary hosts domain master = pureAttrProperty desc (addNamedConf conf)
+secondary :: [Host] -> Domain -> Property
+secondary hosts domain = secondaryFor masters hosts domain
+  where
+	masters = M.keys $ M.filter ismaster $ hostAttrMap hosts
+	ismaster attr = case M.lookup domain (_namedconf attr) of
+		Nothing -> False
+		Just conf -> confType conf == Master && confDomain conf == domain
+
+-- | This variant is useful if the primary server does not have its DNS
+-- configured via propellor.
+secondaryFor :: [HostName] -> [Host] -> Domain -> -> Property
+secondaryFor masters hosts domain = pureAttrProperty desc (addNamedConf conf)
 	`requires` servingZones
   where
  	desc = "dns secondary for " ++ domain
@@ -82,7 +96,7 @@ secondary hosts domain master = pureAttrProperty desc (addNamedConf conf)
 		{ confDomain = domain
 		, confType = Secondary
 		, confFile = "db." ++ domain
-		, confMasters = hostAddresses master hosts
+		, confMasters = concatMap (\m -> hostAddresses m hosts) masters
 		, confLines = ["allow-transfer { }"]
 		}
 

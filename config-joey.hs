@@ -246,15 +246,15 @@ cleanCloudAtCost = propertyList "cloudatcost cleanup"
 
 myDnsSecondary :: Property
 myDnsSecondary = propertyList "dns secondary for all my domains"
-	[ Dns.secondary hosts "kitenet.net" master
-	, Dns.secondary hosts "joeyh.name" master
-	, Dns.secondary hosts "ikiwiki.info" master
-	, Dns.secondary hosts "olduse.net" master
-	, Dns.secondary hosts "branchable.com" branchablemaster
+	[ Dns.secondaryFor wren hosts "kitenet.net"
+	, Dns.secondaryFor wren hosts "joeyh.name"
+	, Dns.secondaryFor wren hosts "ikiwiki.info"
+	, Dns.secondary hosts "olduse.net"
+	, Dns.secondaryFor branchable hosts "branchable.com"
 	]
   where
-	master = "wren.kitenet.net"
-	branchablemaster = "branchable.com"
+	wren = ["wren.kitenet.net"]
+	branchable = ["branchable.com"]
 
 main :: IO ()
 main = defaultMain hosts
