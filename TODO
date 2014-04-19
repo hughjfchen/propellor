@@ -23,4 +23,4 @@
   PrivData..), or the public key should not be stored in
   the PrivData, and instead configured using the attr.
   Getting the ssh host key into the attr will allow automatically
-  exporting it via DNS.
+  exporting it via DNS (SSHFP record)

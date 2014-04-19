@@ -48,18 +48,18 @@ hosts =               --                  (o)  `
 		& Postfix.satellite
 		& Docker.configured
 
-		& cname "shell.olduse.net"
+		& aka "shell.olduse.net"
 		& JoeySites.oldUseNetShellBox
 
-		& cname "openid.kitenet.net"
+		& aka "openid.kitenet.net"
 		& Docker.docked hosts "openid-provider"
 		 	`requires` Apt.installed ["ntp"]
 
-		& cname "ancient.kitenet.net"
+		& aka "ancient.kitenet.net"
 		& Docker.docked hosts "ancient-kitenet"
 
 		-- I'd rather this were on diatom, but it needs unstable.
-		& cname "kgb.kitenet.net"
+		& aka "kgb.kitenet.net"
 		& JoeySites.kgbServer
 
 		& Docker.garbageCollected `period` Daily
@@ -112,25 +112,25 @@ hosts =               --                  (o)  `
 		& Apache.multiSSL
 		& File.ownerGroup "/srv/web" "joey" "joey"
 
-		& cname "git.kitenet.net"
-		& cname "git.joeyh.name"
+		& aka "git.kitenet.net"
+		& aka "git.joeyh.name"
 		& JoeySites.gitServer hosts
 	
-		& cname "downloads.kitenet.net"
+		& aka "downloads.kitenet.net"
 		& JoeySites.annexWebSite hosts "/srv/git/downloads.git"
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
 		& JoeySites.annexRsyncServer
 
-		& cname "tmp.kitenet.net"
+		& aka "tmp.kitenet.net"
 		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"
 			"tmp.kitenet.net"
 			"26fd6e38-1226-11e2-a75f-ff007033bdba"
 			[]
 		& JoeySites.twitRss
 		
-		& cname "nntp.olduse.net"
+		& aka "nntp.olduse.net"
 		& JoeySites.oldUseNetServer hosts
 		
 		& Apt.installed ["ntop"]
@@ -285,11 +285,11 @@ monsters =	      -- but do want to track their public keys etc.
 	, host "wren.kitenet.net"
 		& ipv4 "80.68.85.49"
 		& ipv6 "2001:41c8:125:49::10"
-		& cname "kite.kitenet.net"
+		& aka "kite.kitenet.net"
 	, host "branchable.com"
 		& ipv4 "66.228.46.55"
 		& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
-		& cname "olduse.net"
-		& cname "www.olduse.net"
-		& cname "git.olduse.net"
+		& aka "olduse.net"
+		& aka "www.olduse.net"
+		& aka "git.olduse.net"
 	]

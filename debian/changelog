@@ -5,6 +5,8 @@ propellor (0.4.0) UNRELEASED; urgency=medium
     So Attr settings can be made inside a propertyList, for example.
   * Run all cron jobs under chronic from moreutils to avoid unnecessary
     mails.
+  * The `cname` property was renamed to `aka` as it does not always generate
+    CNAME in the DNS.
 
  -- Joey Hess <joeyh@debian.org>  Thu, 17 Apr 2014 21:00:43 -0400
 

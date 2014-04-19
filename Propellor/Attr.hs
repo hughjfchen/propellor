@@ -41,15 +41,10 @@ ipv6 :: String -> Property
 ipv6 addr = pureAttrProperty ("ipv6 " ++ addr)
 	(addDNS $ Address $ IPv6 addr)
 
--- | Indicate that a host has a CNAME pointing at it in the DNS.
-cname :: Domain -> Property
-cname domain = pureAttrProperty ("cname " ++ domain)
+-- | Indicates another name for the host in the DNS.
+aka :: Domain -> Property
+aka domain = pureAttrProperty ("aka " ++ domain)
 	(addDNS $ CNAME $ AbsDomain domain)
-
-cnameFor :: Domain -> (Domain -> Property) -> Property
-cnameFor domain mkp =
-	let p = mkp domain
-	in p { propertyAttr = propertyAttr p . addDNS (CNAME $ AbsDomain domain) }
 
 addDNS :: Record -> SetAttr
 addDNS record d = d { _dns = S.insert record (_dns d) }
