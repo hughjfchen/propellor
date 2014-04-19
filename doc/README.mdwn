@@ -23,7 +23,7 @@ making declarative properties that are powerful, nicely idempotent, and
 easy to adapt to a system's special needs!
 
 If using Haskell to configure Propellor seems intimidating,
-see [configuration_for_the_Haskell_newbie](https://propellor.branchable.com/haskell_newbie/).
+see [configuration for the Haskell newbie](https://propellor.branchable.com/haskell_newbie/).
 
 ## quick start
 
