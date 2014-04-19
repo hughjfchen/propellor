@@ -11,6 +11,19 @@
 
 [[!inline raw=yes pages="README"]]
 
+## enjoy
+
+Hope you find Propellor fun and useful!
+
+<pre>
+                      --     _         ______`|                          ,-.__ 
+ {- Propellor          --  /   \___-=O`/|O`/__|                         (____.'
+    Deployed -}         -- \          / | /    )             _.-"-._
+                        --  `/-==__ _/__|/__=-|             (       \_
+hosts :: [Host]        --   *             \ | |              '--------'
+hosts =               --                  (o)  `
+</pre>
+
 ## news
 
 [[!inline pages="news/* and !*/Discussion" show="4" archive=yes]]
