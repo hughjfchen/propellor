@@ -38,12 +38,12 @@ stub to go run itself. No need to ever change this part.
 -- Edit this to configure propellor!
 hosts :: [Host]
 hosts =
-	[ host "mybox.example.com"
-		& Apt.stdSourcesList Unstable
-	, host "server.example.com"
-		& Apt.stdSourcesList Stable
-		& Apt.installed ["ssh"]
-	]
+    [ host "mybox.example.com"
+        & Apt.stdSourcesList Unstable
+    , host "server.example.com"
+        & Apt.stdSourcesList Stable
+        & Apt.installed ["ssh"]
+    ]
 """]]
 
 This defines a list of hosts, with two hosts in it. 
@@ -59,9 +59,9 @@ the second host has 2 properties.
 Some other properties you may find in your config.hs, or want to add:
 
 [[!format haskell """
-		& Apt.unattendedUpgrades
-		& User.hasSomePassword "root"
-		& Cron.runPropellor "30 * * * *"
+        & Apt.unattendedUpgrades
+        & User.hasSomePassword "root"
+        & Cron.runPropellor "30 * * * *"
 """]]
 
 Some of these properties can be reverted -- this makes Propellor undo whatever
@@ -70,7 +70,7 @@ maybe you turned that on, but want to disable it now. To do so, just change
 the "&" to a "!"
 
 [[!format haskell """
-		! Apt.unattendedUpgrades
+        ! Apt.unattendedUpgrades
 """]]
 
 Some properties cannot be reverted. Yet. It takes coding to implement
