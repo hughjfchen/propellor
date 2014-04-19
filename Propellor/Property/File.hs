@@ -18,7 +18,7 @@ f `hasContent` newcontent = fileProperty ("replace " ++ f)
 -- The file's permissions are preserved if the file already existed.
 -- Otherwise, they're set to 600.
 hasPrivContent :: FilePath -> Property
-hasPrivContent f = Property desc $ withPrivData (PrivFile f) $ \privcontent -> 
+hasPrivContent f = property desc $ withPrivData (PrivFile f) $ \privcontent -> 
 	ensureProperty $ fileProperty' writeFileProtected desc
 		(\_oldcontent -> lines privcontent) f
   where
@@ -48,13 +48,13 @@ f `lacksLine` l = fileProperty (f ++ " remove: " ++ l) (filter (/= l)) f
 
 -- | Removes a file. Does not remove symlinks or non-plain-files.
 notPresent :: FilePath -> Property
-notPresent f = check (doesFileExist f) $ Property (f ++ " not present") $ 
+notPresent f = check (doesFileExist f) $ property (f ++ " not present") $ 
 	makeChange $ nukeFile f
 
 fileProperty :: Desc -> ([Line] -> [Line]) -> FilePath -> Property
 fileProperty = fileProperty' writeFile
 fileProperty' :: (FilePath -> String -> IO ()) -> Desc -> ([Line] -> [Line]) -> FilePath -> Property
-fileProperty' writer desc a f = Property desc $ go =<< liftIO (doesFileExist f)
+fileProperty' writer desc a f = property desc $ go =<< liftIO (doesFileExist f)
   where
 	go True = do
 		ls <- liftIO $ lines <$> readFile f
@@ -74,12 +74,12 @@ fileProperty' writer desc a f = Property desc $ go =<< liftIO (doesFileExist f)
 
 -- | Ensures a directory exists.
 dirExists :: FilePath -> Property
-dirExists d = check (not <$> doesDirectoryExist d) $ Property (d ++ " exists") $
+dirExists d = check (not <$> doesDirectoryExist d) $ property (d ++ " exists") $
 	makeChange $ createDirectoryIfMissing True d
 
 -- | Ensures that a file/dir has the specified owner and group.
 ownerGroup :: FilePath -> UserName -> GroupName -> Property
-ownerGroup f owner group = Property (f ++ " owner " ++ og) $ do
+ownerGroup f owner group = property (f ++ " owner " ++ og) $ do
 	r <- ensureProperty $ cmdProperty "chown" [og, f]
 	if r == FailedChange
 		then return r
@@ -89,6 +89,6 @@ ownerGroup f owner group = Property (f ++ " owner " ++ og) $ do
 
 -- | Ensures that a file/dir has the specfied mode.
 mode :: FilePath -> FileMode -> Property
-mode f v = Property (f ++ " mode " ++ show v) $ do
+mode f v = property (f ++ " mode " ++ show v) $ do
 	liftIO $ modifyFileMode f (\_old -> v)
 	noChange

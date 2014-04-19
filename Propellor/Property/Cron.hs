@@ -33,7 +33,7 @@ job desc times user cddir command = cronjobfile `File.hasContent`
 	`requires` Apt.installed ["util-linux", "moreutils"]
 	`describe` ("cronned " ++ desc)
   where
-	cmdline = "cd " ++ cddir ++ " && " ++ command
+	cmdline = "cd " ++ cddir ++ " && ( " ++ command ++ " )"
 	cronjobfile = "/etc/cron.d/" ++ map sanitize desc
 	sanitize c
 		| isAlphaNum c = c

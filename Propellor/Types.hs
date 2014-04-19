@@ -5,15 +5,13 @@
 module Propellor.Types
 	( Host(..)
 	, Attr
-	, HostName
 	, Propellor(..)
 	, Property(..)
 	, RevertableProperty(..)
-	, AttrProperty(..)
 	, IsProp
 	, describe
 	, toProp
-	, getAttr
+	, setAttr
 	, requires
 	, Desc
 	, Result(..)
@@ -23,6 +21,7 @@ module Propellor.Types
 	, GpgKeyId
 	, SshKeyType(..)
 	, module Propellor.Types.OS
+	, module Propellor.Types.Dns
 	) where
 
 import Data.Monoid
@@ -33,8 +32,9 @@ import "MonadCatchIO-transformers" Control.Monad.CatchIO
 
 import Propellor.Types.Attr
 import Propellor.Types.OS
+import Propellor.Types.Dns
 
-data Host = Host [Property] (Attr -> Attr)
+data Host = Host [Property] SetAttr
 
 -- | Propellor's monad provides read-only access to attributes of the
 -- system.
@@ -53,15 +53,14 @@ newtype Propellor p = Propellor { runWithAttr :: ReaderT Attr IO p }
 -- property.
 data Property = Property
 	{ propertyDesc :: Desc
-	-- | must be idempotent; may run repeatedly
 	, propertySatisfy :: Propellor Result
+	-- ^ must be idempotent; may run repeatedly
+	, propertyAttr :: SetAttr
+	-- ^ a property can affect the overall Attr
 	}
 
 -- | A property that can be reverted.
 data RevertableProperty = RevertableProperty Property Property
-
--- | A property that affects the Attr.
-data AttrProperty = forall p. IsProp p => AttrProperty p (Attr -> Attr)
 
 class IsProp p where
 	-- | Sets description.
@@ -70,17 +69,21 @@ class IsProp p where
 	-- | Indicates that the first property can only be satisfied
 	-- once the second one is.
 	requires :: p -> Property -> p
-	getAttr :: p -> (Attr -> Attr)
+	setAttr :: p -> SetAttr
 
 instance IsProp Property where
 	describe p d = p { propertyDesc = d }
 	toProp p = p
-	x `requires` y = Property (propertyDesc x) $ do
-		r <- propertySatisfy y
-		case r of
-			FailedChange -> return FailedChange
-			_ -> propertySatisfy x
-	getAttr _ = id
+	setAttr = propertyAttr
+	x `requires` y = Property (propertyDesc x) satisfy attr
+	  where
+	  	attr = propertyAttr x . propertyAttr y
+		satisfy = do
+			r <- propertySatisfy y
+			case r of
+				FailedChange -> return FailedChange
+				_ -> propertySatisfy x
+			
 
 instance IsProp RevertableProperty where
 	-- | Sets the description of both sides.
@@ -89,13 +92,8 @@ instance IsProp RevertableProperty where
 	toProp (RevertableProperty p1 _) = p1
 	(RevertableProperty p1 p2) `requires` y =
 		RevertableProperty (p1 `requires` y) p2
-	getAttr _ = id
-
-instance IsProp AttrProperty where
-	describe (AttrProperty p a) d = AttrProperty (describe p d) a
-	toProp (AttrProperty p _) = toProp p
-	(AttrProperty p a) `requires` y = AttrProperty (p `requires` y) a
-	getAttr (AttrProperty _ a) = a
+	-- | Return the SetAttr of the currently active side.
+	setAttr (RevertableProperty p1 _p2) = setAttr p1
 
 type Desc = String
 

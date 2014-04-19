@@ -16,9 +16,63 @@ import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Apache as Apache
 import Utility.SafeCommand
 
+import Data.List
+import System.Posix.Files
+
+oldUseNetServer :: [Host] -> Property
+oldUseNetServer hosts = propertyList ("olduse.net server")
+	[ oldUseNetInstalled "oldusenet-server"
+	, Obnam.latestVersion
+	, Obnam.backup datadir "33 4 * * *"
+		[ "--repository=sftp://2318@usw-s002.rsync.net/~/olduse.net"
+		, "--client-name=spool"
+		] Obnam.OnlyClient
+		`requires` Ssh.keyImported SshRsa "root"
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
+	, check (not . isSymbolicLink <$> getSymbolicLinkStatus newsspool) $
+		property "olduse.net spool in place" $ makeChange $ do
+			removeDirectoryRecursive newsspool
+			createSymbolicLink (datadir </> "news") newsspool
+	, Apt.installed ["leafnode"]
+	, "/etc/news/leafnode/config" `File.hasContent` 
+		[ "# olduse.net configuration (deployed by propellor)"
+		, "expire = 1000000" -- no expiry via texpire
+		, "server = " -- no upstream server
+		, "debugmode = 1"
+		, "allowSTRANGERS = 42" -- lets anyone connect
+		, "nopost = 1" -- no new posting (just gather them)
+		]
+	, "/etc/hosts.deny" `File.lacksLine` "leafnode: ALL"
+	, Apt.serviceInstalledRunning "openbsd-inetd"
+	, File.notPresent "/etc/cron.daily/leafnode"
+	, File.notPresent "/etc/cron.d/leafnode"
+	, Cron.niceJob "oldusenet-expire" "11 1 * * *" "news" newsspool $ intercalate ";"
+		[ "find \\( -path ./out.going -or -path ./interesting.groups -or -path './*/.overview' \\) -prune -or -type f -ctime +60  -print | xargs --no-run-if-empty rm"
+		, "find -type d -empty | xargs --no-run-if-empty rmdir"
+		]
+	, Cron.niceJob "oldusenet-uucp" "*/5 * * * *" "news" "/" $
+		"/usr/bin/uucp " ++ datadir
+	, toProp $ Apache.siteEnabled "nntp.olduse.net" $ apachecfg "nntp.olduse.net" False
+		[ "  DocumentRoot " ++ datadir ++ "/"
+		, "  <Directory " ++ datadir ++ "/>"
+		, "    Options Indexes FollowSymlinks"
+		, "    AllowOverride None"
+		-- I had this in the file before.
+		-- This may be needed by a newer version of apache?
+		--, "    Require all granted"
+		, "  </Directory>"
+		]
+	]
+  where
+	newsspool = "/var/spool/news"
+	datadir = "/var/spool/oldusenet"
+
 oldUseNetShellBox :: Property
-oldUseNetShellBox = check (not <$> Apt.isInstalled "oldusenet") $
-	propertyList ("olduse.net shellbox")
+oldUseNetShellBox = oldUseNetInstalled "oldusenet"
+
+oldUseNetInstalled :: Apt.Package -> Property
+oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
+	propertyList ("olduse.net " ++ pkg)
 		[ Apt.installed (words "build-essential devscripts debhelper git libncursesw5-dev libpcre3-dev pkg-config bison libicu-dev libidn11-dev libcanlock2-dev libuu-dev ghc libghc-strptime-dev libghc-hamlet-dev libghc-ifelse-dev libghc-hxt-dev libghc-utf8-string-dev libghc-missingh-dev libghc-sha-dev")
 			`describe` "olduse.net build deps"
 		, scriptProperty
@@ -26,11 +80,12 @@ oldUseNetShellBox = check (not <$> Apt.isInstalled "oldusenet") $
 			, "git clone git://olduse.net/ /root/tmp/oldusenet/source"
 			, "cd /root/tmp/oldusenet/source/"
 			, "dpkg-buildpackage -us -uc"
-			, "dpkg -i ../oldusenet*.deb || true"
+			, "dpkg -i ../" ++ pkg ++ "_*.deb || true"
 			, "apt-get -fy install" -- dependencies
 			, "rm -rf /root/tmp/oldusenet"
 			] `describe` "olduse.net built"
 		]
+
 
 kgbServer :: Property
 kgbServer = withOS desc $ \o -> case o of

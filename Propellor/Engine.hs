@@ -18,7 +18,7 @@ runPropellor attr a = runReaderT (runWithAttr a) attr
 mainProperties :: Attr -> [Property] -> IO ()
 mainProperties attr ps = do
 	r <- runPropellor attr $
-		ensureProperties [Property "overall" $ ensureProperties ps]
+		ensureProperties [Property "overall" (ensureProperties ps) id]
 	setTitle "propellor: done"
 	hFlush stdout
 	case r of

@@ -29,7 +29,7 @@ hasSomePassword user = check ((/= HasPassword) <$> getPasswordStatus user) $
 	hasPassword user
 
 hasPassword :: UserName -> Property
-hasPassword user = Property (user ++ " has password") $
+hasPassword user = property (user ++ " has password") $
 	withPrivData (Password user) $ \password -> makeChange $
 		withHandle StdinHandle createProcessSuccess
 			(proc "chpasswd" []) $ \h -> do

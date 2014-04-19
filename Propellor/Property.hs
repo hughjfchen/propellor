@@ -5,6 +5,7 @@ module Propellor.Property where
 import System.Directory
 import Control.Monad
 import Data.Monoid
+import Data.List
 import Control.Monad.IfElse
 import "mtl" Control.Monad.Reader
 
@@ -15,23 +16,21 @@ import Propellor.Engine
 import Utility.Monad
 import System.FilePath
 
-makeChange :: IO () -> Propellor Result
-makeChange a = liftIO a >> return MadeChange
-
-noChange :: Propellor Result
-noChange = return NoChange
+-- Constructs a Property.
+property :: Desc -> Propellor Result -> Property
+property d s = Property d s id
 
 -- | Combines a list of properties, resulting in a single property
 -- that when run will run each property in the list in turn,
 -- and print out the description of each as it's run. Does not stop
 -- on failure; does propigate overall success/failure.
 propertyList :: Desc -> [Property] -> Property
-propertyList desc ps = Property desc $ ensureProperties ps
+propertyList desc ps = Property desc (ensureProperties ps) (combineSetAttrs ps)
 
 -- | Combines a list of properties, resulting in one property that
 -- ensures each in turn, stopping on failure.
 combineProperties :: Desc -> [Property] -> Property
-combineProperties desc ps = Property desc $ go ps NoChange
+combineProperties desc ps = Property desc (go ps NoChange) (combineSetAttrs ps)
   where
   	go [] rs = return rs
 	go (l:ls) rs = do
@@ -44,26 +43,23 @@ combineProperties desc ps = Property desc $ go ps NoChange
 -- that ensures the first, and if the first succeeds, ensures the second.
 -- The property uses the description of the first property.
 before :: Property -> Property -> Property
-p1 `before` p2 = Property (propertyDesc p1) $ do
-	r <- ensureProperty p1
-	case r of
-		FailedChange -> return FailedChange
-		_ -> ensureProperty p2
+p1 `before` p2 = p2 `requires` p1
+	`describe` (propertyDesc p1)
 
 -- | Makes a perhaps non-idempotent Property be idempotent by using a flag
 -- file to indicate whether it has run before.
 -- Use with caution.
 flagFile :: Property -> FilePath -> Property
-flagFile property = flagFile' property . return
+flagFile p = flagFile' p . return
 
 flagFile' :: Property -> IO FilePath -> Property
-flagFile' property getflagfile = Property (propertyDesc property) $ do
+flagFile' p getflagfile = adjustProperty p $ \satisfy -> do
 	flagfile <- liftIO getflagfile
-	go flagfile =<< liftIO (doesFileExist flagfile)
+	go satisfy flagfile =<< liftIO (doesFileExist flagfile)
   where
-	go _ True = return NoChange
-	go flagfile False = do
-		r <- ensureProperty property
+	go _ _ True = return NoChange
+	go satisfy flagfile False = do
+		r <- satisfy
 		when (r == MadeChange) $ liftIO $ 
 			unlessM (doesFileExist flagfile) $ do
 				createDirectoryIfMissing True (takeDirectory flagfile)
@@ -73,22 +69,24 @@ flagFile' property getflagfile = Property (propertyDesc property) $ do
 --- | Whenever a change has to be made for a Property, causes a hook
 -- Property to also be run, but not otherwise.
 onChange :: Property -> Property -> Property
-property `onChange` hook = Property (propertyDesc property) $ do
-	r <- ensureProperty property
-	case r of
-		MadeChange -> do
-			r' <- ensureProperty hook
-			return $ r <> r'
-		_ -> return r
+p `onChange` hook = Property (propertyDesc p) satisfy (combineSetAttr p hook)
+  where
+	satisfy = do
+		r <- ensureProperty p
+		case r of
+			MadeChange -> do
+				r' <- ensureProperty hook
+				return $ r <> r'
+			_ -> return r
 
 (==>) :: Desc -> Property -> Property
 (==>) = flip describe
 infixl 1 ==>
 
--- | Makes a Property only be performed when a test succeeds.
+-- | Makes a Property only need to do anything when a test succeeds.
 check :: IO Bool -> Property -> Property
-check c property = Property (propertyDesc property) $ ifM (liftIO c)
-	( ensureProperty property
+check c p = adjustProperty p $ \satisfy -> ifM (liftIO c)
+	( satisfy
 	, return NoChange
 	)
 
@@ -99,8 +97,8 @@ check c property = Property (propertyDesc property) $ ifM (liftIO c)
 -- to be made as it is to just idempotently assure the property is
 -- satisfied. For example, chmodding a file.
 trivial :: Property -> Property
-trivial p = Property (propertyDesc p) $ do
-	r <- ensureProperty p
+trivial p = adjustProperty p $ \satisfy -> do
+	r <- satisfy
 	if r == MadeChange
 		then return NoChange
 		else return r
@@ -110,10 +108,10 @@ trivial p = Property (propertyDesc p) $ do
 --
 -- Note that the operating system may not be declared for some hosts.
 withOS :: Desc -> (Maybe System -> Propellor Result) -> Property
-withOS desc a = Property desc $ a =<< getOS
+withOS desc a = property desc $ a =<< getOS
 
 boolProperty :: Desc -> IO Bool -> Property
-boolProperty desc a = Property desc $ ifM (liftIO a)
+boolProperty desc a = property desc $ ifM (liftIO a)
 	( return MadeChange
 	, return FailedChange
 	)
@@ -133,16 +131,33 @@ host hn = Host [] (\_ -> newAttr hn)
 
 -- | Adds a property to a Host
 --
--- Can add Properties, RevertableProperties, and AttrProperties
+-- Can add Properties and RevertableProperties
 (&) :: IsProp p => Host -> p -> Host
-(Host ps as) & p = Host (ps ++ [toProp p]) (getAttr p . as)
+(Host ps as) & p = Host (ps ++ [toProp p]) (setAttr p . as)
 
 infixl 1 &
 
 -- | Adds a property to the Host in reverted form.
 (!) :: Host -> RevertableProperty -> Host
-(Host ps as) ! p = Host (ps ++ [toProp q]) (getAttr q . as)
+(Host ps as) ! p = Host (ps ++ [toProp q]) (setAttr q . as)
   where
 	q = revert p
 
 infixl 1 !
+
+-- Changes the action that is performed to satisfy a property. 
+adjustProperty :: Property -> (Propellor Result -> Propellor Result) -> Property
+adjustProperty p f = p { propertySatisfy = f (propertySatisfy p) }
+
+-- Combines the Attr settings of two properties.
+combineSetAttr :: (IsProp p, IsProp q) => p -> q -> SetAttr
+combineSetAttr p q = setAttr p . setAttr q
+
+combineSetAttrs :: IsProp p => [p] -> SetAttr
+combineSetAttrs = foldl' (.) id . map setAttr
+
+makeChange :: IO () -> Propellor Result
+makeChange a = liftIO a >> return MadeChange
+
+noChange :: Propellor Result
+noChange = return NoChange

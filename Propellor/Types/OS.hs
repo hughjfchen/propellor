@@ -1,5 +1,6 @@
 module Propellor.Types.OS where
 
+type HostName = String
 type UserName = String
 type GroupName = String
 

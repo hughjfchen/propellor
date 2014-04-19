@@ -65,7 +65,7 @@ backup dir crontimes params numclients = cronjob `describe` desc
 -- The restore is performed atomically; restoring to a temp directory
 -- and then moving it to the directory.
 restored :: FilePath -> [ObnamParam] -> Property
-restored dir params = Property (dir ++ " restored by obnam") go
+restored dir params = property (dir ++ " restored by obnam") go
 	`requires` installed
   where
 	go = ifM (liftIO needsRestore)
@@ -97,14 +97,17 @@ installed = Apt.installed ["obnam"]
 
 -- | Ensures that a recent version of obnam gets installed.
 --
--- Only useful on Stable.
+-- Only does anything for Debian Stable.
 latestVersion :: Property
-latestVersion = propertyList "obnam latest version"
-	[ toProp $ Apt.trustsKey key
-	, Apt.setSourcesListD sources "obnam"
-	]
+latestVersion = withOS "obnam latest version" $ \o -> case o of
+	(Just (System (Debian suite) _)) | isStable suite -> ensureProperty $
+		Apt.setSourcesListD (sources suite) "obnam"
+			`requires` toProp (Apt.trustsKey key)
+	_ -> noChange
   where
-	sources = ["deb http://code.liw.fi/debian wheezy main"]
+	sources suite = 
+		[ "deb http://code.liw.fi/debian " ++ Apt.showSuite suite ++ " main"
+		]
 	-- gpg key used by the code.liw.fi repository.
 	key = Apt.AptKey "obnam" $ unlines
 		[ "-----BEGIN PGP PUBLIC KEY BLOCK-----"

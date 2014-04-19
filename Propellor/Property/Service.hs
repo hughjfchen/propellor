@@ -13,19 +13,19 @@ type ServiceName = String
 -- we can do is try to start the service, and if it fails, assume
 -- this means it's already running.
 running :: ServiceName -> Property
-running svc = Property ("running " ++ svc) $ do
+running svc = property ("running " ++ svc) $ do
 	void $ ensureProperty $
 		scriptProperty ["service " ++ shellEscape svc ++ " start >/dev/null 2>&1 || true"]
 	return NoChange
 
 restarted :: ServiceName -> Property
-restarted svc = Property ("restarted " ++ svc) $ do
+restarted svc = property ("restarted " ++ svc) $ do
 	void $ ensureProperty $
 		scriptProperty ["service " ++ shellEscape svc ++ " restart >/dev/null 2>&1 || true"]
 	return NoChange
 
 reloaded :: ServiceName -> Property
-reloaded svc = Property ("reloaded " ++ svc) $ do
+reloaded svc = property ("reloaded " ++ svc) $ do
 	void $ ensureProperty $
 		scriptProperty ["service " ++ shellEscape svc ++ " reload >/dev/null 2>&1 || true"]
 	return NoChange

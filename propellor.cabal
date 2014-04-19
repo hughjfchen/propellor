@@ -1,5 +1,5 @@
 Name: propellor
-Version: 0.3.1
+Version: 0.4.0
 Cabal-Version: >= 1.6
 License: GPL
 Maintainer: Joey Hess <joey@kitenet.net>
@@ -99,6 +99,7 @@ Library
     Propellor.Exception
     Propellor.Types
     Propellor.Types.OS
+    Propellor.Types.Dns
   Other-Modules:
     Propellor.Types.Attr
     Propellor.CmdLine

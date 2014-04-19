@@ -32,11 +32,15 @@ hosts :: [Host]        --   *             \ | |              '--------'
 hosts =               --                  (o)  `
 	-- My laptop
 	[ host "darkstar.kitenet.net"
+		& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
 		& Docker.configured
 		& Apt.buildDep ["git-annex"] `period` Daily
 
 	-- Nothing super-important lives here.
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
+		& ipv4 "162.248.143.249"
+		& ipv6 "2002:5044:5531::1"
+
 		& cleanCloudAtCost
 		& Apt.unattendedUpgrades
 		& Network.ipv6to4
@@ -44,18 +48,18 @@ hosts =               --                  (o)  `
 		& Postfix.satellite
 		& Docker.configured
 
-		& cname "shell.olduse.net"
+		& alias "shell.olduse.net"
 		& JoeySites.oldUseNetShellBox
 
-		& cname "openid.kitenet.net"
+		& alias "openid.kitenet.net"
 		& Docker.docked hosts "openid-provider"
 		 	`requires` Apt.installed ["ntp"]
 
-		& cname "ancient.kitenet.net"
+		& alias "ancient.kitenet.net"
 		& Docker.docked hosts "ancient-kitenet"
 
 		-- I'd rather this were on diatom, but it needs unstable.
-		& cname "kgb.kitenet.net"
+		& alias "kgb.kitenet.net"
 		& JoeySites.kgbServer
 
 		& Docker.garbageCollected `period` Daily
@@ -63,6 +67,8 @@ hosts =               --                  (o)  `
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
+		& ipv4 "138.38.108.179"
+
 		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Postfix.satellite
@@ -76,13 +82,14 @@ hosts =               --                  (o)  `
 	
 	-- Important stuff that needs not too much memory or CPU.
   	, standardSystem "diatom.kitenet.net" Stable "amd64"
+		& ipv4 "107.170.31.195"
+
 		& Hostname.sane
 		& Ssh.hostKey SshDsa
 		& Ssh.hostKey SshRsa
 		& Ssh.hostKey SshEcdsa
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
-		& Dns.zones myDnsSecondary
 		& Postfix.satellite
 	
 		& Apt.serviceInstalledRunning "apache2"
@@ -93,24 +100,40 @@ hosts =               --                  (o)  `
 		& Apache.multiSSL
 		& File.ownerGroup "/srv/web" "joey" "joey"
 
-		& cname "git.kitenet.net"
-		& cname "git.joeyh.name"
+		& alias "git.kitenet.net"
+		& alias "git.joeyh.name"
 		& JoeySites.gitServer hosts
 	
-		& cname "downloads.kitenet.net"
+		& alias "downloads.kitenet.net"
 		& JoeySites.annexWebSite hosts "/srv/git/downloads.git"
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
 		& JoeySites.annexRsyncServer
 
-		& cname "tmp.kitenet.net"
+		& alias "tmp.kitenet.net"
 		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"
 			"tmp.kitenet.net"
 			"26fd6e38-1226-11e2-a75f-ff007033bdba"
 			[]
 		& JoeySites.twitRss
 		
+		& alias "nntp.olduse.net"
+		& alias "resources.olduse.net"
+		& JoeySites.oldUseNetServer hosts
+		
+		& myDnsSecondary
+		& Dns.primary hosts "olduse.net"
+			( Dns.mkSOA "ns1.kitenet.net" 100
+				[ NS (AbsDomain "ns1.kitenet.net")
+				, NS (AbsDomain "ns6.gandi.net")
+				, NS (AbsDomain "ns2.kitenet.net")
+				, MX 0 (AbsDomain "kitenet.net")
+				, TXT "v=spf1 a -all"
+				]
+			)
+			[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk") ]
+
 		& Apt.installed ["ntop"]
 
 
@@ -222,17 +245,17 @@ cleanCloudAtCost = propertyList "cloudatcost cleanup"
 		]
 	]
 
-myDnsSecondary :: [Dns.Zone]
-myDnsSecondary =
-	[ Dns.secondary "kitenet.net" master
-	, Dns.secondary "joeyh.name" master
-	, Dns.secondary "ikiwiki.info" master
-	, Dns.secondary "olduse.net" master
-	, Dns.secondary "branchable.com" branchablemaster
+myDnsSecondary :: Property
+myDnsSecondary = propertyList "dns secondary for all my domains"
+	[ Dns.secondaryFor wren hosts "kitenet.net"
+	, Dns.secondaryFor wren hosts "joeyh.name"
+	, Dns.secondaryFor wren hosts "ikiwiki.info"
+	, Dns.secondary hosts "olduse.net"
+	, Dns.secondaryFor branchable hosts "branchable.com"
 	]
   where
-	master = ["80.68.85.49", "2001:41c8:125:49::10"] -- wren
-	branchablemaster = ["66.228.46.55", "2600:3c03::f03c:91ff:fedf:c0e5"]
+	wren = ["wren.kitenet.net"]
+	branchable = ["branchable.com"]
 
 main :: IO ()
 main = defaultMain hosts
@@ -251,11 +274,23 @@ main = defaultMain hosts
 
 
 monsters :: [Host]    -- Systems I don't manage with propellor,
-monsters =	      -- but do want to track their public keys.
+monsters =	      -- but do want to track their public keys etc.
 	[ host "usw-s002.rsync.net"
 		& sshPubKey "ssh-dss AAAAB3NzaC1kc3MAAAEBAI6ZsoW8a+Zl6NqUf9a4xXSMcV1akJHDEKKBzlI2YZo9gb9YoCf5p9oby8THUSgfh4kse7LJeY7Nb64NR6Y/X7I2/QzbE1HGGl5mMwB6LeUcJ74T3TQAlNEZkGt/MOIVLolJHk049hC09zLpkUDtX8K0t1yaCirC9SxDGLTCLEhvU9+vVdVrdQlKZ9wpLUNbdAzvbra+O/IVvExxDZ9WCHrnfNA8ddVZIGEWMqsoNgiuCxiXpi8qL+noghsSQNFTXwo7W2Vp9zj1JkCt3GtSz5IzEpARQaXEAWNEM0n1nJ686YUOhou64iRM8bPC1lp3QXvvZNgj3m+QHhIempx+de8AAAAVAKB5vUDaZOg14gRn7Bp81ja/ik+RAAABACPH/bPbW912x1NxNiikzGR6clLh+bLpIp8Qie3J7DwOr8oC1QOKjNDK+UgQ7mDQEgr4nGjNKSvpDi4c1QCw4sbLqQgx1y2VhT0SmUPHf5NQFldRQyR/jcevSSwOBxszz3aq9AwHiv9OWaO3XY18suXPouiuPTpIcZwc2BLDNHFnDURQeGEtmgqj6gZLIkTY0iw7q9Tj5FOyl4AkvEJC5B4CSzaWgey93Wqn1Imt7KI8+H9lApMKziVL1q+K7xAuNkGmx5YOSNlE6rKAPtsIPHZGxR7dch0GURv2jhh0NQYvBRn3ukCjuIO5gx56HLgilq59/o50zZ4NcT7iASF76TcAAAEAC6YxX7rrs8pp13W4YGiJHwFvIO1yXLGOdqu66JM0plO4J1ItV1AQcazOXLiliny3p2/W+wXZZKd5HIRt52YafCA8YNyMk/sF7JcTR4d4z9CfKaAxh0UpzKiAk+0j/Wu3iPoTOsyt7N0j1+dIyrFodY2sKKuBMT4TQ0yqQpbC+IDQv2i1IlZAPneYGfd5MIGygs2QMfaMQ1jWAKJvEO0vstZ7GB6nDAcg4in3ZiBHtomx3PL5w+zg48S4Ed69BiFXLZ1f6MnjpUOP75pD4MP6toS0rgK9b93xCrEQLgm4oD/7TCHHBo2xR7wwcsN2OddtwWsEM2QgOkt/jdCAoVCqwQ=="
-	, host "turtle.kitenet.net"
-		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
 	, host "github.com" 
 		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+	, host "turtle.kitenet.net"
+		& ipv4 "67.223.19.96"
+		& ipv6 "2001:4978:f:2d9::2"
+		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
+	, host "wren.kitenet.net"
+		& ipv4 "80.68.85.49"
+		& ipv6 "2001:41c8:125:49::10"
+		& alias "kite.kitenet.net"
+	, host "branchable.com"
+		& ipv4 "66.228.46.55"
+		& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
+		& alias "olduse.net"
+		& alias "www.olduse.net"
+		& alias "git.olduse.net"
 	]

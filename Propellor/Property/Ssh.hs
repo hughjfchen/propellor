@@ -67,7 +67,7 @@ randomHostKeys :: Property
 randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 	`onChange` restartSshd
   where
-	prop = Property "ssh random host keys" $ do
+	prop = property "ssh random host keys" $ do
 		void $ liftIO $ boolSystem "sh"
 			[ Param "-c"
 			, Param "rm -f /etc/ssh/ssh_host_*"
@@ -81,8 +81,8 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 -- (Uses a null username for host keys.)
 hostKey :: SshKeyType -> Property
 hostKey keytype = combineProperties desc
-	[ Property desc (install writeFile (SshPubKey keytype "") ".pub")
-	, Property desc (install writeFileProtected (SshPrivKey keytype "") "")
+	[ property desc (install writeFile (SshPubKey keytype "") ".pub")
+	, property desc (install writeFileProtected (SshPrivKey keytype "") "")
 	]
 	`onChange` restartSshd
   where
@@ -98,8 +98,8 @@ hostKey keytype = combineProperties desc
 -- from the site's PrivData.
 keyImported :: SshKeyType -> UserName -> Property
 keyImported keytype user = combineProperties desc
-	[ Property desc (install writeFile (SshPubKey keytype user) ".pub")
-	, Property desc (install writeFileProtected (SshPrivKey keytype user) "")
+	[ property desc (install writeFile (SshPubKey keytype user) ".pub")
+	, property desc (install writeFileProtected (SshPrivKey keytype user) "")
 	]
   where
 	desc = user ++ " has ssh key (" ++ fromKeyType keytype ++ ")"
@@ -108,7 +108,7 @@ keyImported keytype user = combineProperties desc
 		ifM (liftIO $ doesFileExist f)
 			( noChange
 			, ensureProperty $ combineProperties desc
-				[ Property desc $ 
+				[ property desc $ 
 					withPrivData p $ \key -> makeChange $
 						writer f key
 				, File.ownerGroup f user user
@@ -126,7 +126,7 @@ fromKeyType SshEd25519 = "ed25519"
 
 -- | Puts some host's ssh public key into the known_hosts file for a user.
 knownHost :: [Host] -> HostName -> UserName -> Property
-knownHost hosts hn user = Property desc $
+knownHost hosts hn user = property desc $
 	go =<< fromHost hosts hn getSshPubKey
   where
 	desc = user ++ " knows ssh key for " ++ hn
@@ -143,7 +143,7 @@ knownHost hosts hn user = Property desc $
 
 -- | Makes a user have authorized_keys from the PrivData
 authorizedKeys :: UserName -> Property
-authorizedKeys user = Property (user ++ " has authorized_keys") $
+authorizedKeys user = property (user ++ " has authorized_keys") $
 	withPrivData (SshAuthorizedKeys user) $ \v -> do
 		f <- liftIO $ dotFile "authorized_keys" user
 		liftIO $ do
