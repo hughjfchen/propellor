@@ -8,6 +8,7 @@ module Propellor.Property.Dns (
 	nextSerialNumber,
 	adjustSerialNumber,
 	serialNumberOffset,
+	WarningMessage,
 	genZone,
 ) where
 
