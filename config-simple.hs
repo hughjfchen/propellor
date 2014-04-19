@@ -16,13 +16,15 @@ import qualified Propellor.Property.User as User
 --import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Docker as Docker
 
+main :: IO ()
+main = defaultMain hosts
+
 -- The hosts propellor knows about.
 -- Edit this to configure propellor!
 hosts :: [Host]
 hosts =
 	[ host "mybox.example.com"
 		& Apt.stdSourcesList Unstable
-			`onChange` Apt.upgrade
 		& Apt.unattendedUpgrades
 		& Apt.installed ["etckeeper"]
 		& Apt.installed ["ssh"]
@@ -42,6 +44,3 @@ hosts =
 	-- add more hosts here...
 	--, host "foo.example.com" = ...
 	]
-
-main :: IO ()
-main = defaultMain hosts
