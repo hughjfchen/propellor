@@ -2,6 +2,7 @@
 
 [[!sidebar content="""
 [[install]]  
+[API documentation](hackage.haskell.org/package/propellor)
 [[todo]]
 """]]
 
