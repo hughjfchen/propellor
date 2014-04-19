@@ -57,6 +57,7 @@ data Record
 	| MX Int BindDomain
 	| NS BindDomain
 	| TXT String
+	| SRV Word16 Word16 Word16 BindDomain
 	deriving (Read, Show, Eq, Ord)
 
 getIPAddr :: Record -> Maybe IPAddr

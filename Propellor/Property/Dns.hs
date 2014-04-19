@@ -141,6 +141,7 @@ rField (CNAME _) = "CNAME"
 rField (MX _ _) = "MX"
 rField (NS _) = "NS"
 rField (TXT _) = "TXT"
+rField (SRV _ _ _ _) = "SRV"
 
 rValue :: Record -> String
 rValue (Address (IPv4 addr)) = addr
@@ -148,6 +149,12 @@ rValue (Address (IPv6 addr)) = addr
 rValue (CNAME d) = dValue d
 rValue (MX pri d) = show pri ++ " " ++ dValue d
 rValue (NS d) = dValue d
+rValue (SRV priority weight port target) = unwords
+	[ show priority
+	, show weight
+	, show port
+	, dValue target
+	]
 rValue (TXT s) = [q] ++ filter (/= q) s ++ [q]
   where
 	q = '"'
