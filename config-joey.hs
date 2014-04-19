@@ -64,17 +64,6 @@ hosts =               --                  (o)  `
 
 		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
-		
-		& Dns.primary hosts "olduse.net"
-			( Dns.mkSOA "ns1.kitenet.net" 100
-				[ NS (AbsDomain "ns1.kitenet.net")
-				, NS (AbsDomain "ns6.gandi.net")
-				, NS (AbsDomain "ns2.kitenet.net")
-				, MX 0 (AbsDomain "kitenet.net")
-				, TXT "v=spf1 a -all"
-				]
-			)
-			[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk") ]
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
@@ -101,7 +90,7 @@ hosts =               --                  (o)  `
 		& Ssh.hostKey SshEcdsa
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
-		& Dns.servingZones myDnsSecondary
+		& myDnsSecondary
 		& Postfix.satellite
 	
 		& Apt.serviceInstalledRunning "apache2"
@@ -133,6 +122,17 @@ hosts =               --                  (o)  `
 		& aka "nntp.olduse.net"
 		& JoeySites.oldUseNetServer hosts
 		
+		& Dns.primary hosts "olduse.net"
+			( Dns.mkSOA "ns1.kitenet.net" 100
+				[ NS (AbsDomain "ns1.kitenet.net")
+				, NS (AbsDomain "ns6.gandi.net")
+				, NS (AbsDomain "ns2.kitenet.net")
+				, MX 0 (AbsDomain "kitenet.net")
+				, TXT "v=spf1 a -all"
+				]
+			)
+			[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk") ]
+
 		& Apt.installed ["ntop"]
 
 
@@ -244,17 +244,17 @@ cleanCloudAtCost = propertyList "cloudatcost cleanup"
 		]
 	]
 
-myDnsSecondary :: [Dns.NamedConf]
-myDnsSecondary =
-	[ Dns.secondary "kitenet.net" master
-	, Dns.secondary "joeyh.name" master
-	, Dns.secondary "ikiwiki.info" master
-	, Dns.secondary "olduse.net" master
-	, Dns.secondary "branchable.com" branchablemaster
+myDnsSecondary :: Property
+myDnsSecondary = propertyList "dns secondary for all my domains"
+	[ Dns.secondary hosts "kitenet.net" master
+	, Dns.secondary hosts "joeyh.name" master
+	, Dns.secondary hosts "ikiwiki.info" master
+	, Dns.secondary hosts "olduse.net" master
+	, Dns.secondary hosts "branchable.com" branchablemaster
 	]
   where
-	master = hostAddresses "wren.kitenet.net" hosts
-	branchablemaster = hostAddresses "branchable.com" hosts
+	master = "wren.kitenet.net"
+	branchablemaster = "branchable.com"
 
 main :: IO ()
 main = defaultMain hosts

@@ -9,8 +9,9 @@ import qualified Data.Set as S
 data Attr = Attr
 	{ _hostname :: HostName
 	, _os :: Maybe System
-	, _dns :: S.Set Dns.Record
 	, _sshPubKey :: Maybe String
+	, _dns :: S.Set Dns.Record
+	, _namedconf :: S.Set Dns.NamedConf
 
 	, _dockerImage :: Maybe String
 	, _dockerRunParams :: [HostName -> String]
@@ -21,6 +22,7 @@ instance Eq Attr where
 		[ _hostname x == _hostname y
 		, _os x == _os y
 		, _dns x == _dns y
+		, _namedconf x == _namedconf y
 		, _sshPubKey x == _sshPubKey y
 
 		, _dockerImage x == _dockerImage y
@@ -32,13 +34,14 @@ instance Show Attr where
 	show a = unlines
 		[ "hostname " ++ _hostname a
 		, "OS " ++ show (_os a)
-		, "dns " ++ show (_dns a)
 		, "sshPubKey " ++ show (_sshPubKey a)
+		, "dns " ++ show (_dns a)
+		, "namedconf " ++ show (_namedconf a)
 		, "docker image " ++ show (_dockerImage a)
 		, "docker run params " ++ show (map (\mk -> mk "") (_dockerRunParams a))
 		]
 
 newAttr :: HostName -> Attr
-newAttr hn = Attr hn Nothing S.empty Nothing Nothing []
+newAttr hn = Attr hn Nothing Nothing S.empty S.empty Nothing []
 
 type SetAttr = Attr -> Attr

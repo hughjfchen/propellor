@@ -19,10 +19,10 @@ data NamedConf = NamedConf
 	, confMasters :: [IPAddr]
 	, confLines :: [String]
 	}
-	deriving (Show, Eq)
+	deriving (Show, Eq, Ord)
 
 data Type = Master | Secondary
-	deriving (Show, Eq)
+	deriving (Show, Eq, Ord)
 
 -- | Represents a bind 9 zone file.
 data Zone = Zone

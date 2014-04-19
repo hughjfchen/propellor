@@ -2,7 +2,6 @@ module Propellor.Property.Dns (
 	module Propellor.Types.Dns,
 	primary,
 	secondary,
-	servingZones,
 	mkSOA,
 	rootAddressesFrom,
 	writeZoneFile,
@@ -26,8 +25,6 @@ import Data.List
 
 -- | Primary dns server for a domain.
 --
--- TODO: Does not yet add it to named.conf.local.
---
 -- Most of the content of the zone file is configured by setting properties
 -- of hosts. For example,
 --
@@ -35,40 +32,70 @@ import Data.List
 -- >   & ipv4 "192.168.1.1"
 -- >   & aka "mail.exmaple.com"
 --
--- Will cause that host and its cnames to appear in the zone file.
+-- Will cause that hostmame and its alias to appear in the zone file,
+-- with the configured IP address.
 --
 -- The [(Domain, Record)] list can be used for additional records
 -- that cannot be configured elsewhere. For example, it might contain
 -- CNAMEs pointing at hosts that propellor does not control.
 primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
 primary hosts domain soa rs = withwarnings (check needupdate baseprop)
-	`requires` Apt.serviceInstalledRunning "bind9"
+	`requires` servingZones
 	`onChange` Service.reloaded "bind9"
   where
 	(partialzone, warnings) = genZone hosts domain soa
 	zone = partialzone { zHosts = zHosts partialzone ++ rs }
 	zonefile = "/etc/bind/propellor/db." ++ domain
-	needupdate = (/= Just zone) <$> readZonePropellorFile zonefile
-	baseprop = property ("dns primary for " ++ domain) $ makeChange $ do
-		writeZoneFile zone zonefile
+	baseprop = Property ("dns primary for " ++ domain)
+		(makeChange $ writeZoneFile zone zonefile)
+		(addNamedConf conf)
 	withwarnings p = adjustProperty p $ \satisfy -> do
 		mapM_ warningMessage warnings
 		satisfy
+	conf = NamedConf
+		{ confDomain = domain
+		, confType = Master
+		, confFile = zonefile
+		, confMasters = []
+		, confLines = []
+		}
+	needupdate = do
+		v <- readZonePropellorFile zonefile
+		return $ case v of
+			Nothing -> True
+			Just oldzone ->
+				-- compare everything except serial
+				let oldserial = sSerial (zSOA oldzone)
+				    z = zone { zSOA = (zSOA zone) { sSerial = oldserial } }
+				in z /= oldzone || oldserial < sSerial (zSOA zone)
 
-namedconf :: FilePath
-namedconf = "/etc/bind/named.conf.local"
+-- | Secondary dns server for a domain.
+secondary :: [Host] -> Domain -> HostName -> Property
+secondary hosts domain master = pureAttrProperty desc (addNamedConf conf)
+	`requires` servingZones
+  where
+ 	desc = "dns secondary for " ++ domain
+	conf = NamedConf
+		{ confDomain = domain
+		, confType = Secondary
+		, confFile = "db." ++ domain
+		, confMasters = hostAddresses master hosts
+		, confLines = ["allow-transfer { }"]
+		}
 
-zoneDesc :: NamedConf -> String
-zoneDesc z = confDomain z ++ " (" ++ show (confType z) ++ ")"
-
-secondary :: Domain -> [IPAddr] -> NamedConf
-secondary domain masters = NamedConf
-	{ confDomain = domain
-	, confType = Secondary
-	, confFile = "db." ++ domain
-	, confMasters = masters
-	, confLines = ["allow-transfer { }"]
-	}
+-- | Rewrites the whole named.conf.local file to serve the zones
+-- configured by `primary` and `secondary`, and ensures that bind9 is
+-- running.
+servingZones :: Property
+servingZones = property "serving configured dns zones" go
+	`requires` Apt.serviceInstalledRunning "bind9"
+	`onChange` Service.reloaded "bind9"
+  where
+	go = do
+		zs <- getNamedConf
+		ensureProperty $
+			hasContent namedConfFile $
+				concatMap confStanza $ S.toList zs
 
 confStanza :: NamedConf -> [Line]
 confStanza c =
@@ -89,13 +116,8 @@ confStanza c =
 		(map (\ip -> "\t\t" ++ fromIPAddr ip ++ ";") (confMasters c)) ++
 		[ "\t};" ]
 
--- | Rewrites the whole named.conf.local file to serve the specified
--- zones.
-servingZones :: [NamedConf] -> Property
-servingZones zs = hasContent namedconf (concatMap confStanza zs)
-	`describe` ("dns server for zones: " ++ unwords (map zoneDesc zs))
-	`requires` Apt.serviceInstalledRunning "bind9"
-	`onChange` Service.reloaded "bind9"
+namedConfFile :: FilePath
+namedConfFile = "/etc/bind/named.conf.local"
 
 -- | Generates a SOA with some fairly sane numbers in it.
 --

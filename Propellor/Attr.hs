@@ -49,6 +49,12 @@ aka domain = pureAttrProperty ("aka " ++ domain)
 addDNS :: Record -> SetAttr
 addDNS record d = d { _dns = S.insert record (_dns d) }
 
+addNamedConf :: NamedConf -> SetAttr
+addNamedConf conf d = d { _namedconf = S.insert conf (_namedconf d) }
+
+getNamedConf :: Propellor (S.Set NamedConf)
+getNamedConf = asks _namedconf
+
 sshPubKey :: String -> Property
 sshPubKey k = pureAttrProperty ("ssh pubkey known") $
 	\d -> d { _sshPubKey = Just k }
