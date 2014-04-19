@@ -4,7 +4,6 @@ module Propellor.Attr where
 
 import Propellor.Types
 import Propellor.Types.Attr
-import Propellor.Types.Dns
 
 import "mtl" Control.Monad.Reader
 import qualified Data.Set as S

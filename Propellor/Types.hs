@@ -21,6 +21,7 @@ module Propellor.Types
 	, GpgKeyId
 	, SshKeyType(..)
 	, module Propellor.Types.OS
+	, module Propellor.Types.Dns
 	) where
 
 import Data.Monoid
@@ -31,6 +32,7 @@ import "MonadCatchIO-transformers" Control.Monad.CatchIO
 
 import Propellor.Types.Attr
 import Propellor.Types.OS
+import Propellor.Types.Dns
 
 data Host = Host [Property] SetAttr
 

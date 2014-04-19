@@ -39,6 +39,16 @@ hosts =               --                  (o)  `
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
 		& ipv4 "162.248.143.249"
 		& ipv6 "2002:5044:5531::1"
+		
+		& Dns.primary hosts "olduse.net" $
+			Dns.mkSOA "ns1.kitenet.net" 100
+				(Dns.rootAddressesFrom hosts "branchable.com")
+				[ NS "ns1.kitenet.net"
+				, NS "ns6.gandi.net"
+				, NS "ns2.kitenet.net"
+				, MX 0 "kitenet.net"
+				, TXT "v=spf1 a -all"
+				] 
 
 		& cleanCloudAtCost
 		& Apt.unattendedUpgrades
@@ -242,7 +252,7 @@ myDnsSecondary =
 	]
   where
 	master = hostAddresses "wren.kitenet.net" hosts
-	branchablemaster = hostAddresses "pell.branchable.com" hosts
+	branchablemaster = hostAddresses "branchable.com" hosts
 
 main :: IO ()
 main = defaultMain hosts
@@ -274,7 +284,11 @@ monsters =	      -- but do want to track their public keys etc.
 		& ipv4 "80.68.85.49"
 		& ipv6 "2001:41c8:125:49::10"
 		& cname "kite.kitenet.net"
-	, host "pell.branchable.com"
+	, host "branchable.com"
 		& ipv4 "66.228.46.55"
 		& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
+		& cname "www.olduse.net"
+		& cname "git.olduse.net"
+	, host "virgil.koldfront.dk"
+		& cname "article.olduse.net"
 	]

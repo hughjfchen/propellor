@@ -1,8 +1,10 @@
 module Propellor.Property.Dns (
 	module Propellor.Types.Dns,
+	primary,
 	secondary,
 	servingZones,
 	mkSOA,
+	rootAddressesFrom,
 	writeZoneFile,
 	nextSerialNumber,
 	adjustSerialNumber,
@@ -21,6 +23,23 @@ import Utility.Applicative
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.List
+
+-- | Primary dns server for a domain.
+--
+-- TODO: Does not yet add it to named.conf.local.
+primary :: [Host] -> Domain -> SOA -> Property
+primary hosts domain soa = withwarnings (check needupdate baseprop)
+	`requires` Apt.serviceInstalledRunning "bind9"
+	`onChange` Service.reloaded "bind9"
+  where
+	(zone, warnings) = genZone hosts domain soa
+	zonefile = "/etc/bind/propellor/db." ++ domain
+	needupdate = (/= Just zone) <$> readZonePropellorFile zonefile
+	baseprop = property ("dns primary for " ++ domain) $ makeChange $ do
+		writeZoneFile zone zonefile
+	withwarnings p = adjustProperty p $ \satisfy -> do
+		mapM_ warningMessage warnings
+		satisfy
 
 namedconf :: FilePath
 namedconf = "/etc/bind/named.conf.local"
@@ -56,7 +75,7 @@ confStanza c =
 		(map (\ip -> "\t\t" ++ fromIPAddr ip ++ ";") (confMasters c)) ++
 		[ "\t};" ]
 
--- | Rewrites the whole named.conf.local file to serve the specificed
+-- | Rewrites the whole named.conf.local file to serve the specified
 -- zones.
 servingZones :: [NamedConf] -> Property
 servingZones zs = hasContent namedconf (concatMap confStanza zs)
@@ -66,6 +85,10 @@ servingZones zs = hasContent namedconf (concatMap confStanza zs)
 
 -- | Generates a SOA with some fairly sane numbers in it.
 --
+-- The Domain is the domain to use in the SOA record. Typically
+-- something like ns1.example.com. Not the domain that this is the SOA
+-- record for.
+--
 -- The SerialNumber can be whatever serial number was used by the domain
 -- before propellor started managing it. Or 0 if the domain has only ever
 -- been managed by propellor.
@@ -73,18 +96,21 @@ servingZones zs = hasContent namedconf (concatMap confStanza zs)
 -- You do not need to increment the SerialNumber when making changes!
 -- Propellor will automatically add the number of commits in the git
 -- repository to the SerialNumber.
-mkSOA :: Domain -> SerialNumber -> [Record] -> SOA
-mkSOA d sn rs = SOA
+mkSOA :: Domain -> SerialNumber -> [Record] -> [Record] -> SOA
+mkSOA d sn rs1 rs2 = SOA
 	{ sDomain = AbsDomain d
 	, sSerial = sn
 	, sRefresh = hours 4
 	, sRetry = hours 1
 	, sExpire = 2419200 -- 4 weeks
 	, sTTL = hours 8
-	, sRecord = rs
+	, sRecord = rs1 ++ rs2
 	}
   where
 	hours n = n * 60 * 60
+
+rootAddressesFrom :: [Host] -> HostName -> [Record]
+rootAddressesFrom hosts hn = map Address (hostAddresses hn hosts)
 
 dValue :: BindDomain -> String
 dValue (RelDomain d) = d
@@ -137,7 +163,8 @@ writeZoneFile z f = do
 	offset <- serialNumberOffset
 	let z' = nextSerialNumber
 		(adjustSerialNumber z (+ offset))
-		(succ oldserial)
+		oldserial
+	createDirectoryIfMissing True (takeDirectory f)
 	writeFile f (genZoneFile z')
 	writeZonePropellorFile f z'
 
