@@ -8,7 +8,7 @@ Stability: Stable
 Copyright: 2014 Joey Hess
 License-File: GPL
 Build-Type: Simple
-Homepage: http://propellor.branchable.com/
+Homepage: https://propellor.branchable.com/
 Category: Utility
 Extra-Source-Files:
   README.md
