@@ -10,7 +10,7 @@
 
 [[!toc]]
 
-[[!inline raw=yes pages="README.mdwn"]]
+[[!inline raw=yes pages="README"]]
 
 ## news
 
