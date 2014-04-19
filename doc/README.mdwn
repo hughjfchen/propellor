@@ -5,7 +5,8 @@ are satisfied.
 
 Propellor is configured via a git repository, which typically lives
 in `~/.propellor/` on your development machine. Propellor clones the
-repository to each host it manages, in a [[secure|security]] way.
+repository to each host it manages, in a 
+[secure](http://propellor.branchable.com/security/) way.
 
 To trigger propellor to run on a host, run `propellor --spin $host`.
 Or run `/usr/local/propellor/propellor` on the host. Or use the
@@ -20,6 +21,9 @@ There is no special language as used in puppet, chef, ansible, etc.. just
 the full power of Haskell. Hopefully that power can be put to good use in
 making declarative properties that are powerful, nicely idempotent, and
 easy to adapt to a system's special needs!
+
+If using Haskell to configure Propellor seems intimidating,
+see [configuration_for_the_Haskell_newbie](https://propellor.branchable.com/haskell_newbie/).
 
 ## quick start
 
