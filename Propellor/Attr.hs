@@ -43,7 +43,7 @@ ipv6 addr = pureAttrProperty ("ipv6 " ++ addr)
 
 -- | Indicates another name for the host in the DNS.
 alias :: Domain -> Property
-alias domain = pureAttrProperty ("aka " ++ domain)
+alias domain = pureAttrProperty ("alias " ++ domain)
 	(addDNS $ CNAME $ AbsDomain domain)
 
 addDNS :: Record -> SetAttr

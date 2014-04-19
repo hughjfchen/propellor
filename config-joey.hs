@@ -46,6 +46,7 @@ hosts =               --                  (o)  `
 		& Network.ipv6to4
 		& Tor.isBridge
 		& Postfix.satellite
+		& myDnsSecondary
 		& Docker.configured
 
 		& alias "shell.olduse.net"
