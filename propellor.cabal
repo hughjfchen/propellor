@@ -12,6 +12,7 @@ Homepage: http://propellor.branchable.com/
 Category: Utility
 Extra-Source-Files:
   README.md
+  doc/README.mdwn
   TODO
   CHANGELOG
   Makefile
