@@ -124,15 +124,14 @@ hosts =               --                  (o)  `
 		
 		& myDnsSecondary
 		& Dns.primary hosts "olduse.net"
-			( Dns.mkSOA "ns1.kitenet.net" 100
-				[ NS (AbsDomain "ns1.kitenet.net")
-				, NS (AbsDomain "ns6.gandi.net")
-				, NS (AbsDomain "ns2.kitenet.net")
-				, MX 0 (AbsDomain "kitenet.net")
-				, TXT "v=spf1 a -all"
-				]
-			)
-			[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk") ]
+			(Dns.mkSOA "ns1.kitenet.net" 100)
+			[ (RootDomain, NS $ AbsDomain "ns1.kitenet.net")
+			, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
+			, (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
+			, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
+			, (RootDomain, TXT "v=spf1 a -all")
+			, (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
+			]
 
 		& Apt.installed ["ntop"]
 
