@@ -24,6 +24,8 @@ hosts :: [Host]        --   *             \ | |              '--------'
 hosts =               --                  (o)  `
 </pre>
 
+Propellor is free software, licensed under the terms of the GNU GPL 3.
+
 ## news
 
 [[!inline pages="news/* and !*/Discussion" show="4" archive=yes]]
