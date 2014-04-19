@@ -107,5 +107,9 @@ config-simple.hs:27:19:
 
 That's really all there is to configuring Propellor. Once you
 have a `config.hs` ready to try out, you can run `propellor --spin $host`
-on one of the hosts configured in it. See the [[README]] for a further
-quick start.
+on one of the hosts configured in it.
+
+See the [[README]] for a further quick start.
+
+(If you'd like to learn a little Haskell after all, check out
+[Learn You a Haskell for Great Good](http://learnyouahaskell.com/).)
