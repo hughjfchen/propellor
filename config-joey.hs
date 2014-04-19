@@ -241,8 +241,8 @@ myDnsSecondary =
 	, Dns.secondary "branchable.com" branchablemaster
 	]
   where
-	master = getAddresses "wren.kitenet.net" hosts
-	branchablemaster = getAddresses "pell.branchable.com" hosts
+	master = hostAddresses "wren.kitenet.net" hosts
+	branchablemaster = hostAddresses "pell.branchable.com" hosts
 
 main :: IO ()
 main = defaultMain hosts

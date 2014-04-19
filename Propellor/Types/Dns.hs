@@ -1,7 +1,5 @@
 module Propellor.Types.Dns where
 
-import Propellor.Types.OS (HostName)
-
 import Data.Word
 
 type Domain = String
@@ -28,8 +26,9 @@ data Type = Master | Secondary
 
 -- | Represents a bind 9 zone file.
 data Zone = Zone
-	{ zSOA :: SOA
-	, zHosts :: [(HostName, Record)]
+	{ zDomain :: Domain
+	, zSOA :: SOA
+	, zHosts :: [(BindDomain, Record)]
 	}
 	deriving (Read, Show, Eq)
 
@@ -63,6 +62,10 @@ data Record
 getIPAddr :: Record -> Maybe IPAddr
 getIPAddr (Address addr) = Just addr
 getIPAddr _ = Nothing
+
+getCNAME :: Record -> Maybe BindDomain
+getCNAME (CNAME d) = Just d
+getCNAME _ = Nothing
 
 -- | Bind serial numbers are unsigned, 32 bit integers.
 type SerialNumber = Word32

@@ -74,11 +74,19 @@ hostProperties (Host ps _) = ps
 hostMap :: [Host] -> M.Map HostName Host
 hostMap l = M.fromList $ zip (map (_hostname . hostAttr) l) l 
 
+hostAttrMap :: [Host] -> M.Map HostName Attr
+hostAttrMap l = M.fromList $ zip (map _hostname attrs) attrs
+  where
+	attrs = map hostAttr l
+
 findHost :: [Host] -> HostName -> Maybe Host
 findHost l hn = M.lookup hn (hostMap l)
 
-getAddresses :: HostName -> [Host] -> [IPAddr]
-getAddresses hn hosts = case hostAttr <$> findHost hosts hn of
+getAddresses :: Attr -> [IPAddr]
+getAddresses = mapMaybe getIPAddr . S.toList . _dns
+
+hostAddresses :: HostName -> [Host] -> [IPAddr]
+hostAddresses hn hosts = case hostAttr <$> findHost hosts hn of
 	Nothing -> []
 	Just attr -> mapMaybe getIPAddr $ S.toList $ _dns attr
 
