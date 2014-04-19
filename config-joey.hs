@@ -1,4 +1,4 @@
--- |  This is the live config file used by propellor's author.
+-- This is the live config file used by propellor's author.
 
 import Propellor
 import Propellor.CmdLine
@@ -229,7 +229,7 @@ standardContainer name suite arch = Docker.container name (image system)
   where
 	system = System (Debian suite) arch
 
--- | Docker images I prefer to use.
+-- Docker images I prefer to use.
 image :: System -> Docker.Image
 image (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
 image (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
