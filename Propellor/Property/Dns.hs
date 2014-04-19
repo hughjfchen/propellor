@@ -151,7 +151,7 @@ namedConfFile = "/etc/bind/named.conf.local"
 -- repository to the SerialNumber.
 --
 -- Handy trick: You don't need to list IPAddrs in the [Record],
--- just make some Host sets its `alias` to the root of domain.
+-- just make some Host set its `alias` to the root of domain.
 mkSOA :: Domain -> SerialNumber -> [Record] -> SOA
 mkSOA d sn rs = SOA
 	{ sDomain = AbsDomain d
