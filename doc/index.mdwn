@@ -9,8 +9,6 @@
 [[Forum]]  
 """]]
 
-[[!toc]]
-
 [[!inline raw=yes pages="README"]]
 
 ## news
