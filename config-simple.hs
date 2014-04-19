@@ -1,4 +1,4 @@
--- | This is the main configuration file for Propellor, and is used to build
+-- This is the main configuration file for Propellor, and is used to build
 -- the propellor program.
 
 import Propellor
