@@ -63,6 +63,7 @@ Some other properties you may find in your config.hs, or want to add:
 [[!format haskell """
         & Apt.unattendedUpgrades
         & User.hasSomePassword "root"
+	& "/etc/default/foodaemon" `File.containsLine` "ENABLED=yes"
         & Cron.runPropellor "30 * * * *"
 """]]
 
