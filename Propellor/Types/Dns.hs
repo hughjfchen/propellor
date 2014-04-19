@@ -42,7 +42,7 @@ data SOA = SOA
 	, sRefresh :: Integer
 	, sRetry :: Integer
 	, sExpire :: Integer
-	, sTTL :: Integer
+	, sNegativeCacheTTL :: Integer
 	, sRecord :: [Record]
 	-- ^ Records for the root of the domain. Typically NS, A, TXT
 	}

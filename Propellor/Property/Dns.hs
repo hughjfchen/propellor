@@ -86,7 +86,7 @@ servingZones zs = hasContent namedconf (concatMap confStanza zs)
 -- | Generates a SOA with some fairly sane numbers in it.
 --
 -- The Domain is the domain to use in the SOA record. Typically
--- something like ns1.example.com. Not the domain that this is the SOA
+-- something like ns1.example.com. So, not the domain that this is the SOA
 -- record for.
 --
 -- The SerialNumber can be whatever serial number was used by the domain
@@ -96,15 +96,18 @@ servingZones zs = hasContent namedconf (concatMap confStanza zs)
 -- You do not need to increment the SerialNumber when making changes!
 -- Propellor will automatically add the number of commits in the git
 -- repository to the SerialNumber.
-mkSOA :: Domain -> SerialNumber -> [Record] -> [Record] -> SOA
-mkSOA d sn rs1 rs2 = SOA
+--
+-- Handy trick: You don't need to list IPAddrs in the [Record],
+-- just make some Host sets its cname to the root of domain.
+mkSOA :: Domain -> SerialNumber -> [Record] -> SOA
+mkSOA d sn rs = SOA
 	{ sDomain = AbsDomain d
 	, sSerial = sn
 	, sRefresh = hours 4
 	, sRetry = hours 1
 	, sExpire = 2419200 -- 4 weeks
-	, sTTL = hours 8
-	, sRecord = rs1 ++ rs2
+	, sNegativeCacheTTL = hours 8
+	, sRecord = rs
 	}
   where
 	hours n = n * 60 * 60
@@ -221,7 +224,7 @@ genSOA zdomain soa =
 		, headerline sRefresh "Refresh"
 		, headerline sRetry "Retry"
 		, headerline sExpire "Expire"
-		, headerline sTTL "Default TTL"
+		, headerline sNegativeCacheTTL "Negative Cache TTL"
 		, inheader ")"
 		]
 	headerline r comment = inheader $ show (r soa) ++ "\t\t" ++ com comment
@@ -262,11 +265,14 @@ genZone hosts zdomain soa =
 			(map Address $ getAddresses attr)
 
 	-- Any host, whether its hostname is in the zdomain or not,
-	-- may have cnames which are in the zdomain.
+	-- may have cnames which are in the zdomain. The cname may even be
+	-- the same as the root of the zdomain, which is a nice way to
+	-- specify IP addresses for a SOA record.
 	--
 	-- Add Records for those.. But not actually, usually, cnames!
 	-- Why not? Well, using cnames doesn't allow doing some things,
-	-- including MX and round robin DNS. 
+	-- including MX and round robin DNS, and certianly CNAMES
+	-- shouldn't be used in SOA records.
 	--
 	-- We typically know the host's IPAddrs anyway.
 	-- So we can just use the IPAddrs.
