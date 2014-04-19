@@ -43,8 +43,6 @@ data SOA = SOA
 	, sRetry :: Integer
 	, sExpire :: Integer
 	, sNegativeCacheTTL :: Integer
-	, sRecord :: [Record]
-	-- ^ Records for the root of the domain. Typically NS, A, TXT
 	}
 	deriving (Read, Show, Eq)
 
@@ -76,6 +74,7 @@ type SerialNumber = Word32
 -- Let's use a type to keep absolute domains straight from relative
 -- domains.
 --
--- The SOADomain refers to the root SOA record.
-data BindDomain = RelDomain Domain | AbsDomain Domain | SOADomain
+-- The RootDomain refers to the top level of the domain, so can be used
+-- to add nameservers, MX's, etc to a domain.
+data BindDomain = RelDomain Domain | AbsDomain Domain | RootDomain
 	deriving (Read, Show, Eq, Ord)

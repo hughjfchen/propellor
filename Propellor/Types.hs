@@ -5,6 +5,7 @@
 module Propellor.Types
 	( Host(..)
 	, Attr
+	, SetAttr
 	, Propellor(..)
 	, Property(..)
 	, RevertableProperty(..)
@@ -56,7 +57,7 @@ data Property = Property
 	, propertySatisfy :: Propellor Result
 	-- ^ must be idempotent; may run repeatedly
 	, propertyAttr :: SetAttr
-	-- ^ a property can affect the overall Attr
+	-- ^ a property can set an Attr on the host that has the property.
 	}
 
 -- | A property that can be reverted.

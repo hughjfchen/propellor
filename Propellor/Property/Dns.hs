@@ -4,11 +4,11 @@ module Propellor.Property.Dns (
 	secondary,
 	secondaryFor,
 	mkSOA,
-	rootAddressesFrom,
 	writeZoneFile,
 	nextSerialNumber,
 	adjustSerialNumber,
 	serialNumberOffset,
+	WarningMessage,
 	genZone,
 ) where
 
@@ -36,14 +36,22 @@ import Data.List
 -- Will cause that hostmame and its alias to appear in the zone file,
 -- with the configured IP address.
 --
--- The [(Domain, Record)] list can be used for additional records
--- that cannot be configured elsewhere. For example, it might contain
--- CNAMEs pointing at hosts that propellor does not control.
-primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
-primary hosts domain soa rs = withwarnings (check needupdate baseprop)
-	`requires` servingZones
-	`onChange` Service.reloaded "bind9"
+-- The [(BindDomain, Record)] list can be used for additional records
+-- that cannot be configured elsewhere. This often includes NS records,
+-- TXT records and perhaps CNAMEs pointing at hosts that propellor does
+-- not control.
+primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
+primary hosts domain soa rs = RevertableProperty setup cleanup
   where
+	setup = withwarnings (check needupdate baseprop)
+		`requires` servingZones
+		`onChange` Service.reloaded "bind9"
+	cleanup = check (doesFileExist zonefile) $
+		property ("removed dns primary for " ++ domain)
+			(makeChange $ removeZoneFile zonefile)
+			`requires` namedConfWritten
+			`onChange` Service.reloaded "bind9"
+
 	(partialzone, warnings) = genZone hosts domain soa
 	zone = partialzone { zHosts = zHosts partialzone ++ rs }
 	zonefile = "/etc/bind/propellor/db." ++ domain
@@ -77,7 +85,7 @@ primary hosts domain soa rs = withwarnings (check needupdate baseprop)
 --
 -- Note that if a host is declared to be a primary and a secondary dns
 -- server for the same domain, the primary server config always wins.
-secondary :: [Host] -> Domain -> Property
+secondary :: [Host] -> Domain -> RevertableProperty
 secondary hosts domain = secondaryFor masters hosts domain
   where
 	masters = M.keys $ M.filter ismaster $ hostAttrMap hosts
@@ -87,10 +95,13 @@ secondary hosts domain = secondaryFor masters hosts domain
 
 -- | This variant is useful if the primary server does not have its DNS
 -- configured via propellor.
-secondaryFor :: [HostName] -> [Host] -> Domain -> Property
-secondaryFor masters hosts domain = pureAttrProperty desc (addNamedConf conf)
-	`requires` servingZones
+secondaryFor :: [HostName] -> [Host] -> Domain -> RevertableProperty
+secondaryFor masters hosts domain = RevertableProperty setup cleanup
   where
+	setup = pureAttrProperty desc (addNamedConf conf)
+		`requires` servingZones
+	cleanup = namedConfWritten
+
  	desc = "dns secondary for " ++ domain
 	conf = NamedConf
 		{ confDomain = domain
@@ -104,15 +115,16 @@ secondaryFor masters hosts domain = pureAttrProperty desc (addNamedConf conf)
 -- configured by `primary` and `secondary`, and ensures that bind9 is
 -- running.
 servingZones :: Property
-servingZones = property "serving configured dns zones" go
+servingZones = namedConfWritten
 	`requires` Apt.serviceInstalledRunning "bind9"
 	`onChange` Service.reloaded "bind9"
-  where
-	go = do
-		zs <- getNamedConf
-		ensureProperty $
-			hasContent namedConfFile $
-				concatMap confStanza $ M.elems zs
+
+namedConfWritten :: Property
+namedConfWritten = property "named.conf configured" $ do
+	zs <- getNamedConf
+	ensureProperty $
+		hasContent namedConfFile $
+			concatMap confStanza $ M.elems zs
 
 confStanza :: NamedConf -> [Line]
 confStanza c =
@@ -149,29 +161,22 @@ namedConfFile = "/etc/bind/named.conf.local"
 -- You do not need to increment the SerialNumber when making changes!
 -- Propellor will automatically add the number of commits in the git
 -- repository to the SerialNumber.
---
--- Handy trick: You don't need to list IPAddrs in the [Record],
--- just make some Host sets its `alias` to the root of domain.
-mkSOA :: Domain -> SerialNumber -> [Record] -> SOA
-mkSOA d sn rs = SOA
+mkSOA :: Domain -> SerialNumber -> SOA
+mkSOA d sn = SOA
 	{ sDomain = AbsDomain d
 	, sSerial = sn
 	, sRefresh = hours 4
 	, sRetry = hours 1
 	, sExpire = 2419200 -- 4 weeks
 	, sNegativeCacheTTL = hours 8
-	, sRecord = rs
 	}
   where
 	hours n = n * 60 * 60
 
-rootAddressesFrom :: [Host] -> HostName -> [Record]
-rootAddressesFrom hosts hn = map Address (hostAddresses hn hosts)
-
 dValue :: BindDomain -> String
 dValue (RelDomain d) = d
 dValue (AbsDomain d) = d ++ "."
-dValue (SOADomain) = "@"
+dValue (RootDomain) = "@"
 
 rField :: Record -> String
 rField (Address (IPv4 _)) = "A"
@@ -198,10 +203,9 @@ rValue (TXT s) = [q] ++ filter (/= q) s ++ [q]
   where
 	q = '"'
 
--- | Adjusts the serial number of the zone to 
---
--- * Always be larger than the serial number in the Zone record.
--- * Always be larger than the passed SerialNumber
+-- | Adjusts the serial number of the zone to always be larger
+-- than the serial number in the Zone record,
+-- and always be larger than the passed SerialNumber.
 nextSerialNumber :: Zone -> SerialNumber -> Zone
 nextSerialNumber z serial = adjustSerialNumber z $ \sn -> succ $ max sn serial
 
@@ -231,6 +235,11 @@ writeZoneFile z f = do
 	writeFile f (genZoneFile z')
 	writeZonePropellorFile f z'
 
+removeZoneFile :: FilePath -> IO ()
+removeZoneFile f = do
+	nukeFile f
+	nukeFile (zonePropellorFile f)
+
 -- | Next to the zone file, is a ".propellor" file, which contains
 -- the serialized Zone. This saves the bother of parsing
 -- the horrible bind zone file format.
@@ -250,43 +259,37 @@ readZonePropellorFile f = catchDefaultIO Nothing $
 -- | Generating a zone file.
 genZoneFile :: Zone -> String
 genZoneFile (Zone zdomain soa rs) = unlines $
-	header : genSOA zdomain soa ++ map genr rs
+	header : genSOA soa ++ map (genRecord zdomain) rs
   where
 	header = com $ "BIND zone file for " ++ zdomain ++ ". Generated by propellor, do not edit."
 
-	genr (d, r) = genRecord zdomain (Just d, r)
-
-genRecord :: Domain -> (Maybe BindDomain, Record) -> String
-genRecord zdomain (mdomain, record) = intercalate "\t"
-	[ hn
+genRecord :: Domain -> (BindDomain, Record) -> String
+genRecord zdomain (domain, record) = intercalate "\t"
+	[ domainHost zdomain domain
 	, "IN"
 	, rField record
 	, rValue record
 	]
-  where
-	hn = maybe "" (domainHost zdomain) mdomain
 
-genSOA :: Domain -> SOA -> [String]
-genSOA zdomain soa =
-	header ++ map (genRecord zdomain) (zip (repeat Nothing) (sRecord soa))
-  where
-	header =
-		-- "@ IN SOA ns1.example.com. root ("
-		[ intercalate "\t"
-			[ dValue SOADomain 
-			, "IN"
-			, "SOA"
-			, dValue (sDomain soa)
-			, "root"
-			, "("
-			]
-		, headerline sSerial "Serial"
-		, headerline sRefresh "Refresh"
-		, headerline sRetry "Retry"
-		, headerline sExpire "Expire"
-		, headerline sNegativeCacheTTL "Negative Cache TTL"
-		, inheader ")"
+genSOA :: SOA -> [String]
+genSOA soa = 
+	-- "@ IN SOA ns1.example.com. root ("
+	[ intercalate "\t"
+		[ dValue RootDomain 
+		, "IN"
+		, "SOA"
+		, dValue (sDomain soa)
+		, "root"
+		, "("
 		]
+	, headerline sSerial "Serial"
+	, headerline sRefresh "Refresh"
+	, headerline sRetry "Retry"
+	, headerline sExpire "Expire"
+	, headerline sNegativeCacheTTL "Negative Cache TTL"
+	, inheader ")"
+	]
+  where
 	headerline r comment = inheader $ show (r soa) ++ "\t\t" ++ com comment
 	inheader l = "\t\t\t" ++ l
 
@@ -361,7 +364,7 @@ inDomain _ _ = False -- can't tell, so assume not
 -- suitable for using in a zone file.
 domainHost :: Domain -> BindDomain -> String
 domainHost _ (RelDomain d) = d
-domainHost _ SOADomain = "@"
+domainHost _ RootDomain = "@"
 domainHost base (AbsDomain d)
 	| dotbase `isSuffixOf` d = take (length d - length dotbase) d
 	| base == d = "@"

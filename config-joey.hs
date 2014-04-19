@@ -23,6 +23,9 @@ import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 
+main :: IO ()
+main = defaultMain hosts
+
 
                       --     _         ______`|                          ,-.__ 
  {- Propellor          --  /   \___-=O`/|O`/__|                         (____.'
@@ -61,6 +64,9 @@ hosts =               --                  (o)  `
 		-- I'd rather this were on diatom, but it needs unstable.
 		& alias "kgb.kitenet.net"
 		& JoeySites.kgbServer
+		
+		& alias "ns9.kitenet.net"
+		& myDnsSecondary
 
 		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
@@ -122,17 +128,17 @@ hosts =               --                  (o)  `
 		& alias "resources.olduse.net"
 		& JoeySites.oldUseNetServer hosts
 		
+		& alias "ns2.kitenet.net"
 		& myDnsSecondary
 		& Dns.primary hosts "olduse.net"
-			( Dns.mkSOA "ns1.kitenet.net" 100
-				[ NS (AbsDomain "ns1.kitenet.net")
-				, NS (AbsDomain "ns6.gandi.net")
-				, NS (AbsDomain "ns2.kitenet.net")
-				, MX 0 (AbsDomain "kitenet.net")
-				, TXT "v=spf1 a -all"
-				]
-			)
-			[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk") ]
+			(Dns.mkSOA "ns2.kitenet.net" 100)
+			[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
+			, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
+			, (RootDomain, NS $ AbsDomain "ns9.kitenet.net")
+			, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
+			, (RootDomain, TXT "v=spf1 a -all")
+			, (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
+			]
 
 		& Apt.installed ["ntop"]
 
@@ -246,7 +252,7 @@ cleanCloudAtCost = propertyList "cloudatcost cleanup"
 	]
 
 myDnsSecondary :: Property
-myDnsSecondary = propertyList "dns secondary for all my domains"
+myDnsSecondary = propertyList "dns secondary for all my domains" $ map toProp
 	[ Dns.secondaryFor wren hosts "kitenet.net"
 	, Dns.secondaryFor wren hosts "joeyh.name"
 	, Dns.secondaryFor wren hosts "ikiwiki.info"
@@ -256,9 +262,6 @@ myDnsSecondary = propertyList "dns secondary for all my domains"
   where
 	wren = ["wren.kitenet.net"]
 	branchable = ["branchable.com"]
-
-main :: IO ()
-main = defaultMain hosts
 
 
 
@@ -287,6 +290,8 @@ monsters =	      -- but do want to track their public keys etc.
 		& ipv4 "80.68.85.49"
 		& ipv6 "2001:41c8:125:49::10"
 		& alias "kite.kitenet.net"
+		& alias "kitenet.net"
+		& alias "ns1.kitenet.net"
 	, host "branchable.com"
 		& ipv4 "66.228.46.55"
 		& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
