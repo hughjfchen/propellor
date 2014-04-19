@@ -4,7 +4,6 @@ module Propellor.Property.Dns (
 	secondary,
 	secondaryFor,
 	mkSOA,
-	rootAddressesFrom,
 	writeZoneFile,
 	nextSerialNumber,
 	adjustSerialNumber,
@@ -164,9 +163,6 @@ mkSOA d sn rs = SOA
 	}
   where
 	hours n = n * 60 * 60
-
-rootAddressesFrom :: [Host] -> HostName -> [Record]
-rootAddressesFrom hosts hn = map Address (hostAddresses hn hosts)
 
 dValue :: BindDomain -> String
 dValue (RelDomain d) = d
