@@ -1,4 +1,4 @@
-propellor (0.4.0) UNRELEASED; urgency=medium
+propellor (0.4.0) unstable; urgency=medium
 
   * Propellor can configure primary DNS servers, including generating
     zone files, which is done by looking at the properties of hosts
@@ -11,7 +11,7 @@ propellor (0.4.0) UNRELEASED; urgency=medium
   * Run all cron jobs under chronic from moreutils to avoid unnecessary
     mails.
 
- -- Joey Hess <joeyh@debian.org>  Thu, 17 Apr 2014 21:00:43 -0400
+ -- Joey Hess <joeyh@debian.org>  Sat, 19 Apr 2014 02:09:56 -0400
 
 propellor (0.3.1) unstable; urgency=medium
 
