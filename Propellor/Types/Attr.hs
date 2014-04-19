@@ -4,6 +4,7 @@ import Propellor.Types.OS
 import qualified Propellor.Types.Dns as Dns
 
 import qualified Data.Set as S
+import qualified Data.Map as M
 
 -- | The attributes of a host. For example, its hostname.
 data Attr = Attr
@@ -11,7 +12,7 @@ data Attr = Attr
 	, _os :: Maybe System
 	, _sshPubKey :: Maybe String
 	, _dns :: S.Set Dns.Record
-	, _namedconf :: S.Set Dns.NamedConf
+	, _namedconf :: M.Map Dns.Domain Dns.NamedConf
 
 	, _dockerImage :: Maybe String
 	, _dockerRunParams :: [HostName -> String]
@@ -42,6 +43,6 @@ instance Show Attr where
 		]
 
 newAttr :: HostName -> Attr
-newAttr hn = Attr hn Nothing Nothing S.empty S.empty Nothing []
+newAttr hn = Attr hn Nothing Nothing S.empty M.empty Nothing []
 
 type SetAttr = Attr -> Attr

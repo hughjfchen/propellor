@@ -70,6 +70,9 @@ primary hosts domain soa rs = withwarnings (check needupdate baseprop)
 				in z /= oldzone || oldserial < sSerial (zSOA zone)
 
 -- | Secondary dns server for a domain.
+--
+-- Note that if a host is declared to be a primary and a secondary dns
+-- server for the same domain, the primary server config always wins.
 secondary :: [Host] -> Domain -> HostName -> Property
 secondary hosts domain master = pureAttrProperty desc (addNamedConf conf)
 	`requires` servingZones
@@ -95,7 +98,7 @@ servingZones = property "serving configured dns zones" go
 		zs <- getNamedConf
 		ensureProperty $
 			hasContent namedConfFile $
-				concatMap confStanza $ S.toList zs
+				concatMap confStanza $ M.elems zs
 
 confStanza :: NamedConf -> [Line]
 confStanza c =

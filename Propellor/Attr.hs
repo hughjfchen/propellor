@@ -49,10 +49,21 @@ alias domain = pureAttrProperty ("aka " ++ domain)
 addDNS :: Record -> SetAttr
 addDNS record d = d { _dns = S.insert record (_dns d) }
 
+-- | Adds a DNS NamedConf stanza.
+--
+-- Note that adding a Master stanza for a domain always overrides an
+-- existing Secondary stanza, while a Secondary stanza is only added
+-- when there is no existing Master stanza.
 addNamedConf :: NamedConf -> SetAttr
-addNamedConf conf d = d { _namedconf = S.insert conf (_namedconf d) }
+addNamedConf conf d = d { _namedconf = new }
+  where
+	m = _namedconf d
+	domain = confDomain conf
+	new = case (confType conf, confType <$> M.lookup domain m) of
+		(Secondary, Just Master) -> m
+		_  -> M.insert domain conf m
 
-getNamedConf :: Propellor (S.Set NamedConf)
+getNamedConf :: Propellor (M.Map Domain NamedConf)
 getNamedConf = asks _namedconf
 
 sshPubKey :: String -> Property

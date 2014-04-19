@@ -90,7 +90,6 @@ hosts =               --                  (o)  `
 		& Ssh.hostKey SshEcdsa
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
-		& myDnsSecondary
 		& Postfix.satellite
 	
 		& Apt.serviceInstalledRunning "apache2"
@@ -122,6 +121,7 @@ hosts =               --                  (o)  `
 		& alias "nntp.olduse.net"
 		& JoeySites.oldUseNetServer hosts
 		
+		& myDnsSecondary
 		& Dns.primary hosts "olduse.net"
 			( Dns.mkSOA "ns1.kitenet.net" 100
 				[ NS (AbsDomain "ns1.kitenet.net")
