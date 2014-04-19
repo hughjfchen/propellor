@@ -15,7 +15,19 @@ to have Propellor set up a cron job.
 
 Properties are defined using Haskell. Edit `~/.propellor/config.hs`
 to get started. There is fairly complete 
-[API documentation](http://hackage.haskell.org/package/propellor/).
+[API documentation](http://hackage.haskell.org/package/propellor/),
+which includes many built-in Properties for dealing with
+[Apt](http://hackage.haskell.org/package/propellor-0.4.0/docs/Propellor-Property-Apt.html)
+and
+[Apache](http://hackage.haskell.org/package/propellor-0.4.0/docs/Propellor-Property-Apache.html)
+,
+[Cron](http://hackage.haskell.org/package/propellor-0.4.0/docs/Propellor-Property-Cron.html)
+and
+[Commands](http://hackage.haskell.org/package/propellor-0.4.0/docs/Propellor-Property-Cmd.html)
+,
+[Dns](http://hackage.haskell.org/package/propellor-0.4.0/docs/Propellor-Property-Dns.html)
+and
+[Docker](http://hackage.haskell.org/package/propellor-0.4.0/docs/Propellor-Property-Docker.html), etc.
 
 There is no special language as used in puppet, chef, ansible, etc.. just
 the full power of Haskell. Hopefully that power can be put to good use in
