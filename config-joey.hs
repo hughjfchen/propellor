@@ -131,7 +131,7 @@ hosts =               --                  (o)  `
 		& alias "ns2.kitenet.net"
 		& myDnsSecondary
 		& Dns.primary hosts "olduse.net"
-			(Dns.mkSOA "ns1.kitenet.net" 100)
+			(Dns.mkSOA "ns2.kitenet.net" 100)
 			[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
 			, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
 			, (RootDomain, NS $ AbsDomain "ns9.kitenet.net")
