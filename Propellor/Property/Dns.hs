@@ -37,8 +37,9 @@ import Data.List
 -- with the configured IP address.
 --
 -- The [(BindDomain, Record)] list can be used for additional records
--- that cannot be configured elsewhere. For example, it might contain
--- CNAMEs pointing at hosts that propellor does not control.
+-- that cannot be configured elsewhere. This often includes NS records,
+-- TXT records and perhaps CNAMEs pointing at hosts that propellor does
+-- not control.
 primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
 primary hosts domain soa rs = RevertableProperty setup cleanup
   where
