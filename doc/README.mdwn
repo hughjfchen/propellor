@@ -1,27 +1,25 @@
-This is a configuration management system using Haskell and Git.
-
-[Propellor](https://propellor.branchable.com/) enures that the system it's
-run against satisfies a list of properties, taking action as necessary when
-a property is not yet met.
+[Propellor](https://propellor.branchable.com/) is a
+configuration management system using Haskell and Git.
+Each system has a list of properties, which Propellor ensures
+are satisfied.
 
 Propellor is configured via a git repository, which typically lives
-in ~/.propellor/. The git repository contains a config.hs file,
-and also the entire source code to propellor.
+in `~/.propellor/` on your development machine. Propellor clones the
+repository to each host it manages, in a [[secure|security]] way.
 
-You typically want to have the repository checked out on a laptop, in order
-to make changes and push them out to hosts. Each host will also have a
-clone of the repository, and in that clone "make" can be used to build and
-run propellor. This can be done by a cron job (which propellor can set up),
-or a remote host can be triggered to update by running propellor on your
-laptop: propellor --spin $host
+To trigger propellor to run on a host, run `propellor --spin $host`.
+Or run `/usr/local/propellor/propellor` on the host. Or use the
+[runPropellor property](http://hackage.haskell.org/package/propellor-0.4.0/docs/Propellor-Property-Cron.html)
+to have Propellor set up a cron job.
 
-Properties are defined using Haskell. Edit config.hs to get started.
-For API documentation, see <http://hackage.haskell.org/package/propellor/>
+Properties are defined using Haskell. Edit `~/.propellor/config.hs`
+to get started. There is fairly complete 
+[API documentation](http://hackage.haskell.org/package/propellor/).
 
 There is no special language as used in puppet, chef, ansible, etc.. just
 the full power of Haskell. Hopefully that power can be put to good use in
 making declarative properties that are powerful, nicely idempotent, and
-easy to adapt to a system's special needs.
+easy to adapt to a system's special needs!
 
 ## quick start
 
