@@ -87,7 +87,7 @@ secondary hosts domain = secondaryFor masters hosts domain
 
 -- | This variant is useful if the primary server does not have its DNS
 -- configured via propellor.
-secondaryFor :: [HostName] -> [Host] -> Domain -> -> Property
+secondaryFor :: [HostName] -> [Host] -> Domain -> Property
 secondaryFor masters hosts domain = pureAttrProperty desc (addNamedConf conf)
 	`requires` servingZones
   where
