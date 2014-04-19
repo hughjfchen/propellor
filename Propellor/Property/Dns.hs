@@ -30,7 +30,7 @@ import Data.List
 --
 -- > host "foo.example.com"
 -- >   & ipv4 "192.168.1.1"
--- >   & aka "mail.exmaple.com"
+-- >   & alias "mail.exmaple.com"
 --
 -- Will cause that hostmame and its alias to appear in the zone file,
 -- with the configured IP address.
@@ -134,7 +134,7 @@ namedConfFile = "/etc/bind/named.conf.local"
 -- repository to the SerialNumber.
 --
 -- Handy trick: You don't need to list IPAddrs in the [Record],
--- just make some Host sets its `aka` to the root of domain.
+-- just make some Host sets its `alias` to the root of domain.
 mkSOA :: Domain -> SerialNumber -> [Record] -> SOA
 mkSOA d sn rs = SOA
 	{ sDomain = AbsDomain d

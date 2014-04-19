@@ -3,8 +3,8 @@ propellor (0.4.0) UNRELEASED; urgency=medium
   * Propellor can configure primary DNS servers, including generating
     zone files, which is done by looking at the properties of hosts
     in a domain.
-  * The `cname` property was renamed to `aka` as it does not always generate
-    CNAME in the DNS.
+  * The `cname` property was renamed to `alias` as it does not always
+    generate CNAME in the DNS.
   * Constructor of Property has changed (use `property` function instead).
   * All Property combinators now combine together their Attr settings.
     So Attr settings can be made inside a propertyList, for example.

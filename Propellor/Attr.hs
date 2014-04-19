@@ -42,8 +42,8 @@ ipv6 addr = pureAttrProperty ("ipv6 " ++ addr)
 	(addDNS $ Address $ IPv6 addr)
 
 -- | Indicates another name for the host in the DNS.
-aka :: Domain -> Property
-aka domain = pureAttrProperty ("aka " ++ domain)
+alias :: Domain -> Property
+alias domain = pureAttrProperty ("aka " ++ domain)
 	(addDNS $ CNAME $ AbsDomain domain)
 
 addDNS :: Record -> SetAttr

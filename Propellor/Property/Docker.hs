@@ -183,8 +183,8 @@ memory = runProp "memory"
 
 -- | Link with another container on the same host.
 link :: ContainerName -> ContainerAlias -> Property
-link linkwith alias = genProp "link" $ \hn ->
-	fromContainerId (ContainerId hn linkwith) ++ ":" ++ alias
+link linkwith calias = genProp "link" $ \hn ->
+	fromContainerId (ContainerId hn linkwith) ++ ":" ++ calias
 
 -- | A short alias for a linked container.
 -- Each container has its own alias namespace.
