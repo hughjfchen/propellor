@@ -194,10 +194,9 @@ rValue (TXT s) = [q] ++ filter (/= q) s ++ [q]
   where
 	q = '"'
 
--- | Adjusts the serial number of the zone to 
---
--- * Always be larger than the serial number in the Zone record.
--- * Always be larger than the passed SerialNumber
+-- | Adjusts the serial number of the zone to always be larger
+-- than the serial number in the Zone record,
+-- and always be larger than the passed SerialNumber.
 nextSerialNumber :: Zone -> SerialNumber -> Zone
 nextSerialNumber z serial = adjustSerialNumber z $ \sn -> succ $ max sn serial
 
