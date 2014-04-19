@@ -13,7 +13,6 @@ Category: Utility
 Extra-Source-Files:
   README.md
   doc/README.mdwn
-  TODO
   CHANGELOG
   Makefile
   config-simple.hs
