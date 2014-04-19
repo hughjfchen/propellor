@@ -119,6 +119,7 @@ hosts =               --                  (o)  `
 		& JoeySites.twitRss
 		
 		& alias "nntp.olduse.net"
+		& alias "resources.olduse.net"
 		& JoeySites.oldUseNetServer hosts
 		
 		& myDnsSecondary
