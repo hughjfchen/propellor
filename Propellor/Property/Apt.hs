@@ -192,7 +192,9 @@ autoRemove = runApt ["-y", "autoremove"]
 unattendedUpgrades :: RevertableProperty
 unattendedUpgrades = RevertableProperty enable disable
   where
-	enable = setup True `before` Service.running "cron"
+	enable = setup True
+		`before` Service.running "cron"
+		`before` configure
 	disable = setup False
 
 	setup enabled = (if enabled then installed else removed) ["unattended-upgrades"]
@@ -203,6 +205,16 @@ unattendedUpgrades = RevertableProperty enable disable
 		v
 			| enabled = "true"
 			| otherwise = "false"
+	
+	configure = withOS "unattended upgrades configured" $ \o ->
+		case o of
+			-- the package defaults to only upgrading stable
+			(Just (System (Debian suite) _))
+				| not (isStable suite) -> ensureProperty $
+					"/etc/apt/apt.conf.d/50unattended-upgrades"
+						`File.containsLine`
+					("\t\"o=Debian,a="++showSuite suite++"\";")
+			_ -> noChange
 
 -- | Preseeds debconf values and reconfigures the package so it takes
 -- effect.
