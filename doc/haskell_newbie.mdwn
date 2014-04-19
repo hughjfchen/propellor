@@ -85,7 +85,7 @@ you read through it, it's remarkably precise about what and where the problem
 is.
 
 <pre>
-config-simple.hs:30:19:
+config.hs:30:19:
     Couldn't match expected type `RevertableProperty'
                 with actual type `Property'
     In the return type of a call of `Apt.installed'
@@ -100,7 +100,7 @@ Similarly, if you make a typo in the config file, you'll probably get a long
 but informative error message.
 
 <pre>
-config-simple.hs:27:19:
+config.hs:27:19:
     Not in scope: `Apt.standardSourcesList'
     Perhaps you meant one of these:
       `Apt.stdSourcesList' (imported from Propellor.Property.Apt)
