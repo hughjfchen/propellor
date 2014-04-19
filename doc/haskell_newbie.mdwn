@@ -1,3 +1,5 @@
+[[!meta title="Propellor configuration for the Haskell newbie"]]
+
 Propellor's config file is written in Haskell, and
 [Haskell](http://www.haskell.org/) is invaluable to extend Propellor with
 your own custom properties. But you don't need to know about monads to
