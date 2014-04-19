@@ -36,7 +36,7 @@ import Data.List
 -- Will cause that hostmame and its alias to appear in the zone file,
 -- with the configured IP address.
 --
--- The [(Domain, Record)] list can be used for additional records
+-- The [(BindDomain, Record)] list can be used for additional records
 -- that cannot be configured elsewhere. For example, it might contain
 -- CNAMEs pointing at hosts that propellor does not control.
 primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
