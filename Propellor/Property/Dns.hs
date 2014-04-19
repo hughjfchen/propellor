@@ -39,11 +39,18 @@ import Data.List
 -- The [(BindDomain, Record)] list can be used for additional records
 -- that cannot be configured elsewhere. For example, it might contain
 -- CNAMEs pointing at hosts that propellor does not control.
-primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
-primary hosts domain soa rs = withwarnings (check needupdate baseprop)
-	`requires` servingZones
-	`onChange` Service.reloaded "bind9"
+primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
+primary hosts domain soa rs = RevertableProperty setup cleanup
   where
+	setup = withwarnings (check needupdate baseprop)
+		`requires` servingZones
+		`onChange` Service.reloaded "bind9"
+	cleanup = check (doesFileExist zonefile) $
+		property ("removed dns primary for " ++ domain)
+			(makeChange $ removeZoneFile zonefile)
+			`requires` namedConfWritten
+			`onChange` Service.reloaded "bind9"
+
 	(partialzone, warnings) = genZone hosts domain soa
 	zone = partialzone { zHosts = zHosts partialzone ++ rs }
 	zonefile = "/etc/bind/propellor/db." ++ domain
@@ -77,7 +84,7 @@ primary hosts domain soa rs = withwarnings (check needupdate baseprop)
 --
 -- Note that if a host is declared to be a primary and a secondary dns
 -- server for the same domain, the primary server config always wins.
-secondary :: [Host] -> Domain -> Property
+secondary :: [Host] -> Domain -> RevertableProperty
 secondary hosts domain = secondaryFor masters hosts domain
   where
 	masters = M.keys $ M.filter ismaster $ hostAttrMap hosts
@@ -87,10 +94,13 @@ secondary hosts domain = secondaryFor masters hosts domain
 
 -- | This variant is useful if the primary server does not have its DNS
 -- configured via propellor.
-secondaryFor :: [HostName] -> [Host] -> Domain -> Property
-secondaryFor masters hosts domain = pureAttrProperty desc (addNamedConf conf)
-	`requires` servingZones
+secondaryFor :: [HostName] -> [Host] -> Domain -> RevertableProperty
+secondaryFor masters hosts domain = RevertableProperty setup cleanup
   where
+	setup = pureAttrProperty desc (addNamedConf conf)
+		`requires` servingZones
+	cleanup = namedConfWritten
+
  	desc = "dns secondary for " ++ domain
 	conf = NamedConf
 		{ confDomain = domain
@@ -104,15 +114,16 @@ secondaryFor masters hosts domain = pureAttrProperty desc (addNamedConf conf)
 -- configured by `primary` and `secondary`, and ensures that bind9 is
 -- running.
 servingZones :: Property
-servingZones = property "serving configured dns zones" go
+servingZones = namedConfWritten
 	`requires` Apt.serviceInstalledRunning "bind9"
 	`onChange` Service.reloaded "bind9"
-  where
-	go = do
-		zs <- getNamedConf
-		ensureProperty $
-			hasContent namedConfFile $
-				concatMap confStanza $ M.elems zs
+
+namedConfWritten :: Property
+namedConfWritten = property "named.conf configured" $ do
+	zs <- getNamedConf
+	ensureProperty $
+		hasContent namedConfFile $
+			concatMap confStanza $ M.elems zs
 
 confStanza :: NamedConf -> [Line]
 confStanza c =
@@ -222,6 +233,11 @@ writeZoneFile z f = do
 	createDirectoryIfMissing True (takeDirectory f)
 	writeFile f (genZoneFile z')
 	writeZonePropellorFile f z'
+
+removeZoneFile :: FilePath -> IO ()
+removeZoneFile f = do
+	nukeFile f
+	nukeFile (zonePropellorFile f)
 
 -- | Next to the zone file, is a ".propellor" file, which contains
 -- the serialized Zone. This saves the bother of parsing

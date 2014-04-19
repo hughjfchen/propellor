@@ -2,6 +2,7 @@ propellor (0.5.0) UNRELEASED; urgency=medium
 
   * Removed root domain records from SOA. Instead, use RootDomain
     when calling Dns.primary.
+  * Dns primary and secondary properties are now revertable.
 
  -- Joey Hess <joeyh@debian.org>  Sat, 19 Apr 2014 10:46:35 -0400
 

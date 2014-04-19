@@ -245,7 +245,7 @@ cleanCloudAtCost = propertyList "cloudatcost cleanup"
 	]
 
 myDnsSecondary :: Property
-myDnsSecondary = propertyList "dns secondary for all my domains"
+myDnsSecondary = propertyList "dns secondary for all my domains" $ map toProp
 	[ Dns.secondaryFor wren hosts "kitenet.net"
 	, Dns.secondaryFor wren hosts "joeyh.name"
 	, Dns.secondaryFor wren hosts "ikiwiki.info"
