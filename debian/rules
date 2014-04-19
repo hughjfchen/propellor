@@ -12,3 +12,7 @@ override_dh_installdocs:
 	dh_installdocs README.md TODO
 override_dh_installman:
 	dh_installman debian/propellor.1
+
+# Not intended for use by anyone except the author.
+announcedir:
+	@echo ${HOME}/src/propellor/doc/news

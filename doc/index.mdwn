@@ -10,3 +10,7 @@
 [[!toc]]
 
 [[!inline raw=yes README.mdwn]]
+
+## news
+
+[[!inline pages="news/* and !*/Discussion" show="4" archive=yes]]
