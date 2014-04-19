@@ -40,15 +40,16 @@ hosts =               --                  (o)  `
 		& ipv4 "162.248.143.249"
 		& ipv6 "2002:5044:5531::1"
 		
-		& Dns.primary hosts "olduse.net" $
-			Dns.mkSOA "ns1.kitenet.net" 100
-				(Dns.rootAddressesFrom hosts "branchable.com")
-				[ NS "ns1.kitenet.net"
-				, NS "ns6.gandi.net"
-				, NS "ns2.kitenet.net"
-				, MX 0 "kitenet.net"
+		& Dns.primary hosts "olduse.net"
+			( Dns.mkSOA "ns1.kitenet.net" 100
+				( Dns.rootAddressesFrom hosts "branchable.com" )
+				[ NS (AbsDomain "ns1.kitenet.net")
+				, NS (AbsDomain "ns6.gandi.net")
+				, NS (AbsDomain "ns2.kitenet.net")
+				, MX 0 (AbsDomain "kitenet.net")
 				, TXT "v=spf1 a -all"
-				] 
+				]
+			)
 
 		& cleanCloudAtCost
 		& Apt.unattendedUpgrades
