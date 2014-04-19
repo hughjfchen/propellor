@@ -32,6 +32,7 @@ hosts :: [Host]        --   *             \ | |              '--------'
 hosts =               --                  (o)  `
 	-- My laptop
 	[ host "darkstar.kitenet.net"
+		& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
 		& Docker.configured
 		& Apt.buildDep ["git-annex"] `period` Daily
 
@@ -39,17 +40,6 @@ hosts =               --                  (o)  `
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
 		& ipv4 "162.248.143.249"
 		& ipv6 "2002:5044:5531::1"
-		
-		& Dns.primary hosts "olduse.net"
-			( Dns.mkSOA "ns1.kitenet.net" 100
-				( Dns.rootAddressesFrom hosts "branchable.com" )
-				[ NS (AbsDomain "ns1.kitenet.net")
-				, NS (AbsDomain "ns6.gandi.net")
-				, NS (AbsDomain "ns2.kitenet.net")
-				, MX 0 (AbsDomain "kitenet.net")
-				, TXT "v=spf1 a -all"
-				]
-			)
 
 		& cleanCloudAtCost
 		& Apt.unattendedUpgrades
@@ -74,6 +64,17 @@ hosts =               --                  (o)  `
 
 		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
+		
+		& Dns.primary hosts "olduse.net"
+			( Dns.mkSOA "ns1.kitenet.net" 100
+				[ NS (AbsDomain "ns1.kitenet.net")
+				, NS (AbsDomain "ns6.gandi.net")
+				, NS (AbsDomain "ns2.kitenet.net")
+				, MX 0 (AbsDomain "kitenet.net")
+				, TXT "v=spf1 a -all"
+				]
+			)
+			[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk") ]
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
@@ -288,8 +289,7 @@ monsters =	      -- but do want to track their public keys etc.
 	, host "branchable.com"
 		& ipv4 "66.228.46.55"
 		& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
+		& cname "olduse.net"
 		& cname "www.olduse.net"
 		& cname "git.olduse.net"
-	, host "virgil.koldfront.dk"
-		& cname "article.olduse.net"
 	]

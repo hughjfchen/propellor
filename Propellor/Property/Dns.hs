@@ -27,12 +27,26 @@ import Data.List
 -- | Primary dns server for a domain.
 --
 -- TODO: Does not yet add it to named.conf.local.
-primary :: [Host] -> Domain -> SOA -> Property
-primary hosts domain soa = withwarnings (check needupdate baseprop)
+--
+-- Most of the content of the zone file is configured by setting properties
+-- of hosts. For example,
+--
+-- > host "foo.example.com"
+-- >   & ipv4 "192.168.1.1"
+-- >   & cname "mail.exmaple.com"
+--
+-- Will cause that host and its cnames to appear in the zone file.
+--
+-- The [(Domain, Record)] list can be used for additional records
+-- that cannot be configured elsewhere. For example, it might contain
+-- CNAMEs pointing at hosts that propellor does not control.
+primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
+primary hosts domain soa rs = withwarnings (check needupdate baseprop)
 	`requires` Apt.serviceInstalledRunning "bind9"
 	`onChange` Service.reloaded "bind9"
   where
-	(zone, warnings) = genZone hosts domain soa
+	(partialzone, warnings) = genZone hosts domain soa
+	zone = partialzone { zHosts = zHosts partialzone ++ rs }
 	zonefile = "/etc/bind/propellor/db." ++ domain
 	needupdate = (/= Just zone) <$> readZonePropellorFile zonefile
 	baseprop = property ("dns primary for " ++ domain) $ makeChange $ do
