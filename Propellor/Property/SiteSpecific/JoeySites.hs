@@ -102,6 +102,19 @@ kgbServer = withOS desc $ \o -> case o of
   where
 	desc = "kgb.kitenet.net setup"
 
+mumbleServer :: [Host] -> Property
+mumbleServer hosts = combineProperties "mumble.debian.net" 
+	[ Obnam.latestVersion
+	, Obnam.backup "/var/lib/mumble-server" "55 5 * * *"
+		[ "--repository=sftp://joey@turtle.kitenet.net/~/lib/backup/mumble.debian.net.obnam"
+		, "--client-name=mumble"
+		] Obnam.OnlyClient
+		`requires` Ssh.keyImported SshRsa "root"
+		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "root"
+		`requires` User.accountFor "mumble-server"
+	, Apt.installed ["mumble-server"]
+	]
+
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property
 gitServer hosts = propertyList "git.kitenet.net setup"

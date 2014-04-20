@@ -64,6 +64,9 @@ hosts =               --                  (o)  `
 		-- I'd rather this were on diatom, but it needs unstable.
 		& alias "kgb.kitenet.net"
 		& JoeySites.kgbServer
+
+		& alias "mumble.kitenet.net"
+		& JoeySites.mumbleServer hosts
 		
 		& alias "ns9.kitenet.net"
 		& myDnsSecondary
@@ -168,7 +171,7 @@ hosts =               --                  (o)  `
 	, standardContainer "ancient-kitenet" Stable "amd64"
 		& Docker.publish "1994:80"
 		& Apt.serviceInstalledRunning "apache2"
-		& Git.cloned "root" "git://git.kitenet.net/kitewiki" "/var/www"
+		& Git.cloned "root" "git://kitenet-net.branchable.com/" "/var/www"
 			(Just "remotes/origin/old-kitenet.net")
 	
 	-- git-annex autobuilder containers
