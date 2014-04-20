@@ -111,8 +111,8 @@ mumbleServer hosts = combineProperties "mumble.debian.net"
 		] Obnam.OnlyClient
 		`requires` Ssh.keyImported SshRsa "root"
 		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "root"
-		`requires` User.accountFor "mumble-server"
-	, Apt.installed ["mumble-server"]
+	, cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
+	, Apt.serviceInstalledRunning "mumble-server"
 	]
 
 -- git.kitenet.net and git.joeyh.name
