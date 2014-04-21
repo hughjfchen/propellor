@@ -261,6 +261,7 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 			`onChange` Service.running "rsync"
 	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
 	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-mavericks"
+	-- git-annex distribution signing key
 	, Gpg.keyImported "89C809CB" "joey"
 	]
   where
