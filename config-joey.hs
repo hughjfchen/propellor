@@ -142,8 +142,6 @@ hosts =               --                  (o)  `
 		& alias "ns3.branchable.com"
 		& branchableSecondary
 
-		& Apt.installed ["ntop"]
-
 
 	    --'                        __|II|      ,.
 	  ----                      __|II|II|__   (  \_,/\
