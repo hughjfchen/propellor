@@ -100,7 +100,10 @@ hosts =               --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Postfix.satellite
+
+		-- Diatom has 500 mb of memory, so tune for that.
 		& JoeySites.obnamLowMem
+		& Apt.serviceInstalledRunning "swapspace"
 	
 		& Apt.serviceInstalledRunning "apache2"
 		& File.hasPrivContent "/etc/ssl/certs/web.pem"
@@ -119,7 +122,7 @@ hosts =               --                  (o)  `
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
-		& JoeySites.annexRsyncServer
+		& JoeySites.gitAnnexDistributor
 
 		& alias "tmp.kitenet.net"
 		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"

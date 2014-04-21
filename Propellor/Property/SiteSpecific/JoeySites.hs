@@ -116,7 +116,7 @@ mumbleServer hosts = combineProperties "mumble.debian.net"
 	]
 
 obnamLowMem :: Property
-obnamLowMem = propertyList "obnam tuned for low memory use"
+obnamLowMem = combineProperties "obnam tuned for low memory use"
 	[ Obnam.latestVersion
 	, "/etc/obnam.conf" `File.containsLines`
 		[ "# Suggested by liw to keep Obnam memory consumption down (at some speed cost)."
@@ -252,9 +252,8 @@ mainhttpscert True =
 	, "  SSLCertificateChainFile /etc/ssl/certs/startssl.pem"
 	]
 		
-
-annexRsyncServer :: Property
-annexRsyncServer = combineProperties "rsync server for git-annex autobuilders"
+gitAnnexDistributor :: Property
+gitAnnexDistributor = combineProperties "git-annex distributor, including rsync server and signer"
 	[ Apt.installed ["rsync"]
 	, File.hasPrivContent "/etc/rsyncd.conf"
 	, File.hasPrivContent "/etc/rsyncd.secrets"
@@ -262,6 +261,7 @@ annexRsyncServer = combineProperties "rsync server for git-annex autobuilders"
 			`onChange` Service.running "rsync"
 	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
 	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-mavericks"
+	, Gpg.keyImported "89C809CB" "joey"
 	]
   where
 	endpoint d = combineProperties ("endpoint " ++ d)
