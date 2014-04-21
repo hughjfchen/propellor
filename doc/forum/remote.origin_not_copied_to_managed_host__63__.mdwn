@@ -92,4 +92,4 @@ propellor fails with the following message:
 
 
     ** error: protocol error (perhaps the remote propellor failed to run?)
-    propellor: user error (ssh ["-o","ControlPath=/home/user/.ssh/propellor/capeo.gueux.org.sock","-o","ControlMaster=auto","-o","ControlPersist=yes","root@laptop.localdomain","sh -c 'if [ ! -d /usr/local/propellor ] ; then apt-get --no-install-recommends --no-upgrade -y install git make && echo STATUSNeedGitClone ; else cd /usr/local/propellor && if ! test -x ./propellor; then make deps build; fi && ./propellor --boot laptop.localdomain ; fi'"] exited 1)
+    propellor: user error (ssh ["-o","ControlPath=/home/user/.ssh/propellor/laptop.localdomain.sock","-o","ControlMaster=auto","-o","ControlPersist=yes","root@laptop.localdomain","sh -c 'if [ ! -d /usr/local/propellor ] ; then apt-get --no-install-recommends --no-upgrade -y install git make && echo STATUSNeedGitClone ; else cd /usr/local/propellor && if ! test -x ./propellor; then make deps build; fi && ./propellor --boot laptop.localdomain ; fi'"] exited 1)
