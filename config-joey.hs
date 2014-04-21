@@ -133,6 +133,22 @@ hosts =               --                  (o)  `
 		
 		& alias "ns2.kitenet.net"
 		& myDnsSecondary
+		& Dns.primary hosts "joeyh.name"
+			(Dns.mkSOA "ns2.kitenet.net" 100)
+			[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
+			, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
+			, (RootDomain, NS $ AbsDomain "ns9.kitenet.net")
+			, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
+			, (RootDomain, TXT "v=spf1 a mx ip4:80.68.85.49 ~all")
+			]
+		& Dns.primary hosts "ikiwiki.info"
+			(Dns.mkSOA "ns2.kitenet.net" 100)
+			[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
+			, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
+			, (RootDomain, NS $ AbsDomain "ns9.kitenet.net")
+			, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
+			, (RootDomain, TXT "v=spf1 a -all")
+			]
 		& Dns.primary hosts "olduse.net"
 			(Dns.mkSOA "ns2.kitenet.net" 100)
 			[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
@@ -301,4 +317,8 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "olduse.net"
 		& alias "www.olduse.net"
 		& alias "git.olduse.net"
+		& alias "joeyh.name"
+		& alias "campaign.joeyh.name"
+		& alias "ikiwiki.info"
+		& alias "l10n.ikiwiki.info"
 	]

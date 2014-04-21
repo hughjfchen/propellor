@@ -111,7 +111,7 @@ mumbleServer hosts = combineProperties "mumble.debian.net"
 		] Obnam.OnlyClient
 		`requires` Ssh.keyImported SshRsa "root"
 		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "root"
-	, cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
+	, trivial $ cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
 	, Apt.serviceInstalledRunning "mumble-server"
 	]
 
