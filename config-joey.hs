@@ -255,13 +255,11 @@ cleanCloudAtCost = propertyList "cloudatcost cleanup"
 
 myDnsSecondary :: Property
 myDnsSecondary = propertyList "dns secondary for all my domains" $ map toProp
-	[ Dns.secondaryFor wren hosts "kitenet.net"
-	, Dns.secondaryFor wren hosts "joeyh.name"
-	, Dns.secondaryFor wren hosts "ikiwiki.info"
+	[ Dns.secondary hosts "kitenet.net"
+	, Dns.secondary hosts "joeyh.name"
+	, Dns.secondary hosts "ikiwiki.info"
 	, Dns.secondary hosts "olduse.net"
 	]
-  where
-	wren = ["wren.kitenet.net"]
 
 branchableSecondary :: RevertableProperty
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
