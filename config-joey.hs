@@ -132,13 +132,15 @@ hosts =               --                  (o)  `
 		& JoeySites.oldUseNetServer hosts
 		
 		& alias "ns2.kitenet.net"
-		& myDnsPrimary "kitenet.net"
-			[]
+		& myDnsPrimary "kitenet.net" []
 		& myDnsPrimary "joeyh.name" []
 		& myDnsPrimary "ikiwiki.info" []
 		& myDnsPrimary "olduse.net"
 			[ (RelDomain "article",
 				CNAME $ AbsDomain "virgil.koldfront.dk") ]
+	
+		& alias "ns3.branchable.com"
+		& myDnsSecondary
 
 		& Apt.installed ["ntop"]
 
@@ -263,7 +265,8 @@ myDnsSecondary = propertyList "dns secondary for all my domains" $ map toProp
 	wren = ["wren.kitenet.net"]
 	branchable = ["branchable.com"]
 
--- Currently using diatom (ns2) and clam (ns9), with gandi supplimenting;
+-- Currently using diatom (ns2) as primary with secondaries
+-- clam (ns9) and gandi.
 -- kite handles all mail.
 myDnsPrimary :: Domain -> [(BindDomain, Record)] -> RevertableProperty
 myDnsPrimary domain extras = Dns.primary hosts domain
