@@ -140,7 +140,7 @@ hosts =               --                  (o)  `
 				CNAME $ AbsDomain "virgil.koldfront.dk") ]
 	
 		& alias "ns3.branchable.com"
-		& myDnsSecondary
+		& branchableSecondary
 
 		& Apt.installed ["ntop"]
 
@@ -259,11 +259,12 @@ myDnsSecondary = propertyList "dns secondary for all my domains" $ map toProp
 	, Dns.secondaryFor wren hosts "joeyh.name"
 	, Dns.secondaryFor wren hosts "ikiwiki.info"
 	, Dns.secondary hosts "olduse.net"
-	, Dns.secondaryFor branchable hosts "branchable.com"
 	]
   where
 	wren = ["wren.kitenet.net"]
-	branchable = ["branchable.com"]
+
+branchableSecondary :: RevertableProperty
+branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 
 -- Currently using diatom (ns2) as primary with secondaries
 -- clam (ns9) and gandi.
