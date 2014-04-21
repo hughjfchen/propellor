@@ -115,6 +115,16 @@ mumbleServer hosts = combineProperties "mumble.debian.net"
 	, Apt.serviceInstalledRunning "mumble-server"
 	]
 
+obnamLowMem :: Property
+obnamLowMem = propertyList "obnam tuned for low memory use"
+	[ Obnam.latestVersion
+	, "/etc/obnam.conf" `File.containsLines`
+		[ "# Suggested by liw to keep Obnam memory consumption down (at some speed cost)."
+		, "upload-queue-size = 128"
+		, "lru-size = 128"
+		]
+	]
+
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property
 gitServer hosts = propertyList "git.kitenet.net setup"
