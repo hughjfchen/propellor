@@ -1,3 +1,9 @@
+propellor (0.5.1) UNRELEASED; urgency=medium
+
+  * Add missing build deps and deps. Closes: #745459
+
+ -- Joey Hess <joeyh@debian.org>  Tue, 22 Apr 2014 19:07:59 -0400
+
 propellor (0.5.0) unstable; urgency=medium
 
   * Removed root domain records from SOA. Instead, use RootDomain
