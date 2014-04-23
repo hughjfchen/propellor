@@ -344,4 +344,5 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "family.kitenet.net"
 	, host "animx"
 		& ipv4 "76.7.162.101"
+		& ipv4 "76.7.162.186"
 	]
