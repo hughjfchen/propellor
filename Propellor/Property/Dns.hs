@@ -49,8 +49,9 @@ import Data.List
 --
 -- 2. By looking for NS Records in the passed list of records.
 --
--- In either case, the secondary dns server Host should have an ipv4
--- property.
+-- In either case, the secondary dns server Host should have an ipv4 and/or
+-- ipv6 property defined. Propellor will warn if it cannot find the IP
+-- address for any secondary.
 primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
 primary hosts domain soa rs = RevertableProperty setup cleanup
   where
@@ -63,14 +64,14 @@ primary hosts domain soa rs = RevertableProperty setup cleanup
 			`requires` namedConfWritten
 			`onChange` Service.reloaded "bind9"
 
-	(partialzone, warnings) = genZone hosts domain soa
+	(partialzone, zonewarnings) = genZone hosts domain soa
 	zone = partialzone { zHosts = zHosts partialzone ++ rs }
 	zonefile = "/etc/bind/propellor/db." ++ domain
 	baseprop = Property ("dns primary for " ++ domain)
 		(makeChange $ writeZoneFile zone zonefile)
 		(addNamedConf conf)
 	withwarnings p = adjustProperty p $ \satisfy -> do
-		mapM_ warningMessage warnings
+		mapM_ warningMessage $ zonewarnings ++ secondarywarnings
 		satisfy
 	conf = NamedConf
 		{ confDomain = domain
@@ -78,11 +79,13 @@ primary hosts domain soa rs = RevertableProperty setup cleanup
 		, confFile = zonefile
 		, confMasters = []
 		, confAllowTransfer = nub $
-			concatMap (\m -> hostAddresses m hosts) $
-				otherServers Secondary hosts domain ++ 
-				mapMaybe (domainHostName <=< getNS) rootRecords
+			concatMap (\h -> hostAddresses h hosts) secondaries
 		, confLines = []
 		}
+	secondaries = otherServers Secondary hosts domain ++ 
+		mapMaybe (domainHostName <=< getNS) rootRecords
+	secondarywarnings = map (\h -> "No IP address defined for DNS seconary " ++ h) $
+		filter (\h -> null (hostAddresses h hosts)) secondaries
 	rootRecords = map snd $
 		filter (\(d, _r) -> d == RootDomain || d == AbsDomain domain) rs
 	needupdate = do
