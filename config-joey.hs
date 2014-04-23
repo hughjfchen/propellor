@@ -112,6 +112,7 @@ hosts =               --                  (o)  `
 		& Apache.modEnabled "ssl"
 		& Apache.multiSSL
 		& File.ownerGroup "/srv/web" "joey" "joey"
+		& Apt.installed ["analog"]
 
 		& alias "git.kitenet.net"
 		& alias "git.joeyh.name"
