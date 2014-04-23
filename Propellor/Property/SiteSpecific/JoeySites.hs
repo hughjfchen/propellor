@@ -102,6 +102,30 @@ kgbServer = withOS desc $ \o -> case o of
   where
 	desc = "kgb.kitenet.net setup"
 
+mumbleServer :: [Host] -> Property
+mumbleServer hosts = combineProperties "mumble.debian.net" 
+	[ Obnam.latestVersion
+	, Obnam.backup "/var/lib/mumble-server" "55 5 * * *"
+		[ "--repository=sftp://joey@turtle.kitenet.net/~/lib/backup/mumble.debian.net.obnam"
+		, "--client-name=mumble"
+		] Obnam.OnlyClient
+		`requires` Ssh.keyImported SshRsa "root"
+		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "root"
+	, trivial $ cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
+	, Apt.serviceInstalledRunning "mumble-server"
+	]
+
+obnamLowMem :: Property
+obnamLowMem = combineProperties "obnam tuned for low memory use"
+	[ Obnam.latestVersion
+	, "/etc/obnam.conf" `File.containsLines`
+		[ "[config]"
+		, "# Suggested by liw to keep Obnam memory consumption down (at some speed cost)."
+		, "upload-queue-size = 128"
+		, "lru-size = 128"
+		]
+	]
+
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property
 gitServer hosts = propertyList "git.kitenet.net setup"
@@ -229,9 +253,8 @@ mainhttpscert True =
 	, "  SSLCertificateChainFile /etc/ssl/certs/startssl.pem"
 	]
 		
-
-annexRsyncServer :: Property
-annexRsyncServer = combineProperties "rsync server for git-annex autobuilders"
+gitAnnexDistributor :: Property
+gitAnnexDistributor = combineProperties "git-annex distributor, including rsync server and signer"
 	[ Apt.installed ["rsync"]
 	, File.hasPrivContent "/etc/rsyncd.conf"
 	, File.hasPrivContent "/etc/rsyncd.secrets"
@@ -239,6 +262,8 @@ annexRsyncServer = combineProperties "rsync server for git-annex autobuilders"
 			`onChange` Service.running "rsync"
 	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
 	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-mavericks"
+	-- git-annex distribution signing key
+	, Gpg.keyImported "89C809CB" "joey"
 	]
   where
 	endpoint d = combineProperties ("endpoint " ++ d)

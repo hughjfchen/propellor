@@ -32,7 +32,6 @@ simpleSh namedpipe = do
 	forever $ do
 		(client, _addr) <- accept s
 		h <- socketToHandle client ReadWriteMode
-		hSetBuffering h LineBuffering
 		maybe noop (run h) . readish =<< hGetLine h
   where
 	run h (Cmd cmd params) = do
@@ -47,6 +46,7 @@ simpleSh namedpipe = do
 		let runwriter = do
 			v <- readChan chan
 			hPutStrLn h (show v)
+			hFlush h
 			case v of
 				Done -> noop
 				_ -> runwriter
@@ -73,8 +73,8 @@ simpleShClient namedpipe cmd params handler = do
 	s <- socket AF_UNIX Stream defaultProtocol
 	connect s (SockAddrUnix namedpipe)
 	h <- socketToHandle s ReadWriteMode
-	hSetBuffering h LineBuffering
 	hPutStrLn h $ show $ Cmd cmd params
+	hFlush h
 	resps <- catMaybes . map readish . lines <$> hGetContents h
 	hClose h `after` handler resps
 

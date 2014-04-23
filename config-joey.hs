@@ -64,6 +64,9 @@ hosts =               --                  (o)  `
 		-- I'd rather this were on diatom, but it needs unstable.
 		& alias "kgb.kitenet.net"
 		& JoeySites.kgbServer
+
+		& alias "mumble.kitenet.net"
+		& JoeySites.mumbleServer hosts
 		
 		& alias "ns9.kitenet.net"
 		& myDnsSecondary
@@ -97,6 +100,10 @@ hosts =               --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Postfix.satellite
+
+		-- Diatom has 500 mb of memory, so tune for that.
+		& JoeySites.obnamLowMem
+		& Apt.serviceInstalledRunning "swapspace"
 	
 		& Apt.serviceInstalledRunning "apache2"
 		& File.hasPrivContent "/etc/ssl/certs/web.pem"
@@ -115,7 +122,7 @@ hosts =               --                  (o)  `
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
-		& JoeySites.annexRsyncServer
+		& JoeySites.gitAnnexDistributor
 
 		& alias "tmp.kitenet.net"
 		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"
@@ -129,18 +136,15 @@ hosts =               --                  (o)  `
 		& JoeySites.oldUseNetServer hosts
 		
 		& alias "ns2.kitenet.net"
-		& myDnsSecondary
-		& Dns.primary hosts "olduse.net"
-			(Dns.mkSOA "ns2.kitenet.net" 100)
-			[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
-			, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
-			, (RootDomain, NS $ AbsDomain "ns9.kitenet.net")
-			, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
-			, (RootDomain, TXT "v=spf1 a -all")
-			, (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
-			]
-
-		& Apt.installed ["ntop"]
+		& myDnsPrimary "kitenet.net" []
+		& myDnsPrimary "joeyh.name" []
+		& myDnsPrimary "ikiwiki.info" []
+		& myDnsPrimary "olduse.net"
+			[ (RelDomain "article",
+				CNAME $ AbsDomain "virgil.koldfront.dk") ]
+	
+		& alias "ns3.branchable.com"
+		& branchableSecondary
 
 
 	    --'                        __|II|      ,.
@@ -168,7 +172,7 @@ hosts =               --                  (o)  `
 	, standardContainer "ancient-kitenet" Stable "amd64"
 		& Docker.publish "1994:80"
 		& Apt.serviceInstalledRunning "apache2"
-		& Git.cloned "root" "git://git.kitenet.net/kitewiki" "/var/www"
+		& Git.cloned "root" "git://kitenet-net.branchable.com/" "/var/www"
 			(Just "remotes/origin/old-kitenet.net")
 	
 	-- git-annex autobuilder containers
@@ -253,16 +257,27 @@ cleanCloudAtCost = propertyList "cloudatcost cleanup"
 
 myDnsSecondary :: Property
 myDnsSecondary = propertyList "dns secondary for all my domains" $ map toProp
-	[ Dns.secondaryFor wren hosts "kitenet.net"
-	, Dns.secondaryFor wren hosts "joeyh.name"
-	, Dns.secondaryFor wren hosts "ikiwiki.info"
+	[ Dns.secondary hosts "kitenet.net"
+	, Dns.secondary hosts "joeyh.name"
+	, Dns.secondary hosts "ikiwiki.info"
 	, Dns.secondary hosts "olduse.net"
-	, Dns.secondaryFor branchable hosts "branchable.com"
 	]
-  where
-	wren = ["wren.kitenet.net"]
-	branchable = ["branchable.com"]
 
+branchableSecondary :: RevertableProperty
+branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
+
+-- Currently using diatom (ns2) as primary with secondaries
+-- clam (ns9) and gandi.
+-- kite handles all mail.
+myDnsPrimary :: Domain -> [(BindDomain, Record)] -> RevertableProperty
+myDnsPrimary domain extras = Dns.primary hosts domain
+	(Dns.mkSOA "ns2.kitenet.net" 100) $
+	[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
+	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
+	, (RootDomain, NS $ AbsDomain "ns9.kitenet.net")
+	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
+	, (RootDomain, TXT "v=spf1 a ?all")
+	] ++ extras
 
 
                           --                                o
@@ -285,17 +300,41 @@ monsters =	      -- but do want to track their public keys etc.
 	, host "turtle.kitenet.net"
 		& ipv4 "67.223.19.96"
 		& ipv6 "2001:4978:f:2d9::2"
+		& alias "backup.kitenet.net"
 		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
 	, host "wren.kitenet.net"
 		& ipv4 "80.68.85.49"
 		& ipv6 "2001:41c8:125:49::10"
-		& alias "kite.kitenet.net"
 		& alias "kitenet.net"
+		& alias "kite.kitenet.net"
 		& alias "ns1.kitenet.net"
+		& alias "ftp.kitenet.net"
+		& alias "mail.kitenet.net"
+		& alias "smtp.kitenet.net"
+		& alias "sows-ear.kitenet.net"
+		& alias "www.sows-ear.kitenet.net"
+		& alias "wortroot.kitenet.net"
+		& alias "www.wortroot.kitenet.net"
+		& alias "joey.kitenet.net"
+		& alias "annex.kitenet.net"
+		& alias "ipv6.kitenet.net"
+	, host "mouse.kitenet.net"
+		& ipv6 "2001:4830:1600:492::2"
+	, host "beaver.kitenet.net"
+		& ipv6 "2001:4830:1600:195::2"
+	, host "hydra.kitenet.net"
+		& ipv4 "192.25.206.60"
 	, host "branchable.com"
 		& ipv4 "66.228.46.55"
 		& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
 		& alias "olduse.net"
 		& alias "www.olduse.net"
-		& alias "git.olduse.net"
+		& alias "www.kitenet.net"
+		& alias "joeyh.name"
+		& alias "campaign.joeyh.name"
+		& alias "ikiwiki.info"
+		& alias "git.ikiwiki.info"
+		& alias "l10n.ikiwiki.info"
+		& alias "dist-bugs.kitenet.net"
+		& alias "family.kitenet.net"
 	]

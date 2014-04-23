@@ -116,8 +116,8 @@ secondaryFor masters hosts domain = RevertableProperty setup cleanup
 -- running.
 servingZones :: Property
 servingZones = namedConfWritten
-	`requires` Apt.serviceInstalledRunning "bind9"
 	`onChange` Service.reloaded "bind9"
+	`requires` Apt.serviceInstalledRunning "bind9"
 
 namedConfWritten :: Property
 namedConfWritten = property "named.conf configured" $ do
