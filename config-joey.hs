@@ -145,6 +145,8 @@ hosts =               --                  (o)  `
 	
 		& alias "ns3.branchable.com"
 		& branchableSecondary
+		
+		& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
 
 	    --'                        __|II|      ,.
@@ -337,4 +339,6 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "l10n.ikiwiki.info"
 		& alias "dist-bugs.kitenet.net"
 		& alias "family.kitenet.net"
+	, host "animx"
+		& ipv4 "76.7.162.101"
 	]
