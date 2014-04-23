@@ -50,8 +50,7 @@ import Data.List
 -- 2. By looking for NS Records in the passed list of records.
 --
 -- In either case, the secondary dns server Host should have an ipv4 and/or
--- ipv6 property defined. Propellor will warn if it cannot find the IP
--- address for any secondary.
+-- ipv6 property defined.
 primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
 primary hosts domain soa rs = RevertableProperty setup cleanup
   where
@@ -79,13 +78,14 @@ primary hosts domain soa rs = RevertableProperty setup cleanup
 		, confFile = zonefile
 		, confMasters = []
 		, confAllowTransfer = nub $
-			concatMap (\h -> hostAddresses h hosts) secondaries
+			concatMap (\h -> hostAddresses h hosts) $
+				secondaries ++ nssecondaries
 		, confLines = []
 		}
-	secondaries = otherServers Secondary hosts domain ++ 
-		mapMaybe (domainHostName <=< getNS) rootRecords
+	secondaries = otherServers Secondary hosts domain
 	secondarywarnings = map (\h -> "No IP address defined for DNS seconary " ++ h) $
 		filter (\h -> null (hostAddresses h hosts)) secondaries
+	nssecondaries = mapMaybe (domainHostName <=< getNS) rootRecords
 	rootRecords = map snd $
 		filter (\(d, _r) -> d == RootDomain || d == AbsDomain domain) rs
 	needupdate = do
