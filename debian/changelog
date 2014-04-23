@@ -1,6 +1,10 @@
 propellor (0.5.1) UNRELEASED; urgency=medium
 
   * Add missing build deps and deps. Closes: #745459
+  * Primary DNS servers now have allow-transfer automatically populated
+    with the IP addresses of secondary dns servers. So, it's important
+    that all secondary DNS servers have an ipv4 (and/or ipv6) property
+    configured.
 
  -- Joey Hess <joeyh@debian.org>  Tue, 22 Apr 2014 19:07:59 -0400
 

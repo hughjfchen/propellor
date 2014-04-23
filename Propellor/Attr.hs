@@ -59,7 +59,7 @@ addNamedConf conf d = d { _namedconf = new }
   where
 	m = _namedconf d
 	domain = confDomain conf
-	new = case (confType conf, confType <$> M.lookup domain m) of
+	new = case (confDnsServerType conf, confDnsServerType <$> M.lookup domain m) of
 		(Secondary, Just Master) -> m
 		_  -> M.insert domain conf m
 

@@ -1,5 +1,7 @@
 module Propellor.Types.Dns where
 
+import Propellor.Types.OS (HostName)
+
 import Data.Word
 
 type Domain = String
@@ -14,14 +16,15 @@ fromIPAddr (IPv6 addr) = addr
 -- | Represents a bind 9 named.conf file.
 data NamedConf = NamedConf
 	{ confDomain :: Domain
-	, confType :: Type
+	, confDnsServerType :: DnsServerType
 	, confFile :: FilePath
 	, confMasters :: [IPAddr]
+	, confAllowTransfer :: [IPAddr]
 	, confLines :: [String]
 	}
 	deriving (Show, Eq, Ord)
 
-data Type = Master | Secondary
+data DnsServerType = Master | Secondary
 	deriving (Show, Eq, Ord)
 
 -- | Represents a bind 9 zone file.
@@ -66,6 +69,10 @@ getCNAME :: Record -> Maybe BindDomain
 getCNAME (CNAME d) = Just d
 getCNAME _ = Nothing
 
+getNS :: Record -> Maybe BindDomain
+getNS (NS d) = Just d
+getNS _ = Nothing
+
 -- | Bind serial numbers are unsigned, 32 bit integers.
 type SerialNumber = Word32
 
@@ -78,3 +85,8 @@ type SerialNumber = Word32
 -- to add nameservers, MX's, etc to a domain.
 data BindDomain = RelDomain Domain | AbsDomain Domain | RootDomain
 	deriving (Read, Show, Eq, Ord)
+
+domainHostName :: BindDomain -> Maybe HostName
+domainHostName (RelDomain d) = Just d
+domainHostName (AbsDomain d) = Just d
+domainHostName RootDomain = Nothing
