@@ -35,7 +35,7 @@ Description:
 
 Executable propellor
   Main-Is: propellor.hs
-  GHC-Options: -Wall
+  GHC-Options: -Wall -threaded
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
    containers, network, async, time, QuickCheck, mtl,
