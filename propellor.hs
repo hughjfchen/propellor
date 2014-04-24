@@ -74,7 +74,7 @@ wrapper args propellordir propellorbin = do
 		void $ boolSystem "git" [Param "remote", Param "add", Param "upstream", Param srcrepo]
 		-- Connect synthetic git repo with upstream history so
 		-- merging with upstream will work going forward.
-		-- Note -s outs is used to avoid getting any divergent
+		-- Note -s ours is used to avoid getting any divergent
 		-- changes from upstream.
 		when fromsrcdir $ do
 			void $ boolSystem "git" [Param "fetch", Param "upstream"]
