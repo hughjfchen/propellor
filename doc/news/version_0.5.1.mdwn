@@ -1,0 +1,8 @@
+propellor 0.5.1 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Primary DNS servers now have allow-transfer automatically populated
+     with the IP addresses of secondary dns servers. So, it's important
+     that all secondary DNS servers have an ipv4 (and/or ipv6) property
+     configured.
+   * Deal with old ssh connection caching sockets.
+   * Add missing build deps and deps. Closes: #[745459](http://bugs.debian.org/745459)"""]]
