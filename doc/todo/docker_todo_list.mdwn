@@ -6,3 +6,6 @@
   need ntp installed for a good date source.
 * Docking a container in a host should add to the host any cnames that
   are assigned to the container.
+* It seems that provisionContainer sometimes hangs when the container
+  is already running. This seems likely to be a problem with the simpleSh
+  socket hack.
