@@ -185,7 +185,7 @@ annexWebSite hosts origin hn uuid remotes = propertyList (hn ++" website using g
 	[ Git.cloned "joey" origin dir Nothing
 		`onChange` setup
 	, postupdatehook `File.hasContent`
-		[ "!/bin/sh"
+		[ "#!/bin/sh"
 		, "exec git update-server-info"
 		] `onChange`
 			(postupdatehook `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
