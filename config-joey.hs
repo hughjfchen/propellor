@@ -1,4 +1,5 @@
 -- This is the live config file used by propellor's author.
+module Main where
 
 import Propellor
 import Propellor.CmdLine
