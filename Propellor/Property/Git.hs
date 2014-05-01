@@ -86,4 +86,8 @@ cloned owner url dir mbranch = check originurl (property desc checkout)
 			[ Just $ "git clone " ++ shellEscape url ++ " " ++ shellEscape dir ++ " < /dev/null"
 			, Just $ "cd " ++ shellEscape dir
 			, ("git checkout " ++) <$> mbranch
+			-- In case this repo is exposted via the web,
+			-- although the hook to do this ongoing is not
+			-- installed here.
+			, Just "git update-server-info"
 			]
