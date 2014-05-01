@@ -12,6 +12,8 @@
 -- The source is either copied from /usr/src/propellor, or is cloned from
 -- git over the network.
 
+module Main where
+
 import Utility.UserInfo
 import Utility.Monad
 import Utility.Process

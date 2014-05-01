@@ -1,4 +1,5 @@
 -- This is the live config file used by propellor's author.
+module Main where
 
 import Propellor
 import Propellor.CmdLine
@@ -19,6 +20,7 @@ import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
+import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -73,6 +75,11 @@ hosts =               --                  (o)  `
 
 		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
+
+		-- Nothing is using https on clam, so listen on that port
+		-- for ssh, for traveling on bad networks.
+		& "/etc/ssh/sshd_config" `File.containsLine` "Port 443"
+			`onChange` Service.restarted "ssh"
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"

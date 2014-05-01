@@ -15,6 +15,7 @@ import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Apache as Apache
 import Utility.SafeCommand
+import Utility.FileMode
 
 import Data.List
 import System.Posix.Files
@@ -183,10 +184,16 @@ annexWebSite :: [Host] -> Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.
 annexWebSite hosts origin hn uuid remotes = propertyList (hn ++" website using git-annex")
 	[ Git.cloned "joey" origin dir Nothing
 		`onChange` setup
+	, postupdatehook `File.hasContent`
+		[ "#!/bin/sh"
+		, "exec git update-server-info"
+		] `onChange`
+			(postupdatehook `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
 	, setupapache
 	]
   where
 	dir = "/srv/web/" ++ hn
+	postupdatehook = dir </> ".git/hooks/post-update"
 	setup = userScriptProperty "joey" setupscript
 		`requires` Ssh.keyImported SshRsa "joey"
 		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "joey"

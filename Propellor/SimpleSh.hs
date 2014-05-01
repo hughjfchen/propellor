@@ -70,13 +70,17 @@ simpleSh namedpipe = do
 
 simpleShClient :: FilePath -> String -> [String] -> ([Resp] -> IO a) -> IO a
 simpleShClient namedpipe cmd params handler = do
+	debug ["simplesh connecting"]
 	s <- socket AF_UNIX Stream defaultProtocol
 	connect s (SockAddrUnix namedpipe)
 	h <- socketToHandle s ReadWriteMode
 	hPutStrLn h $ show $ Cmd cmd params
 	hFlush h
+	debug ["simplesh sent command"]
 	resps <- catMaybes . map readish . lines <$> hGetContents h
-	hClose h `after` handler resps
+	v <- hClose h `after` handler resps
+	debug ["simplesh processed response"]
+	return v
 
 simpleShClientRetry :: Int -> FilePath -> String -> [String] -> ([Resp] -> IO a) -> IO a
 simpleShClientRetry retries namedpipe cmd params handler = go retries
@@ -88,7 +92,8 @@ simpleShClientRetry retries namedpipe cmd params handler = go retries
 			v <- tryIO run
 			case v of
 				Right r -> return r
-				Left _ -> do
+				Left e -> do
+					debug ["simplesh connection retry", show e]
 					threadDelaySeconds (Seconds 1)
 					go (n - 1)
 
