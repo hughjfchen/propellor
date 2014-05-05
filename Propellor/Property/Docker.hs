@@ -346,11 +346,18 @@ provisionContainer cid = containerDesc cid $ property "provision" $ liftIO $ do
 			hPutStrLn stderr s
 			hFlush stderr
 			go Nothing rest
-		Done -> ret lastline
-	go lastline [] = ret lastline
+		Done -> do
+			debug ["reached Done"]
+			ret lastline
+	go lastline [] = do
+		debug ["reached end of output"]
+		ret lastline
 
-	ret lastline = return $ fromMaybe FailedChange $
-		readish =<< lastline
+	ret lastline = do
+		let v = fromMaybe FailedChange $
+			readish =<< lastline
+		debug ["provisionContainer returning", show v]
+		return v
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]
