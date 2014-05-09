@@ -34,7 +34,7 @@ Description:
  It is configured using haskell.
 
 Executable propellor
-  Main-Is: propellor.hs
+  Main-Is: wrapper.hs
   GHC-Options: -Wall -threaded
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
