@@ -300,3 +300,15 @@ twitRss = combineProperties "twitter rss"
 	crontime = "15 * * * *"
 	feed url desc = Cron.job desc crontime "joey" dir $
 		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
+
+ircBouncer :: Property
+ircBouncer = propertyList "IRC bouncer"
+	[ Apt.installed ["znc"]
+	, User.accountFor "znc"
+	, File.hasPrivContent conf
+	, File.ownerGroup conf "znc" "znc"
+	, Cron.job "znconboot" "@reboot" "znc" "~" "znc"
+	, Cron.job "zncrunning" "@hourly" "znc" "~" "znc || true"
+	]
+  where
+	conf = "/home/znc/.znc/configs/znc.conf"

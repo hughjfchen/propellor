@@ -74,8 +74,7 @@ hosts =               --                  (o)  `
 		& myDnsSecondary
 		
 		& alias "znc.kitenet.net"
-		& Apt.installed ["znc"]
-		& User.accountFor "znc"
+		& JoeySites.ircBouncer
 
 		-- Nothing is using https on clam, so listen on that port
 		-- for ssh, for traveling on bad networks.
