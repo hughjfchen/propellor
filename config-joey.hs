@@ -334,6 +334,7 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "joey.kitenet.net"
 		& alias "annex.kitenet.net"
 		& alias "ipv6.kitenet.net"
+		& alias "bitlbee.kitenet.net"
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
 	, host "beaver.kitenet.net"
