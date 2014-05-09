@@ -105,7 +105,8 @@ kgbServer = withOS desc $ \o -> case o of
 
 mumbleServer :: [Host] -> Property
 mumbleServer hosts = combineProperties "mumble.debian.net" 
-	[ Obnam.latestVersion
+	[ Apt.serviceInstalledRunning "mumble-server"
+	, Obnam.latestVersion
 	, Obnam.backup "/var/lib/mumble-server" "55 5 * * *"
 		[ "--repository=sftp://joey@turtle.kitenet.net/~/lib/backup/mumble.debian.net.obnam"
 		, "--client-name=mumble"
@@ -113,7 +114,6 @@ mumbleServer hosts = combineProperties "mumble.debian.net"
 		`requires` Ssh.keyImported SshRsa "root"
 		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "root"
 	, trivial $ cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
-	, Apt.serviceInstalledRunning "mumble-server"
 	]
 
 obnamLowMem :: Property
