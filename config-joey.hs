@@ -58,7 +58,7 @@ hosts =               --                  (o)  `
 
 		& alias "openid.kitenet.net"
 		& Docker.docked hosts "openid-provider"
-		 	`requires` Apt.installed ["ntp"]
+		 	`requires` Apt.serviceInstalledRunning "ntp"
 
 		& alias "ancient.kitenet.net"
 		& Docker.docked hosts "ancient-kitenet"
