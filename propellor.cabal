@@ -1,12 +1,12 @@
 Name: propellor
 Version: 0.5.1
 Cabal-Version: >= 1.6
-License: GPL
+License: BSD
 Maintainer: Joey Hess <joey@kitenet.net>
 Author: Joey Hess
 Stability: Stable
 Copyright: 2014 Joey Hess
-License-File: GPL
+License-File: LICENSE
 Build-Type: Simple
 Homepage: https://propellor.branchable.com/
 Category: Utility
@@ -34,7 +34,7 @@ Description:
  It is configured using haskell.
 
 Executable propellor
-  Main-Is: propellor.hs
+  Main-Is: wrapper.hs
   GHC-Options: -Wall -threaded
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,

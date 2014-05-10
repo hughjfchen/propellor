@@ -35,14 +35,7 @@ simpleSh namedpipe = do
 		maybe noop (run h) . readish =<< hGetLine h
   where
 	run h (Cmd cmd params) = do
-		let p = (proc cmd params)
-                	{ std_in = Inherit
-	                , std_out = CreatePipe
-			, std_err = CreatePipe
-			}
-		(Nothing, Just outh, Just errh, pid) <- createProcess p
 		chan <- newChan
-
 		let runwriter = do
 			v <- readChan chan
 			hPutStrLn h (show v)
@@ -52,20 +45,28 @@ simpleSh namedpipe = do
 				_ -> runwriter
 		writer <- async runwriter
 
-		let mkreader t from = maybe noop (const $ mkreader t from) 
-			=<< catchMaybeIO (writeChan chan . t =<< hGetLine from)
-		void $ concurrently
-			(mkreader StdoutLine outh)
-			(mkreader StderrLine errh)
-		
-		void $ tryIO $ waitForProcess pid
+		flip catchIO (\_e -> writeChan chan Done) $ do
+			let p = (proc cmd params)
+	                	{ std_in = Inherit
+		                , std_out = CreatePipe
+				, std_err = CreatePipe
+				}
+			(Nothing, Just outh, Just errh, pid) <- createProcess p
 
-		writeChan chan Done
+			let mkreader t from = maybe noop (const $ mkreader t from) 
+				=<< catchMaybeIO (writeChan chan . t =<< hGetLine from)
+			void $ concurrently
+				(mkreader StdoutLine outh)
+				(mkreader StderrLine errh)
+		
+			void $ tryIO $ waitForProcess pid
+
+			writeChan chan Done
+
+			hClose outh
+			hClose errh
 
 		wait writer
-
-		hClose outh
-		hClose errh
 		hClose h
 
 simpleShClient :: FilePath -> String -> [String] -> ([Resp] -> IO a) -> IO a

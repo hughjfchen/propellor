@@ -72,14 +72,17 @@ hosts =               --                  (o)  `
 		
 		& alias "ns9.kitenet.net"
 		& myDnsSecondary
-
-		& Docker.garbageCollected `period` Daily
-		& Apt.installed ["git-annex", "mtr", "screen"]
+		
+		& alias "znc.kitenet.net"
+		& JoeySites.ircBouncer
 
 		-- Nothing is using https on clam, so listen on that port
 		-- for ssh, for traveling on bad networks.
 		& "/etc/ssh/sshd_config" `File.containsLine` "Port 443"
 			`onChange` Service.restarted "ssh"
+
+		& Docker.garbageCollected `period` Daily
+		& Apt.installed ["git-annex", "mtr", "screen"]
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
@@ -330,6 +333,7 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "joey.kitenet.net"
 		& alias "annex.kitenet.net"
 		& alias "ipv6.kitenet.net"
+		& alias "bitlbee.kitenet.net"
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
 	, host "beaver.kitenet.net"

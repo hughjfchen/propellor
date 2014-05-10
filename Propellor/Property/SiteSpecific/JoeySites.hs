@@ -105,7 +105,8 @@ kgbServer = withOS desc $ \o -> case o of
 
 mumbleServer :: [Host] -> Property
 mumbleServer hosts = combineProperties "mumble.debian.net" 
-	[ Obnam.latestVersion
+	[ Apt.serviceInstalledRunning "mumble-server"
+	, Obnam.latestVersion
 	, Obnam.backup "/var/lib/mumble-server" "55 5 * * *"
 		[ "--repository=sftp://joey@turtle.kitenet.net/~/lib/backup/mumble.debian.net.obnam"
 		, "--client-name=mumble"
@@ -113,7 +114,6 @@ mumbleServer hosts = combineProperties "mumble.debian.net"
 		`requires` Ssh.keyImported SshRsa "root"
 		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "root"
 	, trivial $ cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
-	, Apt.serviceInstalledRunning "mumble-server"
 	]
 
 obnamLowMem :: Property
@@ -300,3 +300,15 @@ twitRss = combineProperties "twitter rss"
 	crontime = "15 * * * *"
 	feed url desc = Cron.job desc crontime "joey" dir $
 		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
+
+ircBouncer :: Property
+ircBouncer = propertyList "IRC bouncer"
+	[ Apt.installed ["znc"]
+	, User.accountFor "znc"
+	, File.hasPrivContent conf
+	, File.ownerGroup conf "znc" "znc"
+	, Cron.job "znconboot" "@reboot" "znc" "~" "znc"
+	, Cron.job "zncrunning" "@hourly" "znc" "~" "znc || true"
+	]
+  where
+	conf = "/home/znc/.znc/configs/znc.conf"
