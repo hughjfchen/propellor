@@ -6,6 +6,7 @@
 module Propellor.SimpleSh where
 
 import Network.Socket
+import Control.Concurrent
 import Control.Concurrent.Chan
 import Control.Concurrent.Async
 import System.Process (std_in, std_out, std_err)
@@ -31,8 +32,9 @@ simpleSh namedpipe = do
 	listen s 2
 	forever $ do
 		(client, _addr) <- accept s
-		h <- socketToHandle client ReadWriteMode
-		maybe noop (run h) . readish =<< hGetLine h
+		forkIO $ do
+			h <- socketToHandle client ReadWriteMode
+			maybe noop (run h) . readish =<< hGetLine h
   where
 	run h (Cmd cmd params) = do
 		debug ["simplesh run", cmd, show params]
