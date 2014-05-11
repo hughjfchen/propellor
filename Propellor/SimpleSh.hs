@@ -35,9 +35,11 @@ simpleSh namedpipe = do
 		maybe noop (run h) . readish =<< hGetLine h
   where
 	run h (Cmd cmd params) = do
+		debug ["simplesh run", cmd, show params]
 		chan <- newChan
 		let runwriter = do
 			v <- readChan chan
+			debug ["simplesh run", cmd, show params, "writer got:", show v]
 			hPutStrLn h (show v)
 			hFlush h
 			case v of
@@ -52,6 +54,7 @@ simpleSh namedpipe = do
 				, std_err = CreatePipe
 				}
 			(Nothing, Just outh, Just errh, pid) <- createProcess p
+			debug ["simplesh run", cmd, show params, "started"]
 
 			let mkreader t from = maybe noop (const $ mkreader t from) 
 				=<< catchMaybeIO (writeChan chan . t =<< hGetLine from)
@@ -59,15 +62,19 @@ simpleSh namedpipe = do
 				(mkreader StdoutLine outh)
 				(mkreader StderrLine errh)
 		
+			debug ["simplesh run", cmd, show params, "waiting for process"]
 			void $ tryIO $ waitForProcess pid
 
+			debug ["simplesh run", cmd, show params, "sending Done"]
 			writeChan chan Done
 
 			hClose outh
 			hClose errh
 
+		debug ["simplesh run", cmd, show params, "wait writer"]
 		wait writer
 		hClose h
+		debug ["simplesh run", cmd, show params, "fully done"]
 
 simpleShClient :: FilePath -> String -> [String] -> ([Resp] -> IO a) -> IO a
 simpleShClient namedpipe cmd params handler = do
