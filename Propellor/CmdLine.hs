@@ -290,17 +290,26 @@ boot attr ps = do
 	mainProperties attr ps
 
 addKey :: String -> IO ()
-addKey keyid = exitBool =<< allM id [ gpg, gitadd, gitcommit ]
+addKey keyid = exitBool =<< allM id [ gpg, gitadd, gitconfig, gitcommit ]
   where
-	gpg = boolSystem "sh"
-		[ Param "-c"
-		, Param $ "gpg --export " ++ keyid ++ " | gpg " ++
-			unwords (gpgopts ++ ["--import"])
-		]
+	gpg = do
+		createDirectoryIfMissing True privDataDir
+		boolSystem "sh"
+			[ Param "-c"
+			, Param $ "gpg --export " ++ keyid ++ " | gpg " ++
+				unwords (gpgopts ++ ["--import"])
+			]
 	gitadd = boolSystem "git"
 		[ Param "add"
 		, File keyring
 		]
+
+	gitconfig = boolSystem "git"
+		[ Param "config"
+		, Param "user.signingkey"
+		, Param keyid
+		]
+
 	gitcommit = gitCommit
 		[ File keyring
 		, Param "-m"

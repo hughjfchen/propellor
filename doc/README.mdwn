@@ -6,7 +6,8 @@ are satisfied.
 Propellor is configured via a git repository, which typically lives
 in `~/.propellor/` on your development machine. Propellor clones the
 repository to each host it manages, in a 
-[secure](http://propellor.branchable.com/security/) way.
+[secure](http://propellor.branchable.com/security/) way. The git repository
+contains the full source code to Propellor, along with its config file.
 
 Properties are defined using Haskell. Edit `~/.propellor/config.hs`
 to get started. There is fairly complete 
@@ -40,11 +41,12 @@ see [configuration for the Haskell newbie](https://propellor.branchable.com/hask
      `apt-get install propellor`
 2. Run propellor for the first time. It will set up a `~/.propellor/` git
    repository for you.
-3. `cd ~/.propellor/`; use git to push the repository to a central
+3. If you don't have a gpg private key already, generate one: `gpg --gen-key`
+4. Run: `propellor --add-key $KEYID`, which will make propellor trust
+   your gpg key, and will sign your `~/.propellor` repository using it.
+5. `cd ~/.propellor/`; use git to push the repository to a central
    server (github, or your own git server). Configure that central
    server as the origin remote of the repository.
-4. If you don't have a gpg private key, generate one: `gpg --gen-key`
-5. Run: `propellor --add-key $KEYID`
 6. Edit `~/.propellor/config.hs`, and add a host you want to manage.
    You can start by not adding any properties, or only a few.
 7. Pick a host and run: `propellor --spin $HOST`
