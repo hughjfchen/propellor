@@ -7,7 +7,6 @@ module Propellor.SimpleSh where
 
 import Network.Socket
 import Control.Concurrent
-import Control.Concurrent.Chan
 import Control.Concurrent.Async
 import System.Process (std_in, std_out, std_err)
 
