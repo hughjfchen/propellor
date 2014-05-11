@@ -347,7 +347,7 @@ checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
 			setLevel DEBUG .  setHandlers [f]
 	go _ = whenM ((==) "root" <$> myUserName) $ do
 		f <- setFormatter
-			<$> fileHandler "/usr/local/bin/propellor/log" DEBUG
+			<$> fileHandler "/usr/local/propellor/log" DEBUG
 			<*> pure (simpleLogFormatter "[$time] $msg")
 		updateGlobalLogger rootLoggerName $ 
 			setLevel DEBUG .  setHandlers [f]
