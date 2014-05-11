@@ -74,6 +74,7 @@ simpleSh namedpipe = do
 
 		debug ["simplesh run", cmd, show params, "wait writer"]
 		wait writer
+		debug ["simplesh run", cmd, show params, "wait writer complete"]
 		hClose h
 		debug ["simplesh run", cmd, show params, "fully done"]
 
