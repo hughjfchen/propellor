@@ -354,12 +354,7 @@ checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
 			<*> pure (simpleLogFormatter "[$time] $msg")
 		updateGlobalLogger rootLoggerName $ 
 			setLevel DEBUG .  setHandlers [f]
-	go _ = whenM ((==) "root" <$> myUserName) $ do
-		f <- setFormatter
-			<$> fileHandler "/usr/local/propellor/log" DEBUG
-			<*> pure (simpleLogFormatter "[$time] $msg")
-		updateGlobalLogger rootLoggerName $ 
-			setLevel DEBUG .  setHandlers [f]
+	go _ = noop
 
 -- Parameters can be passed to both ssh and scp, to enable a ssh connection
 -- caching socket.
