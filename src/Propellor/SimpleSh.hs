@@ -6,7 +6,7 @@
 module Propellor.SimpleSh where
 
 import Network.Socket
-import Control.Concurrent.Chan
+import Control.Concurrent
 import Control.Concurrent.Async
 import System.Process (std_in, std_out, std_err)
 
@@ -31,8 +31,9 @@ simpleSh namedpipe = do
 	listen s 2
 	forever $ do
 		(client, _addr) <- accept s
-		h <- socketToHandle client ReadWriteMode
-		maybe noop (run h) . readish =<< hGetLine h
+		forkIO $ do
+			h <- socketToHandle client ReadWriteMode
+			maybe noop (run h) . readish =<< hGetLine h
   where
 	run h (Cmd cmd params) = do
 		chan <- newChan
@@ -71,16 +72,13 @@ simpleSh namedpipe = do
 
 simpleShClient :: FilePath -> String -> [String] -> ([Resp] -> IO a) -> IO a
 simpleShClient namedpipe cmd params handler = do
-	debug ["simplesh connecting"]
 	s <- socket AF_UNIX Stream defaultProtocol
 	connect s (SockAddrUnix namedpipe)
 	h <- socketToHandle s ReadWriteMode
 	hPutStrLn h $ show $ Cmd cmd params
 	hFlush h
-	debug ["simplesh sent command"]
 	resps <- catMaybes . map readish . lines <$> hGetContents h
 	v <- hClose h `after` handler resps
-	debug ["simplesh processed response"]
 	return v
 
 simpleShClientRetry :: Int -> FilePath -> String -> [String] -> ([Resp] -> IO a) -> IO a

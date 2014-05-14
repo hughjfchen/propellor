@@ -335,29 +335,19 @@ provisionContainer cid = containerDesc cid $ property "provision" $ liftIO $ do
 
 	go lastline (v:rest) = case v of
 		StdoutLine s -> do
-			debug ["stdout: ", show s]
 			maybe noop putStrLn lastline
 			hFlush stdout
 			go (Just s) rest
 		StderrLine s -> do
-			debug ["stderr: ", show s]
 			maybe noop putStrLn lastline
 			hFlush stdout
 			hPutStrLn stderr s
 			hFlush stderr
 			go Nothing rest
-		Done -> do
-			debug ["reached Done"]
-			ret lastline
-	go lastline [] = do
-		debug ["reached end of output"]
-		ret lastline
+		Done -> ret lastline
+	go lastline [] = ret lastline
 
-	ret lastline = do
-		let v = fromMaybe FailedChange $
-			readish =<< lastline
-		debug ["provisionContainer returning", show v]
-		return v
+	ret lastline = pure $ fromMaybe FailedChange $ readish =<< lastline
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]
