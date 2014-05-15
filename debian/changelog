@@ -1,6 +1,12 @@
 propellor (0.5.2) UNRELEASED; urgency=medium
 
+  * A bug that caused propellor to hang when updating a running docker
+    container appears to have been fixed. Note that since it affects
+    the propellor process that serves as "init" of docker containers,
+    they have to be restarted for the fix to take effect.
   * Licence changed from GPL to BSD.
+  * A few changes to allow building Propellor on OSX. One user reports
+    successfully using it there.
 
  -- Joey Hess <joeyh@debian.org>  Sat, 10 May 2014 11:05:19 -0300
 
