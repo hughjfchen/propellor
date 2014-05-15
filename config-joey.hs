@@ -252,6 +252,22 @@ image (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
 image (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
 image _ = "debian-stable-official" -- does not currently exist!
 
+-- Digital Ocean does not provide any way to boot
+-- the kernel provided by the distribution, except using kexec.
+-- Without this, some old, and perhaps insecure kernel will be used.
+--
+-- Note that this only causes the new kernel to be loaded on reboot.
+-- If the power is cycled, the old kernel still boots up.
+-- TODO: detect this and reboot immediately?
+digitalOceanDistroKernel :: Property
+digitalOceanDistroKernel = propertyList "digital ocean distro kernel hack"
+	[ Apt.installed ["grub-pc", "kexec-tools"]
+	, "/etc/default/kexec" `File.containsLines`
+		[ "LOAD_KEXEC=true"
+		, "USE_GRUB_CONFIG=true"
+		]
+	]
+
 -- Clean up a system as installed by cloudatcost.com
 cleanCloudAtCost :: Property
 cleanCloudAtCost = propertyList "cloudatcost cleanup"
