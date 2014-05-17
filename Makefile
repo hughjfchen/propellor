@@ -19,7 +19,7 @@ dist/setup-config: propellor.cabal
 
 install:
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
-	install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin
+	install -s dist/build/wrapper/wrapper $(DESTDIR)/usr/bin/propellor
 	$(CABAL) sdist
 	cat dist/propellor-*.tar.gz | \
 		(cd $(DESTDIR)/usr/src/propellor && tar zx --strip-components=1)
