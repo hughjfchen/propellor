@@ -94,8 +94,8 @@ hosts =               --                  (o)  `
 		& Docker.configured
 		& Docker.docked hosts "amd64-git-annex-builder"
 		& Docker.docked hosts "i386-git-annex-builder"
-		! Docker.docked hosts "armel-git-annex-builder-companion"
-		! Docker.docked hosts "armel-git-annex-builder"
+		& Docker.docked hosts "armel-git-annex-builder-companion"
+		& Docker.docked hosts "armel-git-annex-builder"
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
