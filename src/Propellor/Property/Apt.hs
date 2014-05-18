@@ -213,7 +213,7 @@ unattendedUpgrades = RevertableProperty enable disable
 				| not (isStable suite) -> ensureProperty $
 					"/etc/apt/apt.conf.d/50unattended-upgrades"
 						`File.containsLine`
-					("Unattended-Upgrade::Origins-Pattern { \"o=Debian,a=unstable\"; };")
+					("Unattended-Upgrade::Origins-Pattern { \"o=Debian,a="++suite++"\"; };")
 			_ -> noChange
 
 -- | Preseeds debconf values and reconfigures the package so it takes
