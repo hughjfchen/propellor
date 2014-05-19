@@ -23,7 +23,7 @@ setTo hn = combineProperties desc go
 			then Nothing 
 			else Just $ File.fileProperty desc
 				addhostline "/etc/hosts"
-		, cmdProperty "hostname" [basehost]
+		, Just $ cmdProperty "hostname" [basehost]
 		]
 	
 	hostip = "127.0.1.1"
