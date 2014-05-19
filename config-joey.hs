@@ -192,28 +192,33 @@ hosts =               --                  (o)  `
 	, standardGitAnnexBuilder "amd64" 15 "2h"
 	, standardGitAnnexBuilder "i386" 45 "2h"
 	-- armel builder has a companion container using amd64 that
-	-- runs the build first to get TH splices. They share a home
-	-- directory, and need to have the same versions of all haskell
-	-- libraries installed. The armel builder can ssh in to the
-	-- companion.
+	-- runs the build first to get TH splices. They need
+	-- to have the same versions of all haskell libraries installed.
 	, Docker.container "armel-git-annex-builder-companion"
 		(image $ System (Debian Unstable) "amd64")
-		& Docker.volume GitAnnexBuilder.homedir
 		& Apt.unattendedUpgrades
+		-- This volume is shared with the armel builder.
+		& Docker.volume GitAnnexBuilder.homedir
+		& File.ownerGroup GitAnnexBuilder.homedir GitAnnexBuilder.builduser GitAnnexBuilder.builduser
+		-- Install current versions of build deps from cabal.
 		& GitAnnexBuilder.treeDeps "armel"
 		& GitAnnexBuilder.cabalDeps
-		& GitAnnexBuilder.sshKeyGen
+		-- The armel builder can ssh to this companion,
+		-- using $COMPANION_PORT_22_TCP_ADDR as the hostname,
 		& Docker.expose "22"
 		& Apt.serviceInstalledRunning "ssh"
+		-- ssh key is shared via the home directory volume
+		& GitAnnexBuilder.sshKeyGen
 	, Docker.container "armel-git-annex-builder"
 		(image $ System (Debian Unstable) "armel")
+		& Apt.unattendedUpgrades
+		& Apt.installed ["openssh-client"]
 		& Docker.link "armel-git-annex-builder-companion" "companion"
 		& Docker.volumes_from "armel-git-annex-builder-companion"
-		& GitAnnexBuilder.builder "armel" "1 3 * * *" "5h" True
 		-- TODO: automate installing haskell libs
 		-- (Currently have to run
 		-- git-annex/standalone/linux/install-haskell-packages)
-		& Apt.unattendedUpgrades
+		& GitAnnexBuilder.builder "armel" "1 3 * * *" "5h" True
 	] ++ monsters
 
 standardGitAnnexBuilder :: Architecture -> Int -> GitAnnexBuilder.TimeOut -> Host
