@@ -189,28 +189,37 @@ hosts =               --                  (o)  `
 			(Just "remotes/origin/old-kitenet.net")
 	
 	-- git-annex autobuilder containers
-	, gitAnnexBuilder "amd64" 15
-	, gitAnnexBuilder "i386" 45
-	-- armel builder has a companion container that run amd64 and
+	, standardGitAnnexBuilder "amd64" 15 "2h"
+	, standardGitAnnexBuilder "i386" 45 "2h"
+	-- armel builder has a companion container using amd64 that
 	-- runs the build first to get TH splices. They share a home
 	-- directory, and need to have the same versions of all haskell
-	-- libraries installed.
+	-- libraries installed. The armel builder can ssh in to the
+	-- companion.
 	, Docker.container "armel-git-annex-builder-companion"
 		(image $ System (Debian Unstable) "amd64")
 		& Docker.volume GitAnnexBuilder.homedir
 		& Apt.unattendedUpgrades
+		& GitAnnexBuilder.treeDeps "armel"
+		& GitAnnexBuilder.cabalDeps
+		& GitAnnexBuilder.sshKeyGen
+		& Docker.expose "22"
+		& Apt.serviceInstalledRunning "ssh"
 	, Docker.container "armel-git-annex-builder"
 		(image $ System (Debian Unstable) "armel")
 		& Docker.link "armel-git-annex-builder-companion" "companion"
 		& Docker.volumes_from "armel-git-annex-builder-companion"
---		& GitAnnexBuilder.builder "armel" "15 * * * *" True
+		& GitAnnexBuilder.builder "armel" "1 3 * * *" "5h" True
+		-- TODO: automate installing haskell libs
+		-- (Currently have to run
+		-- git-annex/standalone/linux/install-haskell-packages)
 		& Apt.unattendedUpgrades
 	] ++ monsters
 
-gitAnnexBuilder :: Architecture -> Int -> Host
-gitAnnexBuilder arch buildminute = Docker.container (arch ++ "-git-annex-builder")
+standardGitAnnexBuilder :: Architecture -> Int -> GitAnnexBuilder.TimeOut -> Host
+standardGitAnnexBuilder arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
 	(image $ System (Debian Unstable) arch)
-	& GitAnnexBuilder.builder arch (show buildminute ++ " * * * *") True
+	& GitAnnexBuilder.builder arch (show buildminute ++ " * * * *") timeout True
 	& Apt.unattendedUpgrades
 
 -- This is my standard system setup.
