@@ -30,8 +30,10 @@ clean:
 	find -name \*.hi -exec rm {} \;
 
 # hothasktags chokes on some template haskell etc, so ignore errors
+# duplicate tags with Propellor.Property. removed from the start, as we
+# often import qualified by just the module base name.
 tags:
-	find . | grep -v /.git/ | grep -v /tmp/ | grep -v /dist/ | grep -v /doc/ | egrep '\.hs$$' | xargs hothasktags > tags 2>/dev/null
+	find . | grep -v /.git/ | grep -v /tmp/ | grep -v /dist/ | grep -v /doc/ | egrep '\.hs$$' | xargs hothasktags | perl -ne 'print; s/Propellor\.Property\.//; print' > tags  2>/dev/null
 
 # Upload to hackage.
 hackage:
