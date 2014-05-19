@@ -207,8 +207,8 @@ hosts =               --                  (o)  `
 		& Apt.serviceInstalledRunning "ssh"
 	, Docker.container "armel-git-annex-builder"
 		(image $ System (Debian Unstable) "armel")
-		& Docker.link "armel-git-annex-builder-companion.orca.kitenet.net.propellor" "companion"
-		& Docker.volumes_from "armel-git-annex-builder-companion.orca.kitenet.net.propellor"
+		& Docker.link "armel-git-annex-builder-companion" "companion"
+		& Docker.volumes_from "armel-git-annex-builder-companion"
 		& GitAnnexBuilder.builder "armel" "1 3 * * *" "5h" True
 		-- TODO: automate installing haskell libs
 		-- (Currently have to run
