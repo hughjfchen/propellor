@@ -4,6 +4,7 @@ import Propellor
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Cron as Cron
+import qualified Propellor.Property.File as File
 import Propellor.Property.Cron (CronTimes)
 
 builduser :: UserName
@@ -52,6 +53,8 @@ builder' buildepsprop buildarch crontimes timeout rsyncupload = combinePropertie
 tree :: Architecture -> Property
 tree buildarch = combineProperties "gitannexbuilder tree"
 	[ User.accountFor builduser
+	-- Home directory already exists when docker volume is used.
+	, File.ownerGroup homedir builduser builduser
 	, Apt.installed ["git"]
 	, check (not <$> doesDirectoryExist gitbuilderdir) $ userScriptProperty builduser
 		[ "git clone git://git.kitenet.net/gitannexbuilder " ++ gitbuilderdir

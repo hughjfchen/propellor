@@ -199,7 +199,6 @@ hosts =               --                  (o)  `
 		& Apt.unattendedUpgrades
 		-- This volume is shared with the armel builder.
 		& Docker.volume GitAnnexBuilder.homedir
-		& File.ownerGroup GitAnnexBuilder.homedir GitAnnexBuilder.builduser GitAnnexBuilder.builduser
 		-- Install current versions of build deps from cabal.
 		& GitAnnexBuilder.tree "armel"
 		& GitAnnexBuilder.buildDepsNoHaskellLibs
