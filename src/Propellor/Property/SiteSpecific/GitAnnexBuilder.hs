@@ -21,8 +21,12 @@ builddir = gitbuilderdir </> "build"
 type TimeOut = String -- eg, 5h
 
 builder :: Architecture -> CronTimes -> TimeOut -> Bool -> Property
-builder buildarch crontimes timeout rsyncupload = combineProperties "gitannexbuilder"
-	[ treeDeps buildarch
+builder = builder' buildDeps
+
+builder' :: Property -> Architecture -> CronTimes -> TimeOut -> Bool -> Property
+builder' buildepsprop buildarch crontimes timeout rsyncupload = combineProperties "gitannexbuilder"
+	[ tree buildarch
+	, buildepsprop
 	, Apt.serviceInstalledRunning "cron"
 	, Cron.niceJob "gitannexbuilder" crontimes builduser gitbuilderdir $
 		"git pull ; timeout " ++ timeout ++ " ./autobuild"
@@ -45,13 +49,10 @@ builder buildarch crontimes timeout rsyncupload = combineProperties "gitannexbui
 					)
 	]
 
-treeDeps :: Architecture -> Property
-treeDeps buildarch = combineProperties "gitannexbuilder"
-	[ Apt.stdSourcesList Unstable
-	, Apt.buildDep ["git-annex"]
-	, Apt.installed ["git", "rsync", "moreutils", "ca-certificates",
-		"liblockfile-simple-perl", "cabal-install", "vim", "less"]
-	, User.accountFor builduser
+tree :: Architecture -> Property
+tree buildarch = combineProperties "gitannexbuilder tree"
+	[ User.accountFor builduser
+	, Apt.installed ["git"]
 	, check (not <$> doesDirectoryExist gitbuilderdir) $ userScriptProperty builduser
 		[ "git clone git://git.kitenet.net/gitannexbuilder " ++ gitbuilderdir
 		, "cd " ++ gitbuilderdir
@@ -61,8 +62,20 @@ treeDeps buildarch = combineProperties "gitannexbuilder"
 	, check (not <$> doesDirectoryExist builddir) $ userScriptProperty builduser
 		[ "git clone git://git-annex.branchable.com/ " ++ builddir
 		]
+	]
+
+buildDeps :: Property
+buildDeps = combineProperties "gitannexbuilder build deps"
+	[ Apt.stdSourcesList Unstable
+	, Apt.buildDep ["git-annex"]
+	, buildDepsNoHaskellLibs
 	, "git-annex source build deps installed" ==> Apt.buildDepIn builddir
 	]
+
+buildDepsNoHaskellLibs :: Property
+buildDepsNoHaskellLibs = Apt.installed ["git", "rsync", "moreutils", "ca-certificates",
+	"debhelper", "ghc", "curl", "openssh-client", "git-remote-gcrypt",
+	"liblockfile-simple-perl", "cabal-install", "vim", "less"]
 
 -- Installs current versions of git-annex's deps from cabal, but only
 -- does so once.
@@ -79,7 +92,7 @@ sshKeyGen = combineProperties "sshkeygen"
 	, flagFile auth authkeys
 	]
   where
-  	gen = userScriptProperty builduser ["ssh-keygen -t RSA -N '' -f " ++ f]
+  	gen = userScriptProperty builduser ["ssh-keygen -t RSA -N '' -f " ++ privkey]
 	auth = userScriptProperty builduser ["cp " ++ pubkey ++ " " ++ authkeys]
 	privkey = homedir </> ".ssh" </> "id_rsa"
 	pubkey = privkey ++ ".pub"

@@ -94,8 +94,8 @@ hosts =               --                  (o)  `
 		& Docker.configured
 		& Docker.docked hosts "amd64-git-annex-builder"
 		& Docker.docked hosts "i386-git-annex-builder"
-		& Docker.docked hosts "armel-git-annex-builder-companion"
-		& Docker.docked hosts "armel-git-annex-builder"
+		! Docker.docked hosts "armel-git-annex-builder-companion"
+		! Docker.docked hosts "armel-git-annex-builder"
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
@@ -201,7 +201,8 @@ hosts =               --                  (o)  `
 		& Docker.volume GitAnnexBuilder.homedir
 		& File.ownerGroup GitAnnexBuilder.homedir GitAnnexBuilder.builduser GitAnnexBuilder.builduser
 		-- Install current versions of build deps from cabal.
-		& GitAnnexBuilder.treeDeps "armel"
+		& GitAnnexBuilder.tree "armel"
+		& GitAnnexBuilder.buildDepsNoHaskellLibs
 		& GitAnnexBuilder.cabalDeps
 		-- The armel builder can ssh to this companion,
 		-- using $COMPANION_PORT_22_TCP_ADDR as the hostname,
@@ -219,7 +220,7 @@ hosts =               --                  (o)  `
 		-- (Currently have to run
 		-- git-annex/standalone/linux/install-haskell-packages
 		-- which is not fully automated.)
-		& GitAnnexBuilder.builder "armel" "1 3 * * *" "5h" True
+		& GitAnnexBuilder.builder' GitAnnexBuilder.buildDepsNoHaskellLibs "armel" "1 3 * * *" "5h" True
 	] ++ monsters
 
 standardGitAnnexBuilder :: Architecture -> Int -> GitAnnexBuilder.TimeOut -> Host
