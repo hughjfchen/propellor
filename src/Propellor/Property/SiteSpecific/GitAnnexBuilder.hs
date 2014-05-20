@@ -69,8 +69,7 @@ tree buildarch = combineProperties "gitannexbuilder tree"
 
 buildDeps :: Property
 buildDeps = combineProperties "gitannexbuilder build deps"
-	[ Apt.stdSourcesList Unstable
-	, Apt.buildDep ["git-annex"]
+	[ Apt.buildDep ["git-annex"]
 	, buildDepsNoHaskellLibs
 	, "git-annex source build deps installed" ==> Apt.buildDepIn builddir
 	]
@@ -78,7 +77,11 @@ buildDeps = combineProperties "gitannexbuilder build deps"
 buildDepsNoHaskellLibs :: Property
 buildDepsNoHaskellLibs = Apt.installed ["git", "rsync", "moreutils", "ca-certificates",
 	"debhelper", "ghc", "curl", "openssh-client", "git-remote-gcrypt",
-	"liblockfile-simple-perl", "cabal-install", "vim", "less"]
+	"liblockfile-simple-perl", "cabal-install", "vim", "less",
+	"alex", "happy", "c2hs",
+	-- these haskell libs depend on C libs and don't use TH
+	"libghc-dbus-dev", "libghc-fdo-notify-dev", "libghc-network-protocol-xmpp-dev"
+	]
 
 -- Installs current versions of git-annex's deps from cabal, but only
 -- does so once.

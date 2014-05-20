@@ -196,6 +196,7 @@ hosts =               --                  (o)  `
 	-- to have the same versions of all haskell libraries installed.
 	, Docker.container "armel-git-annex-builder-companion"
 		(image $ System (Debian Unstable) "amd64")
+		& Apt.stdSourcesList Unstable
 		& Apt.unattendedUpgrades
 		-- This volume is shared with the armel builder.
 		& Docker.volume GitAnnexBuilder.homedir
@@ -211,6 +212,7 @@ hosts =               --                  (o)  `
 		& GitAnnexBuilder.sshKeyGen
 	, Docker.container "armel-git-annex-builder"
 		(image $ System (Debian Unstable) "armel")
+		& Apt.stdSourcesList Unstable
 		& Apt.unattendedUpgrades
 		& Apt.installed ["openssh-client"]
 		& Docker.link "armel-git-annex-builder-companion" "companion"
@@ -225,8 +227,9 @@ hosts =               --                  (o)  `
 standardGitAnnexBuilder :: Architecture -> Int -> GitAnnexBuilder.TimeOut -> Host
 standardGitAnnexBuilder arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
 	(image $ System (Debian Unstable) arch)
-	& GitAnnexBuilder.builder arch (show buildminute ++ " * * * *") timeout True
+	& Apt.stdSourcesList Unstable
 	& Apt.unattendedUpgrades
+	& GitAnnexBuilder.builder arch (show buildminute ++ " * * * *") timeout True
 
 -- This is my standard system setup.
 standardSystem :: HostName -> DebianSuite -> Architecture -> Host
