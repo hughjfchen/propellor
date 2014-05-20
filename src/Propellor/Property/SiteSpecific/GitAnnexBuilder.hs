@@ -72,9 +72,15 @@ cabalDeps = flagFile go cabalupdated
 		go = userScriptProperty builduser ["cabal update && cabal install git-annex --only-dependencies || true"]
 		cabalupdated = homedir </> ".cabal" </> "packages" </> "hackage.haskell.org" </> "00-index.cache"
 
--- Ensure a ssh key is set up.
+-- Ensure a ssh key is set up, and allow it to be used to ssh in
 sshKeyGen :: Property
-sshKeyGen = flagFile gen f
+sshKeyGen = combineProperties "sshkeygen"
+	[ flagFile gen privkey
+	, flagFile auth authkeys
+	]
   where
   	gen = userScriptProperty builduser ["ssh-keygen -t RSA -N '' -f " ++ f]
-	f = homedir </> ".ssh" </> "id_rsa"
+	auth = userScriptProperty builduser ["cp " ++ pubkey ++ " " ++ authkeys]
+	privkey = homedir </> ".ssh" </> "id_rsa"
+	pubkey = privkey ++ ".pub"
+	authkeys = homedir </> ".ssh" </> "authorized_keys"
