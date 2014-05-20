@@ -217,7 +217,8 @@ hosts =               --                  (o)  `
 		& Docker.volumes_from "armel-git-annex-builder-companion"
 		-- TODO: automate installing haskell libs
 		-- (Currently have to run
-		-- git-annex/standalone/linux/install-haskell-packages)
+		-- git-annex/standalone/linux/install-haskell-packages
+		-- which is not fully automated.)
 		& GitAnnexBuilder.builder "armel" "1 3 * * *" "5h" True
 	] ++ monsters
 
