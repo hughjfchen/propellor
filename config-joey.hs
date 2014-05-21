@@ -94,8 +94,8 @@ hosts =               --                  (o)  `
 		& Docker.configured
 		& Docker.docked hosts "amd64-git-annex-builder"
 		& Docker.docked hosts "i386-git-annex-builder"
-		& Docker.docked hosts "armel-git-annex-builder-companion"
-		& Docker.docked hosts "armel-git-annex-builder"
+		! Docker.docked hosts "armel-git-annex-builder-companion"
+		! Docker.docked hosts "armel-git-annex-builder"
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
@@ -199,7 +199,7 @@ hosts =               --                  (o)  `
 		& Apt.stdSourcesList Unstable
 		& Apt.unattendedUpgrades
 		-- This volume is shared with the armel builder.
-		& Docker.volume GitAnnexBuilder.homedir
+		& Docker.volume GitAnnexBuilder.gitbuilderdir
 		-- Install current versions of build deps from cabal.
 		& GitAnnexBuilder.tree "armel"
 		& GitAnnexBuilder.buildDepsNoHaskellLibs
@@ -208,8 +208,7 @@ hosts =               --                  (o)  `
 		-- using $COMPANION_PORT_22_TCP_ADDR as the hostname,
 		& Docker.expose "22"
 		& Apt.serviceInstalledRunning "ssh"
-		-- ssh key is shared via the home directory volume
-		& GitAnnexBuilder.sshKeyGen
+		& Ssh.authorizedKeys GitAnnexBuilder.builduser
 	, Docker.container "armel-git-annex-builder"
 		(image $ System (Debian Unstable) "armel")
 		& Apt.stdSourcesList Unstable
@@ -217,6 +216,7 @@ hosts =               --                  (o)  `
 		& Apt.installed ["openssh-client"]
 		& Docker.link "armel-git-annex-builder-companion" "companion"
 		& Docker.volumes_from "armel-git-annex-builder-companion"
+		& Ssh.keyImported SshRsa GitAnnexBuilder.builduser
 		-- TODO: automate installing haskell libs
 		-- (Currently have to run
 		-- git-annex/standalone/linux/install-haskell-packages
