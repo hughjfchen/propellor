@@ -109,7 +109,8 @@ keyImported keytype user = combineProperties desc
 			( noChange
 			, ensureProperty $ combineProperties desc
 				[ property desc $ 
-					withPrivData p $ \key -> makeChange $
+					withPrivData p $ \key -> makeChange $ do
+						createDirectoryIfMissing True (takeDirectory f)
 						writer f key
 				, File.ownerGroup f user user
 				]
