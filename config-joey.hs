@@ -216,12 +216,12 @@ hosts =               --                  (o)  `
 		& Apt.installed ["openssh-client"]
 		& Docker.link "armel-git-annex-builder-companion" "companion"
 		& Docker.volumes_from "armel-git-annex-builder-companion"
-		& Ssh.keyImported SshRsa GitAnnexBuilder.builduser
 		-- TODO: automate installing haskell libs
 		-- (Currently have to run
 		-- git-annex/standalone/linux/install-haskell-packages
 		-- which is not fully automated.)
 		& GitAnnexBuilder.builder' GitAnnexBuilder.buildDepsNoHaskellLibs "armel" "1 3 * * *" "5h" True
+		& Ssh.keyImported SshRsa GitAnnexBuilder.builduser
 	] ++ monsters
 
 standardGitAnnexBuilder :: Architecture -> Int -> GitAnnexBuilder.TimeOut -> Host
