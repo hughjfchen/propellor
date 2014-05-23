@@ -189,47 +189,11 @@ hosts =               --                  (o)  `
 			(Just "remotes/origin/old-kitenet.net")
 	
 	-- git-annex autobuilder containers
-	, standardGitAnnexBuilder "amd64" 15 "2h"
-	, standardGitAnnexBuilder "i386" 45 "2h"
-	-- armel builder has a companion container using amd64 that
-	-- runs the build first to get TH splices. They need
-	-- to have the same versions of all haskell libraries installed.
-	, Docker.container "armel-git-annex-builder-companion"
-		(image $ System (Debian Unstable) "amd64")
-		& Apt.stdSourcesList Unstable
-		& Apt.unattendedUpgrades
-		-- This volume is shared with the armel builder.
-		& Docker.volume GitAnnexBuilder.gitbuilderdir
-		-- Install current versions of build deps from cabal.
-		& GitAnnexBuilder.tree "armel"
-		& GitAnnexBuilder.buildDepsNoHaskellLibs
-		& GitAnnexBuilder.cabalDeps
-		-- The armel builder can ssh to this companion,
-		-- using $COMPANION_PORT_22_TCP_ADDR as the hostname,
-		& Docker.expose "22"
-		& Apt.serviceInstalledRunning "ssh"
-		& Ssh.authorizedKeys GitAnnexBuilder.builduser
-	, Docker.container "armel-git-annex-builder"
-		(image $ System (Debian Unstable) "armel")
-		& Apt.stdSourcesList Unstable
-		& Apt.unattendedUpgrades
-		& Apt.installed ["openssh-client"]
-		& Docker.link "armel-git-annex-builder-companion" "companion"
-		& Docker.volumes_from "armel-git-annex-builder-companion"
-		-- TODO: automate installing haskell libs
-		-- (Currently have to run
-		-- git-annex/standalone/linux/install-haskell-packages
-		-- which is not fully automated.)
-		& GitAnnexBuilder.builder' GitAnnexBuilder.buildDepsNoHaskellLibs "armel" "1 3 * * *" "5h" True
-		& Ssh.keyImported SshRsa GitAnnexBuilder.builduser
+	, GitAnnexBuilder.standardContainer dockerImage "amd64" 15 "2h"
+	, GitAnnexBuilder.standardContainer dockerImage "i386" 45 "2h"
+	, GitAnnexBuilder.armelCompanionContainer dockerImage
+	, GitAnnexBuilder.armelContainer dockerImage "1 3 * * *" "5h"
 	] ++ monsters
-
-standardGitAnnexBuilder :: Architecture -> Int -> GitAnnexBuilder.TimeOut -> Host
-standardGitAnnexBuilder arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
-	(image $ System (Debian Unstable) arch)
-	& Apt.stdSourcesList Unstable
-	& Apt.unattendedUpgrades
-	& GitAnnexBuilder.builder arch (show buildminute ++ " * * * *") timeout True
 
 -- This is my standard system setup.
 standardSystem :: HostName -> DebianSuite -> Architecture -> Host
@@ -257,7 +221,7 @@ standardSystem hn suite arch = host hn
 
 -- This is my standard container setup, featuring automatic upgrades.
 standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
-standardContainer name suite arch = Docker.container name (image system)
+standardContainer name suite arch = Docker.container name (dockerImage system)
 	& os (System (Debian suite) arch)
 	& Apt.stdSourcesList suite
 	& Apt.unattendedUpgrades
@@ -265,10 +229,10 @@ standardContainer name suite arch = Docker.container name (image system)
 	system = System (Debian suite) arch
 
 -- Docker images I prefer to use.
-image :: System -> Docker.Image
-image (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
-image (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
-image _ = "debian-stable-official" -- does not currently exist!
+dockerImage :: System -> Docker.Image
+dockerImage (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
+dockerImage (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
+dockerImage _ = "debian-stable-official" -- does not currently exist!
 
 -- Digital Ocean does not provide any way to boot
 -- the kernel provided by the distribution, except using kexec.

@@ -4,7 +4,9 @@ import Propellor
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Cron as Cron
+import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Docker as Docker
 import Propellor.Property.Cron (CronTimes)
 
 builduser :: UserName
@@ -93,3 +95,45 @@ cabalDeps = flagFile go cabalupdated
 	where
 		go = userScriptProperty builduser ["cabal update && cabal install git-annex --only-dependencies || true"]
 		cabalupdated = homedir </> ".cabal" </> "packages" </> "hackage.haskell.org" </> "00-index.cache"
+
+standardContainer :: (System -> Docker.Image) -> Architecture -> Int -> TimeOut -> Host
+standardContainer dockerImage arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
+	(dockerImage $ System (Debian Unstable) arch)
+	& Apt.stdSourcesList Unstable
+	& Apt.unattendedUpgrades
+	& builder arch (show buildminute ++ " * * * *") timeout True
+
+-- armel builder has a companion container using amd64 that
+-- runs the build first to get TH splices. They need
+-- to have the same versions of all haskell libraries installed.
+armelCompanionContainer :: (System -> Docker.Image) -> Host
+armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-companion"
+	(dockerImage $ System (Debian Unstable) "amd64")
+	& Apt.stdSourcesList Unstable
+	& Apt.unattendedUpgrades
+	-- This volume is shared with the armel builder.
+	& Docker.volume gitbuilderdir
+	-- Install current versions of build deps from cabal.
+	& tree "armel"
+	& buildDepsNoHaskellLibs
+	& cabalDeps
+	-- The armel builder can ssh to this companion,
+	-- using $COMPANION_PORT_22_TCP_ADDR as the hostname,
+	& Docker.expose "22"
+	& Apt.serviceInstalledRunning "ssh"
+	& Ssh.authorizedKeys builduser
+
+armelContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
+armelContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
+	(dockerImage $ System (Debian Unstable) "armel")
+	& Apt.stdSourcesList Unstable
+	& Apt.unattendedUpgrades
+	& Apt.installed ["openssh-client"]
+	& Docker.link "armel-git-annex-builder-companion" "companion"
+	& Docker.volumes_from "armel-git-annex-builder-companion"
+	-- TODO: automate installing haskell libs
+	-- (Currently have to run
+	-- git-annex/standalone/linux/install-haskell-packages
+	-- which is not fully automated.)
+	& builder' buildDepsNoHaskellLibs "armel" crontimes timeout True
+	& Ssh.keyImported SshRsa builduser
