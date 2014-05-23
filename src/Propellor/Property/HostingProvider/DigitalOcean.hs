@@ -17,5 +17,5 @@ distroKernel = propertyList "digital ocean distro kernel hack"
 	, "/etc/default/kexec" `File.containsLines`
 		[ "LOAD_KEXEC=true"
 		, "USE_GRUB_CONFIG=true"
-		]
+		] `describe` "kexec configured"
 	]
