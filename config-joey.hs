@@ -21,6 +21,8 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Service as Service
+import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
+import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -46,7 +48,7 @@ hosts =               --                  (o)  `
 		& ipv4 "162.248.143.249"
 		& ipv6 "2002:5044:5531::1"
 
-		& cleanCloudAtCost
+		& CloudAtCost.decruft
 		& Apt.unattendedUpgrades
 		& Network.ipv6to4
 		& Tor.isBridge
@@ -103,6 +105,7 @@ hosts =               --                  (o)  `
   	, standardSystem "diatom.kitenet.net" Stable "amd64"
 		& ipv4 "107.170.31.195"
 
+		& DigitalOcean.distroKernel
 		& Hostname.sane
 		& Ssh.hostKey SshDsa
 		& Ssh.hostKey SshRsa
@@ -233,38 +236,6 @@ dockerImage :: System -> Docker.Image
 dockerImage (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
 dockerImage (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
 dockerImage _ = "debian-stable-official" -- does not currently exist!
-
--- Digital Ocean does not provide any way to boot
--- the kernel provided by the distribution, except using kexec.
--- Without this, some old, and perhaps insecure kernel will be used.
---
--- Note that this only causes the new kernel to be loaded on reboot.
--- If the power is cycled, the old kernel still boots up.
--- TODO: detect this and reboot immediately?
-digitalOceanDistroKernel :: Property
-digitalOceanDistroKernel = propertyList "digital ocean distro kernel hack"
-	[ Apt.installed ["grub-pc", "kexec-tools"]
-	, "/etc/default/kexec" `File.containsLines`
-		[ "LOAD_KEXEC=true"
-		, "USE_GRUB_CONFIG=true"
-		]
-	]
-
--- Clean up a system as installed by cloudatcost.com
-cleanCloudAtCost :: Property
-cleanCloudAtCost = propertyList "cloudatcost cleanup"
-	[ Hostname.sane
-	, Ssh.randomHostKeys
-	, "worked around grub/lvm boot bug #743126" ==>
-		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
-		`onChange` cmdProperty "update-grub" []
-		`onChange` cmdProperty "update-initramfs" ["-u"]
-	, combineProperties "nuked cloudatcost cruft"
-		[ File.notPresent "/etc/rc.local"
-		, File.notPresent "/etc/init.d/S97-setup.sh"
-		, User.nuked "user" User.YesReallyDeleteHome
-		]
-	]
 
 myDnsSecondary :: Property
 myDnsSecondary = propertyList "dns secondary for all my domains" $ map toProp

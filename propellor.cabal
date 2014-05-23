@@ -92,6 +92,8 @@ Library
     Propellor.Property.Sudo
     Propellor.Property.Tor
     Propellor.Property.User
+    Propellor.Property.HostingProvider.DigitalOcean
+    Propellor.Property.HostingProvider.CloudAtCost
     Propellor.Property.SiteSpecific.GitHome
     Propellor.Property.SiteSpecific.JoeySites
     Propellor.Property.SiteSpecific.GitAnnexBuilder

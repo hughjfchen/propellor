@@ -140,4 +140,4 @@ armelContainer dockerImage crontimes timeout = Docker.container "armel-git-annex
   where
 	writecompanionaddress = scriptProperty
 		[ "echo \"$COMPANION_PORT_22_TCP_ADDR\" > " ++ homedir </> "companion_address"
-		]
+		] `describe` "companion_address file"
