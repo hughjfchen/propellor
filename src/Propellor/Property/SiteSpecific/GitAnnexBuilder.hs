@@ -117,8 +117,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	& tree "armel"
 	& buildDepsNoHaskellLibs
 	& cabalDeps
-	-- The armel builder can ssh to this companion,
-	-- using $COMPANION_PORT_22_TCP_ADDR as the hostname,
+	-- The armel builder can ssh to this companion.
 	& Docker.expose "22"
 	& Apt.serviceInstalledRunning "ssh"
 	& Ssh.authorizedKeys builduser
@@ -137,3 +136,8 @@ armelContainer dockerImage crontimes timeout = Docker.container "armel-git-annex
 	-- which is not fully automated.)
 	& builder' buildDepsNoHaskellLibs "armel" crontimes timeout True
 	& Ssh.keyImported SshRsa builduser
+	& trivial writecompanionaddress
+  where
+	writecompanionaddress = scriptProperty
+		[ "echo \"$COMPANION_PORT_22_TCP_ADDR\" > " ++ homedir </> "companion_address"
+		]
