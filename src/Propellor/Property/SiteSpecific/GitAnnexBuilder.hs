@@ -113,16 +113,18 @@ androidContainer dockerImage crontimes timeout = Docker.container "android-git-a
 	& Apt.stdSourcesList Stable
 	& Apt.unattendedUpgrades
 	& builder' noBuildDeps "android" crontimes timeout True
-	-- Use git-annex's android chroot setup script, which will install
-	-- ghc-android and the NDK, all build deps, etc, in the home
-	-- directory of the builder user.
-	& scriptProperty
-		[ "cd " ++ builddir ++ " && ./standalone/android/buildchroot-inchroot"
-		]
+	& flagFile chrootsetup ("/chrootsetup")
 	-- TODO: automate installing haskell libs
 	-- (Currently have to run
 	-- git-annex/standalone/android/install-haskell-packages
 	-- which is not fully automated.)
+  where
+	-- Use git-annex's android chroot setup script, which will install
+	-- ghc-android and the NDK, all build deps, etc, in the home
+	-- directory of the builder user.
+	chrootsetup = scriptProperty
+		[ "cd " ++ builddir ++ " && ./standalone/android/buildchroot-inchroot"
+		]
 
 -- armel builder has a companion container using amd64 that
 -- runs the build first to get TH splices. They need
