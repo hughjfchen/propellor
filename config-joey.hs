@@ -302,7 +302,6 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "wortroot.kitenet.net"
 		& alias "www.wortroot.kitenet.net"
 		& alias "joey.kitenet.net"
-		& alias "annex.kitenet.net"
 		& alias "ipv6.kitenet.net"
 		& alias "bitlbee.kitenet.net"
 	, host "mouse.kitenet.net"
