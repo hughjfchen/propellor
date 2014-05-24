@@ -88,6 +88,9 @@ buildDepsNoHaskellLibs = Apt.installed ["git", "rsync", "moreutils", "ca-certifi
 	"libghc-dbus-dev", "libghc-fdo-notify-dev", "libghc-network-protocol-xmpp-dev"
 	]
 
+noBuildDeps :: Property
+noBuildDeps = propertyList "no build deps" []
+
 -- Installs current versions of git-annex's deps from cabal, but only
 -- does so once.
 cabalDeps :: Property
@@ -109,10 +112,10 @@ androidContainer dockerImage crontimes timeout = Docker.container "android-git-a
 	(dockerImage $ System (Debian Stable) "i386")
 	& Apt.stdSourcesList Stable
 	& Apt.unattendedUpgrades
-	& builder "android" crontimes timeout True
+	& builder' noBuildDeps "android" crontimes timeout True
 	-- Use git-annex's android chroot setup script, which will install
-	-- ghc-android and the NDK, etc, in the home directory of the
-	-- builder user.
+	-- ghc-android and the NDK, all build deps, etc, in the home
+	-- directory of the builder user.
 	& scriptProperty
 		[ "cd " ++ builddir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
