@@ -98,6 +98,7 @@ hosts =               --                  (o)  `
 		& Docker.docked hosts "i386-git-annex-builder"
 		& Docker.docked hosts "armel-git-annex-builder-companion"
 		& Docker.docked hosts "armel-git-annex-builder"
+		& Docker.docked hosts "android-git-annex-builder"
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
@@ -196,6 +197,7 @@ hosts =               --                  (o)  `
 	, GitAnnexBuilder.standardContainer dockerImage "i386" 45 "2h"
 	, GitAnnexBuilder.armelCompanionContainer dockerImage
 	, GitAnnexBuilder.armelContainer dockerImage "1 3 * * *" "5h"
+	, GitAnnexBuilder.androidContainer dockerImage "1 1 * * *" "3h"
 	] ++ monsters
 
 -- This is my standard system setup.

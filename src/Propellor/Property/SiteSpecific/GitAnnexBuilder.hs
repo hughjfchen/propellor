@@ -103,6 +103,24 @@ standardContainer dockerImage arch buildminute timeout = Docker.container (arch 
 	& Apt.unattendedUpgrades
 	& builder arch (show buildminute ++ " * * * *") timeout True
 
+-- Android is cross-built in a Debian i386 container, using the Android NDK.
+androidContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
+androidContainer dockerImage crontimes timeout = Docker.container "android-git-annex-builder"
+	(dockerImage $ System (Debian Stable) "i386")
+	& Apt.stdSourcesList Stable
+	& Apt.unattendedUpgrades
+	& builder "android" crontimes timeout True
+	-- Use git-annex's android chroot setup script, which will install
+	-- ghc-android and the NDK, etc, in the home directory of the
+	-- builder user.
+	& scriptProperty
+		[ "cd " ++ builddir ++ " && ./standalone/android/buildchroot-inchroot"
+		]
+	-- TODO: automate installing haskell libs
+	-- (Currently have to run
+	-- git-annex/standalone/android/install-haskell-packages
+	-- which is not fully automated.)
+
 -- armel builder has a companion container using amd64 that
 -- runs the build first to get TH splices. They need
 -- to have the same versions of all haskell libraries installed.
