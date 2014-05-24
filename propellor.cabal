@@ -1,7 +1,7 @@
 Name: propellor
 Version: 0.5.2
 Cabal-Version: >= 1.6
-License: BSD
+License: BSD3
 Maintainer: Joey Hess <joey@kitenet.net>
 Author: Joey Hess
 Stability: Stable
