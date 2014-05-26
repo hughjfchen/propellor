@@ -267,9 +267,11 @@ gitAnnexDistributor :: Property
 gitAnnexDistributor = combineProperties "git-annex distributor, including rsync server and signer"
 	[ Apt.installed ["rsync"]
 	, File.hasPrivContent "/etc/rsyncd.conf"
+		`onChange` Service.restarted "rsync"
 	, File.hasPrivContent "/etc/rsyncd.secrets"
+		`onChange` Service.restarted "rsync"
 	, "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
-			`onChange` Service.running "rsync"
+		`onChange` Service.running "rsync"
 	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
 	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-mavericks"
 	-- git-annex distribution signing key
