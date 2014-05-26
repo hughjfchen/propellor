@@ -141,7 +141,10 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 		`requires` Ssh.authorizedKeys "family"
 		`requires` User.accountFor "family"
-	, Apt.installed ["git", "rsync", "kgb-client-git", "gitweb"]
+	, Apt.installed ["git", "rsync", "gitweb"]
+	-- backport avoids channel flooding on branch merge
+	, Apt.installedBackport ["kgb-client"]
+	-- backport supports ssh event notification
 	, Apt.installedBackport ["git-annex"]
 	, File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf"
 	, toProp $ Git.daemonRunning "/srv/git"
