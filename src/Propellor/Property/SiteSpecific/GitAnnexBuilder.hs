@@ -75,21 +75,24 @@ tree buildarch = combineProperties "gitannexbuilder tree"
 buildDeps :: Property
 buildDeps = combineProperties "gitannexbuilder build deps"
 	[ Apt.buildDep ["git-annex"]
-	, buildDepsNoHaskellLibs
+	, buildDepsFewHaskellLibs
 	, "git-annex source build deps installed" ==> Apt.buildDepIn builddir
 	]
 
-buildDepsNoHaskellLibs :: Property
-buildDepsNoHaskellLibs = Apt.installed ["git", "rsync", "moreutils", "ca-certificates",
-	"debhelper", "ghc", "curl", "openssh-client", "git-remote-gcrypt",
-	"liblockfile-simple-perl", "cabal-install", "vim", "less",
-	"alex", "happy", "c2hs",
+buildDepsFewHaskellLibs :: Property
+buildDepsFewHaskellLibs = combineProperties "gitannexbuilder build deps"
+	[ buildDepsNoHaskellLibs
 	-- these haskell libs depend on C libs and don't use TH
-	"libghc-dbus-dev", "libghc-fdo-notify-dev", "libghc-network-protocol-xmpp-dev"
+	, Apt.installed ["libghc-dbus-dev", "libghc-fdo-notify-dev", "libghc-network-protocol-xmpp-dev"]
 	]
 
-noBuildDeps :: Property
-noBuildDeps = propertyList "no build deps" []
+buildDepsNoHaskellLibs :: Property
+buildDepsNoHaskellLibs = Apt.installed
+	["git", "rsync", "moreutils", "ca-certificates",
+	"debhelper", "ghc", "curl", "openssh-client", "git-remote-gcrypt",
+	"liblockfile-simple-perl", "cabal-install", "vim", "less",
+	"alex", "happy", "c2hs"
+	]
 
 -- Installs current versions of git-annex's deps from cabal, but only
 -- does so once.
@@ -112,7 +115,7 @@ androidContainer dockerImage crontimes timeout = Docker.container "android-git-a
 	(dockerImage $ System (Debian Stable) "i386")
 	& Apt.stdSourcesList Stable
 	& Apt.unattendedUpgrades
-	& builder' noBuildDeps "android" crontimes timeout True
+	& builder' buildDepsNoHaskellLibs "android" crontimes timeout True
 	& flagFile chrootsetup ("/chrootsetup")
 	-- TODO: automate installing haskell libs
 	-- (Currently have to run
@@ -138,7 +141,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	& Docker.volume gitbuilderdir
 	-- Install current versions of build deps from cabal.
 	& tree "armel"
-	& buildDepsNoHaskellLibs
+	& buildDepsFewHaskellLibs
 	& cabalDeps
 	-- The armel builder can ssh to this companion.
 	& Docker.expose "22"
@@ -157,7 +160,7 @@ armelContainer dockerImage crontimes timeout = Docker.container "armel-git-annex
 	-- (Currently have to run
 	-- git-annex/standalone/linux/install-haskell-packages
 	-- which is not fully automated.)
-	& builder' buildDepsNoHaskellLibs "armel" crontimes timeout True
+	& builder' buildDepsFewHaskellLibs "armel" crontimes timeout True
 	& Ssh.keyImported SshRsa builduser
 	& trivial writecompanionaddress
   where
