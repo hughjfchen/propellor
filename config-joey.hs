@@ -27,16 +27,13 @@ import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 
-main :: IO ()
-main = defaultMain hosts
 
-
-                      --     _         ______`|                          ,-.__ 
- {- Propellor          --  /   \___-=O`/|O`/__|                         (____.'
-    Deployed -}         -- \          / | /    )             _.-"-._
-                        --  `/-==__ _/__|/__=-|             (       \_
-hosts :: [Host]        --   *             \ | |              '--------'
-hosts =               --                  (o)  `
+main :: IO ()           --     _         ______`|                       ,-.__ 
+main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
+  {- Propellor            -- \          / | /    )          _.-"-._
+     Deployed -}          --  `/-==__ _/__|/__=-|          (       \_
+hosts :: [Host]          --   *             \ | |           '--------'
+hosts =                 --                  (o)  `
 	-- My laptop
 	[ host "darkstar.kitenet.net"
 		& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
