@@ -118,7 +118,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 	& Apt.stdSourcesList Stable
 	& User.accountFor builduser
 	& File.dirExists gitbuilderdir
-	& File.ownerGroup gitbuilderdir builduser builduser
+	& File.ownerGroup homedir builduser builduser
 	& buildDepsNoHaskellLibs
 	& flagFile chrootsetup ("/chrootsetup")
 		`requires` setupgitannexdir
