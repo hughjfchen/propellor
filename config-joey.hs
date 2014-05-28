@@ -42,6 +42,7 @@ hosts =               --                  (o)  `
 		& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
 		& Docker.configured
 		& Apt.buildDep ["git-annex"] `period` Daily
+		& Docker.docked hosts "android-git-annex"
 
 	-- Nothing super-important lives here.
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
@@ -193,11 +194,15 @@ hosts =               --                  (o)  `
 			(Just "remotes/origin/old-kitenet.net")
 	
 	-- git-annex autobuilder containers
-	, GitAnnexBuilder.standardContainer dockerImage "amd64" 15 "2h"
-	, GitAnnexBuilder.standardContainer dockerImage "i386" 45 "2h"
+	, GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h"
+	, GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h"
 	, GitAnnexBuilder.armelCompanionContainer dockerImage
-	, GitAnnexBuilder.armelContainer dockerImage "1 3 * * *" "5h"
-	, GitAnnexBuilder.androidContainer dockerImage "1 1 * * *" "3h"
+	, GitAnnexBuilder.armelAutoBuilderContainer dockerImage "1 3 * * *" "5h"
+	, GitAnnexBuilder.androidAutoBuilderContainer dockerImage "1 1 * * *" "3h"
+
+	-- for development of git-annex for android
+	, GitAnnexBuilder.androidContainer dockerImage "android-git-annex"
+		& Docker.volume ("/home/joey/src/git-annex:" ++ GitAnnexBuilder.homedir </> "git-annex")
 	] ++ monsters
 
 -- This is my standard system setup.

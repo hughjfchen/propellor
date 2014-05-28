@@ -24,12 +24,8 @@ builddir = gitbuilderdir </> "build"
 type TimeOut = String -- eg, 5h
 
 builder :: Architecture -> CronTimes -> TimeOut -> Bool -> Property
-builder = builder' buildDeps
-
-builder' :: Property -> Architecture -> CronTimes -> TimeOut -> Bool -> Property
-builder' buildepsprop buildarch crontimes timeout rsyncupload = combineProperties "gitannexbuilder"
+builder buildarch crontimes timeout rsyncupload = combineProperties "gitannexbuilder"
 	[ tree buildarch
-	, buildepsprop
 	, Apt.serviceInstalledRunning "cron"
 	, Cron.niceJob "gitannexbuilder" crontimes builduser gitbuilderdir $
 		"git pull ; timeout " ++ timeout ++ " ./autobuild"
@@ -72,8 +68,8 @@ tree buildarch = combineProperties "gitannexbuilder tree"
 		]
 	]
 
-buildDeps :: Property
-buildDeps = combineProperties "gitannexbuilder build deps"
+buildDepsApt :: Property
+buildDepsApt = combineProperties "gitannexbuilder build deps"
 	[ Apt.buildDep ["git-annex"]
 	, buildDepsFewHaskellLibs
 	, "git-annex source build deps installed" ==> Apt.buildDepIn builddir
@@ -102,20 +98,26 @@ cabalDeps = flagFile go cabalupdated
 		go = userScriptProperty builduser ["cabal update && cabal install git-annex --only-dependencies || true"]
 		cabalupdated = homedir </> ".cabal" </> "packages" </> "hackage.haskell.org" </> "00-index.cache"
 
-standardContainer :: (System -> Docker.Image) -> Architecture -> Int -> TimeOut -> Host
-standardContainer dockerImage arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
+standardAutoBuilderContainer :: (System -> Docker.Image) -> Architecture -> Int -> TimeOut -> Host
+standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
 	(dockerImage $ System (Debian Unstable) arch)
 	& Apt.stdSourcesList Unstable
 	& Apt.unattendedUpgrades
+	& buildDepsApt
 	& builder arch (show buildminute ++ " * * * *") timeout True
 
+androidAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
+androidAutoBuilderContainer dockerImage crontimes timeout =
+	androidContainer dockerImage "android-git-annex-builder"
+		& Apt.unattendedUpgrades
+		& builder "android" crontimes timeout True
+
 -- Android is cross-built in a Debian i386 container, using the Android NDK.
-androidContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
-androidContainer dockerImage crontimes timeout = Docker.container "android-git-annex-builder"
+androidContainer :: (System -> Docker.Image) -> Docker.ContainerName -> Host
+androidContainer dockerImage name = Docker.container name
 	(dockerImage $ System (Debian Stable) "i386")
 	& Apt.stdSourcesList Stable
-	& Apt.unattendedUpgrades
-	& builder' buildDepsNoHaskellLibs "android" crontimes timeout True
+	& buildDepsNoHaskellLibs
 	& flagFile chrootsetup ("/chrootsetup")
 	-- TODO: automate installing haskell libs
 	-- (Currently have to run
@@ -148,8 +150,8 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	& Apt.serviceInstalledRunning "ssh"
 	& Ssh.authorizedKeys builduser
 
-armelContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
-armelContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
+armelAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
+armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
 	(dockerImage $ System (Debian Unstable) "armel")
 	& Apt.stdSourcesList Unstable
 	& Apt.unattendedUpgrades
@@ -160,7 +162,8 @@ armelContainer dockerImage crontimes timeout = Docker.container "armel-git-annex
 	-- (Currently have to run
 	-- git-annex/standalone/linux/install-haskell-packages
 	-- which is not fully automated.)
-	& builder' buildDepsFewHaskellLibs "armel" crontimes timeout True
+	& buildDepsFewHaskellLibs
+	& builder "armel" crontimes timeout True
 	& Ssh.keyImported SshRsa builduser
 	& trivial writecompanionaddress
   where
