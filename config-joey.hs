@@ -197,9 +197,11 @@ hosts =                 --                  (o)  `
 	, GitAnnexBuilder.armelAutoBuilderContainer dockerImage "1 3 * * *" "5h"
 	, GitAnnexBuilder.androidAutoBuilderContainer dockerImage "1 1 * * *" "3h"
 
-	-- for development of git-annex for android
-	, GitAnnexBuilder.androidContainer dockerImage "android-git-annex"
-		& Docker.volume ("/home/joey/src/git-annex:" ++ GitAnnexBuilder.homedir </> "git-annex")
+	-- for development of git-annex for android, using my git-annex
+	-- work tree
+	, let gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
+	  in GitAnnexBuilder.androidContainer dockerImage "android-git-annex" doNothing gitannexdir
+		& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
 	] ++ monsters
 
 -- This is my standard system setup.

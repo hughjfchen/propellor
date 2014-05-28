@@ -23,10 +23,9 @@ builddir = gitbuilderdir </> "build"
 
 type TimeOut = String -- eg, 5h
 
-builder :: Architecture -> CronTimes -> TimeOut -> Bool -> Property
-builder buildarch crontimes timeout rsyncupload = combineProperties "gitannexbuilder"
-	[ tree buildarch
-	, Apt.serviceInstalledRunning "cron"
+autobuilder :: CronTimes -> TimeOut -> Bool -> Property
+autobuilder crontimes timeout rsyncupload = combineProperties "gitannexbuilder"
+	[ Apt.serviceInstalledRunning "cron"
 	, Cron.niceJob "gitannexbuilder" crontimes builduser gitbuilderdir $
 		"git pull ; timeout " ++ timeout ++ " ./autobuild"
 	-- The builduser account does not have a password set,
@@ -50,8 +49,7 @@ builder buildarch crontimes timeout rsyncupload = combineProperties "gitannexbui
 
 tree :: Architecture -> Property
 tree buildarch = combineProperties "gitannexbuilder tree"
-	[ User.accountFor builduser
-	, Apt.installed ["git"]
+	[ Apt.installed ["git"]
 	-- gitbuilderdir directory already exists when docker volume is used,
 	-- but with wrong owner.
 	, File.dirExists gitbuilderdir
@@ -104,21 +102,24 @@ standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.conta
 	& Apt.stdSourcesList Unstable
 	& Apt.unattendedUpgrades
 	& buildDepsApt
-	& builder arch (show buildminute ++ " * * * *") timeout True
+	& autobuilder (show buildminute ++ " * * * *") timeout True
+		`requires` tree arch
 
 androidAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
 androidAutoBuilderContainer dockerImage crontimes timeout =
-	androidContainer dockerImage "android-git-annex-builder"
+	androidContainer dockerImage "android-git-annex-builder" (tree "android") builddir
 		& Apt.unattendedUpgrades
-		& builder "android" crontimes timeout True
+		& autobuilder crontimes timeout True
 
 -- Android is cross-built in a Debian i386 container, using the Android NDK.
-androidContainer :: (System -> Docker.Image) -> Docker.ContainerName -> Host
-androidContainer dockerImage name = Docker.container name
+androidContainer :: (System -> Docker.Image) -> Docker.ContainerName -> Property -> FilePath -> Host
+androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.container name
 	(dockerImage $ System (Debian Stable) "i386")
 	& Apt.stdSourcesList Stable
+	& User.accountFor builduser
 	& buildDepsNoHaskellLibs
 	& flagFile chrootsetup ("/chrootsetup")
+		`requires` setupgitannexdir
 	-- TODO: automate installing haskell libs
 	-- (Currently have to run
 	-- git-annex/standalone/android/install-haskell-packages
@@ -128,7 +129,7 @@ androidContainer dockerImage name = Docker.container name
 	-- ghc-android and the NDK, all build deps, etc, in the home
 	-- directory of the builder user.
 	chrootsetup = scriptProperty
-		[ "cd " ++ builddir ++ " && ./standalone/android/buildchroot-inchroot"
+		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
 
 -- armel builder has a companion container using amd64 that
@@ -163,7 +164,8 @@ armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "arme
 	-- git-annex/standalone/linux/install-haskell-packages
 	-- which is not fully automated.)
 	& buildDepsFewHaskellLibs
-	& builder "armel" crontimes timeout True
+	& autobuilder crontimes timeout True
+		`requires` tree "armel"
 	& Ssh.keyImported SshRsa builduser
 	& trivial writecompanionaddress
   where

@@ -103,6 +103,9 @@ trivial p = adjustProperty p $ \satisfy -> do
 		then return NoChange
 		else return r
 
+doNothing :: Property
+doNothing = property "noop property" noChange
+
 -- | Makes a property that is satisfied differently depending on the host's
 -- operating system. 
 --
