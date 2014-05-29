@@ -1,6 +1,9 @@
 propellor (0.5.3) UNRELEASED; urgency=medium
 
   * Fix unattended-upgrades config for !stable.
+  * Ensure that kernel hostname is same as /etc/hostname when configuring
+    hostname.
+  * Added modules for some hosting providers (DigitalOcean, CloudAtCost).
 
  -- Joey Hess <joeyh@debian.org>  Sun, 18 May 2014 13:44:00 -0400
 

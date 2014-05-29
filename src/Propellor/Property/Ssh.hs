@@ -107,11 +107,13 @@ keyImported keytype user = combineProperties desc
 		f <- liftIO $ keyfile ext
 		ifM (liftIO $ doesFileExist f)
 			( noChange
-			, ensureProperty $ combineProperties desc
+			, ensureProperties
 				[ property desc $ 
-					withPrivData p $ \key -> makeChange $
+					withPrivData p $ \key -> makeChange $ do
+						createDirectoryIfMissing True (takeDirectory f)
 						writer f key
 				, File.ownerGroup f user user
+				, File.ownerGroup (takeDirectory f) user user
 				]
 			)
 	keyfile ext = do
@@ -149,4 +151,7 @@ authorizedKeys user = property (user ++ " has authorized_keys") $
 		liftIO $ do
 			createDirectoryIfMissing True (takeDirectory f)
 			writeFileProtected f v
-		ensureProperty $ File.ownerGroup f user user
+		ensureProperties 
+			[ File.ownerGroup f user user
+			, File.ownerGroup (takeDirectory f) user user
+			] 

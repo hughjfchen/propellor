@@ -1,6 +1,5 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ExistentialQuantification #-}
 
 module Propellor.Types
 	( Host(..)
@@ -35,6 +34,8 @@ import Propellor.Types.Attr
 import Propellor.Types.OS
 import Propellor.Types.Dns
 
+-- | Everything Propellor knows about a system: Its properties and
+-- attributes.
 data Host = Host [Property] SetAttr
 
 -- | Propellor's monad provides read-only access to attributes of the

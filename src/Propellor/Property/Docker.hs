@@ -156,6 +156,10 @@ name = runProp "name"
 publish :: String -> Property
 publish = runProp "publish"
 
+-- | Expose a container's port without publishing it.
+expose :: String -> Property
+expose = runProp "expose"
+
 -- | Username or UID for container.
 user :: String -> Property
 user = runProp "user"

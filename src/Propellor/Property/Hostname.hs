@@ -13,7 +13,6 @@ sane = property ("sane hostname") (ensureProperty . setTo =<< getHostName)
 
 setTo :: HostName -> Property
 setTo hn = combineProperties desc go
-	`onChange` cmdProperty "hostname" [basehost]
   where
 	desc = "hostname " ++ hn
 	(basehost, domain) = separate (== '.') hn
@@ -24,6 +23,7 @@ setTo hn = combineProperties desc go
 			then Nothing 
 			else Just $ File.fileProperty desc
 				addhostline "/etc/hosts"
+		, Just $ trivial $ cmdProperty "hostname" [basehost]
 		]
 	
 	hostip = "127.0.1.1"
