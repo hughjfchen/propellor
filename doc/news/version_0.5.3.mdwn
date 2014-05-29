@@ -1,0 +1,6 @@
+propellor 0.5.3 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Fix unattended-upgrades config for !stable.
+   * Ensure that kernel hostname is same as /etc/hostname when configuring
+     hostname.
+   * Added modules for some hosting providers (DigitalOcean, CloudAtCost)."""]]
