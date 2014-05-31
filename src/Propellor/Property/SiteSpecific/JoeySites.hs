@@ -317,3 +317,25 @@ ircBouncer = propertyList "IRC bouncer"
 	]
   where
 	conf = "/home/znc/.znc/configs/znc.conf"
+
+kiteShellBox :: Property
+kiteShellBox = propertyList "kitenet.net shellinabox"
+	[ Apt.installed ["shellinabox"]
+
+	-- Install ssl cert, let shellinabox read it.
+	, File.dirExists certdir
+	, File.ownerGroup certdir "shellinabox" "shellinabox"
+	, File.mode certdir (combineModes [ownerWriteMode, ownerReadMode, ownerExecuteMode])
+	, File.hasPrivContentExposed (certdir </> "certificate.pem")
+
+	, File.hasContent "/etc/default/shellinabox"
+		[ "# Deployed by propellor"
+		, "SHELLINABOX_DAEMON_START=1"
+		, "SHELLINABOX_PORT=443"
+		, "SHELLINABOX_ARGS=\"--no-beep --service=/:SSH:kitenet.net --cert=" ++ certdir ++ "\""
+		]
+		`onChange` Service.restarted "shellinabox"
+	, Service.running "shellinabox"
+	]
+  where
+	certdir = "/etc/shellinabox/certs"

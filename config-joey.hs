@@ -41,9 +41,7 @@ hosts =                 --                  (o)  `
 		& Apt.buildDep ["git-annex"] `period` Daily
 		& Docker.docked hosts "android-git-annex"
 
-	-- Nothing super-important lives here.
-	-- Any services I care about are containerized so they can easily
-	-- be moved.
+	-- Nothing super-important lives here and mostly it's docker containers.
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
 		& ipv4 "162.248.143.249"
 		& ipv6 "2002:5044:5531::1"
@@ -77,6 +75,11 @@ hosts =                 --                  (o)  `
 		
 		& alias "znc.kitenet.net"
 		& JoeySites.ircBouncer
+
+		-- For https port 443, shellinabox with ssh login to
+		-- kitenet.net
+		& alias "shell.kitenet.net"
+		& JoeySites.kiteShellBox
 
 		-- Nothing is using http port 80 on clam, so listen on
 		-- that port for ssh, for traveling on bad networks that
