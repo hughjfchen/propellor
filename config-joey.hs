@@ -42,6 +42,8 @@ hosts =                 --                  (o)  `
 		& Docker.docked hosts "android-git-annex"
 
 	-- Nothing super-important lives here.
+	-- Any services I care about are containerized so they can easily
+	-- be moved.
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
 		& ipv4 "162.248.143.249"
 		& ipv6 "2002:5044:5531::1"
@@ -54,7 +56,7 @@ hosts =                 --                  (o)  `
 		& Docker.configured
 
 		& alias "shell.olduse.net"
-		& JoeySites.oldUseNetShellBox
+		& Docker.docked hosts "oldusenet-shellbox"
 
 		& alias "openid.kitenet.net"
 		& Docker.docked hosts "openid-provider"
@@ -191,6 +193,10 @@ hosts =                 --                  (o)  `
 		& Git.cloned "root" "git://kitenet-net.branchable.com/" "/var/www"
 			(Just "remotes/origin/old-kitenet.net")
 	
+	, standardContainer "oldusenet-shellbox" Stable "amd64"
+		& Docker.publish "4200:4200"
+		& JoeySites.oldUseNetShellBox
+
 	-- git-annex autobuilder containers
 	, GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h"
 	, GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h"
