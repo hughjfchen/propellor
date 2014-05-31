@@ -32,7 +32,8 @@ ensureProperties ps = ensure ps NoChange
   where
 	ensure [] rs = return rs
 	ensure (l:ls) rs = do
-		r <- actionMessage (propertyDesc l) (ensureProperty l)
+		hn <- getHostName
+		r <- actionMessage (hn ++ " " ++ propertyDesc l) (ensureProperty l)
 		ensure ls (r <> rs)
 
 ensureProperty :: Property -> Propellor Result
