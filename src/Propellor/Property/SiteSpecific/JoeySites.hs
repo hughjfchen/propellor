@@ -321,21 +321,12 @@ ircBouncer = propertyList "IRC bouncer"
 kiteShellBox :: Property
 kiteShellBox = propertyList "kitenet.net shellinabox"
 	[ Apt.installed ["shellinabox"]
-
-	-- Set up certs directory, allowing shellinabox write access.
-	-- It will create its own self-signed cert.
-	, File.dirExists certdir
-	, File.ownerGroup certdir "shellinabox" "shellinabox"
-	, File.mode certdir (combineModes [ownerWriteMode, ownerReadMode, ownerExecuteMode])
-
 	, File.hasContent "/etc/default/shellinabox"
 		[ "# Deployed by propellor"
 		, "SHELLINABOX_DAEMON_START=1"
 		, "SHELLINABOX_PORT=443"
-		, "SHELLINABOX_ARGS=\"--no-beep --service=/:SSH:kitenet.net --cert=" ++ certdir ++ "\""
+		, "SHELLINABOX_ARGS=\"--no-beep --service=/:SSH:kitenet.net\""
 		]
 		`onChange` Service.restarted "shellinabox"
 	, Service.running "shellinabox"
 	]
-  where
-	certdir = "/etc/shellinabox/certs"
