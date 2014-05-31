@@ -322,11 +322,11 @@ kiteShellBox :: Property
 kiteShellBox = propertyList "kitenet.net shellinabox"
 	[ Apt.installed ["shellinabox"]
 
-	-- Install ssl cert, let shellinabox read it.
+	-- Set up certs directory, allowing shellinabox write access.
+	-- It will create its own self-signed cert.
 	, File.dirExists certdir
 	, File.ownerGroup certdir "shellinabox" "shellinabox"
 	, File.mode certdir (combineModes [ownerWriteMode, ownerReadMode, ownerExecuteMode])
-	, File.hasPrivContentExposed (certdir </> "certificate.pem")
 
 	, File.hasContent "/etc/default/shellinabox"
 		[ "# Deployed by propellor"
