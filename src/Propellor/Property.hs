@@ -130,19 +130,19 @@ revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 -- > 	! oldproperty
 -- > 	& otherproperty
 host :: HostName -> Host
-host hn = Host [] (\_ -> newAttr hn)
+host hn = Host hn [] (\_ -> newAttr hn)
 
 -- | Adds a property to a Host
 --
 -- Can add Properties and RevertableProperties
 (&) :: IsProp p => Host -> p -> Host
-(Host ps as) & p = Host (ps ++ [toProp p]) (setAttr p . as)
+(Host hn ps as) & p = Host hn (ps ++ [toProp p]) (setAttr p . as)
 
 infixl 1 &
 
 -- | Adds a property to the Host in reverted form.
 (!) :: Host -> RevertableProperty -> Host
-(Host ps as) ! p = Host (ps ++ [toProp q]) (setAttr q . as)
+(Host hn ps as) ! p = Host hn (ps ++ [toProp q]) (setAttr q . as)
   where
 	q = revert p
 

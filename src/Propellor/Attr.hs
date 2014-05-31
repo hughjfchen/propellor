@@ -83,22 +83,17 @@ sshPubKey k = pureAttrProperty ("ssh pubkey known") $
 getSshPubKey :: Propellor (Maybe String)
 getSshPubKey = asks _sshPubKey
 
-hostnameless :: Attr
-hostnameless = newAttr (error "hostname Attr not specified")
-
 hostAttr :: Host -> Attr
-hostAttr (Host _ mkattrs) = mkattrs hostnameless
+hostAttr (Host hn _ mkattrs) = mkattrs (newAttr hn)
 
 hostProperties :: Host -> [Property]
-hostProperties (Host ps _) = ps
+hostProperties (Host _ ps _) = ps
 
 hostMap :: [Host] -> M.Map HostName Host
-hostMap l = M.fromList $ zip (map (_hostname . hostAttr) l) l 
+hostMap l = M.fromList $ zip (map _hostName l) l 
 
 hostAttrMap :: [Host] -> M.Map HostName Attr
-hostAttrMap l = M.fromList $ zip (map _hostname attrs) attrs
-  where
-	attrs = map hostAttr l
+hostAttrMap l = M.fromList $ zip (map _hostName l) (map hostAttr l)
 
 findHost :: [Host] -> HostName -> Maybe Host
 findHost l hn = M.lookup hn (hostMap l)

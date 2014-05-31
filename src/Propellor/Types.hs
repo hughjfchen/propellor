@@ -34,9 +34,13 @@ import Propellor.Types.Attr
 import Propellor.Types.OS
 import Propellor.Types.Dns
 
--- | Everything Propellor knows about a system: Its properties and
--- attributes.
-data Host = Host [Property] SetAttr
+-- | Everything Propellor knows about a system: Its hostname,
+-- properties and attributes.
+data Host = Host
+	{ _hostName :: HostName
+	, _hostProps :: [Property]
+	, _hostAttrs :: SetAttr
+	}
 
 -- | Propellor's monad provides read-only access to attributes of the
 -- system.

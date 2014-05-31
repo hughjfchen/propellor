@@ -46,9 +46,10 @@ type ContainerName = String
 -- >    & Apt.installed {"apache2"]
 -- >    & ...
 container :: ContainerName -> Image -> Host
-container cn image = Host [] (\_ -> attr)
+container cn image = Host hn [] (\_ -> attr)
   where
-	attr = (newAttr (cn2hn cn)) { _dockerImage = Just image }
+	attr = (newAttr hn) { _dockerImage = Just image }
+	hn = cn2hn cn
 
 cn2hn :: ContainerName -> HostName
 cn2hn cn = cn ++ ".docker"
@@ -67,7 +68,7 @@ docked
 	-> ContainerName
 	-> RevertableProperty
 docked hosts cn = RevertableProperty
-	(go "docked" setup)
+	((maybe id exposeDnsAttrs mhost) (go "docked" setup))
 	(go "undocked" teardown)
   where
 	go desc a = property (desc ++ " " ++ cn) $ do
@@ -95,7 +96,7 @@ docked hosts cn = RevertableProperty
 			]
 
 exposeDnsAttrs :: Host -> Property -> Property
-exposeDnsAttrs (Host _ containerattr) p = combineProperties (propertyDesc p) $
+exposeDnsAttrs (Host _ _ containerattr) p = combineProperties (propertyDesc p) $
 	p : map addDNS (S.toList containerdns)
   where
 	containerdns = _dns $ containerattr $ newAttr undefined
