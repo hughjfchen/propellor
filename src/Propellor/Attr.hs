@@ -33,21 +33,31 @@ getOS = asks _os
 -- TODO check at run time if the host really has this address.
 -- (Can't change the host's address, but as a sanity check.)
 ipv4 :: String -> Property
-ipv4 addr = pureAttrProperty ("ipv4 " ++ addr)
-	(addDNS $ Address $ IPv4 addr)
+ipv4 = addDNS . Address . IPv4
 
 -- | Indidate that a host has an AAAA record in the DNS.
 ipv6 :: String -> Property
-ipv6 addr = pureAttrProperty ("ipv6 " ++ addr)
-	(addDNS $ Address $ IPv6 addr)
+ipv6 = addDNS . Address . IPv6
 
 -- | Indicates another name for the host in the DNS.
 alias :: Domain -> Property
-alias domain = pureAttrProperty ("alias " ++ domain)
-	(addDNS $ CNAME $ AbsDomain domain)
+alias = addDNS . CNAME . AbsDomain
 
-addDNS :: Record -> SetAttr
-addDNS record d = d { _dns = S.insert record (_dns d) }
+addDNS :: Record -> Property
+addDNS r = pureAttrProperty (rdesc r) $
+	\d -> d { _dns = S.insert r (_dns d) }
+  where
+	rdesc (CNAME d) = unwords ["alias", ddesc d]
+	rdesc (Address (IPv4 addr)) = unwords ["ipv4", addr]
+	rdesc (Address (IPv6 addr)) = unwords ["ipv6", addr]
+	rdesc (MX n d) = unwords ["MX", show n, ddesc d]
+	rdesc (NS d) = unwords ["NS", ddesc d]
+	rdesc (TXT s) = unwords ["TXT", s]
+	rdesc (SRV x y z d) = unwords ["SRV", show x, show y, show z, ddesc d]
+
+	ddesc (AbsDomain domain) = domain
+	ddesc (RelDomain domain) = domain
+	ddesc RootDomain = "@"
 
 -- | Adds a DNS NamedConf stanza.
 --

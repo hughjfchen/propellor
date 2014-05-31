@@ -53,7 +53,6 @@ hosts =                 --                  (o)  `
 		& Postfix.satellite
 		& Docker.configured
 
-		& alias "shell.olduse.net"
 		& Docker.docked hosts "oldusenet-shellbox"
 
 		& alias "openid.kitenet.net"
@@ -198,6 +197,7 @@ hosts =                 --                  (o)  `
 	
 	, standardContainer "oldusenet-shellbox" Stable "amd64"
 		& Docker.publish "4200:4200"
+		& alias "shell.olduse.net"
 		& JoeySites.oldUseNetShellBox
 
 	-- git-annex autobuilder containers

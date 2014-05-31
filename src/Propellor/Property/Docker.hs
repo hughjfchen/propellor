@@ -21,6 +21,7 @@ import System.Posix.Directory
 import System.Posix.Process
 import Data.List
 import Data.List.Utils
+import qualified Data.Set as S
 
 -- | Configures docker with an authentication file, so that images can be
 -- pushed to index.docker.io.
@@ -54,7 +55,10 @@ cn2hn cn = cn ++ ".docker"
 
 -- | Ensures that a docker container is set up and running. The container
 -- has its own Properties which are handled by running propellor
--- inside the container.
+-- inside the container. 
+--
+-- Additionally, the container can have DNS attributes, such as a CNAME.
+-- These become attributes of the host(s) it's docked in.
 --
 -- Reverting this property ensures that the container is stopped and
 -- removed.
@@ -62,12 +66,16 @@ docked
 	:: [Host]
 	-> ContainerName
 	-> RevertableProperty
-docked hosts cn = RevertableProperty (go "docked" setup) (go "undocked" teardown)
+docked hosts cn = RevertableProperty
+	(go "docked" setup)
+	(go "undocked" teardown)
   where
 	go desc a = property (desc ++ " " ++ cn) $ do
 		hn <- getHostName
   		let cid = ContainerId hn cn
-		ensureProperties [findContainer hosts cid cn $ a cid]
+		ensureProperties [findContainer mhost cid cn $ a cid]
+		
+	mhost = findHost hosts (cn2hn cn)
 
 	setup cid (Container image runparams) =
 		provisionContainer cid
@@ -86,13 +94,19 @@ docked hosts cn = RevertableProperty (go "docked" setup) (go "undocked" teardown
 					]
 			]
 
+exposeDnsAttrs :: Host -> Property -> Property
+exposeDnsAttrs (Host _ containerattr) p = combineProperties (propertyDesc p) $
+	p : map addDNS (S.toList containerdns)
+  where
+	containerdns = _dns $ containerattr $ newAttr undefined
+
 findContainer
-	:: [Host]
+	:: Maybe Host
 	-> ContainerId
 	-> ContainerName
 	-> (Container -> Property)
 	-> Property
-findContainer hosts cid cn mk = case findHost hosts (cn2hn cn) of
+findContainer mhost cid cn mk = case mhost of
 	Nothing -> cantfind
 	Just h -> maybe cantfind mk (mkContainer cid h)
   where
