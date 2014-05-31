@@ -306,8 +306,35 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "wortroot.kitenet.net"
 		& alias "www.wortroot.kitenet.net"
 		& alias "joey.kitenet.net"
+		& alias "anna.kitenet.net"
 		& alias "ipv6.kitenet.net"
 		& alias "bitlbee.kitenet.net"
+		{- Remaining services on kite:
+		 - 
+		 - mail
+		 -   postfix
+		 -   postgrey
+		 -   mailman
+		 -   spamassassin
+		 -   sqwebmail
+		 -   courier
+		 -     imap
+		 -     tls
+		 - apache
+		 -   some static websites
+		 - bitlbee
+		 - prosody
+		 -   (used by anna and daddy's git-annex)
+		 - named
+		 -   (branchable is still pushing to here
+		 -    (thinking it's ns2.branchable.com), but it's no
+		 -   longer a primary or secondary for anything)
+		 - ajaxterm
+		 - ftpd (EOL)
+		 -
+		 - user shell stuff:
+		 -   pine, zsh, make, ...
+		 -}
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
 	, host "beaver.kitenet.net"
