@@ -338,7 +338,6 @@ monsters =	      -- but do want to track their public keys etc.
 		 -   (branchable is still pushing to here
 		 -    (thinking it's ns2.branchable.com), but it's no
 		 -   longer a primary or secondary for anything)
-		 - ajaxterm
 		 - ftpd (EOL)
 		 -
 		 - user shell stuff:
