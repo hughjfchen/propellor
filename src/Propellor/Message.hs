@@ -12,7 +12,15 @@ import Propellor.Types
 -- | Shows a message while performing an action, with a colored status
 -- display.
 actionMessage :: (MonadIO m, ActionResult r) => Desc -> m r -> m r
-actionMessage desc a = do
+actionMessage = actionMessage' Nothing
+
+-- | Shows a message while performing an action on a specified host,
+-- with a colored status display.
+actionMessageOn :: (MonadIO m, ActionResult r) => HostName -> Desc -> m r -> m r
+actionMessageOn = actionMessage' . Just
+
+actionMessage' :: (MonadIO m, ActionResult r) => Maybe HostName -> Desc -> m r -> m r
+actionMessage' mhn desc a = do
 	liftIO $ do
 		setTitle $ "propellor: " ++ desc
 		hFlush stdout
@@ -21,12 +29,19 @@ actionMessage desc a = do
 
 	liftIO $ do
 		setTitle "propellor: running"
-		let (msg, intensity, color) = getActionResult r
+		showhn mhn
 		putStr $ desc ++ " ... "
+		let (msg, intensity, color) = getActionResult r
 		colorLine intensity color msg
 		hFlush stdout
 
 	return r
+  where
+	showhn Nothing = return ()
+	showhn (Just hn) = do
+		setSGR [SetColor Foreground Dull Cyan]
+		putStr (hn ++ " ")
+		setSGR []
 
 warningMessage :: MonadIO m => String -> m ()
 warningMessage s = liftIO $ colorLine Vivid Magenta $ "** warning: " ++ s
