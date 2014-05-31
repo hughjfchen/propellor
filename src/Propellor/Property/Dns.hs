@@ -129,9 +129,9 @@ secondaryFor masters hosts domain = RevertableProperty setup cleanup
 
 otherServers :: DnsServerType -> [Host] -> Domain -> [HostName]
 otherServers wantedtype hosts domain =
-	M.keys $ M.filter wanted $ hostAttrMap hosts
+	M.keys $ M.filter wanted $ hostMap hosts
   where
-	wanted attr = case M.lookup domain (_namedconf attr) of
+	wanted h = case M.lookup domain (_namedconf $ hostAttr h) of
 		Nothing -> False
 		Just conf -> confDnsServerType conf == wantedtype
 			&& confDomain conf == domain
@@ -341,7 +341,7 @@ genZone hosts zdomain soa =
 		]
 	in (Zone zdomain soa (nub zhosts), warnings)
   where
-	m = hostAttrMap hosts
+	m = hostMap hosts
 	-- Known hosts with hostname located in the zone's domain.
 	inzdomain = M.elems $ M.filterWithKey (\hn _ -> inDomain zdomain $ AbsDomain $ hn) m
 	
@@ -350,12 +350,13 @@ genZone hosts zdomain soa =
 	--
 	-- If a host lacks any IPAddr, it's probably a misconfiguration,
 	-- so warn.
-	hostips :: Attr -> [Either WarningMessage (BindDomain, Record)]
-	hostips attr
-		| null l = [Left $ "no IP address defined for host " ++ _hostname attr]
+	hostips :: Host -> [Either WarningMessage (BindDomain, Record)]
+	hostips h
+		| null l = [Left $ "no IP address defined for host " ++ _hostName h]
 		| otherwise = map Right l
 	  where
-		l = zip (repeat $ AbsDomain $ _hostname attr)
+		attr = hostAttr h
+		l = zip (repeat $ AbsDomain $ _hostName h)
 			(map Address $ getAddresses attr)
 
 	-- Any host, whether its hostname is in the zdomain or not,
@@ -370,10 +371,11 @@ genZone hosts zdomain soa =
 	--
 	-- We typically know the host's IPAddrs anyway.
 	-- So we can just use the IPAddrs.
-	addcnames :: Attr -> [Either WarningMessage (BindDomain, Record)]
-	addcnames attr = concatMap gen $ filter (inDomain zdomain) $
+	addcnames :: Host -> [Either WarningMessage (BindDomain, Record)]
+	addcnames h = concatMap gen $ filter (inDomain zdomain) $
 		mapMaybe getCNAME $ S.toList (_dns attr)
 	  where
+		attr = hostAttr h
 		gen c = case getAddresses attr of
 			[] -> [ret (CNAME c)]
 			l -> map (ret . Address) l
@@ -381,10 +383,11 @@ genZone hosts zdomain soa =
 		  	ret record = Right (c, record)
 	
 	-- Adds any other DNS records for a host located in the zdomain.
-	hostrecords :: Attr -> [Either WarningMessage (BindDomain, Record)]
-	hostrecords attr = map Right l
+	hostrecords :: Host -> [Either WarningMessage (BindDomain, Record)]
+	hostrecords h = map Right l
 	  where
-		l = zip (repeat $ AbsDomain $ _hostname attr)
+		attr = hostAttr h
+		l = zip (repeat $ AbsDomain $ _hostName h)
 			(S.toList $ S.filter (\r -> isNothing (getIPAddr r) && isNothing (getCNAME r)) (_dns attr))
 
 inDomain :: Domain -> BindDomain -> Bool

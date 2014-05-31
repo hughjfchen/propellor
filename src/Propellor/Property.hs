@@ -130,7 +130,7 @@ revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 -- > 	! oldproperty
 -- > 	& otherproperty
 host :: HostName -> Host
-host hn = Host hn [] (\_ -> newAttr hn)
+host hn = Host hn [] (\_ -> newAttr)
 
 -- | Adds a property to a Host
 --

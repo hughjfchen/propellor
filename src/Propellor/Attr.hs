@@ -14,19 +14,15 @@ import Control.Applicative
 pureAttrProperty :: Desc -> SetAttr -> Property 
 pureAttrProperty desc = Property ("has " ++ desc) (return NoChange)
 
-hostname :: HostName -> Property
-hostname name = pureAttrProperty ("hostname " ++ name) $
-	\d -> d { _hostname = name }
-
 getHostName :: Propellor HostName
-getHostName = asks _hostname
+getHostName = asks _hostName
 
 os :: System -> Property
 os system = pureAttrProperty ("Operating " ++ show system) $
 	\d -> d { _os = Just system }
 
 getOS :: Propellor (Maybe System)
-getOS = asks _os
+getOS = asks (_os . hostAttr)
 
 -- | Indidate that a host has an A record in the DNS.
 --
@@ -74,26 +70,23 @@ addNamedConf conf d = d { _namedconf = new }
 		_  -> M.insert domain conf m
 
 getNamedConf :: Propellor (M.Map Domain NamedConf)
-getNamedConf = asks _namedconf
+getNamedConf = asks (_namedconf . hostAttr)
 
 sshPubKey :: String -> Property
 sshPubKey k = pureAttrProperty ("ssh pubkey known") $
 	\d -> d { _sshPubKey = Just k }
 
 getSshPubKey :: Propellor (Maybe String)
-getSshPubKey = asks _sshPubKey
+getSshPubKey = asks (_sshPubKey . hostAttr)
 
 hostAttr :: Host -> Attr
-hostAttr (Host hn _ mkattrs) = mkattrs (newAttr hn)
+hostAttr (Host _ _ mkattrs) = mkattrs newAttr
 
 hostProperties :: Host -> [Property]
 hostProperties (Host _ ps _) = ps
 
 hostMap :: [Host] -> M.Map HostName Host
 hostMap l = M.fromList $ zip (map _hostName l) l 
-
-hostAttrMap :: [Host] -> M.Map HostName Attr
-hostAttrMap l = M.fromList $ zip (map _hostName l) (map hostAttr l)
 
 findHost :: [Host] -> HostName -> Maybe Host
 findHost l hn = M.lookup hn (hostMap l)
@@ -105,12 +98,3 @@ hostAddresses :: HostName -> [Host] -> [IPAddr]
 hostAddresses hn hosts = case hostAttr <$> findHost hosts hn of
 	Nothing -> []
 	Just attr -> mapMaybe getIPAddr $ S.toList $ _dns attr
-
--- | Lifts an action into a different host.
---
--- For example, `fromHost hosts "otherhost" getSshPubKey`
-fromHost :: [Host] -> HostName -> Propellor a -> Propellor (Maybe a)
-fromHost l hn getter = case findHost l hn of
-	Nothing -> return Nothing
-	Just h -> liftIO $ Just <$>
-		runReaderT (runWithAttr getter) (hostAttr h)

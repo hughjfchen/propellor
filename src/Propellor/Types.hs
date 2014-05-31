@@ -42,14 +42,14 @@ data Host = Host
 	, _hostAttrs :: SetAttr
 	}
 
--- | Propellor's monad provides read-only access to attributes of the
--- system.
-newtype Propellor p = Propellor { runWithAttr :: ReaderT Attr IO p }
+-- | Propellor's monad provides read-only access to the host it's running
+-- on, including its attributes.
+newtype Propellor p = Propellor { runWithHost :: ReaderT Host IO p }
 	deriving
 		( Monad
 		, Functor
 		, Applicative
-		, MonadReader Attr 
+		, MonadReader Host
 		, MonadIO
 		, MonadCatchIO
 		)

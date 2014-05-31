@@ -48,7 +48,7 @@ type ContainerName = String
 container :: ContainerName -> Image -> Host
 container cn image = Host hn [] (\_ -> attr)
   where
-	attr = (newAttr hn) { _dockerImage = Just image }
+	attr = newAttr { _dockerImage = Just image }
 	hn = cn2hn cn
 
 cn2hn :: ContainerName -> HostName
@@ -99,7 +99,7 @@ exposeDnsAttrs :: Host -> Property -> Property
 exposeDnsAttrs (Host _ _ containerattr) p = combineProperties (propertyDesc p) $
 	p : map addDNS (S.toList containerdns)
   where
-	containerdns = _dns $ containerattr $ newAttr undefined
+	containerdns = _dns $ containerattr newAttr
 
 findContainer
 	:: Maybe Host

@@ -5,20 +5,22 @@ module Propellor.Engine where
 import System.Exit
 import System.IO
 import Data.Monoid
+import Control.Applicative
 import System.Console.ANSI
 import "mtl" Control.Monad.Reader
 
 import Propellor.Types
 import Propellor.Message
 import Propellor.Exception
+import Propellor.Attr
 
-runPropellor :: Attr -> Propellor a -> IO a
-runPropellor attr a = runReaderT (runWithAttr a) attr
+runPropellor :: Host -> Propellor a -> IO a
+runPropellor host a = runReaderT (runWithHost a) host
 
-mainProperties :: Attr -> [Property] -> IO ()
-mainProperties attr ps = do
-	r <- runPropellor attr $
-		ensureProperties [Property "overall" (ensureProperties ps) id]
+mainProperties :: Host -> IO ()
+mainProperties host = do
+	r <- runPropellor host $
+		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) id]
 	setTitle "propellor: done"
 	hFlush stdout
 	case r of
@@ -35,3 +37,12 @@ ensureProperties ps = ensure ps NoChange
 
 ensureProperty :: Property -> Propellor Result
 ensureProperty = catchPropellor . propertySatisfy
+
+-- | Lifts an action into a different host.
+--
+-- For example, `fromHost hosts "otherhost" getSshPubKey`
+fromHost :: [Host] -> HostName -> Propellor a -> Propellor (Maybe a)
+fromHost l hn getter = case findHost l hn of
+	Nothing -> return Nothing
+	Just h -> liftIO $ Just <$>
+		runReaderT (runWithHost getter) h
