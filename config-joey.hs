@@ -76,9 +76,10 @@ hosts =                 --                  (o)  `
 		& alias "znc.kitenet.net"
 		& JoeySites.ircBouncer
 
-		-- Nothing is using https on clam, so listen on that port
-		-- for ssh, for traveling on bad networks.
-		& "/etc/ssh/sshd_config" `File.containsLine` "Port 443"
+		-- Nothing is using http port 80 on clam, so listen on
+		-- that port for ssh, for traveling on bad networks that
+		-- block 22.
+		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
 			`onChange` Service.restarted "ssh"
 
 		& Docker.garbageCollected `period` Daily
@@ -307,7 +308,6 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "www.wortroot.kitenet.net"
 		& alias "joey.kitenet.net"
 		& alias "anna.kitenet.net"
-		& alias "ipv6.kitenet.net"
 		& alias "bitlbee.kitenet.net"
 		{- Remaining services on kite:
 		 - 
@@ -333,7 +333,7 @@ monsters =	      -- but do want to track their public keys etc.
 		 - ftpd (EOL)
 		 -
 		 - user shell stuff:
-		 -   pine, zsh, make, ...
+		 -   pine, zsh, make, git-annex, myrepos, ...
 		 -}
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
