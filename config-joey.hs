@@ -54,12 +54,8 @@ hosts =                 --                  (o)  `
 		& Docker.configured
 
 		& Docker.docked hosts "oldusenet-shellbox"
-
-		& alias "openid.kitenet.net"
 		& Docker.docked hosts "openid-provider"
 		 	`requires` Apt.serviceInstalledRunning "ntp"
-
-		& alias "ancient.kitenet.net"
 		& Docker.docked hosts "ancient-kitenet"
 
 		-- I'd rather this were on diatom, but it needs unstable.
@@ -184,20 +180,22 @@ hosts =                 --                  (o)  `
 	-- My own openid provider. Uses php, so containerized for security
 	-- and administrative sanity.
 	, standardContainer "openid-provider" Stable "amd64"
+		& alias "openid.kitenet.net"
 		& Docker.publish "8081:80"
 		& OpenId.providerFor ["joey", "liw"]
 			"openid.kitenet.net:8081"
 
 	-- Exhibit: kite's 90's website.
 	, standardContainer "ancient-kitenet" Stable "amd64"
+		& alias "ancient.kitenet.net"
 		& Docker.publish "1994:80"
 		& Apt.serviceInstalledRunning "apache2"
 		& Git.cloned "root" "git://kitenet-net.branchable.com/" "/var/www"
 			(Just "remotes/origin/old-kitenet.net")
 	
 	, standardContainer "oldusenet-shellbox" Stable "amd64"
-		& Docker.publish "4200:4200"
 		& alias "shell.olduse.net"
+		& Docker.publish "4200:4200"
 		& JoeySites.oldUseNetShellBox
 
 	-- git-annex autobuilder containers
