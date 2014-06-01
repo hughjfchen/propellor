@@ -37,6 +37,11 @@ ipv6 :: String -> Property
 ipv6 = addDNS . Address . IPv6
 
 -- | Indicates another name for the host in the DNS.
+--
+-- When the host's ipv4/ipv6 addresses are known, the alias is set up
+-- to use their address, rather than using a CNAME. This avoids various
+-- problems with CNAMEs, and also means that when multiple hosts have the
+-- same alias, a DNS round-robin is automatically set up.
 alias :: Domain -> Property
 alias = addDNS . CNAME . AbsDomain
 

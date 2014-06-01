@@ -37,8 +37,9 @@ hosts =                 --                  (o)  `
 	-- My laptop
 	[ host "darkstar.kitenet.net"
 		& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
-		& Docker.configured
+
 		& Apt.buildDep ["git-annex"] `period` Daily
+		& Docker.configured
 		& Docker.docked hosts "android-git-annex"
 
 	-- Nothing super-important lives here and mostly it's docker containers.
@@ -165,6 +166,7 @@ hosts =                 --                  (o)  `
 	-- storage and backup server
 	, standardSystem "elephant.kitenet.net" Unstable "amd64"
 		& ipv4 "193.234.225.114"
+
 		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
