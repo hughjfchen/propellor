@@ -166,10 +166,17 @@ hosts =                 --                  (o)  `
 	, standardSystem "elephant.kitenet.net" Unstable "amd64"
 		& ipv4 "193.234.225.114"
 		& Hostname.sane
+		& Postfix.satellite
 
 		-- Joey gets pocasts here.
 		& Apt.installed ["git-annex"]
 		& alias "podcatcher.kitenet.net"
+
+		-- Joey runs github-backup here.
+		& Apt.installed ["github-backup", "moreutils"]
+		& let f = "/home/joey/.github-keys"
+		  in File.hasPrivContent f
+			`onChange` File.ownerGroup f "joey" "joey"
 
 	    --'                        __|II|      ,.
 	  ----                      __|II|II|__   (  \_,/\
