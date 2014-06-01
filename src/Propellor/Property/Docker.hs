@@ -6,13 +6,14 @@
 -- which propellor can set up. See config.hs for an example.
 
 module Propellor.Property.Docker (
-	Image,
-	ContainerName,
-	configured,
+	-- * Host properties
 	installed,
+	configured,
 	container,
 	docked,
 	garbageCollected,
+	Image,
+	ContainerName,
 	-- * Container configuration
 	dns,
 	hostname,
@@ -25,6 +26,7 @@ module Propellor.Property.Docker (
 	workdir,
 	memory,
 	link,
+	ContainerAlias,
 	-- * Internal use
 	chain,
 ) where
@@ -45,16 +47,16 @@ import Data.List
 import Data.List.Utils
 import qualified Data.Set as S
 
+installed :: Property
+installed = Apt.installed ["docker.io"]
+
 -- | Configures docker with an authentication file, so that images can be
--- pushed to index.docker.io.
+-- pushed to index.docker.io. Optional.
 configured :: Property
 configured = property "docker configured" go `requires` installed
   where
 	go = withPrivData DockerAuthentication $ \cfg -> ensureProperty $ 
 		"/root/.dockercfg" `File.hasContent` (lines cfg)
-
-installed :: Property
-installed = Apt.installed ["docker.io"]
 
 -- | A short descriptive name for a container.
 -- Should not contain whitespace or other unusual characters,
@@ -76,9 +78,11 @@ container cn image = Host hn [] attr
 cn2hn :: ContainerName -> HostName
 cn2hn cn = cn ++ ".docker"
 
--- | Ensures that a docker container is set up and running. The container
--- has its own Properties which are handled by running propellor
--- inside the container. 
+-- | Ensures that a docker container is set up and running, finding
+-- its configuration in the passed list of hosts.
+-- 
+-- The container has its own Properties which are handled by running
+-- propellor inside the container.
 --
 -- Additionally, the container can have DNS attributes, such as a CNAME.
 -- These become attributes of the host(s) it's docked in.
