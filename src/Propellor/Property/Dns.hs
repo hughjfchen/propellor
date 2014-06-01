@@ -339,7 +339,7 @@ genZone hosts zdomain soa =
 		, map hostrecords inzdomain
 		, map addcnames (M.elems m)
 		]
-	in (Zone zdomain soa (nub zhosts), warnings)
+	in (Zone zdomain soa (simplify zhosts), warnings)
   where
 	m = hostMap hosts
 	-- Known hosts with hostname located in the zone's domain.
@@ -389,6 +389,17 @@ genZone hosts zdomain soa =
 		attr = hostAttr h
 		l = zip (repeat $ AbsDomain $ hostName h)
 			(S.toList $ S.filter (\r -> isNothing (getIPAddr r) && isNothing (getCNAME r)) (_dns attr))
+
+	-- Simplifies the list of hosts. Remove duplicate entries.
+	-- Also, filter out any CHAMES where the same domain has an
+	-- IP address, since that's not legal.
+	simplify :: [(BindDomain, Record)] -> [(BindDomain, Record)]
+	simplify l = nub $ filter (not . dupcname ) l
+	  where
+		dupcname (d, CNAME _) | any (matchingaddr d) l = True
+		dupcname _ = False
+		matchingaddr d (d', (Address _)) | d == d' = True
+		matchingaddr _ _ = False
 
 inDomain :: Domain -> BindDomain -> Bool
 inDomain domain (AbsDomain d) = domain == d || ('.':domain) `isSuffixOf` d
