@@ -165,6 +165,7 @@ hosts =                 --                  (o)  `
 	-- storage and backup server
 	, standardSystem "elephant.kitenet.net" Unstable "amd64"
 		& ipv4 "193.234.225.114"
+		& Hostname.sane
 
 		-- Joey gets pocasts here.
 		& Apt.installed ["git-annex"]
