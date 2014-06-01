@@ -27,6 +27,7 @@ usage = do
 		, "  propellor hostname"
 		, "  propellor --spin hostname"
 		, "  propellor --set hostname field"
+		, "  propellor --dump hostname field"
 		, "  propellor --add-key keyid"
 		]
 	exitFailure
@@ -38,9 +39,8 @@ processCmdLine = go =<< getArgs
   	go ("--spin":h:[]) = return $ Spin h
   	go ("--boot":h:[]) = return $ Boot h
 	go ("--add-key":k:[]) = return $ AddKey k
-	go ("--set":h:f:[]) = case readish f of
-		Just pf -> return $ Set h pf
-		Nothing -> errorMessage $ "Unknown privdata field " ++ f
+	go ("--set":h:f:[]) = withprivfield f (return . Set h)
+	go ("--dump":h:f:[]) = withprivfield f (return . Dump h)
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
@@ -56,6 +56,10 @@ processCmdLine = go =<< getArgs
 			else return $ Run s
 	go _ = usage
 
+	withprivfield s f = case readish s of
+		Just pf -> f pf
+		Nothing -> errorMessage $ "Unknown privdata field " ++ s
+
 defaultMain :: [Host] -> IO ()
 defaultMain hostlist = do
 	DockerShim.cleanEnv
@@ -66,6 +70,7 @@ defaultMain hostlist = do
   where
 	go _ (Continue cmdline) = go False cmdline
 	go _ (Set hn field) = setPrivData hn field
+	go _ (Dump hn field) = dumpPrivData hn field
 	go _ (AddKey keyid) = addKey keyid
 	go _ (Chain hn) = withhost hn $ \h -> do
 		r <- runPropellor h $ ensureProperties $ hostProperties h

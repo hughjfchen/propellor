@@ -132,6 +132,7 @@ data CmdLine
 	| Spin HostName
 	| Boot HostName
 	| Set HostName PrivDataField
+	| Dump HostName PrivDataField
 	| AddKey String
 	| Continue CmdLine
 	| Chain HostName

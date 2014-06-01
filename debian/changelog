@@ -6,6 +6,8 @@ propellor (0.6.0) UNRELEASED; urgency=medium
     if propellor is used to manage DNS for the domain.
   * Propellor's output now includes the hostname being provisioned, or
     when provisioning a docker container, the container name.
+  * Added --dump to dump out a field of a host's privdata. Useful for editing
+    it.
 
  -- Joey Hess <joeyh@debian.org>  Sat, 31 May 2014 16:41:56 -0400
 
