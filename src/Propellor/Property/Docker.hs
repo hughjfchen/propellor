@@ -5,7 +5,29 @@
 -- The existance of a docker container is just another Property of a system,
 -- which propellor can set up. See config.hs for an example.
 
-module Propellor.Property.Docker where
+module Propellor.Property.Docker (
+	Image,
+	ContainerName,
+	configured,
+	installed,
+	container,
+	docked,
+	garbageCollected,
+	-- * Container configuration
+	dns,
+	hostname,
+	name,
+	publish,
+	expose,
+	user,
+	volume,
+	volumes_from,
+	workdir,
+	memory,
+	link,
+	-- * Internal use
+	chain,
+) where
 
 import Propellor
 import Propellor.SimpleSh
@@ -16,7 +38,7 @@ import qualified Propellor.Property.Docker.Shim as Shim
 import Utility.SafeCommand
 import Utility.Path
 
-import Control.Concurrent.Async
+import Control.Concurrent.Async hiding (link)
 import System.Posix.Directory
 import System.Posix.Process
 import Data.List
@@ -217,9 +239,6 @@ data ContainerId = ContainerId HostName ContainerName
 -- with the same RunParams.
 data ContainerIdent = ContainerIdent Image HostName ContainerName [RunParam]
 	deriving (Read, Show, Eq)
-
-ident2id :: ContainerIdent -> ContainerId
-ident2id (ContainerIdent _ hn cn _) = ContainerId hn cn
 
 toContainerId :: String -> Maybe ContainerId
 toContainerId s
