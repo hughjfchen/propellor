@@ -244,6 +244,9 @@ memory :: String -> Property
 memory = runProp "memory"
 
 -- | CPU shares (relative weight).
+--
+-- By default, all containers run at the same priority, but you can tell
+-- the kernel to give more CPU time to a container using this property.
 cpuShares :: Int -> Property
 cpuShares = runProp "cpu-shares" . show
 
