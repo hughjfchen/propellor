@@ -15,12 +15,15 @@ import Control.Applicative
 pureAttrProperty :: Desc -> Attr -> Property 
 pureAttrProperty desc = Property ("has " ++ desc) (return NoChange)
 
+askAttr :: (Attr -> Val a) -> Propellor (Maybe a)
+askAttr f = asks (fromVal . f . hostAttr)
+
 os :: System -> Property
 os system = pureAttrProperty ("Operating " ++ show system) $
-	mempty { _os = Just system }
+	mempty { _os = Val system }
 
 getOS :: Propellor (Maybe System)
-getOS = asks (_os . hostAttr)
+getOS = askAttr _os
 
 -- | Indidate that a host has an A record in the DNS.
 --
@@ -55,10 +58,10 @@ addDNS r = pureAttrProperty (rdesc r) $
 
 sshPubKey :: String -> Property
 sshPubKey k = pureAttrProperty ("ssh pubkey known") $
-	mempty { _sshPubKey = Just k }
+	mempty { _sshPubKey = Val k }
 
 getSshPubKey :: Propellor (Maybe String)
-getSshPubKey = asks (_sshPubKey . hostAttr)
+getSshPubKey = askAttr _sshPubKey
 
 hostMap :: [Host] -> M.Map HostName Host
 hostMap l = M.fromList $ zip (map hostName l) l 

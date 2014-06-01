@@ -48,7 +48,7 @@ type ContainerName = String
 container :: ContainerName -> Image -> Host
 container cn image = Host hn [] attr
   where
-	attr = mempty { _dockerImage = Just image }
+	attr = mempty { _dockerImage = Val image }
 	hn = cn2hn cn
 
 cn2hn :: ContainerName -> HostName
@@ -116,7 +116,7 @@ findContainer mhost cid cn mk = case mhost of
 
 mkContainer :: ContainerId -> Host -> Maybe Container
 mkContainer cid@(ContainerId hn _cn) h = Container
-	<$> _dockerImage attr
+	<$> fromVal (_dockerImage attr)
 	<*> pure (map (\a -> a hn) (_dockerRunParams attr))
   where
 	attr = hostAttr h'

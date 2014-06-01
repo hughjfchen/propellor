@@ -8,12 +8,12 @@ import Data.Monoid
 
 -- | The attributes of a host.
 data Attr = Attr
-	{ _os :: Maybe System
-	, _sshPubKey :: Maybe String
+	{ _os :: Val System
+	, _sshPubKey :: Val String
 	, _dns :: S.Set Dns.Record
 	, _namedconf :: Dns.NamedConfMap
 
-	, _dockerImage :: Maybe String
+	, _dockerImage :: Val String
 	, _dockerRunParams :: [HostName -> String]
 	}
 
@@ -30,19 +30,13 @@ instance Eq Attr where
 		]
 
 instance Monoid Attr where
-	mempty = Attr Nothing Nothing mempty mempty Nothing mempty
+	mempty = Attr mempty mempty mempty mempty mempty mempty
 	mappend old new = Attr
-		{ _os = case _os new of
-			Just v -> Just v
-			Nothing -> _os old
-		, _sshPubKey = case _sshPubKey new of
-			Just v -> Just v
-			Nothing -> _sshPubKey old
+		{ _os = _os old <> _os new
+		, _sshPubKey = _sshPubKey old <> _sshPubKey new
 		, _dns = _dns new <> _dns old
 		, _namedconf = _namedconf old <> _namedconf new
-		, _dockerImage = case _dockerImage new of
-			Just v -> Just v
-			Nothing -> _dockerImage old
+		, _dockerImage = _dockerImage old <> _dockerImage new
 		, _dockerRunParams = _dockerRunParams old <> _dockerRunParams new
 		}
 
@@ -55,3 +49,16 @@ instance Show Attr where
 		, "docker image " ++ show (_dockerImage a)
 		, "docker run params " ++ show (map (\mk -> mk "") (_dockerRunParams a))
 		]
+
+data Val a = Val a | NoVal
+	deriving (Eq, Show)
+
+instance Monoid (Val a) where
+	mempty = NoVal
+	mappend old new = case new of
+		NoVal -> old
+		_ -> new
+
+fromVal :: Val a -> Maybe a
+fromVal (Val a) = Just a
+fromVal NoVal = Nothing
