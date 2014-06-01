@@ -174,7 +174,7 @@ hosts =                 --                  (o)  `
 		
 		& JoeySites.githubBackup
 		
-		& Docker.docked hosts "volatagex"
+		& Docker.docked hosts "voltagex"
 
 	    --'                        __|II|      ,.
 	  ----                      __|II|II|__   (  \_,/\
