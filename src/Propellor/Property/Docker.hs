@@ -72,7 +72,7 @@ type ContainerName = String
 container :: ContainerName -> Image -> Host
 container cn image = Host hn [] attr
   where
-	attr = mempty { _dockerImage = Val image }
+	attr = dockerAttr $ mempty { _dockerImage = Val image }
 	hn = cn2hn cn
 
 cn2hn :: ContainerName -> HostName
@@ -145,7 +145,7 @@ mkContainer cid@(ContainerId hn _cn) h = Container
 	<$> fromVal (_dockerImage attr)
 	<*> pure (map (\a -> a hn) (_dockerRunParams attr))
   where
-	attr = hostAttr h'
+	attr = _dockerattr $ hostAttr h'
   	h' = h
 		-- expose propellor directory inside the container
 		& volume (localdir++":"++localdir)
@@ -443,14 +443,17 @@ listImages :: IO [Image]
 listImages = lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
 runProp :: String -> RunParam -> Property
-runProp field val = pureAttrProperty (param) $
+runProp field val = pureAttrProperty (param) $ dockerAttr $
 	mempty { _dockerRunParams = [\_ -> "--"++param] }
   where
 	param = field++"="++val
 
 genProp :: String -> (HostName -> RunParam) -> Property
-genProp field mkval = pureAttrProperty field $
+genProp field mkval = pureAttrProperty field $ dockerAttr $
 	mempty { _dockerRunParams = [\hn -> "--"++field++"=" ++ mkval hn] }
+
+dockerAttr :: DockerAttr -> Attr
+dockerAttr a = mempty { _dockerattr = a }
 
 -- | The ContainerIdent of a container is written to
 -- /.propellor-ident inside it. This can be checked to see if
