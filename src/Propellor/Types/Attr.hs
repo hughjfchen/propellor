@@ -4,14 +4,14 @@ import Propellor.Types.OS
 import qualified Propellor.Types.Dns as Dns
 
 import qualified Data.Set as S
-import qualified Data.Map as M
+import Data.Monoid
 
 -- | The attributes of a host.
 data Attr = Attr
 	{ _os :: Maybe System
 	, _sshPubKey :: Maybe String
 	, _dns :: S.Set Dns.Record
-	, _namedconf :: M.Map Dns.Domain Dns.NamedConf
+	, _namedconf :: Dns.NamedConfMap
 
 	, _dockerImage :: Maybe String
 	, _dockerRunParams :: [HostName -> String]
@@ -29,6 +29,23 @@ instance Eq Attr where
 		  in simpl x == simpl y
 		]
 
+instance Monoid Attr where
+	mempty = Attr Nothing Nothing mempty mempty Nothing mempty
+	mappend old new = Attr
+		{ _os = case _os new of
+			Just v -> Just v
+			Nothing -> _os old
+		, _sshPubKey = case _sshPubKey new of
+			Just v -> Just v
+			Nothing -> _sshPubKey old
+		, _dns = _dns new <> _dns old
+		, _namedconf = _namedconf new <> _namedconf old
+		, _dockerImage = case _dockerImage new of
+			Just v -> Just v
+			Nothing -> _dockerImage old
+		, _dockerRunParams = _dockerRunParams old <> _dockerRunParams new
+		}
+
 instance Show Attr where
 	show a = unlines
 		[ "OS " ++ show (_os a)
@@ -38,8 +55,3 @@ instance Show Attr where
 		, "docker image " ++ show (_dockerImage a)
 		, "docker run params " ++ show (map (\mk -> mk "") (_dockerRunParams a))
 		]
-
-newAttr :: Attr
-newAttr = Attr Nothing Nothing S.empty M.empty Nothing []
-
-type SetAttr = Attr -> Attr

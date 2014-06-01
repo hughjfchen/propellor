@@ -46,9 +46,9 @@ type ContainerName = String
 -- >    & Apt.installed {"apache2"]
 -- >    & ...
 container :: ContainerName -> Image -> Host
-container cn image = Host hn [] (\_ -> attr)
+container cn image = Host hn [] attr
   where
-	attr = newAttr { _dockerImage = Just image }
+	attr = mempty { _dockerImage = Just image }
 	hn = cn2hn cn
 
 cn2hn :: ContainerName -> HostName
@@ -97,9 +97,7 @@ docked hosts cn = RevertableProperty
 
 exposeDnsAttrs :: Host -> Property -> Property
 exposeDnsAttrs (Host _ _ containerattr) p = combineProperties (propertyDesc p) $
-	p : map addDNS (S.toList containerdns)
-  where
-	containerdns = _dns $ containerattr newAttr
+	p : map addDNS (S.toList $ _dns containerattr)
 
 findContainer
 	:: Maybe Host
@@ -422,14 +420,14 @@ listImages :: IO [Image]
 listImages = lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
 runProp :: String -> RunParam -> Property
-runProp field val = pureAttrProperty (param) $ \attr ->
-	attr { _dockerRunParams = _dockerRunParams attr ++ [\_ -> "--"++param] }
+runProp field val = pureAttrProperty (param) $
+	mempty { _dockerRunParams = [\_ -> "--"++param] }
   where
 	param = field++"="++val
 
 genProp :: String -> (HostName -> RunParam) -> Property
-genProp field mkval = pureAttrProperty field $ \attr ->
-	attr { _dockerRunParams = _dockerRunParams attr ++ [\hn -> "--"++field++"=" ++ mkval hn] }
+genProp field mkval = pureAttrProperty field $
+	mempty { _dockerRunParams = [\hn -> "--"++field++"=" ++ mkval hn] }
 
 -- | The ContainerIdent of a container is written to
 -- /.propellor-ident inside it. This can be checked to see if

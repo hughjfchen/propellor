@@ -3,6 +3,8 @@ module Propellor.Types.Dns where
 import Propellor.Types.OS (HostName)
 
 import Data.Word
+import Data.Monoid
+import qualified Data.Map as M
 
 type Domain = String
 
@@ -90,3 +92,21 @@ domainHostName :: BindDomain -> Maybe HostName
 domainHostName (RelDomain d) = Just d
 domainHostName (AbsDomain d) = Just d
 domainHostName RootDomain = Nothing
+
+newtype NamedConfMap = NamedConfMap (M.Map Domain NamedConf)
+	deriving (Eq, Ord, Show)
+
+-- | Adding a Master NamedConf stanza for a particulr domain always
+-- overrides an existing Secondary stanza for that domain, while a
+-- Secondary stanza is only added when there is no existing Master stanza.
+instance Monoid NamedConfMap where
+	mempty = NamedConfMap M.empty
+	mappend (NamedConfMap old) (NamedConfMap new) = NamedConfMap $
+		M.unionWith combiner new old
+	  where
+		combiner n o = case (confDnsServerType n, confDnsServerType o) of
+			(Secondary, Master) -> o
+			_  -> n
+
+fromNamedConfMap :: NamedConfMap -> M.Map Domain NamedConf
+fromNamedConfMap (NamedConfMap m) = m

@@ -4,14 +4,13 @@
 module Propellor.Types
 	( Host(..)
 	, Attr
-	, SetAttr
+	, getAttr
 	, Propellor(..)
 	, Property(..)
 	, RevertableProperty(..)
 	, IsProp
 	, describe
 	, toProp
-	, setAttr
 	, requires
 	, Desc
 	, Result(..)
@@ -39,7 +38,7 @@ import Propellor.Types.Dns
 data Host = Host
 	{ _hostName :: HostName
 	, _hostProps :: [Property]
-	, _hostAttrs :: SetAttr
+	, _hostAttr :: Attr
 	}
 
 -- | Propellor's monad provides read-only access to the host it's running
@@ -61,8 +60,8 @@ data Property = Property
 	{ propertyDesc :: Desc
 	, propertySatisfy :: Propellor Result
 	-- ^ must be idempotent; may run repeatedly
-	, propertyAttr :: SetAttr
-	-- ^ a property can set an Attr on the host that has the property.
+	, propertyAttr :: Attr
+	-- ^ a property can set an attribute of the host that has the property.
 	}
 
 -- | A property that can be reverted.
@@ -75,15 +74,15 @@ class IsProp p where
 	-- | Indicates that the first property can only be satisfied
 	-- once the second one is.
 	requires :: p -> Property -> p
-	setAttr :: p -> SetAttr
+	getAttr :: p -> Attr
 
 instance IsProp Property where
 	describe p d = p { propertyDesc = d }
 	toProp p = p
-	setAttr = propertyAttr
+	getAttr = propertyAttr
 	x `requires` y = Property (propertyDesc x) satisfy attr
 	  where
-	  	attr = propertyAttr x . propertyAttr y
+	  	attr = getAttr y <> getAttr x
 		satisfy = do
 			r <- propertySatisfy y
 			case r of
@@ -98,8 +97,8 @@ instance IsProp RevertableProperty where
 	toProp (RevertableProperty p1 _) = p1
 	(RevertableProperty p1 p2) `requires` y =
 		RevertableProperty (p1 `requires` y) p2
-	-- | Return the SetAttr of the currently active side.
-	setAttr (RevertableProperty p1 _p2) = setAttr p1
+	-- | Return the Attr of the currently active side.
+	getAttr (RevertableProperty p1 _p2) = getAttr p1
 
 type Desc = String
 

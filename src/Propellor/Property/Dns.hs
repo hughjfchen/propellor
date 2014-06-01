@@ -131,7 +131,7 @@ otherServers :: DnsServerType -> [Host] -> Domain -> [HostName]
 otherServers wantedtype hosts domain =
 	M.keys $ M.filter wanted $ hostMap hosts
   where
-	wanted h = case M.lookup domain (_namedconf $ hostAttr h) of
+	wanted h = case M.lookup domain (fromNamedConfMap $ _namedconf $ hostAttr h) of
 		Nothing -> False
 		Just conf -> confDnsServerType conf == wantedtype
 			&& confDomain conf == domain
@@ -406,3 +406,10 @@ domainHost base (AbsDomain d)
   where
 	dotbase = '.':base
 
+addNamedConf :: NamedConf -> Attr
+addNamedConf conf = mempty { _namedconf = NamedConfMap (M.singleton domain conf) }
+  where
+       domain = confDomain conf
+
+getNamedConf :: Propellor (M.Map Domain NamedConf)
+getNamedConf = asks $ fromNamedConfMap . _namedconf . hostAttr

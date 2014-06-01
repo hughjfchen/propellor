@@ -20,7 +20,7 @@ runPropellor host a = runReaderT (runWithHost a) host
 mainProperties :: Host -> IO ()
 mainProperties host = do
 	r <- runPropellor host $
-		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) id]
+		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) mempty]
 	setTitle "propellor: done"
 	hFlush stdout
 	case r of

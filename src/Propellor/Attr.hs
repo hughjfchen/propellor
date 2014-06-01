@@ -9,9 +9,10 @@ import "mtl" Control.Monad.Reader
 import qualified Data.Set as S
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Monoid
 import Control.Applicative
 
-pureAttrProperty :: Desc -> SetAttr -> Property 
+pureAttrProperty :: Desc -> Attr -> Property 
 pureAttrProperty desc = Property ("has " ++ desc) (return NoChange)
 
 getHostName :: Propellor HostName
@@ -19,7 +20,7 @@ getHostName = asks _hostName
 
 os :: System -> Property
 os system = pureAttrProperty ("Operating " ++ show system) $
-	\d -> d { _os = Just system }
+	mempty { _os = Just system }
 
 getOS :: Propellor (Maybe System)
 getOS = asks (_os . hostAttr)
@@ -41,7 +42,7 @@ alias = addDNS . CNAME . AbsDomain
 
 addDNS :: Record -> Property
 addDNS r = pureAttrProperty (rdesc r) $
-	\d -> d { _dns = S.insert r (_dns d) }
+	mempty { _dns = S.singleton r }
   where
 	rdesc (CNAME d) = unwords ["alias", ddesc d]
 	rdesc (Address (IPv4 addr)) = unwords ["ipv4", addr]
@@ -55,32 +56,15 @@ addDNS r = pureAttrProperty (rdesc r) $
 	ddesc (RelDomain domain) = domain
 	ddesc RootDomain = "@"
 
--- | Adds a DNS NamedConf stanza.
---
--- Note that adding a Master stanza for a domain always overrides an
--- existing Secondary stanza, while a Secondary stanza is only added
--- when there is no existing Master stanza.
-addNamedConf :: NamedConf -> SetAttr
-addNamedConf conf d = d { _namedconf = new }
-  where
-	m = _namedconf d
-	domain = confDomain conf
-	new = case (confDnsServerType conf, confDnsServerType <$> M.lookup domain m) of
-		(Secondary, Just Master) -> m
-		_  -> M.insert domain conf m
-
-getNamedConf :: Propellor (M.Map Domain NamedConf)
-getNamedConf = asks (_namedconf . hostAttr)
-
 sshPubKey :: String -> Property
 sshPubKey k = pureAttrProperty ("ssh pubkey known") $
-	\d -> d { _sshPubKey = Just k }
+	mempty { _sshPubKey = Just k }
 
 getSshPubKey :: Propellor (Maybe String)
 getSshPubKey = asks (_sshPubKey . hostAttr)
 
 hostAttr :: Host -> Attr
-hostAttr (Host _ _ mkattrs) = mkattrs newAttr
+hostAttr (Host _ _ attr) = attr
 
 hostProperties :: Host -> [Property]
 hostProperties (Host _ ps _) = ps

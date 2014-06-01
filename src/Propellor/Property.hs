@@ -5,12 +5,10 @@ module Propellor.Property where
 import System.Directory
 import Control.Monad
 import Data.Monoid
-import Data.List
 import Control.Monad.IfElse
 import "mtl" Control.Monad.Reader
 
 import Propellor.Types
-import Propellor.Types.Attr
 import Propellor.Attr
 import Propellor.Engine
 import Utility.Monad
@@ -18,19 +16,19 @@ import System.FilePath
 
 -- Constructs a Property.
 property :: Desc -> Propellor Result -> Property
-property d s = Property d s id
+property d s = Property d s mempty
 
 -- | Combines a list of properties, resulting in a single property
 -- that when run will run each property in the list in turn,
 -- and print out the description of each as it's run. Does not stop
 -- on failure; does propigate overall success/failure.
 propertyList :: Desc -> [Property] -> Property
-propertyList desc ps = Property desc (ensureProperties ps) (combineSetAttrs ps)
+propertyList desc ps = Property desc (ensureProperties ps) (combineAttrs ps)
 
 -- | Combines a list of properties, resulting in one property that
 -- ensures each in turn, stopping on failure.
 combineProperties :: Desc -> [Property] -> Property
-combineProperties desc ps = Property desc (go ps NoChange) (combineSetAttrs ps)
+combineProperties desc ps = Property desc (go ps NoChange) (combineAttrs ps)
   where
   	go [] rs = return rs
 	go (l:ls) rs = do
@@ -69,7 +67,7 @@ flagFile' p getflagfile = adjustProperty p $ \satisfy -> do
 --- | Whenever a change has to be made for a Property, causes a hook
 -- Property to also be run, but not otherwise.
 onChange :: Property -> Property -> Property
-p `onChange` hook = Property (propertyDesc p) satisfy (combineSetAttr p hook)
+p `onChange` hook = Property (propertyDesc p) satisfy (combineAttr p hook)
   where
 	satisfy = do
 		r <- ensureProperty p
@@ -130,21 +128,19 @@ revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 -- > 	! oldproperty
 -- > 	& otherproperty
 host :: HostName -> Host
-host hn = Host hn [] (\_ -> newAttr)
+host hn = Host hn [] mempty
 
 -- | Adds a property to a Host
 --
 -- Can add Properties and RevertableProperties
 (&) :: IsProp p => Host -> p -> Host
-(Host hn ps as) & p = Host hn (ps ++ [toProp p]) (setAttr p . as)
+(Host hn ps as) & p = Host hn (ps ++ [toProp p]) (as <> getAttr p)
 
 infixl 1 &
 
 -- | Adds a property to the Host in reverted form.
 (!) :: Host -> RevertableProperty -> Host
-(Host hn ps as) ! p = Host hn (ps ++ [toProp q]) (setAttr q . as)
-  where
-	q = revert p
+h ! p = h & revert p
 
 infixl 1 !
 
@@ -152,12 +148,12 @@ infixl 1 !
 adjustProperty :: Property -> (Propellor Result -> Propellor Result) -> Property
 adjustProperty p f = p { propertySatisfy = f (propertySatisfy p) }
 
--- Combines the Attr settings of two properties.
-combineSetAttr :: (IsProp p, IsProp q) => p -> q -> SetAttr
-combineSetAttr p q = setAttr p . setAttr q
+-- Combines the Attr of two properties.
+combineAttr :: (IsProp p, IsProp q) => p -> q -> Attr
+combineAttr p q = getAttr p <> getAttr q
 
-combineSetAttrs :: IsProp p => [p] -> SetAttr
-combineSetAttrs = foldl' (.) id . map setAttr
+combineAttrs :: IsProp p => [p] -> Attr
+combineAttrs = mconcat . map getAttr
 
 makeChange :: IO () -> Propellor Result
 makeChange a = liftIO a >> return MadeChange
