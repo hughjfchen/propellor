@@ -163,8 +163,6 @@ hosts =                 --                  (o)  `
 		& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
 	-- storage and backup server
-	-- (Unstable, but running stable kernel, because unstable kernels
-	-- don't boot for unknown reason.)
 	, standardSystem "elephant.kitenet.net" Unstable "amd64"
 		& ipv4 "193.234.225.114"
 
