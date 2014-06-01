@@ -35,7 +35,7 @@ Description:
 
 Executable wrapper
   Main-Is: wrapper.hs
-  GHC-Options: -Wall -threaded
+  GHC-Options: -Wall -threaded -O0
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
@@ -47,7 +47,7 @@ Executable wrapper
 
 Executable config
   Main-Is: config.hs
-  GHC-Options: -Wall -threaded
+  GHC-Options: -Wall -threaded -0O
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
@@ -58,7 +58,7 @@ Executable config
     Build-Depends: unix
 
 Library
-  GHC-Options: -Wall
+  GHC-Options: -Wall -O0
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
