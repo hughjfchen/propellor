@@ -221,6 +221,7 @@ standardSystem hn suite arch = host hn
 	& os (System (Debian suite) arch)
 	& Apt.stdSourcesList suite
 		`onChange` Apt.upgrade
+	& Apt.cacheCleaned
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
 	& GitHome.installedFor "root"
@@ -245,6 +246,7 @@ standardContainer name suite arch = Docker.container name (dockerImage system)
 	& os (System (Debian suite) arch)
 	& Apt.stdSourcesList suite
 	& Apt.unattendedUpgrades
+	& Apt.cacheCleaned
   where
 	system = System (Debian suite) arch
 
