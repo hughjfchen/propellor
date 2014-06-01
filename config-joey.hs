@@ -166,6 +166,10 @@ hosts =                 --                  (o)  `
 	, standardSystem "elephant.kitenet.net" Unstable "amd64"
 		& ipv4 "193.234.225.114"
 
+		-- Joey gets pocasts here.
+		& Apt.installed ["git-annex"]
+		& alias "podcatcher.kitenet.net"
+
 	    --'                        __|II|      ,.
 	  ----                      __|II|II|__   (  \_,/\
 	 ------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-
