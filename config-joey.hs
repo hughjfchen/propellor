@@ -166,6 +166,8 @@ hosts =                 --                  (o)  `
 	, standardSystem "elephant.kitenet.net" Unstable "amd64"
 		& ipv4 "193.234.225.114"
 
+		& Docker.garbageCollected `period` Daily
+
 	    --'                        __|II|      ,.
 	  ----                      __|II|II|__   (  \_,/\
 	 ------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-
