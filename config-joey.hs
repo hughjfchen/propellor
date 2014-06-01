@@ -168,11 +168,13 @@ hosts =                 --                  (o)  `
 		& Hostname.sane
 		& Postfix.satellite
 
-		-- Joey gets pocasts here.
-		& Apt.installed ["git-annex"]
 		& alias "podcatcher.kitenet.net"
+		& Apt.installed ["git-annex"]
 		
 		& JoeySites.githubBackup
+
+		& alias "eubackup.kitenet.net"
+		& Apt.installed ["obnam", "sshfs", "rsync"]
 		
 		& Docker.docked hosts "voltagex"
 
