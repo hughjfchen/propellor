@@ -163,7 +163,9 @@ hosts =                 --                  (o)  `
 		& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
 	-- storage and backup server
-	, standardSystem "elephant.kitenet.net" Unstable "amd64"
+	-- Running stable because unstable kernels don't boot for unknown
+	-- reason.
+	, standardSystem "elephant.kitenet.net" Stable "amd64"
 		& ipv4 "193.234.225.114"
 
 		& Docker.garbageCollected `period` Daily
