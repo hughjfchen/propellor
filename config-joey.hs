@@ -41,7 +41,7 @@ hosts =                 --                  (o)  `
 		& Apt.buildDep ["git-annex"] `period` Daily
 		& Docker.docked hosts "android-git-annex"
 
-	-- Nothing super-important lives here.
+	-- Nothing super-important lives here and mostly it's docker containers.
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
 		& ipv4 "162.248.143.249"
 		& ipv6 "2002:5044:5531::1"
@@ -53,14 +53,9 @@ hosts =                 --                  (o)  `
 		& Postfix.satellite
 		& Docker.configured
 
-		& alias "shell.olduse.net"
-		& JoeySites.oldUseNetShellBox
-
-		& alias "openid.kitenet.net"
+		& Docker.docked hosts "oldusenet-shellbox"
 		& Docker.docked hosts "openid-provider"
 		 	`requires` Apt.serviceInstalledRunning "ntp"
-
-		& alias "ancient.kitenet.net"
 		& Docker.docked hosts "ancient-kitenet"
 
 		-- I'd rather this were on diatom, but it needs unstable.
@@ -76,9 +71,15 @@ hosts =                 --                  (o)  `
 		& alias "znc.kitenet.net"
 		& JoeySites.ircBouncer
 
-		-- Nothing is using https on clam, so listen on that port
-		-- for ssh, for traveling on bad networks.
-		& "/etc/ssh/sshd_config" `File.containsLine` "Port 443"
+		-- For https port 443, shellinabox with ssh login to
+		-- kitenet.net
+		& alias "shell.kitenet.net"
+		& JoeySites.kiteShellBox
+
+		-- Nothing is using http port 80 on clam, so listen on
+		-- that port for ssh, for traveling on bad networks that
+		-- block 22.
+		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
 			`onChange` Service.restarted "ssh"
 
 		& Docker.garbageCollected `period` Daily
@@ -179,17 +180,24 @@ hosts =                 --                  (o)  `
 	-- My own openid provider. Uses php, so containerized for security
 	-- and administrative sanity.
 	, standardContainer "openid-provider" Stable "amd64"
+		& alias "openid.kitenet.net"
 		& Docker.publish "8081:80"
 		& OpenId.providerFor ["joey", "liw"]
 			"openid.kitenet.net:8081"
 
 	-- Exhibit: kite's 90's website.
 	, standardContainer "ancient-kitenet" Stable "amd64"
+		& alias "ancient.kitenet.net"
 		& Docker.publish "1994:80"
 		& Apt.serviceInstalledRunning "apache2"
 		& Git.cloned "root" "git://kitenet-net.branchable.com/" "/var/www"
 			(Just "remotes/origin/old-kitenet.net")
 	
+	, standardContainer "oldusenet-shellbox" Stable "amd64"
+		& alias "shell.olduse.net"
+		& Docker.publish "4200:4200"
+		& JoeySites.oldUseNetShellBox
+
 	-- git-annex autobuilder containers
 	, GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h"
 	, GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h"
@@ -307,7 +315,6 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "www.wortroot.kitenet.net"
 		& alias "joey.kitenet.net"
 		& alias "anna.kitenet.net"
-		& alias "ipv6.kitenet.net"
 		& alias "bitlbee.kitenet.net"
 		{- Remaining services on kite:
 		 - 
@@ -329,11 +336,10 @@ monsters =	      -- but do want to track their public keys etc.
 		 -   (branchable is still pushing to here
 		 -    (thinking it's ns2.branchable.com), but it's no
 		 -   longer a primary or secondary for anything)
-		 - ajaxterm
 		 - ftpd (EOL)
 		 -
 		 - user shell stuff:
-		 -   pine, zsh, make, ...
+		 -   pine, zsh, make, git-annex, myrepos, ...
 		 -}
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"

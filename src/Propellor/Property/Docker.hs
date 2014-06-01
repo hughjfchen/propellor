@@ -21,6 +21,7 @@ import System.Posix.Directory
 import System.Posix.Process
 import Data.List
 import Data.List.Utils
+import qualified Data.Set as S
 
 -- | Configures docker with an authentication file, so that images can be
 -- pushed to index.docker.io.
@@ -45,16 +46,20 @@ type ContainerName = String
 -- >    & Apt.installed {"apache2"]
 -- >    & ...
 container :: ContainerName -> Image -> Host
-container cn image = Host [] (\_ -> attr)
+container cn image = Host hn [] attr
   where
-	attr = (newAttr (cn2hn cn)) { _dockerImage = Just image }
+	attr = mempty { _dockerImage = Just image }
+	hn = cn2hn cn
 
 cn2hn :: ContainerName -> HostName
 cn2hn cn = cn ++ ".docker"
 
 -- | Ensures that a docker container is set up and running. The container
 -- has its own Properties which are handled by running propellor
--- inside the container.
+-- inside the container. 
+--
+-- Additionally, the container can have DNS attributes, such as a CNAME.
+-- These become attributes of the host(s) it's docked in.
 --
 -- Reverting this property ensures that the container is stopped and
 -- removed.
@@ -62,12 +67,16 @@ docked
 	:: [Host]
 	-> ContainerName
 	-> RevertableProperty
-docked hosts cn = RevertableProperty (go "docked" setup) (go "undocked" teardown)
+docked hosts cn = RevertableProperty
+	((maybe id exposeDnsAttrs mhost) (go "docked" setup))
+	(go "undocked" teardown)
   where
 	go desc a = property (desc ++ " " ++ cn) $ do
-		hn <- getHostName
+		hn <- asks hostName
   		let cid = ContainerId hn cn
-		ensureProperties [findContainer hosts cid cn $ a cid]
+		ensureProperties [findContainer mhost cid cn $ a cid]
+		
+	mhost = findHost hosts (cn2hn cn)
 
 	setup cid (Container image runparams) =
 		provisionContainer cid
@@ -86,13 +95,17 @@ docked hosts cn = RevertableProperty (go "docked" setup) (go "undocked" teardown
 					]
 			]
 
+exposeDnsAttrs :: Host -> Property -> Property
+exposeDnsAttrs (Host _ _ containerattr) p = combineProperties (propertyDesc p) $
+	p : map addDNS (S.toList $ _dns containerattr)
+
 findContainer
-	:: [Host]
+	:: Maybe Host
 	-> ContainerId
 	-> ContainerName
 	-> (Container -> Property)
 	-> Property
-findContainer hosts cid cn mk = case findHost hosts (cn2hn cn) of
+findContainer mhost cid cn mk = case mhost of
 	Nothing -> cantfind
 	Just h -> maybe cantfind mk (mkContainer cid h)
   where
@@ -407,14 +420,14 @@ listImages :: IO [Image]
 listImages = lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
 runProp :: String -> RunParam -> Property
-runProp field val = pureAttrProperty (param) $ \attr ->
-	attr { _dockerRunParams = _dockerRunParams attr ++ [\_ -> "--"++param] }
+runProp field val = pureAttrProperty (param) $
+	mempty { _dockerRunParams = [\_ -> "--"++param] }
   where
 	param = field++"="++val
 
 genProp :: String -> (HostName -> RunParam) -> Property
-genProp field mkval = pureAttrProperty field $ \attr ->
-	attr { _dockerRunParams = _dockerRunParams attr ++ [\hn -> "--"++field++"=" ++ mkval hn] }
+genProp field mkval = pureAttrProperty field $
+	mempty { _dockerRunParams = [\hn -> "--"++field++"=" ++ mkval hn] }
 
 -- | The ContainerIdent of a container is written to
 -- /.propellor-ident inside it. This can be checked to see if

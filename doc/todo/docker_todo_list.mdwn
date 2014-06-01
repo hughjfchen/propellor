@@ -1,8 +1,3 @@
-* Display of docker container properties is a bit wonky. It always
-  says they are unchanged even when they changed and triggered a
-  reprovision.
 * There is no way for a property of a docker container to require
   some property be met outside the container. For example, some servers
   need ntp installed for a good date source.
-* Docking a container in a host should add to the host any cnames that
-  are assigned to the container.

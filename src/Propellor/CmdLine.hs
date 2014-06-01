@@ -67,24 +67,21 @@ defaultMain hostlist = do
 	go _ (Continue cmdline) = go False cmdline
 	go _ (Set hn field) = setPrivData hn field
 	go _ (AddKey keyid) = addKey keyid
-	go _ (Chain hn) = withprops hn $ \attr ps -> do
-		r <- runPropellor attr $ ensureProperties ps
+	go _ (Chain hn) = withhost hn $ \h -> do
+		r <- runPropellor h $ ensureProperties $ hostProperties h
 		putStrLn $ "\n" ++ show r
 	go _ (Docker hn) = Docker.chain hn
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
-	go False (Spin hn) = withprops hn $ const . const $ spin hn
+	go False (Spin hn) = withhost hn $ const $ spin hn
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
-		( onlyProcess $ withprops hn mainProperties
+		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
 		)
-	go False (Boot hn) = onlyProcess $ withprops hn boot
+	go False (Boot hn) = onlyProcess $ withhost hn boot
 
-	withprops :: HostName -> (Attr -> [Property] -> IO ()) -> IO ()
-	withprops hn a = maybe
-		(unknownhost hn)
-		(\h -> a (hostAttr h) (hostProperties h))
-		(findHost hostlist hn)
+	withhost :: HostName -> (Host -> IO ()) -> IO ()
+	withhost hn a = maybe (unknownhost hn) a (findHost hostlist hn)
 
 onlyProcess :: IO a -> IO a
 onlyProcess a = bracket lock unlock (const a)
@@ -279,15 +276,15 @@ fromMarked marker s
 	len = length marker
 	matches = filter (marker `isPrefixOf`) $ lines s
 
-boot :: Attr -> [Property] -> IO ()
-boot attr ps = do
+boot :: Host -> IO ()
+boot h = do
 	sendMarked stdout statusMarker $ show Ready
 	reply <- hGetContentsStrict stdin
 
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
 		fromMarked privDataMarker reply
-	mainProperties attr ps
+	mainProperties h
 
 addKey :: String -> IO ()
 addKey keyid = exitBool =<< allM id [ gpg, gitadd, gitconfig, gitcommit ]

@@ -13,7 +13,6 @@ import Control.Monad
 import "mtl" Control.Monad.Reader
 
 import Propellor.Types
-import Propellor.Attr
 import Propellor.Message
 import Utility.Monad
 import Utility.PartialPrelude
@@ -30,7 +29,7 @@ withPrivData :: PrivDataField -> (String -> Propellor Result) -> Propellor Resul
 withPrivData field a = maybe missing a =<< liftIO (getPrivData field)
   where
 	missing = do
-		host <- getHostName
+		host <- asks hostName
 		let host' = if ".docker" `isSuffixOf` host
 			then "$parent_host"
 			else host
