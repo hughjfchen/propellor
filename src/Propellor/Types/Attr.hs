@@ -39,7 +39,7 @@ instance Monoid Attr where
 			Just v -> Just v
 			Nothing -> _sshPubKey old
 		, _dns = _dns new <> _dns old
-		, _namedconf = _namedconf new <> _namedconf old
+		, _namedconf = _namedconf old <> _namedconf new
 		, _dockerImage = case _dockerImage new of
 			Just v -> Just v
 			Nothing -> _dockerImage old
