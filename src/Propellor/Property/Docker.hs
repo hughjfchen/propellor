@@ -11,6 +11,7 @@ module Propellor.Property.Docker (
 	configured,
 	container,
 	docked,
+	memoryLimited,
 	garbageCollected,
 	Image,
 	ContainerName,
@@ -25,6 +26,7 @@ module Propellor.Property.Docker (
 	volumes_from,
 	workdir,
 	memory,
+	cpuShares,
 	link,
 	ContainerAlias,
 	-- * Internal use
@@ -170,6 +172,20 @@ garbageCollected = propertyList "docker garbage collected"
 	gcimages = property "docker images garbage collected" $ do
 		liftIO $ report <$> (mapM removeImage =<< listImages)
 
+-- | Configures the kernel to respect docker memory limits. 
+--
+-- This assumes the system boots using grub 2. And that you don't need any
+-- other GRUB_CMDLINE_LINUX_DEFAULT settings.
+--
+-- Only takes effect after reboot. (Not automated.)
+memoryLimited :: Property
+memoryLimited = "/etc/default/grub" `File.containsLine` cfg
+	`describe` "docker memory limited" 
+	`onChange` cmdProperty "update-grub" []
+  where
+	cmdline = "cgroup_enable=memory swapaccount=1"
+	cfg = "GRUB_CMDLINE_LINUX_DEFAULT=\""++cmdline++"\""
+
 data Container = Container Image [RunParam]
 
 -- | Parameters to pass to `docker run` when creating a container.
@@ -220,9 +236,16 @@ workdir :: String -> Property
 workdir = runProp "workdir"
 
 -- | Memory limit for container.
---Format: <number><optional unit>, where unit = b, k, m or g
+-- Format: <number><optional unit>, where unit = b, k, m or g
+--
+-- Note: Only takes effect when the host has the memoryLimited property
+-- enabled.
 memory :: String -> Property
 memory = runProp "memory"
+
+-- | CPU shares (relative weight).
+cpuShares :: Int -> Property
+cpuShares = runProp "cpu-shares" . show
 
 -- | Link with another container on the same host.
 link :: ContainerName -> ContainerAlias -> Property

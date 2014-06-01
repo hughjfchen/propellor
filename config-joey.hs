@@ -224,7 +224,7 @@ hosts =                 --                  (o)  `
 	  in GitAnnexBuilder.androidContainer dockerImage "android-git-annex" doNothing gitannexdir
 		& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
 
-	-- temp for an aqquantance
+	-- temp for an accuantance
 	, standardContainer "voltagex" Stable "amd64"
 		& Docker.publish "22022:22"
 		& Apt.serviceInstalledRunning "ssh"
