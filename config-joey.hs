@@ -167,16 +167,18 @@ hosts =                 --                  (o)  `
 		& ipv4 "193.234.225.114"
 		& Hostname.sane
 		& Postfix.satellite
+		& Apt.unattendedUpgrades
+
+		& alias "eubackup.kitenet.net"
+		& Apt.installed ["obnam", "sshfs", "rsync"]
+		& JoeySites.githubBackup
 
 		& alias "podcatcher.kitenet.net"
 		& Apt.installed ["git-annex"]
 		
-		& JoeySites.githubBackup
-
-		& alias "eubackup.kitenet.net"
-		& Apt.installed ["obnam", "sshfs", "rsync"]
-		
+		& Docker.configured
 		& Docker.docked hosts "voltagex"
+		& Docker.garbageCollected `period` (Weekly (Just 1))
 
 	    --'                        __|II|      ,.
 	  ----                      __|II|II|__   (  \_,/\
