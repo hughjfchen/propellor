@@ -34,7 +34,7 @@ instance Monoid Attr where
 	mappend old new = Attr
 		{ _os = _os old <> _os new
 		, _sshPubKey = _sshPubKey old <> _sshPubKey new
-		, _dns = _dns new <> _dns old
+		, _dns = _dns old <> _dns new
 		, _namedconf = _namedconf old <> _namedconf new
 		, _dockerImage = _dockerImage old <> _dockerImage new
 		, _dockerRunParams = _dockerRunParams old <> _dockerRunParams new
