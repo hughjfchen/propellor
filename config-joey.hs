@@ -171,12 +171,10 @@ hosts =                 --                  (o)  `
 		-- Joey gets pocasts here.
 		& Apt.installed ["git-annex"]
 		& alias "podcatcher.kitenet.net"
-
-		-- Joey runs github-backup here.
-		& Apt.installed ["github-backup", "moreutils"]
-		& let f = "/home/joey/.github-keys"
-		  in File.hasPrivContent f
-			`onChange` File.ownerGroup f "joey" "joey"
+		
+		& JoeySites.githubBackup
+		
+		& Docker.docked hosts "volatagex"
 
 	    --'                        __|II|      ,.
 	  ----                      __|II|II|__   (  \_,/\
@@ -225,6 +223,15 @@ hosts =                 --                  (o)  `
 	, let gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
 	  in GitAnnexBuilder.androidContainer dockerImage "android-git-annex" doNothing gitannexdir
 		& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
+
+	-- temp for an aqquantance
+	, standardContainer "voltagex" Stable "amd64"
+		& Docker.publish "22022:22"
+		& Apt.serviceInstalledRunning "ssh"
+		& Ssh.permitRootLogin True
+		& Ssh.passwordAuthentication True
+		& User.hasSomePassword "root"
+
 	] ++ monsters
 
 -- This is my standard system setup.

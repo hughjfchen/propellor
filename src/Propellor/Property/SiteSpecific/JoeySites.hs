@@ -330,3 +330,11 @@ kiteShellBox = propertyList "kitenet.net shellinabox"
 		`onChange` Service.restarted "shellinabox"
 	, Service.running "shellinabox"
 	]
+
+githubBackup :: Property
+githubBackup = propertyList "github-backup box"
+	[ Apt.installed ["github-backup", "moreutils"]
+	, let f = "/home/joey/.github-keys"
+	  in File.hasPrivContent f
+		`onChange` File.ownerGroup f "joey" "joey"
+	]
