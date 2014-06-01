@@ -9,7 +9,7 @@ import qualified Propellor.Property.File as File
 -- A FQDN also configures /etc/hosts, with an entry for 127.0.1.1, which is
 -- standard at least on Debian to set the FDQN (127.0.0.1 is localhost).
 sane :: Property
-sane = property ("sane hostname") (ensureProperty . setTo =<< getHostName)
+sane = property ("sane hostname") (ensureProperty . setTo =<< asks hostName)
 
 setTo :: HostName -> Property
 setTo hn = combineProperties desc go

@@ -72,7 +72,7 @@ docked hosts cn = RevertableProperty
 	(go "undocked" teardown)
   where
 	go desc a = property (desc ++ " " ++ cn) $ do
-		hn <- getHostName
+		hn <- asks hostName
   		let cid = ContainerId hn cn
 		ensureProperties [findContainer mhost cid cn $ a cid]
 		

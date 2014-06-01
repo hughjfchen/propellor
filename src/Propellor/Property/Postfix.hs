@@ -16,7 +16,7 @@ satellite :: Property
 satellite = setup `requires` installed
   where
 	setup = trivial $ property "postfix satellite system" $ do
-		hn <- getHostName
+		hn <- asks hostName
 		ensureProperty $ Apt.reConfigure "postfix"
 			[ ("postfix/main_mailer_type", "select", "Satellite system")
 			, ("postfix/root_address", "string", "root")

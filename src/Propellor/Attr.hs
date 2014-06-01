@@ -15,9 +15,6 @@ import Control.Applicative
 pureAttrProperty :: Desc -> Attr -> Property 
 pureAttrProperty desc = Property ("has " ++ desc) (return NoChange)
 
-getHostName :: Propellor HostName
-getHostName = asks _hostName
-
 os :: System -> Property
 os system = pureAttrProperty ("Operating " ++ show system) $
 	mempty { _os = Just system }
@@ -63,14 +60,8 @@ sshPubKey k = pureAttrProperty ("ssh pubkey known") $
 getSshPubKey :: Propellor (Maybe String)
 getSshPubKey = asks (_sshPubKey . hostAttr)
 
-hostAttr :: Host -> Attr
-hostAttr (Host _ _ attr) = attr
-
-hostProperties :: Host -> [Property]
-hostProperties (Host _ ps _) = ps
-
 hostMap :: [Host] -> M.Map HostName Host
-hostMap l = M.fromList $ zip (map _hostName l) l 
+hostMap l = M.fromList $ zip (map hostName l) l 
 
 findHost :: [Host] -> HostName -> Maybe Host
 findHost l hn = M.lookup hn (hostMap l)

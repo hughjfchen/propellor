@@ -352,11 +352,11 @@ genZone hosts zdomain soa =
 	-- so warn.
 	hostips :: Host -> [Either WarningMessage (BindDomain, Record)]
 	hostips h
-		| null l = [Left $ "no IP address defined for host " ++ _hostName h]
+		| null l = [Left $ "no IP address defined for host " ++ hostName h]
 		| otherwise = map Right l
 	  where
 		attr = hostAttr h
-		l = zip (repeat $ AbsDomain $ _hostName h)
+		l = zip (repeat $ AbsDomain $ hostName h)
 			(map Address $ getAddresses attr)
 
 	-- Any host, whether its hostname is in the zdomain or not,
@@ -387,7 +387,7 @@ genZone hosts zdomain soa =
 	hostrecords h = map Right l
 	  where
 		attr = hostAttr h
-		l = zip (repeat $ AbsDomain $ _hostName h)
+		l = zip (repeat $ AbsDomain $ hostName h)
 			(S.toList $ S.filter (\r -> isNothing (getIPAddr r) && isNothing (getCNAME r)) (_dns attr))
 
 inDomain :: Domain -> BindDomain -> Bool

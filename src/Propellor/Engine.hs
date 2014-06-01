@@ -32,7 +32,7 @@ ensureProperties ps = ensure ps NoChange
   where
 	ensure [] rs = return rs
 	ensure (l:ls) rs = do
-		hn <- getHostName
+		hn <- asks hostName
 		r <- actionMessageOn hn (propertyDesc l) (ensureProperty l)
 		ensure ls (r <> rs)
 

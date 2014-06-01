@@ -36,9 +36,9 @@ import Propellor.Types.Dns
 -- | Everything Propellor knows about a system: Its hostname,
 -- properties and attributes.
 data Host = Host
-	{ _hostName :: HostName
-	, _hostProps :: [Property]
-	, _hostAttr :: Attr
+	{ hostName :: HostName
+	, hostProperties :: [Property]
+	, hostAttr :: Attr
 	}
 
 -- | Propellor's monad provides read-only access to the host it's running
