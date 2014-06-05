@@ -37,8 +37,9 @@ hosts =                 --                  (o)  `
 	-- My laptop
 	[ host "darkstar.kitenet.net"
 		& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
-		& Docker.configured
+
 		& Apt.buildDep ["git-annex"] `period` Daily
+		& Docker.configured
 		& Docker.docked hosts "android-git-annex"
 
 	-- Nothing super-important lives here and mostly it's docker containers.
@@ -162,6 +163,24 @@ hosts =                 --                  (o)  `
 		
 		& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
+	-- storage and backup server
+	, standardSystem "elephant.kitenet.net" Unstable "amd64"
+		& ipv4 "193.234.225.114"
+
+		& Hostname.sane
+		& Postfix.satellite
+		& Apt.unattendedUpgrades
+
+		& alias "eubackup.kitenet.net"
+		& Apt.installed ["obnam", "sshfs", "rsync"]
+		& JoeySites.githubBackup
+
+		& alias "podcatcher.kitenet.net"
+		& Apt.installed ["git-annex"]
+		
+		& Docker.configured
+		! Docker.docked hosts "voltagex"
+		& Docker.garbageCollected `period` (Weekly (Just 1))
 
 	    --'                        __|II|      ,.
 	  ----                      __|II|II|__   (  \_,/\
@@ -210,6 +229,17 @@ hosts =                 --                  (o)  `
 	, let gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
 	  in GitAnnexBuilder.androidContainer dockerImage "android-git-annex" doNothing gitannexdir
 		& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
+
+	-- temp for an acquantance
+	, standardContainer "voltagex" Stable "amd64"
+		& Docker.publish "22022:22"
+		& Docker.memory "500m"
+		& Docker.cpuShares 1
+		& Apt.serviceInstalledRunning "ssh"
+		& Ssh.permitRootLogin True
+		& Ssh.passwordAuthentication True
+		& User.hasSomePassword "root"
+
 	] ++ monsters
 
 -- This is my standard system setup.
@@ -218,6 +248,7 @@ standardSystem hn suite arch = host hn
 	& os (System (Debian suite) arch)
 	& Apt.stdSourcesList suite
 		`onChange` Apt.upgrade
+	& Apt.cacheCleaned
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
 	& GitHome.installedFor "root"
@@ -241,7 +272,9 @@ standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
 standardContainer name suite arch = Docker.container name (dockerImage system)
 	& os (System (Debian suite) arch)
 	& Apt.stdSourcesList suite
+	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
+	& Apt.cacheCleaned
   where
 	system = System (Debian suite) arch
 

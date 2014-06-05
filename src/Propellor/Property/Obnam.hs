@@ -38,8 +38,12 @@ data NumClients = OnlyClient | MultipleClients
 --
 -- How awesome is that?
 backup :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property
-backup dir crontimes params numclients = cronjob `describe` desc
+backup dir crontimes params numclients = backup' dir crontimes params numclients
 	`requires` restored dir params
+
+-- | Does a backup, but does not automatically restore.
+backup' :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property
+backup' dir crontimes params numclients = cronjob `describe` desc
   where
 	desc = dir ++ " backed up by obnam"
 	cronjob = Cron.niceJob ("obnam_backup" ++ dir) crontimes "root" "/" $

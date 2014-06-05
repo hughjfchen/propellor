@@ -5,7 +5,33 @@
 -- The existance of a docker container is just another Property of a system,
 -- which propellor can set up. See config.hs for an example.
 
-module Propellor.Property.Docker where
+module Propellor.Property.Docker (
+	-- * Host properties
+	installed,
+	configured,
+	container,
+	docked,
+	memoryLimited,
+	garbageCollected,
+	Image,
+	ContainerName,
+	-- * Container configuration
+	dns,
+	hostname,
+	name,
+	publish,
+	expose,
+	user,
+	volume,
+	volumes_from,
+	workdir,
+	memory,
+	cpuShares,
+	link,
+	ContainerAlias,
+	-- * Internal use
+	chain,
+) where
 
 import Propellor
 import Propellor.SimpleSh
@@ -16,23 +42,23 @@ import qualified Propellor.Property.Docker.Shim as Shim
 import Utility.SafeCommand
 import Utility.Path
 
-import Control.Concurrent.Async
+import Control.Concurrent.Async hiding (link)
 import System.Posix.Directory
 import System.Posix.Process
 import Data.List
 import Data.List.Utils
 import qualified Data.Set as S
 
+installed :: Property
+installed = Apt.installed ["docker.io"]
+
 -- | Configures docker with an authentication file, so that images can be
--- pushed to index.docker.io.
+-- pushed to index.docker.io. Optional.
 configured :: Property
 configured = property "docker configured" go `requires` installed
   where
 	go = withPrivData DockerAuthentication $ \cfg -> ensureProperty $ 
 		"/root/.dockercfg" `File.hasContent` (lines cfg)
-
-installed :: Property
-installed = Apt.installed ["docker.io"]
 
 -- | A short descriptive name for a container.
 -- Should not contain whitespace or other unusual characters,
@@ -48,15 +74,17 @@ type ContainerName = String
 container :: ContainerName -> Image -> Host
 container cn image = Host hn [] attr
   where
-	attr = mempty { _dockerImage = Just image }
+	attr = dockerAttr $ mempty { _dockerImage = Val image }
 	hn = cn2hn cn
 
 cn2hn :: ContainerName -> HostName
 cn2hn cn = cn ++ ".docker"
 
--- | Ensures that a docker container is set up and running. The container
--- has its own Properties which are handled by running propellor
--- inside the container. 
+-- | Ensures that a docker container is set up and running, finding
+-- its configuration in the passed list of hosts.
+-- 
+-- The container has its own Properties which are handled by running
+-- propellor inside the container.
 --
 -- Additionally, the container can have DNS attributes, such as a CNAME.
 -- These become attributes of the host(s) it's docked in.
@@ -116,10 +144,10 @@ findContainer mhost cid cn mk = case mhost of
 
 mkContainer :: ContainerId -> Host -> Maybe Container
 mkContainer cid@(ContainerId hn _cn) h = Container
-	<$> _dockerImage attr
+	<$> fromVal (_dockerImage attr)
 	<*> pure (map (\a -> a hn) (_dockerRunParams attr))
   where
-	attr = hostAttr h'
+	attr = _dockerattr $ hostAttr h'
   	h' = h
 		-- expose propellor directory inside the container
 		& volume (localdir++":"++localdir)
@@ -143,6 +171,20 @@ garbageCollected = propertyList "docker garbage collected"
 		liftIO $ report <$> (mapM removeContainer =<< listContainers AllContainers)
 	gcimages = property "docker images garbage collected" $ do
 		liftIO $ report <$> (mapM removeImage =<< listImages)
+
+-- | Configures the kernel to respect docker memory limits. 
+--
+-- This assumes the system boots using grub 2. And that you don't need any
+-- other GRUB_CMDLINE_LINUX_DEFAULT settings.
+--
+-- Only takes effect after reboot. (Not automated.)
+memoryLimited :: Property
+memoryLimited = "/etc/default/grub" `File.containsLine` cfg
+	`describe` "docker memory limited" 
+	`onChange` cmdProperty "update-grub" []
+  where
+	cmdline = "cgroup_enable=memory swapaccount=1"
+	cfg = "GRUB_CMDLINE_LINUX_DEFAULT=\""++cmdline++"\""
 
 data Container = Container Image [RunParam]
 
@@ -194,9 +236,19 @@ workdir :: String -> Property
 workdir = runProp "workdir"
 
 -- | Memory limit for container.
---Format: <number><optional unit>, where unit = b, k, m or g
+-- Format: <number><optional unit>, where unit = b, k, m or g
+--
+-- Note: Only takes effect when the host has the memoryLimited property
+-- enabled.
 memory :: String -> Property
 memory = runProp "memory"
+
+-- | CPU shares (relative weight).
+--
+-- By default, all containers run at the same priority, but you can tell
+-- the kernel to give more CPU time to a container using this property.
+cpuShares :: Int -> Property
+cpuShares = runProp "cpu-shares" . show
 
 -- | Link with another container on the same host.
 link :: ContainerName -> ContainerAlias -> Property
@@ -217,9 +269,6 @@ data ContainerId = ContainerId HostName ContainerName
 -- with the same RunParams.
 data ContainerIdent = ContainerIdent Image HostName ContainerName [RunParam]
 	deriving (Read, Show, Eq)
-
-ident2id :: ContainerIdent -> ContainerId
-ident2id (ContainerIdent _ hn cn _) = ContainerId hn cn
 
 toContainerId :: String -> Maybe ContainerId
 toContainerId s
@@ -420,14 +469,17 @@ listImages :: IO [Image]
 listImages = lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
 runProp :: String -> RunParam -> Property
-runProp field val = pureAttrProperty (param) $
+runProp field val = pureAttrProperty (param) $ dockerAttr $
 	mempty { _dockerRunParams = [\_ -> "--"++param] }
   where
 	param = field++"="++val
 
 genProp :: String -> (HostName -> RunParam) -> Property
-genProp field mkval = pureAttrProperty field $
+genProp field mkval = pureAttrProperty field $ dockerAttr $
 	mempty { _dockerRunParams = [\hn -> "--"++field++"=" ++ mkval hn] }
+
+dockerAttr :: DockerAttr -> Attr
+dockerAttr a = mempty { _dockerattr = a }
 
 -- | The ContainerIdent of a container is written to
 -- /.propellor-ident inside it. This can be checked to see if

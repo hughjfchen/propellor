@@ -15,12 +15,15 @@ import Control.Applicative
 pureAttrProperty :: Desc -> Attr -> Property 
 pureAttrProperty desc = Property ("has " ++ desc) (return NoChange)
 
+askAttr :: (Attr -> Val a) -> Propellor (Maybe a)
+askAttr f = asks (fromVal . f . hostAttr)
+
 os :: System -> Property
 os system = pureAttrProperty ("Operating " ++ show system) $
-	mempty { _os = Just system }
+	mempty { _os = Val system }
 
 getOS :: Propellor (Maybe System)
-getOS = asks (_os . hostAttr)
+getOS = askAttr _os
 
 -- | Indidate that a host has an A record in the DNS.
 --
@@ -34,6 +37,11 @@ ipv6 :: String -> Property
 ipv6 = addDNS . Address . IPv6
 
 -- | Indicates another name for the host in the DNS.
+--
+-- When the host's ipv4/ipv6 addresses are known, the alias is set up
+-- to use their address, rather than using a CNAME. This avoids various
+-- problems with CNAMEs, and also means that when multiple hosts have the
+-- same alias, a DNS round-robin is automatically set up.
 alias :: Domain -> Property
 alias = addDNS . CNAME . AbsDomain
 
@@ -55,10 +63,10 @@ addDNS r = pureAttrProperty (rdesc r) $
 
 sshPubKey :: String -> Property
 sshPubKey k = pureAttrProperty ("ssh pubkey known") $
-	mempty { _sshPubKey = Just k }
+	mempty { _sshPubKey = Val k }
 
 getSshPubKey :: Propellor (Maybe String)
-getSshPubKey = asks (_sshPubKey . hostAttr)
+getSshPubKey = askAttr _sshPubKey
 
 hostMap :: [Host] -> M.Map HostName Host
 hostMap l = M.fromList $ zip (map hostName l) l 
