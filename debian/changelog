@@ -1,6 +1,6 @@
 propellor (0.6.0) unstable; urgency=medium
 
-  * Docker containers now propigate DNS attributes out to the host they're
+  * Docker containers now propagate DNS attributes out to the host they're
     docked in. So if a docker container sets a DNS alias, every container
     it's docked in will automatically be added to a DNS round-robin,
     when propellor is used to manage DNS for the domain.
