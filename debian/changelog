@@ -1,4 +1,4 @@
-propellor (0.6.0) UNRELEASED; urgency=medium
+propellor (0.6.0) unstable; urgency=medium
 
   * Docker containers now propigate DNS attributes out to the host they're
     docked in. So if a docker container sets a DNS alias, every container
@@ -10,7 +10,7 @@ propellor (0.6.0) UNRELEASED; urgency=medium
   * Propellor's output now includes the hostname being provisioned, or
     when provisioning a docker container, the container name.
 
- -- Joey Hess <joeyh@debian.org>  Sat, 31 May 2014 16:41:56 -0400
+ -- Joey Hess <joeyh@debian.org>  Thu, 05 Jun 2014 17:32:14 -0400
 
 propellor (0.5.3) unstable; urgency=medium
 
