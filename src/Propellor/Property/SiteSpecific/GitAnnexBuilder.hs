@@ -99,6 +99,7 @@ cabalDeps = flagFile go cabalupdated
 standardAutoBuilderContainer :: (System -> Docker.Image) -> Architecture -> Int -> TimeOut -> Host
 standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
 	(dockerImage $ System (Debian Unstable) arch)
+	& os (System (Debian Unstable) arch)
 	& Apt.stdSourcesList Unstable
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
@@ -116,6 +117,7 @@ androidAutoBuilderContainer dockerImage crontimes timeout =
 androidContainer :: (System -> Docker.Image) -> Docker.ContainerName -> Property -> FilePath -> Host
 androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.container name
 	(dockerImage $ System (Debian Stable) "i386")
+	& os (System (Debian Stable) "i386")
 	& Apt.stdSourcesList Stable
 	& Apt.installed ["systemd"]
 	& User.accountFor builduser
@@ -142,6 +144,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 armelCompanionContainer :: (System -> Docker.Image) -> Host
 armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-companion"
 	(dockerImage $ System (Debian Unstable) "amd64")
+	& os (System (Debian Unstable) "amd64")
 	& Apt.stdSourcesList Unstable
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
@@ -159,6 +162,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 armelAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
 armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
 	(dockerImage $ System (Debian Unstable) "armel")
+	& os (System (Debian Unstable) "armel")
 	& Apt.stdSourcesList Unstable
 	& Apt.unattendedUpgrades
 	& Apt.installed ["systemd"]

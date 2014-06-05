@@ -214,12 +214,7 @@ unattendedUpgrades = RevertableProperty enable disable
 					"/etc/apt/apt.conf.d/50unattended-upgrades"
 						`File.containsLine`
 					("Unattended-Upgrade::Origins-Pattern { \"o=Debian,a="++showSuite suite++"\"; };")
-				| otherwise -> do
-					liftIO $ print ("xxx ", suite)
-					noChange
-			_ -> do
-				liftIO $ print "xxx"
-				noChange
+			_ -> noChange
 
 -- | Preseeds debconf values and reconfigures the package so it takes
 -- effect.
