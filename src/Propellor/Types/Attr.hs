@@ -14,7 +14,7 @@ data Attr = Attr
 	, _namedconf :: Dns.NamedConfMap
 	, _dockerattr :: DockerAttr
 	}
-	deriving (Eq)
+	deriving (Eq, Show)
 
 instance Monoid Attr where
 	mempty = Attr mempty mempty mempty mempty mempty
@@ -25,15 +25,6 @@ instance Monoid Attr where
 		, _namedconf = _namedconf old <> _namedconf new
 		, _dockerattr = _dockerattr old <> _dockerattr new
 		}
-
-instance Show Attr where
-	show a = unlines
-		[ "OS " ++ show (_os a)
-		, "sshPubKey " ++ show (_sshPubKey a)
-		, "dns " ++ show (_dns a)
-		, "namedconf " ++ show (_namedconf a)
-		, show (_dockerattr a)
-		]
 
 data Val a = Val a | NoVal
 	deriving (Eq, Show)

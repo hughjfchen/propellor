@@ -66,7 +66,7 @@ data Property = Property
 	}
 
 instance Show Property where
-	show = propertyDesc
+	show p = "property " ++ show (propertyDesc p)
 
 -- | A property that can be reverted.
 data RevertableProperty = RevertableProperty Property Property
