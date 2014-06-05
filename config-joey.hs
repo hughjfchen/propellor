@@ -179,7 +179,7 @@ hosts =                 --                  (o)  `
 		& Apt.installed ["git-annex"]
 		
 		& Docker.configured
-		& Docker.docked hosts "voltagex"
+		! Docker.docked hosts "voltagex"
 		& Docker.garbageCollected `period` (Weekly (Just 1))
 
 	    --'                        __|II|      ,.
