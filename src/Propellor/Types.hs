@@ -40,6 +40,7 @@ data Host = Host
 	, hostProperties :: [Property]
 	, hostAttr :: Attr
 	}
+	deriving (Show)
 
 -- | Propellor's monad provides read-only access to the host it's running
 -- on, including its attributes.
@@ -63,6 +64,9 @@ data Property = Property
 	, propertyAttr :: Attr
 	-- ^ a property can set an attribute of the host that has the property.
 	}
+
+instance Show Property where
+	show = propertyDesc
 
 -- | A property that can be reverted.
 data RevertableProperty = RevertableProperty Property Property
