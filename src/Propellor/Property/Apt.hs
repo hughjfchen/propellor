@@ -64,12 +64,19 @@ securityUpdates suite
 	| otherwise = []
 
 -- | Makes sources.list have a standard content using the mirror CDN,
--- with a particular DebianSuite.
+-- with the Debian suite configured by the os.
 --
 -- Since the CDN is sometimes unreliable, also adds backup lines using
 -- kernel.org.
-stdSourcesList :: DebianSuite -> Property
-stdSourcesList suite = stdSourcesList' suite []
+stdSourcesList :: Property
+stdSourcesList = withOS ("standard sources.list") $ \o -> 
+	case o of
+		(Just (System (Debian suite) _)) -> 
+			ensureProperty $ stdSourcesListFor suite
+		_ -> error "os is not declared to be Debian"
+
+stdSourcesListFor :: DebianSuite -> Property
+stdSourcesListFor suite = stdSourcesList' suite []
 
 -- | Adds additional sources.list generators.
 --

@@ -8,6 +8,7 @@ propellor (0.6.0) UNRELEASED; urgency=medium
     when provisioning a docker container, the container name.
   * Added --dump to dump out a field of a host's privdata. Useful for editing
     it.
+  * Apt.stdSourcesList no longer needs a suite to be specified.
 
  -- Joey Hess <joeyh@debian.org>  Sat, 31 May 2014 16:41:56 -0400
 

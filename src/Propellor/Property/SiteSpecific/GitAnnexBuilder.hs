@@ -100,7 +100,7 @@ standardAutoBuilderContainer :: (System -> Docker.Image) -> Architecture -> Int 
 standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
 	(dockerImage $ System (Debian Unstable) arch)
 	& os (System (Debian Unstable) arch)
-	& Apt.stdSourcesList Unstable
+	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
 	& buildDepsApt
@@ -118,7 +118,7 @@ androidContainer :: (System -> Docker.Image) -> Docker.ContainerName -> Property
 androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.container name
 	(dockerImage $ System (Debian Stable) "i386")
 	& os (System (Debian Stable) "i386")
-	& Apt.stdSourcesList Stable
+	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& User.accountFor builduser
 	& File.dirExists gitbuilderdir
@@ -145,7 +145,7 @@ armelCompanionContainer :: (System -> Docker.Image) -> Host
 armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-companion"
 	(dockerImage $ System (Debian Unstable) "amd64")
 	& os (System (Debian Unstable) "amd64")
-	& Apt.stdSourcesList Unstable
+	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
 	-- This volume is shared with the armel builder.
@@ -163,7 +163,7 @@ armelAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeO
 armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
 	(dockerImage $ System (Debian Unstable) "armel")
 	& os (System (Debian Unstable) "armel")
-	& Apt.stdSourcesList Unstable
+	& Apt.stdSourcesList
 	& Apt.unattendedUpgrades
 	& Apt.installed ["systemd"]
 	& Apt.installed ["openssh-client"]

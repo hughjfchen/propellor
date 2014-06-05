@@ -246,8 +246,7 @@ hosts =                 --                  (o)  `
 standardSystem :: HostName -> DebianSuite -> Architecture -> Host
 standardSystem hn suite arch = host hn
 	& os (System (Debian suite) arch)
-	& Apt.stdSourcesList suite
-		`onChange` Apt.upgrade
+	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.cacheCleaned
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
@@ -270,8 +269,8 @@ standardSystem hn suite arch = host hn
 -- This is my standard container setup, featuring automatic upgrades.
 standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
 standardContainer name suite arch = Docker.container name (dockerImage system)
-	& os (System (Debian suite) arch)
-	& Apt.stdSourcesList suite
+	& os system
+	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
 	& Apt.cacheCleaned
