@@ -41,22 +41,24 @@ stub to go run itself. No need to ever change this part.
 hosts :: [Host]
 hosts =
     [ host "mybox.example.com"
-        & Apt.stdSourcesList Unstable
+    	& os (System (Debian Unstable) "amd64")
+        & Apt.stdSourcesList
     , host "server.example.com"
-        & Apt.stdSourcesList Stable
+    	& os (System (Debian Stable) "amd64")
+        & Apt.stdSourcesList
         & Apt.installed ["ssh"]
     ]
 """]]
 
 This defines a list of hosts, with two hosts in it. 
 
-The configuration for the mybox host tells propellor to configure its
-`/etc/apt/sources.list` to use Debian `Unstable`.
-Of course you might want to change that to `Stable`.
+The configuration for the mybox host first tells propellor what
+OS it's running. Then the `stdSourcesList` line tells propellor to
+configure its `/etc/apt/sources.list`, using its OS.
+(Of course you might want to change that `Unstable` to `Stable`.)
 
 Each property of the host is prefixed with an "&" operator. This just makes
-a list of properties. Above, the first host has only 1 property, while
-the second host has 2 properties.
+a list of properties.
 
 Some other properties you may find in your config.hs, or want to add:
 
