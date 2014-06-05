@@ -272,6 +272,7 @@ standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
 standardContainer name suite arch = Docker.container name (dockerImage system)
 	& os (System (Debian suite) arch)
 	& Apt.stdSourcesList suite
+	& Apt.removed ["sysvinit", "systemd"]
 	& Apt.unattendedUpgrades
 	& Apt.cacheCleaned
   where
