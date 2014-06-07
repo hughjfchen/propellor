@@ -177,6 +177,7 @@ hosts =                 --                  (o)  `
 
 		-- PV-grub chaining
 		-- http://notes.pault.ag/linode-pv-grub-chainning/
+		-- (Adapted to use xvda1/hd0,0 instead of xvda/hd0)
 		& "/boot/grub/menu.lst" `File.hasContent`
 			[ "default 1" 
 			, "timeout 30"
@@ -187,9 +188,9 @@ hosts =                 --                  (o)  `
 			, "boot"
 			]
 		& "/boot/load.cf" `File.hasContent`
-			[ "configfile (xen/xvda)/boot/grub/grub.cfg" ]
+			[ "configfile (xen/xvda1)/boot/grub/grub.cfg" ]
 		& Apt.installed ["grub-xen"]
-		& flagFile (scriptProperty ["grub-mkimage --prefix '(xen/xvda)/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]) "/boot/xen-shim"
+		& flagFile (scriptProperty ["update-grub; grub-mkimage --prefix '(xen/xvda1)/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]) "/boot/xen-shim"
 
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
