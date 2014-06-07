@@ -345,7 +345,7 @@ obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
   where
   	mkbase = mkdir "/home/joey/lib"
 		`before` mkdir "/home/joey/backup"
-	mkrepo r = mkdir ("/home/joey/lib/nackup/" ++ r ++ ".obnam")
+	mkrepo r = mkdir ("/home/joey/lib/backup/" ++ r ++ ".obnam")
 	mkdir d = File.dirExists d
-		`before` File.ownerGroup "joey" "joey" d
+		`before` File.ownerGroup d "joey" "joey"
 
