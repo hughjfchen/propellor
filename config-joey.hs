@@ -175,6 +175,22 @@ hosts =                 --                  (o)  `
 		& Ssh.hostKey SshEcdsa
 		& Ssh.keyImported SshRsa "joey"
 
+		-- PV-grub chaining
+		-- http://notes.pault.ag/linode-pv-grub-chainning/
+		& "/boot/grub/menu.lst" `File.hasContent`
+			[ "default 1" 
+			, "timeout 30"
+			, ""
+			, "title grub-xen shim"
+			, "root (hd0,0)"
+			, "kernel /boot/xen-shim"
+			, "boot"
+			]
+		& "/boot/load.cf" `File.hasContent`
+			[ "configfile (xen/xvda)/boot/grub/grub.cfg" ]
+		& Apt.installed ["grub-xen"]
+		& flagFile (scriptProperty ["grub-mkimage --prefix '(xen/xvda)/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]) "/boot/xen-shim"
+
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
 		& JoeySites.githubBackup
