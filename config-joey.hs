@@ -170,6 +170,10 @@ hosts =                 --                  (o)  `
 		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
+		& Ssh.hostKey SshDsa
+		& Ssh.hostKey SshRsa
+		& Ssh.hostKey SshEcdsa
+		& Ssh.keyImported SshRsa "joey"
 
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
