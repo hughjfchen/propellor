@@ -179,7 +179,6 @@ hosts =                 --                  (o)  `
 		& Apt.installed ["git-annex"]
 		
 		& Docker.configured
-		! Docker.docked hosts "voltagex"
 		& Docker.garbageCollected `period` (Weekly (Just 1))
 
 	    --'                        __|II|      ,.
@@ -231,15 +230,6 @@ hosts =                 --                  (o)  `
 		& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
 
 	-- temp for an acquantance
-	, standardContainer "voltagex" Stable "amd64"
-		& Docker.publish "22022:22"
-		& Docker.memory "500m"
-		& Docker.cpuShares 1
-		& Apt.serviceInstalledRunning "ssh"
-		& Ssh.permitRootLogin True
-		& Ssh.passwordAuthentication True
-		& User.hasSomePassword "root"
-
 	] ++ monsters
 
 -- This is my standard system setup.
