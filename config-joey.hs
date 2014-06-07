@@ -195,6 +195,7 @@ hosts =                 --                  (o)  `
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
 		& JoeySites.githubBackup
+		& JoeySites.obnamRepos ["wren", "pell"]
 
 		& alias "podcatcher.kitenet.net"
 		& Apt.installed ["git-annex"]

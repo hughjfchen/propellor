@@ -338,3 +338,14 @@ githubBackup = propertyList "github-backup box"
 	  in File.hasPrivContent f
 		`onChange` File.ownerGroup f "joey" "joey"
 	]
+
+obnamRepos :: [String] -> Property
+obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
+	(mkbase : map mkrepo rs)
+  where
+  	mkbase = mkdir "/home/joey/lib"
+		`before` mkdir "/home/joey/backup"
+	mkrepo r = mkdir ("/home/joey/lib/nackup/" ++ r ++ ".obnam")
+	mkdir d = File.dirExists d
+		`before` File.ownerGroup "joey" "joey" d
+
