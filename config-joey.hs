@@ -196,6 +196,7 @@ hosts =                 --                  (o)  `
 		& Apt.installed ["obnam", "sshfs", "rsync"]
 		& JoeySites.githubBackup
 		& JoeySites.obnamRepos ["wren", "pell"]
+		& Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
 
 		& alias "podcatcher.kitenet.net"
 		& Apt.installed ["git-annex"]

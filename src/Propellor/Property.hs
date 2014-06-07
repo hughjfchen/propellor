@@ -37,6 +37,15 @@ combineProperties desc ps = Property desc (go ps NoChange) (combineAttrs ps)
 			FailedChange -> return FailedChange
 			_ -> go ls (r <> rs)
 
+-- | Does not stop on failure (but does propigate failure at the end).
+combineProperties' :: Desc -> [Property] -> Property
+combineProperties' desc ps = Property desc (go ps NoChange) (combineAttrs ps)
+  where
+  	go [] rs = return rs
+	go (l:ls) rs = do
+		r <- ensureProperty l
+		go ls (r <> rs)
+
 -- | Combines together two properties, resulting in one property
 -- that ensures the first, and if the first succeeds, ensures the second.
 -- The property uses the description of the first property.

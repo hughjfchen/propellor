@@ -97,7 +97,7 @@ hostKey keytype = combineProperties desc
 -- | Sets up a user with a ssh private key and public key pair
 -- from the site's PrivData.
 keyImported :: SshKeyType -> UserName -> Property
-keyImported keytype user = combineProperties desc
+keyImported keytype user = combineProperties' desc
 	[ property desc (install writeFile (SshPubKey keytype user) ".pub")
 	, property desc (install writeFileProtected (SshPrivKey keytype user) "")
 	]
