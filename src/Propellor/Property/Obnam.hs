@@ -105,11 +105,11 @@ installed = Apt.installed ["obnam"]
 latestVersion :: Property
 latestVersion = withOS "obnam latest version" $ \o -> case o of
 	(Just (System (Debian suite) _)) | isStable suite -> ensureProperty $
-		Apt.setSourcesListD (sources suite) "obnam"
+		Apt.setSourcesListD stablesources "obnam"
 			`requires` toProp (Apt.trustsKey key)
 	_ -> noChange
   where
-	sources suite = 
+	stablesources = 
 		[ "deb http://code.liw.fi/debian " ++ Apt.showSuite stableRelease ++ " main"
 		]
 	-- gpg key used by the code.liw.fi repository.
