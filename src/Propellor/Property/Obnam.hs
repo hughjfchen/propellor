@@ -110,7 +110,7 @@ latestVersion = withOS "obnam latest version" $ \o -> case o of
 	_ -> noChange
   where
 	sources suite = 
-		[ "deb http://code.liw.fi/debian " ++ Apt.showSuite suite ++ " main"
+		[ "deb http://code.liw.fi/debian " ++ Apt.showSuite stableRelease ++ " main"
 		]
 	-- gpg key used by the code.liw.fi repository.
 	key = Apt.AptKey "obnam" $ unlines
