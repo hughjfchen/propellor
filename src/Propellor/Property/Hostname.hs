@@ -3,7 +3,7 @@ module Propellor.Property.Hostname where
 import Propellor
 import qualified Propellor.Property.File as File
 
--- | Ensures that the hostname is set to the HostAttr value.
+-- | Ensures that the hostname is set to the HostInfo value.
 -- Configures /etc/hostname and the current hostname.
 --
 -- A FQDN also configures /etc/hosts, with an entry for 127.0.1.1, which is

@@ -35,7 +35,7 @@ module Propellor.Property.Docker (
 
 import Propellor
 import Propellor.SimpleSh
-import Propellor.Types.Attr
+import Propellor.Types.Info
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Docker.Shim as Shim
@@ -72,9 +72,9 @@ type ContainerName = String
 -- >    & Apt.installed {"apache2"]
 -- >    & ...
 container :: ContainerName -> Image -> Host
-container cn image = Host hn [] attr
+container cn image = Host hn [] info
   where
-	attr = dockerAttr $ mempty { _dockerImage = Val image }
+	info = dockerInfo $ mempty { _dockerImage = Val image }
 	hn = cn2hn cn
 
 cn2hn :: ContainerName -> HostName
@@ -86,8 +86,8 @@ cn2hn cn = cn ++ ".docker"
 -- The container has its own Properties which are handled by running
 -- propellor inside the container.
 --
--- Additionally, the container can have DNS attributes, such as a CNAME.
--- These become attributes of the host(s) it's docked in.
+-- Additionally, the container can have DNS info, such as a CNAME.
+-- These become info of the host(s) it's docked in.
 --
 -- Reverting this property ensures that the container is stopped and
 -- removed.
@@ -96,7 +96,7 @@ docked
 	-> ContainerName
 	-> RevertableProperty
 docked hosts cn = RevertableProperty
-	((maybe id exposeDnsAttrs mhost) (go "docked" setup))
+	((maybe id exposeDnsInfos mhost) (go "docked" setup))
 	(go "undocked" teardown)
   where
 	go desc a = property (desc ++ " " ++ cn) $ do
@@ -123,9 +123,9 @@ docked hosts cn = RevertableProperty
 					]
 			]
 
-exposeDnsAttrs :: Host -> Property -> Property
-exposeDnsAttrs (Host _ _ containerattr) p = combineProperties (propertyDesc p) $
-	p : map addDNS (S.toList $ _dns containerattr)
+exposeDnsInfos :: Host -> Property -> Property
+exposeDnsInfos (Host _ _ containerinfo) p = combineProperties (propertyDesc p) $
+	p : map addDNS (S.toList $ _dns containerinfo)
 
 findContainer
 	:: Maybe Host
@@ -144,10 +144,10 @@ findContainer mhost cid cn mk = case mhost of
 
 mkContainer :: ContainerId -> Host -> Maybe Container
 mkContainer cid@(ContainerId hn _cn) h = Container
-	<$> fromVal (_dockerImage attr)
-	<*> pure (map (\a -> a hn) (_dockerRunParams attr))
+	<$> fromVal (_dockerImage info)
+	<*> pure (map (\a -> a hn) (_dockerRunParams info))
   where
-	attr = _dockerattr $ hostAttr h'
+	info = _dockerinfo $ hostInfo h'
   	h' = h
 		-- expose propellor directory inside the container
 		& volume (localdir++":"++localdir)
@@ -469,17 +469,17 @@ listImages :: IO [Image]
 listImages = lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
 runProp :: String -> RunParam -> Property
-runProp field val = pureAttrProperty (param) $ dockerAttr $
+runProp field val = pureInfoProperty (param) $ dockerInfo $
 	mempty { _dockerRunParams = [\_ -> "--"++param] }
   where
 	param = field++"="++val
 
 genProp :: String -> (HostName -> RunParam) -> Property
-genProp field mkval = pureAttrProperty field $ dockerAttr $
+genProp field mkval = pureInfoProperty field $ dockerInfo $
 	mempty { _dockerRunParams = [\hn -> "--"++field++"=" ++ mkval hn] }
 
-dockerAttr :: DockerAttr -> Attr
-dockerAttr a = mempty { _dockerattr = a }
+dockerInfo :: DockerInfo -> Info
+dockerInfo i = mempty { _dockerinfo = i }
 
 -- | The ContainerIdent of a container is written to
 -- /.propellor-ident inside it. This can be checked to see if

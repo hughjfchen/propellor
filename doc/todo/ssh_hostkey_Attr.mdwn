@@ -1,7 +1,0 @@
-* Either `Ssh.hostKey` should set the sshPubKey attr
-  (which seems hard, as attrs need to be able to be calculated without
-  running any IO code, and here IO is needed along with decrypting the
-  PrivData..), or the public key should not be stored in
-  the PrivData, and instead configured using the attr.
-  Getting the ssh host key into the attr will allow automatically
-  exporting it via DNS (SSHFP record)

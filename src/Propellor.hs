@@ -33,7 +33,7 @@ module Propellor (
 	  module Propellor.Types
 	, module Propellor.Property
 	, module Propellor.Property.Cmd
-	, module Propellor.Attr
+	, module Propellor.Info
 	, module Propellor.PrivData
 	, module Propellor.Engine
 	, module Propellor.Exception
@@ -50,7 +50,7 @@ import Propellor.Property.Cmd
 import Propellor.PrivData
 import Propellor.Message
 import Propellor.Exception
-import Propellor.Attr
+import Propellor.Info
 
 import Utility.PartialPrelude as X
 import Utility.Process as X

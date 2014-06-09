@@ -1,9 +1,9 @@
 {-# LANGUAGE PackageImports #-}
 
-module Propellor.Attr where
+module Propellor.Info where
 
 import Propellor.Types
-import Propellor.Types.Attr
+import Propellor.Types.Info
 
 import "mtl" Control.Monad.Reader
 import qualified Data.Set as S
@@ -12,18 +12,18 @@ import Data.Maybe
 import Data.Monoid
 import Control.Applicative
 
-pureAttrProperty :: Desc -> Attr -> Property 
-pureAttrProperty desc = Property ("has " ++ desc) (return NoChange)
+pureInfoProperty :: Desc -> Info -> Property 
+pureInfoProperty desc = Property ("has " ++ desc) (return NoChange)
 
-askAttr :: (Attr -> Val a) -> Propellor (Maybe a)
-askAttr f = asks (fromVal . f . hostAttr)
+askInfo :: (Info -> Val a) -> Propellor (Maybe a)
+askInfo f = asks (fromVal . f . hostInfo)
 
 os :: System -> Property
-os system = pureAttrProperty ("Operating " ++ show system) $
+os system = pureInfoProperty ("Operating " ++ show system) $
 	mempty { _os = Val system }
 
 getOS :: Propellor (Maybe System)
-getOS = askAttr _os
+getOS = askInfo _os
 
 -- | Indidate that a host has an A record in the DNS.
 --
@@ -46,7 +46,7 @@ alias :: Domain -> Property
 alias = addDNS . CNAME . AbsDomain
 
 addDNS :: Record -> Property
-addDNS r = pureAttrProperty (rdesc r) $
+addDNS r = pureInfoProperty (rdesc r) $
 	mempty { _dns = S.singleton r }
   where
 	rdesc (CNAME d) = unwords ["alias", ddesc d]
@@ -62,11 +62,11 @@ addDNS r = pureAttrProperty (rdesc r) $
 	ddesc RootDomain = "@"
 
 sshPubKey :: String -> Property
-sshPubKey k = pureAttrProperty ("ssh pubkey known") $
+sshPubKey k = pureInfoProperty ("ssh pubkey known") $
 	mempty { _sshPubKey = Val k }
 
 getSshPubKey :: Propellor (Maybe String)
-getSshPubKey = askAttr _sshPubKey
+getSshPubKey = askInfo _sshPubKey
 
 hostMap :: [Host] -> M.Map HostName Host
 hostMap l = M.fromList $ zip (map hostName l) l 
@@ -74,10 +74,10 @@ hostMap l = M.fromList $ zip (map hostName l) l
 findHost :: [Host] -> HostName -> Maybe Host
 findHost l hn = M.lookup hn (hostMap l)
 
-getAddresses :: Attr -> [IPAddr]
+getAddresses :: Info -> [IPAddr]
 getAddresses = mapMaybe getIPAddr . S.toList . _dns
 
 hostAddresses :: HostName -> [Host] -> [IPAddr]
-hostAddresses hn hosts = case hostAttr <$> findHost hosts hn of
+hostAddresses hn hosts = case hostInfo <$> findHost hosts hn of
 	Nothing -> []
-	Just attr -> mapMaybe getIPAddr $ S.toList $ _dns attr
+	Just info -> mapMaybe getIPAddr $ S.toList $ _dns info
