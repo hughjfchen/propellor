@@ -170,16 +170,38 @@ hosts =                 --                  (o)  `
 		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
+		& Ssh.hostKey SshDsa
+		& Ssh.hostKey SshRsa
+		& Ssh.hostKey SshEcdsa
+		& Ssh.keyImported SshRsa "joey"
+
+		-- PV-grub chaining
+		-- http://notes.pault.ag/linode-pv-grub-chainning/
+		-- (Adapted to use xvda1/hd0,0 instead of xvda/hd0)
+		& "/boot/grub/menu.lst" `File.hasContent`
+			[ "default 1" 
+			, "timeout 30"
+			, ""
+			, "title grub-xen shim"
+			, "root (hd0,0)"
+			, "kernel /boot/xen-shim"
+			, "boot"
+			]
+		& "/boot/load.cf" `File.hasContent`
+			[ "configfile (xen/xvda1)/boot/grub/grub.cfg" ]
+		& Apt.installed ["grub-xen"]
+		& flagFile (scriptProperty ["update-grub; grub-mkimage --prefix '(xen/xvda1)/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]) "/boot/xen-shim"
 
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
 		& JoeySites.githubBackup
+		& JoeySites.obnamRepos ["wren", "pell"]
+		& Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
 
 		& alias "podcatcher.kitenet.net"
 		& Apt.installed ["git-annex"]
 		
 		& Docker.configured
-		! Docker.docked hosts "voltagex"
 		& Docker.garbageCollected `period` (Weekly (Just 1))
 
 	    --'                        __|II|      ,.
@@ -231,15 +253,6 @@ hosts =                 --                  (o)  `
 		& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
 
 	-- temp for an acquantance
-	, standardContainer "voltagex" Stable "amd64"
-		& Docker.publish "22022:22"
-		& Docker.memory "500m"
-		& Docker.cpuShares 1
-		& Apt.serviceInstalledRunning "ssh"
-		& Ssh.permitRootLogin True
-		& Ssh.passwordAuthentication True
-		& User.hasSomePassword "root"
-
 	] ++ monsters
 
 -- This is my standard system setup.

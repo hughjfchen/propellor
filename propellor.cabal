@@ -1,5 +1,5 @@
 Name: propellor
-Version: 0.6.0
+Version: 0.7.0
 Cabal-Version: >= 1.6
 License: BSD3
 Maintainer: Joey Hess <joey@kitenet.net>
@@ -33,7 +33,7 @@ Description:
  .
  It is configured using haskell.
 
-Executable wrapper
+Executable propellor
   Main-Is: wrapper.hs
   GHC-Options: -Wall -threaded -O0
   Hs-Source-Dirs:  src
@@ -45,7 +45,7 @@ Executable wrapper
   if (! os(windows))
     Build-Depends: unix
 
-Executable config
+Executable propellor-config
   Main-Is: config.hs
   GHC-Options: -Wall -threaded -O0
   Hs-Source-Dirs:  src
@@ -97,7 +97,7 @@ Library
     Propellor.Property.SiteSpecific.GitHome
     Propellor.Property.SiteSpecific.JoeySites
     Propellor.Property.SiteSpecific.GitAnnexBuilder
-    Propellor.Attr
+    Propellor.Info
     Propellor.Message
     Propellor.PrivData
     Propellor.Engine
@@ -106,7 +106,7 @@ Library
     Propellor.Types.OS
     Propellor.Types.Dns
   Other-Modules:
-    Propellor.Types.Attr
+    Propellor.Types.Info
     Propellor.CmdLine
     Propellor.SimpleSh
     Propellor.Property.Docker.Shim

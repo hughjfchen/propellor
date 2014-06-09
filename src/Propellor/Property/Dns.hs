@@ -15,7 +15,7 @@ module Propellor.Property.Dns (
 import Propellor
 import Propellor.Types.Dns
 import Propellor.Property.File
-import Propellor.Types.Attr
+import Propellor.Types.Info
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
 import Utility.Applicative
@@ -113,7 +113,7 @@ secondary hosts domain = secondaryFor (otherServers Master hosts domain) hosts d
 secondaryFor :: [HostName] -> [Host] -> Domain -> RevertableProperty
 secondaryFor masters hosts domain = RevertableProperty setup cleanup
   where
-	setup = pureAttrProperty desc (addNamedConf conf)
+	setup = pureInfoProperty desc (addNamedConf conf)
 		`requires` servingZones
 	cleanup = namedConfWritten
 
@@ -131,7 +131,7 @@ otherServers :: DnsServerType -> [Host] -> Domain -> [HostName]
 otherServers wantedtype hosts domain =
 	M.keys $ M.filter wanted $ hostMap hosts
   where
-	wanted h = case M.lookup domain (fromNamedConfMap $ _namedconf $ hostAttr h) of
+	wanted h = case M.lookup domain (fromNamedConfMap $ _namedconf $ hostInfo h) of
 		Nothing -> False
 		Just conf -> confDnsServerType conf == wantedtype
 			&& confDomain conf == domain
@@ -346,7 +346,7 @@ genZone hosts zdomain soa =
 	inzdomain = M.elems $ M.filterWithKey (\hn _ -> inDomain zdomain $ AbsDomain $ hn) m
 	
 	-- Each host with a hostname located in the zdomain
-	-- should have 1 or more IPAddrs in its Attr.
+	-- should have 1 or more IPAddrs in its Info.
 	--
 	-- If a host lacks any IPAddr, it's probably a misconfiguration,
 	-- so warn.
@@ -355,9 +355,9 @@ genZone hosts zdomain soa =
 		| null l = [Left $ "no IP address defined for host " ++ hostName h]
 		| otherwise = map Right l
 	  where
-		attr = hostAttr h
+		info = hostInfo h
 		l = zip (repeat $ AbsDomain $ hostName h)
-			(map Address $ getAddresses attr)
+			(map Address $ getAddresses info)
 
 	-- Any host, whether its hostname is in the zdomain or not,
 	-- may have cnames which are in the zdomain. The cname may even be
@@ -373,10 +373,10 @@ genZone hosts zdomain soa =
 	-- So we can just use the IPAddrs.
 	addcnames :: Host -> [Either WarningMessage (BindDomain, Record)]
 	addcnames h = concatMap gen $ filter (inDomain zdomain) $
-		mapMaybe getCNAME $ S.toList (_dns attr)
+		mapMaybe getCNAME $ S.toList (_dns info)
 	  where
-		attr = hostAttr h
-		gen c = case getAddresses attr of
+		info = hostInfo h
+		gen c = case getAddresses info of
 			[] -> [ret (CNAME c)]
 			l -> map (ret . Address) l
 		  where
@@ -386,9 +386,9 @@ genZone hosts zdomain soa =
 	hostrecords :: Host -> [Either WarningMessage (BindDomain, Record)]
 	hostrecords h = map Right l
 	  where
-		attr = hostAttr h
+		info = hostInfo h
 		l = zip (repeat $ AbsDomain $ hostName h)
-			(S.toList $ S.filter (\r -> isNothing (getIPAddr r) && isNothing (getCNAME r)) (_dns attr))
+			(S.toList $ S.filter (\r -> isNothing (getIPAddr r) && isNothing (getCNAME r)) (_dns info))
 
 	-- Simplifies the list of hosts. Remove duplicate entries.
 	-- Also, filter out any CHAMES where the same domain has an
@@ -417,10 +417,10 @@ domainHost base (AbsDomain d)
   where
 	dotbase = '.':base
 
-addNamedConf :: NamedConf -> Attr
+addNamedConf :: NamedConf -> Info
 addNamedConf conf = mempty { _namedconf = NamedConfMap (M.singleton domain conf) }
   where
        domain = confDomain conf
 
 getNamedConf :: Propellor (M.Map Domain NamedConf)
-getNamedConf = asks $ fromNamedConfMap . _namedconf . hostAttr
+getNamedConf = asks $ fromNamedConfMap . _namedconf . hostInfo

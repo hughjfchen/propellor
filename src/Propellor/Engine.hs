@@ -12,7 +12,7 @@ import "mtl" Control.Monad.Reader
 import Propellor.Types
 import Propellor.Message
 import Propellor.Exception
-import Propellor.Attr
+import Propellor.Info
 
 runPropellor :: Host -> Propellor a -> IO a
 runPropellor host a = runReaderT (runWithHost a) host

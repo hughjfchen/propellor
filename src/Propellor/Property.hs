@@ -9,7 +9,7 @@ import Control.Monad.IfElse
 import "mtl" Control.Monad.Reader
 
 import Propellor.Types
-import Propellor.Attr
+import Propellor.Info
 import Propellor.Engine
 import Utility.Monad
 import System.FilePath
@@ -23,12 +23,13 @@ property d s = Property d s mempty
 -- and print out the description of each as it's run. Does not stop
 -- on failure; does propigate overall success/failure.
 propertyList :: Desc -> [Property] -> Property
-propertyList desc ps = Property desc (ensureProperties ps) (combineAttrs ps)
+propertyList desc ps = Property desc (ensureProperties ps) (combineInfos ps)
 
 -- | Combines a list of properties, resulting in one property that
--- ensures each in turn, stopping on failure.
+-- ensures each in turn. Does not stop on failure; does propigate
+-- overall success/failure.
 combineProperties :: Desc -> [Property] -> Property
-combineProperties desc ps = Property desc (go ps NoChange) (combineAttrs ps)
+combineProperties desc ps = Property desc (go ps NoChange) (combineInfos ps)
   where
   	go [] rs = return rs
 	go (l:ls) rs = do
@@ -67,7 +68,7 @@ flagFile' p getflagfile = adjustProperty p $ \satisfy -> do
 --- | Whenever a change has to be made for a Property, causes a hook
 -- Property to also be run, but not otherwise.
 onChange :: Property -> Property -> Property
-p `onChange` hook = Property (propertyDesc p) satisfy (combineAttr p hook)
+p `onChange` hook = Property (propertyDesc p) satisfy (combineInfo p hook)
   where
 	satisfy = do
 		r <- ensureProperty p
@@ -134,7 +135,7 @@ host hn = Host hn [] mempty
 --
 -- Can add Properties and RevertableProperties
 (&) :: IsProp p => Host -> p -> Host
-(Host hn ps as) & p = Host hn (ps ++ [toProp p]) (as <> getAttr p)
+(Host hn ps as) & p = Host hn (ps ++ [toProp p]) (as <> getInfo p)
 
 infixl 1 &
 
@@ -148,12 +149,12 @@ infixl 1 !
 adjustProperty :: Property -> (Propellor Result -> Propellor Result) -> Property
 adjustProperty p f = p { propertySatisfy = f (propertySatisfy p) }
 
--- Combines the Attr of two properties.
-combineAttr :: (IsProp p, IsProp q) => p -> q -> Attr
-combineAttr p q = getAttr p <> getAttr q
+-- Combines the Info of two properties.
+combineInfo :: (IsProp p, IsProp q) => p -> q -> Info
+combineInfo p q = getInfo p <> getInfo q
 
-combineAttrs :: IsProp p => [p] -> Attr
-combineAttrs = mconcat . map getAttr
+combineInfos :: IsProp p => [p] -> Info
+combineInfos = mconcat . map getInfo
 
 makeChange :: IO () -> Propellor Result
 makeChange a = liftIO a >> return MadeChange

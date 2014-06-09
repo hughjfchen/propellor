@@ -3,8 +3,8 @@
 
 module Propellor.Types
 	( Host(..)
-	, Attr
-	, getAttr
+	, Info
+	, getInfo
 	, Propellor(..)
 	, Property(..)
 	, RevertableProperty(..)
@@ -29,21 +29,21 @@ import System.Console.ANSI
 import "mtl" Control.Monad.Reader
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 
-import Propellor.Types.Attr
+import Propellor.Types.Info
 import Propellor.Types.OS
 import Propellor.Types.Dns
 
 -- | Everything Propellor knows about a system: Its hostname,
--- properties and attributes.
+-- properties and other info.
 data Host = Host
 	{ hostName :: HostName
 	, hostProperties :: [Property]
-	, hostAttr :: Attr
+	, hostInfo :: Info
 	}
 	deriving (Show)
 
--- | Propellor's monad provides read-only access to the host it's running
--- on, including its attributes.
+-- | Propellor's monad provides read-only access to info about the host
+-- it's running on.
 newtype Propellor p = Propellor { runWithHost :: ReaderT Host IO p }
 	deriving
 		( Monad
@@ -61,8 +61,8 @@ data Property = Property
 	{ propertyDesc :: Desc
 	, propertySatisfy :: Propellor Result
 	-- ^ must be idempotent; may run repeatedly
-	, propertyAttr :: Attr
-	-- ^ a property can set an attribute of the host that has the property.
+	, propertyInfo :: Info
+	-- ^ a property can add info to the host.
 	}
 
 instance Show Property where
@@ -78,15 +78,15 @@ class IsProp p where
 	-- | Indicates that the first property can only be satisfied
 	-- once the second one is.
 	requires :: p -> Property -> p
-	getAttr :: p -> Attr
+	getInfo :: p -> Info
 
 instance IsProp Property where
 	describe p d = p { propertyDesc = d }
 	toProp p = p
-	getAttr = propertyAttr
-	x `requires` y = Property (propertyDesc x) satisfy attr
+	getInfo = propertyInfo
+	x `requires` y = Property (propertyDesc x) satisfy info
 	  where
-	  	attr = getAttr y <> getAttr x
+	  	info = getInfo y <> getInfo x
 		satisfy = do
 			r <- propertySatisfy y
 			case r of
@@ -101,8 +101,8 @@ instance IsProp RevertableProperty where
 	toProp (RevertableProperty p1 _) = p1
 	(RevertableProperty p1 p2) `requires` y =
 		RevertableProperty (p1 `requires` y) p2
-	-- | Return the Attr of the currently active side.
-	getAttr (RevertableProperty p1 _p2) = getAttr p1
+	-- | Return the Info of the currently active side.
+	getInfo (RevertableProperty p1 _p2) = getInfo p1
 
 type Desc = String
 
