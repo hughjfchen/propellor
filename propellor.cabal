@@ -33,7 +33,7 @@ Description:
  .
  It is configured using haskell.
 
-Executable wrapper
+Executable propellor
   Main-Is: wrapper.hs
   GHC-Options: -Wall -threaded -O0
   Hs-Source-Dirs:  src
@@ -45,7 +45,7 @@ Executable wrapper
   if (! os(windows))
     Build-Depends: unix
 
-Executable config
+Executable propellor-config
   Main-Is: config.hs
   GHC-Options: -Wall -threaded -O0
   Hs-Source-Dirs:  src
