@@ -98,8 +98,8 @@ cabalDeps = flagFile go cabalupdated
 
 standardAutoBuilderContainer :: (System -> Docker.Image) -> Architecture -> Int -> TimeOut -> Host
 standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
-	(dockerImage $ System (Debian Unstable) arch)
-	& os (System (Debian Unstable) arch)
+	(dockerImage $ System (Debian Testing) arch)
+	& os (System (Debian Testing) arch)
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
