@@ -103,10 +103,10 @@ standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.conta
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
-	& buildDepsApt
 	& User.accountFor builduser
+	& tree arch
+	& buildDepsApt
 	& autobuilder (show buildminute ++ " * * * *") timeout True
-		`requires` tree arch
 
 androidAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
 androidAutoBuilderContainer dockerImage crontimes timeout =
