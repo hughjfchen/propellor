@@ -293,6 +293,7 @@ standardContainer name suite arch = Docker.container name (dockerImage system)
 -- Docker images I prefer to use.
 dockerImage :: System -> Docker.Image
 dockerImage (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
+dockerImage (System (Debian Testing) arch) = "joeyh/debian-unstable-" ++ arch
 dockerImage (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
 dockerImage _ = "debian-stable-official" -- does not currently exist!
 

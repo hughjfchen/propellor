@@ -98,14 +98,15 @@ cabalDeps = flagFile go cabalupdated
 
 standardAutoBuilderContainer :: (System -> Docker.Image) -> Architecture -> Int -> TimeOut -> Host
 standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
-	(dockerImage $ System (Debian Unstable) arch)
-	& os (System (Debian Unstable) arch)
+	(dockerImage $ System (Debian Testing) arch)
+	& os (System (Debian Testing) arch)
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
+	& User.accountFor builduser
+	& tree arch
 	& buildDepsApt
 	& autobuilder (show buildminute ++ " * * * *") timeout True
-		`requires` tree arch
 
 androidAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
 androidAutoBuilderContainer dockerImage crontimes timeout =
@@ -144,12 +145,13 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 armelCompanionContainer :: (System -> Docker.Image) -> Host
 armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-companion"
 	(dockerImage $ System (Debian Unstable) "amd64")
-	& os (System (Debian Unstable) "amd64")
+	& os (System (Debian Testing) "amd64")
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
 	-- This volume is shared with the armel builder.
 	& Docker.volume gitbuilderdir
+	& User.accountFor builduser
 	-- Install current versions of build deps from cabal.
 	& tree "armel"
 	& buildDepsFewHaskellLibs
@@ -162,13 +164,14 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 armelAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
 armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
 	(dockerImage $ System (Debian Unstable) "armel")
-	& os (System (Debian Unstable) "armel")
+	& os (System (Debian Testing) "armel")
 	& Apt.stdSourcesList
 	& Apt.unattendedUpgrades
 	& Apt.installed ["systemd"]
 	& Apt.installed ["openssh-client"]
 	& Docker.link "armel-git-annex-builder-companion" "companion"
 	& Docker.volumes_from "armel-git-annex-builder-companion"
+	& User.accountFor builduser
 	-- TODO: automate installing haskell libs
 	-- (Currently have to run
 	-- git-annex/standalone/linux/install-haskell-packages
