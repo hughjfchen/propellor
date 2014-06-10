@@ -104,6 +104,7 @@ standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.conta
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
 	& buildDepsApt
+	& User.accountFor builduser
 	& autobuilder (show buildminute ++ " * * * *") timeout True
 		`requires` tree arch
 
@@ -150,6 +151,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	& Apt.unattendedUpgrades
 	-- This volume is shared with the armel builder.
 	& Docker.volume gitbuilderdir
+	& User.accountFor builduser
 	-- Install current versions of build deps from cabal.
 	& tree "armel"
 	& buildDepsFewHaskellLibs
@@ -169,6 +171,7 @@ armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "arme
 	& Apt.installed ["openssh-client"]
 	& Docker.link "armel-git-annex-builder-companion" "companion"
 	& Docker.volumes_from "armel-git-annex-builder-companion"
+	& User.accountFor builduser
 	-- TODO: automate installing haskell libs
 	-- (Currently have to run
 	-- git-annex/standalone/linux/install-haskell-packages
