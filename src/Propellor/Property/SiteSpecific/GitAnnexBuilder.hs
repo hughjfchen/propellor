@@ -144,7 +144,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 armelCompanionContainer :: (System -> Docker.Image) -> Host
 armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-companion"
 	(dockerImage $ System (Debian Unstable) "amd64")
-	& os (System (Debian Unstable) "amd64")
+	& os (System (Debian Testing) "amd64")
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
@@ -162,7 +162,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 armelAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
 armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
 	(dockerImage $ System (Debian Unstable) "armel")
-	& os (System (Debian Unstable) "armel")
+	& os (System (Debian Testing) "armel")
 	& Apt.stdSourcesList
 	& Apt.unattendedUpgrades
 	& Apt.installed ["systemd"]
