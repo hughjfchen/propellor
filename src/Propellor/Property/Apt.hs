@@ -265,5 +265,5 @@ trustsKey k = RevertableProperty trust untrust
 -- | Cleans apt's cache of downloaded packages to avoid using up disk
 -- space.
 cacheCleaned :: Property
-cacheCleaned = cmdProperty "apt-get" ["clean"]
+cacheCleaned = trivial $ cmdProperty "apt-get" ["clean"]
 	`describe` "apt cache cleaned" 
