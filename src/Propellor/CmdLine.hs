@@ -132,6 +132,8 @@ updateFirst cmdline next = do
 
 	void $ actionMessage "Git fetch" $ boolSystem "git" [Param "fetch"]
 	
+	oldsha <- getCurrentGitSha1 branchref
+	
 	whenM (doesFileExist keyring) $ do
 		{- To verify origin branch commit's signature, have to
 		 - convince gpg to use our keyring. While running git log.
@@ -153,10 +155,9 @@ updateFirst cmdline next = do
 			then do
 				putStrLn $ "git branch " ++ originbranch ++ " gpg signature verified; merging"
 				hFlush stdout
-			else errorMessage $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it!"
+				void $ boolSystem "git" [Param "merge", Param originbranch]
+			else warningMessage $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it! (Running with previous configuration instead.)"
 	
-	oldsha <- getCurrentGitSha1 branchref
-	void $ boolSystem "git" [Param "merge", Param originbranch]
 	newsha <- getCurrentGitSha1 branchref
 
 	if oldsha == newsha
