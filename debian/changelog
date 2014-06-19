@@ -1,3 +1,9 @@
+propellor (0.7.1) UNRELEASED; urgency=medium
+
+  * Add --edit to edit a privdata value in $EDITOR.
+
+ -- Joey Hess <joeyh@debian.org>  Thu, 19 Jun 2014 14:27:21 -0400
+
 propellor (0.7.0) unstable; urgency=medium
 
   * combineProperties no longer stops when a property fails; now it continues
