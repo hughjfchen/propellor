@@ -68,6 +68,13 @@ editPrivData host field = do
 		readFile f
 	setPrivDataTo host field v'
 
+listPrivDataFields :: HostName -> IO ()
+listPrivDataFields host = do
+	putStrLn (host ++ "'s currently set privdata fields:")
+	mapM_ list . M.keys =<< decryptPrivData host
+  where
+	list = putStrLn . ("\t" ++) . shellEscape . show
+
 setPrivDataTo :: HostName -> PrivDataField -> String -> IO ()
 setPrivDataTo host field value = do
 	makePrivDataDir

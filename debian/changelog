@@ -1,6 +1,7 @@
 propellor (0.7.1) UNRELEASED; urgency=medium
 
   * Add --edit to edit a privdata value in $EDITOR.
+  * Add --list-fields to list a host's currently set privdata fields.
 
  -- Joey Hess <joeyh@debian.org>  Thu, 19 Jun 2014 14:27:21 -0400
 

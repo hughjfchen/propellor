@@ -30,6 +30,7 @@ usage = do
 		, "  propellor --set hostname field"
 		, "  propellor --dump hostname field"
 		, "  propellor --edit hostname field"
+		, "  propellor --list-fields hostname"
 		]
 	exitFailure
 
@@ -43,6 +44,7 @@ processCmdLine = go =<< getArgs
 	go ("--set":h:f:[]) = withprivfield f (return . Set h)
 	go ("--dump":h:f:[]) = withprivfield f (return . Dump h)
 	go ("--edit":h:f:[]) = withprivfield f (return . Edit h)
+	go ("--list-fields":h:[]) = return $ ListFields h
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
@@ -74,6 +76,7 @@ defaultMain hostlist = do
 	go _ (Set hn field) = setPrivData hn field
 	go _ (Dump hn field) = dumpPrivData hn field
 	go _ (Edit hn field) = editPrivData hn field
+	go _ (ListFields hn) = listPrivDataFields hn
 	go _ (AddKey keyid) = addKey keyid
 	go _ (Chain hn) = withhost hn $ \h -> do
 		r <- runPropellor h $ ensureProperties $ hostProperties h

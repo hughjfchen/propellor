@@ -138,6 +138,7 @@ data CmdLine
 	| Set HostName PrivDataField
 	| Dump HostName PrivDataField
 	| Edit HostName PrivDataField
+	| ListFields HostName
 	| AddKey String
 	| Continue CmdLine
 	| Chain HostName
