@@ -42,7 +42,7 @@ hosts =                 --                  (o)  `
 		& Docker.configured
 		& Docker.docked hosts "android-git-annex"
 
-	-- Nothing super-important lives here and mostly it's docker containers.
+	-- Unreliable server.
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
 		& ipv4 "162.248.143.249"
 		& ipv6 "2002:5044:5531::1"
@@ -52,39 +52,10 @@ hosts =                 --                  (o)  `
 		& Network.ipv6to4
 		& Tor.isBridge
 		& Postfix.satellite
-		& Docker.configured
-
-		& Docker.docked hosts "oldusenet-shellbox"
-		& Docker.docked hosts "openid-provider"
-		 	`requires` Apt.serviceInstalledRunning "ntp"
-		& Docker.docked hosts "ancient-kitenet"
-
-		-- I'd rather this were on diatom, but it needs unstable.
-		& alias "kgb.kitenet.net"
-		& JoeySites.kgbServer
-
-		& alias "mumble.kitenet.net"
-		& JoeySites.mumbleServer hosts
-		
-		& alias "ns9.kitenet.net"
-		& myDnsSecondary
-		
-		& alias "znc.kitenet.net"
-		& JoeySites.ircBouncer
-
-		-- For https port 443, shellinabox with ssh login to
-		-- kitenet.net
-		& alias "shell.kitenet.net"
-		& JoeySites.kiteShellBox
-
-		-- Nothing is using http port 80 on clam, so listen on
-		-- that port for ssh, for traveling on bad networks that
-		-- block 22.
-		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
-			`onChange` Service.restarted "ssh"
-
-		& Docker.garbageCollected `period` Daily
 		& Apt.installed ["git-annex", "mtr", "screen"]
+
+		& Docker.configured
+		& Docker.garbageCollected `period` Daily
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
@@ -201,8 +172,38 @@ hosts =                 --                  (o)  `
 		& alias "podcatcher.kitenet.net"
 		& Apt.installed ["git-annex"]
 		
+		& alias "znc.kitenet.net"
+		& JoeySites.ircBouncer
+
+		-- I'd rather this were on diatom, but it needs unstable.
+		& alias "kgb.kitenet.net"
+		& JoeySites.kgbServer
+
+		& alias "mumble.kitenet.net"
+		& JoeySites.mumbleServer hosts
+		
+		& alias "ns3.kitenet.net"
+		& myDnsSecondary
+		
 		& Docker.configured
+
+		& Docker.docked hosts "oldusenet-shellbox"
+		& Docker.docked hosts "openid-provider"
+		 	`requires` Apt.serviceInstalledRunning "ntp"
+		& Docker.docked hosts "ancient-kitenet"
+
 		& Docker.garbageCollected `period` (Weekly (Just 1))
+		
+		-- For https port 443, shellinabox with ssh login to
+		-- kitenet.net
+		& alias "shell.kitenet.net"
+		& JoeySites.kiteShellBox
+		-- Nothing is using http port 80, so listen on
+		-- that port for ssh, for traveling on bad networks that
+		-- block 22.
+		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
+			`onChange` Service.restarted "ssh"
+
 
 	    --'                        __|II|      ,.
 	  ----                      __|II|II|__   (  \_,/\
@@ -309,14 +310,14 @@ branchableSecondary :: RevertableProperty
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 
 -- Currently using diatom (ns2) as primary with secondaries
--- clam (ns9) and gandi.
+-- elephant (ns3) and gandi.
 -- kite handles all mail.
 myDnsPrimary :: Domain -> [(BindDomain, Record)] -> RevertableProperty
 myDnsPrimary domain extras = Dns.primary hosts domain
 	(Dns.mkSOA "ns2.kitenet.net" 100) $
 	[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
+	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
-	, (RootDomain, NS $ AbsDomain "ns9.kitenet.net")
 	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
 	, (RootDomain, TXT "v=spf1 a ?all")
 	] ++ extras
@@ -377,7 +378,7 @@ monsters =	      -- but do want to track their public keys etc.
 		 -   some static websites
 		 - bitlbee
 		 - prosody
-		 -   (used by anna and daddy's git-annex)
+		 -   (used by daddy's git-annex)
 		 - named
 		 -   (branchable is still pushing to here
 		 -    (thinking it's ns2.branchable.com), but it's no
