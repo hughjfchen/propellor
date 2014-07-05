@@ -85,6 +85,9 @@ oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 			, "dpkg -i ../" ++ pkg ++ "_*.deb || true"
 			, "apt-get -fy install" -- dependencies
 			, "rm -rf /root/tmp/oldusenet"
+			-- screen fails unless the directory has this mode.
+			-- not sure what's going on.
+			, "chmod 777 /var/run/screen"
 			] `describe` "olduse.net built"
 		]
 
