@@ -16,6 +16,7 @@ import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Apache as Apache
 import Utility.SafeCommand
 import Utility.FileMode
+import Utility.Path
 
 import Data.List
 import System.Posix.Files
@@ -310,6 +311,7 @@ ircBouncer :: Property
 ircBouncer = propertyList "IRC bouncer"
 	[ Apt.installed ["znc"]
 	, User.accountFor "znc"
+	, File.dirExists (parentDir conf)
 	, File.hasPrivContent conf
 	, File.ownerGroup conf "znc" "znc"
 	, Cron.job "znconboot" "@reboot" "znc" "~" "znc"
