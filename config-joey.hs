@@ -44,8 +44,7 @@ hosts =                 --                  (o)  `
 
 	-- Unreliable server.
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
-		& ipv4 "162.248.143.249"
-		& ipv6 "2002:5044:5531::1"
+		& ipv4 "162.248.9.29"
 
 		& CloudAtCost.decruft
 		& Apt.unattendedUpgrades
