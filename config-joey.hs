@@ -51,7 +51,6 @@ hosts =                 --                  (o)  `
 		& Network.ipv6to4
 		& Tor.isBridge
 		& Postfix.satellite
-		& Apt.installed ["git-annex", "mtr", "screen"]
 
 		& Docker.configured
 		& Docker.garbageCollected `period` Daily
