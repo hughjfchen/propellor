@@ -72,9 +72,8 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 			[ Param "-c"
 			, Param "rm -f /etc/ssh/ssh_host_*"
 			]
-		ensureProperty $
-			cmdProperty "/var/lib/dpkg/info/openssh-server.postinst"
-				["configure"]
+		ensureProperty $ scriptProperty 
+			[ "DPKG_MAINTSCRIPT_PACKAGE=openssh-server /var/lib/dpkg/info/openssh-server.postinst configure" ]
 
 -- | Sets ssh host keys from the site's PrivData.
 -- 
