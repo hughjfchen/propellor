@@ -186,7 +186,7 @@ spin hn = do
   where
 	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let finish = do
-			senddata toh privDataLocal privDataMarker privdata
+			senddata toh "privdata" privDataMarker privdata
 			hClose toh
 			
 			-- Display remaining output.
@@ -228,8 +228,8 @@ spin hn = do
 			Just status -> return status
 	
 	showremote s = putStrLn s
-	senddata toh f marker s = void $
-		actionMessage ("Sending " ++ f ++ " (" ++ show (length s) ++ " bytes) to " ++ hn) $ do
+	senddata toh desc marker s = void $
+		actionMessage ("Sending " ++ desc ++ " (" ++ show (length s) ++ " bytes) to " ++ hn) $ do
 			sendMarked toh marker s
 			return True
 

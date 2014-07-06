@@ -42,6 +42,10 @@ import Utility.Table
 -- Note that if the value is not available, the action is not run
 -- and instead it prints a message to help the user make the necessary
 -- private data available.
+--
+-- The resulting Property includes Info about the PrivDataField
+-- being used, which is necessary to ensure that the privdata is sent to
+-- the remote host by propellor.
 withPrivData
 	:: PrivDataField
 	-> Context

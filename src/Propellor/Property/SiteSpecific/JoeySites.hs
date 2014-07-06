@@ -93,17 +93,19 @@ oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 
 
 kgbServer :: Property
-kgbServer = withOS desc $ \o -> case o of
-	(Just (System (Debian Unstable) _)) ->
-		ensureProperty $ propertyList desc
-			[ Apt.serviceInstalledRunning "kgb-bot"
-			, File.hasPrivContent "/etc/kgb-bot/kgb.conf" anyContext
-				`onChange` Service.restarted "kgb-bot"
-			, "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
-				`describe` "kgb bot enabled"
-				`onChange` Service.running "kgb-bot"
-			]
-	_ -> error "kgb server needs Debian unstable (for kgb-bot 1.31+)"
+kgbServer = propertyList desc
+	[ withOS desc $ \o -> case o of
+		(Just (System (Debian Unstable) _)) ->
+			ensureProperty $ propertyList desc
+				[ Apt.serviceInstalledRunning "kgb-bot"
+				, "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
+					`describe` "kgb bot enabled"
+					`onChange` Service.running "kgb-bot"
+				]
+		_ -> error "kgb server needs Debian unstable (for kgb-bot 1.31+)"
+	, File.hasPrivContent "/etc/kgb-bot/kgb.conf" anyContext
+		`onChange` Service.restarted "kgb-bot"
+	]
   where
 	desc = "kgb.kitenet.net setup"
 
