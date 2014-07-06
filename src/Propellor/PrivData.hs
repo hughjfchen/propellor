@@ -89,8 +89,9 @@ editPrivData field context = do
 
 listPrivDataFields :: IO ()
 listPrivDataFields = do
-	putStrLn ("All currently set privdata fields:")
-	mapM_ list . M.keys =<< decryptPrivData
+	m <- decryptPrivData
+	putStrLn ("\nAll currently set privdata fields:")
+	mapM_ list $ M.keys m
   where
 	list = putStrLn . ("\t" ++) . shellEscape . show
 
