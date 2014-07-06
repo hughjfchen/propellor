@@ -3,11 +3,16 @@ module Propellor.Property.Hostname where
 import Propellor
 import qualified Propellor.Property.File as File
 
--- | Ensures that the hostname is set to the HostInfo value.
+-- | Ensures that the hostname is set using best practices.
+--
 -- Configures /etc/hostname and the current hostname.
 --
--- A FQDN also configures /etc/hosts, with an entry for 127.0.1.1, which is
--- standard at least on Debian to set the FDQN (127.0.0.1 is localhost).
+-- /etc/hosts is also configured, with an entry for 127.0.1.1, which is
+-- standard at least on Debian to set the FDQN.
+--
+-- Also, the /etc/hosts 127.0.0.1 line is set to localhost. Putting any
+-- other hostnames there is not best practices and can lead to annoying
+-- messages from eg, apache.
 sane :: Property
 sane = property ("sane hostname") (ensureProperty . setTo =<< asks hostName)
 
@@ -21,13 +26,14 @@ setTo hn = combineProperties desc go
 		[ Just $ "/etc/hostname" `File.hasContent` [basehost]
 		, if null domain
 			then Nothing 
-			else Just $ File.fileProperty desc
-				addhostline "/etc/hosts"
+			else Just $ hostsline "127.0.1.1" [hn, basehost]
+		, Just $ hostsline "127.0.0.1" ["localhost"]
 		, Just $ trivial $ cmdProperty "hostname" [basehost]
 		]
 	
-	hostip = "127.0.1.1"
-	hostline = hostip ++ "\t" ++ hn ++ " " ++ basehost
-
-	addhostline ls = hostline : filter (not . hashostip) ls
-	hashostip l = headMaybe (words l) == Just hostip
+	hostsline ip names = File.fileProperty desc
+		(addhostsline ip names)
+		"/etc/hosts"
+	addhostsline ip names ls =
+		(ip ++ "\t" ++ (unwords names)) : filter (not . hasip ip) ls
+	hasip ip l = headMaybe (words l) == Just ip

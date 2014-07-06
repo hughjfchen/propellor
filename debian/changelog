@@ -4,6 +4,9 @@ propellor (0.7.1) UNRELEASED; urgency=medium
   * Add --list-fields to list a host's currently set privdata fields.
   * Fix randomHostKeys property to run openssh-server's postinst in a
     non-failing way.
+  * Hostname.sane now cleans up the 127.0.0.1 localhost line in /etc/hosts,
+    to avoid eg, apache complaining that "Could not reliably determine the
+    server's fully qualified domain name".
 
  -- Joey Hess <joeyh@debian.org>  Thu, 19 Jun 2014 14:27:21 -0400
 
