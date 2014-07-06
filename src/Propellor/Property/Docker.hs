@@ -87,8 +87,8 @@ cn2hn cn = cn ++ ".docker"
 -- The container has its own Properties which are handled by running
 -- propellor inside the container.
 --
--- Additionally, the container can have DNS info, such as a CNAME.
--- These become info of the host(s) it's docked in.
+-- When the container's Properties include DNS info, such as a CNAME,
+-- that is propigated to the Info of the host(s) it's docked in.
 --
 -- Reverting this property ensures that the container is stopped and
 -- removed.
@@ -97,7 +97,7 @@ docked
 	-> ContainerName
 	-> RevertableProperty
 docked hosts cn = RevertableProperty
-	((maybe id exposeDnsInfos mhost) (go "docked" setup))
+	((maybe id propigateInfo mhost) (go "docked" setup))
 	(go "undocked" teardown)
   where
 	go desc a = property (desc ++ " " ++ cn) $ do
@@ -124,9 +124,12 @@ docked hosts cn = RevertableProperty
 					]
 			]
 
-exposeDnsInfos :: Host -> Property -> Property
-exposeDnsInfos (Host _ _ containerinfo) p = combineProperties (propertyDesc p) $
-	p : map addDNS (S.toList $ _dns containerinfo)
+propigateInfo :: Host -> Property -> Property
+propigateInfo (Host _ _ containerinfo) p =
+	combineProperties (propertyDesc p) $ p : dnsprops ++ privprops
+  where
+	dnsprops = map addDNS (S.toList $ _dns containerinfo)
+	privprops = map addPrivDataField (S.toList $ _privDataFields containerinfo)
 
 findContainer
 	:: Maybe Host

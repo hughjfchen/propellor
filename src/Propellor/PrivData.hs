@@ -18,6 +18,7 @@ import qualified Data.Set as S
 import Propellor.Types
 import Propellor.Types.Info
 import Propellor.Message
+import Propellor.Info
 import Utility.Monad
 import Utility.PartialPrelude
 import Utility.Exception
@@ -61,6 +62,10 @@ withPrivData field context@(Context cname) mkprop = addinfo $ mkprop $ \a ->
 		putStrLn $ "Fix this by running: propellor --set '" ++ show field ++ "' '" ++ cname ++ "'"
 		return FailedChange
 	addinfo p = p { propertyInfo = propertyInfo p <> mempty { _privDataFields = S.singleton (field, context) } }
+
+addPrivDataField :: (PrivDataField, Context) -> Property
+addPrivDataField v = pureInfoProperty (show v) $
+	mempty { _privDataFields = S.singleton v }
 
 {- Gets the requested field's value, in the specified context if it's
  - available, from the host's local privdata cache. -}
