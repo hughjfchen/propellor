@@ -72,7 +72,7 @@ hosts =                 --                  (o)  `
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
 	-- Important stuff that needs not too much memory or CPU.
-  	, let ctx = Context "diatom.kitenet.net "
+  	, let ctx = Context "diatom.kitenet.net"
 	  in standardSystem "diatom.kitenet.net" Stable "amd64"
 		& ipv4 "107.170.31.195"
 
