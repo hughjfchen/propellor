@@ -8,7 +8,8 @@ propellor (0.8.0) UNRELEASED; urgency=medium
     to store the privdata using the new storage scheme.
 
   * Add --edit to edit a privdata value in $EDITOR.
-  * Add --list-fields to list all currently set privdata fields.
+  * Add --list-fields to list all currently set privdata fields, along with
+    the hosts that use them.
   * Fix randomHostKeys property to run openssh-server's postinst in a
     non-failing way.
   * Hostname.sane now cleans up the 127.0.0.1 localhost line in /etc/hosts,

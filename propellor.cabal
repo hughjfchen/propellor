@@ -127,6 +127,7 @@ Library
     Utility.Process
     Utility.SafeCommand
     Utility.Scheduled
+    Utility.Table
     Utility.ThreadScheduler
     Utility.Tmp
     Utility.UserInfo

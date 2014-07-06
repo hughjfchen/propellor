@@ -26,6 +26,7 @@ import Utility.SafeCommand
 import Utility.Misc
 import Utility.FileMode
 import Utility.Env
+import Utility.Table
 
 -- | Allows a Property to access the value of a specific PrivDataField,
 -- for use in a specific Context.
@@ -90,10 +91,17 @@ editPrivData field context = do
 listPrivDataFields :: IO ()
 listPrivDataFields = do
 	m <- decryptPrivData
-	putStrLn ("\nAll currently set privdata fields:")
-	mapM_ list $ M.keys m
+	putStrLn "\n"
+	let rows = map mkrow (M.keys m)
+	let table = tableWithHeader header rows
+	putStr $ unlines $ formatTable table
   where
-	list = putStrLn . ("\t" ++) . shellEscape . show
+  	header = ["Field", "Context", "Hosts"]
+	mkrow (field, (Context context)) =
+		[ shellEscape $ show field
+		, shellEscape context
+		, "xxx"
+		]
 
 setPrivDataTo :: PrivDataField -> Context -> PrivData -> IO ()
 setPrivDataTo field context value = do
