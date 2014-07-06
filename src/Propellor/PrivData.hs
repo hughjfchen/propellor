@@ -8,6 +8,7 @@ import System.IO
 import System.Directory
 import Data.Maybe
 import Data.Monoid
+import Data.List
 import Control.Monad
 import Control.Monad.IfElse
 import "mtl" Control.Monad.Reader
@@ -88,20 +89,23 @@ editPrivData field context = do
 		readFile f
 	setPrivDataTo field context v'
 
-listPrivDataFields :: IO ()
-listPrivDataFields = do
+listPrivDataFields :: [Host] -> IO ()
+listPrivDataFields hosts = do
 	m <- decryptPrivData
 	putStrLn "\n"
-	let rows = map mkrow (M.keys m)
+	let usedby = M.unionsWith (++) $ map mkhostmap hosts
+	let rows = map (mkrow usedby) (M.keys m)
 	let table = tableWithHeader header rows
 	putStr $ unlines $ formatTable table
   where
-  	header = ["Field", "Context", "Hosts"]
-	mkrow (field, (Context context)) =
+  	header = ["Field", "Context", "Used by"]
+	mkrow usedby k@(field, (Context context)) =
 		[ shellEscape $ show field
 		, shellEscape context
-		, "xxx"
+		, intercalate ", " $ sort $ fromMaybe [] $ M.lookup k usedby
 		]
+	mkhostmap host = M.fromList $ map (\k -> (k, [hostName host])) $
+		S.toList $ _privDataFields $ hostInfo host
 
 setPrivDataTo :: PrivDataField -> Context -> PrivData -> IO ()
 setPrivDataTo field context value = do

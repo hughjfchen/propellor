@@ -76,7 +76,7 @@ defaultMain hostlist = do
 	go _ (Set field context) = setPrivData field context
 	go _ (Dump field context) = dumpPrivData field context
 	go _ (Edit field context) = editPrivData field context
-	go _ ListFields = listPrivDataFields
+	go _ ListFields = listPrivDataFields hostlist
 	go _ (AddKey keyid) = addKey keyid
 	go _ (Chain hn) = withhost hn $ \h -> do
 		r <- runPropellor h $ ensureProperties $ hostProperties h
