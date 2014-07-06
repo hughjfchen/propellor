@@ -5,7 +5,9 @@ propellor (0.8.0) UNRELEASED; urgency=medium
 
     To transition existing privdata, run propellor against a host and
     watch out for the red failure messages, and run the suggested commands
-    to store the privdata using the new storage scheme.
+    to store the privdata using the new storage scheme. You may find
+    it useful to run the old version of propellor to extract data from the old
+    privdata files during this migration.
 
   * Add --edit to edit a privdata value in $EDITOR.
   * Add --list-fields to list all currently set privdata fields, along with
