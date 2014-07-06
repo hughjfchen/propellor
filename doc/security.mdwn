@@ -27,10 +27,11 @@ Since the propoellor git repository is public, you can't store
 in cleartext private data such as passwords, ssh private keys, etc.
 
 Instead, `propellor --spin $host` looks for a
-`~/.propellor/privdata/$host.gpg` file and if found decrypts it and sends
-it to the remote host using ssh. This lets a remote host know its own
-private data, without seeing all the rest.
+`~/.propellor/privdata/privdata.gpg` file and if found decrypts it,
+extracts the private that that the $host needs, and sends it to to the
+$host using ssh. This lets a host know its own private data, without
+seeing all the rest.
 
-To securely store private data, use: `propellor --set $host $field`
-The field name will be something like 'Password "root"'; see PrivData.hs
-for available fields.
+To securely store private data, use: `propellor --set $field $context`
+Propellor will tell you the details when you use a Property that needs
+PrivData.

@@ -42,49 +42,18 @@ hosts =                 --                  (o)  `
 		& Docker.configured
 		& Docker.docked hosts "android-git-annex"
 
-	-- Nothing super-important lives here and mostly it's docker containers.
+	-- Unreliable server.
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
-		& ipv4 "162.248.143.249"
-		& ipv6 "2002:5044:5531::1"
+		& ipv4 "162.248.9.29"
 
 		& CloudAtCost.decruft
 		& Apt.unattendedUpgrades
 		& Network.ipv6to4
 		& Tor.isBridge
 		& Postfix.satellite
+
 		& Docker.configured
-
-		& Docker.docked hosts "oldusenet-shellbox"
-		& Docker.docked hosts "openid-provider"
-		 	`requires` Apt.serviceInstalledRunning "ntp"
-		& Docker.docked hosts "ancient-kitenet"
-
-		-- I'd rather this were on diatom, but it needs unstable.
-		& alias "kgb.kitenet.net"
-		& JoeySites.kgbServer
-
-		& alias "mumble.kitenet.net"
-		& JoeySites.mumbleServer hosts
-		
-		& alias "ns9.kitenet.net"
-		& myDnsSecondary
-		
-		& alias "znc.kitenet.net"
-		& JoeySites.ircBouncer
-
-		-- For https port 443, shellinabox with ssh login to
-		-- kitenet.net
-		& alias "shell.kitenet.net"
-		& JoeySites.kiteShellBox
-
-		-- Nothing is using http port 80 on clam, so listen on
-		-- that port for ssh, for traveling on bad networks that
-		-- block 22.
-		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
-			`onChange` Service.restarted "ssh"
-
 		& Docker.garbageCollected `period` Daily
-		& Apt.installed ["git-annex", "mtr", "screen"]
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
@@ -103,14 +72,15 @@ hosts =                 --                  (o)  `
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
 	-- Important stuff that needs not too much memory or CPU.
-  	, standardSystem "diatom.kitenet.net" Stable "amd64"
+  	, let ctx = Context "diatom.kitenet.net"
+	  in standardSystem "diatom.kitenet.net" Stable "amd64"
 		& ipv4 "107.170.31.195"
 
 		& DigitalOcean.distroKernel
 		& Hostname.sane
-		& Ssh.hostKey SshDsa
-		& Ssh.hostKey SshRsa
-		& Ssh.hostKey SshEcdsa
+		& Ssh.hostKey SshDsa ctx
+		& Ssh.hostKey SshRsa ctx
+		& Ssh.hostKey SshEcdsa ctx
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Postfix.satellite
@@ -120,9 +90,9 @@ hosts =                 --                  (o)  `
 		& Apt.serviceInstalledRunning "swapspace"
 	
 		& Apt.serviceInstalledRunning "apache2"
-		& File.hasPrivContent "/etc/ssl/certs/web.pem"
-		& File.hasPrivContent "/etc/ssl/private/web.pem"
-		& File.hasPrivContent "/etc/ssl/certs/startssl.pem"
+		& File.hasPrivContent "/etc/ssl/certs/web.pem" (Context "kitenet.net")
+		& File.hasPrivContent "/etc/ssl/private/web.pem" (Context "kitenet.net")
+		& File.hasPrivContent "/etc/ssl/certs/startssl.pem" (Context "kitenet.net")
 		& Apache.modEnabled "ssl"
 		& Apache.multiSSL
 		& File.ownerGroup "/srv/web" "joey" "joey"
@@ -164,16 +134,17 @@ hosts =                 --                  (o)  `
 		& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
 	-- storage and backup server
-	, standardSystem "elephant.kitenet.net" Unstable "amd64"
+	, let ctx = Context "elephant.kitenet.net"
+	  in standardSystem "elephant.kitenet.net" Unstable "amd64"
 		& ipv4 "193.234.225.114"
 
 		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
-		& Ssh.hostKey SshDsa
-		& Ssh.hostKey SshRsa
-		& Ssh.hostKey SshEcdsa
-		& Ssh.keyImported SshRsa "joey"
+		& Ssh.hostKey SshDsa ctx
+		& Ssh.hostKey SshRsa ctx
+		& Ssh.hostKey SshEcdsa ctx
+		& Ssh.keyImported SshRsa "joey" ctx
 
 		-- PV-grub chaining
 		-- http://notes.pault.ag/linode-pv-grub-chainning/
@@ -191,6 +162,7 @@ hosts =                 --                  (o)  `
 			[ "configfile (xen/xvda1)/boot/grub/grub.cfg" ]
 		& Apt.installed ["grub-xen"]
 		& flagFile (scriptProperty ["update-grub; grub-mkimage --prefix '(xen/xvda1)/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]) "/boot/xen-shim"
+			`describe` "/boot-xen-shim"
 
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
@@ -201,8 +173,38 @@ hosts =                 --                  (o)  `
 		& alias "podcatcher.kitenet.net"
 		& Apt.installed ["git-annex"]
 		
+		& alias "znc.kitenet.net"
+		& JoeySites.ircBouncer
+
+		-- I'd rather this were on diatom, but it needs unstable.
+		& alias "kgb.kitenet.net"
+		& JoeySites.kgbServer
+
+		& alias "mumble.kitenet.net"
+		& JoeySites.mumbleServer hosts
+		
+		& alias "ns3.kitenet.net"
+		& myDnsSecondary
+		
 		& Docker.configured
+
+		& Docker.docked hosts "oldusenet-shellbox"
+		& Docker.docked hosts "openid-provider"
+		 	`requires` Apt.serviceInstalledRunning "ntp"
+		& Docker.docked hosts "ancient-kitenet"
+
 		& Docker.garbageCollected `period` (Weekly (Just 1))
+		
+		-- For https port 443, shellinabox with ssh login to
+		-- kitenet.net
+		& alias "shell.kitenet.net"
+		& JoeySites.kiteShellBox
+		-- Nothing is using http port 80, so listen on
+		-- that port for ssh, for traveling on bad networks that
+		-- block 22.
+		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
+			`onChange` Service.restarted "ssh"
+
 
 	    --'                        __|II|      ,.
 	  ----                      __|II|II|__   (  \_,/\
@@ -264,13 +266,13 @@ standardSystem hn suite arch = host hn
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
 	& GitHome.installedFor "root"
-	& User.hasSomePassword "root"
+	& User.hasSomePassword "root" (Context hn)
 	-- Harden the system, but only once root's authorized_keys
 	-- is safely in place.
 	& check (Ssh.hasAuthorizedKeys "root")
 		(Ssh.passwordAuthentication False)
 	& User.accountFor "joey"
-	& User.hasSomePassword "joey"
+	& User.hasSomePassword "joey" (Context hn)
 	& Sudo.enabledFor "joey"
 	& GitHome.installedFor "joey"
 	& Apt.installed ["vim", "screen", "less"]
@@ -309,14 +311,14 @@ branchableSecondary :: RevertableProperty
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 
 -- Currently using diatom (ns2) as primary with secondaries
--- clam (ns9) and gandi.
+-- elephant (ns3) and gandi.
 -- kite handles all mail.
 myDnsPrimary :: Domain -> [(BindDomain, Record)] -> RevertableProperty
 myDnsPrimary domain extras = Dns.primary hosts domain
 	(Dns.mkSOA "ns2.kitenet.net" 100) $
 	[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
+	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
-	, (RootDomain, NS $ AbsDomain "ns9.kitenet.net")
 	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
 	, (RootDomain, TXT "v=spf1 a ?all")
 	] ++ extras
@@ -377,7 +379,7 @@ monsters =	      -- but do want to track their public keys etc.
 		 -   some static websites
 		 - bitlbee
 		 - prosody
-		 -   (used by anna and daddy's git-annex)
+		 -   (used by daddy's git-annex)
 		 - named
 		 -   (branchable is still pushing to here
 		 -    (thinking it's ns2.branchable.com), but it's no
