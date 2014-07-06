@@ -84,7 +84,7 @@ defaultMain hostlist = do
 	go _ (Docker hn) = Docker.chain hn
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
-	go False (Spin hn) = withhost hn $ const $ spin hn
+	go False (Spin hn) = withhost hn $ spin hn
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
 		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
@@ -176,14 +176,16 @@ updateFirst cmdline next = do
 getCurrentGitSha1 :: String -> IO String
 getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
 
-spin :: HostName -> IO ()
-spin hn = do
+spin :: HostName -> Host -> IO ()
+spin hn hst = do
 	url <- getUrl
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
 	cacheparams <- toCommand <$> sshCachingParams hn
-	go cacheparams url =<< gpgDecrypt privDataFile
+	go cacheparams url =<< hostprivdata
   where
+	hostprivdata = show . filterPrivData hst <$> decryptPrivData
+
 	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let finish = do
 			senddata toh "privdata" privDataMarker privdata

@@ -29,6 +29,8 @@ import Utility.FileMode
 import Utility.Env
 import Utility.Table
 
+type PrivMap = M.Map (PrivDataField, Context) PrivData
+
 -- | Allows a Property to access the value of a specific PrivDataField,
 -- for use in a specific Context.
 --
@@ -68,7 +70,13 @@ getLocalPrivData field context =
   where
 	localcache = catchDefaultIO Nothing $ readish <$> readFile privDataLocal
 
-getPrivData :: PrivDataField -> Context -> (M.Map (PrivDataField, Context) PrivData) -> Maybe PrivData
+{- Get only the set of PrivData that the Host's Info says it uses. -}
+filterPrivData :: Host -> PrivMap -> PrivMap
+filterPrivData host = M.filterWithKey (\k _v -> S.member k used)
+  where
+	used = _privDataFields $ hostInfo host
+
+getPrivData :: PrivDataField -> Context -> PrivMap -> Maybe PrivData
 getPrivData field context = M.lookup (field, context)
 
 setPrivData :: PrivDataField -> Context -> IO ()
@@ -124,7 +132,7 @@ setPrivDataTo field context value = do
 		| end s == "\n" = chomp (beginning s)
 		| otherwise = s
 
-decryptPrivData :: IO (M.Map (PrivDataField, Context) PrivData)
+decryptPrivData :: IO PrivMap
 decryptPrivData = fromMaybe M.empty . readish <$> gpgDecrypt privDataFile
 
 makePrivDataDir :: IO ()
