@@ -1,7 +1,14 @@
-propellor (0.7.1) UNRELEASED; urgency=medium
+propellor (0.8.0) UNRELEASED; urgency=medium
+
+  * Completely reworked privdata storage. There is now a single file,
+    and each host is sent only the privdata that its Properties actually use.
+
+    To transition existing privdata, run propellor against a host and
+    watch out for the red failure messages, and run the suggested commands
+    to store the privdata using the new storage scheme.
 
   * Add --edit to edit a privdata value in $EDITOR.
-  * Add --list-fields to list a host's currently set privdata fields.
+  * Add --list-fields to list all currently set privdata fields.
   * Fix randomHostKeys property to run openssh-server's postinst in a
     non-failing way.
   * Hostname.sane now cleans up the 127.0.0.1 localhost line in /etc/hosts,

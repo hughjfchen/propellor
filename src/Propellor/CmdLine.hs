@@ -27,10 +27,10 @@ usage = do
 		, "  propellor hostname"
 		, "  propellor --spin hostname"
 		, "  propellor --add-key keyid"
-		, "  propellor --set hostname field"
-		, "  propellor --dump hostname field"
-		, "  propellor --edit hostname field"
-		, "  propellor --list-fields hostname"
+		, "  propellor --set field context"
+		, "  propellor --dump field context"
+		, "  propellor --edit field context"
+		, "  propellor --list-fields"
 		]
 	exitFailure
 
@@ -41,10 +41,10 @@ processCmdLine = go =<< getArgs
   	go ("--spin":h:[]) = return $ Spin h
   	go ("--boot":h:[]) = return $ Boot h
 	go ("--add-key":k:[]) = return $ AddKey k
-	go ("--set":h:f:[]) = withprivfield f (return . Set h)
-	go ("--dump":h:f:[]) = withprivfield f (return . Dump h)
-	go ("--edit":h:f:[]) = withprivfield f (return . Edit h)
-	go ("--list-fields":h:[]) = return $ ListFields h
+	go ("--set":f:c:[]) = withprivfield f c Set
+	go ("--dump":f:c:[]) = withprivfield f c Dump
+	go ("--edit":f:c:[]) = withprivfield f c Edit
+	go ("--list-fields":[]) = return ListFields
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
@@ -60,8 +60,8 @@ processCmdLine = go =<< getArgs
 			else return $ Run s
 	go _ = usage
 
-	withprivfield s f = case readish s of
-		Just pf -> f pf
+	withprivfield s c f = case readish s of
+		Just pf -> return $ f pf (Context c)
 		Nothing -> errorMessage $ "Unknown privdata field " ++ s
 
 defaultMain :: [Host] -> IO ()
@@ -73,10 +73,10 @@ defaultMain hostlist = do
 	go True cmdline
   where
 	go _ (Continue cmdline) = go False cmdline
-	go _ (Set hn field) = setPrivData hn field
-	go _ (Dump hn field) = dumpPrivData hn field
-	go _ (Edit hn field) = editPrivData hn field
-	go _ (ListFields hn) = listPrivDataFields hn
+	go _ (Set field context) = setPrivData field context
+	go _ (Dump field context) = dumpPrivData field context
+	go _ (Edit field context) = editPrivData field context
+	go _ ListFields = listPrivDataFields
 	go _ (AddKey keyid) = addKey keyid
 	go _ (Chain hn) = withhost hn $ \h -> do
 		r <- runPropellor h $ ensureProperties $ hostProperties h
@@ -182,11 +182,11 @@ spin hn = do
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
 	cacheparams <- toCommand <$> sshCachingParams hn
-	go cacheparams url =<< gpgDecrypt (privDataFile hn)
+	go cacheparams url =<< gpgDecrypt privDataFile
   where
 	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let finish = do
-			senddata toh (privDataFile hn) privDataMarker privdata
+			senddata toh privDataLocal privDataMarker privdata
 			hClose toh
 			
 			-- Display remaining output.

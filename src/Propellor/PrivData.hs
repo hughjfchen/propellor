@@ -2,18 +2,20 @@
 
 module Propellor.PrivData where
 
-import qualified Data.Map as M
 import Control.Applicative
 import System.FilePath
 import System.IO
 import System.Directory
 import Data.Maybe
-import Data.List
+import Data.Monoid
 import Control.Monad
 import Control.Monad.IfElse
 import "mtl" Control.Monad.Reader
+import qualified Data.Map as M
+import qualified Data.Set as S
 
 import Propellor.Types
+import Propellor.Types.Info
 import Propellor.Message
 import Utility.Monad
 import Utility.PartialPrelude
@@ -25,40 +27,57 @@ import Utility.Misc
 import Utility.FileMode
 import Utility.Env
 
--- | When the specified PrivDataField is available on the host Propellor
--- is provisioning, it provies the data to the action. Otherwise, it prints
--- a message to help the user make the necessary private data available.
-withPrivData :: PrivDataField -> (String -> Propellor Result) -> Propellor Result
-withPrivData field a = maybe missing a =<< liftIO (getPrivData field)
+-- | Allows a Property to access the value of a specific PrivDataField,
+-- for use in a specific Context.
+--
+-- Example use:
+--
+-- > withPrivData (PrivFile pemfile) (Context "joeyh.name") $ \getdata ->
+-- >     property "joeyh.name ssl cert" $ getdata $ \privdata ->
+-- >       liftIO $ writeFile pemfile privdata
+-- >   where pemfile = "/etc/ssl/certs/web.pem"
+-- 
+-- Note that if the value is not available, the action is not run
+-- and instead it prints a message to help the user make the necessary
+-- private data available.
+withPrivData
+	:: PrivDataField
+	-> Context
+	-> (((PrivData -> Propellor Result) -> Propellor Result) -> Property)
+	-> Property
+withPrivData field context@(Context cname) mkprop = addinfo $ mkprop $ \a ->
+	maybe missing a =<< liftIO (getLocalPrivData field context)
   where
-	missing = do
-		host <- asks hostName
-		let host' = if ".docker" `isSuffixOf` host
-			then "$parent_host"
-			else host
-		liftIO $ do
-			warningMessage $ "Missing privdata " ++ show field
-			putStrLn $ "Fix this by running: propellor --set "++host'++" '" ++ show field ++ "'"
-			return FailedChange
+	missing = liftIO $ do
+		warningMessage $ "Missing privdata " ++ show field ++ " (for " ++ cname ++ ")"
+		putStrLn $ "Fix this by running: propellor --set '" ++ show field ++ "' '" ++ cname ++ "'"
+		return FailedChange
+	addinfo p = p { propertyInfo = propertyInfo p <> mempty { _privDataFields = S.singleton (field, context) } }
 
-getPrivData :: PrivDataField -> IO (Maybe String)
-getPrivData field = do
-	m <- catchDefaultIO Nothing $ readish <$> readFile privDataLocal
-	return $ maybe Nothing (M.lookup field) m
+{- Gets the requested field's value, in the specified context if it's
+ - available, from the host's local privdata cache. -}
+getLocalPrivData :: PrivDataField -> Context -> IO (Maybe PrivData)
+getLocalPrivData field context =
+	getPrivData field context . fromMaybe M.empty <$> localcache
+  where
+	localcache = catchDefaultIO Nothing $ readish <$> readFile privDataLocal
 
-setPrivData :: HostName -> PrivDataField -> IO ()
-setPrivData host field = do
+getPrivData :: PrivDataField -> Context -> (M.Map (PrivDataField, Context) PrivData) -> Maybe PrivData
+getPrivData field context = M.lookup (field, context)
+
+setPrivData :: PrivDataField -> Context -> IO ()
+setPrivData field context = do
 	putStrLn "Enter private data on stdin; ctrl-D when done:"
-	setPrivDataTo host field =<< hGetContentsStrict stdin
+	setPrivDataTo field context =<< hGetContentsStrict stdin
 
-dumpPrivData :: HostName -> PrivDataField -> IO ()
-dumpPrivData host field =
+dumpPrivData :: PrivDataField -> Context -> IO ()
+dumpPrivData field context =
 	maybe (error "Requested privdata is not set.") putStrLn
-		=<< getPrivDataFor host field
+		=<< (getPrivData field context <$> decryptPrivData)
 
-editPrivData :: HostName -> PrivDataField -> IO ()
-editPrivData host field = do
-	v <- getPrivDataFor host field
+editPrivData :: PrivDataField -> Context -> IO ()
+editPrivData field context = do
+	v <- getPrivData field context <$> decryptPrivData
 	v' <- withTmpFile "propellorXXXX" $ \f h -> do
 		hClose h
 		maybe noop (writeFileProtected f) v
@@ -66,35 +85,30 @@ editPrivData host field = do
 		unlessM (boolSystem editor [File f]) $
 			error "Editor failed; aborting."
 		readFile f
-	setPrivDataTo host field v'
+	setPrivDataTo field context v'
 
-listPrivDataFields :: HostName -> IO ()
-listPrivDataFields host = do
-	putStrLn (host ++ "'s currently set privdata fields:")
-	mapM_ list . M.keys =<< decryptPrivData host
+listPrivDataFields :: IO ()
+listPrivDataFields = do
+	putStrLn ("All currently set privdata fields:")
+	mapM_ list . M.keys =<< decryptPrivData
   where
 	list = putStrLn . ("\t" ++) . shellEscape . show
 
-setPrivDataTo :: HostName -> PrivDataField -> String -> IO ()
-setPrivDataTo host field value = do
+setPrivDataTo :: PrivDataField -> Context -> PrivData -> IO ()
+setPrivDataTo field context value = do
 	makePrivDataDir
-	let f = privDataFile host
-	m <- decryptPrivData host
-	let m' = M.insert field (chomp value) m
-	gpgEncrypt f (show m')
+	m <- decryptPrivData
+	let m' = M.insert (field, context) (chomp value) m
+	gpgEncrypt privDataFile (show m')
 	putStrLn "Private data set."
-	void $ boolSystem "git" [Param "add", File f]
+	void $ boolSystem "git" [Param "add", File privDataFile]
   where
 	chomp s
 		| end s == "\n" = chomp (beginning s)
 		| otherwise = s
 
-getPrivDataFor :: HostName -> PrivDataField -> IO (Maybe String)
-getPrivDataFor host field = M.lookup field <$> decryptPrivData host
-
-decryptPrivData :: HostName -> IO (M.Map PrivDataField String)
-decryptPrivData host = fromMaybe M.empty . readish
-	<$> gpgDecrypt (privDataFile host)
+decryptPrivData :: IO (M.Map (PrivDataField, Context) PrivData)
+decryptPrivData = fromMaybe M.empty . readish <$> gpgDecrypt privDataFile
 
 makePrivDataDir :: IO ()
 makePrivDataDir = createDirectoryIfMissing False privDataDir
@@ -102,8 +116,8 @@ makePrivDataDir = createDirectoryIfMissing False privDataDir
 privDataDir :: FilePath
 privDataDir = "privdata"
 
-privDataFile :: HostName -> FilePath
-privDataFile host = privDataDir </> host ++ ".gpg"
+privDataFile :: FilePath
+privDataFile = privDataDir </> "privdata.gpg"
 
 privDataLocal :: FilePath
 privDataLocal = privDataDir </> "local"

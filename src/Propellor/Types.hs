@@ -17,7 +17,9 @@ module Propellor.Types
 	, ActionResult(..)
 	, CmdLine(..)
 	, PrivDataField(..)
-	, GpgKeyId
+	, PrivData
+	, Context(..)
+	, anyContext
 	, SshKeyType(..)
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
@@ -32,6 +34,7 @@ import "MonadCatchIO-transformers" Control.Monad.CatchIO
 import Propellor.Types.Info
 import Propellor.Types.OS
 import Propellor.Types.Dns
+import Propellor.Types.PrivData
 
 -- | Everything Propellor knows about a system: Its hostname,
 -- properties and other info.
@@ -135,30 +138,12 @@ data CmdLine
 	= Run HostName
 	| Spin HostName
 	| Boot HostName
-	| Set HostName PrivDataField
-	| Dump HostName PrivDataField
-	| Edit HostName PrivDataField
-	| ListFields HostName
+	| Set PrivDataField Context
+	| Dump PrivDataField Context
+	| Edit PrivDataField Context
+	| ListFields
 	| AddKey String
 	| Continue CmdLine
 	| Chain HostName
 	| Docker HostName
   deriving (Read, Show, Eq)
-
--- | Note that removing or changing field names will break the
--- serialized privdata files, so don't do that!
--- It's fine to add new fields.
-data PrivDataField
-	= DockerAuthentication
-	| SshPubKey SshKeyType UserName
-	| SshPrivKey SshKeyType UserName
-	| SshAuthorizedKeys UserName
-	| Password UserName
-	| PrivFile FilePath
-	| GpgKey GpgKeyId
-	deriving (Read, Show, Ord, Eq)
-
-type GpgKeyId = String
-
-data SshKeyType = SshRsa | SshDsa | SshEcdsa | SshEd25519
-	deriving (Read, Show, Ord, Eq)

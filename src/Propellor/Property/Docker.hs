@@ -55,10 +55,11 @@ installed = Apt.installed ["docker.io"]
 -- | Configures docker with an authentication file, so that images can be
 -- pushed to index.docker.io. Optional.
 configured :: Property
-configured = property "docker configured" go `requires` installed
+configured = prop `requires` installed
   where
-	go = withPrivData DockerAuthentication $ \cfg -> ensureProperty $ 
-		"/root/.dockercfg" `File.hasContent` (lines cfg)
+	prop = withPrivData DockerAuthentication anyContext $ \getcfg ->
+		property "docker configured" $ getcfg $ \cfg -> ensureProperty $ 
+			"/root/.dockercfg" `File.hasContent` (lines cfg)
 
 -- | A short descriptive name for a container.
 -- Should not contain whitespace or other unusual characters,

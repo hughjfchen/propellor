@@ -72,14 +72,15 @@ hosts =                 --                  (o)  `
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
 	-- Important stuff that needs not too much memory or CPU.
-  	, standardSystem "diatom.kitenet.net" Stable "amd64"
+  	, let ctx = Context "diatom.kitenet.net "
+	  in standardSystem "diatom.kitenet.net" Stable "amd64"
 		& ipv4 "107.170.31.195"
 
 		& DigitalOcean.distroKernel
 		& Hostname.sane
-		& Ssh.hostKey SshDsa
-		& Ssh.hostKey SshRsa
-		& Ssh.hostKey SshEcdsa
+		& Ssh.hostKey SshDsa ctx
+		& Ssh.hostKey SshRsa ctx
+		& Ssh.hostKey SshEcdsa ctx
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Postfix.satellite
@@ -89,9 +90,9 @@ hosts =                 --                  (o)  `
 		& Apt.serviceInstalledRunning "swapspace"
 	
 		& Apt.serviceInstalledRunning "apache2"
-		& File.hasPrivContent "/etc/ssl/certs/web.pem"
-		& File.hasPrivContent "/etc/ssl/private/web.pem"
-		& File.hasPrivContent "/etc/ssl/certs/startssl.pem"
+		& File.hasPrivContent "/etc/ssl/certs/web.pem" (Context "kitenet.net")
+		& File.hasPrivContent "/etc/ssl/private/web.pem" (Context "kitenet.net")
+		& File.hasPrivContent "/etc/ssl/certs/startssl.pem" (Context "kitenet.net")
 		& Apache.modEnabled "ssl"
 		& Apache.multiSSL
 		& File.ownerGroup "/srv/web" "joey" "joey"
@@ -133,16 +134,17 @@ hosts =                 --                  (o)  `
 		& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
 	-- storage and backup server
-	, standardSystem "elephant.kitenet.net" Unstable "amd64"
+	, let ctx = Context "elephant.kitenet.net"
+	  in standardSystem "elephant.kitenet.net" Unstable "amd64"
 		& ipv4 "193.234.225.114"
 
 		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
-		& Ssh.hostKey SshDsa
-		& Ssh.hostKey SshRsa
-		& Ssh.hostKey SshEcdsa
-		& Ssh.keyImported SshRsa "joey"
+		& Ssh.hostKey SshDsa ctx
+		& Ssh.hostKey SshRsa ctx
+		& Ssh.hostKey SshEcdsa ctx
+		& Ssh.keyImported SshRsa "joey" ctx
 
 		-- PV-grub chaining
 		-- http://notes.pault.ag/linode-pv-grub-chainning/
@@ -263,13 +265,13 @@ standardSystem hn suite arch = host hn
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
 	& GitHome.installedFor "root"
-	& User.hasSomePassword "root"
+	& User.hasSomePassword "root" (Context hn)
 	-- Harden the system, but only once root's authorized_keys
 	-- is safely in place.
 	& check (Ssh.hasAuthorizedKeys "root")
 		(Ssh.passwordAuthentication False)
 	& User.accountFor "joey"
-	& User.hasSomePassword "joey"
+	& User.hasSomePassword "joey" (Context hn)
 	& Sudo.enabledFor "joey"
 	& GitHome.installedFor "joey"
 	& Apt.installed ["vim", "screen", "less"]

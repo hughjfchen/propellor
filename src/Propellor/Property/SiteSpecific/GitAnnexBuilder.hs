@@ -23,29 +23,25 @@ builddir = gitbuilderdir </> "build"
 
 type TimeOut = String -- eg, 5h
 
-autobuilder :: CronTimes -> TimeOut -> Bool -> Property
-autobuilder crontimes timeout rsyncupload = combineProperties "gitannexbuilder"
+autobuilder :: Architecture -> CronTimes -> TimeOut -> Property
+autobuilder arch crontimes timeout = combineProperties "gitannexbuilder"
 	[ Apt.serviceInstalledRunning "cron"
 	, Cron.niceJob "gitannexbuilder" crontimes builduser gitbuilderdir $
 		"git pull ; timeout " ++ timeout ++ " ./autobuild"
 	-- The builduser account does not have a password set,
 	-- instead use the password privdata to hold the rsync server
 	-- password used to upload the built image.
-	, property "rsync password" $ do
-		let f = homedir </> "rsyncpassword"
-		if rsyncupload 
-			then withPrivData (Password builduser) $ \p -> do
-				oldp <- liftIO $ catchDefaultIO "" $
-					readFileStrict f
-				if p /= oldp
-					then makeChange $ writeFile f p
-					else noChange
-			else do
-				ifM (liftIO $ doesFileExist f)
-					( noChange
-					, makeChange $ writeFile f "no password configured"
-					)
+	, withPrivData (Password builduser) context $ \getpw ->
+		property "rsync password" $ getpw $ \pw -> do
+			oldpw <- liftIO $ catchDefaultIO "" $
+				readFileStrict pwfile
+			if pw /= oldpw
+				then makeChange $ writeFile pwfile pw
+				else noChange
 	]
+  where
+	context = Context ("gitannexbuilder " ++ arch)
+	pwfile = homedir </> "rsyncpassword"
 
 tree :: Architecture -> Property
 tree buildarch = combineProperties "gitannexbuilder tree"
@@ -101,13 +97,13 @@ standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.conta
 	& User.accountFor builduser
 	& tree arch
 	& buildDepsApt
-	& autobuilder (show buildminute ++ " * * * *") timeout True
+	& autobuilder arch (show buildminute ++ " * * * *") timeout
 
 androidAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
 androidAutoBuilderContainer dockerImage crontimes timeout =
 	androidContainer dockerImage "android-git-annex-builder" (tree "android") builddir
 		& Apt.unattendedUpgrades
-		& autobuilder crontimes timeout True
+		& autobuilder "android" crontimes timeout
 
 -- Android is cross-built in a Debian i386 container, using the Android NDK.
 androidContainer :: (System -> Docker.Image) -> Docker.ContainerName -> Property -> FilePath -> Host
@@ -154,7 +150,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	-- The armel builder can ssh to this companion.
 	& Docker.expose "22"
 	& Apt.serviceInstalledRunning "ssh"
-	& Ssh.authorizedKeys builduser
+	& Ssh.authorizedKeys builduser (Context "armel-git-annex-builder")
 
 armelAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
 armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
@@ -172,9 +168,9 @@ armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "arme
 	-- git-annex/standalone/linux/install-haskell-packages
 	-- which is not fully automated.)
 	& buildDepsNoHaskellLibs
-	& autobuilder crontimes timeout True
+	& autobuilder "armel" crontimes timeout
 		`requires` tree "armel"
-	& Ssh.keyImported SshRsa builduser
+	& Ssh.keyImported SshRsa builduser (Context "armel-git-annex-builder")
 	& trivial writecompanionaddress
   where
 	writecompanionaddress = scriptProperty

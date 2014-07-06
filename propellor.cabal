@@ -105,6 +105,7 @@ Library
     Propellor.Types
     Propellor.Types.OS
     Propellor.Types.Dns
+    Propellor.Types.PrivData
   Other-Modules:
     Propellor.Types.Info
     Propellor.CmdLine

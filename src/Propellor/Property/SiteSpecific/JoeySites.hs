@@ -29,7 +29,7 @@ oldUseNetServer hosts = propertyList ("olduse.net server")
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/olduse.net"
 		, "--client-name=spool"
 		] Obnam.OnlyClient
-		`requires` Ssh.keyImported SshRsa "root"
+		`requires` Ssh.keyImported SshRsa "root" (Context "olduse.net")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 	, check (not . isSymbolicLink <$> getSymbolicLinkStatus newsspool) $
 		property "olduse.net spool in place" $ makeChange $ do
@@ -97,7 +97,7 @@ kgbServer = withOS desc $ \o -> case o of
 	(Just (System (Debian Unstable) _)) ->
 		ensureProperty $ propertyList desc
 			[ Apt.serviceInstalledRunning "kgb-bot"
-			, File.hasPrivContent "/etc/kgb-bot/kgb.conf"
+			, File.hasPrivContent "/etc/kgb-bot/kgb.conf" anyContext
 				`onChange` Service.restarted "kgb-bot"
 			, "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
 				`describe` "kgb bot enabled"
@@ -108,17 +108,19 @@ kgbServer = withOS desc $ \o -> case o of
 	desc = "kgb.kitenet.net setup"
 
 mumbleServer :: [Host] -> Property
-mumbleServer hosts = combineProperties "mumble.debian.net" 
+mumbleServer hosts = combineProperties hn
 	[ Apt.serviceInstalledRunning "mumble-server"
 	, Obnam.latestVersion
 	, Obnam.backup "/var/lib/mumble-server" "55 5 * * *"
-		[ "--repository=sftp://joey@turtle.kitenet.net/~/lib/backup/mumble.debian.net.obnam"
+		[ "--repository=sftp://joey@turtle.kitenet.net/~/lib/backup/" ++ hn ++ ".obnam"
 		, "--client-name=mumble"
 		] Obnam.OnlyClient
-		`requires` Ssh.keyImported SshRsa "root"
+		`requires` Ssh.keyImported SshRsa "root" (Context hn)
 		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "root"
 	, trivial $ cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
 	]
+  where
+	hn = "mumble.debian.net"
 
 obnamLowMem :: Property
 obnamLowMem = combineProperties "obnam tuned for low memory use"
@@ -141,16 +143,16 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 		, "--client-name=wren"
 		] Obnam.OnlyClient
 		`requires` Gpg.keyImported "1B169BE1" "root"
-		`requires` Ssh.keyImported SshRsa "root"
+		`requires` Ssh.keyImported SshRsa "root" (Context "git.kitenet.net")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
-		`requires` Ssh.authorizedKeys "family"
+		`requires` Ssh.authorizedKeys "family" (Context "git.kitenet.net")
 		`requires` User.accountFor "family"
 	, Apt.installed ["git", "rsync", "gitweb"]
 	-- backport avoids channel flooding on branch merge
 	, Apt.installedBackport ["kgb-client"]
 	-- backport supports ssh event notification
 	, Apt.installedBackport ["git-annex"]
-	, File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf"
+	, File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf" anyContext
 	, toProp $ Git.daemonRunning "/srv/git"
 	, "/etc/gitweb.conf" `File.containsLines`
 		[ "$projectroot = '/srv/git';"
@@ -202,7 +204,7 @@ annexWebSite hosts origin hn uuid remotes = propertyList (hn ++" website using g
 	dir = "/srv/web/" ++ hn
 	postupdatehook = dir </> ".git/hooks/post-update"
 	setup = userScriptProperty "joey" setupscript
-		`requires` Ssh.keyImported SshRsa "joey"
+		`requires` Ssh.keyImported SshRsa "joey" (Context hn)
 		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "joey"
 	setupscript = 
 		[ "cd " ++ shellEscape dir
@@ -270,9 +272,9 @@ mainhttpscert True =
 gitAnnexDistributor :: Property
 gitAnnexDistributor = combineProperties "git-annex distributor, including rsync server and signer"
 	[ Apt.installed ["rsync"]
-	, File.hasPrivContent "/etc/rsyncd.conf"
+	, File.hasPrivContent "/etc/rsyncd.conf" (Context "git-annex distributor")
 		`onChange` Service.restarted "rsync"
-	, File.hasPrivContent "/etc/rsyncd.secrets"
+	, File.hasPrivContent "/etc/rsyncd.secrets" (Context "git-annex distributor")
 		`onChange` Service.restarted "rsync"
 	, "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
 		`onChange` Service.running "rsync"
@@ -315,7 +317,7 @@ ircBouncer = propertyList "IRC bouncer"
 	[ Apt.installed ["znc"]
 	, User.accountFor "znc"
 	, File.dirExists (parentDir conf)
-	, File.hasPrivContent conf
+	, File.hasPrivContent conf anyContext
 	, File.ownerGroup conf "znc" "znc"
 	, Cron.job "znconboot" "@reboot" "znc" "~" "znc"
 	-- ensure running if it was not already
@@ -341,7 +343,7 @@ githubBackup :: Property
 githubBackup = propertyList "github-backup box"
 	[ Apt.installed ["github-backup", "moreutils"]
 	, let f = "/home/joey/.github-keys"
-	  in File.hasPrivContent f
+	  in File.hasPrivContent f anyContext
 		`onChange` File.ownerGroup f "joey" "joey"
 	]
 

@@ -24,17 +24,18 @@ nuked user _ = check (isJust <$> catchMaybeIO (homedir user)) $ cmdProperty "use
 
 -- | Only ensures that the user has some password set. It may or may
 -- not be the password from the PrivData.
-hasSomePassword :: UserName -> Property
-hasSomePassword user = check ((/= HasPassword) <$> getPasswordStatus user) $
-	hasPassword user
+hasSomePassword :: UserName -> Context -> Property
+hasSomePassword user context = check ((/= HasPassword) <$> getPasswordStatus user) $
+	hasPassword user context
 
-hasPassword :: UserName -> Property
-hasPassword user = property (user ++ " has password") $
-	withPrivData (Password user) $ \password -> makeChange $
-		withHandle StdinHandle createProcessSuccess
-			(proc "chpasswd" []) $ \h -> do
-				hPutStrLn h $ user ++ ":" ++ password
-				hClose h
+hasPassword :: UserName -> Context -> Property
+hasPassword user context = withPrivData (Password user) context $ \getpassword ->
+	property (user ++ " has password") $ 
+		getpassword $ \password -> makeChange $
+			withHandle StdinHandle createProcessSuccess
+				(proc "chpasswd" []) $ \h -> do
+					hPutStrLn h $ user ++ ":" ++ password
+					hClose h
 
 lockedPassword :: UserName -> Property
 lockedPassword user = check (not <$> isLockedPassword user) $ cmdProperty "passwd"
