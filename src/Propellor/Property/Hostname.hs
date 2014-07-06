@@ -27,7 +27,7 @@ setTo hn = combineProperties desc go
 		, if null domain
 			then Nothing 
 			else Just $ hostsline "127.0.1.1" [hn, basehost]
-		, Just $ hostsline "127.0.0.1" ["localhost"]
+		, Just $ trivial $ hostsline "127.0.0.1" ["localhost"]
 		, Just $ trivial $ cmdProperty "hostname" [basehost]
 		]
 	
