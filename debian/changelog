@@ -1,4 +1,4 @@
-propellor (0.8.0) UNRELEASED; urgency=medium
+propellor (0.8.0) unstable; urgency=medium
 
   * Completely reworked privdata storage. There is now a single file,
     and each host is sent only the privdata that its Properties actually use.
@@ -22,7 +22,7 @@ propellor (0.8.0) UNRELEASED; urgency=medium
     to avoid eg, apache complaining "Could not reliably determine the
     server's fully qualified domain name".
 
- -- Joey Hess <joeyh@debian.org>  Thu, 19 Jun 2014 14:27:21 -0400
+ -- Joey Hess <joeyh@debian.org>  Sun, 06 Jul 2014 18:28:08 -0400
 
 propellor (0.7.0) unstable; urgency=medium
 
