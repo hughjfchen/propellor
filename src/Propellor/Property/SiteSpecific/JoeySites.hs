@@ -324,6 +324,7 @@ ircBouncer = propertyList "IRC bouncer"
 	, Cron.job "znconboot" "@reboot" "znc" "~" "znc"
 	-- ensure running if it was not already
 	, trivial $ userScriptProperty "znc" ["znc || true"]
+		`describe` "znc running"
 	]
   where
 	conf = "/home/znc/.znc/configs/znc.conf"
