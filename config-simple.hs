@@ -29,7 +29,7 @@ hosts =
 		& Apt.unattendedUpgrades
 		& Apt.installed ["etckeeper"]
 		& Apt.installed ["ssh"]
-		& User.hasSomePassword "root"
+		& User.hasSomePassword "root" (Context "mybox.example.com")
 		& Network.ipv6to4
 		& File.dirExists "/var/www"
 		& Docker.docked hosts "webserver"
