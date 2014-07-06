@@ -162,6 +162,7 @@ hosts =                 --                  (o)  `
 			[ "configfile (xen/xvda1)/boot/grub/grub.cfg" ]
 		& Apt.installed ["grub-xen"]
 		& flagFile (scriptProperty ["update-grub; grub-mkimage --prefix '(xen/xvda1)/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]) "/boot/xen-shim"
+			`describe` "/boot-xen-shim"
 
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
