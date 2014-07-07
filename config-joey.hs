@@ -76,6 +76,8 @@ hosts =                 --                  (o)  `
 	  in standardSystem "kite.kitenet.net" Stable "amd64"
 	  	& ipv4 "66.228.36.95"
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
+
+		& Apt.installed ["linux-image-amd64", "pv-grub-menu"]
 	
 	-- Important stuff that needs not too much memory or CPU.
   	, let ctx = Context "diatom.kitenet.net"
