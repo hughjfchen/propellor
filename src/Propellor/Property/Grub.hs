@@ -7,6 +7,8 @@ import qualified Propellor.Property.Apt as Apt
 -- | Eg, hd0,0 or xen/xvda1
 type GrubDevice = String
 
+type TimeoutSecs = Int
+
 -- | Use PV-grub chaining to boot
 --
 -- Useful when the VPS's pv-grub is too old to boot a modern kernel image.
@@ -15,12 +17,12 @@ type GrubDevice = String
 --
 -- The rootdev should be in the form "hd0", while the bootdev is in the form
 -- "xen/xvda".
-chainPVGrub :: GrubDevice -> GrubDevice -> Property
-chainPVGrub rootdev bootdev = combineProperties desc
+chainPVGrub :: GrubDevice -> GrubDevice -> TimeoutSecs -> Property
+chainPVGrub rootdev bootdev timeout = combineProperties desc
 	[ File.dirExists "/boot/grub"
 	, "/boot/grub/menu.lst" `File.hasContent`
 		[ "default 1" 
-		, "timeout 30"
+		, "timeout " ++ show timeout
 		, ""
 		, "title grub-xen shim"
 		, "root (" ++ rootdev ++ ")"

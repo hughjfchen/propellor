@@ -78,8 +78,13 @@ hosts =                 --                  (o)  `
 	  	& ipv4 "66.228.36.95"
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 
+		& File.hasContent "/etc/motd"
+			[ "Welcome to the new kitenet.net server!"
+			, "This is still under construction and not yet live.."
+			]
+
 		& Apt.installed ["linux-image-amd64"]
-		& Linode.chainPVGrub
+		& Linode.chainPVGrub 5
 		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Apt.installed ["systemd"]
@@ -151,7 +156,7 @@ hosts =                 --                  (o)  `
 	  in standardSystem "elephant.kitenet.net" Unstable "amd64"
 		& ipv4 "193.234.225.114"
 
-		& Grub.chainPVGrub "hd0,0" "xen/xvda1"
+		& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
 		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
