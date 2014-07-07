@@ -24,6 +24,7 @@ import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
+import qualified Propellor.Property.HostingProvider.Linode as Linode
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -78,7 +79,7 @@ hosts =                 --                  (o)  `
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 
 		& Apt.installed ["linux-image-amd64"]
-		& Grub.chainPVGrub "hd0" "xen/xvda"
+		& Linode.chainPVGrub
 		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Apt.installed ["systemd"]

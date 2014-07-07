@@ -17,7 +17,8 @@ type GrubDevice = String
 -- "xen/xvda".
 chainPVGrub :: GrubDevice -> GrubDevice -> Property
 chainPVGrub rootdev bootdev = combineProperties desc
-	[ "/boot/grub/menu.lst" `File.hasContent`
+	[ File.dirExists "/boot/grub"
+	, "/boot/grub/menu.lst" `File.hasContent`
 		[ "default 1" 
 		, "timeout 30"
 		, ""

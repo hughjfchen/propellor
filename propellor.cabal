@@ -81,6 +81,7 @@ Library
     Propellor.Property.File
     Propellor.Property.Git
     Propellor.Property.Gpg
+    Propellor.Property.Grub
     Propellor.Property.Network
     Propellor.Property.Obnam
     Propellor.Property.OpenId
@@ -92,8 +93,9 @@ Library
     Propellor.Property.Sudo
     Propellor.Property.Tor
     Propellor.Property.User
-    Propellor.Property.HostingProvider.DigitalOcean
     Propellor.Property.HostingProvider.CloudAtCost
+    Propellor.Property.HostingProvider.DigitalOcean
+    Propellor.Property.HostingProvider.Linode
     Propellor.Property.SiteSpecific.GitHome
     Propellor.Property.SiteSpecific.JoeySites
     Propellor.Property.SiteSpecific.GitAnnexBuilder
