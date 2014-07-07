@@ -210,7 +210,8 @@ spin hn hst = do
 	bootstrapcmd = shellWrap $ intercalate " ; "
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then " ++ intercalate " && "
-			[ "apt-get --no-install-recommends --no-upgrade -y install git make"
+			[ "apt-get update"
+			, "apt-get --no-install-recommends --no-upgrade -y install git make"
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			]
 		, "else " ++ intercalate " && "
