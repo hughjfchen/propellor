@@ -21,6 +21,7 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Service as Service
+import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
@@ -76,9 +77,11 @@ hosts =                 --                  (o)  `
 	  	& ipv4 "66.228.36.95"
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 
+		& Apt.installed ["linux-image-amd64"]
+		& Grub.chainPVGrub "hd0,0" "xen/xvda1"
+		& Grub.chainPVGrub "hd0" "xen/xvda"
 		& Hostname.sane
 		& Apt.unattendedUpgrades
-		& Apt.installed ["linux-image-amd64", "pv-grub-menu"]
 		& Apt.installed ["systemd"]
 	
 	-- Important stuff that needs not too much memory or CPU.
@@ -148,6 +151,7 @@ hosts =                 --                  (o)  `
 	  in standardSystem "elephant.kitenet.net" Unstable "amd64"
 		& ipv4 "193.234.225.114"
 
+		& Grub.chainPVGrub "hd0,0" "xen/xvda1"
 		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
@@ -155,24 +159,6 @@ hosts =                 --                  (o)  `
 		& Ssh.hostKey SshRsa ctx
 		& Ssh.hostKey SshEcdsa ctx
 		& Ssh.keyImported SshRsa "joey" ctx
-
-		-- PV-grub chaining
-		-- http://notes.pault.ag/linode-pv-grub-chainning/
-		-- (Adapted to use xvda1/hd0,0 instead of xvda/hd0)
-		& "/boot/grub/menu.lst" `File.hasContent`
-			[ "default 1" 
-			, "timeout 30"
-			, ""
-			, "title grub-xen shim"
-			, "root (hd0,0)"
-			, "kernel /boot/xen-shim"
-			, "boot"
-			]
-		& "/boot/load.cf" `File.hasContent`
-			[ "configfile (xen/xvda1)/boot/grub/grub.cfg" ]
-		& Apt.installed ["grub-xen"]
-		& flagFile (scriptProperty ["update-grub; grub-mkimage --prefix '(xen/xvda1)/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]) "/boot/xen-shim"
-			`describe` "/boot-xen-shim"
 
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
