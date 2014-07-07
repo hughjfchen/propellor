@@ -30,8 +30,6 @@ import Utility.FileMode
 import Utility.Env
 import Utility.Table
 
-type PrivMap = M.Map (PrivDataField, Context) PrivData
-
 -- | Allows a Property to access the value of a specific PrivDataField,
 -- for use in a specific Context.
 --
@@ -74,6 +72,8 @@ getLocalPrivData field context =
 	getPrivData field context . fromMaybe M.empty <$> localcache
   where
 	localcache = catchDefaultIO Nothing $ readish <$> readFile privDataLocal
+
+type PrivMap = M.Map (PrivDataField, Context) PrivData
 
 {- Get only the set of PrivData that the Host's Info says it uses. -}
 filterPrivData :: Host -> PrivMap -> PrivMap
