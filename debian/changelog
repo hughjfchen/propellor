@@ -1,6 +1,8 @@
 propellor (0.8.1) UNRELEASED; urgency=medium
 
   * Run apt-get update in initial bootstrap.
+  * --list-fields now includes a table of fields that are not currently set,
+    but would be used if they got set.
 
  -- Joey Hess <joeyh@debian.org>  Mon, 07 Jul 2014 02:03:46 -0400
 

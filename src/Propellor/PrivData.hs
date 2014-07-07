@@ -109,20 +109,24 @@ editPrivData field context = do
 listPrivDataFields :: [Host] -> IO ()
 listPrivDataFields hosts = do
 	m <- decryptPrivData
-	putStrLn "\n"
-	let usedby = M.unionsWith (++) $ map mkhostmap hosts
-	let rows = map (mkrow usedby) (M.keys m)
-	let table = tableWithHeader header rows
-	putStr $ unlines $ formatTable table
+	showtable "Currently set data:" $
+		map mkrow (M.keys m)
+	showtable "Data that would be used if set:" $
+		map mkrow (M.keys $ M.difference wantedmap m)
   where
   	header = ["Field", "Context", "Used by"]
-	mkrow usedby k@(field, (Context context)) =
+	mkrow k@(field, (Context context)) =
 		[ shellEscape $ show field
 		, shellEscape context
 		, intercalate ", " $ sort $ fromMaybe [] $ M.lookup k usedby
 		]
 	mkhostmap host = M.fromList $ map (\k -> (k, [hostName host])) $
 		S.toList $ _privDataFields $ hostInfo host
+	usedby = M.unionsWith (++) $ map mkhostmap hosts
+	wantedmap = M.fromList $ zip (M.keys usedby) (repeat "")
+	showtable desc rows = do
+		putStrLn $ "\n" ++ desc
+		putStr $ unlines $ formatTable $ tableWithHeader header rows
 
 setPrivDataTo :: PrivDataField -> Context -> PrivData -> IO ()
 setPrivDataTo field context value = do

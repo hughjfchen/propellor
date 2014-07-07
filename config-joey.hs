@@ -44,8 +44,7 @@ hosts =                 --                  (o)  `
 		& Docker.docked hosts "android-git-annex"
 
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
-		[ "Unreliable server. Anything here may be lost at any time!"
-		]
+		[ "Unreliable server. Anything here may be lost at any time!" ]
 		& ipv4 "162.248.9.29"
 
 		& CloudAtCost.decruft
@@ -59,8 +58,7 @@ hosts =                 --                  (o)  `
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
-		[ "Main git-annex build box."
-		]
+		[ "Main git-annex build box." ]
 		& ipv4 "138.38.108.179"
 
 		& Hostname.sane
@@ -90,8 +88,7 @@ hosts =                 --                  (o)  `
 	
   	, let ctx = Context "diatom.kitenet.net"
 	  in standardSystem "diatom.kitenet.net" Stable "amd64"
-	  	[ "Important stuff that needs not too much memory or CPU."
-		]
+	  	[ "Important stuff that needs not too much memory or CPU." ]
 		& ipv4 "107.170.31.195"
 
 		& DigitalOcean.distroKernel
@@ -153,8 +150,7 @@ hosts =                 --                  (o)  `
 
 	, let ctx = Context "elephant.kitenet.net"
 	  in standardSystem "elephant.kitenet.net" Unstable "amd64"
-	  	[ "Mmmm, storage, big data, and backups!"
-		]
+	  	[ "Storage, big data, and backups, omnomnom!" ]
 		& ipv4 "193.234.225.114"
 
 		& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
