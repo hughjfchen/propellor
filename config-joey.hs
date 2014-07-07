@@ -76,6 +76,8 @@ hosts =                 --                  (o)  `
 	  	& ipv4 "66.228.36.95"
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 
+		& Hostname.sane
+		& Apt.unattendedUpgrades
 		& Apt.installed ["linux-image-amd64", "pv-grub-menu"]
 	
 	-- Important stuff that needs not too much memory or CPU.
