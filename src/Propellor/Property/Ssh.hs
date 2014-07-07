@@ -5,6 +5,7 @@ module Propellor.Property.Ssh (
 	hasAuthorizedKeys,
 	restartSshd,
 	randomHostKeys,
+	hostKeys,
 	hostKey,
 	keyImported,
 	knownHost,
@@ -75,7 +76,15 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 		ensureProperty $ scriptProperty 
 			[ "DPKG_MAINTSCRIPT_NAME=postinst DPKG_MAINTSCRIPT_PACKAGE=openssh-server /var/lib/dpkg/info/openssh-server.postinst configure" ]
 
--- | Sets ssh host keys.
+-- | Sets all types of ssh host keys from the privdata.
+hostKeys :: Context -> Property
+hostKeys ctx = propertyList "known ssh host keys"
+	[ hostKey SshDsa ctx
+	, hostKey SshRsa ctx
+	, hostKey SshEcdsa ctx
+	]
+
+-- | Sets a single ssh host key from the privdata.
 hostKey :: SshKeyType -> Context -> Property
 hostKey keytype context = combineProperties desc
 	[ installkey (SshPubKey keytype "")  (install writeFile ".pub")

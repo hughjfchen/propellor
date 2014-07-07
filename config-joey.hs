@@ -85,17 +85,15 @@ hosts =                 --                  (o)  `
 		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Apt.installed ["systemd"]
+		& Ssh.hostKeys (Context "kitenet.net")
 	
-  	, let ctx = Context "diatom.kitenet.net"
-	  in standardSystem "diatom.kitenet.net" Stable "amd64"
+  	, standardSystem "diatom.kitenet.net" Stable "amd64"
 	  	[ "Important stuff that needs not too much memory or CPU." ]
 		& ipv4 "107.170.31.195"
 
 		& DigitalOcean.distroKernel
 		& Hostname.sane
-		& Ssh.hostKey SshDsa ctx
-		& Ssh.hostKey SshRsa ctx
-		& Ssh.hostKey SshEcdsa ctx
+		& Ssh.hostKeys (Context "diatom.kitenet.net")
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Postfix.satellite
@@ -157,9 +155,7 @@ hosts =                 --                  (o)  `
 		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
-		& Ssh.hostKey SshDsa ctx
-		& Ssh.hostKey SshRsa ctx
-		& Ssh.hostKey SshEcdsa ctx
+		& Ssh.hostKeys ctx
 		& Ssh.keyImported SshRsa "joey" ctx
 
 		& alias "eubackup.kitenet.net"
