@@ -122,7 +122,9 @@ buildFirst cmdline next = do
 			newtime <- getmtime
 			if newtime == oldtime
 				then next
-				else void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
+				else do
+					print ["./propellor"]
+					void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
 		, errorMessage "Propellor build failed!" 
 		)
   where
