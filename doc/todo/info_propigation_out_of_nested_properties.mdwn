@@ -1,0 +1,28 @@
+Currently, Info about a Host's Properties is manually gathered and
+propigated. propertyList combines the Info of the Properties in the list.
+Docker.docked extracts relevant Info from the Properties of the container
+(but not al of it, intentionally!).
+
+This works, but it's error-prone. Consider this example:
+
+	withOS desc $ \o -> case o of
+                (Just (System (Debian Unstable) _)) -> ensureProperty foo
+		_ -> ensureProperty bar
+
+Here, the Info of `foo` is not propigated out. Nor is `bar`'s Info.
+Of course, only one of them will be run, and only its info should be propigated
+out..
+
+One approach might be to make the Propellor monad be able to be run in two
+modes. In one mode, it actually perform IO, etc. In the other mode, all
+liftIO is a no-op, but all Info encountered is accumulated using a Reader
+monad. This might need two separate monad definitions.
+
+That is surely doable, but the withOS example above shows a problem with it --
+the OS is itself part of a Host's info, so won't be known until all its
+properties have been examined for info!
+
+Perhaps that can be finessed. We don't really need to propigate out OS info.
+Just DNS and PrivDataField Info. So info could be collected in 2 passes,
+first as it's done now by static propertyInfo values. Then by running
+the Properties in the Reader monad.
