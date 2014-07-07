@@ -72,7 +72,7 @@ hosts =                 --                  (o)  `
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
 	-- Main kite server.
-  	, standardSystem "kite.kitenet.net" Stable "amd64"
+  	, standardSystem "kite.kitenet.net" Unstable "amd64"
 	  	& ipv4 "66.228.36.95"
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 
