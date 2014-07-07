@@ -92,7 +92,7 @@ defaultMain hostlist = do
 	go False (Boot hn) = onlyProcess $ withhost hn boot
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
-	withhost hn a = maybe (unknownhost hn) a (findHost hostlist hn)
+	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
 
 onlyProcess :: IO a -> IO a
 onlyProcess a = bracket lock unlock (const a)
@@ -106,11 +106,12 @@ onlyProcess a = bracket lock unlock (const a)
 	alreadyrunning = error "Propellor is already running on this host!"
 	lockfile = localdir </> ".lock"
 
-unknownhost :: HostName -> IO a
-unknownhost h = errorMessage $ unlines
+unknownhost :: HostName -> [Host] -> IO a
+unknownhost h hosts = errorMessage $ unlines
 	[ "Propellor does not know about host: " ++ h
 	, "(Perhaps you should specify the real hostname on the command line?)"
 	, "(Or, edit propellor's config.hs to configure this host)"
+	, "Known hosts: " ++ unwords (map hostName hosts)
 	]
 
 buildFirst :: CmdLine -> IO () -> IO ()
