@@ -71,7 +71,7 @@ hosts =                 --                  (o)  `
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
-	-- Main kite server
+	-- Main kite server.
   	, standardSystem "kite.kitenet.net" Stable "amd64"
 	  	& ipv4 "66.228.36.95"
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
@@ -359,7 +359,6 @@ monsters =	      -- but do want to track their public keys etc.
 		& ipv4 "80.68.85.49"
 		& ipv6 "2001:41c8:125:49::10"
 		& alias "kitenet.net"
-		& alias "kite.kitenet.net"
 		& alias "ns1.kitenet.net"
 		& alias "ftp.kitenet.net"
 		& alias "mail.kitenet.net"
