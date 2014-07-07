@@ -78,7 +78,6 @@ hosts =                 --                  (o)  `
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 
 		& Apt.installed ["linux-image-amd64"]
-		& Grub.chainPVGrub "hd0,0" "xen/xvda1"
 		& Grub.chainPVGrub "hd0" "xen/xvda"
 		& Hostname.sane
 		& Apt.unattendedUpgrades
