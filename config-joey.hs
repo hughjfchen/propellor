@@ -79,6 +79,7 @@ hosts =                 --                  (o)  `
 		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Apt.installed ["linux-image-amd64", "pv-grub-menu"]
+		& Apt.installed ["systemd"]
 	
 	-- Important stuff that needs not too much memory or CPU.
   	, let ctx = Context "diatom.kitenet.net"
