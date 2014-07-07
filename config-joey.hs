@@ -36,7 +36,6 @@ main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
      Deployed -}          --  `/-==__ _/__|/__=-|          (       \_
 hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                 --                  (o)  `
-	-- My laptop
 	[ host "darkstar.kitenet.net"
 		& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
 
@@ -44,8 +43,9 @@ hosts =                 --                  (o)  `
 		& Docker.configured
 		& Docker.docked hosts "android-git-annex"
 
-	-- Unreliable server.
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
+		[ "Unreliable server. Anything here may be lost at any time!"
+		]
 		& ipv4 "162.248.9.29"
 
 		& CloudAtCost.decruft
@@ -59,6 +59,8 @@ hosts =                 --                  (o)  `
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
+		[ "Main git-annex build box."
+		]
 		& ipv4 "138.38.108.179"
 
 		& Hostname.sane
@@ -73,15 +75,12 @@ hosts =                 --                  (o)  `
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
-	-- Main kite server.
   	, standardSystem "kite.kitenet.net" Unstable "amd64"
+		[ "Welcome to the new kitenet.net server!"
+		, "This is still under construction and not yet live.."
+		]
 	  	& ipv4 "66.228.36.95"
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
-
-		& File.hasContent "/etc/motd"
-			[ "Welcome to the new kitenet.net server!"
-			, "This is still under construction and not yet live.."
-			]
 
 		& Apt.installed ["linux-image-amd64"]
 		& Linode.chainPVGrub 5
@@ -89,9 +88,10 @@ hosts =                 --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Apt.installed ["systemd"]
 	
-	-- Important stuff that needs not too much memory or CPU.
   	, let ctx = Context "diatom.kitenet.net"
 	  in standardSystem "diatom.kitenet.net" Stable "amd64"
+	  	[ "Important stuff that needs not too much memory or CPU."
+		]
 		& ipv4 "107.170.31.195"
 
 		& DigitalOcean.distroKernel
@@ -151,9 +151,10 @@ hosts =                 --                  (o)  `
 		
 		& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
-	-- storage and backup server
 	, let ctx = Context "elephant.kitenet.net"
 	  in standardSystem "elephant.kitenet.net" Unstable "amd64"
+	  	[ "Mmmm, storage, big data, and backups!"
+		]
 		& ipv4 "193.234.225.114"
 
 		& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
@@ -258,10 +259,13 @@ hosts =                 --                  (o)  `
 	-- temp for an acquantance
 	] ++ monsters
 
+type Motd = [String]
+
 -- This is my standard system setup.
-standardSystem :: HostName -> DebianSuite -> Architecture -> Host
-standardSystem hn suite arch = host hn
+standardSystem :: HostName -> DebianSuite -> Architecture -> Motd -> Host
+standardSystem hn suite arch motd = host hn
 	& os (System (Debian suite) arch)
+	& File.hasContent "/etc/motd" ("":motd++[""])
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.cacheCleaned
 	& Apt.installed ["etckeeper"]
