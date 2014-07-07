@@ -59,7 +59,6 @@ colorLine intensity color msg = do
 errorMessage :: String -> IO a
 errorMessage s = do
 	liftIO $ colorLine Vivid Red $ "** error: " ++ s
-	hFlush stdout
 	error "Cannot continue!"
 
 -- | Causes a debug message to be displayed when PROPELLOR_DEBUG=1
