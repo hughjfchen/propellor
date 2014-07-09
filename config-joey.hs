@@ -200,8 +200,10 @@ hosts =                 --                  (o)  `
 		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
 			`onChange` Service.restarted "ssh"
 		
+		-- temp
 		& Docker.docked hosts "amd64-git-annex-builder"
 		& Docker.docked hosts "i386-git-annex-builder"
+		& Docker.docked hosts "android-git-annex-builder"
 
 
 	    --'                        __|II|      ,.
