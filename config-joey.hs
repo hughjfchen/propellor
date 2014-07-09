@@ -157,6 +157,7 @@ hosts =                 --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Ssh.hostKeys ctx
 		& Ssh.keyImported SshRsa "joey" ctx
+		& Apt.serviceInstalledRunning "swapspace"
 
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
@@ -198,6 +199,9 @@ hosts =                 --                  (o)  `
 		-- block 22.
 		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
 			`onChange` Service.restarted "ssh"
+		
+		& Docker.docked hosts "amd64-git-annex-builder"
+		& Docker.docked hosts "i386-git-annex-builder"
 
 
 	    --'                        __|II|      ,.
