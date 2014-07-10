@@ -1,0 +1,37 @@
+Propellor's security model is that the hosts it's used to deploy are
+untrusted, and that the central git repository server is untrusted too.
+
+The only trusted machine is the laptop where you run `propellor --spin`
+to connect to a remote host. And that one only because you have a ssh key
+or login password to the host.
+
+Since the hosts propellor deploys are not trusted by the central git
+repository, they have to use git:// or http:// to pull from the central
+git repository, rather than ssh://. 
+
+So, to avoid a MITM attack, propellor checks that any commit it fetches
+from origin is gpg signed by a trusted gpg key, and refuses to deploy it
+otherwise.
+
+That is only done when privdata/keyring.gpg exists. To set it up:
+
+	gpg --gen-key             # only if you don't already have a gpg key
+	propellor --add-key $MYKEYID
+
+In order to be secure from the beginning, when `propellor --spin` is used
+to bootstrap propellor on a new host, it transfers the local git repositry
+to the remote host over ssh. After that, the remote host knows the
+gpg key, and will use it to verify git fetches.
+
+Since the propoellor git repository is public, you can't store
+in cleartext private data such as passwords, ssh private keys, etc.
+
+Instead, `propellor --spin $host` looks for a
+`~/.propellor/privdata/privdata.gpg` file and if found decrypts it,
+extracts the private that that the $host needs, and sends it to to the
+$host using ssh. This lets a host know its own private data, without
+seeing all the rest.
+
+To securely store private data, use: `propellor --set $field $context`
+Propellor will tell you the details when you use a Property that needs
+PrivData.

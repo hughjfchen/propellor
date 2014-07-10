@@ -1,0 +1,2 @@
+# These files are used in a git repository that propellor sets up.
+propellor: package-contains-vcs-control-file usr/src/propellor/.gitignore

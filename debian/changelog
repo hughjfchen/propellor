@@ -1,0 +1,194 @@
+propellor (0.8.1) unstable; urgency=medium
+
+  * Run apt-get update in initial bootstrap.
+  * --list-fields now includes a table of fields that are not currently set,
+    but would be used if they got set.
+  * Remove .gitignore from cabal file list, to avoid build failure on Debian.
+    Closes: #754334
+
+ -- Joey Hess <joeyh@debian.org>  Wed, 09 Jul 2014 22:11:31 -0400
+
+propellor (0.8.0) unstable; urgency=medium
+
+  * Completely reworked privdata storage. There is now a single file,
+    and each host is sent only the privdata that its Properties actually use.
+
+    To transition existing privdata, run propellor against a host and
+    watch out for the red failure messages, and run the suggested commands
+    to store the privdata using the new storage scheme. You may find
+    it useful to run the old version of propellor to extract data from the old
+    privdata files during this migration.
+
+    Several properties that use privdata now require a context to be
+    specified. If in doubt, you can use anyContext, or
+    Context "hostname.example.com"
+
+  * Add --edit to edit a privdata value in $EDITOR.
+  * Add --list-fields to list all currently set privdata fields, along with
+    the hosts that use them.
+  * Fix randomHostKeys property to run openssh-server's postinst in a
+    non-failing way.
+  * Hostname.sane now cleans up the 127.0.0.1 localhost line in /etc/hosts,
+    to avoid eg, apache complaining "Could not reliably determine the
+    server's fully qualified domain name".
+
+ -- Joey Hess <joeyh@debian.org>  Sun, 06 Jul 2014 18:28:08 -0400
+
+propellor (0.7.0) unstable; urgency=medium
+
+  * combineProperties no longer stops when a property fails; now it continues
+    trying to satisfy all properties on the list before propigating the
+    failure.
+  * Attr is renamed to Info.
+  * Renamed wrapper to propellor to make cabal installation of propellor work.
+  * When git gpg signature of a fetched git branch cannot be verified,
+    propellor will now continue running, but without merging in that branch.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 13 Jun 2014 10:06:40 -0400
+
+propellor (0.6.0) unstable; urgency=medium
+
+  * Docker containers now propagate DNS attributes out to the host they're
+    docked in. So if a docker container sets a DNS alias, every container
+    it's docked in will automatically be added to a DNS round-robin,
+    when propellor is used to manage DNS for the domain.
+  * Apt.stdSourcesList no longer needs a suite to be specified.
+  * Added --dump to dump out a field of a host's privdata. Useful for editing
+    it.
+  * Propellor's output now includes the hostname being provisioned, or
+    when provisioning a docker container, the container name.
+
+ -- Joey Hess <joeyh@debian.org>  Thu, 05 Jun 2014 17:32:14 -0400
+
+propellor (0.5.3) unstable; urgency=medium
+
+  * Fix unattended-upgrades config for !stable.
+  * Ensure that kernel hostname is same as /etc/hostname when configuring
+    hostname.
+  * Added modules for some hosting providers (DigitalOcean, CloudAtCost).
+
+ -- Joey Hess <joeyh@debian.org>  Thu, 29 May 2014 14:29:53 -0400
+
+propellor (0.5.2) unstable; urgency=medium
+
+  * A bug that caused propellor to hang when updating a running docker
+    container appears to have been fixed. Note that since it affects
+    the propellor process that serves as "init" of docker containers,
+    they have to be restarted for the fix to take effect.
+  * Licence changed from GPL to BSD.
+  * A few changes to allow building Propellor on OSX. One user reports
+    successfully using it there.
+
+ -- Joey Hess <joeyh@debian.org>  Sat, 17 May 2014 16:42:55 -0400
+
+propellor (0.5.1) unstable; urgency=medium
+
+  * Primary DNS servers now have allow-transfer automatically populated
+    with the IP addresses of secondary dns servers. So, it's important
+    that all secondary DNS servers have an ipv4 (and/or ipv6) property
+    configured.
+  * Deal with old ssh connection caching sockets.
+  * Add missing build deps and deps. Closes: #745459
+
+ -- Joey Hess <joeyh@debian.org>  Thu, 24 Apr 2014 18:09:58 -0400
+
+propellor (0.5.0) unstable; urgency=medium
+
+  * Removed root domain records from SOA. Instead, use RootDomain
+    when calling Dns.primary.
+  * Dns primary and secondary properties are now revertable.
+  * When unattendedUpgrades is enabled on an Unstable or Testing system,
+    configure it to allow the upgrades.
+  * New website, https://propellor.branchable.com/
+
+ -- Joey Hess <joeyh@debian.org>  Sat, 19 Apr 2014 17:38:02 -0400
+
+propellor (0.4.0) unstable; urgency=medium
+
+  * Propellor can configure primary DNS servers, including generating
+    zone files, which is done by looking at the properties of hosts
+    in a domain.
+  * The `cname` property was renamed to `alias` as it does not always
+    generate CNAME in the DNS.
+  * Constructor of Property has changed (use `property` function instead).
+  * All Property combinators now combine together their Attr settings.
+    So Attr settings can be made inside a propertyList, for example.
+  * Run all cron jobs under chronic from moreutils to avoid unnecessary
+    mails.
+
+ -- Joey Hess <joeyh@debian.org>  Sat, 19 Apr 2014 02:09:56 -0400
+
+propellor (0.3.1) unstable; urgency=medium
+
+  * Merge scheduler bug fix from git-annex.
+  * Support for provisioning hosts with ssh and gpg keys.
+  * Obnam support.
+  * Apache support.
+  * Postfix satellite system support.
+  * Properties can now be satisfied differently on different operating
+    systems.
+  * Standard apt configuration for stable now includes backports.
+  * Cron jobs generated by propellor use flock(1) to avoid multiple
+    instances running at a time.
+  * Add support for SSH ed25519 keys.
+    (Thanks, Franz Pletz.)
+
+ -- Joey Hess <joeyh@debian.org>  Thu, 17 Apr 2014 20:07:33 -0400
+
+propellor (0.3.0) unstable; urgency=medium
+
+  * ipv6to4: Ensure interface is brought up automatically on boot.
+  * Enabling unattended upgrades now ensures that cron is installed and
+    running to perform them.
+  * Properties can be scheduled to only be checked after a given time period.
+  * Fix bootstrapping of dependencies.
+  * Fix compilation on Debian stable.
+  * Include security updates in sources.list for stable and testing.
+  * Use ssh connection caching, especially when bootstrapping.
+  * Properties now run in a Propellor monad, which provides access to
+    attributes of the host.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 11 Apr 2014 01:19:05 -0400
+
+propellor (0.2.3) unstable; urgency=medium
+
+  * docker: Fix laziness bug that caused running containers to be
+    unnecessarily stopped and committed.
+  * Add locking so only one propellor can run at a time on a host.
+  * docker: When running as effective init inside container, wait on zombies.
+  * docker: Added support for configuring shared volumes and linked
+    containers.
+
+ -- Joey Hess <joeyh@debian.org>  Tue, 08 Apr 2014 02:07:37 -0400
+
+propellor (0.2.2) unstable; urgency=medium
+
+  * Now supports provisioning docker containers with architecture/libraries
+    that do not match the host.
+  * Fixed a bug that caused file modes to be set to 600 when propellor
+    modified the file (did not affect newly created files).
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 04 Apr 2014 01:07:32 -0400
+
+propellor (0.2.1) unstable; urgency=medium
+
+  * First release with Debian package.
+
+ -- Joey Hess <joeyh@debian.org>  Thu, 03 Apr 2014 01:43:14 -0400
+
+propellor (0.2.0) unstable; urgency=low
+
+  * Added support for provisioning Docker containers.
+  * Bootstrap deployment now pushes the git repo to the remote host
+    over ssh, securely.
+  * propellor --add-key configures a gpg key, and makes propellor refuse
+    to pull commits from git repositories not signed with that key.
+    This allows propellor to be securely used with public, non-encrypted
+    git repositories without the possibility of MITM.
+  * Added support for type-safe reversions. Only some properties can be
+    reverted; the type checker will tell you if you try something that won't
+    work.
+  * New syntactic sugar for building a list of properties, including
+    revertable properties.
+
+ -- Joey Hess <joeyh@debian.org>  Wed, 02 Apr 2014 13:57:42 -0400

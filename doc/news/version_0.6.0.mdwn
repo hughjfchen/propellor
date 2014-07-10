@@ -1,0 +1,11 @@
+propellor 0.6.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Docker containers now propagate DNS attributes out to the host they're
+     docked in. So if a docker container sets a DNS alias, every container
+     it's docked in will automatically be added to a DNS round-robin,
+     when propellor is used to manage DNS for the domain.
+   * Apt.stdSourcesList no longer needs a suite to be specified.
+   * Added --dump to dump out a field of a host's privdata. Useful for editing
+     it.
+   * Propellor's output now includes the hostname being provisioned, or
+     when provisioning a docker container, the container name."""]]
