@@ -1,8 +1,0 @@
-propellor 0.5.0 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Removed root domain records from SOA. Instead, use RootDomain
-     when calling Dns.primary.
-   * Dns primary and secondary properties are now revertable.
-   * When unattendedUpgrades is enabled on an Unstable or Testing system,
-     configure it to allow the upgrades.
-   * New website, https://propellor.branchable.com/"""]]

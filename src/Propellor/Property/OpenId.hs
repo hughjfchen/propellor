@@ -25,5 +25,6 @@ providerFor users baseurl = propertyList desc $
 	
 	-- the identitites directory controls access, so open up
 	-- file mode
-	identfile u = File.hasPrivContentExposed $
-		concat $ [ "/var/lib/simpleid/identities/", u, ".identity" ]
+	identfile u = File.hasPrivContentExposed
+		(concat [ "/var/lib/simpleid/identities/", u, ".identity" ])
+		(Context baseurl)

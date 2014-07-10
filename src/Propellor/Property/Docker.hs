@@ -55,10 +55,11 @@ installed = Apt.installed ["docker.io"]
 -- | Configures docker with an authentication file, so that images can be
 -- pushed to index.docker.io. Optional.
 configured :: Property
-configured = property "docker configured" go `requires` installed
+configured = prop `requires` installed
   where
-	go = withPrivData DockerAuthentication $ \cfg -> ensureProperty $ 
-		"/root/.dockercfg" `File.hasContent` (lines cfg)
+	prop = withPrivData DockerAuthentication anyContext $ \getcfg ->
+		property "docker configured" $ getcfg $ \cfg -> ensureProperty $ 
+			"/root/.dockercfg" `File.hasContent` (lines cfg)
 
 -- | A short descriptive name for a container.
 -- Should not contain whitespace or other unusual characters,
@@ -86,8 +87,8 @@ cn2hn cn = cn ++ ".docker"
 -- The container has its own Properties which are handled by running
 -- propellor inside the container.
 --
--- Additionally, the container can have DNS info, such as a CNAME.
--- These become info of the host(s) it's docked in.
+-- When the container's Properties include DNS info, such as a CNAME,
+-- that is propigated to the Info of the host(s) it's docked in.
 --
 -- Reverting this property ensures that the container is stopped and
 -- removed.
@@ -96,7 +97,7 @@ docked
 	-> ContainerName
 	-> RevertableProperty
 docked hosts cn = RevertableProperty
-	((maybe id exposeDnsInfos mhost) (go "docked" setup))
+	((maybe id propigateInfo mhost) (go "docked" setup))
 	(go "undocked" teardown)
   where
 	go desc a = property (desc ++ " " ++ cn) $ do
@@ -123,9 +124,12 @@ docked hosts cn = RevertableProperty
 					]
 			]
 
-exposeDnsInfos :: Host -> Property -> Property
-exposeDnsInfos (Host _ _ containerinfo) p = combineProperties (propertyDesc p) $
-	p : map addDNS (S.toList $ _dns containerinfo)
+propigateInfo :: Host -> Property -> Property
+propigateInfo (Host _ _ containerinfo) p =
+	combineProperties (propertyDesc p) $ p : dnsprops ++ privprops
+  where
+	dnsprops = map addDNS (S.toList $ _dns containerinfo)
+	privprops = map addPrivDataField (S.toList $ _privDataFields containerinfo)
 
 findContainer
 	:: Maybe Host
@@ -390,7 +394,7 @@ chain s = case toContainerId s of
 -- being run. So, retry connections to the client for up to
 -- 1 minute.
 provisionContainer :: ContainerId -> Property
-provisionContainer cid = containerDesc cid $ property "provision" $ liftIO $ do
+provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ do
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 	r <- simpleShClientRetry 60 (namedPipe cid) shim params (go Nothing)
 	when (r /= FailedChange) $

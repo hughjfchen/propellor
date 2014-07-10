@@ -5,6 +5,7 @@ module Propellor.Property.Ssh (
 	hasAuthorizedKeys,
 	restartSshd,
 	randomHostKeys,
+	hostKeys,
 	hostKey,
 	keyImported,
 	knownHost,
@@ -72,46 +73,54 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 			[ Param "-c"
 			, Param "rm -f /etc/ssh/ssh_host_*"
 			]
-		ensureProperty $
-			cmdProperty "/var/lib/dpkg/info/openssh-server.postinst"
-				["configure"]
+		ensureProperty $ scriptProperty 
+			[ "DPKG_MAINTSCRIPT_NAME=postinst DPKG_MAINTSCRIPT_PACKAGE=openssh-server /var/lib/dpkg/info/openssh-server.postinst configure" ]
 
--- | Sets ssh host keys from the site's PrivData.
--- 
--- (Uses a null username for host keys.)
-hostKey :: SshKeyType -> Property
-hostKey keytype = combineProperties desc
-	[ property desc (install writeFile (SshPubKey keytype "") ".pub")
-	, property desc (install writeFileProtected (SshPrivKey keytype "") "")
+-- | Sets all types of ssh host keys from the privdata.
+hostKeys :: Context -> Property
+hostKeys ctx = propertyList "known ssh host keys"
+	[ hostKey SshDsa ctx
+	, hostKey SshRsa ctx
+	, hostKey SshEcdsa ctx
+	]
+
+-- | Sets a single ssh host key from the privdata.
+hostKey :: SshKeyType -> Context -> Property
+hostKey keytype context = combineProperties desc
+	[ installkey (SshPubKey keytype "")  (install writeFile ".pub")
+	, installkey (SshPrivKey keytype "") (install writeFileProtected "")
 	]
 	`onChange` restartSshd
   where
  	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
-	install writer p ext = withPrivData p $ \key -> do
+	installkey p a = withPrivData p context $ \getkey ->
+		property desc $ getkey a
+	install writer ext key = do
 		let f = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++ ext
 		s <- liftIO $ readFileStrict f
 		if s == key
 			then noChange
 			else makeChange $ writer f key
 
--- | Sets up a user with a ssh private key and public key pair
--- from the site's PrivData.
-keyImported :: SshKeyType -> UserName -> Property
-keyImported keytype user = combineProperties desc
-	[ property desc (install writeFile (SshPubKey keytype user) ".pub")
-	, property desc (install writeFileProtected (SshPrivKey keytype user) "")
+-- | Sets up a user with a ssh private key and public key pair from the
+-- PrivData.
+keyImported :: SshKeyType -> UserName -> Context -> Property
+keyImported keytype user context = combineProperties desc
+	[ installkey (SshPubKey keytype user) (install writeFile ".pub")
+	, installkey (SshPrivKey keytype user) (install writeFileProtected "")
 	]
   where
 	desc = user ++ " has ssh key (" ++ fromKeyType keytype ++ ")"
-	install writer p ext = do
+	installkey p a = withPrivData p context $ \getkey ->
+		property desc $ getkey a
+	install writer ext key = do
 		f <- liftIO $ keyfile ext
 		ifM (liftIO $ doesFileExist f)
 			( noChange
 			, ensureProperties
-				[ property desc $ 
-					withPrivData p $ \key -> makeChange $ do
-						createDirectoryIfMissing True (takeDirectory f)
-						writer f key
+				[ property desc $ makeChange $ do
+					createDirectoryIfMissing True (takeDirectory f)
+					writer f key
 				, File.ownerGroup f user user
 				, File.ownerGroup (takeDirectory f) user user
 				]
@@ -144,9 +153,9 @@ knownHost hosts hn user = property desc $
 		return FailedChange
 
 -- | Makes a user have authorized_keys from the PrivData
-authorizedKeys :: UserName -> Property
-authorizedKeys user = property (user ++ " has authorized_keys") $
-	withPrivData (SshAuthorizedKeys user) $ \v -> do
+authorizedKeys :: UserName -> Context -> Property
+authorizedKeys user context = withPrivData (SshAuthorizedKeys user) context $ \get ->
+	property (user ++ " has authorized_keys") $ get $ \v -> do
 		f <- liftIO $ dotFile "authorized_keys" user
 		liftIO $ do
 			createDirectoryIfMissing True (takeDirectory f)

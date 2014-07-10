@@ -26,9 +26,11 @@ usage = do
 		, "  propellor"
 		, "  propellor hostname"
 		, "  propellor --spin hostname"
-		, "  propellor --set hostname field"
-		, "  propellor --dump hostname field"
 		, "  propellor --add-key keyid"
+		, "  propellor --set field context"
+		, "  propellor --dump field context"
+		, "  propellor --edit field context"
+		, "  propellor --list-fields"
 		]
 	exitFailure
 
@@ -39,8 +41,10 @@ processCmdLine = go =<< getArgs
   	go ("--spin":h:[]) = return $ Spin h
   	go ("--boot":h:[]) = return $ Boot h
 	go ("--add-key":k:[]) = return $ AddKey k
-	go ("--set":h:f:[]) = withprivfield f (return . Set h)
-	go ("--dump":h:f:[]) = withprivfield f (return . Dump h)
+	go ("--set":f:c:[]) = withprivfield f c Set
+	go ("--dump":f:c:[]) = withprivfield f c Dump
+	go ("--edit":f:c:[]) = withprivfield f c Edit
+	go ("--list-fields":[]) = return ListFields
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
@@ -56,8 +60,8 @@ processCmdLine = go =<< getArgs
 			else return $ Run s
 	go _ = usage
 
-	withprivfield s f = case readish s of
-		Just pf -> f pf
+	withprivfield s c f = case readish s of
+		Just pf -> return $ f pf (Context c)
 		Nothing -> errorMessage $ "Unknown privdata field " ++ s
 
 defaultMain :: [Host] -> IO ()
@@ -69,8 +73,10 @@ defaultMain hostlist = do
 	go True cmdline
   where
 	go _ (Continue cmdline) = go False cmdline
-	go _ (Set hn field) = setPrivData hn field
-	go _ (Dump hn field) = dumpPrivData hn field
+	go _ (Set field context) = setPrivData field context
+	go _ (Dump field context) = dumpPrivData field context
+	go _ (Edit field context) = editPrivData field context
+	go _ ListFields = listPrivDataFields hostlist
 	go _ (AddKey keyid) = addKey keyid
 	go _ (Chain hn) = withhost hn $ \h -> do
 		r <- runPropellor h $ ensureProperties $ hostProperties h
@@ -78,7 +84,7 @@ defaultMain hostlist = do
 	go _ (Docker hn) = Docker.chain hn
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
-	go False (Spin hn) = withhost hn $ const $ spin hn
+	go False (Spin hn) = withhost hn $ spin hn
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
 		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
@@ -86,7 +92,7 @@ defaultMain hostlist = do
 	go False (Boot hn) = onlyProcess $ withhost hn boot
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
-	withhost hn a = maybe (unknownhost hn) a (findHost hostlist hn)
+	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
 
 onlyProcess :: IO a -> IO a
 onlyProcess a = bracket lock unlock (const a)
@@ -100,11 +106,12 @@ onlyProcess a = bracket lock unlock (const a)
 	alreadyrunning = error "Propellor is already running on this host!"
 	lockfile = localdir </> ".lock"
 
-unknownhost :: HostName -> IO a
-unknownhost h = errorMessage $ unlines
+unknownhost :: HostName -> [Host] -> IO a
+unknownhost h hosts = errorMessage $ unlines
 	[ "Propellor does not know about host: " ++ h
 	, "(Perhaps you should specify the real hostname on the command line?)"
 	, "(Or, edit propellor's config.hs to configure this host)"
+	, "Known hosts: " ++ unwords (map hostName hosts)
 	]
 
 buildFirst :: CmdLine -> IO () -> IO ()
@@ -170,17 +177,19 @@ updateFirst cmdline next = do
 getCurrentGitSha1 :: String -> IO String
 getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
 
-spin :: HostName -> IO ()
-spin hn = do
+spin :: HostName -> Host -> IO ()
+spin hn hst = do
 	url <- getUrl
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
 	cacheparams <- toCommand <$> sshCachingParams hn
-	go cacheparams url =<< gpgDecrypt (privDataFile hn)
+	go cacheparams url =<< hostprivdata
   where
+	hostprivdata = show . filterPrivData hst <$> decryptPrivData
+
 	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let finish = do
-			senddata toh (privDataFile hn) privDataMarker privdata
+			senddata toh "privdata" privDataMarker privdata
 			hClose toh
 			
 			-- Display remaining output.
@@ -201,7 +210,8 @@ spin hn = do
 	bootstrapcmd = shellWrap $ intercalate " ; "
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then " ++ intercalate " && "
-			[ "apt-get --no-install-recommends --no-upgrade -y install git make"
+			[ "apt-get update"
+			, "apt-get --no-install-recommends --no-upgrade -y install git make"
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			]
 		, "else " ++ intercalate " && "
@@ -222,8 +232,8 @@ spin hn = do
 			Just status -> return status
 	
 	showremote s = putStrLn s
-	senddata toh f marker s = void $
-		actionMessage ("Sending " ++ f ++ " (" ++ show (length s) ++ " bytes) to " ++ hn) $ do
+	senddata toh desc marker s = void $
+		actionMessage ("Sending " ++ desc ++ " (" ++ show (length s) ++ " bytes) to " ++ hn) $ do
 			sendMarked toh marker s
 			return True
 

@@ -1,3 +1,39 @@
+propellor (0.8.1) unstable; urgency=medium
+
+  * Run apt-get update in initial bootstrap.
+  * --list-fields now includes a table of fields that are not currently set,
+    but would be used if they got set.
+  * Remove .gitignore from cabal file list, to avoid build failure on Debian.
+    Closes: #754334
+
+ -- Joey Hess <joeyh@debian.org>  Wed, 09 Jul 2014 22:11:31 -0400
+
+propellor (0.8.0) unstable; urgency=medium
+
+  * Completely reworked privdata storage. There is now a single file,
+    and each host is sent only the privdata that its Properties actually use.
+
+    To transition existing privdata, run propellor against a host and
+    watch out for the red failure messages, and run the suggested commands
+    to store the privdata using the new storage scheme. You may find
+    it useful to run the old version of propellor to extract data from the old
+    privdata files during this migration.
+
+    Several properties that use privdata now require a context to be
+    specified. If in doubt, you can use anyContext, or
+    Context "hostname.example.com"
+
+  * Add --edit to edit a privdata value in $EDITOR.
+  * Add --list-fields to list all currently set privdata fields, along with
+    the hosts that use them.
+  * Fix randomHostKeys property to run openssh-server's postinst in a
+    non-failing way.
+  * Hostname.sane now cleans up the 127.0.0.1 localhost line in /etc/hosts,
+    to avoid eg, apache complaining "Could not reliably determine the
+    server's fully qualified domain name".
+
+ -- Joey Hess <joeyh@debian.org>  Sun, 06 Jul 2014 18:28:08 -0400
+
 propellor (0.7.0) unstable; urgency=medium
 
   * combineProperties no longer stops when a property fails; now it continues

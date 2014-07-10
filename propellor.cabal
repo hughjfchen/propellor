@@ -1,5 +1,5 @@
 Name: propellor
-Version: 0.7.0
+Version: 0.8.1
 Cabal-Version: >= 1.6
 License: BSD3
 Maintainer: Joey Hess <joey@kitenet.net>
@@ -25,7 +25,6 @@ Extra-Source-Files:
   debian/copyright
   debian/rules
   debian/lintian-overrides
-  .gitignore
 Synopsis: property-based host configuration management in haskell
 Description:
  Propellor enures that the system it's run in satisfies a list of
@@ -81,6 +80,7 @@ Library
     Propellor.Property.File
     Propellor.Property.Git
     Propellor.Property.Gpg
+    Propellor.Property.Grub
     Propellor.Property.Network
     Propellor.Property.Obnam
     Propellor.Property.OpenId
@@ -92,8 +92,9 @@ Library
     Propellor.Property.Sudo
     Propellor.Property.Tor
     Propellor.Property.User
-    Propellor.Property.HostingProvider.DigitalOcean
     Propellor.Property.HostingProvider.CloudAtCost
+    Propellor.Property.HostingProvider.DigitalOcean
+    Propellor.Property.HostingProvider.Linode
     Propellor.Property.SiteSpecific.GitHome
     Propellor.Property.SiteSpecific.JoeySites
     Propellor.Property.SiteSpecific.GitAnnexBuilder
@@ -105,6 +106,7 @@ Library
     Propellor.Types
     Propellor.Types.OS
     Propellor.Types.Dns
+    Propellor.Types.PrivData
   Other-Modules:
     Propellor.Types.Info
     Propellor.CmdLine
@@ -126,6 +128,7 @@ Library
     Utility.Process
     Utility.SafeCommand
     Utility.Scheduled
+    Utility.Table
     Utility.ThreadScheduler
     Utility.Tmp
     Utility.UserInfo

@@ -1,6 +1,7 @@
 module Propellor.Types.Info where
 
 import Propellor.Types.OS
+import Propellor.Types.PrivData
 import qualified Propellor.Types.Dns as Dns
 
 import qualified Data.Set as S
@@ -9,6 +10,7 @@ import Data.Monoid
 -- | Information about a host.
 data Info = Info
 	{ _os :: Val System
+	, _privDataFields :: S.Set (PrivDataField, Context)
 	, _sshPubKey :: Val String
 	, _dns :: S.Set Dns.Record
 	, _namedconf :: Dns.NamedConfMap
@@ -17,9 +19,10 @@ data Info = Info
 	deriving (Eq, Show)
 
 instance Monoid Info where
-	mempty = Info mempty mempty mempty mempty mempty
+	mempty = Info mempty mempty mempty mempty mempty mempty
 	mappend old new = Info
 		{ _os = _os old <> _os new
+		, _privDataFields = _privDataFields old <> _privDataFields new
 		, _sshPubKey = _sshPubKey old <> _sshPubKey new
 		, _dns = _dns old <> _dns new
 		, _namedconf = _namedconf old <> _namedconf new

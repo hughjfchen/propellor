@@ -1,0 +1,9 @@
+propellor 0.7.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * combineProperties no longer stops when a property fails; now it continues
+     trying to satisfy all properties on the list before propigating the
+     failure.
+   * Attr is renamed to Info.
+   * Renamed wrapper to propellor to make cabal installation of propellor work.
+   * When git gpg signature of a fetched git branch cannot be verified,
+     propellor will now continue running, but without merging in that branch."""]]
