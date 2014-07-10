@@ -1,3 +1,13 @@
+propellor (0.8.1) unstable; urgency=medium
+
+  * Run apt-get update in initial bootstrap.
+  * --list-fields now includes a table of fields that are not currently set,
+    but would be used if they got set.
+  * Remove .gitignore from cabal file list, to avoid build failure on Debian.
+    Closes: #754334
+
+ -- Joey Hess <joeyh@debian.org>  Wed, 09 Jul 2014 22:11:31 -0400
+
 propellor (0.8.0) unstable; urgency=medium
 
   * Completely reworked privdata storage. There is now a single file,

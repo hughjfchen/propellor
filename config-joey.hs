@@ -21,8 +21,10 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Service as Service
+import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
+import qualified Propellor.Property.HostingProvider.Linode as Linode
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
@@ -34,7 +36,6 @@ main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
      Deployed -}          --  `/-==__ _/__|/__=-|          (       \_
 hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                 --                  (o)  `
-	-- My laptop
 	[ host "darkstar.kitenet.net"
 		& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
 
@@ -42,8 +43,8 @@ hosts =                 --                  (o)  `
 		& Docker.configured
 		& Docker.docked hosts "android-git-annex"
 
-	-- Unreliable server.
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
+		[ "Unreliable server. Anything here may be lost at any time!" ]
 		& ipv4 "162.248.9.29"
 
 		& CloudAtCost.decruft
@@ -57,6 +58,7 @@ hosts =                 --                  (o)  `
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
+		[ "Main git-annex build box." ]
 		& ipv4 "138.38.108.179"
 
 		& Hostname.sane
@@ -71,16 +73,27 @@ hosts =                 --                  (o)  `
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
-	-- Important stuff that needs not too much memory or CPU.
-  	, let ctx = Context "diatom.kitenet.net"
-	  in standardSystem "diatom.kitenet.net" Stable "amd64"
+  	, standardSystem "kite.kitenet.net" Unstable "amd64"
+		[ "Welcome to the new kitenet.net server!"
+		, "This is still under construction and not yet live.."
+		]
+	  	& ipv4 "66.228.36.95"
+		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
+
+		& Apt.installed ["linux-image-amd64"]
+		& Linode.chainPVGrub 5
+		& Hostname.sane
+		& Apt.unattendedUpgrades
+		& Apt.installed ["systemd"]
+		& Ssh.hostKeys (Context "kitenet.net")
+	
+  	, standardSystem "diatom.kitenet.net" Stable "amd64"
+	  	[ "Important stuff that needs not too much memory or CPU." ]
 		& ipv4 "107.170.31.195"
 
 		& DigitalOcean.distroKernel
 		& Hostname.sane
-		& Ssh.hostKey SshDsa ctx
-		& Ssh.hostKey SshRsa ctx
-		& Ssh.hostKey SshEcdsa ctx
+		& Ssh.hostKeys (Context "diatom.kitenet.net")
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
 		& Postfix.satellite
@@ -133,36 +146,18 @@ hosts =                 --                  (o)  `
 		
 		& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
-	-- storage and backup server
 	, let ctx = Context "elephant.kitenet.net"
 	  in standardSystem "elephant.kitenet.net" Unstable "amd64"
+	  	[ "Storage, big data, and backups, omnomnom!" ]
 		& ipv4 "193.234.225.114"
 
+		& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
 		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
-		& Ssh.hostKey SshDsa ctx
-		& Ssh.hostKey SshRsa ctx
-		& Ssh.hostKey SshEcdsa ctx
+		& Ssh.hostKeys ctx
 		& Ssh.keyImported SshRsa "joey" ctx
-
-		-- PV-grub chaining
-		-- http://notes.pault.ag/linode-pv-grub-chainning/
-		-- (Adapted to use xvda1/hd0,0 instead of xvda/hd0)
-		& "/boot/grub/menu.lst" `File.hasContent`
-			[ "default 1" 
-			, "timeout 30"
-			, ""
-			, "title grub-xen shim"
-			, "root (hd0,0)"
-			, "kernel /boot/xen-shim"
-			, "boot"
-			]
-		& "/boot/load.cf" `File.hasContent`
-			[ "configfile (xen/xvda1)/boot/grub/grub.cfg" ]
-		& Apt.installed ["grub-xen"]
-		& flagFile (scriptProperty ["update-grub; grub-mkimage --prefix '(xen/xvda1)/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]) "/boot/xen-shim"
-			`describe` "/boot-xen-shim"
+		& Apt.serviceInstalledRunning "swapspace"
 
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
@@ -204,6 +199,11 @@ hosts =                 --                  (o)  `
 		-- block 22.
 		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
 			`onChange` Service.restarted "ssh"
+		
+		-- temp
+		& Docker.docked hosts "amd64-git-annex-builder"
+		& Docker.docked hosts "i386-git-annex-builder"
+		& Docker.docked hosts "android-git-annex-builder"
 
 
 	    --'                        __|II|      ,.
@@ -257,10 +257,13 @@ hosts =                 --                  (o)  `
 	-- temp for an acquantance
 	] ++ monsters
 
+type Motd = [String]
+
 -- This is my standard system setup.
-standardSystem :: HostName -> DebianSuite -> Architecture -> Host
-standardSystem hn suite arch = host hn
+standardSystem :: HostName -> DebianSuite -> Architecture -> Motd -> Host
+standardSystem hn suite arch motd = host hn
 	& os (System (Debian suite) arch)
+	& File.hasContent "/etc/motd" ("":motd++[""])
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.cacheCleaned
 	& Apt.installed ["etckeeper"]
@@ -352,7 +355,6 @@ monsters =	      -- but do want to track their public keys etc.
 		& ipv4 "80.68.85.49"
 		& ipv6 "2001:41c8:125:49::10"
 		& alias "kitenet.net"
-		& alias "kite.kitenet.net"
 		& alias "ns1.kitenet.net"
 		& alias "ftp.kitenet.net"
 		& alias "mail.kitenet.net"
