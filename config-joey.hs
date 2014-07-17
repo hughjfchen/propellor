@@ -97,7 +97,7 @@ hosts =                 --                  (o)  `
 			, "--exclude=/home/joey/lib"
 			, "--exclude=.*/tmp/"
 			] Obnam.OnlyClient
-			`requires` Gpg.keyImported "" "root"
+			`requires` Gpg.keyImported "98147487" "root"
 			`requires` Ssh.keyImported SshRsa "root"
 				(Context "kite.kitenet.net")
 	
@@ -175,12 +175,13 @@ hosts =                 --                  (o)  `
 
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
-		& JoeySites.githubBackup
 		& JoeySites.obnamRepos ["wren", "pell", "kite"]
-		& Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
+		& JoeySites.githubBackup
+		& JoeySites.rsyncNetBackup hosts
+		& JoeySites.backupsBackedupTo hosts "usbackup.kitenet.net" "lib/backup/eubackup"
 
 		& alias "podcatcher.kitenet.net"
-		& Apt.installed ["git-annex"]
+		& JoeySites.podcatcher
 		
 		& alias "znc.kitenet.net"
 		& JoeySites.ircBouncer
@@ -364,6 +365,7 @@ monsters =	      -- but do want to track their public keys etc.
 		& ipv4 "67.223.19.96"
 		& ipv6 "2001:4978:f:2d9::2"
 		& alias "backup.kitenet.net"
+		& alias "usbackup.kitenet.net"
 		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
 	, host "wren.kitenet.net"
 		& ipv4 "80.68.85.49"

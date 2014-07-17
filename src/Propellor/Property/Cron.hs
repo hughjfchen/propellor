@@ -42,7 +42,7 @@ job desc times user cddir command = cronjobfile `File.hasContent`
 -- | Installs a cron job, and runs it niced and ioniced.
 niceJob :: Desc -> CronTimes -> UserName -> FilePath -> String -> Property
 niceJob desc times user cddir command = job desc times user cddir
-	("nice ionice -c 3 " ++ command)
+	("nice ionice -c 3 sh -c " ++ shellEscape command)
 
 -- | Installs a cron job to run propellor.
 runPropellor :: CronTimes -> Property

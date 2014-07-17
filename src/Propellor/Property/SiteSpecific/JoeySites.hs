@@ -348,7 +348,25 @@ githubBackup = propertyList "github-backup box"
 	, let f = "/home/joey/.github-keys"
 	  in File.hasPrivContent f anyContext
 		`onChange` File.ownerGroup f "joey" "joey"
+	, Cron.niceJob "github-backup run" "30 4 * * *" "joey"
+		"/home/joey/lib/backup" $ intercalate "&"
+			[ "mkdir -p github"
+			, "cd github"
+			, "$HOME/.github-keys && github-backup joeyh"
+			]
 	]
+
+rsyncNetBackup :: [Host] -> Property
+rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" "30 5 * * *"
+	"joey" "/home/joey/lib/backup" "mkdir -p rsync.net && rsync --delete -az 2318@usw-s002.rsync.net: rsync.net"
+	`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
+
+backupsBackedupTo :: [Host] -> HostName -> FilePath -> Property
+backupsBackedupTo hosts desthost destdir = Cron.niceJob "backups copied to usbackup weekly"
+	"1 1 * * 3" "joey" "/" cmd
+	`requires` Ssh.knownHost hosts desthost "joey"
+  where
+	cmd = "rsync -az --delete /home/joey/lib/backup " ++ desthost ++ ":" ++ destdir
 
 obnamRepos :: [String] -> Property
 obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
@@ -360,3 +378,8 @@ obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
 	mkdir d = File.dirExists d
 		`before` File.ownerGroup d "joey" "joey"
 
+podcatcher :: Property
+podcatcher = Cron.niceJob "podcatcher run hourly" "55 * * * *"
+	"joey" "/home/joey/lib/sound/podcasts"
+	"xargs git-annex importfeed -c annex.genmetadata=true < feeds; mr --quiet update"
+	`requires` Apt.installed ["git-annex"]
