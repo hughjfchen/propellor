@@ -381,4 +381,4 @@ podcatcher :: Property
 podcatcher = Cron.niceJob "podcatcher run hourly" "55 * * * *"
 	"joey" "/home/joey/lib/sound/podcasts"
 	"xargs git-annex importfeed -c annex.genmetadata=true < feeds; mr --quiet update"
-	`requires` Apt.installed ["git-annex"]
+	`requires` Apt.installed ["git-annex", "myrepos"]
