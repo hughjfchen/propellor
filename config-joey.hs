@@ -8,6 +8,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
 import qualified Propellor.Property.Ssh as Ssh
+import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
@@ -22,6 +23,7 @@ import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Grub as Grub
+import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -87,6 +89,17 @@ hosts =                 --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Apt.installed ["systemd"]
 		& Ssh.hostKeys (Context "kitenet.net")
+		& Obnam.backup "/" "33 1 * * *"
+			[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
+			, "--encrypt-with="
+			, "--exclude=/var/cache"
+			, "--exclude=/var/tmp"
+			, "--exclude=/home/joey/lib"
+			, "--exclude=.*/tmp/"
+			] Obnam.OnlyClient
+			`requires` Gpg.keyImported "" "root"
+			`requires` Ssh.keyImported SshRsa "root"
+				(Context "kite.kitenet.net")
 	
   	, standardSystem "diatom.kitenet.net" Stable "amd64"
 	  	[ "Important stuff that needs not too much memory or CPU." ]
