@@ -362,10 +362,11 @@ rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" "30 5 * * *"
 	`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
 
 backupsBackedupTo :: [Host] -> HostName -> FilePath -> Property
-backupsBackedupTo hosts desthost destdir = Cron.niceJob "backups copied to usbackup weekly"
+backupsBackedupTo hosts desthost destdir = Cron.niceJob desc
 	"1 1 * * 3" "joey" "/" cmd
 	`requires` Ssh.knownHost hosts desthost "joey"
   where
+	desc = "backups copied to " ++ desthost ++ " weekly"
 	cmd = "rsync -az --delete /home/joey/lib/backup " ++ desthost ++ ":" ++ destdir
 
 obnamRepos :: [String] -> Property
