@@ -163,7 +163,7 @@ hosts =                 --                  (o)  `
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
 		& JoeySites.githubBackup
-		& JoeySites.obnamRepos ["wren", "pell"]
+		& JoeySites.obnamRepos ["wren", "pell", "kite"]
 		& Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
 
 		& alias "podcatcher.kitenet.net"
