@@ -165,7 +165,9 @@ hosts =                 --                  (o)  `
 
 	, let ctx = Context "elephant.kitenet.net"
 	  in standardSystem "elephant.kitenet.net" Unstable "amd64"
-	  	[ "Storage, big data, and backups, omnomnom!" ]
+	  	[ "Storage, big data, and backups, omnomnom!"
+		, "(Encrypt all data stored here.)"
+		]
 		& ipv4 "193.234.225.114"
 
 		& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
