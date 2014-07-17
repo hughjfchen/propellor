@@ -191,8 +191,8 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 type AnnexUUID = String
 
 -- | A website, with files coming from a git-annex repository.
-annexWebSite :: [Host] -> Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] -> Property
-annexWebSite hosts origin hn uuid remotes = propertyList (hn ++" website using git-annex")
+annexWebSite :: Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] -> Property
+annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-annex")
 	[ Git.cloned "joey" origin dir Nothing
 		`onChange` setup
 	, postupdatehook `File.hasContent`

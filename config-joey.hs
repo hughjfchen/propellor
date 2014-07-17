@@ -131,7 +131,7 @@ hosts =                 --                  (o)  `
 		& JoeySites.gitServer hosts
 	
 		& alias "downloads.kitenet.net"
-		& JoeySites.annexWebSite hosts "/srv/git/downloads.git"
+		& JoeySites.annexWebSite "/srv/git/downloads.git"
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
@@ -140,7 +140,7 @@ hosts =                 --                  (o)  `
 		& JoeySites.gitAnnexDistributor
 
 		& alias "tmp.kitenet.net"
-		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"
+		& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
 			"tmp.kitenet.net"
 			"26fd6e38-1226-11e2-a75f-ff007033bdba"
 			[]
