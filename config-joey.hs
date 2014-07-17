@@ -91,6 +91,7 @@ hosts =                 --                  (o)  `
 		& Ssh.hostKeys (Context "kitenet.net")
 		& Obnam.backup "/" "33 1 * * *"
 			[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
+			, "--client-name=kitenet.net"
 			, "--encrypt-with="
 			, "--exclude=/var/cache"
 			, "--exclude=/var/tmp"
@@ -134,6 +135,8 @@ hosts =                 --                  (o)  `
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
 			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
+			`requires` Ssh.keyImported SshRsa "joey" (Context "downloads.kitenet.net")
+			`requires` Ssh.knownHost hosts "turtle.kitenet.net" "joey"
 		& JoeySites.gitAnnexDistributor
 
 		& alias "tmp.kitenet.net"

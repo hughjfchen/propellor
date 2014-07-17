@@ -142,7 +142,7 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 	, Obnam.backup "/srv/git" "33 3 * * *"
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
 		, "--encrypt-with=1B169BE1"
-		, "--client-name=wren"
+		, "--client-name=wren" -- historical
 		] Obnam.OnlyClient
 		`requires` Gpg.keyImported "1B169BE1" "root"
 		`requires` Ssh.keyImported SshRsa "root" (Context "git.kitenet.net")
@@ -206,8 +206,6 @@ annexWebSite hosts origin hn uuid remotes = propertyList (hn ++" website using g
 	dir = "/srv/web/" ++ hn
 	postupdatehook = dir </> ".git/hooks/post-update"
 	setup = userScriptProperty "joey" setupscript
-		`requires` Ssh.keyImported SshRsa "joey" (Context hn)
-		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "joey"
 	setupscript = 
 		[ "cd " ++ shellEscape dir
 		, "git config annex.uuid " ++ shellEscape uuid
