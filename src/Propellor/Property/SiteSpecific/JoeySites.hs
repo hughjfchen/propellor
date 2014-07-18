@@ -465,7 +465,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "smtp_use_tls = yes"
 		, "smtp_tls_session_cache_database = sdbm:/etc/postfix/smtp_scache"
 		]
-		-- `onChange` Postfix.dedupMainCf
+		`onChange` Postfix.dedupMainCf
 		`onChange` Service.restarted "postfix"
 		`describe` "postfix configured"
 	, Apt.serviceInstalledRunning "dovecot-imapd"
