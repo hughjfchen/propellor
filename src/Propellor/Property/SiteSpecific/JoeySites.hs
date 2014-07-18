@@ -409,7 +409,8 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`onChange` Service.restarted "spamass-milter"
 		`describe` "spamass-milter configured"
 	
-	, Apt.serviceInstalledRunning "clamav-milter"
+	, Apt.serviceInstalledRunning "clamav-freshclam"
+	, Apt.serviceInstalledRunning "amavisd-milter"
 
 	, Apt.installed ["maildrop"]
 	, "/etc/maildroprc" `File.hasContent`
