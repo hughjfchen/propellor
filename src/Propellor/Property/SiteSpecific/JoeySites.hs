@@ -389,6 +389,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	[ Postfix.installed
 	, Apt.installed ["postfix-pcre"]
 	, Apt.serviceInstalledRunning "postgrey"
+
 	, Apt.serviceInstalledRunning "spamassassin"
 	, "/etc/default/spamassassin" `File.containsLines`
 		[ "ENABLED=1"
@@ -397,13 +398,35 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "NICE=\"--nicelevel 15\""
 		] `onChange` Service.restarted "spamassassin"
 		`describe` "spamd enabled"
+	
 	, Apt.serviceInstalledRunning "spamass-milter"
+	-- Add -m to prevent modifying messages Subject or body.
+	, "/etc/default/spamass-milter" `File.containsLine`
+		"OPTIONS=\"-m -u spamass-milter -i 127.0.0.1\""
+		`onChange` Service.restarted "spamass-milter"
+		`describe` "spamass-milter configured"
+	
 	, Apt.installed ["maildrop"]
+	, "/etc/maildroprc" `File.hasContent`
+		[ "# Global maildrop filter file (deployed with propellor"
+		, "DEFAULT=\"$HOME/Maildir\""
+		, "MAILBOX=\"$DEFAULT/.\""
+		, "# Filter spam to a spam folder, unless .keepspam exists"
+		, "if (/^X-Spam-Status: Yes/)"
+		, "{"
+		, "  `test -e \"$HOME/.keepspam\"`"
+		, "  if ( $RETURNCODE != 0 )"
+		, "  to ${MAILBOX}spam"
+		, "}"
+		]
+		`describe` "maildrop configured"
+
 	, "/etc/aliases" `File.hasPrivContentExposed` ctx
 		`onChange` cmdProperty "newaliases" ["newaliases"]
 	, hasJoeyCAChain
 	, "/etc/ssl/certs/postfix.pem" `File.hasPrivContentExposed` ctx
 	, "/etc/ssl/private/postfix.pem" `File.hasPrivContent` ctx
+
 	, "/etc/postfix/mydomain" `File.containsLines`
 		[ "/.*\\.kitenet\\.net/\tOK"
 		, "/mooix\\.net/\tOK"
@@ -468,8 +491,10 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`onChange` Postfix.dedupMainCf
 		`onChange` Service.restarted "postfix"
 		`describe` "postfix configured"
+	
 	, Apt.serviceInstalledRunning "dovecot-imapd"
 	, Apt.serviceInstalledRunning "dovecot-pop3d"
+
 	, Apt.serviceInstalledRunning "cron"
 	, Apt.installed ["bsd-mailx"]
 	]
