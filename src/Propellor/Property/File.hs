@@ -41,11 +41,9 @@ containsLine :: FilePath -> Line -> Property
 f `containsLine` l = f `containsLines` [l]
 
 containsLines :: FilePath -> [Line] -> Property
-f `containsLines` l = fileProperty (f ++ " contains:" ++ show l) go f
+f `containsLines` ls = fileProperty (f ++ " contains:" ++ show ls) go f
   where
-	go ls
-		| all (`elem` ls) l = ls
-		| otherwise = ls++l
+	go content = content ++ filter (`notElem` content) ls
 
 -- | Ensures that a line is not present in a file.
 -- Note that the file is ensured to exist, so if it doesn't, an empty
