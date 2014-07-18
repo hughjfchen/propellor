@@ -38,14 +38,14 @@ satellite = check norelayhost setup
 				, ("postfix/destinations", "string", " ")
 				, ("postfix/mailname", "string", hn)
 				]
-			, mainCf `containsLine` ("relayhost = " ++ domain)
-				`onChange` dedupMainCf
+			, mainCf ("relayhost", domain)
 				`onChange` reloaded
 			]
 	norelayhost = not . any relayhostset . lines
 		<$> readProcess "postconf" []
 	relayhostset l
 		| l == "relayhost =" = False
+		| l == "relayhost = " = False
 		| "relayhost =" `isPrefixOf` l = True
 		| otherwise = False
 
@@ -61,6 +61,29 @@ mappedFile f setup = setup f
 newaliases :: Property
 newaliases = trivial $ cmdProperty "newaliases" []
 
+-- | The main config file for postfix.
+mainCfFile :: FilePath
+mainCfFile = "/etc/postfix/main.cf"
+
+-- | Sets a main.cf name=value pair. Does not reload postfix immediately.
+mainCf :: (String, String) -> Property
+mainCf (name, value) = check notset set
+		`describe` ("postfix main.cf " ++ setting)
+  where
+	setting = name ++ "=" ++ value
+	notset = (/= Just value) <$> getMainCf name
+	set = cmdProperty "postconf" ["-e", setting]
+
+-- | Gets a man.cf setting.
+getMainCf :: String -> IO (Maybe String)
+getMainCf name = parse . lines <$> readProcess "postconf" [name]
+  where
+	parse (l:_) = Just $ 
+		case separate (== '=') l of
+			(_, (' ':v)) -> v
+			(_, v) -> v
+	parse [] = Nothing
+
 -- | Parses main.cf, and removes any initial configuration lines that are
 -- overridden to other values later in the file.
 --
@@ -74,7 +97,7 @@ newaliases = trivial $ cmdProperty "newaliases" []
 -- Note that multiline configurations that continue onto the next line
 -- are not currently supported.
 dedupMainCf :: Property
-dedupMainCf = fileProperty "postfix main.cf dedupped" dedupCf mainCf
+dedupMainCf = fileProperty "postfix main.cf dedupped" dedupCf mainCfFile
 
 dedupCf :: [String] -> [String]
 dedupCf ls =
@@ -96,7 +119,3 @@ dedupCf ls =
 	dedup c kc ((Right (k, v)):rest) = case M.lookup k kc of
 		Just n | n > 1 -> dedup c (M.insert k (n - 1) kc) rest
 		_ -> dedup (fmt k v:c) kc rest
-
--- | The main config file for postfix.
-mainCf :: FilePath
-mainCf = "/etc/postfix/main.cf"

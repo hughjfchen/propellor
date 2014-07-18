@@ -461,7 +461,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`onChange` Postfix.reloaded
 	, Postfix.mappedFile "/etc/postfix/relay_clientcerts" $
 		flip File.hasPrivContentExposed ctx
-	, Postfix.mainCf `File.containsLines`
+	, Postfix.mainCfFile `File.containsLines`
 		[ "myhostname = kitenet.net"
 		, "mydomain = $myhostname"
 		, "append_dot_mydomain = no"
