@@ -6,6 +6,7 @@ import Propellor.Property.File
 
 import qualified Data.Map as M
 import Data.List
+import Data.Char
 
 installed :: Property
 installed = Apt.serviceInstalledRunning "postfix"
@@ -56,7 +57,9 @@ dedupMainCf = fileProperty "postfix main.cf dedupped" go mainCf
 	
 	parse l
 		| "#" `isPrefixOf` l = Left l
-		| "=" `isInfixOf` l = Right (separate (== '=') l)
+		| "=" `isInfixOf` l = 
+			let (k, v) = separate (== '=') l
+			in Right ((filter (not . isSpace) k), v)
 		| otherwise = Left l
 	fmt k v = k ++ "=" ++ v
 
