@@ -75,7 +75,10 @@ hosts =                 --                  (o)  `
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
-  	, standardSystem "kite.kitenet.net" Unstable "amd64"
+	-- This is not a complete description of kite, since it's a
+	-- multiuser system with eg, user passwords that are not deployed
+	-- with propellor.
+  	, standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 		[ "Welcome to the new kitenet.net server!"
 		, "This is still under construction and not yet live.."
 		]
@@ -102,6 +105,8 @@ hosts =                 --                  (o)  `
 		& JoeySites.kiteMailServer
 
 		& Apt.installed ["mutt", "alpine", "git-annex", "myrepos"]
+		-- Since password authentication is allowed:
+		& Apt.serviceInstalledRunning "fail2ban"
 
   	, standardSystem "diatom.kitenet.net" Stable "amd64"
 	  	[ "Important stuff that needs not too much memory or CPU." ]
@@ -280,7 +285,14 @@ type Motd = [String]
 
 -- This is my standard system setup.
 standardSystem :: HostName -> DebianSuite -> Architecture -> Motd -> Host
-standardSystem hn suite arch motd = host hn
+standardSystem hn suite arch motd = standardSystemUnhardened hn suite arch motd
+	-- Harden the system, but only once root's authorized_keys
+	-- is safely in place.
+	& check (Ssh.hasAuthorizedKeys "root")
+		(Ssh.passwordAuthentication False)
+
+standardSystemUnhardened :: HostName -> DebianSuite -> Architecture -> Motd -> Host
+standardSystemUnhardened hn suite arch motd = host hn
 	& os (System (Debian suite) arch)
 	& Hostname.sane
 	& Hostname.searchDomain
@@ -291,10 +303,6 @@ standardSystem hn suite arch motd = host hn
 	& Apt.installed ["ssh"]
 	& GitHome.installedFor "root"
 	& User.hasSomePassword "root" (Context hn)
-	-- Harden the system, but only once root's authorized_keys
-	-- is safely in place.
-	& check (Ssh.hasAuthorizedKeys "root")
-		(Ssh.passwordAuthentication False)
 	& User.accountFor "joey"
 	& User.hasSomePassword "joey" (Context hn)
 	& Sudo.enabledFor "joey"

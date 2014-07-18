@@ -15,6 +15,9 @@ installed = Apt.serviceInstalledRunning "postfix"
 restarted :: Property
 restarted = Service.restarted "postfix"
 
+reloaded :: Property
+reloaded = Service.reloaded "postfix"
+
 -- | Configures postfix as a satellite system, which 
 -- relats all mail through a relay host, which defaults to smtp.domain. 
 --

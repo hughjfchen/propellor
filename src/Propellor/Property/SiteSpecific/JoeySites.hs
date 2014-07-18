@@ -435,11 +435,11 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "/ikiwiki\\.info/\tOK"
 		, "/joeyh\\.name/\tOK"
 		]
-		`onChange` Postfix.restarted
+		`onChange` Postfix.reloaded
 		`describe` "postfix mydomain file configured"
 	, "/etc/postfix/obscure_client_relay.pcre" `File.containsLine`
 		"/^Received: from ([^.]+)\\.kitenet\\.net.*using TLS.*by kitenet\\.net \\(([^)]+)\\) with (E?SMTPS?A?) id ([A-F[:digit:]]+)(.*)/ IGNORE"
-		`onChange` Postfix.restarted
+		`onChange` Postfix.reloaded
 		`describe` "postfix obscure_client_relay file configured"
 	, Postfix.mappedFile "/etc/postfix/virtual"
 		(flip File.containsLines
@@ -447,7 +447,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 			, "@joeyh.name\tjoey"
 			]
 		) `describe` "postfix virtual file configured"
-		`onChange` Postfix.restarted
+		`onChange` Postfix.reloaded
 	, Postfix.mappedFile "/etc/postfix/relay_clientcerts" $
 		flip File.hasPrivContentExposed ctx
 	, Postfix.mainCf `File.containsLines`
@@ -492,7 +492,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "smtp_tls_session_cache_database = sdbm:/etc/postfix/smtp_scache"
 		]
 		`onChange` Postfix.dedupMainCf
-		`onChange` Postfix.restarted
+		`onChange` Postfix.reloaded
 		`describe` "postfix configured"
 	
 	, Apt.serviceInstalledRunning "dovecot-imapd"
