@@ -3,6 +3,7 @@ module Propellor.Property.Postfix where
 import Propellor
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.File
+import qualified Propellor.Property.Service as Service
 
 import qualified Data.Map as M
 import Data.List
@@ -10,6 +11,9 @@ import Data.Char
 
 installed :: Property
 installed = Apt.serviceInstalledRunning "postfix"
+
+restarted :: Property
+restarted = Service.restarted "postfix"
 
 -- | Configures postfix as a satellite system, which 
 -- relats all mail through a relay host, which defaults to smtp.domain. 
@@ -35,6 +39,11 @@ satellite = setup `requires` installed
 mappedFile :: FilePath -> (FilePath -> Property) -> Property
 mappedFile f setup = setup f
 	`onChange` cmdProperty "postmap" [f]
+
+-- | Run newaliases command, which should be done after changing
+-- /etc/aliases.
+newaliases :: Property
+newaliases = trivial $ cmdProperty "newaliases" []
 
 -- | Parses main.cf, and removes any initial configuration lines that are
 -- overridden to other values later in the file.

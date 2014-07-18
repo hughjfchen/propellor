@@ -392,12 +392,15 @@ kiteMailServer = propertyList "kitenet.net mail server"
 
 	, Apt.serviceInstalledRunning "spamassassin"
 	, "/etc/default/spamassassin" `File.containsLines`
-		[ "ENABLED=1"
+		[ "# Propellor deployed"
+		, "ENABLED=1"
+		, "CRON=1"
 		, "OPTIONS=\"--create-prefs --max-children 5 --helper-home-dir\""
 		, "CRON=1"
 		, "NICE=\"--nicelevel 15\""
 		] `onChange` Service.restarted "spamassassin"
 		`describe` "spamd enabled"
+		`requires` Apt.serviceInstalledRunning "cron"
 	
 	, Apt.serviceInstalledRunning "spamass-milter"
 	-- Add -m to prevent modifying messages Subject or body.
@@ -408,7 +411,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	
 	, Apt.installed ["maildrop"]
 	, "/etc/maildroprc" `File.hasContent`
-		[ "# Global maildrop filter file (deployed with propellor"
+		[ "# Global maildrop filter file (deployed with propellor)"
 		, "DEFAULT=\"$HOME/Maildir\""
 		, "MAILBOX=\"$DEFAULT/.\""
 		, "# Filter spam to a spam folder, unless .keepspam exists"
@@ -422,22 +425,21 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`describe` "maildrop configured"
 
 	, "/etc/aliases" `File.hasPrivContentExposed` ctx
-		`onChange` cmdProperty "newaliases" ["newaliases"]
+		`onChange` Postfix.newaliases
 	, hasJoeyCAChain
 	, "/etc/ssl/certs/postfix.pem" `File.hasPrivContentExposed` ctx
 	, "/etc/ssl/private/postfix.pem" `File.hasPrivContent` ctx
 
 	, "/etc/postfix/mydomain" `File.containsLines`
 		[ "/.*\\.kitenet\\.net/\tOK"
-		, "/mooix\\.net/\tOK"
 		, "/ikiwiki\\.info/\tOK"
 		, "/joeyh\\.name/\tOK"
 		]
-		`onChange` Service.restarted "postfix"
+		`onChange` Postfix.restarted
 		`describe` "postfix mydomain file configured"
 	, "/etc/postfix/obscure_client_relay.pcre" `File.containsLine`
 		"/^Received: from ([^.]+)\\.kitenet\\.net.*using TLS.*by kitenet\\.net \\(([^)]+)\\) with (E?SMTPS?A?) id ([A-F[:digit:]]+)(.*)/ IGNORE"
-		`onChange` Service.restarted "postfix"
+		`onChange` Postfix.restarted
 		`describe` "postfix obscure_client_relay file configured"
 	, Postfix.mappedFile "/etc/postfix/virtual"
 		(flip File.containsLines
@@ -445,6 +447,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 			, "@joeyh.name\tjoey"
 			]
 		) `describe` "postfix virtual file configured"
+		`onChange` Postfix.restarted
 	, Postfix.mappedFile "/etc/postfix/relay_clientcerts" $
 		flip File.hasPrivContentExposed ctx
 	, Postfix.mainCf `File.containsLines`
@@ -489,13 +492,12 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "smtp_tls_session_cache_database = sdbm:/etc/postfix/smtp_scache"
 		]
 		`onChange` Postfix.dedupMainCf
-		`onChange` Service.restarted "postfix"
+		`onChange` Postfix.restarted
 		`describe` "postfix configured"
 	
 	, Apt.serviceInstalledRunning "dovecot-imapd"
 	, Apt.serviceInstalledRunning "dovecot-pop3d"
 
-	, Apt.serviceInstalledRunning "cron"
 	, Apt.installed ["bsd-mailx"]
 	]
   where
