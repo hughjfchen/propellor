@@ -508,11 +508,34 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	
 	, Apt.serviceInstalledRunning "dovecot-imapd"
 	, Apt.serviceInstalledRunning "dovecot-pop3d"
+	, "/etc/dovecot/conf.d/10-mail.conf" `File.containsLine`
+		"mail_location = maildir:~/Maildir"
+		`onChange` Service.reloaded "dovecot"
+		`describe` "dovecot configured"
 
-	, Apt.installed ["bsd-mailx"]
+	, Apt.installed ["mutt", "bsd-mailx", "alpine"]
+
+	, pinescript `File.hasContent`
+		[ "#!/bin/sh"
+		, "# deployed with propellor"
+		, "set -e"
+		, "pass=$HOME/.pine-password"
+		, "if [ ! -e $pass ]; then"
+		, "\ttouch $pass"
+		, "fi"
+		, "chmod 600 pass"
+		, "exec alpine -passfile $pass \"$@\""
+		]
+		`onChange` (pinescript `File.mode` combineModes (readModes ++ executeModes))
+		`describe` "pine wrapper script"
+	, "/etc/pine.conf" `File.containsLines`
+		[ "inbox-path={localhost/novalidate-cert}inbox"
+		]
+		`describe` "pine configured to use local imap server"
 	]
   where
 	ctx = Context "kitenet.net"
+	pinescript = "/usr/local/bin/pine"
 
 hasJoeyCAChain :: Property
 hasJoeyCAChain = "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed`

@@ -105,8 +105,9 @@ hosts =                 --                  (o)  `
 
 		& JoeySites.kiteMailServer
 		-- & alias "smtp.kitenet.net" -- not yet live!
+		-- & alias "imap.kitenet.net" -- not yet live!
 
-		& Apt.installed ["mutt", "alpine", "git-annex", "myrepos"]
+		& Apt.installed ["git-annex", "myrepos"]
 		-- Since password authentication is allowed:
 		& Apt.serviceInstalledRunning "fail2ban"
 
@@ -400,14 +401,14 @@ monsters =	      -- but do want to track their public keys etc.
 		{- Remaining services on kite:
 		 - 
 		 - mail
-		 -   postfix
-		 -   postgrey
+		 -   /postfix
+		 -   /postgrey
 		 -   mailman
-		 -   spamassassin
+		 -   /spamassassin
 		 -   sqwebmail
-		 -   courier
-		 -     imap
-		 -     tls
+		 -   /courier
+		 -     /imap
+		 -     /pop
 		 - apache
 		 -   some static websites
 		 - bitlbee
