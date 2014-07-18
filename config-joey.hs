@@ -101,17 +101,8 @@ hosts =                 --                  (o)  `
 			`requires` Gpg.keyImported "98147487" "root"
 			`requires` Ssh.keyImported SshRsa "root"
 				(Context "kite.kitenet.net")
+		& JoeySites.kiteMailServer
 
-		& Docker.configured
-		& Docker.garbageCollected `period` (Weekly (Just 1))
-
-		-- Mail server is in a docker container for stability.
-		& Docker.docked hosts "mail-server"
-			`requires` File.dirExists "/var/spool/postfix"
-		-- sstmp is used to relay mail on kite into the container's
-		-- mail server.
-		& Apt.installed ["ssmtp"]
-	
   	, standardSystem "diatom.kitenet.net" Stable "amd64"
 	  	[ "Important stuff that needs not too much memory or CPU." ]
 		& ipv4 "107.170.31.195"
@@ -249,32 +240,6 @@ hosts =                 --                  (o)  `
 		& Docker.publish "8080:80"
 		& Docker.volume "/var/www:/var/www"
 		& Apt.serviceInstalledRunning "apache2"
-
-	-- Mail server (smtp, pop, imap) in a container.
-	-- Uses the host's /home, /var/mail and /var/spool/postfix directories,
-	-- which must exist on the host.
-	, standardContainer "mail-server" Stable "amd64"
-		& Docker.volume "/home"
-		& Docker.volume "/var/mail"
-		& Docker.volume "/var/spool/postfix"
-		& Docker.publish "25:25" -- smtp
-		& Docker.publish "110:110" -- pop3
-		& Docker.publish "220:220" -- imap3
-		& Docker.publish "465:465" -- smtps
-		& Docker.publish "993:993" -- imaps
-		& Docker.publish "995:995" -- pop3s
-		& Postfix.installed
-		& Apt.installed ["postgrey", "postfix-pcre"]
-		& Apt.installed ["spamass-milter", "spamassassin"]
-		& "/etc/default/spamassassin" `File.containsLines`
-			[ "ENABLED=1"
-			, "OPTIONS=\"--create-prefs --max-children 5 --helper-home-dir\""
-			, "CRON=1"
-			, "NICE=\"--nicelevel 15\""
-			]
-		& Apt.installed ["maildrop"]
-		& Apt.serviceInstalledRunning "dovecot-imapd"
-		& Apt.serviceInstalledRunning "dovecot-pop3d"
 
 	-- My own openid provider. Uses php, so containerized for security
 	-- and administrative sanity.

@@ -23,3 +23,12 @@ satellite = setup `requires` installed
 			, ("postfix/destinations", "string", " ")
 			, ("postfix/mailname", "string", hn)
 			]
+
+-- | Sets up a file by running a property (which the filename is passed
+-- to). If the setup property makes a change, postmap will be run on the
+-- file, and postfix will be reloaded.
+mappedFile :: FilePath -> (FilePath -> Property) -> Property
+mappedFile f setup = setup f
+	`onChange` cmdProperty postmap [postmap]
+  where
+	postmap = "postmap " ++ f

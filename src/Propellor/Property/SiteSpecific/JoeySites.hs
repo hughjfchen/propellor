@@ -14,6 +14,7 @@ import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Apache as Apache
+import qualified Propellor.Property.Postfix as Postfix
 import Utility.SafeCommand
 import Utility.FileMode
 import Utility.Path
@@ -382,3 +383,88 @@ podcatcher = Cron.niceJob "podcatcher run hourly" "55 * * * *"
 	"joey" "/home/joey/lib/sound/podcasts"
 	"xargs git-annex importfeed -c annex.genmetadata=true < feeds; mr --quiet update"
 	`requires` Apt.installed ["git-annex", "myrepos"]
+
+kiteMailServer :: Property
+kiteMailServer = propertyList "kitenet.net mail server"
+	[ Postfix.installed
+	, Apt.installed ["postfix-pcre"]
+	, Apt.serviceInstalledRunning "postgrey"
+	, Apt.serviceInstalledRunning "spamassassin"
+	, "/etc/default/spamassassin" `File.containsLines`
+		[ "ENABLED=1"
+		, "OPTIONS=\"--create-prefs --max-children 5 --helper-home-dir\""
+		, "CRON=1"
+		, "NICE=\"--nicelevel 15\""
+		] `onChange` Service.restarted "spamassassin"
+	, Apt.serviceInstalledRunning "spamass-miter"
+	, Apt.installed ["maildrop"]
+	, "/etc/aliases" `File.hasPrivContentExposed` ctx
+		`onChange` cmdProperty "newaliases" ["newaliases"]
+	, "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed` ctx
+	, "/etc/ssl/certs/postfix.pem" `File.hasPrivContentExposed` ctx
+	, "/etc/ssl/private/postfix.pem" `File.hasPrivContent` ctx
+	, "/etc/postfix/mydomain" `File.containsLines`
+		[ "/.*\\.kitenet\\.net/\tOK"
+		, "/mooix\\.net/\tOK"
+		, "/ikiwiki\\.info/\tOK"
+		, "/joeyh\\.name/\tOK"
+		]
+		`onChange` Service.restarted "postfix"
+	, "/etc/postfix/obscure_client_relay.pcre" `File.containsLine`
+		"/^Received: from ([^.]+)\\.kitenet\\.net.*using TLS.*by kitenet\\.net \\(([^)]+)\\) with (E?SMTPS?A?) id ([A-F[:digit:]]+)(.*)/ IGNORE"
+		`onChange` Service.restarted "postfix"
+	, Postfix.mappedFile "/etc/postfix/virtual" $
+		flip File.containsLines
+			[ "# *@joeyh.name to joey"
+			, "@joeyh.name\tjoey"
+			]
+	, Postfix.mappedFile "/etc/postfix/relay_clientcerts" $
+		flip File.hasPrivContentExposed ctx
+	, "/etc/postfix/main.cf" `File.containsLines`
+		[ "myhostname = kitenet.net"
+		, "mydomain = $myhostname"
+		, "append_dot_mydomain = no"
+		, "myorigin = kitenet.net"
+		, "mydestination = $myhostname, localhost.$mydomain, $mydomain, kite.$mydomain., localhost, regexp:$config_directory/mydomain"
+		, "mailbox_command = maildrop"
+		, "virtual_alias_maps = hash:/etc/postfix/virtual"
+
+		, "# Allow clients with trusted certs to relay mail through."
+		, "relay_clientcerts = hash:/etc/postfix/relay_clientcerts"
+		, "smtpd_relay_restrictions = permit_mynetworks,permit_tls_clientcerts,permit_sasl_authenticated,reject_unauth_destination"
+
+		, "# Filter out client relay lines from headers."
+		, "header_checks = pcre:$config_directory/obscure_client_relay.pcre"
+
+		, "# Enable postgrey."
+		, "smtpd_recipient_restrictions = permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
+
+		, "# Enable spamass-milter."
+		, "smtpd_milters = unix:/spamass/spamass.sock"
+		, "milter_connect_macros = j {daemon_name} v {if_name} _"
+
+		, "# TLS setup -- server"
+		, "smtpd_tls_CAfile = /etc/ssl/certs/joeyca.pem"
+		, "smtpd_tls_cert_file = /etc/ssl/certs/postfix.pem"
+		, "smtpd_tls_key_file = /etc/ssl/private/postfix.pem"
+		, "smtpd_tls_loglevel = 1"
+		, "smtpd_tls_received_header = yes"
+		, "smtpd_use_tls = yes"
+		, "smtpd_tls_ask_ccert = yes"
+		, "smtpd_tls_session_cache_database = sdbm:/etc/postfix/smtpd_scache"
+
+		, "# TLS setup -- client"
+		, "smtp_tls_CAfile = /etc/ssl/certs/joeyca.pem"
+		, "smtp_tls_cert_file = /etc/ssl/certs/postfix.pem"
+		, "smtp_tls_key_file = /etc/ssl/private/postfix.pem"
+		, "smtp_tls_loglevel = 1"
+		, "smtp_use_tls = yes"
+		, "smtp_tls_session_cache_database = sdbm:/etc/postfix/smtp_scache"
+		]
+		`onChange` Service.restarted "postfix"
+	, Apt.serviceInstalledRunning "dovecot-imapd"
+	, Apt.serviceInstalledRunning "dovecot-pop3d"
+	, Apt.serviceInstalledRunning "cron"
+	]
+  where
+	ctx = Context "kitenet.net"
