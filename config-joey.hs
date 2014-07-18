@@ -103,6 +103,8 @@ hosts =                 --                  (o)  `
 				(Context "kite.kitenet.net")
 		& JoeySites.kiteMailServer
 
+		& Apt.installed ["mutt", "alpine", "git-annex", "myrepos"]
+
   	, standardSystem "diatom.kitenet.net" Stable "amd64"
 	  	[ "Important stuff that needs not too much memory or CPU." ]
 		& ipv4 "107.170.31.195"
