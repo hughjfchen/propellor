@@ -511,7 +511,14 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	, "/etc/dovecot/conf.d/10-mail.conf" `File.containsLine`
 		"mail_location = maildir:~/Maildir"
 		`onChange` Service.reloaded "dovecot"
-		`describe` "dovecot configured"
+		`describe` "dovecot mail.conf"
+	, "/etc/dovecot/conf.d/10-auth.conf" `File.containsLine`
+		"!include auth-passwdfile.conf.ex"
+		`onChange` Service.restarted "dovecot"
+		`describe` "dovecot auth.conf"
+	, File.hasPrivContent dovecotusers ctx
+		`onChange` (dovecotusers `File.mode`
+			combineModes [ownerReadMode, groupReadMode])
 
 	, Apt.installed ["mutt", "bsd-mailx", "alpine"]
 
@@ -526,7 +533,8 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "chmod 600 $pass"
 		, "exec alpine -passfile $pass \"$@\""
 		]
-		`onChange` (pinescript `File.mode` combineModes (readModes ++ executeModes))
+		`onChange` (pinescript `File.mode`
+			combineModes (readModes ++ executeModes))
 		`describe` "pine wrapper script"
 	, "/etc/pine.conf" `File.containsLines`
 		[ "inbox-path={localhost/novalidate-cert}inbox"
@@ -536,6 +544,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
   where
 	ctx = Context "kitenet.net"
 	pinescript = "/usr/local/bin/pine"
+	dovecotusers = "/etc/dovecot/users"
 
 hasJoeyCAChain :: Property
 hasJoeyCAChain = "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed`

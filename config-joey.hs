@@ -90,6 +90,8 @@ hosts =                 --                  (o)  `
 		& Apt.unattendedUpgrades
 		& Apt.installed ["systemd"]
 		& Ssh.hostKeys (Context "kitenet.net")
+		-- Since ssh password authentication is allowed:
+		& Apt.serviceInstalledRunning "fail2ban"
 		& Obnam.backup "/" "33 1 * * *"
 			[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
 			, "--client-name=kitenet.net"
@@ -107,9 +109,12 @@ hosts =                 --                  (o)  `
 		-- & alias "smtp.kitenet.net" -- not yet live!
 		-- & alias "imap.kitenet.net" -- not yet live!
 
-		& Apt.installed ["git-annex", "myrepos"]
-		-- Since password authentication is allowed:
-		& Apt.serviceInstalledRunning "fail2ban"
+		& Apt.installed
+			["git-annex", "myrepos"
+			, "build-essential", "make"
+			-- Some users have zsh as their login shell.
+			, "zsh"
+			]
 
   	, standardSystem "diatom.kitenet.net" Stable "amd64"
 	  	[ "Important stuff that needs not too much memory or CPU." ]
@@ -406,9 +411,8 @@ monsters =	      -- but do want to track their public keys etc.
 		 -   mailman
 		 -   /spamassassin
 		 -   sqwebmail
-		 -   /courier
-		 -     /imap
-		 -     /pop
+		 -   /imap server
+		 -   /pop server
 		 - apache
 		 -   some static websites
 		 - bitlbee
