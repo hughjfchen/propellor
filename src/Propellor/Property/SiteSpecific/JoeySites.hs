@@ -351,7 +351,7 @@ githubBackup = propertyList "github-backup box"
 		"/home/joey/lib/backup" $ intercalate "&"
 			[ "mkdir -p github"
 			, "cd github"
-			, "$HOME/.github-keys && github-backup joeyh"
+			, ". $HOME/.github-keys && github-backup joeyh"
 			]
 	]
 
