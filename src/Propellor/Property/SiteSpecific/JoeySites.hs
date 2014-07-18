@@ -400,7 +400,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	, Apt.installed ["maildrop"]
 	, "/etc/aliases" `File.hasPrivContentExposed` ctx
 		`onChange` cmdProperty "newaliases" ["newaliases"]
-	, "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed` ctx
+	, hasJoeyCAChain
 	, "/etc/ssl/certs/postfix.pem" `File.hasPrivContentExposed` ctx
 	, "/etc/ssl/private/postfix.pem" `File.hasPrivContent` ctx
 	, "/etc/postfix/mydomain" `File.containsLines`
@@ -468,3 +468,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	]
   where
 	ctx = Context "kitenet.net"
+
+hasJoeyCAChain :: Property
+hasJoeyCAChain = "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed`
+	Context "joeyca.pem"
