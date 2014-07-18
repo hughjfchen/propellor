@@ -409,8 +409,16 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`onChange` Service.restarted "spamass-milter"
 		`describe` "spamass-milter configured"
 	
-	, Apt.serviceInstalledRunning "clamav-freshclam"
 	, Apt.serviceInstalledRunning "amavisd-milter"
+	, "/etc/default/amavisd-milter" `File.containsLines`
+		[ "# Propellor deployed"
+		, "MILTERSOCKET=/var/spool/postfix/amavis/amavis.sock"
+		, "MILTERSOCKETOWNER=\"postfix:postfix\""
+		, "MILTERSOCKETMODE=\"0660\""
+		]
+		`onChange` Service.restarted "amavisd-milter"
+		`describe` "amavisd-milter configured for postfix"
+	, Apt.serviceInstalledRunning "clamav-freshclam"
 
 	, Apt.installed ["maildrop"]
 	, "/etc/maildroprc" `File.hasContent`
@@ -472,8 +480,8 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "# Enable postgrey."
 		, "smtpd_recipient_restrictions = permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
 
-		, "# Enable spamass-milter."
-		, "smtpd_milters = unix:/spamass/spamass.sock"
+		, "# Enable spamass-milter and amavis-milter."
+		, "smtpd_milters = unix:/spamass/spamass.sock unix:amavis/amavis.sock"
 		, "milter_connect_macros = j {daemon_name} v {if_name} _"
 
 		, "# TLS setup -- server"
