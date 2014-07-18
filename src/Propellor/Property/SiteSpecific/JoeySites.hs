@@ -471,6 +471,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	, Apt.serviceInstalledRunning "dovecot-imapd"
 	, Apt.serviceInstalledRunning "dovecot-pop3d"
 	, Apt.serviceInstalledRunning "cron"
+	, Apt.installed ["bsd-mailx"]
 	]
   where
 	ctx = Context "kitenet.net"
