@@ -2,6 +2,10 @@ module Propellor.Property.Postfix where
 
 import Propellor
 import qualified Propellor.Property.Apt as Apt
+import Propellor.Property.File
+
+import qualified Data.Map as M
+import Data.List
 
 installed :: Property
 installed = Apt.serviceInstalledRunning "postfix"
@@ -29,6 +33,41 @@ satellite = setup `requires` installed
 -- file, and postfix will be reloaded.
 mappedFile :: FilePath -> (FilePath -> Property) -> Property
 mappedFile f setup = setup f
-	`onChange` cmdProperty postmap [postmap]
+	`onChange` cmdProperty "postmap" [f]
+
+-- | Parses main.cf, and removes any initial configuration lines that are
+-- overridden to other values later in the file.
+--
+-- For example, to add some settings, removing any old settings:
+--
+-- > mainCf `File.containsLines`
+-- >	[ "# I like bars."
+-- >	, "foo = bar"
+-- >	] `onChange` dedupMainCf
+--
+-- Note that multiline configurations that continue onto the next line
+-- are not currently supported.
+dedupMainCf :: Property
+dedupMainCf = fileProperty "postfix main.cf dedupped" go mainCf
   where
-	postmap = "postmap " ++ f
+	go ls =
+		let parsed = map parse ls
+		in dedup [] (keycounts $ rights parsed) parsed
+	
+	parse l
+		| "#" `isPrefixOf` l = Left l
+		| "=" `isInfixOf` l = Right (separate (== '=') l)
+		| otherwise = Left l
+	fmt k v = k ++ "=" ++ v
+
+	keycounts = M.fromListWith (+) . map (\(k, _v) -> (k, (1 :: Integer)))
+
+	dedup c _ [] = reverse c
+	dedup c kc ((Left v):rest) = dedup (v:c) kc rest
+	dedup c kc ((Right (k, v)):rest) = case M.lookup k kc of
+		Just n | n > 1 -> dedup c (M.insert k (n - 1) kc) rest
+		_ -> dedup (fmt k v:c) kc rest
+
+-- | The main config file for postfix.
+mainCf :: FilePath
+mainCf = "/etc/postfix/main.cf"

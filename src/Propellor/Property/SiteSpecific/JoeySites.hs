@@ -423,7 +423,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		) `describe` "postfix virtual file configured"
 	, Postfix.mappedFile "/etc/postfix/relay_clientcerts" $
 		flip File.hasPrivContentExposed ctx
-	, "/etc/postfix/main.cf" `File.containsLines`
+	, Postfix.mainCf `File.containsLines`
 		[ "myhostname = kitenet.net"
 		, "mydomain = $myhostname"
 		, "append_dot_mydomain = no"
@@ -464,6 +464,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "smtp_use_tls = yes"
 		, "smtp_tls_session_cache_database = sdbm:/etc/postfix/smtp_scache"
 		]
+		`onChange` Postfix.dedupMainCf
 		`onChange` Service.restarted "postfix"
 		`describe` "postfix configured"
 	, Apt.serviceInstalledRunning "dovecot-imapd"
