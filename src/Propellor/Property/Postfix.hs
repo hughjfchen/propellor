@@ -62,7 +62,7 @@ dedupCf ls =
 			let (k, v) = separate (== '=') l
 			in Right ((filter (not . isSpace) k), v)
 		| otherwise = Left l
-	fmt k v = k ++ "=" ++ v
+	fmt k v = k ++ " =" ++ v
 
 	keycounts = M.fromListWith (+) . map (\(k, _v) -> (k, (1 :: Integer)))
 
