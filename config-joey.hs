@@ -102,7 +102,9 @@ hosts =                 --                  (o)  `
 			`requires` Gpg.keyImported "98147487" "root"
 			`requires` Ssh.keyImported SshRsa "root"
 				(Context "kite.kitenet.net")
+
 		& JoeySites.kiteMailServer
+		-- & alias "smtp.kitenet.net" -- not yet live!
 
 		& Apt.installed ["mutt", "alpine", "git-annex", "myrepos"]
 		-- Since password authentication is allowed:

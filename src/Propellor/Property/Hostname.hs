@@ -9,6 +9,8 @@ import Data.List
 --
 -- Configures /etc/hostname and the current hostname.
 --
+-- Configures /etc/mailname with the domain part of the hostname.
+--
 -- /etc/hosts is also configured, with an entry for 127.0.1.1, which is
 -- standard at least on Debian to set the FDQN.
 --
@@ -31,6 +33,8 @@ setTo hn = combineProperties desc go
 			else Just $ trivial $ hostsline "127.0.1.1" [hn, basehost]
 		, Just $ trivial $ hostsline "127.0.0.1" ["localhost"]
 		, Just $ trivial $ cmdProperty "hostname" [basehost]
+		, Just $ "/etc/mailname" `File.hasContent`
+			[if null domain then hn else domain]
 		]
 	
 	hostsline ip names = File.fileProperty desc
