@@ -25,7 +25,7 @@ reloaded = Service.reloaded "postfix"
 -- futher coniguration/keys. But this should be enough to get cron job
 -- mail flowing to a place where it will be seen.
 satellite :: Property
-satellite = check norelayhost setup
+satellite = check (not <$> mainCfIsSet "relayhost") setup
 	`requires` installed
   where
 	setup = trivial $ property "postfix satellite system" $ do
@@ -41,13 +41,6 @@ satellite = check norelayhost setup
 			, mainCf ("relayhost", domain)
 				`onChange` reloaded
 			]
-	norelayhost = not . any relayhostset . lines
-		<$> readProcess "postconf" []
-	relayhostset l
-		| l == "relayhost =" = False
-		| l == "relayhost = " = False
-		| "relayhost =" `isPrefixOf` l = True
-		| otherwise = False
 
 -- | Sets up a file by running a property (which the filename is passed
 -- to). If the setup property makes a change, postmap will be run on the
@@ -83,6 +76,13 @@ getMainCf name = parse . lines <$> readProcess "postconf" [name]
 			(_, (' ':v)) -> v
 			(_, v) -> v
 	parse [] = Nothing
+
+-- | Checks if a main.cf field is set. A field that is set to "" 
+-- is considered not set.
+mainCfIsSet :: String -> IO Bool
+mainCfIsSet name = do
+	v <- getMainCf name
+	return $ v == Nothing || v == Just ""
 
 -- | Parses main.cf, and removes any initial configuration lines that are
 -- overridden to other values later in the file.
