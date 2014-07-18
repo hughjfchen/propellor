@@ -82,7 +82,7 @@ getMainCf name = parse . lines <$> readProcess "postconf" [name]
 mainCfIsSet :: String -> IO Bool
 mainCfIsSet name = do
 	v <- getMainCf name
-	return $ v == Nothing || v == Just ""
+	return $ v /= Nothing && v /= Just ""
 
 -- | Parses main.cf, and removes any initial configuration lines that are
 -- overridden to other values later in the file.
