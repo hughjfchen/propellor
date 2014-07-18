@@ -519,6 +519,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	, File.hasPrivContent dovecotusers ctx
 		`onChange` (dovecotusers `File.mode`
 			combineModes [ownerReadMode, groupReadMode])
+	, File.ownerGroup dovecotusers "root" "dovecot"
 
 	, Apt.installed ["mutt", "bsd-mailx", "alpine"]
 
