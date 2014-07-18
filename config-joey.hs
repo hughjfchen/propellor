@@ -63,7 +63,6 @@ hosts =                 --                  (o)  `
 		[ "Main git-annex build box." ]
 		& ipv4 "138.38.108.179"
 
-		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Postfix.satellite
 		& Docker.configured
@@ -85,7 +84,6 @@ hosts =                 --                  (o)  `
 
 		& Apt.installed ["linux-image-amd64"]
 		& Linode.chainPVGrub 5
-		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Apt.installed ["systemd"]
 		& Ssh.hostKeys (Context "kitenet.net")
@@ -110,7 +108,6 @@ hosts =                 --                  (o)  `
 		& ipv4 "107.170.31.195"
 
 		& DigitalOcean.distroKernel
-		& Hostname.sane
 		& Ssh.hostKeys (Context "diatom.kitenet.net")
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
@@ -174,7 +171,6 @@ hosts =                 --                  (o)  `
 		& ipv4 "193.234.225.114"
 
 		& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
-		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
 		& Ssh.hostKeys ctx
@@ -286,6 +282,8 @@ type Motd = [String]
 standardSystem :: HostName -> DebianSuite -> Architecture -> Motd -> Host
 standardSystem hn suite arch motd = host hn
 	& os (System (Debian suite) arch)
+	& Hostname.sane
+	& Hostname.searchDomain
 	& File.hasContent "/etc/motd" ("":motd++[""])
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.cacheCleaned
