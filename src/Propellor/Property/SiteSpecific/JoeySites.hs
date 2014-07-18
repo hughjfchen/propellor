@@ -409,6 +409,8 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`onChange` Service.restarted "spamass-milter"
 		`describe` "spamass-milter configured"
 	
+	, Apt.serviceInstalledRunning "clamav-milter"
+
 	, Apt.installed ["maildrop"]
 	, "/etc/maildroprc" `File.hasContent`
 		[ "# Global maildrop filter file (deployed with propellor)"
