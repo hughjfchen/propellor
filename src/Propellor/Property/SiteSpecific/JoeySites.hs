@@ -523,7 +523,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "if [ ! -e $pass ]; then"
 		, "\ttouch $pass"
 		, "fi"
-		, "chmod 600 pass"
+		, "chmod 600 $pass"
 		, "exec alpine -passfile $pass \"$@\""
 		]
 		`onChange` (pinescript `File.mode` combineModes (readModes ++ executeModes))
