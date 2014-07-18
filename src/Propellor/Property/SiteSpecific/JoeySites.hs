@@ -513,7 +513,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`onChange` Service.reloaded "dovecot"
 		`describe` "dovecot mail.conf"
 	, "/etc/dovecot/conf.d/10-auth.conf" `File.containsLine`
-		"!include auth-passwdfile.conf.ex"
+		"!include auth-passwdfile.conf.ext"
 		`onChange` Service.restarted "dovecot"
 		`describe` "dovecot auth.conf"
 	, File.hasPrivContent dovecotusers ctx
