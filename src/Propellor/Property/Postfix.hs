@@ -31,12 +31,16 @@ satellite = check norelayhost setup
 	setup = trivial $ property "postfix satellite system" $ do
 		hn <- asks hostName
 		let (_, domain) = separate (== '.') hn
-		ensureProperty $ Apt.reConfigure "postfix"
-			[ ("postfix/main_mailer_type", "select", "Satellite system")
-			, ("postfix/root_address", "string", "root")
-			, ("postfix/destinations", "string", " ")
-			, ("postfix/mailname", "string", hn)
-			, ("postfix/relayhost", "string", "smtp." ++ domain)
+		ensureProperties 
+			[ Apt.reConfigure "postfix"
+				[ ("postfix/main_mailer_type", "select", "Satellite system")
+				, ("postfix/root_address", "string", "root")
+				, ("postfix/destinations", "string", " ")
+				, ("postfix/mailname", "string", hn)
+				]
+			, mainCf `containsLine` ("relayhost = " ++ domain)
+				`onChange` dedupMainCf
+				`onChange` reloaded
 			]
 	norelayhost = not . any relayhostset . lines
 		<$> readProcess "postconf" []
