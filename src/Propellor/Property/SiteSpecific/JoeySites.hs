@@ -397,7 +397,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "NICE=\"--nicelevel 15\""
 		] `onChange` Service.restarted "spamassassin"
 		`describe` "spamd enabled"
-	, Apt.serviceInstalledRunning "spamass-miter"
+	, Apt.serviceInstalledRunning "spamass-milter"
 	, Apt.installed ["maildrop"]
 	, "/etc/aliases" `File.hasPrivContentExposed` ctx
 		`onChange` cmdProperty "newaliases" ["newaliases"]
