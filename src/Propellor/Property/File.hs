@@ -18,17 +18,23 @@ f `hasContent` newcontent = fileProperty ("replace " ++ f)
 -- The file's permissions are preserved if the file already existed.
 -- Otherwise, they're set to 600.
 hasPrivContent :: FilePath -> Context -> Property
-hasPrivContent f context = withPrivData (PrivFile f) context $ \getcontent -> 
-	property desc $ getcontent $ \privcontent -> 
-		ensureProperty $ fileProperty' writeFileProtected desc
-			(\_oldcontent -> lines privcontent) f
+hasPrivContent = hasPrivContent' writeFileProtected
+
+-- | Leaves the file at its default or current mode,
+-- allowing "private" data to be read.
+--
+-- Use with caution!
+hasPrivContentExposed :: FilePath -> Context -> Property
+hasPrivContentExposed = hasPrivContent' writeFile
+
+hasPrivContent' :: (String -> FilePath -> IO ()) -> FilePath -> Context -> Property
+hasPrivContent' writer f context = 
+	withPrivData (PrivFile f) context $ \getcontent -> 
+		property desc $ getcontent $ \privcontent -> 
+			ensureProperty $ fileProperty' writer desc
+				(\_oldcontent -> lines privcontent) f
   where
 	desc = "privcontent " ++ f
-
--- | Leaves the file world-readable.
-hasPrivContentExposed :: FilePath -> Context -> Property
-hasPrivContentExposed f context = hasPrivContent f context `onChange`
-	mode f (combineModes (ownerWriteMode:readModes))
 
 -- | Ensures that a line is present in a file, adding it to the end if not.
 containsLine :: FilePath -> Line -> Property
