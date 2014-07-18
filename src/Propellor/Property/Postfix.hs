@@ -49,12 +49,13 @@ mappedFile f setup = setup f
 -- Note that multiline configurations that continue onto the next line
 -- are not currently supported.
 dedupMainCf :: Property
-dedupMainCf = fileProperty "postfix main.cf dedupped" go mainCf
-  where
-	go ls =
-		let parsed = map parse ls
-		in dedup [] (keycounts $ rights parsed) parsed
-	
+dedupMainCf = fileProperty "postfix main.cf dedupped" dedupCf mainCf
+
+dedupCf :: [String] -> [String]
+dedupCf ls =
+	let parsed = map parse ls
+	in dedup [] (keycounts $ rights parsed) parsed
+  where	
 	parse l
 		| "#" `isPrefixOf` l = Left l
 		| "=" `isInfixOf` l = 
