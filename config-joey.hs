@@ -43,7 +43,7 @@ hosts =                 --                  (o)  `
 
 		& Apt.buildDep ["git-annex"] `period` Daily
 		& Docker.configured
-		& Docker.docked hosts "android-git-annex"
+		! Docker.docked hosts "android-git-annex"
 
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
 		[ "Unreliable server. Anything here may be lost at any time!" ]
