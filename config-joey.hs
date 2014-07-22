@@ -397,12 +397,6 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "ftp.kitenet.net"
 		& alias "mail.kitenet.net"
 		& alias "smtp.kitenet.net"
-		& alias "sows-ear.kitenet.net"
-		& alias "www.sows-ear.kitenet.net"
-		& alias "wortroot.kitenet.net"
-		& alias "www.wortroot.kitenet.net"
-		& alias "joey.kitenet.net"
-		& alias "anna.kitenet.net"
 		& alias "bitlbee.kitenet.net"
 		{- Remaining services on kite:
 		 -
