@@ -405,6 +405,8 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "anna.kitenet.net"
 		& alias "bitlbee.kitenet.net"
 		{- Remaining services on kite:
+		 -
+		 - / = ready to go on kite.kitenet.net
 		 - 
 		 - mail
 		 -   /postfix
@@ -413,19 +415,16 @@ monsters =	      -- but do want to track their public keys etc.
 		 -   /spamassassin
 		 -   sqwebmail (cannot use this with dovecot, alternatives?)
 		 -   /imap server
+		 -   	(note: will need to re-download offlineimap)
 		 -   /pop server
-		 - apache
-		 -   some static websites
+		 -   	(note: different hostname and ssl cert, will need
+		 -   	to reconfigure errol's email client)
+		 - /apache
+		 -   (need to re-rsync /srv/web to new kite.kitenet.net
+		 -   server before decommissioning)
 		 - bitlbee (EOL?)
 		 - prosody (EOL?)
-		 - named
-		 -   (branchable is still pushing to here
-		 -    (thinking it's ns2.branchable.com), but it's no
-		 -   longer a primary or secondary for anything)
 		 - ftpd (EOL)
-		 -
-		 - user shell stuff:
-		 -   pine, zsh, make, git-annex, myrepos, ...
 		 -}
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
