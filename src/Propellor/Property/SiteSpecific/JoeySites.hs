@@ -576,7 +576,7 @@ legacyWebSites = propertyList "legacy web sites"
 		-- /var/www is empty
 		[ "DocumentRoot /var/www"
 		, "<Directory /var/www>"
-		, "  Options Options Indexes FollowSymLinks MultiViews ExecCGI Includes"
+		, "  Options Indexes FollowSymLinks MultiViews ExecCGI Includes"
 		, "  AllowOverride None"
 		, "  Order allow,deny"
 		, "  allow from all"
