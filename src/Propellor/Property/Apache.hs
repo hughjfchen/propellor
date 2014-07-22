@@ -68,3 +68,19 @@ multiSSL = "/etc/apache2/conf.d/ssl" `File.hasContent`
 	]
 	`describe` "apache SNI enabled"
 	`onChange` reloaded
+
+-- | Config file fragment that can be inserted into a <Directory>
+-- stanza to allow global read access to the directory.
+--
+-- Works with multiple versions of apache that have different ways to do
+-- it.
+allowAll :: String
+allowAll = unlines
+	[ "<IfVersion < 2.4>"
+	, "Order allow,deny"
+	, "allow from all"
+	, "</IfVersion>"
+	, "<IfVersion >= 2.4>"
+	, "Require all granted"
+	, "</IfVersion>"
+	]

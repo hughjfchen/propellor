@@ -61,9 +61,7 @@ oldUseNetServer hosts = propertyList ("olduse.net server")
 		, "  <Directory " ++ datadir ++ "/>"
 		, "    Options Indexes FollowSymlinks"
 		, "    AllowOverride None"
-		-- I had this in the file before.
-		-- This may be needed by a newer version of apache?
-		--, "    Require all granted"
+		, Apache.allowAll
 		, "  </Directory>"
 		]
 	]
@@ -578,9 +576,7 @@ legacyWebSites = propertyList "legacy web sites"
 		, "<Directory /var/www>"
 		, "  Options Indexes FollowSymLinks MultiViews ExecCGI Includes"
 		, "  AllowOverride None"
-		, "  Order allow,deny"
-		, "  allow from all"
-		, "  Require all granted"
+		, Apache.allowAll
 		, "</Directory>"
 		, "ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/"
 
@@ -588,24 +584,19 @@ legacyWebSites = propertyList "legacy web sites"
 		, "<Directory /usr/lib/cgi-bin>"
 		, "  AllowOverride None"
 		, "  Options ExecCGI"
-		, "  Order allow,deny"
-		, "  allow from all"
+		, Apache.allowAll
 		, "</Directory>"
 		, "Alias /pipermail/ /var/lib/mailman/archives/public/"
 		, "<Directory /var/lib/mailman/archives/public/>"
 		, "  Options Indexes MultiViews FollowSymlinks"
 		, "  AllowOverride None"
-		, "  Order allow,deny"
-		, "  Allow from all"
-		, "  Require all granted"
+		, Apache.allowAll
 		, "</Directory>"
 		, "Alias /images/ /usr/share/images/"
 		, "<Directory /usr/share/images/>"
 		, "  Options Indexes MultiViews"
 		, "  AllowOverride None"
-		, "  Order allow,deny"
-		, "  Allow from all"
-		, "  Require all granted"
+		, Apache.allowAll
 		, "</Directory>"
 
 		, "RewriteEngine On"
@@ -672,7 +663,7 @@ legacyWebSites = propertyList "legacy web sites"
 		, "<Directory /home/anna/html/>"
 		, "  Options Indexes ExecCGI"
 		, "  AllowOverride None"
-		, "  Require all granted"
+		, Apache.allowAll
 		, "</Directory>"
 		]
 	, alias "sows-ear.kitenet.net"
@@ -683,7 +674,7 @@ legacyWebSites = propertyList "legacy web sites"
 		, "<Directory /srv/web/sows-ear.kitenet.net>"
 		, "  Options FollowSymLinks"
 		, "  AllowOverride None"
-		, "  Require all granted"
+		, Apache.allowAll
 		, "</Directory>"
 		]
 	, alias "wortroot.kitenet.net"
@@ -694,7 +685,7 @@ legacyWebSites = propertyList "legacy web sites"
 		, "<Directory /srv/web/wortroot.kitenet.net>"
 		, "  Options FollowSymLinks"
 		, "  AllowOverride None"
-		, "  Require all granted"
+		, Apache.allowAll
 		, "</Directory>"
 		]
 	, alias "joey.kitenet.net"
@@ -703,7 +694,7 @@ legacyWebSites = propertyList "legacy web sites"
 		, "<Directory /home/joey/html/>"
 		, "  Options Indexes ExecCGI"
 		, "  AllowOverride None"
-		, "  Require all granted"
+		, Apache.allowAll
 		, "</Directory>"
 
 		, "RewriteEngine On"
