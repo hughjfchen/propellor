@@ -21,6 +21,7 @@ import Utility.Path
 
 import Data.List
 import System.Posix.Files
+import Data.String.Utils
 
 oldUseNetServer :: [Host] -> Property
 oldUseNetServer hosts = propertyList ("olduse.net server")
@@ -550,3 +551,173 @@ kiteMailServer = propertyList "kitenet.net mail server"
 hasJoeyCAChain :: Property
 hasJoeyCAChain = "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed`
 	Context "joeyca.pem"
+
+kitenetHttps :: Property
+kitenetHttps = propertyList "kitenet.net https certs"
+	[ File.hasPrivContent "/etc/ssl/certs/web.pem" ctx
+	, File.hasPrivContent "/etc/ssl/private/web.pem" ctx
+	, File.hasPrivContent "/etc/ssl/certs/startssl.pem" ctx
+	, toProp $ Apache.modEnabled "ssl"
+	]
+  where
+	ctx = Context "kitenet.net"
+
+-- Legacy static web sites and redirections from kitenet.net to newer
+-- sites.
+legacyWebSites :: Property
+legacyWebSites = propertyList "legacy web sites"
+	[ Apt.serviceInstalledRunning "apache2"
+	, toProp $ Apache.modEnabled "rewrite"
+	, toProp $ Apache.modEnabled "cgi"
+	, toProp $ Apache.modEnabled "speling"
+	, userDirHtml
+	, kitenetHttps
+	, toProp $ Apache.siteEnabled "kitenet.net" $ apachecfg "kitenet.net" True
+		-- /var/www is empty
+		[ "DocumentRoot /var/www"
+		, "<Directory /var/www>"
+		, "  Options Options Indexes FollowSymLinks MultiViews ExecCGI Includes"
+		, "  AllowOverride None"
+		, "  Order allow,deny"
+		, "  allow from all"
+		, "</Directory>"
+		, "ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/"
+
+		-- for mailman cgi scripts
+		, "<Directory /usr/lib/cgi-bin>"
+		, "  AllowOverride None"
+		, "  Options ExecCGI"
+		, "  Order allow,deny"
+		, "  allow from all"
+		, "</Directory>"
+		, "Alias /pipermail/ /var/lib/mailman/archives/public/"
+		, "<Directory /var/lib/mailman/archives/public/>"
+		, "  Options Indexes MultiViews FollowSymlinks"
+		, "  AllowOverride None"
+		, "  Order allow,deny"
+		, "  Allow from all"
+		, "  Require all granted"
+		, "</Directory>"
+		, "Alias /images/ /usr/share/images/"
+		, "<Directory /usr/share/images/>"
+		, "  Options Indexes MultiViews"
+		, "  AllowOverride None"
+		, "  Order allow,deny"
+		, "  Allow from all"
+		, "</Directory>"
+
+		, "RewriteEngine On"
+		, "# Force hostname to kitenet.net"
+		, "RewriteCond %{HTTP_HOST} !^kitenet\\.net [NC]"
+		, "RewriteCond %{HTTP_HOST} !^$"
+		, "RewriteRule ^/(.*) http://kitenet\\.net/$1 [L,R]"
+
+		, "# Moved pages"
+		, "RewriteRule /programs/debhelper http://joeyh.name/code/debhelper/ [L]"
+		, "RewriteRule /programs/satutils http://joeyh.name/code/satutils/ [L]"
+		, "RewriteRule /programs/filters http://joeyh.name/code/filters/ [L]"
+		, "RewriteRule /programs/ticker http://joeyh.name/code/ticker/ [L]"
+		, "RewriteRule /programs/pdmenu http://joeyh.name/code/pdmenu/ [L]"
+		, "RewriteRule /programs/sleepd http://joeyh.name/code/sleepd/ [L]"
+		, "RewriteRule /programs/Lingua::EN::Words2Nums http://joeyh.name/code/Words2Nums/ [L]"
+		, "RewriteRule /programs/wmbattery http://joeyh.name/code/wmbattery/ [L]"
+		, "RewriteRule /programs/dpkg-repack http://joeyh.name/code/dpkg-repack/ [L]"
+		, "RewriteRule /programs/debconf http://joeyh.name/code/debconf/ [L]"
+		, "RewriteRule /programs/perlmoo http://joeyh.name/code/perlmoo/ [L]"
+		, "RewriteRule /programs/alien http://joeyh.name/code/alien/ [L]"
+		, "RewriteRule /~joey/blog/entry/(.+)-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9].html http://joeyh.name/blog/entry/$1/ [L]"
+		, "RewriteRule /~anna/.* http://waldeneffect\\.org/ [R]"
+		, "RewriteRule /~anna/.* http://waldeneffect\\.org/ [R]"
+		, "RewriteRule /~anna http://waldeneffect\\.org/ [R]"
+		, "RewriteRule /simpleid/ http://openid.kitenet.net:8081/simpleid/"
+		, "# Even the kite home page is not here any more!"
+		, "RewriteRule ^/$ http://www.kitenet.net/ [R]"
+		, "RewriteRule ^/index.html http://www.kitenet.net/ [R]"
+		, "RewriteRule ^/joey http://www.kitenet.net/joey/ [R]"
+		, "RewriteRule ^/joey/index.html http://www.kitenet.net/joey/ [R]"
+		, "RewriteRule ^/wifi http://www.kitenet.net/wifi/ [R]"
+		, "RewriteRule ^/wifi/index.html http://www.kitenet.net/wifi/ [R]"
+		
+		, "# Old ikiwiki filenames for kitenet.net wiki."
+		, "rewritecond $1 !^/~"
+		, "rewritecond $1 !^/doc/"
+		, "rewritecond $1 !^/pipermail/"
+		, "rewritecond $1 !^/cgi-bin/"
+		, "rewritecond $1 !.*/index$"
+		, "rewriterule (.+).html$ $1/ [r]"
+
+		, "# Old ikiwiki filenames for joey's wiki."
+		, "rewritecond $1 ^/~joey/"
+		, "rewritecond $1 !.*/index$"
+		, "rewriterule (.+).html$ http://kitenet.net/$1/ [L,R]"
+
+		, "# ~joey to joeyh.name"
+		, "rewriterule /~joey/(.*) http://joeyh.name/$1 [L]"
+
+		, "# Old familywiki location."
+		, "rewriterule /~family/(.*).html http://family.kitenet.net/$1 [L]"
+		, "rewriterule /~family/(.*).rss http://family.kitenet.net/$1/index.rss [L]"
+		, "rewriterule /~family(.*) http://family.kitenet.net$1 [L]"
+
+		, "rewriterule /~kyle/bywayofscience(.*) http://bywayofscience.branchable.com$1 [L]"
+		, "rewriterule /~kyle/family/wiki/(.*).html http://macleawiki.branchable.com/$1 [L]"
+		, "rewriterule /~kyle/family/wiki/(.*).rss http://macleawiki.branchable.com/$1/index.rss [L]"
+		, "rewriterule /~kyle/family/wiki(.*) http://macleawiki.branchable.com$1 [L]"
+		]
+	, alias "anna.kitenet.net"
+	, toProp $ Apache.siteEnabled "anna.kitenet.net" $ apachecfg "anna.kitenet.net" False
+		[ "DocumentRoot /home/anna/html"
+		, "<Directory /home/anna/html/>"
+		, "  Options Indexes ExecCGI"
+		, "  AllowOverride None"
+		, "</Directory>"
+		]
+	, alias "sows-ear.kitenet.net"
+	, alias "www.sows-ear.kitenet.net"
+	, toProp $ Apache.siteEnabled "sows-ear.kitenet.net" $ apachecfg "sows-ear.kitenet.net" False
+		[ "ServerAlias www.sows-ear.kitenet.net"
+		, "DocumentRoot /srv/web/sows-ear.kitenet.net"
+		, "<Directory /srv/web/sows-ear.kitenet.net>"
+		, "  Options FollowSymLinks"
+		, "  AllowOverride None"
+		, "</Directory>"
+		]
+	, alias "wortroot.kitenet.net"
+	, alias "www.wortroot.kitenet.net"
+	, toProp $ Apache.siteEnabled "wortroot.kitenet.net" $ apachecfg "wortroot.kitenet.net" False
+		[ "ServerAlias www.wortroot.kitenet.net"
+		, "DocumentRoot /srv/web/wortroot.kitenet.net"
+		, "<Directory /srv/web/wortroot.kitenet.net>"
+		, "  Options FollowSymLinks"
+		, "  AllowOverride None"
+		, "</Directory>"
+		]
+	, alias "joey.kitenet.net"
+	, toProp $ Apache.siteEnabled "joey.kitenet.net" $ apachecfg "joey.kitenet.net" False
+		[ "DocumentRoot /home/joey/html"
+		, "<Directory /home/joey/html/>"
+		, "  Options Indexes ExecCGI"
+		, "  AllowOverride None"
+		, "</Directory>"
+
+		, "RewriteEngine On"
+
+		, "# Old ikiwiki filenames for joey's wiki."
+		, "rewritecond $1 !.*/index$"
+		, "rewriterule (.+).html$ http://joeyh.name/$1/ [l]"
+
+		, "rewritecond $1 !.*/index$"
+		, "rewriterule (.+).rss$ http://joeyh.name/$1/index.rss [l]"
+		
+		, "# Redirect all to joeyh.name."
+		, "rewriterule (.*) http://joeyh.name$1 [r]"
+		]
+	]
+
+userDirHtml :: Property
+userDirHtml = File.fileProperty "apache userdir is html" (map munge) conf
+	`onChange` Apache.reloaded
+	`requires` (toProp $ Apache.modEnabled "userdir")
+  where
+	munge = replace "public_html" "html"
+	conf = "/etc/apache2/mods-available/userdir.conf"

@@ -15,15 +15,16 @@ siteEnabled hn cf = RevertableProperty enable disable
 		`requires` siteAvailable hn cf
 		`requires` installed
 		`onChange` reloaded
-	disable = trivial $ File.notPresent (siteCfg hn)
-		`describe` ("apache site disabled " ++ hn)
+	disable = trivial $ combineProperties
+		("apache site disabled " ++ hn) 
+		(map File.notPresent (siteCfg hn))
 		`onChange` cmdProperty "a2dissite" ["--quiet", hn]
 		`requires` installed
 		`onChange` reloaded
 
 siteAvailable :: HostName -> ConfigFile -> Property
-siteAvailable hn cf = siteCfg hn `File.hasContent` (comment:cf)
-	`describe` ("apache site available " ++ hn)
+siteAvailable hn cf = combineProperties ("apache site available " ++ hn) $
+	map (`File.hasContent` (comment:cf)) (siteCfg hn)
   where
 	comment = "# deployed with propellor, do not modify"
 
@@ -39,8 +40,15 @@ modEnabled modname = RevertableProperty enable disable
 		`requires` installed
 		`onChange` reloaded
 
-siteCfg :: HostName -> FilePath
-siteCfg hn = "/etc/apache2/sites-available/" ++ hn
+-- This is a list of config files because different versions of apache
+-- use different filenames. Propellor simply writen them all.
+siteCfg :: HostName -> [FilePath]
+siteCfg hn =
+	-- Debian pre-2.4
+	[ "/etc/apache2/sites-available/" ++ hn
+	-- Debian 2.4+
+	, "/etc/apache2/sites-available/" ++ hn ++ ".conf"
+	] 
 
 installed :: Property
 installed = Apt.installed ["apache2"]

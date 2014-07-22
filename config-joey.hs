@@ -84,6 +84,7 @@ hosts =                 --                  (o)  `
 		]
 	  	& ipv4 "66.228.36.95"
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
+		-- & alias "kitenet.net" -- not yet live!
 
 		& Apt.installed ["linux-image-amd64"]
 		& Linode.chainPVGrub 5
@@ -105,9 +106,12 @@ hosts =                 --                  (o)  `
 			`requires` Ssh.keyImported SshRsa "root"
 				(Context "kite.kitenet.net")
 
-		& JoeySites.kiteMailServer
 		-- & alias "smtp.kitenet.net" -- not yet live!
 		-- & alias "imap.kitenet.net" -- not yet live!
+		-- & alias "mail.kitenet.net" -- not yet live!
+		& JoeySites.kiteMailServer
+
+		& JoeySites.legacyWebSites
 
 		& Apt.installed
 			["git-annex", "myrepos"
@@ -131,10 +135,7 @@ hosts =                 --                  (o)  `
 		& Apt.serviceInstalledRunning "swapspace"
 	
 		& Apt.serviceInstalledRunning "apache2"
-		& File.hasPrivContent "/etc/ssl/certs/web.pem" (Context "kitenet.net")
-		& File.hasPrivContent "/etc/ssl/private/web.pem" (Context "kitenet.net")
-		& File.hasPrivContent "/etc/ssl/certs/startssl.pem" (Context "kitenet.net")
-		& Apache.modEnabled "ssl"
+		& JoeySites.kitenetHttps
 		& Apache.multiSSL
 		& File.ownerGroup "/srv/web" "joey" "joey"
 		& Apt.installed ["analog"]
@@ -410,14 +411,13 @@ monsters =	      -- but do want to track their public keys etc.
 		 -   /postgrey
 		 -   mailman
 		 -   /spamassassin
-		 -   sqwebmail
+		 -   sqwebmail (cannot use this with dovecot, alternatives?)
 		 -   /imap server
 		 -   /pop server
 		 - apache
 		 -   some static websites
-		 - bitlbee
-		 - prosody
-		 -   (used by daddy's git-annex)
+		 - bitlbee (EOL?)
+		 - prosody (EOL?)
 		 - named
 		 -   (branchable is still pushing to here
 		 -    (thinking it's ns2.branchable.com), but it's no
