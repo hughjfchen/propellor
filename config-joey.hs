@@ -150,7 +150,7 @@ hosts =                 --                  (o)  `
 		& JoeySites.annexWebSite "/srv/git/downloads.git"
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
-			[("turtle", "ssh://usbackup.kitenet.net/~/lib/downloads/")]
+			[("usbackup", "ssh://usbackup.kitenet.net/~/lib/downloads/")]
 			`requires` Ssh.keyImported SshRsa "joey" (Context "downloads.kitenet.net")
 			`requires` Ssh.knownHost hosts "usbackup.kitenet.net" "joey"
 		& JoeySites.gitAnnexDistributor
