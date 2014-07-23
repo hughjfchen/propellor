@@ -148,8 +148,8 @@ knownHost hosts hn user = property desc $
 			, f `File.containsLine` (hn ++ " " ++ k)
 			, File.ownerGroup f user user
 			]
-	go v = do
-		warningMessage $ "no configred sshPubKey for " ++ hn ++ " " ++ show v
+	go _ = do
+		warningMessage $ "no configred sshPubKey for " ++ hn
 		return FailedChange
 
 -- | Makes a user have authorized_keys from the PrivData

@@ -44,8 +44,8 @@ ensureProperty = catchPropellor . propertySatisfy
 -- For example, `fromHost hosts "otherhost" getSshPubKey`
 fromHost :: [Host] -> HostName -> Propellor a -> Propellor (Maybe a)
 fromHost l hn getter = case findHost l hn of
-	Nothing -> do
-		liftIO $ print "fromHost found Nothing"
-		return Nothing
-	Just h -> liftIO $ Just <$>
-		runReaderT (runWithHost getter) h
+	Nothing -> return Nothing
+	Just h -> liftIO $ do
+		print ("fromHost", hn, "using", h)
+		Just <$>
+			runReaderT (runWithHost getter) h
