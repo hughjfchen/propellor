@@ -76,8 +76,8 @@ hostMap :: [Host] -> M.Map HostName Host
 hostMap l = M.fromList $ zip (map hostName l) l 
 
 aliasMap :: [Host] -> M.Map HostName Host
-aliasMap l = M.fromList $ concat $ map (flip zip l) $
-	map (S.toList . _aliases . hostInfo) l
+aliasMap = M.fromList . concat .
+	map (\h -> map (\aka -> (aka, h)) $ S.toList $ _aliases $ hostInfo h)
 
 findHost :: [Host] -> HostName -> Maybe Host
 findHost l hn = maybe (findAlias l hn) Just (M.lookup hn (hostMap l))
