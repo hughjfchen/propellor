@@ -43,11 +43,15 @@ ipv6 = addDNS . Address . IPv6
 -- problems with CNAMEs, and also means that when multiple hosts have the
 -- same alias, a DNS round-robin is automatically set up.
 alias :: Domain -> Property
-alias = addDNS . CNAME . AbsDomain
+alias d = pureInfoProperty ("alias " ++ d) $ mempty
+	{ _aliases = S.singleton d
+	-- A CNAME is added here, but the DNS setup code converts it to an
+	-- IP address when that makes sense.
+	, _dns = S.singleton $ CNAME $ AbsDomain d
+	} 
 
 addDNS :: Record -> Property
-addDNS r = pureInfoProperty (rdesc r) $
-	mempty { _dns = S.singleton r }
+addDNS r = pureInfoProperty (rdesc r) $ mempty { _dns = S.singleton r }
   where
 	rdesc (CNAME d) = unwords ["alias", ddesc d]
 	rdesc (Address (IPv4 addr)) = unwords ["ipv4", addr]
@@ -71,8 +75,15 @@ getSshPubKey = askInfo _sshPubKey
 hostMap :: [Host] -> M.Map HostName Host
 hostMap l = M.fromList $ zip (map hostName l) l 
 
+aliasMap :: [Host] -> M.Map HostName Host
+aliasMap l = M.fromList $ concat $ map (flip zip l) $
+	map (S.toList . _aliases . hostInfo) l
+
 findHost :: [Host] -> HostName -> Maybe Host
-findHost l hn = M.lookup hn (hostMap l)
+findHost l hn = maybe (findAlias l hn) Just (M.lookup hn (hostMap l))
+
+findAlias :: [Host] -> HostName -> Maybe Host
+findAlias l hn = M.lookup hn (aliasMap l)
 
 getAddresses :: Info -> [IPAddr]
 getAddresses = mapMaybe getIPAddr . S.toList . _dns
