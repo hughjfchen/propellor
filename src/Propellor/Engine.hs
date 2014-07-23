@@ -45,7 +45,5 @@ ensureProperty = catchPropellor . propertySatisfy
 fromHost :: [Host] -> HostName -> Propellor a -> Propellor (Maybe a)
 fromHost l hn getter = case findHost l hn of
 	Nothing -> return Nothing
-	Just h -> liftIO $ do
-		print ("fromHost", hn, "using", h)
-		Just <$>
-			runReaderT (runWithHost getter) h
+	Just h -> liftIO $ Just <$>
+		runReaderT (runWithHost getter) h
