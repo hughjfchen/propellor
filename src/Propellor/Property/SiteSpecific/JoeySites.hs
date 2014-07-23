@@ -691,8 +691,8 @@ legacyWebSites = propertyList "legacy web sites"
 	, alias "creeksidepress.com"
 	, toProp $ Apache.siteEnabled "creeksidepress.com" $ apachecfg "creeksidepress.com" False
 		[ "ServerAlias www.creeksidepress.com"
-		, "DocumentRoot /srv/web/creeksidepress.com"
-		, "<Directory /srv/web/creeksidepress.com>"
+		, "DocumentRoot /srv/web/www.creeksidepress.com"
+		, "<Directory /srv/web/www.creeksidepress.com>"
 		, "  Options FollowSymLinks"
 		, "  AllowOverride None"
 		, Apache.allowAll
