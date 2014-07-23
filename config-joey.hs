@@ -101,6 +101,7 @@ hosts =                 --                  (o)  `
 			, "--exclude=/var/tmp"
 			, "--exclude=/home/joey/lib"
 			, "--exclude=.*/tmp/"
+			, "--one-file-system"
 			] Obnam.OnlyClient
 			`requires` Gpg.keyImported "98147487" "root"
 			`requires` Ssh.keyImported SshRsa "root"
