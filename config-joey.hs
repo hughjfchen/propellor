@@ -436,6 +436,7 @@ monsters =	      -- but do want to track their public keys etc.
 		 - - test mail
 		 - - test virus filtering
 		 - - test http://kitenet.net/~kyle/ (user home dirs)
+		 - - migrate user cron jobs
 		 -}
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"

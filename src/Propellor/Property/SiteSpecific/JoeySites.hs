@@ -347,7 +347,7 @@ githubBackup = propertyList "github-backup box"
 	  in File.hasPrivContent f anyContext
 		`onChange` File.ownerGroup f "joey" "joey"
 	, Cron.niceJob "github-backup run" "30 4 * * *" "joey"
-		"/home/joey/lib/backup" $ intercalate "&"
+		"/home/joey/lib/backup" $ intercalate "&&"
 			[ "mkdir -p github"
 			, "cd github"
 			, ". $HOME/.github-keys && github-backup joeyh"
