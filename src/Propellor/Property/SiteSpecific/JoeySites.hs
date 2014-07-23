@@ -114,11 +114,11 @@ mumbleServer hosts = combineProperties hn
 	[ Apt.serviceInstalledRunning "mumble-server"
 	, Obnam.latestVersion
 	, Obnam.backup "/var/lib/mumble-server" "55 5 * * *"
-		[ "--repository=sftp://joey@turtle.kitenet.net/~/lib/backup/" ++ hn ++ ".obnam"
+		[ "--repository=sftp://joey@usbackup.kitenet.net/~/lib/backup/" ++ hn ++ ".obnam"
 		, "--client-name=mumble"
 		] Obnam.OnlyClient
 		`requires` Ssh.keyImported SshRsa "root" (Context hn)
-		`requires` Ssh.knownHost hosts "turtle.kitenet.net" "root"
+		`requires` Ssh.knownHost hosts "usbackup.kitenet.net" "root"
 	, trivial $ cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
 	]
   where
