@@ -418,15 +418,14 @@ monsters =	      -- but do want to track their public keys etc.
 		 - ftpd (EOL)
 		 -
 		 - Pre-transition:
-		 - - re-rsync /home
-		 - - set up imap passwords for users who use pine
+		 - - re-rsync /home (skip ~joey and .pine*)
 		 - 
 		 - Transition plan:
 		 - - on darkstar: offlineimap run & disable cron job
 		 -    & move offlineimap files to tmp
 		 - - take down wren pstfix, imap, pop servers
 		 - - log all users out of wren
-		 - - final /home rsync
+		 - - final /home rsync (skip ~joey and .pine*)
 		 - - rsync /var/mail
 		 - - rsync mailman and mailman list archives dirs
 		 - - switch kitenet.net dns and enable pop.kitenet.net etc aliass
