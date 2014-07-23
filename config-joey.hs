@@ -105,6 +105,7 @@ hosts =                 --                  (o)  `
 			`requires` Gpg.keyImported "98147487" "root"
 			`requires` Ssh.keyImported SshRsa "root"
 				(Context "kite.kitenet.net")
+			`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "root"
 
 		-- & alias "smtp.kitenet.net" -- not yet live!
 		-- & alias "imap.kitenet.net" -- not yet live!
@@ -188,6 +189,7 @@ hosts =                 --                  (o)  `
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
 		& Ssh.hostKeys ctx
+		& sshPubKey "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAJkoPRhUGT8EId6m37uBdYEtq42VNwslKnc9mmO+89ody066q6seHKeFY6ImfwjcyIjM30RTzEwftuVNQnbEB0="
 		& Ssh.keyImported SshRsa "joey" ctx
 		& Apt.serviceInstalledRunning "swapspace"
 
