@@ -409,16 +409,34 @@ monsters =	      -- but do want to track their public keys etc.
 		 -   /spamassassin
 		 -   sqwebmail (cannot use this with dovecot, alternatives?)
 		 -   /imap server
-		 -   	(note: will need to re-download offlineimap)
 		 -   /pop server
-		 -   	(note: different hostname and ssl cert, will need
-		 -   	to reconfigure errol's email client)
 		 - /apache
 		 -   (need to re-rsync /srv/web to new kite.kitenet.net
 		 -   server before decommissioning)
 		 - bitlbee (EOL?)
 		 - prosody (EOL?)
 		 - ftpd (EOL)
+		 -
+		 - Pre-transition:
+		 - - re-rsync /home
+		 - - set up imap passwords for users who use pine
+		 - 
+		 - Transition plan:
+		 - - on darkstar: offlineimap run & disable cron job
+		 -    & move offlineimap files to tmp
+		 - - take down wren pstfix, imap, pop servers
+		 - - log all users out of wren
+		 - - final /home rsync
+		 - - rsync /var/mail
+		 - - rsync mailman and mailman list archives dirs
+		 - - switch kitenet.net dns and enable pop.kitenet.net etc aliass
+		 - - point wren.kitenet.net at kite.kitenet.net temporarily
+		 -   (make real-wren.kitenet.net alias)
+		 - - reconfigure errol's email client to use new server
+		 - - re-run offlinimap against new server
+		 - - test mail
+		 - - test virus filtering
+		 - - test http://kitenet.net/~kyle/ (user home dirs)
 		 -}
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"

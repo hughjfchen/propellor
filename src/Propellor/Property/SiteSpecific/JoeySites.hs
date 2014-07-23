@@ -688,6 +688,16 @@ legacyWebSites = propertyList "legacy web sites"
 		, Apache.allowAll
 		, "</Directory>"
 		]
+	, alias "creeksidepress.com"
+	, toProp $ Apache.siteEnabled "creeksidepress.com" $ apachecfg "creeksidepress.com" False
+		[ "ServerAlias www.creeksidepress.com"
+		, "DocumentRoot /srv/web/creeksidepress.com"
+		, "<Directory /srv/web/creeksidepress.com>"
+		, "  Options FollowSymLinks"
+		, "  AllowOverride None"
+		, Apache.allowAll
+		, "</Directory>"
+		]
 	, alias "joey.kitenet.net"
 	, toProp $ Apache.siteEnabled "joey.kitenet.net" $ apachecfg "joey.kitenet.net" False
 		[ "DocumentRoot /home/joey/html"
