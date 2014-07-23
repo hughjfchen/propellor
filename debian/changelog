@@ -6,6 +6,8 @@ propellor (0.8.2) UNRELEASED; urgency=medium
   * Fixed Postfix.satellite to really configure relayhost = smtp.domain.
   * Avoid reconfiguring postfix unncessarily when it already has a relayhost.
   * Deal with apache 2.4's change in the name of site-available config files.
+  * Hostname aliases can now be used in several places, including --spin
+    and Ssh.knownHost.
 
  -- Joey Hess <joeyh@debian.org>  Thu, 17 Jul 2014 23:32:01 -0400
 
