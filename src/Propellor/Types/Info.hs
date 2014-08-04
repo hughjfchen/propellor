@@ -12,6 +12,7 @@ data Info = Info
 	{ _os :: Val System
 	, _privDataFields :: S.Set (PrivDataField, Context)
 	, _sshPubKey :: Val String
+	, _aliases :: S.Set HostName
 	, _dns :: S.Set Dns.Record
 	, _namedconf :: Dns.NamedConfMap
 	, _dockerinfo :: DockerInfo
@@ -19,11 +20,12 @@ data Info = Info
 	deriving (Eq, Show)
 
 instance Monoid Info where
-	mempty = Info mempty mempty mempty mempty mempty mempty
+	mempty = Info mempty mempty mempty mempty mempty mempty mempty
 	mappend old new = Info
 		{ _os = _os old <> _os new
 		, _privDataFields = _privDataFields old <> _privDataFields new
 		, _sshPubKey = _sshPubKey old <> _sshPubKey new
+		, _aliases = _aliases old <> _aliases new
 		, _dns = _dns old <> _dns new
 		, _namedconf = _namedconf old <> _namedconf new
 		, _dockerinfo = _dockerinfo old <> _dockerinfo new

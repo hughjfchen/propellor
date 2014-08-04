@@ -18,28 +18,32 @@ f `hasContent` newcontent = fileProperty ("replace " ++ f)
 -- The file's permissions are preserved if the file already existed.
 -- Otherwise, they're set to 600.
 hasPrivContent :: FilePath -> Context -> Property
-hasPrivContent f context = withPrivData (PrivFile f) context $ \getcontent -> 
-	property desc $ getcontent $ \privcontent -> 
-		ensureProperty $ fileProperty' writeFileProtected desc
-			(\_oldcontent -> lines privcontent) f
+hasPrivContent = hasPrivContent' writeFileProtected
+
+-- | Leaves the file at its default or current mode,
+-- allowing "private" data to be read.
+--
+-- Use with caution!
+hasPrivContentExposed :: FilePath -> Context -> Property
+hasPrivContentExposed = hasPrivContent' writeFile
+
+hasPrivContent' :: (String -> FilePath -> IO ()) -> FilePath -> Context -> Property
+hasPrivContent' writer f context = 
+	withPrivData (PrivFile f) context $ \getcontent -> 
+		property desc $ getcontent $ \privcontent -> 
+			ensureProperty $ fileProperty' writer desc
+				(\_oldcontent -> lines privcontent) f
   where
 	desc = "privcontent " ++ f
-
--- | Leaves the file world-readable.
-hasPrivContentExposed :: FilePath -> Context -> Property
-hasPrivContentExposed f context = hasPrivContent f context `onChange`
-	mode f (combineModes (ownerWriteMode:readModes))
 
 -- | Ensures that a line is present in a file, adding it to the end if not.
 containsLine :: FilePath -> Line -> Property
 f `containsLine` l = f `containsLines` [l]
 
 containsLines :: FilePath -> [Line] -> Property
-f `containsLines` l = fileProperty (f ++ " contains:" ++ show l) go f
+f `containsLines` ls = fileProperty (f ++ " contains:" ++ show ls) go f
   where
-	go ls
-		| all (`elem` ls) l = ls
-		| otherwise = ls++l
+	go content = content ++ filter (`notElem` content) ls
 
 -- | Ensures that a line is not present in a file.
 -- Note that the file is ensured to exist, so if it doesn't, an empty

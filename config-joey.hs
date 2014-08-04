@@ -8,6 +8,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
 import qualified Propellor.Property.Ssh as Ssh
+import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
@@ -22,6 +23,7 @@ import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Grub as Grub
+import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -41,7 +43,7 @@ hosts =                 --                  (o)  `
 
 		& Apt.buildDep ["git-annex"] `period` Daily
 		& Docker.configured
-		& Docker.docked hosts "android-git-annex"
+		! Docker.docked hosts "android-git-annex"
 
 	, standardSystem "clam.kitenet.net" Unstable "amd64"
 		[ "Unreliable server. Anything here may be lost at any time!" ]
@@ -61,38 +63,70 @@ hosts =                 --                  (o)  `
 		[ "Main git-annex build box." ]
 		& ipv4 "138.38.108.179"
 
-		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Postfix.satellite
 		& Docker.configured
 		& Docker.docked hosts "amd64-git-annex-builder"
 		& Docker.docked hosts "i386-git-annex-builder"
-		& Docker.docked hosts "armel-git-annex-builder-companion"
-		& Docker.docked hosts "armel-git-annex-builder"
 		& Docker.docked hosts "android-git-annex-builder"
+		-- not currently working
+		! Docker.docked hosts "armel-git-annex-builder-companion"
+		! Docker.docked hosts "armel-git-annex-builder"
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
 	
-  	, standardSystem "kite.kitenet.net" Unstable "amd64"
+	-- This is not a complete description of kite, since it's a
+	-- multiuser system with eg, user passwords that are not deployed
+	-- with propellor.
+  	, standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 		[ "Welcome to the new kitenet.net server!"
 		, "This is still under construction and not yet live.."
 		]
 	  	& ipv4 "66.228.36.95"
 		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
+		-- & alias "kitenet.net" -- not yet live!
 
 		& Apt.installed ["linux-image-amd64"]
 		& Linode.chainPVGrub 5
-		& Hostname.sane
 		& Apt.unattendedUpgrades
 		& Apt.installed ["systemd"]
 		& Ssh.hostKeys (Context "kitenet.net")
-	
+		-- Since ssh password authentication is allowed:
+		& Apt.serviceInstalledRunning "fail2ban"
+		& Obnam.backup "/" "33 1 * * *"
+			[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
+			, "--client-name=kitenet.net"
+			, "--encrypt-with="
+			, "--exclude=/var/cache"
+			, "--exclude=/var/tmp"
+			, "--exclude=/home/joey/lib"
+			, "--exclude=.*/tmp/"
+			, "--one-file-system"
+			] Obnam.OnlyClient
+			`requires` Gpg.keyImported "98147487" "root"
+			`requires` Ssh.keyImported SshRsa "root"
+				(Context "kite.kitenet.net")
+			`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "root"
+
+		-- & alias "smtp.kitenet.net" -- not yet live!
+		-- & alias "imap.kitenet.net" -- not yet live!
+		-- & alias "mail.kitenet.net" -- not yet live!
+		& JoeySites.kiteMailServer
+
+		& JoeySites.legacyWebSites
+
+		& Apt.installed
+			["git-annex", "myrepos"
+			, "build-essential", "make"
+			-- Some users have zsh as their login shell.
+			, "zsh"
+			]
+
   	, standardSystem "diatom.kitenet.net" Stable "amd64"
 	  	[ "Important stuff that needs not too much memory or CPU." ]
 		& ipv4 "107.170.31.195"
 
 		& DigitalOcean.distroKernel
-		& Hostname.sane
 		& Ssh.hostKeys (Context "diatom.kitenet.net")
 		& Apt.unattendedUpgrades
 		& Apt.serviceInstalledRunning "ntp"
@@ -103,10 +137,7 @@ hosts =                 --                  (o)  `
 		& Apt.serviceInstalledRunning "swapspace"
 	
 		& Apt.serviceInstalledRunning "apache2"
-		& File.hasPrivContent "/etc/ssl/certs/web.pem" (Context "kitenet.net")
-		& File.hasPrivContent "/etc/ssl/private/web.pem" (Context "kitenet.net")
-		& File.hasPrivContent "/etc/ssl/certs/startssl.pem" (Context "kitenet.net")
-		& Apache.modEnabled "ssl"
+		& JoeySites.kitenetHttps
 		& Apache.multiSSL
 		& File.ownerGroup "/srv/web" "joey" "joey"
 		& Apt.installed ["analog"]
@@ -116,14 +147,16 @@ hosts =                 --                  (o)  `
 		& JoeySites.gitServer hosts
 	
 		& alias "downloads.kitenet.net"
-		& JoeySites.annexWebSite hosts "/srv/git/downloads.git"
+		& JoeySites.annexWebSite "/srv/git/downloads.git"
 			"downloads.kitenet.net"
 			"840760dc-08f0-11e2-8c61-576b7e66acfd"
-			[("turtle", "ssh://turtle.kitenet.net/~/lib/downloads/")]
+			[("usbackup", "ssh://usbackup.kitenet.net/~/lib/downloads/")]
+			`requires` Ssh.keyImported SshRsa "joey" (Context "downloads.kitenet.net")
+			`requires` Ssh.knownHost hosts "usbackup.kitenet.net" "joey"
 		& JoeySites.gitAnnexDistributor
 
 		& alias "tmp.kitenet.net"
-		& JoeySites.annexWebSite hosts "/srv/git/joey/tmp.git"
+		& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
 			"tmp.kitenet.net"
 			"26fd6e38-1226-11e2-a75f-ff007033bdba"
 			[]
@@ -148,25 +181,28 @@ hosts =                 --                  (o)  `
 
 	, let ctx = Context "elephant.kitenet.net"
 	  in standardSystem "elephant.kitenet.net" Unstable "amd64"
-	  	[ "Storage, big data, and backups, omnomnom!" ]
+	  	[ "Storage, big data, and backups, omnomnom!"
+		, "(Encrypt all data stored here.)"
+		]
 		& ipv4 "193.234.225.114"
 
 		& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
-		& Hostname.sane
 		& Postfix.satellite
 		& Apt.unattendedUpgrades
 		& Ssh.hostKeys ctx
+		& sshPubKey "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAJkoPRhUGT8EId6m37uBdYEtq42VNwslKnc9mmO+89ody066q6seHKeFY6ImfwjcyIjM30RTzEwftuVNQnbEB0="
 		& Ssh.keyImported SshRsa "joey" ctx
 		& Apt.serviceInstalledRunning "swapspace"
 
 		& alias "eubackup.kitenet.net"
 		& Apt.installed ["obnam", "sshfs", "rsync"]
+		& JoeySites.obnamRepos ["wren", "pell", "kite"]
 		& JoeySites.githubBackup
-		& JoeySites.obnamRepos ["wren", "pell"]
-		& Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
+		& JoeySites.rsyncNetBackup hosts
+		& JoeySites.backupsBackedupTo hosts "usbackup.kitenet.net" "lib/backup/eubackup"
 
 		& alias "podcatcher.kitenet.net"
-		& Apt.installed ["git-annex"]
+		& JoeySites.podcatcher
 		
 		& alias "znc.kitenet.net"
 		& JoeySites.ircBouncer
@@ -201,9 +237,9 @@ hosts =                 --                  (o)  `
 			`onChange` Service.restarted "ssh"
 		
 		-- temp
-		& Docker.docked hosts "amd64-git-annex-builder"
-		& Docker.docked hosts "i386-git-annex-builder"
-		& Docker.docked hosts "android-git-annex-builder"
+		! Docker.docked hosts "amd64-git-annex-builder"
+		! Docker.docked hosts "i386-git-annex-builder"
+		! Docker.docked hosts "android-git-annex-builder"
 
 
 	    --'                        __|II|      ,.
@@ -261,8 +297,17 @@ type Motd = [String]
 
 -- This is my standard system setup.
 standardSystem :: HostName -> DebianSuite -> Architecture -> Motd -> Host
-standardSystem hn suite arch motd = host hn
+standardSystem hn suite arch motd = standardSystemUnhardened hn suite arch motd
+	-- Harden the system, but only once root's authorized_keys
+	-- is safely in place.
+	& check (Ssh.hasAuthorizedKeys "root")
+		(Ssh.passwordAuthentication False)
+
+standardSystemUnhardened :: HostName -> DebianSuite -> Architecture -> Motd -> Host
+standardSystemUnhardened hn suite arch motd = host hn
 	& os (System (Debian suite) arch)
+	& Hostname.sane
+	& Hostname.searchDomain
 	& File.hasContent "/etc/motd" ("":motd++[""])
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.cacheCleaned
@@ -270,10 +315,6 @@ standardSystem hn suite arch motd = host hn
 	& Apt.installed ["ssh"]
 	& GitHome.installedFor "root"
 	& User.hasSomePassword "root" (Context hn)
-	-- Harden the system, but only once root's authorized_keys
-	-- is safely in place.
-	& check (Ssh.hasAuthorizedKeys "root")
-		(Ssh.passwordAuthentication False)
 	& User.accountFor "joey"
 	& User.hasSomePassword "joey" (Context hn)
 	& Sudo.enabledFor "joey"
@@ -350,6 +391,7 @@ monsters =	      -- but do want to track their public keys etc.
 		& ipv4 "67.223.19.96"
 		& ipv6 "2001:4978:f:2d9::2"
 		& alias "backup.kitenet.net"
+		& alias "usbackup.kitenet.net"
 		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
 	, host "wren.kitenet.net"
 		& ipv4 "80.68.85.49"
@@ -359,37 +401,46 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "ftp.kitenet.net"
 		& alias "mail.kitenet.net"
 		& alias "smtp.kitenet.net"
-		& alias "sows-ear.kitenet.net"
-		& alias "www.sows-ear.kitenet.net"
-		& alias "wortroot.kitenet.net"
-		& alias "www.wortroot.kitenet.net"
-		& alias "joey.kitenet.net"
-		& alias "anna.kitenet.net"
 		& alias "bitlbee.kitenet.net"
 		{- Remaining services on kite:
+		 -
+		 - / = ready to go on kite.kitenet.net
 		 - 
 		 - mail
-		 -   postfix
-		 -   postgrey
+		 -   /postfix
+		 -   /postgrey
 		 -   mailman
-		 -   spamassassin
-		 -   sqwebmail
-		 -   courier
-		 -     imap
-		 -     tls
-		 - apache
-		 -   some static websites
-		 - bitlbee
-		 - prosody
-		 -   (used by daddy's git-annex)
-		 - named
-		 -   (branchable is still pushing to here
-		 -    (thinking it's ns2.branchable.com), but it's no
-		 -   longer a primary or secondary for anything)
+		 -   /spamassassin
+		 -   sqwebmail (cannot use this with dovecot, alternatives?)
+		 -   /imap server
+		 -   /pop server
+		 - /apache
+		 -   (need to re-rsync /srv/web to new kite.kitenet.net
+		 -   server before decommissioning)
+		 - bitlbee (EOL?)
+		 - prosody (EOL?)
 		 - ftpd (EOL)
 		 -
-		 - user shell stuff:
-		 -   pine, zsh, make, git-annex, myrepos, ...
+		 - Pre-transition:
+		 - - re-rsync /home (skip ~joey and .pine*)
+		 - 
+		 - Transition plan:
+		 - - on darkstar: offlineimap run & disable cron job
+		 -    & move offlineimap files to tmp
+		 - - take down wren pstfix, imap, pop servers
+		 - - log all users out of wren
+		 - - final /home rsync (skip ~joey and .pine*)
+		 - - rsync /var/mail
+		 - - rsync mailman and mailman list archives dirs
+		 - - switch kitenet.net dns and enable pop.kitenet.net etc aliass
+		 - - point wren.kitenet.net at kite.kitenet.net temporarily
+		 -   (make real-wren.kitenet.net alias)
+		 - - reconfigure errol's email client to use new server
+		 - - re-run offlinimap against new server
+		 - - test mail
+		 - - test virus filtering
+		 - - test http://kitenet.net/~kyle/ (user home dirs)
+		 - - migrate user cron jobs
 		 -}
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"

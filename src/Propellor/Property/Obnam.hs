@@ -33,8 +33,8 @@ data NumClients = OnlyClient | MultipleClients
 -- >		[ "--repository=sftp://2318@usw-s002.rsync.net/~/mygitrepos.obnam"
 -- >		, "--encrypt-with=1B169BE1"
 -- >		] Obnam.OnlyClient
--- >		`requires` Gpg.keyImported "1B169BE1" "root"
--- >		`requires` Ssh.keyImported SshRsa "root"
+-- >		`requires` Gpg.keyImported "1B169BE1" "root" 
+-- >		`requires` Ssh.keyImported SshRsa "root" (Context hostname)
 --
 -- How awesome is that?
 backup :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property

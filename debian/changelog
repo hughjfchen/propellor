@@ -1,3 +1,16 @@
+propellor (0.8.2) unstable; urgency=medium
+
+  * Fix bug in File.containsLines that caused lines that were already in the
+    file to sometimes be appended to the end.
+  * Hostname.sane also configures /etc/mailname.
+  * Fixed Postfix.satellite to really configure relayhost = smtp.domain.
+  * Avoid reconfiguring postfix unncessarily when it already has a relayhost.
+  * Deal with apache 2.4's change in the name of site-available config files.
+  * Hostname aliases can now be used in several places, including --spin
+    and Ssh.knownHost.
+
+ -- Joey Hess <joeyh@debian.org>  Mon, 04 Aug 2014 01:12:19 -0400
+
 propellor (0.8.1) unstable; urgency=medium
 
   * Run apt-get update in initial bootstrap.
