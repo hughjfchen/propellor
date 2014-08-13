@@ -70,7 +70,7 @@ hosts =                 --                  (o)  `
 		& Docker.docked hosts "i386-git-annex-builder"
 		& Docker.docked hosts "android-git-annex-builder"
 		-- not currently working
-		! Docker.docked hosts "armel-git-annex-builder-companion"
+		& Docker.docked hosts "armel-git-annex-builder-companion"
 		! Docker.docked hosts "armel-git-annex-builder"
 		& Docker.garbageCollected `period` Daily
 		& Apt.buildDep ["git-annex"] `period` Daily
