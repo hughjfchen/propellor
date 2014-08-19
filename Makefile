@@ -23,7 +23,8 @@ install:
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
 	install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin/propellor
 	mkdir -p dist/gittmp
-	git archive HEAD | (cd dist/gittmp && tar x)
+	$(CABAL) sdist --list-sources > dist/list-sources
+	tar c -T dist/list-sources | (cd dist/gittmp && tar x)
 	cd dist/gittmp && git init && \
 		git add . \
 		&& git commit -q -m "distributed version of propellor" \
