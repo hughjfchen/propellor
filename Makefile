@@ -22,9 +22,8 @@ dist/setup-config: propellor.cabal
 install:
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
 	install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin/propellor
-	$(CABAL) sdist
 	mkdir -p dist/gittmp
-	cat dist/propellor-*.tar.gz | (cd dist/gittmp && tar zx --strip-components=1)
+	git archive HEAD - | (cd dist/gittmp && tar zx)
 	cd dist/gittmp && git init && \
 		git add . \
 		&& git commit -q -m "distributed version of propellor" \
