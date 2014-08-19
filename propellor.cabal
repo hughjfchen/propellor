@@ -18,13 +18,14 @@ Extra-Source-Files:
   config-simple.hs
   config-joey.hs
   config.hs
+  propellor.1
   debian/changelog
   debian/README.Debian
-  debian/propellor.1
   debian/compat
   debian/control
   debian/copyright
   debian/rules
+  debian/manpages
 Synopsis: property-based host configuration management in haskell
 Description:
  Propellor enures that the system it's run in satisfies a list of
