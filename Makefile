@@ -25,6 +25,7 @@ install:
 	$(CABAL) sdist
 	cat dist/propellor-*.tar.gz | \
 		(cd $(DESTDIR)/usr/src/propellor && tar zx --strip-components=1)
+	cd $(DESTDIR)/usr/src/propellor && git init && git add . && git commit -m "current version of propellor"
 
 clean:
 	rm -rf dist Setup tags propellor privdata/local
