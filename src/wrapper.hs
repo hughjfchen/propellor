@@ -125,7 +125,7 @@ setupupstreammaster newref propellordir = do
 		changeWorkingDirectory tmprepo
 		git ["fetch", distrepo, "--quiet"]
 		git ["reset", "--hard", oldref, "--quiet"]
-		git ["merge", newref, "-s", "theirs", "--quiet", "-m", "merging upstream version"]
+		git ["merge", newref, "-s", "recursive", "-Xtheirs", "--quiet", "-m", "merging upstream version"]
 	
 		fetchUpstreamBranch propellordir tmprepo
 		cleantmprepo
