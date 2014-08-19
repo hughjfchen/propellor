@@ -24,7 +24,7 @@ install:
 	install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin/propellor
 	mkdir -p dist/gittmp
 	$(CABAL) sdist
-	tar vf dist/propellor-*.tar.gz > dist/list-sources
+	tar tf dist/propellor-*.tar.gz | perl -pe 's!propellor-[^/]+/!!' > dist/list-sources
 	tar c -T dist/list-sources | (cd dist/gittmp && tar x)
 	cd dist/gittmp && git init && \
 		git add . \
