@@ -17,6 +17,7 @@ Extra-Source-Files:
   Makefile
   config-simple.hs
   config-joey.hs
+  config.hs
   debian/changelog
   debian/README.Debian
   debian/propellor.1

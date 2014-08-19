@@ -1,3 +1,10 @@
+propellor (0.8.3) UNRELEASED; urgency=medium
+
+  * Included the config.hs symlink to config-simple.hs in the cabal and Debian
+    packages.
+
+ -- Joey Hess <joeyh@debian.org>  Tue, 19 Aug 2014 14:16:32 -0400
+
 propellor (0.8.2) unstable; urgency=medium
 
   * Fix bug in File.containsLines that caused lines that were already in the
