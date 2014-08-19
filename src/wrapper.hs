@@ -9,8 +9,8 @@
 -- uses it to build the real propellor program (if not already built),
 -- and runs it.
 -- 
--- The source is either copied from /usr/src/propellor, or is cloned from
--- git over the network.
+-- The source is cloned from /usr/src/propellor when available,
+-- or is cloned from git over the network.
 
 module Main where
 
@@ -28,13 +28,13 @@ import System.Environment (getArgs)
 import System.Exit
 import System.Posix.Directory
 
-srcdir :: FilePath
-srcdir = "/usr/src/propellor"
+localrepo :: FilePath
+localrepo = "/usr/src/propellor"
 
 -- Using the github mirror of the main propellor repo because
 -- it is accessible over https for better security.
-srcrepo :: String
-srcrepo = "https://github.com/joeyh/propellor.git"
+netrepo :: String
+netrepo = "https://github.com/joeyh/propellor.git"
 
 main :: IO ()
 main = do
@@ -56,29 +56,25 @@ wrapper args propellordir propellorbin = do
 	makeRepo = do
 		putStrLn $ "Setting up your propellor repo in " ++ propellordir
 		putStrLn ""
-		ifM (doesDirectoryExist srcdir)
+		ifM (doesDirectoryExist localrepo)
 			( do
-				void $ boolSystem "cp" [Param "-a", File srcdir, File propellordir]
-				changeWorkingDirectory propellordir
-				void $ boolSystem "git" [Param "init"]
-				void $ boolSystem "git" [Param "add", Param "."]
-				setuprepo True
+				void $ boolSystem "git" [Param "clone", File localrepo, File propellordir]
+				setuprepo True localrepo
 			, do
-				void $ boolSystem "git" [Param "clone", Param srcrepo, File propellordir] 
-				void $ boolSystem "git" [Param "remote", Param "rm", Param "origin"]
-				setuprepo False
+				void $ boolSystem "git" [Param "clone", Param netrepo, File propellordir] 
+				setuprepo False netrepo
 			)
-	setuprepo fromsrcdir = do
+	setuprepo fromlocalrepo repolocation = do
 		changeWorkingDirectory propellordir
 		whenM (doesDirectoryExist "privdata") $
 			mapM_ nukeFile =<< dirContents "privdata"
-		void $ boolSystem "git" [Param "commit", Param "--allow-empty", Param "--quiet", Param "-m", Param "setting up propellor git repository"]
-		void $ boolSystem "git" [Param "remote", Param "add", Param "upstream", Param srcrepo]
+		void $ boolSystem "git" [Param "remote", Param "rm", Param "origin"]
+		void $ boolSystem "git" [Param "remote", Param "add", Param "upstream", Param repolocation]
 		-- Connect synthetic git repo with upstream history so
 		-- merging with upstream will work going forward.
 		-- Note -s ours is used to avoid getting any divergent
 		-- changes from upstream.
-		when fromsrcdir $ do
+		when (not fromlocalrepo) $ do
 			void $ boolSystem "git" [Param "fetch", Param "upstream"]
 			version <- readProcess "dpkg-query" ["--showformat", "${Version}", "--show", "propellor"]
 			void $ boolSystem "git" [Param "merge", Param "-s", Param "ours", Param version]
