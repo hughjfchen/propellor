@@ -19,6 +19,7 @@ import Utility.Monad
 import Utility.Process
 import Utility.SafeCommand
 import Utility.Directory
+import Utility.Exception
 
 import Control.Monad
 import Control.Monad.IfElse
@@ -27,9 +28,10 @@ import System.FilePath
 import System.Environment (getArgs)
 import System.Exit
 import System.Posix.Directory
+import System.IO
 
-localrepo :: FilePath
-localrepo = "/usr/src/propellor/propellor.git"
+distrepo :: FilePath
+distrepo = "/usr/src/propellor/propellor.git"
 
 -- Using the github mirror of the main propellor repo because
 -- it is accessible over https for better security.
@@ -46,19 +48,34 @@ main = do
 
 wrapper :: [String] -> FilePath -> FilePath -> IO ()
 wrapper args propellordir propellorbin = do
-	unlessM (doesDirectoryExist propellordir) $
-		makeRepo
+	ifM (doesDirectoryExist propellordir)
+		( checkRepo 
+		, makeRepo
+		)
 	buildruncfg
   where
-	chain = do
-		(_, _, _, pid) <- createProcess (proc propellorbin args) 
-		exitWith =<< waitForProcess pid
 	makeRepo = do
 		putStrLn $ "Setting up your propellor repo in " ++ propellordir
 		putStrLn ""
-		localexists <- doesFileExist localrepo <||> doesDirectoryExist localrepo
-		let repo = if localexists then localrepo else netrepo
+		distexists <- doesFileExist distrepo <||> doesDirectoryExist distrepo
+		let repo = if distexists then distrepo else netrepo
 		void $ boolSystem "git" [Param "clone", File repo, File propellordir]
+
+	disthead = propellordir </> "head"
+
+	checkRepo = whenM (doesFileExist disthead) $ do
+		head <- readFile disthead
+		changeWorkingDirectory propellordir
+		headknown <- catchMaybeIO $ 
+			withQuietOutput createProcessSuccess $
+				proc "git" ["log", head]
+		when (headknown == Nothing)
+			warnoutofdate
+	warnoutofdate = do
+		let n = hPutStrLn stderr
+		n ("** Your " ++ propellordir ++ " is out of date..")
+		n ("   A newer upstream version is available in " ++ distrepo)
+		n ("   To merge it, run eg: git pull origin master")
 	buildruncfg = do
 		changeWorkingDirectory propellordir
 		ifM (boolSystem "make" [Param "build"])
@@ -68,3 +85,7 @@ wrapper args propellordir propellorbin = do
 				chain
 			, error "Propellor build failed."
 			)
+	chain = do
+		(_, _, _, pid) <- createProcess (proc propellorbin args) 
+		exitWith =<< waitForProcess pid
+
