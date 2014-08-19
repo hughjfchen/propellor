@@ -23,7 +23,8 @@ install:
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
 	install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin/propellor
 	mkdir -p dist/gittmp
-	$(CABAL) sdist | (cd dist/gittmp && tar x --strip-components=1)
+	$(CABAL) sdist
+	cat dist/propellor-*.tar.gz | (cd dist/gittmp && tar zx --strip-components=1)
 	# cabal sdist does not preserve symlinks, so copy over file
 	cd dist/gittmp && for f in $$(find -type f); do rm -f $$f; cp -a ../../$$f $$f; done
 	cd dist/gittmp && git init && \
