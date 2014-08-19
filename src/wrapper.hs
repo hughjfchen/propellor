@@ -112,12 +112,13 @@ wrapper args propellordir propellorbin = do
 setupupstreammaster :: String -> FilePath -> IO ()
 setupupstreammaster newref propellordir = do
 	changeWorkingDirectory propellordir
-	go =<< catchMaybeIO (readProcess "git" ["show-ref", upstreambranch, "--hash"])
+	go =<< catchMaybeIO getoldrev
   where
 	go Nothing = warnoutofdate False
 	go (Just oldref) = do
 		let tmprepo = ".git/propellordisttmp"
-		removeDirectoryRecursive tmprepo
+		let cleantmprepo = void $ catchMaybeIO $ removeDirectoryRecursive tmprepo
+		cleantmprepo
 		git ["clone", "--quiet", ".", tmprepo]
 	
 		changeWorkingDirectory tmprepo
@@ -127,8 +128,11 @@ setupupstreammaster newref propellordir = do
 		git ["commit", "-a", "-m", "merging upstream changes", "--quiet"]
 	
 		fetchUpstreamBranch propellordir tmprepo
-		removeDirectoryRecursive tmprepo
+		cleantmprepo
 		warnoutofdate True
+
+	getoldrev = takeWhile (/= '\n')
+		<$> readProcess "git" ["show-ref", upstreambranch, "--hash"]
 	
 	git = run "git"
 	run cmd ps = unlessM (boolSystem cmd (map Param ps)) $
