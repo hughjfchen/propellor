@@ -38,6 +38,9 @@ distrepo = distdir </> "propellor.git"
 disthead :: FilePath
 disthead = distdir </> "head"
 
+upstreambranch :: String
+upstreambranch = "upstream/master"
+
 -- Using the github mirror of the main propellor repo because
 -- it is accessible over https for better security.
 netrepo :: String
@@ -62,9 +65,12 @@ wrapper args propellordir propellorbin = do
 	makeRepo = do
 		putStrLn $ "Setting up your propellor repo in " ++ propellordir
 		putStrLn ""
-		distexists <- doesFileExist distrepo <||> doesDirectoryExist distrepo
-		let repo = if distexists then distrepo else netrepo
-		void $ boolSystem "git" [Param "clone", File repo, File propellordir]
+		ifM (doesFileExist distrepo <||> doesDirectoryExist distrepo)
+			( do			
+				void $ boolSystem "git" [Param "clone", File distrepo, File propellordir]
+				fetchUpstreamBranch propellordir distrepo
+			, void $ boolSystem "git" [Param "clone", Param netrepo, File propellordir]
+			)
 
 	checkRepo = whenM (doesFileExist disthead) $ do
 		headrev <- readFile disthead
@@ -72,14 +78,8 @@ wrapper args propellordir propellorbin = do
 		headknown <- catchMaybeIO $ 
 			withQuietOutput createProcessSuccess $
 				proc "git" ["log", headrev]
-		when (headknown == Nothing)
-			warnoutofdate
-	warnoutofdate = do
-		let n = hPutStrLn stderr
-		n ("** Your " ++ propellordir ++ " is out of date..")
-		n ("   A newer upstream version is available in " ++ distrepo)
-		n ("   To merge it, run eg: git pull origin master")
-		n ""
+		when (headknown == Nothing) $
+			setupupstreammaster headrev propellordir
 	buildruncfg = do
 		changeWorkingDirectory propellordir
 		ifM (boolSystem "make" [Param "build"])
@@ -93,3 +93,61 @@ wrapper args propellordir propellorbin = do
 		(_, _, _, pid) <- createProcess (proc propellorbin args) 
 		exitWith =<< waitForProcess pid
 
+-- Passed the user's propellordir repository, makes upstream/master
+-- be a usefully mergeable branch.
+--
+-- We cannot just use origin/master, because in the case of a distrepo,
+-- it only contains 1 commit. So, trying to merge with it will result
+-- in lots of merge conflicts, since git cannot find a common parent
+-- commit.
+--
+-- Instead, the upstream/master branch is created by taking the previous
+-- upstream/master branch (which must be an old version of propellor,
+-- as distributed), and diffing from it to the current origin/master,
+-- and committing the result. This is done in a temporary clone of the
+-- repository, giving it a new master branch. That new branch is fetched
+-- into the user's repository, as if fetching from a upstream remote,
+-- yielding a new upstream/master branch.
+setupupstreammaster :: String -> FilePath -> IO ()
+setupupstreammaster newref propellordir = do
+	changeWorkingDirectory propellordir
+	go =<< catchMaybeIO (readProcess "git" ["show-ref", upstreambranch, "--hash"])
+  where
+	go Nothing = warnoutofdate False
+	go (Just oldref) = do
+		let tmprepo = ".git/propellordisttmp"
+		removeDirectoryRecursive tmprepo
+		git ["clone", "--quiet", ".", tmprepo]
+	
+		changeWorkingDirectory tmprepo
+		git ["fetch", distrepo, "--quiet"]
+		git ["reset", "--hard", oldref, "--quiet"]
+		run "sh" ["-c", "git diff .." ++ newref ++ " | git apply --whitespace=nowarn"]
+		git ["commit", "-a", "-m", "merging upstream changes", "--quiet"]
+	
+		fetchUpstreamBranch propellordir tmprepo
+		removeDirectoryRecursive tmprepo
+		warnoutofdate True
+	
+	git = run "git"
+	run cmd ps = unlessM (boolSystem cmd (map Param ps)) $
+		error $ "Failed to run " ++ cmd ++ " " ++ show ps
+	
+	warnoutofdate havebranch = do
+		let n = hPutStrLn stderr
+		n ("** Your " ++ propellordir ++ " is out of date..")
+		n ("   A newer upstream version is available in " ++ distrepo)
+		if havebranch
+			then n ("   To merge it, run: git merge " ++ upstreambranch)
+			else n ("   To merge it, find the most recent commit in your repository's history that corresponds to an upstream release of propellor, and set refs/heads/" ++ upstreambranch ++ " to it. Then run propellor again." )
+		n ""
+
+fetchUpstreamBranch :: FilePath -> FilePath -> IO ()
+fetchUpstreamBranch propellordir repo = do
+	changeWorkingDirectory propellordir
+	void $ boolSystem "git"
+		[ Param "fetch"
+		, File repo
+		, Param ("+refs/heads/master:refs/remotes/" ++ upstreambranch)
+		, Param "--quiet"
+		]
