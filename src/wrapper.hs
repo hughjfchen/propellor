@@ -29,7 +29,7 @@ import System.Exit
 import System.Posix.Directory
 
 localrepo :: FilePath
-localrepo = "/usr/src/propellor"
+localrepo = "/usr/src/propellor/propellor.git"
 
 -- Using the github mirror of the main propellor repo because
 -- it is accessible over https for better security.
@@ -56,28 +56,13 @@ wrapper args propellordir propellorbin = do
 	makeRepo = do
 		putStrLn $ "Setting up your propellor repo in " ++ propellordir
 		putStrLn ""
-		ifM (doesDirectoryExist localrepo)
-			( do
-				void $ boolSystem "git" [Param "clone", File localrepo, File propellordir]
-				setuprepo True localrepo
+		ifM (doesFileExist localrepo <||> doesDirectoryExist localrepo)
+			( void $ boolSystem "git" [Param "clone", File localrepo, File propellordir]
 			, do
 				void $ boolSystem "git" [Param "clone", Param netrepo, File propellordir] 
-				setuprepo False netrepo
+				whenM (doesDirectoryExist (propellordir </> "privdata")) $
+					mapM_ nukeFile =<< dirContents (propellordir </> "privdata")
 			)
-	setuprepo fromlocalrepo repolocation = do
-		changeWorkingDirectory propellordir
-		whenM (doesDirectoryExist "privdata") $
-			mapM_ nukeFile =<< dirContents "privdata"
-		void $ boolSystem "git" [Param "remote", Param "rm", Param "origin"]
-		void $ boolSystem "git" [Param "remote", Param "add", Param "upstream", Param repolocation]
-		-- Connect synthetic git repo with upstream history so
-		-- merging with upstream will work going forward.
-		-- Note -s ours is used to avoid getting any divergent
-		-- changes from upstream.
-		when (not fromlocalrepo) $ do
-			void $ boolSystem "git" [Param "fetch", Param "upstream"]
-			version <- readProcess "dpkg-query" ["--showformat", "${Version}", "--show", "propellor"]
-			void $ boolSystem "git" [Param "merge", Param "-s", Param "ours", Param version]
 	buildruncfg = do
 		changeWorkingDirectory propellordir
 		ifM (boolSystem "make" [Param "build"])

@@ -7,10 +7,16 @@ repository in ~/.propellor/, and run ~/.propellor/propellor if it exists.
 Edit ~/.propellor/config.hs to configure it.
 
 Note that upgrading the propellor package will not update your
-~/.propellor/ repository. You can `git pull upstream` in your repository to
-update to the current upstream source, as distributed in the Debian
-package.
+~/.propellor/ repository. This is because you may have local changes
+to the source, or may need to adapt your config.hs to work with the new
+version of propellor. Instead, if your ~/.propellor/ is from an older
+version of propellor, /usr/bin/propellor will warn that it's out of date.
 
-Older versions of propellor set the upstream remote to
-point to a repository on github, so if you used one of them, you may want
-to change it to point to the new location, /usr/src/propellor/
+You can `git pull upstream` in your repository to update to the
+current upstream source, as distributed in the Debian package.
+
+In older versions of propellor, the upstream remote was pointed at
+the repository on github, so you may want to change it to point
+to the repository included in the Debian package:
+
+	git config remote.upstream.url /usr/src/propellor/propellor.git
