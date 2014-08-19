@@ -23,9 +23,9 @@ install:
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
 	install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin/propellor
 	mkdir -p dist/gittmp
-	$(CABAL) sdist
-	tar tf dist/propellor-*.tar.gz | perl -ne 's!propellor-[^/]+/!!; print unless $$_ eq "\n"' > dist/list-sources
-	tar c -T dist/list-sources | (cd dist/gittmp && tar x)
+	$(CABAL) sdist | (cd dist/gittmp && tar x --strip-components=1)
+	# cabal sdist does not preserve symlinks, so copy over file
+	cd dist/gittmp && for f in $$(find -type f); do rm -f $$f; cp -a ../../$$f $$f; done
 	cd dist/gittmp && git init && \
 		git add . \
 		&& git commit -q -m "distributed version of propellor" \
