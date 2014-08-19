@@ -18,7 +18,6 @@ import Utility.UserInfo
 import Utility.Monad
 import Utility.Process
 import Utility.SafeCommand
-import Utility.Directory
 import Utility.Exception
 
 import Control.Monad
@@ -64,11 +63,11 @@ wrapper args propellordir propellorbin = do
 	disthead = propellordir </> "head"
 
 	checkRepo = whenM (doesFileExist disthead) $ do
-		head <- readFile disthead
+		headrev <- readFile disthead
 		changeWorkingDirectory propellordir
 		headknown <- catchMaybeIO $ 
 			withQuietOutput createProcessSuccess $
-				proc "git" ["log", head]
+				proc "git" ["log", headrev]
 		when (headknown == Nothing)
 			warnoutofdate
 	warnoutofdate = do
