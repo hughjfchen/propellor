@@ -8,4 +8,9 @@ Edit ~/.propellor/config.hs to configure it.
 
 Note that upgrading the propellor package will not update your
 ~/.propellor/ repository. You can `git pull upstream` in your repository to
-update to the current upstream.
+update to the current upstream source, as distributed in the Debian
+package.
+
+Older versions of propellor set the upstream remote to
+point to a repository on github, so if you used one of them, you may want
+to change it to point to the new location, /usr/src/propellor/
