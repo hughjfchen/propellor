@@ -57,7 +57,8 @@ wrapper args propellordir propellorbin = do
 		putStrLn $ "Setting up your propellor repo in " ++ propellordir
 		putStrLn ""
 		localexists <- doesFileExist localrepo <||> doesDirectoryExist localrepo
-		void $ boolSystem "git" [Param "clone", File (if localexists then localrepo else netrepo). File propellordir]
+		let repo = if localexists then localrepo else netrepo
+		void $ boolSystem "git" [Param "clone", File repo, File propellordir]
 	buildruncfg = do
 		changeWorkingDirectory propellordir
 		ifM (boolSystem "make" [Param "build"])
