@@ -56,13 +56,8 @@ wrapper args propellordir propellorbin = do
 	makeRepo = do
 		putStrLn $ "Setting up your propellor repo in " ++ propellordir
 		putStrLn ""
-		ifM (doesFileExist localrepo <||> doesDirectoryExist localrepo)
-			( void $ boolSystem "git" [Param "clone", File localrepo, File propellordir]
-			, do
-				void $ boolSystem "git" [Param "clone", Param netrepo, File propellordir] 
-				whenM (doesDirectoryExist (propellordir </> "privdata")) $
-					mapM_ nukeFile =<< dirContents (propellordir </> "privdata")
-			)
+		localexists <- doesFileExist localrepo <||> doesDirectoryExist localrepo
+		void $ boolSystem "git" [Param "clone", File (if localexists then localrepo else netrepo). File propellordir]
 	buildruncfg = do
 		changeWorkingDirectory propellordir
 		ifM (boolSystem "make" [Param "build"])
