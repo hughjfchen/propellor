@@ -23,7 +23,7 @@ import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Cron as Cron
 """]]
 
-This loads up Propellor's modules. You'll almost certianly want these;
+This loads up Propellor's modules. You'll almost certainly want these;
 many more can be found in the [API documentation](http://hackage.haskell.org/package/propellor).
 
 [[!format haskell """
