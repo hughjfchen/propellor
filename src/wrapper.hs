@@ -103,7 +103,7 @@ wrapper args propellordir propellorbin = do
 -- in lots of merge conflicts, since git cannot find a common parent
 -- commit.
 --
--- Instead, the upstream/master branch is created by taking the previous
+-- Instead, the upstream/master branch is created by taking the
 -- upstream/master branch (which must be an old version of propellor,
 -- as distributed), and diffing from it to the current origin/master,
 -- and committing the result. This is done in a temporary clone of the
@@ -126,7 +126,8 @@ setupupstreammaster newref propellordir = do
 		git ["fetch", distrepo, "--quiet"]
 		git ["reset", "--hard", oldref, "--quiet"]
 		run "sh" ["-c", "git diff .." ++ newref ++ " | git apply --whitespace=nowarn"]
-		git ["commit", "-a", "-m", "merging upstream changes", "--quiet"]
+		git ["commit", "-a", "-m", "merging upstream into master", "--quiet"]
+		git ["merge", newref, "--quiet", "-m", "merging upstream release"]
 	
 		fetchUpstreamBranch propellordir tmprepo
 		cleantmprepo
