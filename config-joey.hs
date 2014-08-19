@@ -415,14 +415,13 @@ monsters =	      -- but do want to track their public keys etc.
 		 -   /imap server
 		 -   /pop server
 		 - /apache
-		 -   (need to re-rsync /srv/web to new kite.kitenet.net
-		 -   server before decommissioning)
 		 - bitlbee (EOL?)
 		 - prosody (EOL?)
 		 - ftpd (EOL)
 		 -
 		 - Pre-transition:
 		 - - re-rsync /home (skip ~joey and .pine*)
+		 -     cd /home && rsync -4 --progress -avz root@wren.kitenet.net:/home/ ./ --exclude='.pine*' --exclude='joey/*' --delete
 		 - 
 		 - Transition plan:
 		 - - on darkstar: offlineimap run & disable cron job
@@ -436,10 +435,11 @@ monsters =	      -- but do want to track their public keys etc.
 		 - - point wren.kitenet.net at kite.kitenet.net temporarily
 		 -   (make real-wren.kitenet.net alias)
 		 - - reconfigure errol's email client to use new server
-		 - - re-run offlinimap against new server
+		 - - on darkstar: re-run offlinimap against new server
 		 - - test mail
 		 - - test virus filtering
 		 - - test http://kitenet.net/~kyle/ (user home dirs)
+		 - - test mailman
 		 - - migrate user cron jobs
 		 -}
 	, host "mouse.kitenet.net"
