@@ -29,8 +29,14 @@ import System.Exit
 import System.Posix.Directory
 import System.IO
 
+distdir :: FilePath
+distdir = "/usr/src/propellor"
+
 distrepo :: FilePath
-distrepo = "/usr/src/propellor/propellor.git"
+distrepo = distdir </> "propellor.git"
+
+disthead :: FilePath
+disthead = distdir </> "head"
 
 -- Using the github mirror of the main propellor repo because
 -- it is accessible over https for better security.
@@ -60,8 +66,6 @@ wrapper args propellordir propellorbin = do
 		let repo = if distexists then distrepo else netrepo
 		void $ boolSystem "git" [Param "clone", File repo, File propellordir]
 
-	disthead = propellordir </> "head"
-
 	checkRepo = whenM (doesFileExist disthead) $ do
 		headrev <- readFile disthead
 		changeWorkingDirectory propellordir
@@ -75,6 +79,7 @@ wrapper args propellordir propellorbin = do
 		n ("** Your " ++ propellordir ++ " is out of date..")
 		n ("   A newer upstream version is available in " ++ distrepo)
 		n ("   To merge it, run eg: git pull origin master")
+		n ""
 	buildruncfg = do
 		changeWorkingDirectory propellordir
 		ifM (boolSystem "make" [Param "build"])
