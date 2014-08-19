@@ -22,6 +22,7 @@ import Utility.Exception
 
 import Control.Monad
 import Control.Monad.IfElse
+import Control.Applicative
 import System.Directory
 import System.FilePath
 import System.Environment (getArgs)
@@ -73,7 +74,7 @@ wrapper args propellordir propellorbin = do
 			)
 
 	checkRepo = whenM (doesFileExist disthead) $ do
-		headrev <- readFile disthead
+		headrev <- takeWhile (/= '\n') <$> readFile disthead
 		changeWorkingDirectory propellordir
 		headknown <- catchMaybeIO $ 
 			withQuietOutput createProcessSuccess $
