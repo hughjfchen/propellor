@@ -140,7 +140,7 @@ setupupstreammaster newref propellordir = do
 		n ("   A newer upstream version is available in " ++ distrepo)
 		if havebranch
 			then n ("   To merge it, run: git merge " ++ upstreambranch)
-			else n ("   To merge it, find the most recent commit in your repository's history that corresponds to an upstream release of propellor, and set refs/heads/" ++ upstreambranch ++ " to it. Then run propellor again." )
+			else n ("   To merge it, find the most recent commit in your repository's history that corresponds to an upstream release of propellor, and set refs/remotes/" ++ upstreambranch ++ " to it. Then run propellor again." )
 		n ""
 
 fetchUpstreamBranch :: FilePath -> FilePath -> IO ()
