@@ -71,6 +71,8 @@ wrapper args propellordir propellorbin = do
 			( do			
 				void $ boolSystem "git" [Param "clone", File distrepo, File propellordir]
 				fetchUpstreamBranch propellordir distrepo
+				changeWorkingDirectory propellordir
+				void $ boolSystem "git" [Param "remote", Param "rm", Param "origin"]
 			, void $ boolSystem "git" [Param "clone", Param netrepo, File propellordir]
 			)
 
