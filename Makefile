@@ -23,9 +23,13 @@ install:
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
 	install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin/propellor
 	$(CABAL) sdist
-	cat dist/propellor-*.tar.gz | \
-		(cd $(DESTDIR)/usr/src/propellor && tar zx --strip-components=1)
-	cd $(DESTDIR)/usr/src/propellor && git init && git add . && git commit -m "current version of propellor"
+	mkdir -p dist/gittmp
+	cat dist/propellor-*.tar.gz | (cd dist/gittmp && tar zx --strip-components=1)
+	cd dist/gittmp && git init && \
+		git add . \
+		&& git commit -m "distributed version of propellor" \
+		&& git bundle create $(DESTDIR)/usr/src/propellor/propellor.git master HEAD
+	rm -rf dist/gittmp
 
 clean:
 	rm -rf dist Setup tags propellor privdata/local
