@@ -27,9 +27,9 @@ install:
 	cat dist/propellor-*.tar.gz | (cd dist/gittmp && tar zx --strip-components=1)
 	cd dist/gittmp && git init && \
 		git add . \
-		&& git commit -m "distributed version of propellor" \
+		&& git commit -q -m "distributed version of propellor" \
 		&& git bundle create $(DESTDIR)/usr/src/propellor/propellor.git master HEAD \
-		&& git show-ref HEAD --hash > $(DESTDIR)/usr/src/propellor/head
+		&& git show-ref master --hash > $(DESTDIR)/usr/src/propellor/head
 	rm -rf dist/gittmp
 
 clean:
