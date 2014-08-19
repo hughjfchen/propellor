@@ -82,8 +82,13 @@ wrapper args propellordir propellorbin = do
 		headknown <- catchMaybeIO $ 
 			withQuietOutput createProcessSuccess $
 				proc "git" ["log", headrev]
-		when (headknown == Nothing) $
-			setupupstreammaster headrev propellordir
+		if (headknown == Nothing)
+			then setupupstreammaster headrev propellordir
+			else do
+				merged <- not . null <$>
+					readProcess "git" ["log", headrev ++ "..HEAD", "--ancestry-path"]
+				unless merged $
+					warnoutofdate propellordir True
 	buildruncfg = do
 		changeWorkingDirectory propellordir
 		ifM (boolSystem "make" [Param "build"])
@@ -117,7 +122,7 @@ setupupstreammaster newref propellordir = do
 	changeWorkingDirectory propellordir
 	go =<< catchMaybeIO getoldrev
   where
-	go Nothing = warnoutofdate False
+	go Nothing = warnoutofdate propellordir False
 	go (Just oldref) = do
 		let tmprepo = ".git/propellordisttmp"
 		let cleantmprepo = void $ catchMaybeIO $ removeDirectoryRecursive tmprepo
@@ -131,7 +136,7 @@ setupupstreammaster newref propellordir = do
 	
 		fetchUpstreamBranch propellordir tmprepo
 		cleantmprepo
-		warnoutofdate True
+		warnoutofdate propellordir True
 
 	getoldrev = takeWhile (/= '\n')
 		<$> readProcess "git" ["show-ref", upstreambranch, "--hash"]
@@ -139,15 +144,16 @@ setupupstreammaster newref propellordir = do
 	git = run "git"
 	run cmd ps = unlessM (boolSystem cmd (map Param ps)) $
 		error $ "Failed to run " ++ cmd ++ " " ++ show ps
-	
-	warnoutofdate havebranch = do
-		warningMessage ("** Your " ++ propellordir ++ " is out of date..")
-		let also s = hPutStrLn stderr ("   " ++ s)
-		also ("A newer upstream version is available in " ++ distrepo)
-		if havebranch
-			then also ("To merge it, run: git merge " ++ upstreambranch)
-			else also ("To merge it, find the most recent commit in your repository's history that corresponds to an upstream release of propellor, and set refs/remotes/" ++ upstreambranch ++ " to it. Then run propellor again.")
-		also ""
+
+warnoutofdate :: FilePath -> Bool -> IO ()
+warnoutofdate propellordir havebranch = do
+	warningMessage ("** Your " ++ propellordir ++ " is out of date..")
+	let also s = hPutStrLn stderr ("   " ++ s)
+	also ("A newer upstream version is available in " ++ distrepo)
+	if havebranch
+		then also ("To merge it, run: git merge " ++ upstreambranch)
+		else also ("To merge it, find the most recent commit in your repository's history that corresponds to an upstream release of propellor, and set refs/remotes/" ++ upstreambranch ++ " to it. Then run propellor again.")
+	also ""
 
 fetchUpstreamBranch :: FilePath -> FilePath -> IO ()
 fetchUpstreamBranch propellordir repo = do
