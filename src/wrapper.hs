@@ -140,12 +140,12 @@ setupupstreammaster newref propellordir = do
 		error $ "Failed to run " ++ cmd ++ " " ++ show ps
 	
 	warnoutofdate havebranch = do
-		warningMessage"** Your " ++ propellordir ++ " is out of date..")
+		warningMessage ("** Your " ++ propellordir ++ " is out of date..")
 		let also s = hPutStrLn stderr ("   " ++ s)
-		also "A newer upstream version is available in " ++ distrepo
+		also ("A newer upstream version is available in " ++ distrepo)
 		if havebranch
-			then also "To merge it, run: git merge " ++ upstreambranch
-			else also "To merge it, find the most recent commit in your repository's history that corresponds to an upstream release of propellor, and set refs/remotes/" ++ upstreambranch ++ " to it. Then run propellor again."
+			then also ("To merge it, run: git merge " ++ upstreambranch)
+			else also ("To merge it, find the most recent commit in your repository's history that corresponds to an upstream release of propellor, and set refs/remotes/" ++ upstreambranch ++ " to it. Then run propellor again.")
 		n ""
 
 fetchUpstreamBranch :: FilePath -> FilePath -> IO ()
