@@ -29,6 +29,7 @@ install:
 		git add . \
 		&& git commit -m "distributed version of propellor" \
 		&& git bundle create $(DESTDIR)/usr/src/propellor/propellor.git master HEAD
+		&& git show-ref HEAD --hash > $(DESTDIR)/usr/src/propellor/head
 	rm -rf dist/gittmp
 
 clean:

@@ -2,8 +2,10 @@ propellor (0.8.3) UNRELEASED; urgency=medium
 
   * The Debian package now includes a single-revision git repository in
     /usr/src/propellor/, and ~/.propellor/ is set up to use this repository as
-    its "upstream" remote. This avoids relying on the security of the github
+    its origin remote. This avoids relying on the security of the github
     repository when using the Debian package.
+  * The /usr/bin/propellor wrapper will warn when ~/.propellor/ is out of date
+    and a newer version is available from origin.
   * Included the config.hs symlink to config-simple.hs in the cabal and Debian
     packages.
 
