@@ -5,3 +5,7 @@ of the source code.
 /usr/bin/propellor is a wrapper which will set up a propellor git
 repository in ~/.propellor/, and run ~/.propellor/propellor if it exists.
 Edit ~/.propellor/config.hs to configure it.
+
+Note that upgrading the propellor package will not update your
+~/.propellor/ repository. You can `git pull upstream` in your repository to
+update to the current upstream.
