@@ -73,7 +73,6 @@ hosts =                 --                  (o)  `
 		& Docker.docked hosts "amd64-git-annex-builder"
 		& Docker.docked hosts "i386-git-annex-builder"
 		& Docker.docked hosts "android-git-annex-builder"
-		-- not currently working
 		& Docker.docked hosts "armel-git-annex-builder-companion"
 		& Docker.docked hosts "armel-git-annex-builder"
 		& Docker.garbageCollected `period` Daily
@@ -238,11 +237,6 @@ hosts =                 --                  (o)  `
 		-- that port for ssh, for traveling on bad networks that
 		-- block 22.
 		& Ssh.listenPort 80
-		
-		-- temp
-		! Docker.docked hosts "amd64-git-annex-builder"
-		! Docker.docked hosts "i386-git-annex-builder"
-		! Docker.docked hosts "android-git-annex-builder"
 
 
 	    --'                        __|II|      ,.
@@ -292,8 +286,6 @@ hosts =                 --                  (o)  `
 	, let gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
 	  in GitAnnexBuilder.androidContainer dockerImage "android-git-annex" doNothing gitannexdir
 		& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
-
-	-- temp for an acquantance
 	] ++ monsters
 
 type Motd = [String]
