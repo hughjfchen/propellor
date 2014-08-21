@@ -13,7 +13,6 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
---import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
@@ -21,7 +20,6 @@ import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
-import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
@@ -57,6 +55,12 @@ hosts =                 --                  (o)  `
 
 		& Docker.configured
 		& Docker.garbageCollected `period` Daily
+		
+		-- ssh on some extra ports to deal with horrible networks
+		-- while travelling
+		& alias "travelling.kitenet.net"
+		& Ssh.listenPort 80
+		& Ssh.listenPort 443
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
@@ -233,8 +237,7 @@ hosts =                 --                  (o)  `
 		-- Nothing is using http port 80, so listen on
 		-- that port for ssh, for traveling on bad networks that
 		-- block 22.
-		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
-			`onChange` Service.restarted "ssh"
+		& Ssh.listenPort 80
 		
 		-- temp
 		! Docker.docked hosts "amd64-git-annex-builder"
