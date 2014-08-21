@@ -164,6 +164,7 @@ hosts =                 --                  (o)  `
 			"26fd6e38-1226-11e2-a75f-ff007033bdba"
 			[]
 		& JoeySites.twitRss
+		& JoeySites.pumpRss
 		
 		& alias "nntp.olduse.net"
 		& alias "resources.olduse.net"
