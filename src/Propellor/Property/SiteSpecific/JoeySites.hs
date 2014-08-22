@@ -312,6 +312,11 @@ twitRss = combineProperties "twitter rss"
 	feed url desc = Cron.job desc crontime "joey" dir $
 		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
 
+-- Work around for expired ssl cert.
+pumpRss :: Property
+pumpRss = Cron.job "pump rss" "15 * * * *" "joey" "/srv/web/tmp.kitenet.net/"
+	"wget https://pump2rss.com/feed/joeyh@identi.ca.atom -O pump.atom --no-check-certificate 2>/dev/null"
+
 ircBouncer :: Property
 ircBouncer = propertyList "IRC bouncer"
 	[ Apt.installed ["znc"]

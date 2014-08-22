@@ -9,7 +9,8 @@ module Propellor.Property.Ssh (
 	hostKey,
 	keyImported,
 	knownHost,
-	authorizedKeys
+	authorizedKeys,
+	listenPort
 ) where
 
 import Propellor
@@ -164,3 +165,18 @@ authorizedKeys user context = withPrivData (SshAuthorizedKeys user) context $ \g
 			[ File.ownerGroup f user user
 			, File.ownerGroup (takeDirectory f) user user
 			] 
+
+-- | Makes the ssh server listen on a given port, in addition to any other
+-- ports it is configured to listen on.
+--
+-- Revert to prevent it listening on a particular port.
+listenPort :: Int -> RevertableProperty
+listenPort port = RevertableProperty enable disable
+  where
+	portline = "Port " ++ show port
+	enable = sshdConfig `File.containsLine` portline
+		`describe` ("ssh listening on " ++ portline)
+		`onChange` restartSshd
+	disable = sshdConfig `File.lacksLine` portline
+		`describe` ("ssh not listening on " ++ portline)
+		`onChange` restartSshd

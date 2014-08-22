@@ -13,7 +13,6 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
---import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
@@ -21,7 +20,6 @@ import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
-import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
@@ -57,6 +55,12 @@ hosts =                 --                  (o)  `
 
 		& Docker.configured
 		& Docker.garbageCollected `period` Daily
+		
+		-- ssh on some extra ports to deal with horrible networks
+		-- while travelling
+		& alias "travelling.kitenet.net"
+		& Ssh.listenPort 80
+		& Ssh.listenPort 443
 	
 	-- Orca is the main git-annex build box.
 	, standardSystem "orca.kitenet.net" Unstable "amd64"
@@ -69,7 +73,6 @@ hosts =                 --                  (o)  `
 		& Docker.docked hosts "amd64-git-annex-builder"
 		& Docker.docked hosts "i386-git-annex-builder"
 		& Docker.docked hosts "android-git-annex-builder"
-		-- not currently working
 		& Docker.docked hosts "armel-git-annex-builder-companion"
 		& Docker.docked hosts "armel-git-annex-builder"
 		& Docker.garbageCollected `period` Daily
@@ -161,6 +164,7 @@ hosts =                 --                  (o)  `
 			"26fd6e38-1226-11e2-a75f-ff007033bdba"
 			[]
 		& JoeySites.twitRss
+		& JoeySites.pumpRss
 		
 		& alias "nntp.olduse.net"
 		& alias "resources.olduse.net"
@@ -233,13 +237,7 @@ hosts =                 --                  (o)  `
 		-- Nothing is using http port 80, so listen on
 		-- that port for ssh, for traveling on bad networks that
 		-- block 22.
-		& "/etc/ssh/sshd_config" `File.containsLine` "Port 80"
-			`onChange` Service.restarted "ssh"
-		
-		-- temp
-		! Docker.docked hosts "amd64-git-annex-builder"
-		! Docker.docked hosts "i386-git-annex-builder"
-		! Docker.docked hosts "android-git-annex-builder"
+		& Ssh.listenPort 80
 
 
 	    --'                        __|II|      ,.
@@ -289,8 +287,6 @@ hosts =                 --                  (o)  `
 	, let gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
 	  in GitAnnexBuilder.androidContainer dockerImage "android-git-annex" doNothing gitannexdir
 		& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
-
-	-- temp for an acquantance
 	] ++ monsters
 
 type Motd = [String]
