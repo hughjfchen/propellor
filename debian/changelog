@@ -10,7 +10,7 @@ propellor (0.8.3) unstable; urgency=medium
   * Included the config.hs symlink to config-simple.hs in the cabal and Debian
     packages.
 
- -- Joey Hess <joeyh@debian.org>  Tue, 19 Aug 2014 17:00:39 -0400
+ -- Joey Hess <joeyh@debian.org>  Fri, 22 Aug 2014 13:02:01 -0400
 
 propellor (0.8.2) unstable; urgency=medium
 
