@@ -50,7 +50,7 @@ binandsrc url suite
 	bl = debLine backportSuite url stdSections
 
 debCdn :: SourcesGenerator
-debCdn = binandsrc "http://cdn.debian.net/debian"
+debCdn = binandsrc "http://http.debian.net/debian"
 
 kernelOrg :: SourcesGenerator
 kernelOrg = binandsrc "http://mirrors.kernel.org/debian"

@@ -1,3 +1,10 @@
+propellor (0.8.4) UNRELEASED; urgency=medium
+
+  * debCdn switched from cdn.debian.net to http.debian.net, which seems to be
+    better managed now.
+
+ -- Joey Hess <joeyh@debian.org>  Sat, 23 Aug 2014 13:18:46 -0700
+
 propellor (0.8.3) unstable; urgency=medium
 
   * The Debian package now includes a single-revision git repository in
