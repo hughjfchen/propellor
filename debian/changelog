@@ -7,6 +7,8 @@ propellor (0.9.0) UNRELEASED; urgency=medium
     to use, eg Stable "wheezy".
   * stdSourcesList uses the stable suite name, to avoid unwanted
     immediate upgrades to the next stable release.
+  * debCdn switched from cdn.debian.net to http.debian.net, which seems to be
+    better managed now.
 
  -- Joey Hess <joeyh@debian.org>  Fri, 10 Oct 2014 11:08:55 -0400
 
