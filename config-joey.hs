@@ -263,7 +263,7 @@ containers :: [Host]
 containers =
 	-- Simple web server, publishing the outside host's /var/www
 	[ standardContainer "webserver" Stable "amd64"
-		& Docker.publish "8080:80"
+		& Docker.publish "80:80"
 		& Docker.volume "/var/www:/var/www"
 		& Apt.serviceInstalledRunning "apache2"
 
