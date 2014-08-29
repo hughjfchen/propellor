@@ -35,209 +35,216 @@ main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
   {- Propellor            -- \          / | /    )          _.-"-._
      Deployed -}          --  `/-==__ _/__|/__=-|          (       \_
 hosts :: [Host]          --   *             \ | |           '--------'
-hosts =                 --                  (o)  `
-	[ host "darkstar.kitenet.net"
-		& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
+hosts =                --                  (o)  `
+	[ darkstar
+	, clam
+	, orca
+	, kite
+	, diatom
+	, elephant
+	] ++ containers ++ monsters
 
-		& Apt.buildDep ["git-annex"] `period` Daily
-		& Docker.configured
-		! Docker.docked hosts "android-git-annex"
+darkstar :: Host
+darkstar = host "darkstar.kitenet.net"
+	& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
 
-	, standardSystem "clam.kitenet.net" Unstable "amd64"
-		[ "Unreliable server. Anything here may be lost at any time!" ]
-		& ipv4 "162.248.9.29"
+	& Apt.buildDep ["git-annex"] `period` Daily
+	& Docker.configured
+	! Docker.docked hosts "android-git-annex"
 
-		& CloudAtCost.decruft
-		& Apt.unattendedUpgrades
-		& Network.ipv6to4
-		& Tor.isBridge
-		& Postfix.satellite
+clam :: Host
+clam = standardSystem "clam.kitenet.net" Unstable "amd64"
+	[ "Unreliable server. Anything here may be lost at any time!" ]
+	& ipv4 "162.248.9.29"
 
-		& Docker.configured
-		& Docker.garbageCollected `period` Daily
+	& CloudAtCost.decruft
+	& Apt.unattendedUpgrades
+	& Network.ipv6to4
+	& Tor.isBridge
+	& Postfix.satellite
+
+	& Docker.configured
+	& Docker.garbageCollected `period` Daily
 		
-		-- ssh on some extra ports to deal with horrible networks
-		-- while travelling
-		& alias "travelling.kitenet.net"
-		& Ssh.listenPort 80
-		& Ssh.listenPort 443
+	-- ssh on some extra ports to deal with horrible networks
+	-- while travelling
+	& alias "travelling.kitenet.net"
+	& Ssh.listenPort 80
+	& Ssh.listenPort 443
 	
-	-- Orca is the main git-annex build box.
-	, standardSystem "orca.kitenet.net" Unstable "amd64"
-		[ "Main git-annex build box." ]
-		& ipv4 "138.38.108.179"
+orca :: Host
+orca = standardSystem "orca.kitenet.net" Unstable "amd64"
+	[ "Main git-annex build box." ]
+	& ipv4 "138.38.108.179"
 
-		& Apt.unattendedUpgrades
-		& Postfix.satellite
-		& Docker.configured
-		& Docker.docked hosts "amd64-git-annex-builder"
-		& Docker.docked hosts "i386-git-annex-builder"
-		& Docker.docked hosts "android-git-annex-builder"
-		& Docker.docked hosts "armel-git-annex-builder-companion"
-		& Docker.docked hosts "armel-git-annex-builder"
-		& Docker.garbageCollected `period` Daily
-		& Apt.buildDep ["git-annex"] `period` Daily
+	& Apt.unattendedUpgrades
+	& Postfix.satellite
+	& Docker.configured
+	& Docker.docked hosts "amd64-git-annex-builder"
+	& Docker.docked hosts "i386-git-annex-builder"
+	& Docker.docked hosts "android-git-annex-builder"
+	& Docker.docked hosts "armel-git-annex-builder-companion"
+	& Docker.docked hosts "armel-git-annex-builder"
+	& Docker.garbageCollected `period` Daily
+	& Apt.buildDep ["git-annex"] `period` Daily
 	
-	-- This is not a complete description of kite, since it's a
-	-- multiuser system with eg, user passwords that are not deployed
-	-- with propellor.
-  	, standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
-		[ "Welcome to the new kitenet.net server!"
-		, "This is still under construction and not yet live.."
+-- This is not a complete description of kite, since it's a
+-- multiuser system with eg, user passwords that are not deployed
+-- with propellor.
+kite :: Host
+kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
+	[ "Welcome to the new kitenet.net server!"
+	, "This is still under construction and not yet live.."
+	]
+  	& ipv4 "66.228.36.95"
+	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
+	-- & alias "kitenet.net" -- not yet live!
+
+	& Apt.installed ["linux-image-amd64"]
+	& Linode.chainPVGrub 5
+	& Apt.unattendedUpgrades
+	& Apt.installed ["systemd"]
+	& Ssh.hostKeys (Context "kitenet.net")
+	-- Since ssh password authentication is allowed:
+	& Apt.serviceInstalledRunning "fail2ban"
+	& Obnam.backup "/" "33 1 * * *"
+		[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
+		, "--client-name=kitenet.net"
+		, "--encrypt-with="
+		, "--exclude=/var/cache"
+		, "--exclude=/var/tmp"
+		, "--exclude=/home/joey/lib"
+		, "--exclude=.*/tmp/"
+		, "--one-file-system"
+		] Obnam.OnlyClient
+		`requires` Gpg.keyImported "98147487" "root"
+		`requires` Ssh.keyImported SshRsa "root"
+			(Context "kite.kitenet.net")
+		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "root"
+
+	-- & alias "smtp.kitenet.net" -- not yet live!
+	-- & alias "imap.kitenet.net" -- not yet live!
+	-- & alias "mail.kitenet.net" -- not yet live!
+	& JoeySites.kiteMailServer
+
+	& JoeySites.legacyWebSites
+
+	& Apt.installed
+		["git-annex", "myrepos"
+		, "build-essential", "make"
+		-- Some users have zsh as their login shell.
+		, "zsh"
 		]
-	  	& ipv4 "66.228.36.95"
-		& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
-		-- & alias "kitenet.net" -- not yet live!
 
-		& Apt.installed ["linux-image-amd64"]
-		& Linode.chainPVGrub 5
-		& Apt.unattendedUpgrades
-		& Apt.installed ["systemd"]
-		& Ssh.hostKeys (Context "kitenet.net")
-		-- Since ssh password authentication is allowed:
-		& Apt.serviceInstalledRunning "fail2ban"
-		& Obnam.backup "/" "33 1 * * *"
-			[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
-			, "--client-name=kitenet.net"
-			, "--encrypt-with="
-			, "--exclude=/var/cache"
-			, "--exclude=/var/tmp"
-			, "--exclude=/home/joey/lib"
-			, "--exclude=.*/tmp/"
-			, "--one-file-system"
-			] Obnam.OnlyClient
-			`requires` Gpg.keyImported "98147487" "root"
-			`requires` Ssh.keyImported SshRsa "root"
-				(Context "kite.kitenet.net")
-			`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "root"
+diatom :: Host
+diatom = standardSystem "diatom.kitenet.net" Stable "amd64"
+	[ "Important stuff that needs not too much memory or CPU." ]
+	& ipv4 "107.170.31.195"
 
-		-- & alias "smtp.kitenet.net" -- not yet live!
-		-- & alias "imap.kitenet.net" -- not yet live!
-		-- & alias "mail.kitenet.net" -- not yet live!
-		& JoeySites.kiteMailServer
+	& DigitalOcean.distroKernel
+	& Ssh.hostKeys (Context "diatom.kitenet.net")
+	& Apt.unattendedUpgrades
+	& Apt.serviceInstalledRunning "ntp"
+	& Postfix.satellite
 
-		& JoeySites.legacyWebSites
-
-		& Apt.installed
-			["git-annex", "myrepos"
-			, "build-essential", "make"
-			-- Some users have zsh as their login shell.
-			, "zsh"
-			]
-
-  	, standardSystem "diatom.kitenet.net" Stable "amd64"
-	  	[ "Important stuff that needs not too much memory or CPU." ]
-		& ipv4 "107.170.31.195"
-
-		& DigitalOcean.distroKernel
-		& Ssh.hostKeys (Context "diatom.kitenet.net")
-		& Apt.unattendedUpgrades
-		& Apt.serviceInstalledRunning "ntp"
-		& Postfix.satellite
-
-		-- Diatom has 500 mb of memory, so tune for that.
-		& JoeySites.obnamLowMem
-		& Apt.serviceInstalledRunning "swapspace"
+	-- Diatom has 500 mb of memory, so tune for that.
+	& JoeySites.obnamLowMem
+	& Apt.serviceInstalledRunning "swapspace"
 	
-		& Apt.serviceInstalledRunning "apache2"
-		& JoeySites.kitenetHttps
-		& Apache.multiSSL
-		& File.ownerGroup "/srv/web" "joey" "joey"
-		& Apt.installed ["analog"]
+	& Apt.serviceInstalledRunning "apache2"
+	& JoeySites.kitenetHttps
+	& Apache.multiSSL
+	& File.ownerGroup "/srv/web" "joey" "joey"
+	& Apt.installed ["analog"]
 
-		& alias "git.kitenet.net"
-		& alias "git.joeyh.name"
-		& JoeySites.gitServer hosts
+	& alias "git.kitenet.net"
+	& alias "git.joeyh.name"
+	& JoeySites.gitServer hosts
 	
-		& alias "downloads.kitenet.net"
-		& JoeySites.annexWebSite "/srv/git/downloads.git"
-			"downloads.kitenet.net"
-			"840760dc-08f0-11e2-8c61-576b7e66acfd"
-			[("usbackup", "ssh://usbackup.kitenet.net/~/lib/downloads/")]
-			`requires` Ssh.keyImported SshRsa "joey" (Context "downloads.kitenet.net")
-			`requires` Ssh.knownHost hosts "usbackup.kitenet.net" "joey"
-		& JoeySites.gitAnnexDistributor
-
+	& alias "downloads.kitenet.net"
+	& JoeySites.annexWebSite "/srv/git/downloads.git"
+		"downloads.kitenet.net"
+		"840760dc-08f0-11e2-8c61-576b7e66acfd"
+		[("usbackup", "ssh://usbackup.kitenet.net/~/lib/downloads/")]
+		`requires` Ssh.keyImported SshRsa "joey" (Context "downloads.kitenet.net")
+		`requires` Ssh.knownHost hosts "usbackup.kitenet.net" "joey"
+	& JoeySites.gitAnnexDistributor
 		& alias "tmp.kitenet.net"
-		& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
-			"tmp.kitenet.net"
-			"26fd6e38-1226-11e2-a75f-ff007033bdba"
-			[]
-		& JoeySites.twitRss
-		& JoeySites.pumpRss
+	& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
+		"tmp.kitenet.net"
+		"26fd6e38-1226-11e2-a75f-ff007033bdba"
+		[]
+	& JoeySites.twitRss
+	& JoeySites.pumpRss
 		
-		& alias "nntp.olduse.net"
-		& alias "resources.olduse.net"
-		& JoeySites.oldUseNetServer hosts
-		
-		& alias "ns2.kitenet.net"
-		& myDnsPrimary "kitenet.net" []
-		& myDnsPrimary "joeyh.name" []
-		& myDnsPrimary "ikiwiki.info" []
-		& myDnsPrimary "olduse.net"
-			[ (RelDomain "article",
-				CNAME $ AbsDomain "virgil.koldfront.dk") ]
+	& alias "nntp.olduse.net"
+	& alias "resources.olduse.net"
+	& JoeySites.oldUseNetServer hosts
 	
-		& alias "ns3.branchable.com"
-		& branchableSecondary
-		
-		& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
+	& alias "ns2.kitenet.net"
+	& myDnsPrimary "kitenet.net" []
+	& myDnsPrimary "joeyh.name" []
+	& myDnsPrimary "ikiwiki.info" []
+	& myDnsPrimary "olduse.net"
+		[ (RelDomain "article",
+			CNAME $ AbsDomain "virgil.koldfront.dk") ]
 
-	, let ctx = Context "elephant.kitenet.net"
-	  in standardSystem "elephant.kitenet.net" Unstable "amd64"
-	  	[ "Storage, big data, and backups, omnomnom!"
-		, "(Encrypt all data stored here.)"
-		]
-		& ipv4 "193.234.225.114"
+	& alias "ns3.branchable.com"
+	& branchableSecondary
+	
+	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
+elephant :: Host
+elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
+  	[ "Storage, big data, and backups, omnomnom!"
+	, "(Encrypt all data stored here.)"
+	]
+	& ipv4 "193.234.225.114"
 		& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
-		& Postfix.satellite
-		& Apt.unattendedUpgrades
-		& Ssh.hostKeys ctx
-		& sshPubKey "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAJkoPRhUGT8EId6m37uBdYEtq42VNwslKnc9mmO+89ody066q6seHKeFY6ImfwjcyIjM30RTzEwftuVNQnbEB0="
-		& Ssh.keyImported SshRsa "joey" ctx
-		& Apt.serviceInstalledRunning "swapspace"
-
+	& Postfix.satellite
+	& Apt.unattendedUpgrades
+	& Ssh.hostKeys ctx
+	& sshPubKey "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAJkoPRhUGT8EId6m37uBdYEtq42VNwslKnc9mmO+89ody066q6seHKeFY6ImfwjcyIjM30RTzEwftuVNQnbEB0="
+	& Ssh.keyImported SshRsa "joey" ctx
+	& Apt.serviceInstalledRunning "swapspace"
 		& alias "eubackup.kitenet.net"
-		& Apt.installed ["obnam", "sshfs", "rsync"]
-		& JoeySites.obnamRepos ["wren", "pell", "kite"]
-		& JoeySites.githubBackup
-		& JoeySites.rsyncNetBackup hosts
-		& JoeySites.backupsBackedupTo hosts "usbackup.kitenet.net" "lib/backup/eubackup"
-
+	& Apt.installed ["obnam", "sshfs", "rsync"]
+	& JoeySites.obnamRepos ["wren", "pell", "kite"]
+	& JoeySites.githubBackup
+	& JoeySites.rsyncNetBackup hosts
+	& JoeySites.backupsBackedupTo hosts "usbackup.kitenet.net" "lib/backup/eubackup"
 		& alias "podcatcher.kitenet.net"
-		& JoeySites.podcatcher
-		
-		& alias "znc.kitenet.net"
-		& JoeySites.ircBouncer
-
+	& JoeySites.podcatcher
+	
+	& alias "znc.kitenet.net"
+	& JoeySites.ircBouncer
 		-- I'd rather this were on diatom, but it needs unstable.
-		& alias "kgb.kitenet.net"
-		& JoeySites.kgbServer
-
+	& alias "kgb.kitenet.net"
+	& JoeySites.kgbServer
 		& alias "mumble.kitenet.net"
-		& JoeySites.mumbleServer hosts
-		
-		& alias "ns3.kitenet.net"
-		& myDnsSecondary
-		
-		& Docker.configured
-
+	& JoeySites.mumbleServer hosts
+	
+	& alias "ns3.kitenet.net"
+	& myDnsSecondary
+	
+	& Docker.configured
 		& Docker.docked hosts "oldusenet-shellbox"
-		& Docker.docked hosts "openid-provider"
-		 	`requires` Apt.serviceInstalledRunning "ntp"
-		& Docker.docked hosts "ancient-kitenet"
+	& Docker.docked hosts "openid-provider"
+	 	`requires` Apt.serviceInstalledRunning "ntp"
+	& Docker.docked hosts "ancient-kitenet"
 
-		& Docker.garbageCollected `period` (Weekly (Just 1))
-		
-		-- For https port 443, shellinabox with ssh login to
-		-- kitenet.net
-		& alias "shell.kitenet.net"
-		& JoeySites.kiteShellBox
-		-- Nothing is using http port 80, so listen on
-		-- that port for ssh, for traveling on bad networks that
-		-- block 22.
-		& Ssh.listenPort 80
+	& Docker.garbageCollected `period` (Weekly (Just 1))
+	
+	-- For https port 443, shellinabox with ssh login to
+	-- kitenet.net
+	& alias "shell.kitenet.net"
+	& JoeySites.kiteShellBox
+	-- Nothing is using http port 80, so listen on
+	-- that port for ssh, for traveling on bad networks that
+	-- block 22.
+	& Ssh.listenPort 80
+  where
+	ctx = Context "elephant.kitenet.net"
 
 
 	    --'                        __|II|      ,.
@@ -247,9 +254,10 @@ hosts =                 --                  (o)  `
 	----------------------- :                    / -----------------------
 	------------------------ \____, o          ,' ------------------------
 	------------------------- '--,___________,'  -------------------------
-
+containers :: [Host]
+containers =
 	-- Simple web server, publishing the outside host's /var/www
-	, standardContainer "webserver" Stable "amd64"
+	[ standardContainer "webserver" Stable "amd64"
 		& Docker.publish "8080:80"
 		& Docker.volume "/var/www:/var/www"
 		& Apt.serviceInstalledRunning "apache2"
@@ -287,7 +295,7 @@ hosts =                 --                  (o)  `
 	, let gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
 	  in GitAnnexBuilder.androidContainer dockerImage "android-git-annex" doNothing gitannexdir
 		& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
-	] ++ monsters
+	]
 
 type Motd = [String]
 
