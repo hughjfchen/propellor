@@ -67,6 +67,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
 	& Docker.docked hosts "webserver"
+	& alias "helloworld.kitenet.net"
 	
 	-- ssh on some extra ports to deal with horrible networks
 	-- while travelling
