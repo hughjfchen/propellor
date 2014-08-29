@@ -1,4 +1,5 @@
 -- This is the live config file used by propellor's author.
+-- https://propellor.branchable.com/
 module Main where
 
 import Propellor
@@ -65,11 +66,12 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
-		
+	& Docker.docked hosts "webserver"
+	
 	-- ssh on some extra ports to deal with horrible networks
 	-- while travelling
 	& alias "travelling.kitenet.net"
-	& Ssh.listenPort 80
+	! Ssh.listenPort 80
 	& Ssh.listenPort 443
 	
 orca :: Host
