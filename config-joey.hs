@@ -68,8 +68,8 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& Docker.garbageCollected `period` Daily
 	& Docker.docked hosts "webserver"
 	& File.dirExists "/var/www/html"
-	& "/var/www/html/index.html" `File.containsLine` "hello, world"
-	& "/var/www/index.html" `File.containsLine` "hello, world"
+	& "/var/www/html/index.html" `File.hasContent` ["hello, world"]
+	& "/var/www/index.html" `File.hasContent` ["hello, world"]
 	& alias "helloworld.kitenet.net"
 	
 	-- ssh on some extra ports to deal with horrible networks
