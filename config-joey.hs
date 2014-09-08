@@ -405,9 +405,8 @@ monsters =	      -- but do want to track their public keys etc.
 		& alias "backup.kitenet.net"
 		& alias "usbackup.kitenet.net"
 		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
-	, host "wren.kitenet.net"
+	, host "old.kitenet.net"
 		& ipv4 "80.68.85.49"
-		& alias "old.kitenet.net"
 		{- Remaining services on kite:
 		 -
 		 - / = ready to go on kite.kitenet.net
@@ -441,12 +440,12 @@ monsters =	      -- but do want to track their public keys etc.
 		 - / point wren.kitenet.net at kite.kitenet.net temporarily
 		 - / (make old.kitenet.net alias)
 		 - - reconfigure errol's email client to use new server
-		 - - on darkstar: re-run offlinimap against new server
+		 - / on darkstar: re-run offlinimap against new server
 		 - - test mail
 		 - - test virus filtering
-		 - - test http://kitenet.net/~kyle/ (user home dirs)
+		 - / test http://kitenet.net/~kyle/ (user home dirs)
 		 - - test mailman
-		 - - migrate user cron jobs
+		 - / migrate user cron jobs
 		 -}
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
