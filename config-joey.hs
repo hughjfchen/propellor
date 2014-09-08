@@ -127,7 +127,9 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 		`requires` Ssh.keyImported SshRsa "root"
 			(Context "kite.kitenet.net")
 		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "root"
+	
 	& Apt.serviceInstalledRunning "ntp"
+	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
 
 	& alias "smtp.kitenet.net"
 	& alias "imap.kitenet.net"
