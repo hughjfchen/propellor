@@ -142,6 +142,8 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	& Apt.installed
 		["git-annex", "myrepos"
 		, "build-essential", "make"
+		, "rss2email", "archivemail"
+		, "devscripts"
 		-- Some users have zsh as their login shell.
 		, "zsh"
 		]
