@@ -100,7 +100,6 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 kite :: Host
 kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	[ "Welcome to the new kitenet.net server!"
-	, "This is still under construction and not yet live.."
 	]
   	& ipv4 "66.228.36.95"
 	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
@@ -430,7 +429,7 @@ monsters =	      -- but do want to track their public keys etc.
 		 - 
 		 - Transition plan:
 		 - / on darkstar: offlineimap run & disable cron job
-		 -    & move offlineimap files to tmp
+		 - /  & move offlineimap files to tmp
 		 - / take down wren pstfix, imap, pop servers
 		 - / log all users out of wren
 		 - / final /home rsync (skip ~joey and .pine*)
