@@ -102,7 +102,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	[ "Welcome to the new kitenet.net server!"
 	]
   	& ipv4 "66.228.36.95"
-	-- & ipv6 "2600:3c03::f03c:91ff:fe73:b0d2" -- being problimatic
+	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 	& alias "kitenet.net"
 	& alias "wren.kitenet.net" -- temporary
 
