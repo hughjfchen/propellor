@@ -413,7 +413,7 @@ monsters =	      -- but do want to track their public keys etc.
 		 - mail
 		 -   /postfix
 		 -   /postgrey
-		 -   mailman
+		 -   /mailman
 		 -   /spamassassin
 		 -   sqwebmail (cannot use this with dovecot, alternatives?)
 		 -   /imap server
@@ -438,12 +438,12 @@ monsters =	      -- but do want to track their public keys etc.
 		 - / switch kitenet.net dns and enable pop.kitenet.net etc aliass
 		 - / point wren.kitenet.net at kite.kitenet.net temporarily
 		 - / (make old.kitenet.net alias)
-		 - - reconfigure errol's email client to use new server
+		 - / reconfigure errol's email client to use new server
 		 - / on darkstar: re-run offlinimap against new server
-		 - - test mail (blocked on dns propigation)
+		 - - test sending mail (blocked on dns propigation)
 		 - - test virus filtering
 		 - / test http://kitenet.net/~kyle/ (user home dirs)
-		 - - test mailman
+		 - / test mailman
 		 - / migrate user cron jobs
 		 -}
 	, host "mouse.kitenet.net"

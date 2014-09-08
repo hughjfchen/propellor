@@ -482,7 +482,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "header_checks = pcre:$config_directory/obscure_client_relay.pcre"
 
 		, "# Enable postgrey."
-		, "smtpd_recipient_restrictions = permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
+		, "smtpd_recipient_restrictions = permit_tls_clientcerts,permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
 
 		, "# Enable spamass-milter and amavis-milter."
 		, "smtpd_milters = unix:/spamass/spamass.sock unix:amavis/amavis.sock"
