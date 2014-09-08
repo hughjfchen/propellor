@@ -104,7 +104,8 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	]
   	& ipv4 "66.228.36.95"
 	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
-	-- & alias "kitenet.net" -- not yet live!
+	& alias "kitenet.net"
+	& alias "wren.kitenet.net" -- temporary
 
 	& Apt.installed ["linux-image-amd64"]
 	& Linode.chainPVGrub 5
@@ -116,7 +117,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	& Obnam.backup "/" "33 1 * * *"
 		[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
 		, "--client-name=kitenet.net"
-		, "--encrypt-with="
+		, "--encrypt-with=98147487"
 		, "--exclude=/var/cache"
 		, "--exclude=/var/tmp"
 		, "--exclude=/home/joey/lib"
@@ -128,9 +129,10 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 			(Context "kite.kitenet.net")
 		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "root"
 
-	-- & alias "smtp.kitenet.net" -- not yet live!
-	-- & alias "imap.kitenet.net" -- not yet live!
-	-- & alias "mail.kitenet.net" -- not yet live!
+	& alias "smtp.kitenet.net"
+	& alias "imap.kitenet.net"
+	& alias "pop.kitenet.net"
+	& alias "mail.kitenet.net"
 	& JoeySites.kiteMailServer
 
 	& JoeySites.legacyWebSites
@@ -405,12 +407,7 @@ monsters =	      -- but do want to track their public keys etc.
 		& sshPubKey "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
 	, host "wren.kitenet.net"
 		& ipv4 "80.68.85.49"
-		& alias "kitenet.net"
-		& alias "ns1.kitenet.net"
-		& alias "ftp.kitenet.net"
-		& alias "mail.kitenet.net"
-		& alias "smtp.kitenet.net"
-		& alias "bitlbee.kitenet.net"
+		& alias "old.kitenet.net"
 		{- Remaining services on kite:
 		 -
 		 - / = ready to go on kite.kitenet.net
@@ -429,20 +426,20 @@ monsters =	      -- but do want to track their public keys etc.
 		 - ftpd (EOL)
 		 -
 		 - Pre-transition:
-		 - - re-rsync /home (skip ~joey and .pine*)
+		 - / re-rsync /home (skip ~joey and .pine*)
 		 -     cd /home && rsync -4 --progress -avz root@wren.kitenet.net:/home/ ./ --exclude='.pine*' --exclude='joey/*' --delete
 		 - 
 		 - Transition plan:
-		 - - on darkstar: offlineimap run & disable cron job
+		 - / on darkstar: offlineimap run & disable cron job
 		 -    & move offlineimap files to tmp
-		 - - take down wren pstfix, imap, pop servers
-		 - - log all users out of wren
-		 - - final /home rsync (skip ~joey and .pine*)
-		 - - rsync /var/mail
-		 - - rsync mailman and mailman list archives dirs
-		 - - switch kitenet.net dns and enable pop.kitenet.net etc aliass
-		 - - point wren.kitenet.net at kite.kitenet.net temporarily
-		 -   (make real-wren.kitenet.net alias)
+		 - / take down wren pstfix, imap, pop servers
+		 - / log all users out of wren
+		 - / final /home rsync (skip ~joey and .pine*)
+		 - / rync ~joey/Maildir and ~joey/mail
+		 - / rsync mailman and mailman list archives dirs
+		 - / switch kitenet.net dns and enable pop.kitenet.net etc aliass
+		 - / point wren.kitenet.net at kite.kitenet.net temporarily
+		 - / (make old.kitenet.net alias)
 		 - - reconfigure errol's email client to use new server
 		 - - on darkstar: re-run offlinimap against new server
 		 - - test mail

@@ -545,6 +545,8 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		[ "inbox-path={localhost/novalidate-cert}inbox"
 		]
 		`describe` "pine configured to use local imap server"
+	
+	, Apt.serviceInstalledRunning "mailman"
 	]
   where
 	ctx = Context "kitenet.net"
