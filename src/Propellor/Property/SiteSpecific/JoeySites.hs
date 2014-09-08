@@ -452,6 +452,8 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		]
 		`onChange` Postfix.reloaded
 		`describe` "postfix mydomain file configured"
+	, addDNS (MX 0 $ AbsDomain "joeyh.name")
+	, addDNS (MX 0 $ AbsDomain "ikiwiki.info")
 	, "/etc/postfix/obscure_client_relay.pcre" `File.containsLine`
 		"/^Received: from ([^.]+)\\.kitenet\\.net.*using TLS.*by kitenet\\.net \\(([^)]+)\\) with (E?SMTPS?A?) id ([A-F[:digit:]]+)(.*)/ IGNORE"
 		`onChange` Postfix.reloaded
