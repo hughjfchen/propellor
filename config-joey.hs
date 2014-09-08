@@ -102,7 +102,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	[ "Welcome to the new kitenet.net server!"
 	]
   	& ipv4 "66.228.36.95"
-	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
+	-- & ipv6 "2600:3c03::f03c:91ff:fe73:b0d2" -- being problimatic
 	& alias "kitenet.net"
 	& alias "wren.kitenet.net" -- temporary
 
@@ -440,7 +440,7 @@ monsters =	      -- but do want to track their public keys etc.
 		 - / (make old.kitenet.net alias)
 		 - - reconfigure errol's email client to use new server
 		 - / on darkstar: re-run offlinimap against new server
-		 - - test mail
+		 - - test mail (blocked on dns propigation)
 		 - - test virus filtering
 		 - / test http://kitenet.net/~kyle/ (user home dirs)
 		 - - test mailman
