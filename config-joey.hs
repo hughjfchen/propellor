@@ -140,6 +140,12 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 
 	& alias "bitlbee.kitenet.net"
 	& Apt.serviceInstalledRunning "bitlbee"
+	& "/etc/bitlbee/bitlbee.conf" `File.hasContent`
+		[ "[settings]"
+		, "User = bitlbee"
+		, "AuthMode = Registered"
+		, "[defaults]"
+		]
 
 	& Apt.installed
 		["git-annex", "myrepos"
