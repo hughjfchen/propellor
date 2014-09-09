@@ -146,7 +146,10 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 		, "User = bitlbee"
 		, "AuthMode = Registered"
 		, "[defaults]"
-		] `onChange` Service.restarted "bitlbee"
+		] 
+		`onChange` Service.restarted "bitlbee"
+	& "/etc/default/bitlbee" `File.containsLine` "BITLBEE_PORT=\"6767\""
+		`onChange` Service.restarted "bitlbee"
 
 	& Apt.installed
 		["git-annex", "myrepos"
