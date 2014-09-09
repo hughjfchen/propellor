@@ -127,7 +127,6 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 		`requires` Ssh.keyImported SshRsa "root"
 			(Context "kite.kitenet.net")
 		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "root"
-	
 	& Apt.serviceInstalledRunning "ntp"
 	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
 
@@ -138,6 +137,9 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	& JoeySites.kiteMailServer
 
 	& JoeySites.legacyWebSites
+
+	& alias "bitlbee.kitenet.net"
+	& Apt.serviceInstalledRunning "bitlbee"
 
 	& Apt.installed
 		["git-annex", "myrepos"
