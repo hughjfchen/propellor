@@ -8,6 +8,7 @@ import Propellor.Property.Scheduled
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
+import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Cron as Cron
@@ -145,7 +146,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 		, "User = bitlbee"
 		, "AuthMode = Registered"
 		, "[defaults]"
-		]
+		] `onChange` Service.restarted "bitlbee"
 
 	& Apt.installed
 		["git-annex", "myrepos"
@@ -238,7 +239,7 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	
 	& alias "znc.kitenet.net"
 	& JoeySites.ircBouncer
-		-- I'd rather this were on diatom, but it needs unstable.
+	-- I'd rather this were on diatom, but it needs unstable.
 	& alias "kgb.kitenet.net"
 	& JoeySites.kgbServer
 		& alias "mumble.kitenet.net"
