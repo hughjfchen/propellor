@@ -112,6 +112,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	& Apt.unattendedUpgrades
 	& Apt.installed ["systemd"]
 	& Ssh.hostKeys (Context "kitenet.net")
+	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
 	& Apt.serviceInstalledRunning "fail2ban"
 	& Obnam.backup "/" "33 1 * * *"
