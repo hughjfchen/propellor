@@ -541,8 +541,9 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`onChange` (pinescript `File.mode`
 			combineModes (readModes ++ executeModes))
 		`describe` "pine wrapper script"
-	, "/etc/pine.conf" `File.containsLines`
-		[ "inbox-path={localhost/novalidate-cert}inbox"
+	, "/etc/pine.conf" `File.hasContent`
+		[ "# deployed with propellor"
+		, "inbox-path={localhost/novalidate-cert/NoRsh}inbox"
 		]
 		`describe` "pine configured to use local imap server"
 	
