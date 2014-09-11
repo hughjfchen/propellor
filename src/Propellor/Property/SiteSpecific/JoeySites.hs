@@ -708,8 +708,8 @@ legacyWebSites = propertyList "legacy web sites"
 		]
 	, alias "joey.kitenet.net"
 	, toProp $ Apache.siteEnabled "joey.kitenet.net" $ apachecfg "joey.kitenet.net" False
-		[ "DocumentRoot /home/joey/html"
-		, "<Directory /home/joey/html/>"
+		[ "DocumentRoot /var/www"
+		, "<Directory /var/www/>"
 		, "  Options Indexes ExecCGI"
 		, "  AllowOverride None"
 		, Apache.allowAll
