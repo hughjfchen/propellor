@@ -139,7 +139,6 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	& os (System (Debian Testing) "amd64")
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
-	& Apt.unattendedUpgrades
 	-- This volume is shared with the armel builder.
 	& Docker.volume gitbuilderdir
 	& User.accountFor builduser
@@ -157,7 +156,6 @@ armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "arme
 	(dockerImage $ System (Debian Unstable) "armel")
 	& os (System (Debian Testing) "armel")
 	& Apt.stdSourcesList
-	& Apt.unattendedUpgrades
 	& Apt.installed ["systemd"]
 	& Apt.installed ["openssh-client"]
 	& Docker.link "armel-git-annex-builder-companion" "companion"
