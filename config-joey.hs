@@ -362,6 +362,7 @@ standardContainer name suite arch = Docker.container name (dockerImage system)
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
 	& Apt.cacheCleaned
+	& Docker.tweaked
   where
 	system = System (Debian suite) arch
 
