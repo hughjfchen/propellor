@@ -98,6 +98,7 @@ standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.conta
 	& tree arch
 	& buildDepsApt
 	& autobuilder arch (show buildminute ++ " * * * *") timeout
+	& Docker.tweaked
 
 androidAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
 androidAutoBuilderContainer dockerImage crontimes timeout =
@@ -118,6 +119,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 	& buildDepsNoHaskellLibs
 	& flagFile chrootsetup ("/chrootsetup")
 		`requires` setupgitannexdir
+	& Docker.tweaked
 	-- TODO: automate installing haskell libs
 	-- (Currently have to run
 	-- git-annex/standalone/android/install-haskell-packages
@@ -150,6 +152,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	& Docker.expose "22"
 	& Apt.serviceInstalledRunning "ssh"
 	& Ssh.authorizedKeys builduser (Context "armel-git-annex-builder")
+	& Docker.tweaked
 
 armelAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
 armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
@@ -170,6 +173,7 @@ armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "arme
 		`requires` tree "armel"
 	& Ssh.keyImported SshRsa builduser (Context "armel-git-annex-builder")
 	& trivial writecompanionaddress
+	& Docker.tweaked
   where
 	writecompanionaddress = scriptProperty
 		[ "echo \"$COMPANION_PORT_22_TCP_ADDR\" > " ++ homedir </> "companion_address"
