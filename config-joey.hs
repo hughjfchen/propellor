@@ -73,12 +73,6 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& "/var/www/index.html" `File.hasContent` ["hello, world"]
 	& alias "helloworld.kitenet.net"
 	
-	-- ssh on some extra ports to deal with horrible networks
-	-- while travelling
-	& alias "travelling.kitenet.net"
-	! Ssh.listenPort 80
-	& Ssh.listenPort 443
-	
 orca :: Host
 orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	[ "Main git-annex build box." ]
