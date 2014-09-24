@@ -452,7 +452,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		]
 		`onChange` Postfix.reloaded
 		`describe` "postfix mydomain file configured"
-	, "/etc/postfix/obscure_client_relay.pcre" `File.containsLines`
+	, "/etc/postfix/obscure_client_relay.pcre" `File.hasContent`
 		-- Remove received lines for mails relayed from trusted
 		-- clients. These can be a privacy vilation, or trigger
 		-- spam filters.
