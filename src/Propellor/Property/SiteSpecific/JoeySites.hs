@@ -460,7 +460,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		-- Remove local Received line for postfix running on a
 		-- trusted client that relays through. These can trigger
 		-- spam filters.
-		-- , "/^Received: by ([^.]+)\\.kitenet\\.net.*from userid.*/ IGNORE"
+		, "/^Received: by ([^.]+)\\.kitenet\\.net \\(Postfix, from userid.*/ IGNORE"
 		]
 		`onChange` Postfix.reloaded
 		`describe` "postfix obscure_client_relay file configured"
