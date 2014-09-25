@@ -237,6 +237,7 @@ spin hn hst = do
 			sendMarked toh marker s
 			return True
 
+-- Initial git clone, used for bootstrapping.
 sendGitClone :: HostName -> String -> IO ()
 sendGitClone hn url = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
 	branch <- getCurrentBranch
