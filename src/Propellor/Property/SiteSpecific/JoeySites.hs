@@ -70,7 +70,10 @@ oldUseNetServer hosts = propertyList ("olduse.net server")
 	datadir = "/var/spool/oldusenet"
 
 oldUseNetShellBox :: Property
-oldUseNetShellBox = oldUseNetInstalled "oldusenet"
+oldUseNetShellBox = propertyList "olduse.net shellbox"
+	[ oldUseNetInstalled "oldusenet"
+	, Service.running "oldusenet"
+	]
 
 oldUseNetInstalled :: Apt.Package -> Property
 oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
