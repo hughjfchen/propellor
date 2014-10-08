@@ -380,7 +380,7 @@ genZone hosts zdomain soa =
 			[] -> [ret (CNAME c)]
 			l -> map (ret . Address) l
 		  where
-		  	ret record = Right (c, record)
+			ret record = Right (c, record)
 	
 	-- Adds any other DNS records for a host located in the zdomain.
 	hostrecords :: Host -> [Either WarningMessage (BindDomain, Record)]

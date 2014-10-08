@@ -102,7 +102,7 @@ kite :: Host
 kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	[ "Welcome to the new kitenet.net server!"
 	]
-  	& ipv4 "66.228.36.95"
+	& ipv4 "66.228.36.95"
 	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 	& alias "kitenet.net"
 	& alias "wren.kitenet.net" -- temporary
@@ -221,7 +221,7 @@ diatom = standardSystem "diatom.kitenet.net" Stable "amd64"
 
 elephant :: Host
 elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
-  	[ "Storage, big data, and backups, omnomnom!"
+	[ "Storage, big data, and backups, omnomnom!"
 	, "(Encrypt all data stored here.)"
 	]
 	& ipv4 "193.234.225.114"
@@ -255,7 +255,7 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& Docker.configured
 		& Docker.docked hosts "oldusenet-shellbox"
 	& Docker.docked hosts "openid-provider"
-	 	`requires` Apt.serviceInstalledRunning "ntp"
+		`requires` Apt.serviceInstalledRunning "ntp"
 	& Docker.docked hosts "ancient-kitenet"
 
 	& Docker.garbageCollected `period` (Weekly (Just 1))
@@ -410,7 +410,7 @@ myDnsPrimary domain extras = Dns.primary hosts domain
 
 
 monsters :: [Host]    -- Systems I don't manage with propellor,
-monsters =	      -- but do want to track their public keys etc.
+monsters =            -- but do want to track their public keys etc.
 	[ host "usw-s002.rsync.net"
 		& sshPubKey "ssh-dss AAAAB3NzaC1kc3MAAAEBAI6ZsoW8a+Zl6NqUf9a4xXSMcV1akJHDEKKBzlI2YZo9gb9YoCf5p9oby8THUSgfh4kse7LJeY7Nb64NR6Y/X7I2/QzbE1HGGl5mMwB6LeUcJ74T3TQAlNEZkGt/MOIVLolJHk049hC09zLpkUDtX8K0t1yaCirC9SxDGLTCLEhvU9+vVdVrdQlKZ9wpLUNbdAzvbra+O/IVvExxDZ9WCHrnfNA8ddVZIGEWMqsoNgiuCxiXpi8qL+noghsSQNFTXwo7W2Vp9zj1JkCt3GtSz5IzEpARQaXEAWNEM0n1nJ686YUOhou64iRM8bPC1lp3QXvvZNgj3m+QHhIempx+de8AAAAVAKB5vUDaZOg14gRn7Bp81ja/ik+RAAABACPH/bPbW912x1NxNiikzGR6clLh+bLpIp8Qie3J7DwOr8oC1QOKjNDK+UgQ7mDQEgr4nGjNKSvpDi4c1QCw4sbLqQgx1y2VhT0SmUPHf5NQFldRQyR/jcevSSwOBxszz3aq9AwHiv9OWaO3XY18suXPouiuPTpIcZwc2BLDNHFnDURQeGEtmgqj6gZLIkTY0iw7q9Tj5FOyl4AkvEJC5B4CSzaWgey93Wqn1Imt7KI8+H9lApMKziVL1q+K7xAuNkGmx5YOSNlE6rKAPtsIPHZGxR7dch0GURv2jhh0NQYvBRn3ukCjuIO5gx56HLgilq59/o50zZ4NcT7iASF76TcAAAEAC6YxX7rrs8pp13W4YGiJHwFvIO1yXLGOdqu66JM0plO4J1ItV1AQcazOXLiliny3p2/W+wXZZKd5HIRt52YafCA8YNyMk/sF7JcTR4d4z9CfKaAxh0UpzKiAk+0j/Wu3iPoTOsyt7N0j1+dIyrFodY2sKKuBMT4TQ0yqQpbC+IDQv2i1IlZAPneYGfd5MIGygs2QMfaMQ1jWAKJvEO0vstZ7GB6nDAcg4in3ZiBHtomx3PL5w+zg48S4Ed69BiFXLZ1f6MnjpUOP75pD4MP6toS0rgK9b93xCrEQLgm4oD/7TCHHBo2xR7wwcsN2OddtwWsEM2QgOkt/jdCAoVCqwQ=="
 	, host "github.com" 
