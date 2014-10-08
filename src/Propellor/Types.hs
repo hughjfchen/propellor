@@ -146,4 +146,4 @@ data CmdLine
 	| Continue CmdLine
 	| Chain HostName
 	| Docker HostName
-  deriving (Read, Show, Eq)
+	deriving (Read, Show, Eq)

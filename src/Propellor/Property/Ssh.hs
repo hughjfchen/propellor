@@ -94,7 +94,7 @@ hostKey keytype context = combineProperties desc
 	]
 	`onChange` restarted
   where
- 	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
+	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
 	installkey p a = withPrivData p context $ \getkey ->
 		property desc $ getkey a
 	install writer ext key = do

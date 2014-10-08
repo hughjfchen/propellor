@@ -103,7 +103,7 @@ docked hosts cn = RevertableProperty
   where
 	go desc a = property (desc ++ " " ++ cn) $ do
 		hn <- asks hostName
-  		let cid = ContainerId hn cn
+		let cid = ContainerId hn cn
 		ensureProperties [findContainer mhost cid cn $ a cid]
 		
 	mhost = findHost hosts (cn2hn cn)
@@ -153,7 +153,7 @@ mkContainer cid@(ContainerId hn _cn) h = Container
 	<*> pure (map (\a -> a hn) (_dockerRunParams info))
   where
 	info = _dockerinfo $ hostInfo h'
-  	h' = h
+	h' = h
 		-- expose propellor directory inside the container
 		& volume (localdir++":"++localdir)
 		-- name the container in a predictable way so we

@@ -114,7 +114,7 @@ listPrivDataFields hosts = do
 	showtable "Data that would be used if set:" $
 		map mkrow (M.keys $ M.difference wantedmap m)
   where
-  	header = ["Field", "Context", "Used by"]
+	header = ["Field", "Context", "Used by"]
 	mkrow k@(field, (Context context)) =
 		[ shellEscape $ show field
 		, shellEscape context
