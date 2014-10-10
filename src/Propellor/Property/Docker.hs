@@ -314,27 +314,33 @@ runningContainer :: ContainerId -> Image -> [RunParam] -> Property
 runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ property "running" $ do
 	l <- liftIO $ listContainers RunningContainers
 	if cid `elem` l
-		then do
-			-- Check if the ident has changed; if so the
-			-- parameters of the container differ and it must
-			-- be restarted.
-			runningident <- liftIO $ getrunningident
-			if runningident == Just ident
-				then noChange
-				else do
-					liftIO $ print ("runningident", runningident, "vs", ident)
-					void $ liftIO $ stopContainer cid
-					restartcontainer
+		then checkident
 		else ifM (liftIO $ elem cid <$> listContainers AllContainers)
-			( restartcontainer
+			( do
+				-- The container exists, but is not
+				-- running. Its parameters may have
+				-- changed, but we cannot tell without
+				-- starting it up first.
+				void $ liftIO $ startContainer cid
+				checkident
 			, go image
 			)
   where
 	ident = ContainerIdent image hn cn runps
 
+	-- Check if the ident has changed; if so the
+	-- parameters of the container differ and it must
+	-- be restarted.
+	checkident = do
+		runningident <- liftIO $ getrunningident
+		if runningident == Just ident
+			then noChange
+			else do
+				void $ liftIO $ stopContainer cid
+				restartcontainer
+
 	restartcontainer = do
 		oldimage <- liftIO $ fromMaybe image <$> commitContainer cid
-		liftIO $ print ("restarting", oldimage)
 		void $ liftIO $ removeContainer cid
 		go oldimage
 
@@ -434,6 +440,9 @@ provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ d
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]
+
+startContainer :: ContainerId -> IO Bool
+startContainer cid = boolSystem dockercmd [Param "start", Param $ fromContainerId cid ]
 
 stoppedContainer :: ContainerId -> Property
 stoppedContainer cid = containerDesc cid $ property desc $ 
