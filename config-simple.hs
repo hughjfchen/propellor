@@ -38,7 +38,7 @@ hosts =
 
 	-- A generic webserver in a Docker container.
 	, Docker.container "webserver" "joeyh/debian-stable"
-		& os (System (Debian Stable) "amd64")
+		& os (System (Debian (Stable "wheezy")) "amd64")
 		& Apt.stdSourcesList
 		& Docker.publish "80:80"
 		& Docker.volume "/var/www:/var/www"
