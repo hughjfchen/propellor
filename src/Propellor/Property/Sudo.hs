@@ -27,6 +27,6 @@ enabledFor user = property desc go `requires` Apt.installed ["sudo"]
 		| not (sudobaseline `isPrefixOf` l) = True
 		| "NOPASSWD" `isInfixOf` l = locked
 		| otherwise = True
- 	modify locked ls
+	modify locked ls
 		| sudoline locked `elem` ls = ls
 		| otherwise = ls ++ [sudoline locked]

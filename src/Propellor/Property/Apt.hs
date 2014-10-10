@@ -20,14 +20,14 @@ type Section = String
 type SourcesGenerator = DebianSuite -> [Line]
 
 showSuite :: DebianSuite -> String
-showSuite Stable = "stable"
+showSuite (Stable s) = s
 showSuite Testing = "testing"
 showSuite Unstable = "unstable"
 showSuite Experimental = "experimental"
-showSuite (DebianRelease r) = r
 
-backportSuite :: String
-backportSuite = showSuite stableRelease ++ "-backports"
+backportSuite :: DebianSuite -> Maybe String
+backportSuite (Stable s) = Just (s ++ "-backports")
+backportSuite _ = Nothing
 
 debLine :: String -> Url -> [Section] -> Line
 debLine suite mirror sections = unwords $
@@ -42,12 +42,17 @@ stdSections :: [Section]
 stdSections = ["main", "contrib", "non-free"]
 
 binandsrc :: String -> SourcesGenerator
-binandsrc url suite
-	| isStable suite = [l, srcLine l, bl, srcLine bl]
-	| otherwise = [l, srcLine l]
+binandsrc url suite = catMaybes
+	[ Just l
+	, Just $ srcLine l
+	, bl
+	, srcLine <$> bl
+	]
   where
 	l = debLine (showSuite suite) url stdSections
-	bl = debLine backportSuite url stdSections
+	bl = do
+		bs <- backportSuite suite
+		return $ debLine bs url stdSections
 
 debCdn :: SourcesGenerator
 debCdn = binandsrc "http://http.debian.net/debian"
@@ -128,13 +133,14 @@ installed' params ps = robustly $ check (isInstallable ps) go
 installedBackport :: [Package] -> Property
 installedBackport ps = trivial $ withOS desc $ \o -> case o of
 	Nothing -> error "cannot install backports; os not declared"
-	(Just (System (Debian suite) _))
-		| isStable suite -> 
-			ensureProperty $ runApt $ 
-				["install", "-t", backportSuite, "-y"] ++ ps
-	_ -> error $ "backports not supported on " ++ show o
+	(Just (System (Debian suite) _)) -> case backportSuite suite of
+		Nothing -> notsupported o
+		Just bs -> ensureProperty $ runApt $ 
+			["install", "-t", bs, "-y"] ++ ps
+	_ -> notsupported o
   where
 	desc = (unwords $ "apt installed backport":ps)
+	notsupported o = error $ "backports not supported on " ++ show o
 
 -- | Minimal install of package, without recommends.
 installedMin :: [Package] -> Property

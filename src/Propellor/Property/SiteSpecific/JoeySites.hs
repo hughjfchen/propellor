@@ -70,7 +70,10 @@ oldUseNetServer hosts = propertyList ("olduse.net server")
 	datadir = "/var/spool/oldusenet"
 
 oldUseNetShellBox :: Property
-oldUseNetShellBox = oldUseNetInstalled "oldusenet"
+oldUseNetShellBox = propertyList "olduse.net shellbox"
+	[ oldUseNetInstalled "oldusenet"
+	, Service.running "oldusenet"
+	]
 
 oldUseNetInstalled :: Apt.Package -> Property
 oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
@@ -376,7 +379,7 @@ obnamRepos :: [String] -> Property
 obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
 	(mkbase : map mkrepo rs)
   where
-  	mkbase = mkdir "/home/joey/lib/backup"
+	mkbase = mkdir "/home/joey/lib/backup"
 		`requires` mkdir "/home/joey/lib"
 	mkrepo r = mkdir ("/home/joey/lib/backup/" ++ r ++ ".obnam")
 	mkdir d = File.dirExists d
@@ -452,8 +455,16 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		]
 		`onChange` Postfix.reloaded
 		`describe` "postfix mydomain file configured"
-	, "/etc/postfix/obscure_client_relay.pcre" `File.containsLine`
-		"/^Received: from ([^.]+)\\.kitenet\\.net.*using TLS.*by kitenet\\.net \\(([^)]+)\\) with (E?SMTPS?A?) id ([A-F[:digit:]]+)(.*)/ IGNORE"
+	, "/etc/postfix/obscure_client_relay.pcre" `File.hasContent`
+		-- Remove received lines for mails relayed from trusted
+		-- clients. These can be a privacy vilation, or trigger
+		-- spam filters.
+		[ "/^Received: from ([^.]+)\\.kitenet\\.net.*using TLS.*by kitenet\\.net \\(([^)]+)\\) with (E?SMTPS?A?) id ([A-F[:digit:]]+)(.*)/ IGNORE"
+		-- Munge local Received line for postfix running on a
+		-- trusted client that relays through. These can trigger
+		-- spam filters.
+		, "/^Received: by ([^.]+)\\.kitenet\\.net.*/ REPLACE Received: by kitenet.net"
+		]
 		`onChange` Postfix.reloaded
 		`describe` "postfix obscure_client_relay file configured"
 	, Postfix.mappedFile "/etc/postfix/virtual"
@@ -482,7 +493,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "header_checks = pcre:$config_directory/obscure_client_relay.pcre"
 
 		, "# Enable postgrey."
-		, "smtpd_recipient_restrictions = permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
+		, "smtpd_recipient_restrictions = permit_tls_clientcerts,permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
 
 		, "# Enable spamass-milter and amavis-milter."
 		, "smtpd_milters = unix:/spamass/spamass.sock unix:amavis/amavis.sock"
@@ -541,10 +552,13 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`onChange` (pinescript `File.mode`
 			combineModes (readModes ++ executeModes))
 		`describe` "pine wrapper script"
-	, "/etc/pine.conf" `File.containsLines`
-		[ "inbox-path={localhost/novalidate-cert}inbox"
+	, "/etc/pine.conf" `File.hasContent`
+		[ "# deployed with propellor"
+		, "inbox-path={localhost/novalidate-cert/NoRsh}inbox"
 		]
 		`describe` "pine configured to use local imap server"
+	
+	, Apt.serviceInstalledRunning "mailman"
 	]
   where
 	ctx = Context "kitenet.net"
@@ -705,8 +719,8 @@ legacyWebSites = propertyList "legacy web sites"
 		]
 	, alias "joey.kitenet.net"
 	, toProp $ Apache.siteEnabled "joey.kitenet.net" $ apachecfg "joey.kitenet.net" False
-		[ "DocumentRoot /home/joey/html"
-		, "<Directory /home/joey/html/>"
+		[ "DocumentRoot /var/www"
+		, "<Directory /var/www/>"
 		, "  Options Indexes ExecCGI"
 		, "  AllowOverride None"
 		, Apache.allowAll

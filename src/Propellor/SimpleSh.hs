@@ -48,8 +48,8 @@ simpleSh namedpipe = do
 
 		flip catchIO (\_e -> writeChan chan Done) $ do
 			let p = (proc cmd params)
-	                	{ std_in = Inherit
-		                , std_out = CreatePipe
+				{ std_in = Inherit
+				, std_out = CreatePipe
 				, std_err = CreatePipe
 				}
 			(Nothing, Just outh, Just errh, pid) <- createProcess p

@@ -54,7 +54,7 @@ installed :: Property
 installed = Apt.installed ["apache2"]
 
 restarted :: Property
-restarted = cmdProperty "service" ["apache2", "restart"]
+restarted = Service.restarted "apache2"
 
 reloaded :: Property
 reloaded = Service.reloaded "apache2"

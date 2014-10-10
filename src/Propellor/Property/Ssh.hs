@@ -3,7 +3,7 @@ module Propellor.Property.Ssh (
 	permitRootLogin,
 	passwordAuthentication,
 	hasAuthorizedKeys,
-	restartSshd,
+	restarted,
 	randomHostKeys,
 	hostKeys,
 	hostKey,
@@ -15,6 +15,7 @@ module Propellor.Property.Ssh (
 
 import Propellor
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Service as Service
 import Propellor.Property.User
 import Utility.SafeCommand
 import Utility.FileMode
@@ -33,7 +34,7 @@ setSshdConfig setting allowed = combineProperties "sshd config"
 	[ sshdConfig `File.lacksLine` (sshline $ not allowed)
 	, sshdConfig `File.containsLine` (sshline allowed)
 	]
-	`onChange` restartSshd
+	`onChange` restarted
 	`describe` unwords [ "ssh config:", setting, sshBool allowed ]
   where
 	sshline v = setting ++ " " ++ sshBool v
@@ -59,15 +60,15 @@ hasAuthorizedKeys = go <=< dotFile "authorized_keys"
   where
 	go f = not . null <$> catchDefaultIO "" (readFile f)
 
-restartSshd :: Property
-restartSshd = cmdProperty "service" ["ssh", "restart"]
+restarted :: Property
+restarted = Service.restarted "ssh"
 
 -- | Blows away existing host keys and make new ones.
 -- Useful for systems installed from an image that might reuse host keys.
 -- A flag file is used to only ever do this once.
 randomHostKeys :: Property
 randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
-	`onChange` restartSshd
+	`onChange` restarted
   where
 	prop = property "ssh random host keys" $ do
 		void $ liftIO $ boolSystem "sh"
@@ -91,9 +92,9 @@ hostKey keytype context = combineProperties desc
 	[ installkey (SshPubKey keytype "")  (install writeFile ".pub")
 	, installkey (SshPrivKey keytype "") (install writeFileProtected "")
 	]
-	`onChange` restartSshd
+	`onChange` restarted
   where
- 	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
+	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
 	installkey p a = withPrivData p context $ \getkey ->
 		property desc $ getkey a
 	install writer ext key = do
@@ -176,7 +177,7 @@ listenPort port = RevertableProperty enable disable
 	portline = "Port " ++ show port
 	enable = sshdConfig `File.containsLine` portline
 		`describe` ("ssh listening on " ++ portline)
-		`onChange` restartSshd
+		`onChange` restarted
 	disable = sshdConfig `File.lacksLine` portline
 		`describe` ("ssh not listening on " ++ portline)
-		`onChange` restartSshd
+		`onChange` restarted

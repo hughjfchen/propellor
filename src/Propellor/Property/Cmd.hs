@@ -33,7 +33,7 @@ cmdProperty' cmd params env = property desc $ liftIO $ do
 		, return FailedChange
 		)
   where
-  	desc = unwords $ cmd : params
+	desc = unwords $ cmd : params
 
 -- | A property that can be satisfied by running a series of shell commands.
 scriptProperty :: [String] -> Property

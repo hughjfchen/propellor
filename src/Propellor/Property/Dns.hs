@@ -117,7 +117,7 @@ secondaryFor masters hosts domain = RevertableProperty setup cleanup
 		`requires` servingZones
 	cleanup = namedConfWritten
 
- 	desc = "dns secondary for " ++ domain
+	desc = "dns secondary for " ++ domain
 	conf = NamedConf
 		{ confDomain = domain
 		, confDnsServerType = Secondary
@@ -380,7 +380,7 @@ genZone hosts zdomain soa =
 			[] -> [ret (CNAME c)]
 			l -> map (ret . Address) l
 		  where
-		  	ret record = Right (c, record)
+			ret record = Right (c, record)
 	
 	-- Adds any other DNS records for a host located in the zdomain.
 	hostrecords :: Host -> [Either WarningMessage (BindDomain, Record)]
@@ -420,7 +420,7 @@ domainHost base (AbsDomain d)
 addNamedConf :: NamedConf -> Info
 addNamedConf conf = mempty { _namedconf = NamedConfMap (M.singleton domain conf) }
   where
-       domain = confDomain conf
+	domain = confDomain conf
 
 getNamedConf :: Propellor (M.Map Domain NamedConf)
 getNamedConf = asks $ fromNamedConfMap . _namedconf . hostInfo

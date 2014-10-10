@@ -3,6 +3,7 @@ module Propellor.Property.Tor where
 import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Service as Service
 
 isBridge :: Property
 isBridge = setup `requires` Apt.installed ["tor"]
@@ -13,7 +14,7 @@ isBridge = setup `requires` Apt.installed ["tor"]
 		, "ORPort 443"
 		, "BridgeRelay 1"
 		, "Exitpolicy reject *:*"
-		] `onChange` restartTor
+		] `onChange` restarted
 
-restartTor :: Property
-restartTor = cmdProperty "service" ["tor", "restart"]
+restarted :: Property
+restarted = Service.restarted "tor"

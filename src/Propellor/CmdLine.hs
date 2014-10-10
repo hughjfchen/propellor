@@ -37,9 +37,9 @@ usage = do
 processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
   where
-  	go ("--help":_) = usage
-  	go ("--spin":h:[]) = return $ Spin h
-  	go ("--boot":h:[]) = return $ Boot h
+	go ("--help":_) = usage
+	go ("--spin":h:[]) = return $ Spin h
+	go ("--boot":h:[]) = return $ Boot h
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--dump":f:c:[]) = withprivfield f c Dump
@@ -48,7 +48,7 @@ processCmdLine = go =<< getArgs
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
-  	go ("--chain":h:[]) = return $ Chain h
+	go ("--chain":h:[]) = return $ Chain h
 	go ("--docker":h:[]) = return $ Docker h
 	go (h:[])
 		| "--" `isPrefixOf` h = usage
@@ -237,6 +237,7 @@ spin hn hst = do
 			sendMarked toh marker s
 			return True
 
+-- Initial git clone, used for bootstrapping.
 sendGitClone :: HostName -> String -> IO ()
 sendGitClone hn url = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
 	branch <- getCurrentBranch

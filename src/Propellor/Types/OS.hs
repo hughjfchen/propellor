@@ -13,15 +13,14 @@ data Distribution
 	| Ubuntu Release
 	deriving (Show, Eq)
 
-data DebianSuite = Experimental | Unstable | Testing | Stable | DebianRelease Release
+-- | Debian has several rolling suites, and a number of stable releases,
+-- such as Stable "wheezy".
+data DebianSuite = Experimental | Unstable | Testing | Stable Release
 	deriving (Show, Eq)
 
--- | The release that currently corresponds to stable.
-stableRelease :: DebianSuite
-stableRelease = DebianRelease "wheezy"
-
 isStable :: DebianSuite -> Bool
-isStable s = s == Stable || s == stableRelease
+isStable (Stable _) = True
+isStable _ = False
 
 type Release = String
 type Architecture = String

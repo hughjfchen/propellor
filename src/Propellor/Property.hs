@@ -31,7 +31,7 @@ propertyList desc ps = Property desc (ensureProperties ps) (combineInfos ps)
 combineProperties :: Desc -> [Property] -> Property
 combineProperties desc ps = Property desc (go ps NoChange) (combineInfos ps)
   where
-  	go [] rs = return rs
+	go [] rs = return rs
 	go (l:ls) rs = do
 		r <- ensureProperty l
 		case r of

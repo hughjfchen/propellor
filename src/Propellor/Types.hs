@@ -89,7 +89,7 @@ instance IsProp Property where
 	getInfo = propertyInfo
 	x `requires` y = Property (propertyDesc x) satisfy info
 	  where
-	  	info = getInfo y <> getInfo x
+		info = getInfo y <> getInfo x
 		satisfy = do
 			r <- propertySatisfy y
 			case r of
@@ -146,4 +146,4 @@ data CmdLine
 	| Continue CmdLine
 	| Chain HostName
 	| Docker HostName
-  deriving (Read, Show, Eq)
+	deriving (Read, Show, Eq)

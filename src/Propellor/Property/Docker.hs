@@ -13,6 +13,7 @@ module Propellor.Property.Docker (
 	docked,
 	memoryLimited,
 	garbageCollected,
+	tweaked,
 	Image,
 	ContainerName,
 	-- * Container configuration
@@ -102,7 +103,7 @@ docked hosts cn = RevertableProperty
   where
 	go desc a = property (desc ++ " " ++ cn) $ do
 		hn <- asks hostName
-  		let cid = ContainerId hn cn
+		let cid = ContainerId hn cn
 		ensureProperties [findContainer mhost cid cn $ a cid]
 		
 	mhost = findHost hosts (cn2hn cn)
@@ -152,7 +153,7 @@ mkContainer cid@(ContainerId hn _cn) h = Container
 	<*> pure (map (\a -> a hn) (_dockerRunParams info))
   where
 	info = _dockerinfo $ hostInfo h'
-  	h' = h
+	h' = h
 		-- expose propellor directory inside the container
 		& volume (localdir++":"++localdir)
 		-- name the container in a predictable way so we
@@ -175,6 +176,16 @@ garbageCollected = propertyList "docker garbage collected"
 		liftIO $ report <$> (mapM removeContainer =<< listContainers AllContainers)
 	gcimages = property "docker images garbage collected" $ do
 		liftIO $ report <$> (mapM removeImage =<< listImages)
+
+-- | Tweaks a container to work well with docker.
+--
+-- Currently, this consists of making pam_loginuid lines optional in
+-- the pam config, to work around https://github.com/docker/docker/issues/5663
+-- which affects docker 1.2.0.
+tweaked :: Property
+tweaked = trivial $
+	cmdProperty "sh" ["-c", "sed -ri 's/^session\\s+required\\s+pam_loginuid.so$/session optional pam_loginuid.so/' /etc/pam.d/*"]
+	`describe` "tweaked for docker"
 
 -- | Configures the kernel to respect docker memory limits. 
 --
