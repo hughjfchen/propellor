@@ -109,8 +109,8 @@ androidAutoBuilderContainer dockerImage crontimes timeout =
 -- Android is cross-built in a Debian i386 container, using the Android NDK.
 androidContainer :: (System -> Docker.Image) -> Docker.ContainerName -> Property -> FilePath -> Host
 androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.container name
-	(dockerImage $ System (Debian Stable) "i386")
-	& os (System (Debian Stable) "i386")
+	(dockerImage osver)
+	& os osver
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& User.accountFor builduser
@@ -131,6 +131,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 	chrootsetup = scriptProperty
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
+	osver = System (Debian (Stable "wheezy")) "i386"
 
 -- armel builder has a companion container using amd64 that
 -- runs the build first to get TH splices. They need

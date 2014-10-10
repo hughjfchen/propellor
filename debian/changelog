@@ -1,3 +1,15 @@
+propellor (0.9.0) UNRELEASED; urgency=medium
+
+  * Avoid encoding the current stable suite in propellor's code,
+    since that poses a difficult transition around the release,
+    and can easily be wrong if an older version of propellor is used.
+    Instead, the os property for a stable system includes the suite name
+    to use, eg Stable "wheezy".
+  * stdSourcesList uses the stable suite name, to avoid unwanted
+    immediate upgrades to the next stable release.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 10 Oct 2014 11:08:55 -0400
+
 propellor (0.8.3) unstable; urgency=medium
 
   * The Debian package now includes a single-revision git repository in

@@ -162,7 +162,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 		]
 
 diatom :: Host
-diatom = standardSystem "diatom.kitenet.net" Stable "amd64"
+diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	[ "Important stuff that needs not too much memory or CPU." ]
 	& ipv4 "107.170.31.195"
 
@@ -282,28 +282,28 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 containers :: [Host]
 containers =
 	-- Simple web server, publishing the outside host's /var/www
-	[ standardContainer "webserver" Stable "amd64"
+	[ standardStableContainer "webserver"
 		& Docker.publish "80:80"
 		& Docker.volume "/var/www:/var/www"
 		& Apt.serviceInstalledRunning "apache2"
 
 	-- My own openid provider. Uses php, so containerized for security
 	-- and administrative sanity.
-	, standardContainer "openid-provider" Stable "amd64"
+	, standardStableContainer "openid-provider"
 		& alias "openid.kitenet.net"
 		& Docker.publish "8081:80"
 		& OpenId.providerFor ["joey", "liw"]
 			"openid.kitenet.net:8081"
 
 	-- Exhibit: kite's 90's website.
-	, standardContainer "ancient-kitenet" Stable "amd64"
+	, standardStableContainer "ancient-kitenet"
 		& alias "ancient.kitenet.net"
 		& Docker.publish "1994:80"
 		& Apt.serviceInstalledRunning "apache2"
 		& Git.cloned "root" "git://kitenet-net.branchable.com/" "/var/www"
 			(Just "remotes/origin/old-kitenet.net")
 	
-	, standardContainer "oldusenet-shellbox" Stable "amd64"
+	, standardStableContainer "oldusenet-shellbox"
 		& alias "shell.olduse.net"
 		& Docker.publish "4200:4200"
 		& JoeySites.oldUseNetShellBox
@@ -354,6 +354,9 @@ standardSystemUnhardened hn suite arch motd = host hn
 	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
 		`onChange` Apt.autoRemove
 
+standardStableContainer :: Docker.ContainerName -> Host
+standardStableContainer name = standardContainer name (Stable "wheezy") "amd64"
+
 -- This is my standard container setup, featuring automatic upgrades.
 standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
 standardContainer name suite arch = Docker.container name (dockerImage system)
@@ -370,7 +373,7 @@ standardContainer name suite arch = Docker.container name (dockerImage system)
 dockerImage :: System -> Docker.Image
 dockerImage (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
 dockerImage (System (Debian Testing) arch) = "joeyh/debian-unstable-" ++ arch
-dockerImage (System (Debian Stable) arch) = "joeyh/debian-stable-" ++ arch
+dockerImage (System (Debian (Stable _)) arch) = "joeyh/debian-stable-" ++ arch
 dockerImage _ = "debian-stable-official" -- does not currently exist!
 
 myDnsSecondary :: Property
