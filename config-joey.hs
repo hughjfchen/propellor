@@ -53,6 +53,7 @@ darkstar = host "darkstar.kitenet.net"
 	& Apt.buildDep ["git-annex"] `period` Daily
 	& Docker.configured
 	! Docker.docked hosts "android-git-annex"
+	! Docker.docked hosts "webserver"
 
 clam :: Host
 clam = standardSystem "clam.kitenet.net" Unstable "amd64"
@@ -362,7 +363,6 @@ standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
 standardContainer name suite arch = Docker.container name (dockerImage system)
 	& os system
 	& Apt.stdSourcesList `onChange` Apt.upgrade
-	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
 	& Apt.cacheCleaned
 	& Docker.tweaked
