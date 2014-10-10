@@ -333,6 +333,7 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 
 	restartcontainer = do
 		oldimage <- liftIO $ fromMaybe image <$> commitContainer cid
+		liftIO $ print ("restarting", oldimage)
 		void $ liftIO $ removeContainer cid
 		go oldimage
 
