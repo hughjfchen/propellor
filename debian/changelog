@@ -1,4 +1,4 @@
-propellor (0.9.0) UNRELEASED; urgency=medium
+propellor (0.9.0) unstable; urgency=medium
 
   * Avoid encoding the current stable suite in propellor's code,
     since that poses a difficult transition around the release,
@@ -10,7 +10,7 @@ propellor (0.9.0) UNRELEASED; urgency=medium
   * debCdn switched from cdn.debian.net to http.debian.net, which seems to be
     better managed now.
 
- -- Joey Hess <joeyh@debian.org>  Fri, 10 Oct 2014 11:08:55 -0400
+ -- Joey Hess <joeyh@debian.org>  Fri, 10 Oct 2014 11:37:45 -0400
 
 propellor (0.8.3) unstable; urgency=medium
 
