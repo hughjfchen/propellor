@@ -322,6 +322,7 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 			if runningident == Just ident
 				then noChange
 				else do
+					liftIO $ print ("runningident", runningident, "vs", ident)
 					void $ liftIO $ stopContainer cid
 					restartcontainer
 		else ifM (liftIO $ elem cid <$> listContainers AllContainers)
