@@ -363,7 +363,6 @@ standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
 standardContainer name suite arch = Docker.container name (dockerImage system)
 	& os system
 	& Apt.stdSourcesList `onChange` Apt.upgrade
-	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
 	& Apt.cacheCleaned
 	& Docker.tweaked
