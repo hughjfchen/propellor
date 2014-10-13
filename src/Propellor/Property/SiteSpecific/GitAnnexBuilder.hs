@@ -65,6 +65,7 @@ tree buildarch = combineProperties "gitannexbuilder tree"
 buildDepsApt :: Property
 buildDepsApt = combineProperties "gitannexbuilder build deps"
 	[ Apt.buildDep ["git-annex"]
+	, Apt.installed ["liblockfile-simple-perl"]
 	, buildDepsNoHaskellLibs
 	, "git-annex source build deps installed" ==> Apt.buildDepIn builddir
 	]
