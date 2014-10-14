@@ -132,7 +132,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 	chrootsetup = scriptProperty
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
-	osver = System (Debian (Stable "wheezy")) "i386"
+	osver = System (Debian Testing) "i386" -- once jessie is released, use: (Stable "jessie")
 
 -- armel builder has a companion container using amd64 that
 -- runs the build first to get TH splices. They need
