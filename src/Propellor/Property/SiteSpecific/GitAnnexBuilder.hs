@@ -114,23 +114,23 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 	& os osver
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
+	& Docker.tweaked
 	& User.accountFor builduser
 	& File.dirExists gitbuilderdir
 	& File.ownerGroup homedir builduser builduser
 	& buildDepsApt
 	& flagFile chrootsetup ("/chrootsetup")
 		`requires` setupgitannexdir
-	& Docker.tweaked
-	-- TODO: automate installing haskell libs
-	-- (Currently have to run
-	-- git-annex/standalone/android/install-haskell-packages
-	-- which is not fully automated.)
+	& flagFile haskellpkgsinstalled ("/haskellpkgsinstalled")
   where
 	-- Use git-annex's android chroot setup script, which will install
 	-- ghc-android and the NDK, all build deps, etc, in the home
 	-- directory of the builder user.
 	chrootsetup = scriptProperty
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
+		]
+	haskellpkgsinstalled = userScriptProperty "builder"
+		[ "cd " ++ gitannexdir ++ " && ./install-haskell-packages"
 		]
 	osver = System (Debian Testing) "i386" -- once jessie is released, use: (Stable "jessie")
 
