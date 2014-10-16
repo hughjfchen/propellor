@@ -72,7 +72,7 @@ oldUseNetServer hosts = propertyList ("olduse.net server")
 oldUseNetShellBox :: Property
 oldUseNetShellBox = propertyList "olduse.net shellbox"
 	[ oldUseNetInstalled "oldusenet"
-	, Service.running "oldusenet"
+	, Service.running "shellinabox"
 	]
 
 oldUseNetInstalled :: Apt.Package -> Property
