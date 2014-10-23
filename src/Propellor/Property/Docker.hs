@@ -157,7 +157,7 @@ mkContainer cid@(ContainerId hn _cn) h = Container
 	h' = h
 		-- Restart by default so container comes up on
 		-- boot or when docker is upgraded.
-		&^ restart RestartAlways
+		-- &^ restart RestartAlways
 		-- Expose propellor directory inside the container.
 		& volume (localdir++":"++localdir)
 		-- Name the container in a predictable way so we
