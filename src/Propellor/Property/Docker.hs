@@ -282,7 +282,7 @@ restart policy = runProp "restart" (serialize policy)
    where
 	serialize NoRestart = "no"
 	serialize (RestartOnFailure Nothing) = "on-failure"
-	serialize (RestartOnFailure n) = "on-failure:" ++ show n
+	serialize (RestartOnFailure (Just n)) = "on-failure:" ++ show n
 	serialize RestartAlways = "always"
 
 -- | RestartAlways is the default for docker containers configured by
@@ -388,6 +388,7 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 			-- in mkContainer, to avoid changing the ident
 			-- of existing containers. Any restart property
 			-- will override it.
+			-- This is a hack.  TODO: Move to correct place.
 			("--restart=always" : runps ++ ["-i", "-d", "-t"])
 			[shim, "--docker", fromContainerId cid]
 

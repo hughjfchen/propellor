@@ -135,7 +135,7 @@ host hn = Host hn [] mempty
 --
 -- Can add Properties and RevertableProperties
 (&) :: IsProp p => Host -> p -> Host
-(Host hn ps as) & p = Host hn (ps ++ [toProp p]) (as <> getInfo p)
+(Host hn ps is) & p = Host hn (ps ++ [toProp p]) (is <> getInfo p)
 
 infixl 1 &
 
