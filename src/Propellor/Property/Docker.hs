@@ -161,7 +161,7 @@ mkContainer cid@(ContainerId hn _cn) h = Container
 		-- name the container in a predictable way so we
 		-- and the user can easily find it later
 		& name (fromContainerId cid)
-		& restart RestartAlways
+		-- & restart RestartAlways
 
 -- | Causes *any* docker images that are not in use by running containers to
 -- be deleted. And deletes any containers that propellor has set up
