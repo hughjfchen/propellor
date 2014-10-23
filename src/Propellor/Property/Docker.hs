@@ -286,16 +286,16 @@ restart policy = runProp "restart" (serialize policy)
 	serialize (RestartOnFailure n) = "on-failure:" ++ show n
 	serialize RestartAlways = "always"
 
--- | NoRestart makes docker not restart a container when it exits
--- Note that this includes not restarting it on boot!
---
--- RestartOnFailure will restart the container if it exits nonzero.
--- A max-retry value can be provided to prevent repeated restarts.
---
--- RestartAlways is the default for docker containers configured by
+-- | RestartAlways is the default for docker containers configured by
 -- propellor; as well as keeping badly behaved containers running,
 -- it ensures that containers get started back up after reboot or
 -- after docker is upgraded.
+--
+-- NoRestart makes docker not restart a container when it exits
+-- Note that this includes not restarting it on boot!
+--
+-- RestartOnFailure will restart the container if it exits nonzero.
+-- A max-retry value can be provided to prevent too many restarts.
 data RestartPolicy = NoRestart | RestartOnFailure (Maybe Int) | RestartAlways
 
 -- | A container is identified by its name, and the host
