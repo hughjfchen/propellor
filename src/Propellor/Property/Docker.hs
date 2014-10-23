@@ -29,8 +29,9 @@ module Propellor.Property.Docker (
 	cpuShares,
 	link,
 	ContainerAlias,
-	restart,
-	RestartPolicy(..),
+	restartAlways,
+	restartOnFailure,
+	restartNever,
 	-- * Internal use
 	chain,
 ) where
@@ -157,7 +158,7 @@ mkContainer cid@(ContainerId hn _cn) h = Container
 	h' = h
 		-- Restart by default so container comes up on
 		-- boot or when docker is upgraded.
-		&^ restart RestartAlways
+		&^ restartAlways
 		-- Expose propellor directory inside the container.
 		& volume (localdir++":"++localdir)
 		-- Name the container in a predictable way so we
@@ -279,26 +280,24 @@ link linkwith calias = genProp "link" $ \hn ->
 -- Each container has its own alias namespace.
 type ContainerAlias = String
 
--- | Restart policy to apply when a container exits.
-restart :: RestartPolicy -> Property
-restart policy = runProp "restart" (serialize policy)
-   where
-	serialize NoRestart = "no"
-	serialize (RestartOnFailure Nothing) = "on-failure"
-	serialize (RestartOnFailure (Just n)) = "on-failure:" ++ show n
-	serialize RestartAlways = "always"
-
--- | RestartAlways is the default for docker containers configured by
+-- | This property is enabled by default for docker containers configured by
 -- propellor; as well as keeping badly behaved containers running,
 -- it ensures that containers get started back up after reboot or
 -- after docker is upgraded.
---
--- NoRestart makes docker not restart a container when it exits
+restartAlways :: Property
+restartAlways = runProp "restart" "always"
+
+-- | Docker will restart the container if it exits nonzero.
+-- If a number is provided, it will be restarted only up to that many
+-- times.
+restartOnFailure :: Maybe Int -> Property
+restartOnFailure Nothing = runProp "restart" "on-failure"
+restartOnFailure (Just n) = runProp "restart" ("on-failure:" ++ show n)
+
+-- | Makes docker not restart a container when it exits
 -- Note that this includes not restarting it on boot!
---
--- RestartOnFailure will restart the container if it exits nonzero.
--- A max-retry value can be provided to prevent too many restarts.
-data RestartPolicy = NoRestart | RestartOnFailure (Maybe Int) | RestartAlways
+restartNever :: Property
+restartNever = runProp "restart" "no"
 
 -- | A container is identified by its name, and the host
 -- on which it's deployed.
