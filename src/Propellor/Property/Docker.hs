@@ -19,7 +19,6 @@ module Propellor.Property.Docker (
 	-- * Container configuration
 	dns,
 	hostname,
-	name,
 	publish,
 	expose,
 	user,
@@ -156,10 +155,14 @@ mkContainer cid@(ContainerId hn _cn) h = Container
   where
 	info = _dockerinfo $ hostInfo h'
 	h' = h
-		-- expose propellor directory inside the container
+		-- Restart by default so container comes up on
+		-- boot or when docker is upgraded.
+		&^ restart RestartAlways
+		-- Expose propellor directory inside the container.
 		& volume (localdir++":"++localdir)
-		-- name the container in a predictable way so we
-		-- and the user can easily find it later
+		-- Name the container in a predictable way so we
+		-- and the user can easily find it later. This property
+		-- comes last, so it cannot be overridden.
 		& name (fromContainerId cid)
 
 -- | Causes *any* docker images that are not in use by running containers to
@@ -219,7 +222,7 @@ dns = runProp "dns"
 hostname :: String -> Property
 hostname = runProp "hostname"
 
--- | Set name for container. (Normally done automatically.)
+-- | Set name of container.
 name :: String -> Property
 name = runProp "name"
 
@@ -382,14 +385,7 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 		shim <- liftIO $ Shim.setup (localdir </> "propellor") (localdir </> shimdir cid)
 		liftIO $ writeFile (identFile cid) (show ident)
 		ensureProperty $ boolProperty "run" $ runContainer img
-			-- Restart by default so container comes up on
-			-- boot or when docker is upgraded. This is put
-			-- here, rather than adding a default Property
-			-- in mkContainer, to avoid changing the ident
-			-- of existing containers. Any restart property
-			-- will override it.
-			-- This is a hack.  TODO: Move to correct place.
-			("--restart=always" : runps ++ ["-i", "-d", "-t"])
+			(runps ++ ["-i", "-d", "-t"])
 			[shim, "--docker", fromContainerId cid]
 
 -- | Called when propellor is running inside a docker container.
