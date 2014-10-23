@@ -161,7 +161,6 @@ mkContainer cid@(ContainerId hn _cn) h = Container
 		-- name the container in a predictable way so we
 		-- and the user can easily find it later
 		& name (fromContainerId cid)
-		-- & restart RestartAlways
 
 -- | Causes *any* docker images that are not in use by running containers to
 -- be deleted. And deletes any containers that propellor has set up
@@ -383,7 +382,13 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 		shim <- liftIO $ Shim.setup (localdir </> "propellor") (localdir </> shimdir cid)
 		liftIO $ writeFile (identFile cid) (show ident)
 		ensureProperty $ boolProperty "run" $ runContainer img
-			(runps ++ ["-i", "-d", "-t"])
+			-- Restart by default so container comes up on
+			-- boot or when docker is upgraded. This is put
+			-- here, rather than adding a default Property
+			-- in mkContainer, to avoid changing the ident
+			-- of existing containers. Any restart property
+			-- will override it.
+			("--restart=always" : runps ++ ["-i", "-d", "-t"])
 			[shim, "--docker", fromContainerId cid]
 
 -- | Called when propellor is running inside a docker container.
