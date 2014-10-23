@@ -130,7 +130,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
 	haskellpkgsinstalled = userScriptProperty "builder"
-		[ "cd " ++ gitannexdir ++ " && ./install-haskell-packages"
+		[ "cd " ++ gitannexdir ++ " && ./standalone/android/install-haskell-packages"
 		]
 	osver = System (Debian Testing) "i386" -- once jessie is released, use: (Stable "jessie")
 
