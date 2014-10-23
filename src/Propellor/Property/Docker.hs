@@ -107,7 +107,7 @@ docked hosts cn = RevertableProperty
 		let cid = ContainerId hn cn
 		ensureProperties [findContainer mhost cid cn $ a cid]
 		
-	mhost = findHost hosts (cn2hn cn)
+	mhost = findHostNoAlias hosts (cn2hn cn)
 
 	setup cid (Container image runparams) =
 		provisionContainer cid
