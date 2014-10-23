@@ -19,7 +19,6 @@ module Propellor.Property.Docker (
 	-- * Container configuration
 	dns,
 	hostname,
-	name,
 	publish,
 	expose,
 	user,
@@ -156,12 +155,15 @@ mkContainer cid@(ContainerId hn _cn) h = Container
   where
 	info = _dockerinfo $ hostInfo h'
 	h' = h
-		-- expose propellor directory inside the container
+		-- Restart by default so container comes up on
+		-- boot or when docker is upgraded.
+		&^ restart RestartAlways
+		-- Expose propellor directory inside the container.
 		& volume (localdir++":"++localdir)
-		-- name the container in a predictable way so we
-		-- and the user can easily find it later
+		-- Name the container in a predictable way so we
+		-- and the user can easily find it later. This property
+		-- comes last, so it cannot be overridden.
 		& name (fromContainerId cid)
-		& restart RestartAlways
 
 -- | Causes *any* docker images that are not in use by running containers to
 -- be deleted. And deletes any containers that propellor has set up
@@ -220,7 +222,7 @@ dns = runProp "dns"
 hostname :: String -> Property
 hostname = runProp "hostname"
 
--- | Set name for container. (Normally done automatically.)
+-- | Set name of container.
 name :: String -> Property
 name = runProp "name"
 
@@ -283,19 +285,19 @@ restart policy = runProp "restart" (serialize policy)
    where
 	serialize NoRestart = "no"
 	serialize (RestartOnFailure Nothing) = "on-failure"
-	serialize (RestartOnFailure n) = "on-failure:" ++ show n
+	serialize (RestartOnFailure (Just n)) = "on-failure:" ++ show n
 	serialize RestartAlways = "always"
 
--- | NoRestart makes docker not restart a container when it exits
--- Note that this includes not restarting it on boot!
---
--- RestartOnFailure will restart the container if it exits nonzero.
--- A max-retry value can be provided to prevent repeated restarts.
---
--- RestartAlways is the default for docker containers configured by
+-- | RestartAlways is the default for docker containers configured by
 -- propellor; as well as keeping badly behaved containers running,
 -- it ensures that containers get started back up after reboot or
 -- after docker is upgraded.
+--
+-- NoRestart makes docker not restart a container when it exits
+-- Note that this includes not restarting it on boot!
+--
+-- RestartOnFailure will restart the container if it exits nonzero.
+-- A max-retry value can be provided to prevent too many restarts.
 data RestartPolicy = NoRestart | RestartOnFailure (Maybe Int) | RestartAlways
 
 -- | A container is identified by its name, and the host
