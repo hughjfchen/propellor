@@ -1,7 +1,7 @@
 propellor (0.9.1) UNRELEASED; urgency=medium
 
   * Docker: Add ability to control when containers restart.
-  * Docker: Default to always restarting containers, so they come back 
+  * Docker: Defaut to always restarting containers, so they come back 
     up after reboots and docker daemon upgrades.
 
  -- Joey Hess <joeyh@debian.org>  Thu, 23 Oct 2014 03:05:22 -0400
