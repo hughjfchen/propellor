@@ -30,8 +30,6 @@ module Propellor.Property.Docker (
 	cpuShares,
 	link,
 	ContainerAlias,
-	restart,
-	RestartPolicy(..),
 	-- * Internal use
 	chain,
 ) where
@@ -152,7 +150,7 @@ findContainer mhost cid cn mk = case mhost of
 mkContainer :: ContainerId -> Host -> Maybe Container
 mkContainer cid@(ContainerId hn _cn) h = Container
 	<$> fromVal (_dockerImage info)
-	<*> pure (map (\mkparam -> mkparam hn) (_dockerRunParams info))
+	<*> pure (map (\a -> a hn) (_dockerRunParams info))
   where
 	info = _dockerinfo $ hostInfo h'
 	h' = h
@@ -161,7 +159,6 @@ mkContainer cid@(ContainerId hn _cn) h = Container
 		-- name the container in a predictable way so we
 		-- and the user can easily find it later
 		& name (fromContainerId cid)
-		& restart RestartAlways
 
 -- | Causes *any* docker images that are not in use by running containers to
 -- be deleted. And deletes any containers that propellor has set up
@@ -276,27 +273,6 @@ link linkwith calias = genProp "link" $ \hn ->
 -- | A short alias for a linked container.
 -- Each container has its own alias namespace.
 type ContainerAlias = String
-
--- | Restart policy to apply when a container exits.
-restart :: RestartPolicy -> Property
-restart policy = runProp "restart" (serialize policy)
-   where
-	serialize NoRestart = "no"
-	serialize (RestartOnFailure Nothing) = "on-failure"
-	serialize (RestartOnFailure n) = "on-failure:" ++ show n
-	serialize RestartAlways = "always"
-
--- | NoRestart makes docker not restart a container when it exits
--- Note that this includes not restarting it on boot!
---
--- RestartOnFailure will restart the container if it exits nonzero.
--- A max-retry value can be provided to prevent repeated restarts.
---
--- RestartAlways is the default for docker containers configured by
--- propellor; as well as keeping badly behaved containers running,
--- it ensures that containers get started back up after reboot or
--- after docker is upgraded.
-data RestartPolicy = NoRestart | RestartOnFailure (Maybe Int) | RestartAlways
 
 -- | A container is identified by its name, and the host
 -- on which it's deployed.
