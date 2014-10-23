@@ -135,7 +135,7 @@ host hn = Host hn [] mempty
 --
 -- Can add Properties and RevertableProperties
 (&) :: IsProp p => Host -> p -> Host
-(Host hn ps is) & p = Host hn (ps ++ [toProp p]) (is <> getInfo p)
+(Host hn ps as) & p = Host hn (ps ++ [toProp p]) (as <> getInfo p)
 
 infixl 1 &
 
@@ -144,14 +144,6 @@ infixl 1 &
 h ! p = h & revert p
 
 infixl 1 !
-
--- | Like (&), but adds the property as the first property of the host.
--- Normally, property order should not matter, but this is useful
--- when it does.
-(&^) :: IsProp p => Host -> p -> Host
-(Host hn ps is) &^ p = Host hn ([toProp p] ++ ps) (getInfo p <> is)
-
-infixl 1 &^
 
 -- Changes the action that is performed to satisfy a property. 
 adjustProperty :: Property -> (Propellor Result -> Propellor Result) -> Property
