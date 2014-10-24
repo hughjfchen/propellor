@@ -19,7 +19,6 @@ module Propellor.Property.Docker (
 	-- * Container configuration
 	dns,
 	hostname,
-	name,
 	publish,
 	expose,
 	user,
@@ -30,6 +29,9 @@ module Propellor.Property.Docker (
 	cpuShares,
 	link,
 	ContainerAlias,
+	restartAlways,
+	restartOnFailure,
+	restartNever,
 	-- * Internal use
 	chain,
 ) where
@@ -106,7 +108,7 @@ docked hosts cn = RevertableProperty
 		let cid = ContainerId hn cn
 		ensureProperties [findContainer mhost cid cn $ a cid]
 		
-	mhost = findHost hosts (cn2hn cn)
+	mhost = findHostNoAlias hosts (cn2hn cn)
 
 	setup cid (Container image runparams) =
 		provisionContainer cid
@@ -150,14 +152,18 @@ findContainer mhost cid cn mk = case mhost of
 mkContainer :: ContainerId -> Host -> Maybe Container
 mkContainer cid@(ContainerId hn _cn) h = Container
 	<$> fromVal (_dockerImage info)
-	<*> pure (map (\a -> a hn) (_dockerRunParams info))
+	<*> pure (map (\mkparam -> mkparam hn) (_dockerRunParams info))
   where
 	info = _dockerinfo $ hostInfo h'
 	h' = h
-		-- expose propellor directory inside the container
+		-- Restart by default so container comes up on
+		-- boot or when docker is upgraded.
+		&^ restartAlways
+		-- Expose propellor directory inside the container.
 		& volume (localdir++":"++localdir)
-		-- name the container in a predictable way so we
-		-- and the user can easily find it later
+		-- Name the container in a predictable way so we
+		-- and the user can easily find it later. This property
+		-- comes last, so it cannot be overridden.
 		& name (fromContainerId cid)
 
 -- | Causes *any* docker images that are not in use by running containers to
@@ -217,7 +223,7 @@ dns = runProp "dns"
 hostname :: String -> Property
 hostname = runProp "hostname"
 
--- | Set name for container. (Normally done automatically.)
+-- | Set name of container.
 name :: String -> Property
 name = runProp "name"
 
@@ -273,6 +279,25 @@ link linkwith calias = genProp "link" $ \hn ->
 -- | A short alias for a linked container.
 -- Each container has its own alias namespace.
 type ContainerAlias = String
+
+-- | This property is enabled by default for docker containers configured by
+-- propellor; as well as keeping badly behaved containers running,
+-- it ensures that containers get started back up after reboot or
+-- after docker is upgraded.
+restartAlways :: Property
+restartAlways = runProp "restart" "always"
+
+-- | Docker will restart the container if it exits nonzero.
+-- If a number is provided, it will be restarted only up to that many
+-- times.
+restartOnFailure :: Maybe Int -> Property
+restartOnFailure Nothing = runProp "restart" "on-failure"
+restartOnFailure (Just n) = runProp "restart" ("on-failure:" ++ show n)
+
+-- | Makes docker not restart a container when it exits
+-- Note that this includes not restarting it on boot!
+restartNever :: Property
+restartNever = runProp "restart" "no"
 
 -- | A container is identified by its name, and the host
 -- on which it's deployed.

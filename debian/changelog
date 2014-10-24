@@ -1,3 +1,12 @@
+propellor (0.9.1) unstable; urgency=medium
+
+  * Docker: Add ability to control when containers restart.
+  * Docker: Default to always restarting containers, so they come back 
+    up after reboots and docker daemon upgrades.
+  * Fix loop when a docker host that does not exist was docked.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 24 Oct 2014 09:57:31 -0400
+
 propellor (0.9.0) unstable; urgency=medium
 
   * Avoid encoding the current stable suite in propellor's code,

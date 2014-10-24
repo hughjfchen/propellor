@@ -65,6 +65,7 @@ tree buildarch = combineProperties "gitannexbuilder tree"
 buildDepsApt :: Property
 buildDepsApt = combineProperties "gitannexbuilder build deps"
 	[ Apt.buildDep ["git-annex"]
+	, Apt.installed ["liblockfile-simple-perl"]
 	, buildDepsNoHaskellLibs
 	, "git-annex source build deps installed" ==> Apt.buildDepIn builddir
 	]
@@ -113,17 +114,14 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 	& os osver
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
+	& Docker.tweaked
 	& User.accountFor builduser
 	& File.dirExists gitbuilderdir
 	& File.ownerGroup homedir builduser builduser
-	& buildDepsNoHaskellLibs
+	& buildDepsApt
 	& flagFile chrootsetup ("/chrootsetup")
 		`requires` setupgitannexdir
-	& Docker.tweaked
-	-- TODO: automate installing haskell libs
-	-- (Currently have to run
-	-- git-annex/standalone/android/install-haskell-packages
-	-- which is not fully automated.)
+	& flagFile haskellpkgsinstalled ("/haskellpkgsinstalled")
   where
 	-- Use git-annex's android chroot setup script, which will install
 	-- ghc-android and the NDK, all build deps, etc, in the home
@@ -131,7 +129,10 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 	chrootsetup = scriptProperty
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
-	osver = System (Debian (Stable "wheezy")) "i386"
+	haskellpkgsinstalled = userScriptProperty "builder"
+		[ "cd " ++ gitannexdir ++ " && ./standalone/android/install-haskell-packages"
+		]
+	osver = System (Debian Testing) "i386" -- once jessie is released, use: (Stable "jessie")
 
 -- armel builder has a companion container using amd64 that
 -- runs the build first to get TH splices. They need
