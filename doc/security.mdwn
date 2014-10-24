@@ -28,7 +28,7 @@ in cleartext private data such as passwords, ssh private keys, etc.
 
 Instead, `propellor --spin $host` looks for a
 `~/.propellor/privdata/privdata.gpg` file and if found decrypts it,
-extracts the private data that that the $host needs, and sends it to to the
+extracts the private data that the $host needs, and sends it to to the
 $host using ssh. This lets a host know its own private data, without
 seeing all the rest.
 
