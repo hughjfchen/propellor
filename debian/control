@@ -19,7 +19,7 @@ Build-Depends:
 Maintainer: Joey Hess <joeyh@debian.org>
 Standards-Version: 3.9.5
 Vcs-Git: git://git.kitenet.net/propellor
-Homepage: http://joeyh.name/code/propellor/
+Homepage: http://propellor.branchable.com/
 
 Package: propellor
 Architecture: any
