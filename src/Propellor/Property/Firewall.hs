@@ -2,10 +2,7 @@
 module Propellor.Property.Firewall(
   rule,
   installed,
-  Chain(..),
-  Target(..),
-  Proto(..),
-  Rules(..)) where
+  Chain(..),Target(..),Proto(..),Rules(..),ConnectionState(..)) where
 
 import Data.Monoid
 import Data.Char
