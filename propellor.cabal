@@ -82,6 +82,7 @@ Library
     Propellor.Property.Gpg
     Propellor.Property.Grub
     Propellor.Property.Network
+    Propellor.Property.Nginx
     Propellor.Property.Obnam
     Propellor.Property.OpenId
     Propellor.Property.Postfix
