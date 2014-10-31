@@ -3,7 +3,11 @@ modify and distribute it; indeed doing so is a fundamental part of how
 propellor is configured and used.
 
 You don't have to contribute your patches, but you're encouraged to do so;
-let's all make propellor awesome together! Patches can be sent to
+let's all make propellor awesome together! Also, contributing patches is a
+good way to make sure that your code keeps working in new versions of
+propellor. See [[interface_stability]].
+
+Patches can be sent to 
 <propellor@joeyh.name> or pull requests can be posted to [[todo]].
 
 To certify that a change is released under propellor's BSD license,
