@@ -160,6 +160,9 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 		-- Some users have zsh as their login shell.
 		, "zsh"
 		]
+	
+	& Docker.configured
+	& Docker.garbageCollected `period` Daily
 
 diatom :: Host
 diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"

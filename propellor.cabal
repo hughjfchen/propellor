@@ -78,10 +78,12 @@ Library
     Propellor.Property.Dns
     Propellor.Property.Docker
     Propellor.Property.File
+    Propellor.Property.Firewall
     Propellor.Property.Git
     Propellor.Property.Gpg
     Propellor.Property.Grub
     Propellor.Property.Network
+    Propellor.Property.Nginx
     Propellor.Property.Obnam
     Propellor.Property.OpenId
     Propellor.Property.Postfix
