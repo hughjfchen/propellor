@@ -4,23 +4,26 @@ import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
+import Utility.SafeCommand
 
 type ConfigFile = [String]
 
 siteEnabled :: HostName -> ConfigFile -> RevertableProperty
 siteEnabled hn cf = RevertableProperty enable disable
   where
-	enable = trivial (cmdProperty "a2ensite" ["--quiet", hn])
-		`describe` ("apache site enabled " ++ hn)
-		`requires` siteAvailable hn cf
-		`requires` installed
-		`onChange` reloaded
-	disable = trivial $ combineProperties
+	enable = check (not <$> isenabled) $
+		cmdProperty "a2ensite" ["--quiet", hn]
+			`describe` ("apache site enabled " ++ hn)
+			`requires` siteAvailable hn cf
+			`requires` installed
+			`onChange` reloaded
+	disable = combineProperties
 		("apache site disabled " ++ hn) 
 		(map File.notPresent (siteCfg hn))
 		`onChange` cmdProperty "a2dissite" ["--quiet", hn]
 		`requires` installed
 		`onChange` reloaded
+	isenabled = boolSystem "a2query" [Param "-q", Param "-s", Param hn]
 
 siteAvailable :: HostName -> ConfigFile -> Property
 siteAvailable hn cf = combineProperties ("apache site available " ++ hn) $
@@ -31,17 +34,20 @@ siteAvailable hn cf = combineProperties ("apache site available " ++ hn) $
 modEnabled :: String -> RevertableProperty
 modEnabled modname = RevertableProperty enable disable
   where
-	enable = trivial $ cmdProperty "a2enmod" ["--quiet", modname]
-		`describe` ("apache module enabled " ++ modname)
-		`requires` installed
-		`onChange` reloaded
-	disable = trivial $ cmdProperty "a2dismod" ["--quiet", modname]
-		`describe` ("apache module disabled " ++ modname)
-		`requires` installed
-		`onChange` reloaded
+	enable = check (not <$> isenabled) $
+		cmdProperty "a2enmod" ["--quiet", modname]
+			`describe` ("apache module enabled " ++ modname)
+			`requires` installed
+			`onChange` reloaded
+	disable = check isenabled $ 
+		cmdProperty "a2dismod" ["--quiet", modname]
+			`describe` ("apache module disabled " ++ modname)
+			`requires` installed
+			`onChange` reloaded
+	isenabled = boolSystem "a2query" [Param "-q", Param "-m", Param modname]
 
 -- This is a list of config files because different versions of apache
--- use different filenames. Propellor simply writen them all.
+-- use different filenames. Propellor simply writes them all.
 siteCfg :: HostName -> [FilePath]
 siteCfg hn =
 	-- Debian pre-2.4
