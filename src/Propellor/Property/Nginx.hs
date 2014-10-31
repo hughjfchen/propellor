@@ -4,21 +4,26 @@ import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
+import System.Posix.Files
 
 type ConfigFile = [String]
 
 siteEnabled :: HostName -> ConfigFile -> RevertableProperty
 siteEnabled hn cf = RevertableProperty enable disable
   where
-	enable = trivial (cmdProperty "ln" ["-s", siteValRelativeCfg hn, siteVal hn])
+	enable = check test prop
 		`describe` ("nginx site enabled " ++ hn)
 		`requires` siteAvailable hn cf
 		`requires` installed
 		`onChange` reloaded
-	disable = trivial $ 
-		("nginx site disabled " ++ hn) ==>
-		    File.notPresent (siteCfg hn)
-		`onChange` cmdProperty "rm" [siteVal hn]
+	  where
+		test = not <$> doesFileExist (siteVal hn)
+		prop = property "nginx site in place" $ makeChange $
+			createSymbolicLink target dir
+		target = siteValRelativeCfg hn
+		dir = siteVal hn
+	disable = trivial $ File.notPresent (siteVal hn)
+		`describe` ("nginx site disable" ++ hn)
 		`requires` installed
 		`onChange` reloaded
 
