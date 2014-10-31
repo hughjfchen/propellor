@@ -50,6 +50,8 @@ darkstar :: Host
 darkstar = host "darkstar.kitenet.net"
 	& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
 
+	! Apache.siteEnabled "nntp.olduse.net" (JoeySites.apachecfg "nntp.olduse.net" False [])
+
 	& Apt.buildDep ["git-annex"] `period` Daily
 	& Docker.configured
 	! Docker.docked hosts "android-git-annex"
