@@ -62,7 +62,11 @@ see [configuration for the Haskell newbie](https://propellor.branchable.com/hask
    Now they'll automatically update every 30 minutes, and you can
    `git commit -S` and `git push` changes that affect any number of
    hosts.
-10. Write some neat new properties and send patches to <propellor@joeyh.name>!
+10. Write some neat new properties and send patches to <propellor@joeyh.name>!  
+    Use `git commit --signoff` to certify that your additions to propellor
+    are released under its BSD license.  
+    See <https://propellor.branchable.com/contributing> for coding styles,
+    etc.
 
 ## debugging
 
