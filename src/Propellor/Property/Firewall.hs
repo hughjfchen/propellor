@@ -30,10 +30,10 @@ rule c t rs = property ("firewall rule: " <> show r) addIpTable
 	r = Rule c t rs
 	addIpTable = liftIO $ do
 		let args = toIpTable r
-		exist <- boolSystem "/sbin/iptables" (chk args)
+		exist <- boolSystem "iptables" (chk args)
 		if exist
 			then return NoChange
-			else ifM (boolSystem "/sbin/iptables" (add args))
+			else ifM (boolSystem "iptables" (add args))
 				( return MadeChange , return FailedChange)
 	add params = (Param "-A") : params
 	chk params = (Param "-C") : params
