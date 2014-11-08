@@ -567,7 +567,7 @@ readIdentFile cid = fromMaybe (error "bad ident in identFile")
 	. readish <$> readFile (identFile cid)
 
 dockercmd :: String
-dockercmd = "docker.io"
+dockercmd = "docker"
 
 report :: [Bool] -> Result
 report rmed
