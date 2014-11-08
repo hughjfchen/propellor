@@ -1,7 +1,0 @@
-propellor 0.8.1 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Run apt-get update in initial bootstrap.
-   * --list-fields now includes a table of fields that are not currently set,
-     but would be used if they got set.
-   * Remove .gitignore from cabal file list, to avoid build failure on Debian.
-     Closes: #[754334](http://bugs.debian.org/754334)"""]]
