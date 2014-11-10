@@ -36,11 +36,11 @@ Executable propellor
   Main-Is: wrapper.hs
   GHC-Options: -Wall -threaded -O0
   Hs-Source-Dirs:  src
-  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
+  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
    containers, network, async, time, QuickCheck, mtl,
    MonadCatchIO-transformers
-  
+
   if (! os(windows))
     Build-Depends: unix
 
@@ -48,7 +48,7 @@ Executable propellor-config
   Main-Is: config.hs
   GHC-Options: -Wall -threaded -O0
   Hs-Source-Dirs:  src
-  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
+  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
    containers, network, async, time, QuickCheck, mtl,
    MonadCatchIO-transformers
@@ -59,7 +59,7 @@ Executable propellor-config
 Library
   GHC-Options: -Wall -O0
   Hs-Source-Dirs:  src
-  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5, 
+  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
    containers, network, async, time, QuickCheck, mtl,
    MonadCatchIO-transformers
@@ -87,6 +87,7 @@ Library
     Propellor.Property.Obnam
     Propellor.Property.OpenId
     Propellor.Property.Postfix
+    Propellor.Property.Prosody
     Propellor.Property.Reboot
     Propellor.Property.Scheduled
     Propellor.Property.Service
