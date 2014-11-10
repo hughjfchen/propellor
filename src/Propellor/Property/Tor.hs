@@ -20,11 +20,11 @@ hiddenServiceAvailable :: FilePath -> Int -> Property
 hiddenServiceAvailable dir port = hiddenServiceHostName prop
   where
 	prop = "/etc/tor/torrc" `File.containsLines`
-			[ "HiddenServiceDir " ++ dir
-			, "HiddenServicePort " ++ show port ++ " 127.0.0.1:" ++ show port
-			]
-			`describe` "hidden service available"
-			`onChange` Service.reloaded "tor"
+		[ "HiddenServiceDir " ++ dir
+		, "HiddenServicePort " ++ show port ++ " 127.0.0.1:" ++ show port
+		]
+		`describe` "hidden service available"
+		`onChange` Service.reloaded "tor"
 	hiddenServiceHostName p =  adjustProperty p $ \satisfy -> do
 		r <- satisfy
 		h <- liftIO $ readFile (dir </> "hostname")
