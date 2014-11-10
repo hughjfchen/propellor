@@ -1,6 +1,7 @@
 propellor (0.9.3) UNRELEASED; urgency=medium
 
   * Added prosody module, contributed by Félix Sipma.
+  * Can be used to configure tor hidden services. Thanks, Félix Sipma.
 
  -- Joey Hess <joeyh@debian.org>  Mon, 10 Nov 2014 11:15:27 -0400
 
