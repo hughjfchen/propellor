@@ -4,5 +4,3 @@ To support multiple gpg keys added with --add-key, propellor should
   listed in `privdata/keyring.gpg`
 * When --add-key adds a new key, it should re-encrypt the privdata,
   so that this new key can access it.
-
-[[done]]
