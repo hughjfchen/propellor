@@ -9,35 +9,44 @@ isBridge :: Property
 isBridge = setup `requires` Apt.installed ["tor"]
 	`describe` "tor bridge"
   where
-	setup = "/etc/tor/torrc" `File.hasContent`
+	setup = mainConfig `File.hasContent`
 		[ "SocksPort 0"
 		, "ORPort 443"
 		, "BridgeRelay 1"
 		, "Exitpolicy reject *:*"
 		] `onChange` restarted
 
-hiddenServiceAvailable :: FilePath -> Int -> Property
-hiddenServiceAvailable dir port = hiddenServiceHostName prop
+hiddenServiceAvailable :: HostName -> Int -> Property
+hiddenServiceAvailable hn port = hiddenServiceHostName prop
   where
-	prop = "/etc/tor/torrc" `File.containsLines`
-		[ "HiddenServiceDir " ++ dir
-		, "HiddenServicePort " ++ show port ++ " 127.0.0.1:" ++ show port
+	prop = mainConfig `File.containsLines`
+		[ unlines ["HiddenServiceDir", varLib </> hn]
+		, unlines ["HiddenServicePort", show port, "127.0.0.1:" ++ show port]
 		]
 		`describe` "hidden service available"
 		`onChange` Service.reloaded "tor"
 	hiddenServiceHostName p =  adjustProperty p $ \satisfy -> do
 		r <- satisfy
-		h <- liftIO $ readFile (dir </> "hostname")
+		h <- liftIO $ readFile (varLib </> hn </> "hostname")
 		warningMessage $ unlines ["hidden service hostname:", h]
 		return r
 
-hiddenService :: FilePath -> Int -> Property
-hiddenService dir port = "/etc/tor/torrc" `File.containsLines`
-	[ "HiddenServiceDir " ++ dir
-	, "HiddenServicePort " ++ show port ++ " 127.0.0.1:" ++ show port
+hiddenService :: HostName -> Int -> Property
+hiddenService hn port = mainConfig `File.containsLines`
+	[ unlines ["HiddenServiceDir", varLib </> hn]
+	, unlines ["HiddenServicePort", show port, "127.0.0.1:" ++ show port]
 	]
-	`describe` ("hidden service (" ++ dir ++ " " ++ show port ++ ") available")
-	`onChange` Service.reloaded "tor"
+	`describe` unlines ["hidden service available:", hn, show port]
+	`onChange` restarted
 
 restarted :: Property
 restarted = Service.restarted "tor"
+
+mainConfig :: FilePath
+mainConfig = "/etc/tor/torrc"
+
+varLib :: FilePath
+varLib = "/var/lib/tor"
+
+varRun :: FilePath
+varRun = "/var/run/tor"
