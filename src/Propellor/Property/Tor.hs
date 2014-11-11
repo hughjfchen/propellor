@@ -47,3 +47,6 @@ mainConfig = "/etc/tor/torrc"
 
 varLib :: FilePath
 varLib = "/var/lib/tor"
+
+varRun :: FilePath
+varRun = "/var/run/tor"
