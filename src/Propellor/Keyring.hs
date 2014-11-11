@@ -3,6 +3,9 @@ module Propellor.Keyring where
 import Propellor
 import Utility.SafeCommand
 
+keyring :: FilePath
+keyring = privDataDir </> "keyring.gpg"
+
 addKey :: String -> IO ()
 addKey keyid = exitBool =<< allM id [ gpg, gitadd, gitconfig, gitcommit ]
   where
@@ -30,6 +33,13 @@ addKey keyid = exitBool =<< allM id [ gpg, gitadd, gitconfig, gitcommit ]
 		, Param "propellor addkey"
 		]
 
+	gpgopts =
+		[ "--options"
+		, "/dev/null"
+		, "--no-default-keyring"
+		, "--keyring", keyring
+		]
+
 {- Automatically sign the commit if there'a a keyring. -}
 gitCommit :: [CommandParam] -> IO Bool
 gitCommit ps = do
@@ -38,9 +48,3 @@ gitCommit ps = do
 		[ Just (Param "commit")
 		, if k then Just (Param "--gpg-sign") else Nothing
 		] ++ map Just ps
-
-keyring :: FilePath
-keyring = privDataDir </> "keyring.gpg"
-
-gpgopts :: [String]
-gpgopts = ["--options", "/dev/null", "--no-default-keyring", "--keyring", keyring]
