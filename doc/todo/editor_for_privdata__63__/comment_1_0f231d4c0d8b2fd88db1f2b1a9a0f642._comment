@@ -1,9 +1,0 @@
-[[!comment format=mdwn
- username="http://joeyh.name/"
- subject="comment 1"
- date="2014-11-11T21:15:57Z"
- content="""
-Already exists in `propellor --list-fields`
-
-Documentation patches accepted! :)
-"""]]
