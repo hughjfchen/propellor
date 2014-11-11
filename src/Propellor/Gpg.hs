@@ -93,6 +93,7 @@ gpgEncrypt f s = do
 		[ "--default-recipient-self"
 		, "--armor"
 		, "--encrypt"
+		, "--trust-model", "always"
 		] ++ concatMap (\k -> ["--recipient", k]) keyids
 	encrypted <- writeReadProcessEnv "gpg" opts
 		Nothing
