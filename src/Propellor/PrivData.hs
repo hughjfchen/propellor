@@ -3,7 +3,6 @@
 module Propellor.PrivData where
 
 import Control.Applicative
-import System.FilePath
 import System.IO
 import System.Directory
 import Data.Maybe
@@ -19,10 +18,11 @@ import Propellor.Types
 import Propellor.Types.Info
 import Propellor.Message
 import Propellor.Info
+import Propellor.Gpg
+import Propellor.PrivData.Paths
 import Utility.Monad
 import Utility.PartialPrelude
 import Utility.Exception
-import Utility.Process
 import Utility.Tmp
 import Utility.SafeCommand
 import Utility.Misc
@@ -146,30 +146,3 @@ decryptPrivData = fromMaybe M.empty . readish <$> gpgDecrypt privDataFile
 
 makePrivDataDir :: IO ()
 makePrivDataDir = createDirectoryIfMissing False privDataDir
-
-privDataDir :: FilePath
-privDataDir = "privdata"
-
-privDataFile :: FilePath
-privDataFile = privDataDir </> "privdata.gpg"
-
-privDataLocal :: FilePath
-privDataLocal = privDataDir </> "local"
-
-gpgDecrypt :: FilePath -> IO String
-gpgDecrypt f = ifM (doesFileExist f)
-	( readProcess "gpg" ["--decrypt", f]
-	, return ""
-	)
-
-gpgEncrypt :: FilePath -> String -> IO ()
-gpgEncrypt f s = do
-	encrypted <- writeReadProcessEnv "gpg"
-		[ "--default-recipient-self"
-		, "--armor"
-		, "--encrypt"
-		]
-		Nothing
-		(Just $ flip hPutStr s)
-		Nothing
-	viaTmp writeFile f encrypted

@@ -113,7 +113,9 @@ Library
   Other-Modules:
     Propellor.Types.Info
     Propellor.CmdLine
+    Propellor.Gpg
     Propellor.SimpleSh
+    Propellor.PrivData.Paths
     Propellor.Property.Docker.Shim
     Utility.Applicative
     Utility.Data
