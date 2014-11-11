@@ -29,6 +29,10 @@ backportSuite :: DebianSuite -> Maybe String
 backportSuite (Stable s) = Just (s ++ "-backports")
 backportSuite _ = Nothing
 
+stableUpdatesSuite :: DebianSuite -> Maybe String
+stableUpdatesSuite (Stable s) = Just (s ++ "-updates")
+stableUpdatesSuite _ = Nothing
+
 debLine :: String -> Url -> [Section] -> Line
 debLine suite mirror sections = unwords $
 	["deb", mirror, suite] ++ sections
@@ -74,9 +78,9 @@ securityUpdates suite
 -- Since the CDN is sometimes unreliable, also adds backup lines using
 -- kernel.org.
 stdSourcesList :: Property
-stdSourcesList = withOS ("standard sources.list") $ \o -> 
+stdSourcesList = withOS ("standard sources.list") $ \o ->
 	case o of
-		(Just (System (Debian suite) _)) -> 
+		(Just (System (Debian suite) _)) ->
 			ensureProperty $ stdSourcesListFor suite
 		_ -> error "os is not declared to be Debian"
 
@@ -135,7 +139,7 @@ installedBackport ps = trivial $ withOS desc $ \o -> case o of
 	Nothing -> error "cannot install backports; os not declared"
 	(Just (System (Debian suite) _)) -> case backportSuite suite of
 		Nothing -> notsupported o
-		Just bs -> ensureProperty $ runApt $ 
+		Just bs -> ensureProperty $ runApt $
 			["install", "-t", bs, "-y"] ++ ps
 	_ -> notsupported o
   where
@@ -218,7 +222,7 @@ unattendedUpgrades = RevertableProperty enable disable
 		v
 			| enabled = "true"
 			| otherwise = "false"
-	
+
 	configure = withOS "unattended upgrades configured" $ \o ->
 		case o of
 			-- the package defaults to only upgrading stable
@@ -272,4 +276,4 @@ trustsKey k = RevertableProperty trust untrust
 -- space.
 cacheCleaned :: Property
 cacheCleaned = trivial $ cmdProperty "apt-get" ["clean"]
-	`describe` "apt cache cleaned" 
+	`describe` "apt cache cleaned"
