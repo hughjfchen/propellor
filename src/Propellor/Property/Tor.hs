@@ -20,20 +20,20 @@ hiddenServiceAvailable :: HostName -> Int -> Property
 hiddenServiceAvailable hn port = hiddenServiceHostName prop
   where
 	prop = mainConfig `File.containsLines`
-		[ unlines ["HiddenServiceDir", varPath </> hn]
+		[ unlines ["HiddenServiceDir", varLib </> hn]
 		, unlines ["HiddenServicePort", show port, "127.0.0.1:" ++ show port]
 		]
 		`describe` "hidden service available"
 		`onChange` Service.reloaded "tor"
 	hiddenServiceHostName p =  adjustProperty p $ \satisfy -> do
 		r <- satisfy
-		h <- liftIO $ readFile (varPath </> hn </> "hostname")
+		h <- liftIO $ readFile (varLib </> hn </> "hostname")
 		warningMessage $ unlines ["hidden service hostname:", h]
 		return r
 
 hiddenService :: HostName -> Int -> Property
 hiddenService hn port = mainConfig `File.containsLines`
-	[ unlines ["HiddenServiceDir", varPath </> hn]
+	[ unlines ["HiddenServiceDir", varLib </> hn]
 	, unlines ["HiddenServicePort", show port, "127.0.0.1:" ++ show port]
 	]
 	`describe` unlines ["hidden service available:", hn, show port]
@@ -45,5 +45,5 @@ restarted = Service.restarted "tor"
 mainConfig :: FilePath
 mainConfig = "/etc/tor/torrc"
 
-varPath :: FilePath
-varPath = "/var/lib/tor"
+varLib :: FilePath
+varLib = "/var/lib/tor"
