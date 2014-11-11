@@ -8,6 +8,7 @@ import Data.Maybe
 import Data.List.Utils
 
 import Propellor.PrivData.Paths
+import Propellor.Message
 import Utility.SafeCommand
 import Utility.Process
 import Utility.Monad
@@ -19,6 +20,7 @@ type KeyId = String
 keyring :: FilePath
 keyring = privDataDir </> "keyring.gpg"
 
+-- Lists the keys in propellor's keyring.
 listPubKeys :: IO [KeyId]
 listPubKeys = parse . lines <$> readProcess "gpg" listopts
   where
@@ -36,10 +38,15 @@ useKeyringOpts =
 	]
 
 addKey :: KeyId -> IO ()
-addKey keyid = exitBool =<< allM id
-	[ gpg, gitadd keyring, reencryptprivdata, gitconfig, gitcommit ]
+addKey keyid = exitBool =<< allM (uncurry actionMessage)
+	[ ("adding key to propellor's keyring", addkeyring)
+	, ("staging propellor's keyring", gitadd keyring)
+	, ("updating encryption of any privdata", reencryptprivdata)
+	, ("configuring git signing to use key", gitconfig)
+	, ("committing changes", gitcommit)
+	]
   where
-	gpg = do
+	addkeyring = do
 		createDirectoryIfMissing True privDataDir
 		boolSystem "sh"
 			[ Param "-c"
@@ -59,11 +66,16 @@ addKey keyid = exitBool =<< allM id
 		, File f
 		]
 
-	gitconfig = boolSystem "git"
-		[ Param "config"
-		, Param "user.signingkey"
-		, Param keyid
-		]
+	gitconfig = ifM (snd <$> processTranscript "gpg" ["--list-secret-keys", keyid] Nothing)
+		( boolSystem "git"
+			[ Param "config"
+			, Param "user.signingkey"
+			, Param keyid
+			]
+		, do
+			warningMessage $ "Cannot find a secret key for key " ++ keyid ++ ", so not configuring git user.signingkey to use this key."
+			return True
+		)
 
 	gitcommit = gitCommit
 		[ File keyring
@@ -71,7 +83,7 @@ addKey keyid = exitBool =<< allM id
 		, Param "propellor addkey"
 		]
 
-{- Automatically sign the commit if there'a a keyring. -}
+-- Automatically sign the commit if there'a a keyring.
 gitCommit :: [CommandParam] -> IO Bool
 gitCommit ps = do
 	k <- doesFileExist keyring
@@ -86,6 +98,7 @@ gpgDecrypt f = ifM (doesFileExist f)
 	, return ""
 	)
 
+-- Encrypt file to all keys in propellor's keyring.
 gpgEncrypt :: FilePath -> String -> IO ()
 gpgEncrypt f s = do
 	keyids <- listPubKeys

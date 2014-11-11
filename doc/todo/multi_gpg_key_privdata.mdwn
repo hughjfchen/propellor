@@ -8,4 +8,5 @@ To support multiple gpg keys added with --add-key, propellor should
   so that this new key can access it.
 * When --add-key on behalf of another user, do not modify the signing key for
   local git. This entails either splitting this command in two, `--add-key` and
-  `--set-signing-key`, or adding another command `--add-foreign-key`. 
+  `--set-signing-key`, or adding another command `--add-foreign-key`,
+  or perhaps determining if the key being added has a known secret key.
