@@ -13,7 +13,8 @@ import System.Posix.IO
 import Data.Time.Clock.POSIX
 
 import Propellor
-import Propellor.Keyring
+import Propellor.PrivData.Paths
+import Propellor.Gpg
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Docker.Shim as DockerShim
 import Utility.FileMode
