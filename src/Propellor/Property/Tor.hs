@@ -38,10 +38,10 @@ hiddenServiceAvailable hn port = hiddenServiceHostName prop
 
 hiddenService :: HiddenServiceName -> Int -> Property
 hiddenService hn port = mainConfig `File.containsLines`
-	[ unlines ["HiddenServiceDir", varLib </> hn]
-	, unlines ["HiddenServicePort", show port, "127.0.0.1:" ++ show port]
+	[ unwords ["HiddenServiceDir", varLib </> hn]
+	, unwords ["HiddenServicePort", show port, "127.0.0.1:" ++ show port]
 	]
-	`describe` unlines ["hidden service available:", hn, show port]
+	`describe` unwords ["hidden service available:", hn, show port]
 	`onChange` restarted
 
 hiddenServiceData :: HiddenServiceName -> Context -> Property
