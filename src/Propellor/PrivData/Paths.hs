@@ -3,7 +3,7 @@ module Propellor.PrivData.Paths where
 import System.FilePath
 
 privDataDir :: FilePath
-privDataDir = "privdata.joey"
+privDataDir = "privdata"
 
 privDataFile :: FilePath
 privDataFile = privDataDir </> "privdata.gpg"
