@@ -144,9 +144,8 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 	[ Obnam.latestVersion
 	, Obnam.backupEncrypted "/srv/git" "33 3 * * *"
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
-		, "--encrypt-with=1B169BE1"
 		, "--client-name=wren" -- historical
-		] Obnam.OnlyClient "1B169BE1"
+		] Obnam.OnlyClient (Gpg.GpgKeyId "1B169BE1")
 		`requires` Ssh.keyImported SshRsa "root" (Context "git.kitenet.net")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 		`requires` Ssh.authorizedKeys "family" (Context "git.kitenet.net")
@@ -283,7 +282,7 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
 	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-mavericks"
 	-- git-annex distribution signing key
-	, Gpg.keyImported "89C809CB" "joey"
+	, Gpg.keyImported (Gpg.GpgKeyId "89C809CB") "joey"
 	]
   where
 	endpoint d = combineProperties ("endpoint " ++ d)

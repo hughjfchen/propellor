@@ -23,6 +23,7 @@ import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
+import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -122,7 +123,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 		, "--exclude=/home/joey/lib"
 		, "--exclude=.*/tmp/"
 		, "--one-file-system"
-		] Obnam.OnlyClient "98147487"
+		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
 		`requires` Ssh.keyImported SshRsa "root"
 			(Context "kite.kitenet.net")
 		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "root"

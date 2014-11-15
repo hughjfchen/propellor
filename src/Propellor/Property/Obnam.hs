@@ -48,8 +48,10 @@ backup dir crontimes params numclients =
 -- into root's keyring using Propellor.Property.Gpg.keyImported
 backupEncrypted :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Gpg.GpgKeyId -> Property
 backupEncrypted dir crontimes params numclients keyid =
-	backup dir crontimes (("--encrypt-with=" ++ keyid):params) numclients
+	backup dir crontimes params' numclients
 		`requires` Gpg.keyImported keyid "root"
+  where
+	params' = ("--encrypt-with=" ++ Gpg.getGpgKeyId keyid) : params
 
 -- | Does a backup, but does not automatically restore.
 backup' :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property
