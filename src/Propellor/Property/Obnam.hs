@@ -3,6 +3,7 @@ module Propellor.Property.Obnam where
 import Propellor
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
+import qualified Propellor.Property.Gpg as Gpg
 import Utility.SafeCommand
 
 import Data.List
@@ -31,15 +32,24 @@ data NumClients = OnlyClient | MultipleClients
 --
 -- >	& Obnam.backup "/srv/git" "33 3 * * *"
 -- >		[ "--repository=sftp://2318@usw-s002.rsync.net/~/mygitrepos.obnam"
--- >		, "--encrypt-with=1B169BE1"
 -- >		] Obnam.OnlyClient
--- >		`requires` Gpg.keyImported "1B169BE1" "root" 
 -- >		`requires` Ssh.keyImported SshRsa "root" (Context hostname)
 --
 -- How awesome is that?
 backup :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property
-backup dir crontimes params numclients = backup' dir crontimes params numclients
-	`requires` restored dir params
+backup dir crontimes params numclients =
+	backup' dir crontimes params numclients
+		`requires` restored dir params
+
+-- | Like backup, but the specified gpg key id is used to encrypt
+-- the repository. 
+--
+-- The gpg secret key will be automatically imported
+-- into root's keyring using Propellor.Property.Gpg.keyImported
+backupEncrypted :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Gpg.GpgKeyId -> Property
+backupEncrypted dir crontimes params numclients keyid =
+	backup dir crontimes (("--encrypt-with=" ++ keyid):params) numclients
+		`requires` Gpg.keyImported keyid "root"
 
 -- | Does a backup, but does not automatically restore.
 backup' :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property

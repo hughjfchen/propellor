@@ -10,7 +10,6 @@ import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Ssh as Ssh
-import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
@@ -115,17 +114,15 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
 	& Apt.serviceInstalledRunning "fail2ban"
-	& Obnam.backup "/" "33 1 * * *"
+	& Obnam.backupEncrypted "/" "33 1 * * *"
 		[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
 		, "--client-name=kitenet.net"
-		, "--encrypt-with=98147487"
 		, "--exclude=/var/cache"
 		, "--exclude=/var/tmp"
 		, "--exclude=/home/joey/lib"
 		, "--exclude=.*/tmp/"
 		, "--one-file-system"
-		] Obnam.OnlyClient
-		`requires` Gpg.keyImported "98147487" "root"
+		] Obnam.OnlyClient "98147487"
 		`requires` Ssh.keyImported SshRsa "root"
 			(Context "kite.kitenet.net")
 		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "root"
