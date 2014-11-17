@@ -92,5 +92,5 @@ cloned owner url dir mbranch = check originurl (property desc checkout)
 			, Just "git update-server-info"
 			]
 
-isRepo :: FilePath -> IO Bool
-isRepo dir = isNothing <$> catchMaybeIO (readProcess "git" ["rev-parse", "--resolve-git-dir", dir])
+isGitDir :: FilePath -> IO Bool
+isGitDir dir = isNothing <$> catchMaybeIO (readProcess "git" ["rev-parse", "--resolve-git-dir", dir])
