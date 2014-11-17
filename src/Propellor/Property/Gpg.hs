@@ -9,7 +9,8 @@ import System.PosixCompat
 installed :: Property
 installed = Apt.installed ["gnupg"]
 
-type GpgKeyId = String
+-- A numeric id, or a description of the key, in a form understood by gpg.
+newtype GpgKeyId = GpgKeyId { getGpgKeyId :: String }
 
 -- | Sets up a user with a gpg key from the privdata.
 --
@@ -19,11 +20,8 @@ type GpgKeyId = String
 --
 -- Recommend only using this for low-value dedicated role keys.
 -- No attempt has been made to scrub the key out of memory once it's used.
---
--- The GpgKeyId does not have to be a numeric id; it can just as easily
--- be a description of the key.
 keyImported :: GpgKeyId -> UserName -> Property
-keyImported keyid user = flagFile' prop genflag
+keyImported (GpgKeyId keyid) user = flagFile' prop genflag
 	`requires` installed
   where
 	desc = user ++ " has gpg key " ++ show keyid
