@@ -7,6 +7,7 @@ propellor (0.9.3) UNRELEASED; urgency=medium
   * Convert GpgKeyId to newtype.
   * DigitalOcean.distroKernel property now reboots into the distribution
     kernel when necessary.
+  * Avoid outputting color setting sequences when not run on a terminal.
 
  -- Joey Hess <joeyh@debian.org>  Mon, 10 Nov 2014 11:15:27 -0400
 
