@@ -214,17 +214,19 @@ spin hn hst = do
 				Just NeedPrivData -> do
 					sendprivdata toh privdata
 					loop
-				Just NeedGitPush -> do
+				Just NeedGitPush -> void $ actionMessage "Git update" $ do
 					sendMarked toh gitPushMarker ""
 					let p = (proc "git" ["upload-pack", "."])
 						{ std_in = UseHandle fromh
 						, std_out = UseHandle toh
 						}
 					(Nothing, Nothing, Nothing, h) <- createProcess p
-					unlessM ((==) ExitSuccess <$> waitForProcess h) $
-						errorMessage "git upload-pack failed"
+					r <- waitForProcess h
 					-- no more protocol possible after
 					-- git push
+					hClose fromh
+					hClose toh
+					return (r == ExitSuccess)
 				Just NeedGitClone -> do
 					hClose toh
 					hClose fromh
