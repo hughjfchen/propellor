@@ -222,7 +222,7 @@ spin hn hst = do
 						}
 					(Nothing, Nothing, Nothing, h) <- createProcess p
 					unlessM ((==) ExitSuccess <$> waitForProcess h) $
-						warningMessage "git upload-pack failed"
+						errorMessage "git upload-pack failed"
 					-- no more protocol possible after
 					-- git push
 				Just NeedGitClone -> do
@@ -308,7 +308,7 @@ boot = do
 		hClose stdin
 		hClose stdout
 		unlessM (boolSystem "git" [Param "pull", Param "--upload-pack", Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
-			warningMessage "git pull from client failed"
+			errorMessage "git pull from client failed"
 
 -- Shim for git push over the propellor ssh channel.
 -- Reads from stdin and sends it to hout;
@@ -324,6 +324,7 @@ gitPush hin hout = void $ fromstdin `concurrently` tostdout
 		connect h stdout
 	connect fromh toh = do
 		b <- B.hGetSome fromh 40960
+		hPutStrLn stderr $ show ("from", fromh, "to", toh, b)
 		unless (B.null b) $ do
 			B.hPut toh b
 			hFlush toh
