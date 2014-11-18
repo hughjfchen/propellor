@@ -28,7 +28,7 @@ gitPushMarker :: String
 gitPushMarker = "GITPUSH"
 
 toMarked :: Marker -> String -> String
-toMarked marker = ++
+toMarked = (++)
 
 fromMarked :: Marker -> Marked -> Maybe String
 fromMarked marker s
@@ -47,11 +47,13 @@ getMarked :: Handle -> Marker -> IO (Maybe String)
 getMarked h marker = go =<< catchMaybeIO (hGetLine h)
   where
 	go Nothing = return Nothing
-	go (Just l) = case fromMarked marker l of
-		Nothing -> do
-			putStrLn l
-			getMarked h marker
-		Just v -> return (Just v)
+	go (Just l) = do
+		hPutStrLn stderr $ show ("got ", l)
+		case fromMarked marker l of
+			Nothing -> do
+				putStrLn l
+				getMarked h marker
+			Just v -> return (Just v)
 
 req :: Stage -> Marker -> (String -> IO ()) -> IO ()
 req stage marker a = do
