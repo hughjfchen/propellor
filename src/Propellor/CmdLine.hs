@@ -197,54 +197,55 @@ spin hn hst = do
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
 	cacheparams <- toCommand <$> sshCachingParams hn
-	go cacheparams =<< hostprivdata
+	comm cacheparams =<< hostprivdata
 	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, runcmd]))) $
 		error $ "remote propellor failed (running: " ++ runcmd ++")"
   where
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData
 
-	go cacheparams privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
-		let loop = do
-			status <- getMarked fromh statusMarker
-			case readish =<< status of
-				Just NeedRepoUrl -> do
-					sendMarked toh repoUrlMarker
-						=<< (fromMaybe "" <$> getRepoUrl)
-					loop
-				Just NeedPrivData -> do
-					sendprivdata toh privdata
-					loop
-				Just NeedGitPush -> void $ actionMessage "Git update" $ do
-					sendMarked toh gitPushMarker ""
-					let p = (proc "git" ["upload-pack", "."])
-						{ std_in = UseHandle fromh
-						, std_out = UseHandle toh
-						}
-					(Nothing, Nothing, Nothing, h) <- createProcess p
-					r <- waitForProcess h
-					-- no more protocol possible after
-					-- git push
-					hClose fromh
-					hClose toh
-					return (r == ExitSuccess)
-				Just NeedGitClone -> do
-					hClose toh
-					hClose fromh
-					sendGitClone hn
-					go cacheparams privdata
-				-- Ready is only sent by old versions of
-				-- propellor. They expect to get privdata,
-				-- and then no more protocol communication.
-				Just Ready -> do
-					sendprivdata toh privdata
-					hClose toh
-					
-					-- Display remaining output.
-					void $ tryIO $ forever $
-						showremote =<< hGetLine fromh
-					hClose fromh
-				Nothing -> return ()
-		loop
+	comm cacheparams privdata = 
+		withBothHandles createProcessSuccess
+			(proc "ssh" $ cacheparams ++ [user, bootstrapcmd])
+			(comm' cacheparams privdata)
+	comm' cacheparams privdata (toh, fromh) = loop
+	  where
+		loop = dispatch =<< (maybe Nothing readish <$> getMarked fromh statusMarker)
+		dispatch (Just NeedRepoUrl) = do
+			sendMarked toh repoUrlMarker
+				=<< (fromMaybe "" <$> getRepoUrl)
+			loop
+		dispatch (Just NeedPrivData) = do
+			sendprivdata toh privdata
+			loop
+		dispatch (Just NeedGitPush) = do
+			void $ actionMessage ("Sending git update to " ++ hn) $ do
+				sendMarked toh gitPushMarker ""
+				let p = (proc "git" ["upload-pack", "."])
+					{ std_in = UseHandle fromh
+					, std_out = UseHandle toh
+					}
+				(Nothing, Nothing, Nothing, h) <- createProcess p
+				r <- waitForProcess h
+				-- no more protocol possible after git push
+				hClose fromh
+				hClose toh
+				return (r == ExitSuccess)
+		dispatch (Just NeedGitClone) = do
+			hClose toh
+			hClose fromh
+			sendGitClone hn
+			comm cacheparams privdata
+		-- Ready is only sent by old versions of
+		-- propellor. They expect to get privdata,
+		-- and then no more protocol communication.
+		dispatch (Just Ready) = do
+			sendprivdata toh privdata
+			hClose toh
+			-- Display remaining output.
+			void $ tryIO $ forever $
+				showremote =<< hGetLine fromh
+			hClose fromh
+		dispatch Nothing = return ()
 	
 	user = "root@"++hn
 
