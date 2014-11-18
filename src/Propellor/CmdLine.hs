@@ -19,6 +19,7 @@ import Propellor
 import Propellor.Protocol
 import Propellor.PrivData.Paths
 import Propellor.Gpg
+import Propellor.Git
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Docker.Shim as DockerShim
 import Utility.FileMode
@@ -143,10 +144,6 @@ buildFirst cmdline next = do
   where
 	getmtime = catchMaybeIO $ getModificationTime "propellor"
 
-getCurrentBranch :: IO String
-getCurrentBranch = takeWhile (/= '\n') 
-	<$> readProcess "git" ["symbolic-ref", "--short", "HEAD"]
-
 updateFirst :: CmdLine -> IO () -> IO ()
 updateFirst cmdline next = ifM hasOrigin (updateFirst' cmdline next, next)
 
@@ -191,9 +188,6 @@ updateFirst' cmdline next = do
 			( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
 			, errorMessage "Propellor build failed!" 
 			)
-
-getCurrentGitSha1 :: String -> IO String
-getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
 
 -- spin handles deploying propellor to a remote host, if it's not already
 -- installed there, or updating it if it is. Once the remote propellor is
@@ -350,35 +344,6 @@ gitPush hin hout = void $ fromstdin `concurrently` tostdout
 				B.hPut toh b
 				hFlush toh
 				connect fromh toh
-
-hasOrigin :: IO Bool
-hasOrigin = do
-	rs <- lines <$> readProcess "git" ["remote"]
-	return $ "origin" `elem` rs
-
-setRepoUrl :: String -> IO ()
-setRepoUrl "" = return ()
-setRepoUrl url = do
-	subcmd <- ifM hasOrigin (pure "set-url", pure "add")
-	void $ boolSystem "git" [Param "remote", Param subcmd, Param "origin", Param url]
-	-- same as --set-upstream-to, except origin branch
-	-- may not have been pulled yet
-	branch <- getCurrentBranch
-	let branchval s = "branch." ++ branch ++ "." ++ s
-	void $ boolSystem "git" [Param "config", Param (branchval "remote"), Param "origin"]
-	void $ boolSystem "git" [Param "config", Param (branchval "merge"), Param $ "refs/heads/"++branch]
-
-getRepoUrl :: IO (Maybe String)
-getRepoUrl = getM get urls
-  where
-	urls = ["remote.deploy.url", "remote.origin.url"]
-	get u = do
-		v <- catchMaybeIO $ 
-			takeWhile (/= '\n') 
-				<$> readProcess "git" ["config", u]
-		return $ case v of
-			Just url | not (null url) -> Just url
-			_ -> Nothing
 
 checkDebugMode :: IO ()
 checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
