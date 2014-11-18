@@ -295,8 +295,8 @@ boot = do
 		writeFileProtected privDataLocal
 	req NeedGitPush gitPushMarker $ \_ -> do
 		hin <- dup stdInput
-		hClose stdin
 		hout <- dup stdOutput
+		hClose stdin
 		hClose stdout
 		unlessM (boolSystem "git" [Param "pull", Param $ "--upload=pack=./propellor --gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
 			warningMessage "git pull from client failed"
