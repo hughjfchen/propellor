@@ -229,7 +229,7 @@ spin hn hst = do
 		]
 
 	spincmd = mkcmd
-		[ "cd " ++ localdir ++ " && ./propellor --continue " ++ show (Chain hn) ]
+		[ "cd " ++ localdir ++ " && ./propellor --continue " ++ shellEscape (show (Chain hn)) ]
 
 	getstatus :: Handle -> IO BootStrapStatus
 	getstatus h = do
