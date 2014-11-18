@@ -9,3 +9,5 @@ the local one runs `git send-pack`.
 Then there would be no need for a central git repo. Although still very
 useful if you have multiple propellor driven hosts and you want to just git
 commit and let cron sort them out.
+
+> [[done]]! --[[Joey]]
