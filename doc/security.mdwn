@@ -6,13 +6,13 @@ The only trusted machine is the laptop where you run `propellor --spin`
 to connect to a remote host. And that one only because you have a ssh key
 or login password to the host.
 
-Since the hosts propellor deploys are not trusted by the central git
-repository, they have to use git:// or http:// to pull from the central
-git repository, rather than ssh://. 
+Since the hosts propellor deploys do not trust the central git repository,
+and it doesn't trust them, it's normal to use git:// or http:// to pull
+from the central git repository, rather than ssh://.
 
-So, to avoid a MITM attack, propellor checks that any commit it fetches
-from origin is gpg signed by a trusted gpg key, and refuses to deploy it
-otherwise.
+Since propellor doesn't trust the central git repository, it checks
+that any commit it fetches from it is gpg signed by a trusted gpg key,
+and refuses to deploy it otherwise.
 
 That is only done when privdata/keyring.gpg exists. To set it up:
 
