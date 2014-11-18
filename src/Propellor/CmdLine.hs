@@ -233,16 +233,6 @@ spin hn hst = do
 			hClose fromh
 			sendGitClone hn
 			comm cacheparams privdata
-		-- Ready is only sent by old versions of
-		-- propellor. They expect to get privdata,
-		-- and then no more protocol communication.
-		dispatch (Just Ready) = do
-			sendprivdata toh privdata
-			hClose toh
-			-- Display remaining output.
-			void $ tryIO $ forever $
-				putStrLn =<< hGetLine fromh
-			hClose fromh
 		dispatch Nothing = return ()
 	
 	user = "root@"++hn
