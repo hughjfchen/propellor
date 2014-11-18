@@ -146,7 +146,7 @@ data CmdLine
 	| AddKey String
 	| Continue CmdLine
 	| Chain HostName Bool
-	| Boot HostName
+	| Update HostName
 	| Docker HostName
 	| GitPush Fd Fd
 	deriving (Read, Show, Eq)

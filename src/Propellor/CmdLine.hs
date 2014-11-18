@@ -41,7 +41,8 @@ processCmdLine = go =<< getArgs
   where
 	go ("--help":_) = usage
 	go ("--spin":h:[]) = return $ Spin h
-	go ("--boot":h:[]) = return $ Boot h
+	go ("--update":h:[]) = return $ Update h
+	go ("--boot":h:[]) = return $ Update h -- for back-compat
 	go ("--run":h:[]) = return $ Run h
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
@@ -94,9 +95,9 @@ defaultMain hostlist = do
 		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
 		)
-	go False (Boot _) = do
+	go False (Update _) = do
 		forceConsole
-		onlyProcess boot
+		onlyProcess update
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
@@ -282,11 +283,10 @@ sendGitClone hn = void $ actionMessage ("Cloning git repository to " ++ hn) $ do
 		, "rm -f " ++ remotebundle
 		]
 
--- Called "boot" for historical reasons, but what this really does is
--- update the privdata, repo url, and git repo over the ssh connection from the
--- client that ran propellor --spin.
-boot :: IO ()
-boot = do
+-- Update the privdata, repo url, and git repo over the ssh
+-- connection from the client that ran propellor --spin.
+update :: IO ()
+update = do
 	req NeedRepoUrl repoUrlMarker setRepoUrl
 	makePrivDataDir
 	req NeedPrivData privDataMarker $
