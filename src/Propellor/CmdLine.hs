@@ -202,6 +202,7 @@ spin hn hst = do
 	go cacheparams privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let loop = do
 			status <- getMarked fromh statusMarker
+			print (">>", status)
 			case readish =<< status of
 				Just NeedRepoUrl -> do
 					sendMarked toh repoUrlMarker
@@ -211,7 +212,6 @@ spin hn hst = do
 					sendprivdata toh privdata
 					loop
 				Just NeedGitPush -> do
-					print "NeedGitPush"
 					sendMarked toh gitPushMarker ""
 					unlessM (boolSystem "git" [Param "send-pack", Param "--thin", Param "."]) $
 						warningMessage "git send-pack failed"
