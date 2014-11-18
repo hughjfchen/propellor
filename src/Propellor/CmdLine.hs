@@ -196,22 +196,28 @@ spin hn hst = do
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData
 
 	go cacheparams privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
-		status <- getMarked fromh statusMarker
-		case readish =<< status of
-			Just Ready -> do
-				sendprivdata toh "privdata" privDataMarker privdata
-				hClose toh
-				
-				-- Display remaining output.
-				void $ tryIO $ forever $
-					showremote =<< hGetLine fromh
-				hClose fromh
-			Just NeedGitClone -> do
-				hClose toh
-				hClose fromh
-				sendGitClone hn =<< getUrl
-				go cacheparams privdata
-			Nothing -> error $ "protocol error; received: " ++ show status
+		let comm = do
+			status <- getMarked fromh statusMarker
+			case readish =<< status of
+				Just RepoUrl -> do
+					sendMarked toh repoUrlMarker
+						=<< (fromMaybe "" <$> getRepoUrl)
+					comm
+				Just Ready -> do
+					sendprivdata toh "privdata" privDataMarker privdata
+					hClose toh
+					
+					-- Display remaining output.
+					void $ tryIO $ forever $
+						showremote =<< hGetLine fromh
+					hClose fromh
+				Just NeedGitClone -> do
+					hClose toh
+					hClose fromh
+					sendGitClone hn
+					go cacheparams privdata
+				Nothing -> error $ "protocol error; received: " ++ show status
+		comm
 	
 	user = "root@"++hn
 
@@ -243,8 +249,8 @@ spin hn hst = do
 			return True
 
 -- Initial git clone, used for bootstrapping.
-sendGitClone :: HostName -> String -> IO ()
-sendGitClone hn url = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
+sendGitClone :: HostName -> IO ()
+sendGitClone hn = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
 	branch <- getCurrentBranch
 	cacheparams <- sshCachingParams hn
 	withTmpFile "propellor.git" $ \tmp _ -> allM id
@@ -260,25 +266,38 @@ sendGitClone hn url = void $ actionMessage ("Pushing git repository to " ++ hn) 
 		, "git checkout -b " ++ branch
 		, "git remote rm origin"
 		, "rm -f " ++ remotebundle
-		, "git remote add origin " ++ url
-		-- same as --set-upstream-to, except origin branch
-		-- may not have been pulled yet
-		, "git config branch."++branch++".remote origin"
-		, "git config branch."++branch++".merge refs/heads/"++branch
 		]
 
+-- Called "boot" for historical reasons, but what this really does is
+-- update the privdata, repo url, and git repo over the ssh connection from the
+-- client that ran propellor --spin.
 boot :: IO ()
 boot = do
+	sendMarked stdout statusMarker (show RepoUrl)
+	maybe noop setRepoUrl
+		=<< getMarked stdin repoUrlMarker
 	sendMarked stdout statusMarker (show Ready)
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal)
 		=<< getMarked stdin privDataMarker
 
-getUrl :: IO String
-getUrl = maybe nourl return =<< getM get urls
+setRepoUrl :: String -> IO ()
+setRepoUrl "" = return ()
+setRepoUrl url = do
+	rs <- lines <$> readProcess "git" ["remote"]
+	let subcmd = if "origin" `elem` rs then "set-url" else "add"
+	void $ boolSystem "git" [Param "remote", Param subcmd, Param "origin", Param url]
+	-- same as --set-upstream-to, except origin branch
+	-- may not have been pulled yet
+	branch <- getCurrentBranch
+	let branchval s = "branch." ++ branch ++ "." ++ s
+	void $ boolSystem "git" [Param "config", Param (branchval "remote"), Param "origin"]
+	void $ boolSystem "git" [Param "config", Param (branchval "merge"), Param $ "refs/heads/"++branch]
+
+getRepoUrl :: IO (Maybe String)
+getRepoUrl = getM get urls
   where
 	urls = ["remote.deploy.url", "remote.origin.url"]
-	nourl = errorMessage $ "Cannot find deploy url in " ++ show urls
 	get u = do
 		v <- catchMaybeIO $ 
 			takeWhile (/= '\n') 

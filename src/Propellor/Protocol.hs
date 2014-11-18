@@ -9,7 +9,7 @@ import Data.List
 
 import Propellor
 
-data BootStrapStatus = Ready | NeedGitClone
+data BootStrapStatus = Ready | NeedGitClone | RepoUrl
 	deriving (Read, Show, Eq)
 
 type Marker = String
@@ -20,6 +20,9 @@ statusMarker = "STATUS"
 
 privDataMarker :: String
 privDataMarker = "PRIVDATA "
+
+repoUrlMarker :: String
+repoUrlMarker = "REPOURL "
 
 toMarked :: Marker -> String -> String
 toMarked marker = intercalate "\n" . map (marker ++) . lines
