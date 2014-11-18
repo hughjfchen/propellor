@@ -11,8 +11,12 @@ import System.PosixCompat
 import Control.Exception (bracket)
 import System.Posix.IO
 import Data.Time.Clock.POSIX
+import Control.Concurrent.Async
+import qualified Data.ByteString as B
+import System.Process (std_in, std_out)
 
 import Propellor
+import Propellor.Protocol
 import Propellor.PrivData.Paths
 import Propellor.Gpg
 import qualified Propellor.Property.Docker as Docker
@@ -42,6 +46,7 @@ processCmdLine = go =<< getArgs
 	go ("--help":_) = usage
 	go ("--spin":h:[]) = return $ Spin h
 	go ("--boot":h:[]) = return $ Boot h
+	go ("--run":h:[]) = return $ Run h
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--dump":f:c:[]) = withprivfield f c Dump
@@ -52,6 +57,7 @@ processCmdLine = go =<< getArgs
 		Nothing -> errorMessage "--continue serialization failure"
 	go ("--chain":h:[]) = return $ Chain h
 	go ("--docker":h:[]) = return $ Docker h
+	go ("--gitpush":fin:fout:_) = return $ GitPush (Prelude.read fin) (Prelude.read fout)
 	go (h:[])
 		| "--" `isPrefixOf` h = usage
 		| otherwise = return $ Run h
@@ -84,6 +90,7 @@ defaultMain hostlist = do
 		r <- runPropellor h $ ensureProperties $ hostProperties h
 		putStrLn $ "\n" ++ show r
 	go _ (Docker hn) = Docker.chain hn
+	go _ (GitPush fin fout) = gitPush fin fout
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin hn) = withhost hn $ spin hn
@@ -91,7 +98,7 @@ defaultMain hostlist = do
 		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
 		)
-	go False (Boot hn) = onlyProcess $ withhost hn boot
+	go False (Boot _) = onlyProcess boot
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
@@ -135,7 +142,10 @@ getCurrentBranch = takeWhile (/= '\n')
 	<$> readProcess "git" ["symbolic-ref", "--short", "HEAD"]
 
 updateFirst :: CmdLine -> IO () -> IO ()
-updateFirst cmdline next = do
+updateFirst cmdline next = ifM hasOrigin (updateFirst' cmdline next, next)
+
+updateFirst' :: CmdLine -> IO () -> IO ()
+updateFirst' cmdline next = do
 	branchref <- getCurrentBranch
 	let originbranch = "origin" </> branchref
 
@@ -179,37 +189,74 @@ updateFirst cmdline next = do
 getCurrentGitSha1 :: String -> IO String
 getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
 
+-- spin handles deploying propellor to a remote host, if it's not already
+-- installed there, or updating it if it is. Once the remote propellor is
+-- updated, it's run.
 spin :: HostName -> Host -> IO ()
 spin hn hst = do
-	url <- getUrl
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
-	void $ boolSystem "git" [Param "push"]
+	-- Push to central origin repo first, if possible.
+	-- The remote propellor will pull from there, which avoids
+	-- us needing to send stuff directly to the remote host.
+	whenM hasOrigin $
+		void $ boolSystem "git" [Param "push"]
+	
 	cacheparams <- toCommand <$> sshCachingParams hn
-	go cacheparams url =<< hostprivdata
+	comm cacheparams =<< hostprivdata
+	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, runcmd]))) $
+		error $ "remote propellor failed (running: " ++ runcmd ++")"
   where
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData
 
-	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
-		let finish = do
-			senddata toh "privdata" privDataMarker privdata
+	comm cacheparams privdata = 
+		withBothHandles createProcessSuccess
+			(proc "ssh" $ cacheparams ++ [user, bootstrapcmd])
+			(comm' cacheparams privdata)
+	comm' cacheparams privdata (toh, fromh) = loop
+	  where
+		loop = dispatch =<< (maybe Nothing readish <$> getMarked fromh statusMarker)
+		dispatch (Just NeedRepoUrl) = do
+			sendMarked toh repoUrlMarker
+				=<< (fromMaybe "" <$> getRepoUrl)
+			loop
+		dispatch (Just NeedPrivData) = do
+			sendprivdata toh privdata
+			loop
+		dispatch (Just NeedGitPush) = do
+			void $ actionMessage ("Sending git update to " ++ hn) $ do
+				sendMarked toh gitPushMarker ""
+				let p = (proc "git" ["upload-pack", "."])
+					{ std_in = UseHandle fromh
+					, std_out = UseHandle toh
+					}
+				(Nothing, Nothing, Nothing, h) <- createProcess p
+				r <- waitForProcess h
+				-- no more protocol possible after git push
+				hClose fromh
+				hClose toh
+				return (r == ExitSuccess)
+		dispatch (Just NeedGitClone) = do
 			hClose toh
-			
+			hClose fromh
+			sendGitClone hn
+			comm cacheparams privdata
+		-- Ready is only sent by old versions of
+		-- propellor. They expect to get privdata,
+		-- and then no more protocol communication.
+		dispatch (Just Ready) = do
+			sendprivdata toh privdata
+			hClose toh
 			-- Display remaining output.
 			void $ tryIO $ forever $
 				showremote =<< hGetLine fromh
 			hClose fromh
-		status <- getstatus fromh `catchIO` (const $ errorMessage "protocol error (perhaps the remote propellor failed to run?)")
-		case status of
-			Ready -> finish
-			NeedGitClone -> do
-				hClose toh
-				hClose fromh
-				sendGitClone hn url
-				go cacheparams url privdata
+		dispatch Nothing = return ()
 	
 	user = "root@"++hn
 
-	bootstrapcmd = shellWrap $ intercalate " ; "
+	mkcmd = shellWrap . intercalate " ; "
+
+	bootstrapcmd = mkcmd
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then " ++ intercalate " && "
 			[ "apt-get update"
@@ -224,24 +271,19 @@ spin hn hst = do
 		, "fi"
 		]
 
-	getstatus :: Handle -> IO BootStrapStatus
-	getstatus h = do
-		l <- hGetLine h
-		case readish =<< fromMarked statusMarker l of
-			Nothing -> do
-				showremote l
-				getstatus h
-			Just status -> return status
-	
+	runcmd = mkcmd
+		[ "cd " ++ localdir ++ " && ./propellor --run " ++ hn ]
+
 	showremote s = putStrLn s
-	senddata toh desc marker s = void $
-		actionMessage ("Sending " ++ desc ++ " (" ++ show (length s) ++ " bytes) to " ++ hn) $ do
-			sendMarked toh marker s
+
+	sendprivdata toh privdata = void $
+		actionMessage ("Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn) $ do
+			sendMarked toh privDataMarker privdata
 			return True
 
 -- Initial git clone, used for bootstrapping.
-sendGitClone :: HostName -> String -> IO ()
-sendGitClone hn url = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
+sendGitClone :: HostName -> IO ()
+sendGitClone hn = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
 	branch <- getCurrentBranch
 	cacheparams <- sshCachingParams hn
 	withTmpFile "propellor.git" $ \tmp _ -> allM id
@@ -257,59 +299,71 @@ sendGitClone hn url = void $ actionMessage ("Pushing git repository to " ++ hn) 
 		, "git checkout -b " ++ branch
 		, "git remote rm origin"
 		, "rm -f " ++ remotebundle
-		, "git remote add origin " ++ url
-		-- same as --set-upstream-to, except origin branch
-		-- has not been pulled yet
-		, "git config branch."++branch++".remote origin"
-		, "git config branch."++branch++".merge refs/heads/"++branch
 		]
 
-data BootStrapStatus = Ready | NeedGitClone
-	deriving (Read, Show, Eq)
-
-type Marker = String
-type Marked = String
-
-statusMarker :: Marker
-statusMarker = "STATUS"
-
-privDataMarker :: String
-privDataMarker = "PRIVDATA "
-
-toMarked :: Marker -> String -> String
-toMarked marker = intercalate "\n" . map (marker ++) . lines
-
-sendMarked :: Handle -> Marker -> String -> IO ()
-sendMarked h marker s = do
-	-- Prefix string with newline because sometimes a
-	-- incomplete line is output.
-	hPutStrLn h ("\n" ++ toMarked marker s)
-	hFlush h
-
-fromMarked :: Marker -> Marked -> Maybe String
-fromMarked marker s
-	| null matches = Nothing
-	| otherwise = Just $ intercalate "\n" $
-		map (drop len) matches
-  where
-	len = length marker
-	matches = filter (marker `isPrefixOf`) $ lines s
-
-boot :: Host -> IO ()
-boot h = do
-	sendMarked stdout statusMarker $ show Ready
-	reply <- hGetContentsStrict stdin
-
+-- Called "boot" for historical reasons, but what this really does is
+-- update the privdata, repo url, and git repo over the ssh connection from the
+-- client that ran propellor --spin.
+boot :: IO ()
+boot = do
+	req NeedRepoUrl repoUrlMarker setRepoUrl
 	makePrivDataDir
-	maybe noop (writeFileProtected privDataLocal) $
-		fromMarked privDataMarker reply
-	mainProperties h
+	req NeedPrivData privDataMarker $
+		writeFileProtected privDataLocal
+	req NeedGitPush gitPushMarker $ \_ -> do
+		hin <- dup stdInput
+		hout <- dup stdOutput
+		hClose stdin
+		hClose stdout
+		unlessM (boolSystem "git" [Param "pull", Param "--progress", Param "--upload-pack", Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
+			errorMessage "git pull from client failed"
 
-getUrl :: IO String
-getUrl = maybe nourl return =<< getM get urls
+-- Shim for git push over the propellor ssh channel.
+-- Reads from stdin and sends it to hout;
+-- reads from hin and sends it to stdout.
+gitPush :: Fd -> Fd -> IO ()
+gitPush hin hout = void $ fromstdin `concurrently` tostdout
+  where
+	fromstdin = do
+		h <- fdToHandle hout
+		connect stdin h
+	tostdout = do
+		h <- fdToHandle hin
+		connect h stdout
+	connect fromh toh = do
+		hSetBinaryMode fromh True
+		hSetBinaryMode toh True
+		b <- B.hGetSome fromh 40960
+		if B.null b
+			then do
+				hClose fromh
+				hClose toh
+			else do
+				B.hPut toh b
+				hFlush toh
+				connect fromh toh
+
+hasOrigin :: IO Bool
+hasOrigin = do
+	rs <- lines <$> readProcess "git" ["remote"]
+	return $ "origin" `elem` rs
+
+setRepoUrl :: String -> IO ()
+setRepoUrl "" = return ()
+setRepoUrl url = do
+	subcmd <- ifM hasOrigin (pure "set-url", pure "add")
+	void $ boolSystem "git" [Param "remote", Param subcmd, Param "origin", Param url]
+	-- same as --set-upstream-to, except origin branch
+	-- may not have been pulled yet
+	branch <- getCurrentBranch
+	let branchval s = "branch." ++ branch ++ "." ++ s
+	void $ boolSystem "git" [Param "config", Param (branchval "remote"), Param "origin"]
+	void $ boolSystem "git" [Param "config", Param (branchval "merge"), Param $ "refs/heads/"++branch]
+
+getRepoUrl :: IO (Maybe String)
+getRepoUrl = getM get urls
   where
 	urls = ["remote.deploy.url", "remote.origin.url"]
-	nourl = errorMessage $ "Cannot find deploy url in " ++ show urls
 	get u = do
 		v <- catchMaybeIO $ 
 			takeWhile (/= '\n') 
@@ -321,8 +375,7 @@ getUrl = maybe nourl return =<< getM get urls
 checkDebugMode :: IO ()
 checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
   where
-	go (Just s)
-		| s == "1" = do
+	go (Just "1") = do
 		f <- setFormatter
 			<$> streamHandler stderr DEBUG
 			<*> pure (simpleLogFormatter "[$time] $msg")

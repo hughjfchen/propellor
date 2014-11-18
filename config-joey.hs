@@ -191,9 +191,9 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& JoeySites.annexWebSite "/srv/git/downloads.git"
 		"downloads.kitenet.net"
 		"840760dc-08f0-11e2-8c61-576b7e66acfd"
-		[("usbackup", "ssh://usbackup.kitenet.net/~/lib/downloads/")]
+		[("eubackup", "ssh://eubackup.kitenet.net/~/lib/downloads/")]
 		`requires` Ssh.keyImported SshRsa "joey" (Context "downloads.kitenet.net")
-		`requires` Ssh.knownHost hosts "usbackup.kitenet.net" "joey"
+		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "joey"
 	& JoeySites.gitAnnexDistributor
 		& alias "tmp.kitenet.net"
 	& JoeySites.annexWebSite "/srv/git/joey/tmp.git"

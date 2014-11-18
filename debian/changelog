@@ -1,5 +1,11 @@
 propellor (0.9.3) UNRELEASED; urgency=medium
 
+  * propellor --spin can now be used to update remote hosts, without
+    any central git repository being used. The git repository is updated
+    over propellor's ssh connection to the remote host. The central
+    git repository is still useful for running propellor from cron,
+    but this simplifies getting started with propellor.
+  * The git repo url, if any, is updated whenever propellor --spin is used.
   * Added prosody module, contributed by Félix Sipma.
   * Can be used to configure tor hidden services. Thanks, Félix Sipma.
   * When multiple gpg keys are added, ensure that the privdata file
@@ -7,6 +13,8 @@ propellor (0.9.3) UNRELEASED; urgency=medium
   * Convert GpgKeyId to newtype.
   * DigitalOcean.distroKernel property now reboots into the distribution
     kernel when necessary.
+  * Avoid outputting color setting sequences when not run on a terminal.
+  * Run remote propellor --spin with a controlling terminal.
 
  -- Joey Hess <joeyh@debian.org>  Mon, 10 Nov 2014 11:15:27 -0400
 

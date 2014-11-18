@@ -28,6 +28,7 @@ module Propellor.Types
 import Data.Monoid
 import Control.Applicative
 import System.Console.ANSI
+import System.Posix.Types
 import "mtl" Control.Monad.Reader
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 
@@ -137,7 +138,6 @@ instance ActionResult Result where
 data CmdLine
 	= Run HostName
 	| Spin HostName
-	| Boot HostName
 	| Set PrivDataField Context
 	| Dump PrivDataField Context
 	| Edit PrivDataField Context
@@ -145,5 +145,7 @@ data CmdLine
 	| AddKey String
 	| Continue CmdLine
 	| Chain HostName
+	| Boot HostName
 	| Docker HostName
+	| GitPush Fd Fd
 	deriving (Read, Show, Eq)

@@ -1,5 +1,6 @@
 Propellor's security model is that the hosts it's used to deploy are
-untrusted, and that the central git repository server is untrusted too.
+untrusted, and that the central git repository server, if any,
+is untrusted too.
 
 The only trusted machine is the laptop where you run `propellor --spin`
 to connect to a remote host. And that one only because you have a ssh key

@@ -8,6 +8,21 @@ import System.Log.Logger
 import "mtl" Control.Monad.Reader
 
 import Propellor.Types
+import Utility.Monad
+
+data MessageHandle
+	= ConsoleMessageHandle
+	| TextMessageHandle
+
+mkMessageHandle :: IO MessageHandle
+mkMessageHandle = ifM (hIsTerminalDevice stdout)
+	( return ConsoleMessageHandle
+	, return TextMessageHandle
+	)
+
+whenConsole :: MessageHandle -> IO () -> IO ()
+whenConsole ConsoleMessageHandle a = a
+whenConsole _ _ = return ()
 
 -- | Shows a message while performing an action, with a colored status
 -- display.
@@ -21,45 +36,54 @@ actionMessageOn = actionMessage' . Just
 
 actionMessage' :: (MonadIO m, ActionResult r) => Maybe HostName -> Desc -> m r -> m r
 actionMessage' mhn desc a = do
-	liftIO $ do
+	h <- liftIO mkMessageHandle
+	liftIO $ whenConsole h $ do
 		setTitle $ "propellor: " ++ desc
 		hFlush stdout
 
 	r <- a
 
 	liftIO $ do
-		setTitle "propellor: running"
-		showhn mhn
+		whenConsole h $
+			setTitle "propellor: running"
+		showhn h mhn
 		putStr $ desc ++ " ... "
 		let (msg, intensity, color) = getActionResult r
-		colorLine intensity color msg
+		colorLine h intensity color msg
 		hFlush stdout
 
 	return r
   where
-	showhn Nothing = return ()
-	showhn (Just hn) = do
-		setSGR [SetColor Foreground Dull Cyan]
+	showhn _ Nothing = return ()
+	showhn h (Just hn) = do
+		whenConsole h $
+			setSGR [SetColor Foreground Dull Cyan]
 		putStr (hn ++ " ")
-		setSGR []
+		whenConsole h $
+			setSGR []
 
 warningMessage :: MonadIO m => String -> m ()
-warningMessage s = liftIO $ colorLine Vivid Magenta $ "** warning: " ++ s
+warningMessage s = liftIO $ do
+	h <- mkMessageHandle
+	colorLine h Vivid Magenta $ "** warning: " ++ s
 
-colorLine :: ColorIntensity -> Color -> String -> IO ()
-colorLine intensity color msg = do
-	setSGR [SetColor Foreground intensity color]
+errorMessage :: MonadIO m => String -> m a
+errorMessage s = liftIO $ do
+	h <- mkMessageHandle
+	colorLine h Vivid Red $ "** error: " ++ s
+	error "Cannot continue!"
+
+colorLine :: MessageHandle -> ColorIntensity -> Color -> String -> IO ()
+colorLine h intensity color msg = do
+	whenConsole h $
+		setSGR [SetColor Foreground intensity color]
 	putStr msg
-	setSGR []
+	whenConsole h $
+		setSGR []
 	-- Note this comes after the color is reset, so that
 	-- the color set and reset happen in the same line.
 	putStrLn ""
 	hFlush stdout
-
-errorMessage :: String -> IO a
-errorMessage s = do
-	liftIO $ colorLine Vivid Red $ "** error: " ++ s
-	error "Cannot continue!"
 
 -- | Causes a debug message to be displayed when PROPELLOR_DEBUG=1
 debug :: [String] -> IO ()
