@@ -12,7 +12,7 @@ import Control.Exception (bracket)
 import System.Posix.IO
 import Data.Time.Clock.POSIX
 import Control.Concurrent.Async
-import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as B
 import System.Process (std_in, std_out)
 
 import Propellor
