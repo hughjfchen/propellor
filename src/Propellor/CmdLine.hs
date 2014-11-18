@@ -13,6 +13,7 @@ import System.Posix.IO
 import Data.Time.Clock.POSIX
 
 import Propellor
+import Propellor.Protocol
 import Propellor.PrivData.Paths
 import Propellor.Gpg
 import qualified Propellor.Property.Docker as Docker
@@ -180,35 +181,37 @@ updateFirst cmdline next = do
 getCurrentGitSha1 :: String -> IO String
 getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
 
+-- spin handles deploying propellor to a remote host, if it's not already
+-- installed there, or updating it if it is. Once the remote propellor is
+-- updated, it's run.
 spin :: HostName -> Host -> IO ()
 spin hn hst = do
-	url <- getUrl
 	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	void $ boolSystem "git" [Param "push"]
 	cacheparams <- toCommand <$> sshCachingParams hn
-	go cacheparams url =<< hostprivdata
+	go cacheparams =<< hostprivdata
 	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, runcmd]))) $
 		error $ "remote propellor failed (running: " ++ runcmd ++")"
   where
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData
 
-	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
-		let finish = do
-			senddata toh "privdata" privDataMarker privdata
-			hClose toh
-			
-			-- Display remaining output.
-			void $ tryIO $ forever $
-				showremote =<< hGetLine fromh
-			hClose fromh
-		status <- getstatus fromh `catchIO` (const $ errorMessage "protocol error (perhaps the remote propellor failed to run?)")
-		case status of
-			Ready -> finish
-			NeedGitClone -> do
+	go cacheparams privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
+		status <- getMarked fromh statusMarker
+		case readish =<< status of
+			Just Ready -> do
+				sendprivdata toh "privdata" privDataMarker privdata
+				hClose toh
+				
+				-- Display remaining output.
+				void $ tryIO $ forever $
+					showremote =<< hGetLine fromh
+				hClose fromh
+			Just NeedGitClone -> do
 				hClose toh
 				hClose fromh
-				sendGitClone hn url
-				go cacheparams url privdata
+				sendGitClone hn =<< getUrl
+				go cacheparams privdata
+			Nothing -> error $ "protocol error; received: " ++ show status
 	
 	user = "root@"++hn
 
@@ -232,17 +235,9 @@ spin hn hst = do
 	runcmd = mkcmd
 		[ "cd " ++ localdir ++ " && ./propellor --run " ++ hn ]
 
-	getstatus :: Handle -> IO BootStrapStatus
-	getstatus h = do
-		l <- hGetLine h
-		case readish =<< fromMarked statusMarker l of
-			Nothing -> do
-				showremote l
-				getstatus h
-			Just status -> return status
-	
 	showremote s = putStrLn s
-	senddata toh desc marker s = void $
+
+	sendprivdata toh desc marker s = void $
 		actionMessage ("Sending " ++ desc ++ " (" ++ show (length s) ++ " bytes) to " ++ hn) $ do
 			sendMarked toh marker s
 			return True
@@ -267,50 +262,17 @@ sendGitClone hn url = void $ actionMessage ("Pushing git repository to " ++ hn) 
 		, "rm -f " ++ remotebundle
 		, "git remote add origin " ++ url
 		-- same as --set-upstream-to, except origin branch
-		-- has not been pulled yet
+		-- may not have been pulled yet
 		, "git config branch."++branch++".remote origin"
 		, "git config branch."++branch++".merge refs/heads/"++branch
 		]
 
-data BootStrapStatus = Ready | NeedGitClone
-	deriving (Read, Show, Eq)
-
-type Marker = String
-type Marked = String
-
-statusMarker :: Marker
-statusMarker = "STATUS"
-
-privDataMarker :: String
-privDataMarker = "PRIVDATA "
-
-toMarked :: Marker -> String -> String
-toMarked marker = intercalate "\n" . map (marker ++) . lines
-
-sendMarked :: Handle -> Marker -> String -> IO ()
-sendMarked h marker s = do
-	-- Prefix string with newline because sometimes a
-	-- incomplete line is output.
-	hPutStrLn h ("\n" ++ toMarked marker s)
-	hFlush h
-
-fromMarked :: Marker -> Marked -> Maybe String
-fromMarked marker s
-	| null matches = Nothing
-	| otherwise = Just $ intercalate "\n" $
-		map (drop len) matches
-  where
-	len = length marker
-	matches = filter (marker `isPrefixOf`) $ lines s
-
 boot :: IO ()
 boot = do
-	sendMarked stdout statusMarker $ show Ready
-	reply <- hGetContentsStrict stdin
-
+	sendMarked stdout statusMarker (show Ready)
 	makePrivDataDir
-	maybe noop (writeFileProtected privDataLocal) $
-		fromMarked privDataMarker reply
+	maybe noop (writeFileProtected privDataLocal)
+		=<< getMarked stdin privDataMarker
 
 getUrl :: IO String
 getUrl = maybe nourl return =<< getM get urls
