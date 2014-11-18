@@ -245,7 +245,7 @@ spin hn hst = do
 			hClose toh
 			-- Display remaining output.
 			void $ tryIO $ forever $
-				showremote =<< hGetLine fromh
+				putStrLn =<< hGetLine fromh
 			hClose fromh
 		dispatch Nothing = return ()
 	
@@ -270,8 +270,6 @@ spin hn hst = do
 
 	runcmd = mkcmd
 		[ "cd " ++ localdir ++ " && ./propellor --continue " ++ shellEscape (show (SimpleRun hn)) ]
-
-	showremote s = putStrLn s
 
 	sendprivdata toh privdata = void $
 		actionMessage ("Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn) $ do
