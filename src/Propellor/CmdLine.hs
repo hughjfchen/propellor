@@ -216,15 +216,11 @@ spin hn hst = do
 					loop
 				Just NeedGitPush -> do
 					sendMarked toh gitPushMarker ""
-					void $ hGetLine fromh
 					let p = (proc "git" ["upload-pack", "."])
 						{ std_in = UseHandle fromh
 						, std_out = UseHandle toh
 						}
 					(Nothing, Nothing, Nothing, h) <- createProcess p
-					{-forever $ do
-						b <- B.hGetSome fromh 40960
-						hPutStrLn stderr $ show ("<<<", b)-}
 					unlessM ((==) ExitSuccess <$> waitForProcess h) $
 						errorMessage "git upload-pack failed"
 					-- no more protocol possible after
@@ -330,7 +326,6 @@ gitPush hin hout = void $ fromstdin `concurrently` tostdout
 		hSetBinaryMode fromh True
 		hSetBinaryMode toh True
 		b <- B.hGetSome fromh 40960
-		hPutStrLn stderr $ show ("from", fromh, "to", toh, b)
 		if B.null b
 			then do
 				hClose fromh

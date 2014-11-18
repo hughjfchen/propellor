@@ -1,7 +1,7 @@
 -- | This is a simple line-based protocol used for communication between
 -- a local and remote propellor. It's sent over a ssh channel, and lines of
 -- the protocol can be interspersed with other, non-protocol lines
--- that should just be passed through to be displayed.
+-- that should be ignored.
 
 module Propellor.Protocol where
 
@@ -48,9 +48,7 @@ getMarked h marker = go =<< catchMaybeIO (hGetLine h)
   where
 	go Nothing = return Nothing
 	go (Just l) = case fromMarked marker l of
-		Nothing -> do
-			putStrLn l
-			getMarked h marker
+		Nothing -> getMarked h marker
 		Just v -> return (Just v)
 
 req :: Stage -> Marker -> (String -> IO ()) -> IO ()
