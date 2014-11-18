@@ -96,6 +96,8 @@ defaultMain hostlist = do
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin hn) = withhost hn $ spin hn
+	go False cmdline@(SimpleRun hn) = buildFirst cmdline $
+		go False (Run hn)
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
 		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
@@ -278,7 +280,7 @@ spin hn hst = do
 		]
 
 	runcmd = mkcmd
-		[ "cd " ++ localdir ++ " && ./propellor --run " ++ hn ]
+		[ "cd " ++ localdir ++ " && ./propellor --continue " ++ shellEscape (show (SimpleRun hn)) ]
 
 	showremote s = putStrLn s
 

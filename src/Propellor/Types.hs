@@ -138,6 +138,7 @@ instance ActionResult Result where
 data CmdLine
 	= Run HostName
 	| Spin HostName
+	| SimpleRun HostName
 	| Set PrivDataField Context
 	| Dump PrivDataField Context
 	| Edit PrivDataField Context
