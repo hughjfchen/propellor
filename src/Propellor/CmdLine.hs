@@ -12,7 +12,7 @@ import Control.Exception (bracket)
 import System.Posix.IO
 import Data.Time.Clock.POSIX
 import Control.Concurrent.Async
-import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString as B
 import System.Process (std_in, std_out)
 
 import Propellor
@@ -317,10 +317,17 @@ gitPush hin hout = void $ fromstdin `concurrently` tostdout
   where
 	fromstdin = do
 		h <- fdToHandle hout
-		B.getContents >>= B.hPut h
+		connect stdin h
 	tostdout = do
 		h <- fdToHandle hin
-		B.hGetContents h >>= B.putStr
+		connect h stdout
+	connect fromh toh = do
+		b <- B.hGetSome fromh 40960
+		unless (B.null b) $ do
+			hPutStrLn stderr $ show ("got", fromh, b)
+			B.hPut toh b
+			hFlush toh
+			connect fromh toh
 
 hasOrigin :: IO Bool
 hasOrigin = do
