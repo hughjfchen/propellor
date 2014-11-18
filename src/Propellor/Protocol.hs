@@ -28,7 +28,7 @@ gitPushMarker :: String
 gitPushMarker = "GITPUSH"
 
 toMarked :: Marker -> String -> String
-toMarked marker = intercalate "\n" . map (marker ++) . lines
+toMarked marker = ++
 
 fromMarked :: Marker -> Marked -> Maybe String
 fromMarked marker s
