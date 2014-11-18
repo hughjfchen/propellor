@@ -212,7 +212,7 @@ spin hn hst = do
 					loop
 				Just NeedGitPush -> do
 					sendMarked toh gitPushMarker ""
-					unlessM (boolSystem "git" [Param "send-pack", Param "--thin", Param "."]) $
+					unlessM (boolSystem "git" [Param "upload-pack", Param "."]) $
 						warningMessage "git send-pack failed"
 					-- no more protocol possible after
 					-- git push
