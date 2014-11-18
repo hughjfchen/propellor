@@ -91,7 +91,7 @@ defaultMain hostlist = do
 		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
 		)
-	go False (Boot _) = onlyProcess sync
+	go False (Boot _) = onlyProcess boot
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
@@ -229,7 +229,7 @@ spin hn hst = do
 		]
 
 	spincmd = mkcmd
-		[ "cd " ++ localdir ++ " && ./propellor --spin " ++ hn ]
+		[ "cd " ++ localdir ++ " && ./propellor --continue " ++ show (Chain hn) ]
 
 	getstatus :: Handle -> IO BootStrapStatus
 	getstatus h = do
@@ -302,8 +302,8 @@ fromMarked marker s
 	len = length marker
 	matches = filter (marker `isPrefixOf`) $ lines s
 
-sync :: IO ()
-sync = do
+boot :: IO ()
+boot = do
 	sendMarked stdout statusMarker $ show Ready
 	reply <- hGetContentsStrict stdin
 
