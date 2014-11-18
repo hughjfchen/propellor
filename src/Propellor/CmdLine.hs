@@ -281,8 +281,16 @@ update = do
 		hout <- dup stdOutput
 		hClose stdin
 		hClose stdout
-		unlessM (boolSystem "git" [Param "pull", Param "--progress", Param "--upload-pack", Param $ "./propellor --continue " ++ show (GitPush hin hout), Param "."]) $
+		unlessM (boolSystem "git" (pullparams hin hout)) $
 			errorMessage "git pull from client failed"
+  where
+	pullparams hin hout =
+		[ Param "pull"
+		, Param "--progress"
+		, Param "--upload-pack"
+		, Param $ "./propellor --continue " ++ show (GitPush hin hout)
+		, Param "."
+		]
 
 -- Shim for git push over the propellor ssh channel.
 -- Reads from stdin and sends it to hout;
