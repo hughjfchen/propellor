@@ -211,6 +211,7 @@ spin hn hst = do
 					sendprivdata toh privdata
 					loop
 				Just NeedGitPush -> do
+					print "NeedGitPush"
 					sendMarked toh gitPushMarker ""
 					unlessM (boolSystem "git" [Param "send-pack", Param "--thin", Param "."]) $
 						warningMessage "git send-pack failed"
