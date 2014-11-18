@@ -6,7 +6,6 @@ import System.Console.ANSI
 import System.IO
 import System.Log.Logger
 import "mtl" Control.Monad.Reader
-import Data.Maybe
 import Control.Applicative
 
 import Propellor.Types
@@ -18,7 +17,7 @@ data MessageHandle
 	| TextMessageHandle
 
 mkMessageHandle :: IO MessageHandle
-mkMessageHandle = ifM (isJust <$> getEnv "TERM")
+mkMessageHandle = ifM (hIsTerminalDevice stdout)
 	( return ConsoleMessageHandle
 	, return TextMessageHandle
 	)
