@@ -144,6 +144,6 @@ data CmdLine
 	| AddKey String
 	| Continue CmdLine
 	| Chain HostName
-	| Sync
+	| Boot HostName
 	| Docker HostName
 	deriving (Read, Show, Eq)

@@ -41,7 +41,7 @@ processCmdLine = go =<< getArgs
   where
 	go ("--help":_) = usage
 	go ("--spin":h:[]) = return $ Spin h
-	go ("--sync":[]) = return $ Sync
+	go ("--boot":h:[]) = return $ Boot h
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--dump":f:c:[]) = withprivfield f c Dump
@@ -91,7 +91,7 @@ defaultMain hostlist = do
 		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
 		)
-	go False Sync = onlyProcess sync
+	go False (Boot _) = onlyProcess sync
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
@@ -223,7 +223,7 @@ spin hn hst = do
 		, "else " ++ intercalate " && "
 			[ "cd " ++ localdir
 			, "if ! test -x ./propellor; then make deps build; fi"
-			, "./propellor --sync"
+			, "./propellor --boot " ++ hn
 			]
 		, "fi"
 		]
