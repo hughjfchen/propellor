@@ -323,6 +323,8 @@ gitPush hin hout = void $ fromstdin `concurrently` tostdout
 		h <- fdToHandle hin
 		connect h stdout
 	connect fromh toh = do
+		hSetBinaryMode fromh True
+		hSetBinaryMode toh True
 		b <- B.hGetSome fromh 40960
 		hPutStrLn stderr $ show ("from", fromh, "to", toh, b)
 		if B.null b
