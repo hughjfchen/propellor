@@ -24,17 +24,18 @@ privDataMarker = "PRIVDATA "
 toMarked :: Marker -> String -> String
 toMarked marker = intercalate "\n" . map (marker ++) . lines
 
-sendMarked :: Handle -> Marker -> String -> IO ()
-sendMarked h marker s = do
-	-- Prefix string with newline because sometimes a
-	-- incomplete line is output.
-	hPutStrLn h ("\n" ++ toMarked marker s)
-	hFlush h
-
 fromMarked :: Marker -> Marked -> Maybe String
 fromMarked marker s
 	| marker `isPrefixOf` s = Just $ drop (length marker) s
 	| otherwise = Nothing
+
+sendMarked :: Handle -> Marker -> String -> IO ()
+sendMarked h marker s = do
+	-- Prefix string with newline because sometimes a
+	-- incomplete line has been output, and the marker needs to
+	-- come at the start of a line.
+	hPutStrLn h ("\n" ++ toMarked marker s)
+	hFlush h
 
 getMarked :: Handle -> Marker -> IO (Maybe String)
 getMarked h marker = go =<< catchMaybeIO (hGetLine h)
