@@ -218,7 +218,8 @@ spin hn hst = do
 					sendMarked toh gitPushMarker ""
 					let p = (proc "git" ["upload-pack", "."])
 						{ std_in = UseHandle fromh
-						, std_out = UseHandle toh }
+						, std_out = UseHandle toh
+						}
 					(Nothing, Nothing, Nothing, h) <- createProcess p
 					unlessM ((==) ExitSuccess <$> waitForProcess h) $
 						warningMessage "git upload-pack failed"
