@@ -285,7 +285,7 @@ spin hn hst = do
 
 -- Initial git clone, used for bootstrapping.
 sendGitClone :: HostName -> IO ()
-sendGitClone hn = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
+sendGitClone hn = void $ actionMessage ("Cloning git repository to " ++ hn) $ do
 	branch <- getCurrentBranch
 	cacheparams <- sshCachingParams hn
 	withTmpFile "propellor.git" $ \tmp _ -> allM id
