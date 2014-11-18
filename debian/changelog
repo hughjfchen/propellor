@@ -9,6 +9,9 @@ propellor (0.9.3) UNRELEASED; urgency=medium
     kernel when necessary.
   * Avoid outputting color setting sequences when not run on a terminal.
   * Run remote propellor --spin with a controlling terminal.
+  * The git repo url is updated whenever propellor --spin is used,
+    and a central git repo does not need to be set up before using --spin
+    for the first time.
 
  -- Joey Hess <joeyh@debian.org>  Mon, 10 Nov 2014 11:15:27 -0400
 
