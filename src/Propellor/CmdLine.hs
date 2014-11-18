@@ -10,7 +10,6 @@ import System.Log.Handler.Simple
 import System.PosixCompat
 import Control.Exception (bracket)
 import System.Posix.IO
-import Data.Time.Clock.POSIX
 import Control.Concurrent.Async
 import qualified Data.ByteString as B
 import System.Process (std_in, std_out)
@@ -20,11 +19,11 @@ import Propellor.Protocol
 import Propellor.PrivData.Paths
 import Propellor.Gpg
 import Propellor.Git
+import Propellor.Ssh
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Docker.Shim as DockerShim
 import Utility.FileMode
 import Utility.SafeCommand
-import Utility.UserInfo
 
 usage :: IO a
 usage = do
@@ -355,38 +354,3 @@ checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
 		updateGlobalLogger rootLoggerName $ 
 			setLevel DEBUG .  setHandlers [f]
 	go _ = noop
-
--- Parameters can be passed to both ssh and scp, to enable a ssh connection
--- caching socket.
---
--- If the socket already exists, check if its mtime is older than 10
--- minutes, and if so stop that ssh process, in order to not try to
--- use an old stale connection. (atime would be nicer, but there's
--- a good chance a laptop uses noatime)
-sshCachingParams :: HostName -> IO [CommandParam]
-sshCachingParams hn = do
-	home <- myHomeDir
-	let cachedir = home </> ".ssh" </> "propellor"
-	createDirectoryIfMissing False cachedir
-	let socketfile = cachedir </> hn ++ ".sock"
-	let ps = 
-		[ Param "-o", Param ("ControlPath=" ++ socketfile)
-		, Params "-o ControlMaster=auto -o ControlPersist=yes"
-		]
-
-	maybe noop (expireold ps socketfile)
-		=<< catchMaybeIO (getFileStatus socketfile)
-	
-	return ps
-		
-  where
-	expireold ps f s = do
-		now <- truncate <$> getPOSIXTime :: IO Integer
-		if modificationTime s > fromIntegral now - tenminutes
-			then touchFile f
-			else do
-				void $ boolSystem "ssh" $
-					[ Params "-O stop" ] ++ ps ++
-					[ Param "localhost" ]
-				nukeFile f
-	tenminutes = 600

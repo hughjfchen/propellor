@@ -116,6 +116,7 @@ Library
     Propellor.Git
     Propellor.Gpg
     Propellor.SimpleSh
+    Propellor.Ssh
     Propellor.PrivData.Paths
     Propellor.Protocol
     Propellor.Property.Docker.Shim
