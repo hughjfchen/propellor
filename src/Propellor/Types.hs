@@ -137,7 +137,6 @@ instance ActionResult Result where
 data CmdLine
 	= Run HostName
 	| Spin HostName
-	| Boot HostName
 	| Set PrivDataField Context
 	| Dump PrivDataField Context
 	| Edit PrivDataField Context
@@ -145,5 +144,6 @@ data CmdLine
 	| AddKey String
 	| Continue CmdLine
 	| Chain HostName
+	| Sync
 	| Docker HostName
 	deriving (Read, Show, Eq)

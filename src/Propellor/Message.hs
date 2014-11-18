@@ -6,25 +6,19 @@ import System.Console.ANSI
 import System.IO
 import System.Log.Logger
 import "mtl" Control.Monad.Reader
-import Control.Applicative
-import Data.Maybe
 
 import Propellor.Types
 import Utility.Monad
-import Utility.Env
 
 data MessageHandle
 	= ConsoleMessageHandle
 	| TextMessageHandle
 
 mkMessageHandle :: IO MessageHandle
-mkMessageHandle = ifM (hIsTerminalDevice stdout <||> (isJust <$> getEnv "TERM"))
+mkMessageHandle = ifM (hIsTerminalDevice stdout)
 	( return ConsoleMessageHandle
 	, return TextMessageHandle
 	)
-
-forceConsoleMode :: IO ()
-forceConsoleMode = void $ setEnv "TERM" "vt100" False
 
 whenConsole :: MessageHandle -> IO () -> IO ()
 whenConsole ConsoleMessageHandle a = a

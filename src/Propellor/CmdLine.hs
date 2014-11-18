@@ -41,7 +41,7 @@ processCmdLine = go =<< getArgs
   where
 	go ("--help":_) = usage
 	go ("--spin":h:[]) = return $ Spin h
-	go ("--boot":h:[]) = return $ Boot h
+	go ("--sync":[]) = return $ Sync
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--dump":f:c:[]) = withprivfield f c Dump
@@ -91,7 +91,7 @@ defaultMain hostlist = do
 		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
 		)
-	go False (Boot hn) = onlyProcess $ withhost hn boot
+	go False Sync = onlyProcess sync
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
@@ -186,6 +186,8 @@ spin hn hst = do
 	void $ boolSystem "git" [Param "push"]
 	cacheparams <- toCommand <$> sshCachingParams hn
 	go cacheparams url =<< hostprivdata
+	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, spincmd]))) $
+		error "remote propellor failed"
   where
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData
 
@@ -209,7 +211,9 @@ spin hn hst = do
 	
 	user = "root@"++hn
 
-	bootstrapcmd = shellWrap $ intercalate " ; "
+	mkcmd = shellWrap . intercalate " ; "
+
+	bootstrapcmd = mkcmd
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then " ++ intercalate " && "
 			[ "apt-get update"
@@ -219,10 +223,13 @@ spin hn hst = do
 		, "else " ++ intercalate " && "
 			[ "cd " ++ localdir
 			, "if ! test -x ./propellor; then make deps build; fi"
-			, "./propellor --boot " ++ hn
+			, "./propellor --sync"
 			]
 		, "fi"
 		]
+
+	spincmd = mkcmd
+		[ "cd " ++ localdir ++ " && ./propellor --spin " ++ hn ]
 
 	getstatus :: Handle -> IO BootStrapStatus
 	getstatus h = do
@@ -295,16 +302,14 @@ fromMarked marker s
 	len = length marker
 	matches = filter (marker `isPrefixOf`) $ lines s
 
-boot :: Host -> IO ()
-boot h = do
+sync :: IO ()
+sync = do
 	sendMarked stdout statusMarker $ show Ready
 	reply <- hGetContentsStrict stdin
 
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
 		fromMarked privDataMarker reply
-	forceConsoleMode
-	mainProperties h
 
 getUrl :: IO String
 getUrl = maybe nourl return =<< getM get urls
