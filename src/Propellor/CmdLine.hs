@@ -310,7 +310,7 @@ boot = do
 		hout <- dup stdOutput
 		hClose stdin
 		hClose stdout
-		unlessM (boolSystem "git" [Param "pull", Param "--upload-pack", Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
+		unlessM (boolSystem "git" [Param "pull", Param "--progress", Param "--upload-pack", Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
 			errorMessage "git pull from client failed"
 
 -- Shim for git push over the propellor ssh channel.
