@@ -19,7 +19,7 @@ You can add a central git repository to your existing propellor setup easily:
    `Cron.runPropellor "30 * * * *"`
 
 3. Let your hosts know about the changed configuration (including the url
-   to the central repository), by running `proellor --spin $HOST` for each
+   to the central repository), by running `propellor --spin $HOST` for each
    of your hosts.
 
 Now the hosts will automatically update every 30 minutes, and you can
