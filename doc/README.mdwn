@@ -48,8 +48,7 @@ see [configuration for the Haskell newbie](https://propellor.branchable.com/hask
    You can start by not adding any properties, or only a few.
 6. Pick a host and run: `propellor --spin $HOST`
 7. Now you have a simple propellor deployment, but it doesn't do
-   much to the host yet, besides installing propellor.
-
+   much to the host yet, besides installing propellor.  
    So, edit `~/.propellor/config.hs` to configure the host (maybe
    start with a few simple properties), and re-run step 6.
    Repeat until happy and move on to the next host. :)
