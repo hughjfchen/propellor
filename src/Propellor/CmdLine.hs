@@ -100,7 +100,9 @@ defaultMain hostlist = do
 		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
 		)
-	go False (Boot _) = onlyProcess boot
+	go False (Boot _) = do
+		forceConsole
+		onlyProcess boot
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
@@ -196,18 +198,18 @@ getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref
 -- updated, it's run.
 spin :: HostName -> Host -> IO ()
 spin hn hst = do
-	void $ actionMessage "git commit (signed)" $
+	void $ actionMessage "Git commit (signed)" $
 		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	-- Push to central origin repo first, if possible.
 	-- The remote propellor will pull from there, which avoids
 	-- us needing to send stuff directly to the remote host.
 	whenM hasOrigin $
-		void $ actionMessage "pushing to central git repository" $
+		void $ actionMessage "Push to central git repository" $
 			boolSystem "git" [Param "push"]
 	
 	cacheparams <- toCommand <$> sshCachingParams hn
 	comm cacheparams =<< hostprivdata
-	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, runcmd]))) $
+	unlessM (boolSystem "ssh" (map Param (cacheparams ++ [user, runcmd]))) $
 		error $ "remote propellor failed (running: " ++ runcmd ++")"
   where
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData

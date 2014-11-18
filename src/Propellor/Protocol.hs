@@ -49,7 +49,8 @@ getMarked h marker = go =<< catchMaybeIO (hGetLine h)
 	go Nothing = return Nothing
 	go (Just l) = case fromMarked marker l of
 		Nothing -> do
-			hPutStrLn stderr l
+			unless (null l) $
+				hPutStrLn stderr l
 			getMarked h marker
 		Just v -> return (Just v)
 
