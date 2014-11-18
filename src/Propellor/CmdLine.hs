@@ -217,10 +217,13 @@ spin hn hst = do
 				Just NeedGitPush -> do
 					sendMarked toh gitPushMarker ""
 					let p = (proc "git" ["upload-pack", "."])
-						{ std_in = UseHandle fromh
-						, std_out = UseHandle toh
+						-- { std_in = UseHandle fromh
+						{ std_out = UseHandle toh
 						}
 					(Nothing, Nothing, Nothing, h) <- createProcess p
+					forever $ do
+						b <- B.hGetSome fromh 40960
+						hPutStrLn stderr $ show ("<<<", b)
 					unlessM ((==) ExitSuccess <$> waitForProcess h) $
 						errorMessage "git upload-pack failed"
 					-- no more protocol possible after
