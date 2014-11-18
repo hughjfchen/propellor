@@ -202,7 +202,6 @@ spin hn hst = do
 	go cacheparams privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let loop = do
 			status <- getMarked fromh statusMarker
-			print (">>", status)
 			case readish =<< status of
 				Just NeedRepoUrl -> do
 					sendMarked toh repoUrlMarker
@@ -299,7 +298,7 @@ boot = do
 		hClose stdin
 		hout <- dup stdOutput
 		hClose stdout
-		unlessM (boolSystem "git" [Param "pull", Param $ "--upload=pack=./propellor gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
+		unlessM (boolSystem "git" [Param "pull", Param $ "--upload=pack=./propellor --gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
 			warningMessage "git pull from client failed"
 
 -- Shim for git push over the propellor ssh channel.
