@@ -364,3 +364,4 @@ sshCachingParams hn = do
 					[ Param "localhost" ]
 				nukeFile f
 	tenminutes = 600
+sshCachingParams hn = return []
