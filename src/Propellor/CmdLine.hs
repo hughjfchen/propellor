@@ -196,12 +196,14 @@ getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref
 -- updated, it's run.
 spin :: HostName -> Host -> IO ()
 spin hn hst = do
-	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
+	void $ actionMessage "git commit (signed)" $
+		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	-- Push to central origin repo first, if possible.
 	-- The remote propellor will pull from there, which avoids
 	-- us needing to send stuff directly to the remote host.
 	whenM hasOrigin $
-		void $ boolSystem "git" [Param "push"]
+		void $ actionMessage "pushing to central git repository" $
+			boolSystem "git" [Param "push"]
 	
 	cacheparams <- toCommand <$> sshCachingParams hn
 	comm cacheparams =<< hostprivdata
@@ -212,7 +214,7 @@ spin hn hst = do
 
 	comm cacheparams privdata = 
 		withBothHandles createProcessSuccess
-			(proc "ssh" $ cacheparams ++ [user, bootstrapcmd])
+			(proc "ssh" $ cacheparams ++ ["-t", user, bootstrapcmd])
 			(comm' cacheparams privdata)
 	comm' cacheparams privdata (toh, fromh) = loop
 	  where
