@@ -187,7 +187,7 @@ spin hn hst = do
 	cacheparams <- toCommand <$> sshCachingParams hn
 	go cacheparams url =<< hostprivdata
 	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, spincmd]))) $
-		error "remote propellor failed"
+		error $ "remote propellor failed (running: " ++ spincmd ++")"
   where
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData
 
