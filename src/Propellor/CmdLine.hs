@@ -315,8 +315,10 @@ boot = do
 		hout <- dup stdOutput
 		hClose stdin
 		hClose stdout
-		unlessM (boolSystem "git" [Param "pull", Param "--progress", Param "--upload-pack", Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
-			errorMessage "git pull from client failed"
+		unlessM (boolSystem "git" [Param "fetch", Param "--progress", Param "--upload-pack", Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
+			errorMessage "git fetch from client failed"
+		unlessM (boolSystem "git" [Param "merge", Param "--quiet", Param "FETCH_HEAD"]) $
+			errorMessage "git merge failed"
 
 -- Shim for git push over the propellor ssh channel.
 -- Reads from stdin and sends it to hout;
