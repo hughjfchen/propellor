@@ -142,7 +142,10 @@ getCurrentBranch = takeWhile (/= '\n')
 	<$> readProcess "git" ["symbolic-ref", "--short", "HEAD"]
 
 updateFirst :: CmdLine -> IO () -> IO ()
-updateFirst cmdline next = do
+updateFirst cmdline next = ifM hasOrigin (updateFirst' cmdline next, next)
+
+updateFirst' :: CmdLine -> IO () -> IO ()
+updateFirst' cmdline next = do
 	branchref <- getCurrentBranch
 	let originbranch = "origin" </> branchref
 
@@ -319,11 +322,15 @@ gitPush hin hout = void $ fromstdin `concurrently` tostdout
 		h <- fdToHandle hout
 		B.hGetContents h >>= B.putStr
 
+hasOrigin :: IO Bool
+hasOrigin = do
+	rs <- lines <$> readProcess "git" ["remote"]
+	return $ "origin" `elem` rs
+
 setRepoUrl :: String -> IO ()
 setRepoUrl "" = return ()
 setRepoUrl url = do
-	rs <- lines <$> readProcess "git" ["remote"]
-	let subcmd = if "origin" `elem` rs then "set-url" else "add"
+	subcmd <- ifM hasOrigin (pure "set-url", pure "add")
 	void $ boolSystem "git" [Param "remote", Param subcmd, Param "origin", Param url]
 	-- same as --set-upstream-to, except origin branch
 	-- may not have been pulled yet
