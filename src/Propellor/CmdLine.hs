@@ -306,7 +306,7 @@ boot = do
 -- reads from the second fd and sends it to stdout.
 gitPush :: Fd -> Fd -> IO ()
 gitPush hin hout = do
-	print ("gitPush", hin, hout)
+	hPutStrLn stderr $ show ("gitPush", hin, hout)
 	void $ fromstdin `concurrently` tostdout
   where
 	fromstdin = do
