@@ -222,7 +222,7 @@ spin hn hst = do
 					void $ tryIO $ forever $
 						showremote =<< hGetLine fromh
 					hClose fromh
-				Nothing -> error $ "protocol error; received: " ++ show status
+				Nothing -> return ()
 		loop
 	
 	user = "root@"++hn
