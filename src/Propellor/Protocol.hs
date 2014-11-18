@@ -9,7 +9,7 @@ import Data.List
 
 import Propellor
 
-data BootStrapStatus = Ready | NeedGitClone | RepoUrl
+data Stage = Ready | NeedGitClone | NeedRepoUrl | NeedPrivData
 	deriving (Read, Show, Eq)
 
 type Marker = String
@@ -49,3 +49,8 @@ getMarked h marker = go =<< catchMaybeIO (hGetLine h)
 			putStrLn l
 			getMarked h marker
 		Just v -> return (Just v)
+
+req :: Stage -> Marker -> (String -> IO ()) -> IO ()
+req stage marker a = do
+	sendMarked stdout statusMarker (show stage)
+	maybe noop a =<< getMarked stdin marker

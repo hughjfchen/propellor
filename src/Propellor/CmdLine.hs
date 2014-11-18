@@ -196,28 +196,34 @@ spin hn hst = do
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData
 
 	go cacheparams privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
-		let comm = do
+		let loop = do
 			status <- getMarked fromh statusMarker
 			case readish =<< status of
-				Just RepoUrl -> do
+				Just NeedRepoUrl -> do
 					sendMarked toh repoUrlMarker
 						=<< (fromMaybe "" <$> getRepoUrl)
-					comm
+					loop
+				Just NeedPrivData -> do
+					sendprivdata toh privdata
+					loop
+				Just NeedGitClone -> do
+					hClose toh
+					hClose fromh
+					sendGitClone hn
+					go cacheparams privdata
+				-- Ready is only sent by old versions of
+				-- propellor. They expect to get privdata,
+				-- and then no more protocol communication.
 				Just Ready -> do
-					sendprivdata toh "privdata" privDataMarker privdata
+					sendprivdata toh privdata
 					hClose toh
 					
 					-- Display remaining output.
 					void $ tryIO $ forever $
 						showremote =<< hGetLine fromh
 					hClose fromh
-				Just NeedGitClone -> do
-					hClose toh
-					hClose fromh
-					sendGitClone hn
-					go cacheparams privdata
 				Nothing -> error $ "protocol error; received: " ++ show status
-		comm
+		loop
 	
 	user = "root@"++hn
 
@@ -243,9 +249,9 @@ spin hn hst = do
 
 	showremote s = putStrLn s
 
-	sendprivdata toh desc marker s = void $
-		actionMessage ("Sending " ++ desc ++ " (" ++ show (length s) ++ " bytes) to " ++ hn) $ do
-			sendMarked toh marker s
+	sendprivdata toh privdata = void $
+		actionMessage ("Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn) $ do
+			sendMarked toh privDataMarker privdata
 			return True
 
 -- Initial git clone, used for bootstrapping.
@@ -273,13 +279,10 @@ sendGitClone hn = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
 -- client that ran propellor --spin.
 boot :: IO ()
 boot = do
-	sendMarked stdout statusMarker (show RepoUrl)
-	maybe noop setRepoUrl
-		=<< getMarked stdin repoUrlMarker
-	sendMarked stdout statusMarker (show Ready)
+	req NeedRepoUrl repoUrlMarker setRepoUrl
 	makePrivDataDir
-	maybe noop (writeFileProtected privDataLocal)
-		=<< getMarked stdin privDataMarker
+	req NeedPrivData privDataMarker $
+		writeFileProtected privDataLocal
 
 setRepoUrl :: String -> IO ()
 setRepoUrl "" = return ()
