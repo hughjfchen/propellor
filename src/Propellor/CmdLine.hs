@@ -209,14 +209,14 @@ spin hn hst = do
 	
 	cacheparams <- toCommand <$> sshCachingParams hn
 	comm cacheparams =<< hostprivdata
-	unlessM (boolSystem "ssh" (map Param (cacheparams ++ [user, runcmd]))) $
+	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, runcmd]))) $
 		error $ "remote propellor failed (running: " ++ runcmd ++")"
   where
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData
 
 	comm cacheparams privdata = 
 		withBothHandles createProcessSuccess
-			(proc "ssh" $ cacheparams ++ ["-t", user, bootstrapcmd])
+			(proc "ssh" $ cacheparams ++ [ user, bootstrapcmd])
 			(comm' cacheparams privdata)
 	comm' cacheparams privdata (toh, fromh) = loop
 	  where
