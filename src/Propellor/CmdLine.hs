@@ -189,7 +189,7 @@ spin hn hst = do
   where
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData
 
-	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ ["-t", user, bootstrapcmd]) $ \(toh, fromh) -> do
+	go cacheparams url privdata = withBothHandles createProcessSuccess (proc "ssh" $ cacheparams ++ [user, bootstrapcmd]) $ \(toh, fromh) -> do
 		let finish = do
 			senddata toh "privdata" privDataMarker privdata
 			hClose toh
@@ -303,6 +303,7 @@ boot h = do
 	makePrivDataDir
 	maybe noop (writeFileProtected privDataLocal) $
 		fromMarked privDataMarker reply
+	forceConsoleMode
 	mainProperties h
 
 getUrl :: IO String
@@ -364,4 +365,3 @@ sshCachingParams hn = do
 					[ Param "localhost" ]
 				nukeFile f
 	tenminutes = 600
-sshCachingParams hn = return []
