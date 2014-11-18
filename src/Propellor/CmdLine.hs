@@ -310,16 +310,16 @@ boot = do
 			warningMessage "git pull from client failed"
 
 -- Shim for git push over the propellor ssh channel.
--- Reads from stdin and sends it to the first fd;
--- reads from the second fd and sends it to stdout.
+-- Reads from stdin and sends it to hout;
+-- reads from hin and sends it to stdout.
 gitPush :: Fd -> Fd -> IO ()
 gitPush hin hout = void $ fromstdin `concurrently` tostdout
   where
 	fromstdin = do
-		h <- fdToHandle hin
+		h <- fdToHandle hout
 		B.getContents >>= B.hPut h
 	tostdout = do
-		h <- fdToHandle hout
+		h <- fdToHandle hin
 		B.hGetContents h >>= B.putStr
 
 hasOrigin :: IO Bool
