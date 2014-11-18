@@ -1,7 +1,10 @@
 module Propellor.Git where
 
 import Propellor
+import Propellor.PrivData.Paths
+import Propellor.Gpg
 import Utility.SafeCommand
+import Utility.FileMode
 
 getCurrentBranch :: IO String
 getCurrentBranch = takeWhile (/= '\n') 
@@ -39,3 +42,23 @@ hasOrigin = do
 	rs <- lines <$> readProcess "git" ["remote"]
 	return $ "origin" `elem` rs
 
+{- To verify origin branch commit's signature, have to convince gpg
+ - to use our keyring.
+ - While running git log. Which has no way to pass options to gpg.
+ - Argh!
+ -}
+verifyOriginBranch :: String -> IO Bool
+verifyOriginBranch originbranch = do
+	let gpgconf = privDataDir </> "gpg.conf"
+	writeFile gpgconf $ unlines
+		[ " keyring " ++ keyring
+		, "no-auto-check-trustdb"
+		]
+	-- gpg is picky about perms
+	modifyFileMode privDataDir (removeModes otherGroupModes)
+	s <- readProcessEnv "git" ["log", "-n", "1", "--format=%G?", originbranch]
+		(Just [("GNUPGHOME", privDataDir)])
+	nukeFile $ privDataDir </> "trustdb.gpg"
+	nukeFile $ privDataDir </> "pubring.gpg"
+	nukeFile $ privDataDir </> "gpg.conf"
+	return (s == "U\n" || s == "G\n")

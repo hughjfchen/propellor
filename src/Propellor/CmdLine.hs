@@ -148,29 +148,14 @@ updateFirst' cmdline next = do
 	
 	oldsha <- getCurrentGitSha1 branchref
 	
-	whenM (doesFileExist keyring) $ do
-		{- To verify origin branch commit's signature, have to
-		 - convince gpg to use our keyring. While running git log.
-		 - Which has no way to pass options to gpg.
-		 - Argh! -}
-		let gpgconf = privDataDir </> "gpg.conf"
-		writeFile gpgconf $ unlines
-			[ " keyring " ++ keyring
-			, "no-auto-check-trustdb"
-			]
-		-- gpg is picky about perms
-		modifyFileMode privDataDir (removeModes otherGroupModes)
-		s <- readProcessEnv "git" ["log", "-n", "1", "--format=%G?", originbranch]
-			(Just [("GNUPGHOME", privDataDir)])
-		nukeFile $ privDataDir </> "trustdb.gpg"
-		nukeFile $ privDataDir </> "pubring.gpg"
-		nukeFile $ privDataDir </> "gpg.conf"
-		if s == "U\n" || s == "G\n"
-			then do
+	whenM (doesFileExist keyring) $
+		ifM (verifyOriginBranch originbranch)
+			( do
 				putStrLn $ "git branch " ++ originbranch ++ " gpg signature verified; merging"
 				hFlush stdout
 				void $ boolSystem "git" [Param "merge", Param originbranch]
-			else warningMessage $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it! (Running with previous configuration instead.)"
+			, warningMessage $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it! (Running with previous configuration instead.)"
+			)
 	
 	newsha <- getCurrentGitSha1 branchref
 
