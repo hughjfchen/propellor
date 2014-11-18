@@ -28,6 +28,7 @@ module Propellor.Types
 import Data.Monoid
 import Control.Applicative
 import System.Console.ANSI
+import System.Posix.Types
 import "mtl" Control.Monad.Reader
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 
@@ -146,4 +147,5 @@ data CmdLine
 	| Chain HostName
 	| Boot HostName
 	| Docker HostName
+	| GitPush Fd Fd
 	deriving (Read, Show, Eq)

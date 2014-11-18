@@ -9,7 +9,7 @@ import Data.List
 
 import Propellor
 
-data Stage = Ready | NeedGitClone | NeedRepoUrl | NeedPrivData
+data Stage = Ready | NeedGitClone | NeedRepoUrl | NeedPrivData | NeedGitPush
 	deriving (Read, Show, Eq)
 
 type Marker = String
@@ -23,6 +23,9 @@ privDataMarker = "PRIVDATA "
 
 repoUrlMarker :: String
 repoUrlMarker = "REPOURL "
+
+gitPushMarker :: String
+gitPushMarker = "GITPUSH"
 
 toMarked :: Marker -> String -> String
 toMarked marker = intercalate "\n" . map (marker ++) . lines

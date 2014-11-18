@@ -11,6 +11,8 @@ import System.PosixCompat
 import Control.Exception (bracket)
 import System.Posix.IO
 import Data.Time.Clock.POSIX
+import Control.Concurrent.Async
+import qualified Data.ByteString as B
 
 import Propellor
 import Propellor.Protocol
@@ -54,6 +56,7 @@ processCmdLine = go =<< getArgs
 		Nothing -> errorMessage "--continue serialization failure"
 	go ("--chain":h:[]) = return $ Chain h
 	go ("--docker":h:[]) = return $ Docker h
+	go ("--gitpush":fin:fout:_) = return $ GitPush (Prelude.read fin) (Prelude.read fout)
 	go (h:[])
 		| "--" `isPrefixOf` h = usage
 		| otherwise = return $ Run h
@@ -86,6 +89,7 @@ defaultMain hostlist = do
 		r <- runPropellor h $ ensureProperties $ hostProperties h
 		putStrLn $ "\n" ++ show r
 	go _ (Docker hn) = Docker.chain hn
+	go _ (GitPush fin fout) = gitPush fin fout
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin hn) = withhost hn $ spin hn
@@ -206,6 +210,12 @@ spin hn hst = do
 				Just NeedPrivData -> do
 					sendprivdata toh privdata
 					loop
+				Just NeedGitPush -> do
+					sendMarked toh gitPushMarker ""
+					unlessM (boolSystem "git" [Param "send-pack", Param "--thin", Param "."]) $
+						warningMessage "git send-pack failed"
+					-- no more protocol possible after
+					-- git push
 				Just NeedGitClone -> do
 					hClose toh
 					hClose fromh
@@ -283,6 +293,28 @@ boot = do
 	makePrivDataDir
 	req NeedPrivData privDataMarker $
 		writeFileProtected privDataLocal
+	req NeedGitPush gitPushMarker $ \_ -> do
+		hin <- dup stdInput
+		hClose stdin
+		hout <- dup stdOutput
+		hClose stdout
+		unlessM (boolSystem "git" [Param "pull", Param $ "--upload=pack=./propellor gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
+			warningMessage "git pull from client failed"
+
+-- Shim for git push over the propellor ssh channel.
+-- Reads from stdin and sends it to the first fd;
+-- reads from the second fd and sends it to stdout.
+gitPush :: Fd -> Fd -> IO ()
+gitPush hin hout = do
+	print ("gitPush", hin, hout)
+	void $ fromstdin `concurrently` tostdout
+  where
+	fromstdin = do
+		h <- fdToHandle hin
+		B.getContents >>= B.hPut h
+	tostdout = do
+		h <- fdToHandle hout
+		B.hGetContents h >>= B.putStr
 
 setRepoUrl :: String -> IO ()
 setRepoUrl "" = return ()
