@@ -42,6 +42,7 @@ processCmdLine = go =<< getArgs
 	go ("--help":_) = usage
 	go ("--spin":h:[]) = return $ Spin h
 	go ("--boot":h:[]) = return $ Boot h
+	go ("--run":h:[]) = return $ Run h
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--dump":f:c:[]) = withprivfield f c Dump
@@ -186,8 +187,8 @@ spin hn hst = do
 	void $ boolSystem "git" [Param "push"]
 	cacheparams <- toCommand <$> sshCachingParams hn
 	go cacheparams url =<< hostprivdata
-	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, spincmd]))) $
-		error $ "remote propellor failed (running: " ++ spincmd ++")"
+	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, runcmd]))) $
+		error $ "remote propellor failed (running: " ++ runcmd ++")"
   where
 	hostprivdata = show . filterPrivData hst <$> decryptPrivData
 
@@ -228,8 +229,8 @@ spin hn hst = do
 		, "fi"
 		]
 
-	spincmd = mkcmd
-		[ "cd " ++ localdir ++ " && ./propellor --continue " ++ shellEscape (show (Chain hn)) ]
+	runcmd = mkcmd
+		[ "cd " ++ localdir ++ " && ./propellor --run " ++ hn ]
 
 	getstatus :: Handle -> IO BootStrapStatus
 	getstatus h = do
