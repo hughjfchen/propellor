@@ -5,6 +5,9 @@ module Propellor.Message where
 import System.Console.ANSI
 import System.IO
 import System.Log.Logger
+import System.Log.Formatter
+import System.Log.Handler (setFormatter, LogHandler)
+import System.Log.Handler.Simple
 import "mtl" Control.Monad.Reader
 import Data.Maybe
 import Control.Applicative
@@ -98,3 +101,14 @@ colorLine h intensity color msg = do
 -- | Causes a debug message to be displayed when PROPELLOR_DEBUG=1
 debug :: [String] -> IO ()
 debug = debugM "propellor" . unwords
+
+checkDebugMode :: IO ()
+checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
+  where
+	go (Just "1") = do
+		f <- setFormatter
+			<$> streamHandler stderr DEBUG
+			<*> pure (simpleLogFormatter "[$time] $msg")
+		updateGlobalLogger rootLoggerName $ 
+			setLevel DEBUG .  setHandlers [f]
+	go _ = noop

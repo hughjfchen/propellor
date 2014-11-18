@@ -3,10 +3,6 @@ module Propellor.CmdLine where
 import System.Environment (getArgs)
 import Data.List
 import System.Exit
-import System.Log.Logger
-import System.Log.Formatter
-import System.Log.Handler (setFormatter, LogHandler)
-import System.Log.Handler.Simple
 import System.PosixCompat
 import Control.Exception (bracket)
 import System.Posix.IO
@@ -343,14 +339,3 @@ gitPush hin hout = void $ fromstdin `concurrently` tostdout
 				B.hPut toh b
 				hFlush toh
 				connect fromh toh
-
-checkDebugMode :: IO ()
-checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
-  where
-	go (Just "1") = do
-		f <- setFormatter
-			<$> streamHandler stderr DEBUG
-			<*> pure (simpleLogFormatter "[$time] $msg")
-		updateGlobalLogger rootLoggerName $ 
-			setLevel DEBUG .  setHandlers [f]
-	go _ = noop
