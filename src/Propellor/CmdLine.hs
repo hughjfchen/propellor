@@ -13,6 +13,7 @@ import System.Posix.IO
 import Data.Time.Clock.POSIX
 import Control.Concurrent.Async
 import qualified Data.ByteString as B
+import System.Process (std_in, std_out)
 
 import Propellor
 import Propellor.Protocol
@@ -212,7 +213,11 @@ spin hn hst = do
 					loop
 				Just NeedGitPush -> do
 					sendMarked toh gitPushMarker ""
-					unlessM (boolSystem "git" [Param "upload-pack", Param "."]) $
+					let p = (proc "git" ["upload-pack", "."])
+						{ std_in = UseHandle fromh
+						, std_out = UseHandle toh }
+					(Nothing, Nothing, Nothing, h) <- createProcess p
+					unlessM ((==) ExitSuccess <$> waitForProcess h) $
 						warningMessage "git send-pack failed"
 					-- no more protocol possible after
 					-- git push
