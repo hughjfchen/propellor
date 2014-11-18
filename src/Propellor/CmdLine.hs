@@ -221,7 +221,7 @@ spin hn hst = do
 						, std_out = UseHandle toh }
 					(Nothing, Nothing, Nothing, h) <- createProcess p
 					unlessM ((==) ExitSuccess <$> waitForProcess h) $
-						warningMessage "git send-pack failed"
+						warningMessage "git upload-pack failed"
 					-- no more protocol possible after
 					-- git push
 				Just NeedGitClone -> do
@@ -324,7 +324,6 @@ gitPush hin hout = void $ fromstdin `concurrently` tostdout
 	connect fromh toh = do
 		b <- B.hGetSome fromh 40960
 		unless (B.null b) $ do
-			hPutStrLn stderr $ show ("got", fromh, b)
 			B.hPut toh b
 			hFlush toh
 			connect fromh toh
