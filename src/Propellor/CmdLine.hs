@@ -325,10 +325,14 @@ gitPush hin hout = void $ fromstdin `concurrently` tostdout
 	connect fromh toh = do
 		b <- B.hGetSome fromh 40960
 		hPutStrLn stderr $ show ("from", fromh, "to", toh, b)
-		unless (B.null b) $ do
-			B.hPut toh b
-			hFlush toh
-			connect fromh toh
+		if B.null b
+			then do
+				hClose fromh
+				hClose toh
+			else do
+				B.hPut toh b
+				hFlush toh
+				connect fromh toh
 
 hasOrigin :: IO Bool
 hasOrigin = do
