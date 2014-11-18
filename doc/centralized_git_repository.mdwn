@@ -4,7 +4,13 @@ directly to the host. This makes it easy to get started with propellor.
 
 A central git repository allows hosts to run propellor from cron and pick
 up any updates you may have pushed. This is useful when managing several
-hosts with propellor.
+hosts with propellor. 
+
+The central repository does not need to be trusted; it can be hosted 
+anywhere, and propellor will only accept verified gpg signed git commits
+from it. See [[security]] for details, but this means you can put it
+on github without github being able to 0wn your propellor driven hosts, for
+example.
 
 You can add a central git repository to your existing propellor setup easily:
 
