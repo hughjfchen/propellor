@@ -6,19 +6,29 @@ import System.Console.ANSI
 import System.IO
 import System.Log.Logger
 import "mtl" Control.Monad.Reader
+import Data.Maybe
+import Control.Applicative
 
 import Propellor.Types
 import Utility.Monad
+import Utility.Env
 
 data MessageHandle
 	= ConsoleMessageHandle
 	| TextMessageHandle
 
 mkMessageHandle :: IO MessageHandle
-mkMessageHandle = ifM (hIsTerminalDevice stdout)
+mkMessageHandle = ifM (hIsTerminalDevice stdout <||> (isJust <$> getEnv "PROPELLOR_CONSOLE"))
 	( return ConsoleMessageHandle
 	, return TextMessageHandle
 	)
+
+forceConsole :: IO ()
+forceConsole = void $ setEnv "PROPELLOR_CONSOLE" "1" True
+
+isConsole :: MessageHandle -> Bool
+isConsole ConsoleMessageHandle = True
+isConsole _ = False
 
 whenConsole :: MessageHandle -> IO () -> IO ()
 whenConsole ConsoleMessageHandle a = a

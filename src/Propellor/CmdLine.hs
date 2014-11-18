@@ -55,7 +55,8 @@ processCmdLine = go =<< getArgs
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
-	go ("--chain":h:[]) = return $ Chain h
+	go ("--chain":h:[]) = return $ Chain h False
+	go ("--chain":h:b:[]) = return $ Chain h (Prelude.read b)
 	go ("--docker":h:[]) = return $ Docker h
 	go ("--gitpush":fin:fout:_) = return $ GitPush (Prelude.read fin) (Prelude.read fout)
 	go (h:[])
@@ -86,7 +87,8 @@ defaultMain hostlist = do
 	go _ (Edit field context) = editPrivData field context
 	go _ ListFields = listPrivDataFields hostlist
 	go _ (AddKey keyid) = addKey keyid
-	go _ (Chain hn) = withhost hn $ \h -> do
+	go _ (Chain hn isconsole) = withhost hn $ \h -> do
+		when isconsole forceConsole
 		r <- runPropellor h $ ensureProperties $ hostProperties h
 		putStrLn $ "\n" ++ show r
 	go _ (Docker hn) = Docker.chain hn
