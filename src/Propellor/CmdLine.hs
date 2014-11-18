@@ -51,9 +51,6 @@ processCmdLine = go =<< getArgs
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
-	go ("--chain":h:[]) = return $ Chain h False
-	go ("--chain":h:b:[]) = return $ Chain h (Prelude.read b)
-	go ("--docker":h:[]) = return $ Docker h
 	go (h:[])
 		| "--" `isPrefixOf` h = usage
 		| otherwise = return $ Run h
