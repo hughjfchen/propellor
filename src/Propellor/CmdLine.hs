@@ -39,16 +39,16 @@ usage = do
 processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
   where
-	go ("--help":_) = usage
-	go ("--spin":h:[]) = return $ Spin h
-	go ("--update":h:[]) = return $ Update h
-	go ("--boot":h:[]) = return $ Update h -- for back-compat
 	go ("--run":h:[]) = return $ Run h
+	go ("--spin":h:[]) = return $ Spin h
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--dump":f:c:[]) = withprivfield f c Dump
 	go ("--edit":f:c:[]) = withprivfield f c Edit
 	go ("--list-fields":[]) = return ListFields
+	go ("--help":_) = usage
+	go ("--update":h:[]) = return $ Update h
+	go ("--boot":h:[]) = return $ Update h -- for back-compat
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage "--continue serialization failure"
