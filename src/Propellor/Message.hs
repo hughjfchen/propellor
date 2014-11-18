@@ -6,10 +6,8 @@ import System.Console.ANSI
 import System.IO
 import System.Log.Logger
 import "mtl" Control.Monad.Reader
-import Control.Applicative
 
 import Propellor.Types
-import Utility.Env
 import Utility.Monad
 
 data MessageHandle
