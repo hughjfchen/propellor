@@ -54,7 +54,6 @@ processCmdLine = go =<< getArgs
 	go ("--chain":h:[]) = return $ Chain h False
 	go ("--chain":h:b:[]) = return $ Chain h (Prelude.read b)
 	go ("--docker":h:[]) = return $ Docker h
-	go ("--gitpush":fin:fout:_) = return $ GitPush (Prelude.read fin) (Prelude.read fout)
 	go (h:[])
 		| "--" `isPrefixOf` h = usage
 		| otherwise = return $ Run h
@@ -310,7 +309,7 @@ boot = do
 		hout <- dup stdOutput
 		hClose stdin
 		hClose stdout
-		unlessM (boolSystem "git" [Param "pull", Param "--progress", Param "--upload-pack", Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
+		unlessM (boolSystem "git" [Param "pull", Param "--progress", Param "--upload-pack", Param $ "./propellor --continue " ++ show (GitPush hin hout), Param "."]) $
 			errorMessage "git pull from client failed"
 
 -- Shim for git push over the propellor ssh channel.
