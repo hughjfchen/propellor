@@ -181,46 +181,11 @@ spin hn hst = do
 			boolSystem "git" [Param "push"]
 	
 	cacheparams <- toCommand <$> sshCachingParams hn
-	comm cacheparams =<< hostprivdata
-	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, runcmd]))) $
+	comm hn hst $ withBothHandles createProcessSuccess
+		(proc "ssh" $ cacheparams ++ [user, bootstrapcmd])
+	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, runcmd])) $
 		error $ "remote propellor failed (running: " ++ runcmd ++")"
   where
-	hostprivdata = show . filterPrivData hst <$> decryptPrivData
-
-	comm cacheparams privdata = 
-		withBothHandles createProcessSuccess
-			(proc "ssh" $ cacheparams ++ [ user, bootstrapcmd])
-			(comm' cacheparams privdata)
-	comm' cacheparams privdata (toh, fromh) = loop
-	  where
-		loop = dispatch =<< (maybe Nothing readish <$> getMarked fromh statusMarker)
-		dispatch (Just NeedRepoUrl) = do
-			sendMarked toh repoUrlMarker
-				=<< (fromMaybe "" <$> getRepoUrl)
-			loop
-		dispatch (Just NeedPrivData) = do
-			sendprivdata toh privdata
-			loop
-		dispatch (Just NeedGitPush) = do
-			void $ actionMessage ("Sending git update to " ++ hn) $ do
-				sendMarked toh gitPushMarker ""
-				let p = (proc "git" ["upload-pack", "."])
-					{ std_in = UseHandle fromh
-					, std_out = UseHandle toh
-					}
-				(Nothing, Nothing, Nothing, h) <- createProcess p
-				r <- waitForProcess h
-				-- no more protocol possible after git push
-				hClose fromh
-				hClose toh
-				return (r == ExitSuccess)
-		dispatch (Just NeedGitClone) = do
-			hClose toh
-			hClose fromh
-			sendGitClone hn
-			comm cacheparams privdata
-		dispatch Nothing = return ()
-	
 	user = "root@"++hn
 
 	mkcmd = shellWrap . intercalate " ; "
@@ -243,10 +208,52 @@ spin hn hst = do
 	runcmd = mkcmd
 		[ "cd " ++ localdir ++ " && ./propellor --continue " ++ shellEscape (show (SimpleRun hn)) ]
 
-	sendprivdata toh privdata = void $
-		actionMessage ("Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn) $ do
-			sendMarked toh privDataMarker privdata
-			return True
+comm :: HostName  -> Host -> (((Handle, Handle) -> IO ()) -> IO ()) -> IO ()
+comm hn hst connect = connect go
+  where
+	go (toh, fromh) = do
+		let loop = go (toh, fromh)
+		v <- (maybe Nothing readish <$> getMarked fromh statusMarker)
+		case v of
+			(Just NeedRepoUrl) -> do
+				sendRepoUrl toh
+				loop
+			(Just NeedPrivData) -> do
+				sendPrivData hn hst toh
+				loop
+			(Just NeedGitPush) -> do
+				sendGitUpdate hn fromh toh
+				-- no more protocol possible after git push
+				hClose fromh
+				hClose toh
+			(Just NeedGitClone) -> do
+				hClose toh
+				hClose fromh
+				sendGitClone hn
+				comm hn hst connect
+			Nothing -> return ()
+
+sendRepoUrl :: Handle -> IO ()
+sendRepoUrl toh = sendMarked toh repoUrlMarker =<< (fromMaybe "" <$> getRepoUrl)
+
+sendPrivData :: HostName -> Host -> Handle -> IO ()
+sendPrivData hn hst toh = do
+	privdata <- show . filterPrivData hst <$> decryptPrivData
+	void $ actionMessage ("Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn) $ do
+		sendMarked toh privDataMarker privdata
+		return True
+
+sendGitUpdate :: HostName -> Handle -> Handle -> IO ()
+sendGitUpdate hn fromh toh =
+	void $ actionMessage ("Sending git update to " ++ hn) $ do
+		sendMarked toh gitPushMarker ""
+		(Nothing, Nothing, Nothing, h) <- createProcess p
+		(==) ExitSuccess <$> waitForProcess h
+  where
+	p = (proc "git" ["upload-pack", "."])
+		{ std_in = UseHandle fromh
+		, std_out = UseHandle toh
+		}
 
 -- Initial git clone, used for bootstrapping.
 sendGitClone :: HostName -> IO ()
