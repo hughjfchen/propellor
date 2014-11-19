@@ -385,7 +385,7 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 		liftIO $ writeFile (identFile cid) (show ident)
 		ensureProperty $ boolProperty "run" $ runContainer img
 			(runps ++ ["-i", "-d", "-t"])
-			[shim, "--docker", fromContainerId cid]
+			[shim, "--continue", show (Docker (fromContainerId cid))]
 
 -- | Called when propellor is running inside a docker container.
 -- The string should be the container's ContainerId.
@@ -416,7 +416,7 @@ chain s = case toContainerId s of
 		-- to avoid ever provisioning twice at the same time.
 		whenM (checkProvisionedFlag cid) $ do
 			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
-			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain $ containerHostName cid]) $
+			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain (containerHostName cid) False]) $
 				warningMessage "Boot provision failed!"
 		void $ async $ job reapzombies
 		void $ async $ job $ simpleSh $ namedPipe cid
@@ -440,13 +440,13 @@ chain s = case toContainerId s of
 provisionContainer :: ContainerId -> Property
 provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ do
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
+	msgh <- mkMessageHandle
+	let params = ["--continue", show $ Chain (containerHostName cid) (isConsole msgh)]
 	r <- simpleShClientRetry 60 (namedPipe cid) shim params (go Nothing)
 	when (r /= FailedChange) $
 		setProvisionedFlag cid 
 	return r
   where
-	params = ["--continue", show $ Chain $ containerHostName cid]
-
 	go lastline (v:rest) = case v of
 		StdoutLine s -> do
 			maybe noop putStrLn lastline

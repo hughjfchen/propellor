@@ -8,8 +8,8 @@ run: deps build
 dev: build tags
 
 build: dist/setup-config
-	if ! $(CABAL) build; then $(CABAL) configure; $(CABAL) build; fi
-	ln -sf dist/build/propellor-config/propellor-config propellor
+	@if ! $(CABAL) build; then $(CABAL) configure; $(CABAL) build; fi
+	@ln -sf dist/build/propellor-config/propellor-config propellor
 
 deps:
 	@if [ $$(whoami) = root ]; then apt-get --no-upgrade --no-install-recommends -y install $(DEBDEPS) || (apt-get update && apt-get --no-upgrade --no-install-recommends -y install $(DEBDEPS)); fi || true

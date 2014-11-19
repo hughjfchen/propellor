@@ -3,14 +3,9 @@ module Propellor.CmdLine where
 import System.Environment (getArgs)
 import Data.List
 import System.Exit
-import System.Log.Logger
-import System.Log.Formatter
-import System.Log.Handler (setFormatter, LogHandler)
-import System.Log.Handler.Simple
 import System.PosixCompat
 import Control.Exception (bracket)
 import System.Posix.IO
-import Data.Time.Clock.POSIX
 import Control.Concurrent.Async
 import qualified Data.ByteString as B
 import System.Process (std_in, std_out)
@@ -19,54 +14,59 @@ import Propellor
 import Propellor.Protocol
 import Propellor.PrivData.Paths
 import Propellor.Gpg
+import Propellor.Git
+import Propellor.Ssh
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Docker.Shim as DockerShim
 import Utility.FileMode
 import Utility.SafeCommand
-import Utility.UserInfo
 
-usage :: IO a
-usage = do
-	putStrLn $ unlines 
-		[ "Usage:"
-		, "  propellor"
-		, "  propellor hostname"
-		, "  propellor --spin hostname"
-		, "  propellor --add-key keyid"
-		, "  propellor --set field context"
-		, "  propellor --dump field context"
-		, "  propellor --edit field context"
-		, "  propellor --list-fields"
-		]
-	exitFailure
+usage :: Handle -> IO ()
+usage h = hPutStrLn h $ unlines 
+	[ "Usage:"
+	, "  propellor"
+	, "  propellor hostname"
+	, "  propellor --spin hostname"
+	, "  propellor --add-key keyid"
+	, "  propellor --set field context"
+	, "  propellor --dump field context"
+	, "  propellor --edit field context"
+	, "  propellor --list-fields"
+	]
+
+usageError :: [String] -> IO a
+usageError ps = do
+	usage stderr
+	error ("(Unexpected: " ++ show ps)
 
 processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
   where
-	go ("--help":_) = usage
-	go ("--spin":h:[]) = return $ Spin h
-	go ("--boot":h:[]) = return $ Boot h
 	go ("--run":h:[]) = return $ Run h
+	go ("--spin":h:[]) = return $ Spin h
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--dump":f:c:[]) = withprivfield f c Dump
 	go ("--edit":f:c:[]) = withprivfield f c Edit
 	go ("--list-fields":[]) = return ListFields
+	go ("--help":_) = do	
+		usage stdout
+		exitFailure
+	go ("--update":h:[]) = return $ Update h
+	go ("--boot":h:[]) = return $ Update h -- for back-compat
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
-		Nothing -> errorMessage "--continue serialization failure"
-	go ("--chain":h:[]) = return $ Chain h
-	go ("--docker":h:[]) = return $ Docker h
+		Nothing -> errorMessage $ "--continue serialization failure (" ++ s ++ ")"
 	go ("--gitpush":fin:fout:_) = return $ GitPush (Prelude.read fin) (Prelude.read fout)
 	go (h:[])
-		| "--" `isPrefixOf` h = usage
+		| "--" `isPrefixOf` h = usageError [h]
 		| otherwise = return $ Run h
 	go [] = do
 		s <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
 		if null s
 			then errorMessage "Cannot determine hostname! Pass it on the command line."
 			else return $ Run s
-	go _ = usage
+	go v = usageError v
 
 	withprivfield s c f = case readish s of
 		Just pf -> return $ f pf (Context c)
@@ -86,7 +86,8 @@ defaultMain hostlist = do
 	go _ (Edit field context) = editPrivData field context
 	go _ ListFields = listPrivDataFields hostlist
 	go _ (AddKey keyid) = addKey keyid
-	go _ (Chain hn) = withhost hn $ \h -> do
+	go _ (Chain hn isconsole) = withhost hn $ \h -> do
+		when isconsole forceConsole
 		r <- runPropellor h $ ensureProperties $ hostProperties h
 		putStrLn $ "\n" ++ show r
 	go _ (Docker hn) = Docker.chain hn
@@ -94,11 +95,15 @@ defaultMain hostlist = do
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin hn) = withhost hn $ spin hn
+	go False cmdline@(SimpleRun hn) = buildFirst cmdline $
+		go False (Run hn)
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
 		( onlyProcess $ withhost hn mainProperties
 		, go True (Spin hn)
 		)
-	go False (Boot _) = onlyProcess boot
+	go False (Update _) = do
+		forceConsole
+		onlyProcess update
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
@@ -137,10 +142,6 @@ buildFirst cmdline next = do
   where
 	getmtime = catchMaybeIO $ getModificationTime "propellor"
 
-getCurrentBranch :: IO String
-getCurrentBranch = takeWhile (/= '\n') 
-	<$> readProcess "git" ["symbolic-ref", "--short", "HEAD"]
-
 updateFirst :: CmdLine -> IO () -> IO ()
 updateFirst cmdline next = ifM hasOrigin (updateFirst' cmdline next, next)
 
@@ -153,29 +154,14 @@ updateFirst' cmdline next = do
 	
 	oldsha <- getCurrentGitSha1 branchref
 	
-	whenM (doesFileExist keyring) $ do
-		{- To verify origin branch commit's signature, have to
-		 - convince gpg to use our keyring. While running git log.
-		 - Which has no way to pass options to gpg.
-		 - Argh! -}
-		let gpgconf = privDataDir </> "gpg.conf"
-		writeFile gpgconf $ unlines
-			[ " keyring " ++ keyring
-			, "no-auto-check-trustdb"
-			]
-		-- gpg is picky about perms
-		modifyFileMode privDataDir (removeModes otherGroupModes)
-		s <- readProcessEnv "git" ["log", "-n", "1", "--format=%G?", originbranch]
-			(Just [("GNUPGHOME", privDataDir)])
-		nukeFile $ privDataDir </> "trustdb.gpg"
-		nukeFile $ privDataDir </> "pubring.gpg"
-		nukeFile $ privDataDir </> "gpg.conf"
-		if s == "U\n" || s == "G\n"
-			then do
+	whenM (doesFileExist keyring) $
+		ifM (verifyOriginBranch originbranch)
+			( do
 				putStrLn $ "git branch " ++ originbranch ++ " gpg signature verified; merging"
 				hFlush stdout
 				void $ boolSystem "git" [Param "merge", Param originbranch]
-			else warningMessage $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it! (Running with previous configuration instead.)"
+			, warningMessage $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it! (Running with previous configuration instead.)"
+			)
 	
 	newsha <- getCurrentGitSha1 branchref
 
@@ -186,72 +172,26 @@ updateFirst' cmdline next = do
 			, errorMessage "Propellor build failed!" 
 			)
 
-getCurrentGitSha1 :: String -> IO String
-getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
-
 -- spin handles deploying propellor to a remote host, if it's not already
 -- installed there, or updating it if it is. Once the remote propellor is
 -- updated, it's run.
 spin :: HostName -> Host -> IO ()
 spin hn hst = do
-	void $ gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
+	void $ actionMessage "Git commit (signed)" $
+		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	-- Push to central origin repo first, if possible.
 	-- The remote propellor will pull from there, which avoids
 	-- us needing to send stuff directly to the remote host.
 	whenM hasOrigin $
-		void $ boolSystem "git" [Param "push"]
+		void $ actionMessage "Push to central git repository" $
+			boolSystem "git" [Param "push"]
 	
 	cacheparams <- toCommand <$> sshCachingParams hn
-	comm cacheparams =<< hostprivdata
-	unlessM (boolSystem "ssh" (map Param (cacheparams ++ ["-t", user, runcmd]))) $
+	comm hn hst $ withBothHandles createProcessSuccess
+		(proc "ssh" $ cacheparams ++ [user, bootstrapcmd])
+	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, runcmd])) $
 		error $ "remote propellor failed (running: " ++ runcmd ++")"
   where
-	hostprivdata = show . filterPrivData hst <$> decryptPrivData
-
-	comm cacheparams privdata = 
-		withBothHandles createProcessSuccess
-			(proc "ssh" $ cacheparams ++ [user, bootstrapcmd])
-			(comm' cacheparams privdata)
-	comm' cacheparams privdata (toh, fromh) = loop
-	  where
-		loop = dispatch =<< (maybe Nothing readish <$> getMarked fromh statusMarker)
-		dispatch (Just NeedRepoUrl) = do
-			sendMarked toh repoUrlMarker
-				=<< (fromMaybe "" <$> getRepoUrl)
-			loop
-		dispatch (Just NeedPrivData) = do
-			sendprivdata toh privdata
-			loop
-		dispatch (Just NeedGitPush) = do
-			void $ actionMessage ("Sending git update to " ++ hn) $ do
-				sendMarked toh gitPushMarker ""
-				let p = (proc "git" ["upload-pack", "."])
-					{ std_in = UseHandle fromh
-					, std_out = UseHandle toh
-					}
-				(Nothing, Nothing, Nothing, h) <- createProcess p
-				r <- waitForProcess h
-				-- no more protocol possible after git push
-				hClose fromh
-				hClose toh
-				return (r == ExitSuccess)
-		dispatch (Just NeedGitClone) = do
-			hClose toh
-			hClose fromh
-			sendGitClone hn
-			comm cacheparams privdata
-		-- Ready is only sent by old versions of
-		-- propellor. They expect to get privdata,
-		-- and then no more protocol communication.
-		dispatch (Just Ready) = do
-			sendprivdata toh privdata
-			hClose toh
-			-- Display remaining output.
-			void $ tryIO $ forever $
-				showremote =<< hGetLine fromh
-			hClose fromh
-		dispatch Nothing = return ()
-	
 	user = "root@"++hn
 
 	mkcmd = shellWrap . intercalate " ; "
@@ -272,18 +212,82 @@ spin hn hst = do
 		]
 
 	runcmd = mkcmd
-		[ "cd " ++ localdir ++ " && ./propellor --run " ++ hn ]
+		[ "cd " ++ localdir ++ " && ./propellor --continue " ++ shellEscape (show (SimpleRun hn)) ]
 
-	showremote s = putStrLn s
+-- Update the privdata, repo url, and git repo over the ssh
+-- connection from the client that ran propellor --spin.
+update :: IO ()
+update = do
+	req NeedRepoUrl repoUrlMarker setRepoUrl
+	makePrivDataDir
+	req NeedPrivData privDataMarker $
+		writeFileProtected privDataLocal
+	req NeedGitPush gitPushMarker $ \_ -> do
+		hin <- dup stdInput
+		hout <- dup stdOutput
+		hClose stdin
+		hClose stdout
+		unlessM (boolSystem "git" (pullparams hin hout)) $
+			errorMessage "git pull from client failed"
+  where
+	pullparams hin hout =
+		[ Param "pull"
+		, Param "--progress"
+		, Param "--upload-pack"
+		, Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout
+		, Param "."
+		]
 
-	sendprivdata toh privdata = void $
-		actionMessage ("Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn) $ do
-			sendMarked toh privDataMarker privdata
-			return True
+comm :: HostName  -> Host -> (((Handle, Handle) -> IO ()) -> IO ()) -> IO ()
+comm hn hst connect = connect go
+  where
+	go (toh, fromh) = do
+		let loop = go (toh, fromh)
+		v <- (maybe Nothing readish <$> getMarked fromh statusMarker)
+		case v of
+			(Just NeedRepoUrl) -> do
+				sendRepoUrl toh
+				loop
+			(Just NeedPrivData) -> do
+				sendPrivData hn hst toh
+				loop
+			(Just NeedGitPush) -> do
+				sendGitUpdate hn fromh toh
+				-- no more protocol possible after git push
+				hClose fromh
+				hClose toh
+			(Just NeedGitClone) -> do
+				hClose toh
+				hClose fromh
+				sendGitClone hn
+				comm hn hst connect
+			Nothing -> return ()
+
+sendRepoUrl :: Handle -> IO ()
+sendRepoUrl toh = sendMarked toh repoUrlMarker =<< (fromMaybe "" <$> getRepoUrl)
+
+sendPrivData :: HostName -> Host -> Handle -> IO ()
+sendPrivData hn hst toh = do
+	privdata <- show . filterPrivData hst <$> decryptPrivData
+	void $ actionMessage ("Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn) $ do
+		sendMarked toh privDataMarker privdata
+		return True
+
+sendGitUpdate :: HostName -> Handle -> Handle -> IO ()
+sendGitUpdate hn fromh toh =
+	void $ actionMessage ("Sending git update to " ++ hn) $ do
+		sendMarked toh gitPushMarker ""
+		(Nothing, Nothing, Nothing, h) <- createProcess p
+		(==) ExitSuccess <$> waitForProcess h
+  where
+	p = (proc "git" ["upload-pack", "."])
+		{ std_in = UseHandle fromh
+		, std_out = UseHandle toh
+		}
 
 -- Initial git clone, used for bootstrapping.
 sendGitClone :: HostName -> IO ()
-sendGitClone hn = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
+sendGitClone hn = void $ actionMessage ("Clone git repository to " ++ hn) $ do
 	branch <- getCurrentBranch
 	cacheparams <- sshCachingParams hn
 	withTmpFile "propellor.git" $ \tmp _ -> allM id
@@ -300,23 +304,6 @@ sendGitClone hn = void $ actionMessage ("Pushing git repository to " ++ hn) $ do
 		, "git remote rm origin"
 		, "rm -f " ++ remotebundle
 		]
-
--- Called "boot" for historical reasons, but what this really does is
--- update the privdata, repo url, and git repo over the ssh connection from the
--- client that ran propellor --spin.
-boot :: IO ()
-boot = do
-	req NeedRepoUrl repoUrlMarker setRepoUrl
-	makePrivDataDir
-	req NeedPrivData privDataMarker $
-		writeFileProtected privDataLocal
-	req NeedGitPush gitPushMarker $ \_ -> do
-		hin <- dup stdInput
-		hout <- dup stdOutput
-		hClose stdin
-		hClose stdout
-		unlessM (boolSystem "git" [Param "pull", Param "--progress", Param "--upload-pack", Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout, Param "."]) $
-			errorMessage "git pull from client failed"
 
 -- Shim for git push over the propellor ssh channel.
 -- Reads from stdin and sends it to hout;
@@ -342,78 +329,3 @@ gitPush hin hout = void $ fromstdin `concurrently` tostdout
 				B.hPut toh b
 				hFlush toh
 				connect fromh toh
-
-hasOrigin :: IO Bool
-hasOrigin = do
-	rs <- lines <$> readProcess "git" ["remote"]
-	return $ "origin" `elem` rs
-
-setRepoUrl :: String -> IO ()
-setRepoUrl "" = return ()
-setRepoUrl url = do
-	subcmd <- ifM hasOrigin (pure "set-url", pure "add")
-	void $ boolSystem "git" [Param "remote", Param subcmd, Param "origin", Param url]
-	-- same as --set-upstream-to, except origin branch
-	-- may not have been pulled yet
-	branch <- getCurrentBranch
-	let branchval s = "branch." ++ branch ++ "." ++ s
-	void $ boolSystem "git" [Param "config", Param (branchval "remote"), Param "origin"]
-	void $ boolSystem "git" [Param "config", Param (branchval "merge"), Param $ "refs/heads/"++branch]
-
-getRepoUrl :: IO (Maybe String)
-getRepoUrl = getM get urls
-  where
-	urls = ["remote.deploy.url", "remote.origin.url"]
-	get u = do
-		v <- catchMaybeIO $ 
-			takeWhile (/= '\n') 
-				<$> readProcess "git" ["config", u]
-		return $ case v of
-			Just url | not (null url) -> Just url
-			_ -> Nothing
-
-checkDebugMode :: IO ()
-checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
-  where
-	go (Just "1") = do
-		f <- setFormatter
-			<$> streamHandler stderr DEBUG
-			<*> pure (simpleLogFormatter "[$time] $msg")
-		updateGlobalLogger rootLoggerName $ 
-			setLevel DEBUG .  setHandlers [f]
-	go _ = noop
-
--- Parameters can be passed to both ssh and scp, to enable a ssh connection
--- caching socket.
---
--- If the socket already exists, check if its mtime is older than 10
--- minutes, and if so stop that ssh process, in order to not try to
--- use an old stale connection. (atime would be nicer, but there's
--- a good chance a laptop uses noatime)
-sshCachingParams :: HostName -> IO [CommandParam]
-sshCachingParams hn = do
-	home <- myHomeDir
-	let cachedir = home </> ".ssh" </> "propellor"
-	createDirectoryIfMissing False cachedir
-	let socketfile = cachedir </> hn ++ ".sock"
-	let ps = 
-		[ Param "-o", Param ("ControlPath=" ++ socketfile)
-		, Params "-o ControlMaster=auto -o ControlPersist=yes"
-		]
-
-	maybe noop (expireold ps socketfile)
-		=<< catchMaybeIO (getFileStatus socketfile)
-	
-	return ps
-		
-  where
-	expireold ps f s = do
-		now <- truncate <$> getPOSIXTime :: IO Integer
-		if modificationTime s > fromIntegral now - tenminutes
-			then touchFile f
-			else do
-				void $ boolSystem "ssh" $
-					[ Params "-O stop" ] ++ ps ++
-					[ Param "localhost" ]
-				nukeFile f
-	tenminutes = 600

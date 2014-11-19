@@ -113,8 +113,10 @@ Library
   Other-Modules:
     Propellor.Types.Info
     Propellor.CmdLine
+    Propellor.Git
     Propellor.Gpg
     Propellor.SimpleSh
+    Propellor.Ssh
     Propellor.PrivData.Paths
     Propellor.Protocol
     Propellor.Property.Docker.Shim

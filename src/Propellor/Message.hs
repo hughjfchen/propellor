@@ -5,20 +5,33 @@ module Propellor.Message where
 import System.Console.ANSI
 import System.IO
 import System.Log.Logger
+import System.Log.Formatter
+import System.Log.Handler (setFormatter, LogHandler)
+import System.Log.Handler.Simple
 import "mtl" Control.Monad.Reader
+import Data.Maybe
+import Control.Applicative
 
 import Propellor.Types
 import Utility.Monad
+import Utility.Env
 
 data MessageHandle
 	= ConsoleMessageHandle
 	| TextMessageHandle
 
 mkMessageHandle :: IO MessageHandle
-mkMessageHandle = ifM (hIsTerminalDevice stdout)
+mkMessageHandle = ifM (hIsTerminalDevice stdout <||> (isJust <$> getEnv "PROPELLOR_CONSOLE"))
 	( return ConsoleMessageHandle
 	, return TextMessageHandle
 	)
+
+forceConsole :: IO ()
+forceConsole = void $ setEnv "PROPELLOR_CONSOLE" "1" True
+
+isConsole :: MessageHandle -> Bool
+isConsole ConsoleMessageHandle = True
+isConsole _ = False
 
 whenConsole :: MessageHandle -> IO () -> IO ()
 whenConsole ConsoleMessageHandle a = a
@@ -88,3 +101,14 @@ colorLine h intensity color msg = do
 -- | Causes a debug message to be displayed when PROPELLOR_DEBUG=1
 debug :: [String] -> IO ()
 debug = debugM "propellor" . unwords
+
+checkDebugMode :: IO ()
+checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
+  where
+	go (Just "1") = do
+		f <- setFormatter
+			<$> streamHandler stderr DEBUG
+			<*> pure (simpleLogFormatter "[$time] $msg")
+		updateGlobalLogger rootLoggerName $ 
+			setLevel DEBUG .  setHandlers [f]
+	go _ = noop
