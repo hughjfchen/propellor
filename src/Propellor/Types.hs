@@ -145,8 +145,8 @@ data CmdLine
 	| ListFields
 	| AddKey String
 	| Continue CmdLine
-	| Chain HostName
 	| Update HostName
-	| Docker HostName
+	| DockerInit HostName
+	| DockerChain HostName String
 	| GitPush Fd Fd
 	deriving (Read, Show, Eq)

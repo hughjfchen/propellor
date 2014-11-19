@@ -33,10 +33,11 @@ module Propellor.Property.Docker (
 	restartOnFailure,
 	restartNever,
 	-- * Internal use
+	init,
 	chain,
 ) where
 
-import Propellor
+import Propellor hiding (init)
 import Propellor.Types.Info
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
@@ -48,7 +49,8 @@ import Utility.ThreadScheduler
 import Control.Concurrent.Async hiding (link)
 import System.Posix.Directory
 import System.Posix.Process
-import Data.List
+import Prelude hiding (init)
+import Data.List hiding (init)
 import Data.List.Utils
 import qualified Data.Set as S
 
@@ -391,7 +393,7 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 		liftIO $ writeFile (identFile cid) (show ident)
 		ensureProperty $ boolProperty "run" $ runContainer img
 			(runps ++ ["-i", "-d", "-t"])
-			[shim, "--continue", show (Docker (fromContainerId cid))]
+			[shim, "--continue", show (DockerInit (fromContainerId cid))]
 
 -- | Called when propellor is running inside a docker container.
 -- The string should be the container's ContainerId.
@@ -406,20 +408,20 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 -- again. So, to make the necessary services get started on boot, this needs
 -- to provision the container then. However, if the container is already
 -- being provisioned by the calling propellor, it would be redundant and
--- problimatic to also provisoon it here.
+-- problimatic to also provisoon it here, when not booting up.
 --
 -- The solution is a flag file. If the flag file exists, then the container
 -- was already provisioned. So, it must be a reboot, and time to provision
 -- again. If the flag file doesn't exist, don't provision here.
-chain :: String -> IO ()
-chain s = case toContainerId s of
+init :: String -> IO ()
+init s = case toContainerId s of
 	Nothing -> error $ "Invalid ContainerId: " ++ s
 	Just cid -> do
 		changeWorkingDirectory localdir
 		writeFile propellorIdent . show =<< readIdentFile cid
 		whenM (checkProvisionedFlag cid) $ do
 			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
-			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain (containerHostName cid)]) $
+			unlessM (boolSystem shim [Param "--continue", Param $ show $ DockerChain (containerHostName cid) (fromContainerId cid)]) $
 				warningMessage "Boot provision failed!"
 		void $ async $ job reapzombies
 		job $ do
@@ -437,7 +439,7 @@ chain s = case toContainerId s of
 provisionContainer :: ContainerId -> Property
 provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ do
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
-	let params = ["--continue", show $ Chain (containerHostName cid)]
+	let params = ["--continue", show $ DockerChain (containerHostName cid) (fromContainerId cid)]
 	msgh <- mkMessageHandle
 	let p = inContainerProcess cid
 		[ if isConsole msgh then "-it" else "-i" ]
@@ -457,6 +459,13 @@ provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ d
 				maybe noop putStrLn lastline
 				hFlush stdout
 				processoutput (Just s) h
+
+chain :: String -> Host -> IO ()
+chain s h = case toContainerId s of
+	Just cid -> onlyProcess (provisioningLock cid) $ do
+		r <- runPropellor h $ ensureProperties $ hostProperties h
+		putStrLn $ "\n" ++ show r
+	Nothing -> error "bad container id"
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]
@@ -548,6 +557,9 @@ setProvisionedFlag cid = do
 
 checkProvisionedFlag :: ContainerId -> IO Bool
 checkProvisionedFlag = doesFileExist . provisionedFlag
+
+provisioningLock :: ContainerId -> FilePath
+provisioningLock cid = "docker" </> fromContainerId cid ++ ".lock"
 
 shimdir :: ContainerId -> FilePath
 shimdir cid = "docker" </> fromContainerId cid ++ ".shim"

@@ -7,8 +7,6 @@ import System.Environment (getArgs)
 import Data.List
 import System.Exit
 import System.PosixCompat
-import Control.Exception (bracket)
-import System.Posix.IO
 
 import Propellor
 import Propellor.Protocol
@@ -86,10 +84,8 @@ defaultMain hostlist = do
 	go _ (Edit field context) = editPrivData field context
 	go _ ListFields = listPrivDataFields hostlist
 	go _ (AddKey keyid) = addKey keyid
-	go _ (Chain hn) = withhost hn $ \h -> do
-		r <- runPropellor h $ ensureProperties $ hostProperties h
-		putStrLn $ "\n" ++ show r
-	go _ (Docker hn) = Docker.chain hn
+	go _ (DockerChain hn s) = withhost hn $ Docker.chain s
+	go _ (DockerInit hn) = Docker.init hn
 	go _ (GitPush fin fout) = gitPushHelper fin fout
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
@@ -97,27 +93,17 @@ defaultMain hostlist = do
 	go False cmdline@(SimpleRun hn) = buildFirst cmdline $
 		go False (Run hn)
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
-		( onlyProcess $ withhost hn mainProperties
+		( onlyprocess $ withhost hn mainProperties
 		, go True (Spin hn)
 		)
 	go False (Update _) = do
 		forceConsole
-		onlyProcess update
+		onlyprocess update
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
-
-onlyProcess :: IO a -> IO a
-onlyProcess a = bracket lock unlock (const a)
-  where
-	lock = do
-		l <- createFile lockfile stdFileMode
-		setLock l (WriteLock, AbsoluteSeek, 0, 0)
-			`catchIO` const alreadyrunning
-		return l
-	unlock = closeFd
-	alreadyrunning = error "Propellor is already running on this host!"
-	lockfile = localdir </> ".lock"
+	
+	onlyprocess = onlyProcess (localdir </> ".lock")
 
 unknownhost :: HostName -> [Host] -> IO a
 unknownhost h hosts = errorMessage $ unlines
