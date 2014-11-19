@@ -115,6 +115,7 @@ Library
     Propellor.CmdLine
     Propellor.Git
     Propellor.Gpg
+    Propellor.Server
     Propellor.SimpleSh
     Propellor.Ssh
     Propellor.PrivData.Paths
