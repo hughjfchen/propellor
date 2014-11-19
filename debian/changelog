@@ -15,8 +15,9 @@ propellor (1.0.0) UNRELEASED; urgency=medium
   * Avoid outputting color setting sequences when not run on a terminal.
   * Run remote propellor --spin with a controlling terminal.
   * Docker code simplified by using `docker exec`; needs docker 1.2.0.
+  * Added support for using debootstrap from propellor.
 
- -- Joey Hess <joeyh@debian.org>  Mon, 10 Nov 2014 11:15:27 -0400
+ -- Joey Hess <id@joeyh.name>  Mon, 10 Nov 2014 11:15:27 -0400
 
 propellor (0.9.2) unstable; urgency=medium
 

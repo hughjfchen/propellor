@@ -131,6 +131,10 @@ boolProperty desc a = property desc $ ifM (liftIO a)
 revert :: RevertableProperty -> RevertableProperty
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
+-- | Turns a revertable property into a regular property.
+unrevertable :: RevertableProperty -> Property
+unrevertable (RevertableProperty p1 _p2) = p1
+
 -- | Starts accumulating the properties of a Host.
 --
 -- > host "example.com"

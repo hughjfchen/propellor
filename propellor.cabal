@@ -75,6 +75,7 @@ Library
     Propellor.Property.Cmd
     Propellor.Property.Hostname
     Propellor.Property.Cron
+    Propellor.Property.Debootstrap
     Propellor.Property.Dns
     Propellor.Property.Docker
     Propellor.Property.File
