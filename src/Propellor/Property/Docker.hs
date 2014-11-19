@@ -462,9 +462,11 @@ provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ d
 
 chain :: String -> Host -> IO ()
 chain s h = case toContainerId s of
-	Just cid -> onlyProcess (provisioningLock cid) $ do
-		r <- runPropellor h $ ensureProperties $ hostProperties h
-		putStrLn $ "\n" ++ show r
+	Just cid -> do
+		changeWorkingDirectory localdir
+		onlyProcess (provisioningLock cid) $ do
+			r <- runPropellor h $ ensureProperties $ hostProperties h
+			putStrLn $ "\n" ++ show r
 	Nothing -> error "bad container id"
 
 stopContainer :: ContainerId -> IO Bool
