@@ -37,13 +37,13 @@ module Propellor.Property.Docker (
 ) where
 
 import Propellor
-import Propellor.SimpleSh
 import Propellor.Types.Info
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Docker.Shim as Shim
 import Utility.SafeCommand
 import Utility.Path
+import Utility.ThreadScheduler
 
 import Control.Concurrent.Async hiding (link)
 import System.Posix.Directory
@@ -339,7 +339,7 @@ runningContainer :: ContainerId -> Image -> [RunParam] -> Property
 runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ property "running" $ do
 	l <- liftIO $ listContainers RunningContainers
 	if cid `elem` l
-		then checkident =<< liftIO (getrunningident simpleShClient)
+		then checkident =<< liftIO getrunningident
 		else ifM (liftIO $ elem cid <$> listContainers AllContainers)
 			( do
 				-- The container exists, but is not
@@ -348,9 +348,9 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 				-- starting it up first.
 				void $ liftIO $ startContainer cid
 				-- It can take a while for the container to
-				-- start up enough to get its ident, so
-				-- retry for up to 60 seconds.
-				checkident =<< liftIO (getrunningident (simpleShClientRetry 60))
+				-- start up enough for its ident file to be
+				-- written, so retry for up to 60 seconds.
+				checkident =<< liftIO (retry 60 $ getrunningident)
 			, go image
 			)
   where
@@ -370,12 +370,18 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 		void $ liftIO $ removeContainer cid
 		go oldimage
 
-	getrunningident shclient = shclient (namedPipe cid) "cat" [propellorIdent] $ \rs -> do
-		let !v = extractident rs
-		return v
+	getrunningident = readish
+		<$> readProcess' (inContainerProcess cid [] ["cat", propellorIdent])
 
-	extractident :: [Resp] -> Maybe ContainerIdent
-	extractident = headMaybe . catMaybes . map readish . catMaybes . map getStdout
+	retry :: Int -> IO (Maybe a) -> IO (Maybe a)
+	retry 0 _ = return Nothing
+	retry n a = do
+		v <- a
+		case v of
+			Just _ -> return v
+			Nothing -> do
+				threadDelaySeconds (Seconds 1)				
+				retry (n-1) a
 
 	go img = do
 		liftIO $ do
@@ -393,7 +399,6 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 -- This process is effectively init inside the container.
 -- It even needs to wait on zombie processes!
 --
--- Fork a thread to run the SimpleSh server in the background.
 -- In the foreground, run an interactive bash (or sh) shell,
 -- so that the user can interact with it when attached to the container.
 --
@@ -412,14 +417,11 @@ chain s = case toContainerId s of
 	Just cid -> do
 		changeWorkingDirectory localdir
 		writeFile propellorIdent . show =<< readIdentFile cid
-		-- Run boot provisioning before starting simpleSh,
-		-- to avoid ever provisioning twice at the same time.
 		whenM (checkProvisionedFlag cid) $ do
 			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain (containerHostName cid)]) $
 				warningMessage "Boot provision failed!"
 		void $ async $ job reapzombies
-		void $ async $ job $ simpleSh $ namedPipe cid
 		job $ do
 			void $ tryIO $ ifM (inPath "bash")
 				( boolSystem "bash" [Param "-l"]
@@ -437,10 +439,11 @@ provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ d
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 	let params = ["--continue", show $ Chain (containerHostName cid)]
 	msgh <- mkMessageHandle
-	r <- inContainer cid
+	let p = inContainerProcess cid
 		[ if isConsole msgh then "-it" else "-i" ]
 		(shim : params)
-		(processoutput Nothing)
+	r <- withHandle StdoutHandle createProcessSuccess p $
+		processoutput Nothing
 	when (r /= FailedChange) $
 		setProvisionedFlag cid 
 	return r
@@ -471,7 +474,6 @@ stoppedContainer cid = containerDesc cid $ property desc $
   where
 	desc = "stopped"
 	cleanup = do
-		nukeFile $ namedPipe cid
 		nukeFile $ identFile cid
 		removeDirectoryRecursive $ shimdir cid
 		clearProvisionedFlag cid
@@ -488,9 +490,8 @@ runContainer :: Image -> [RunParam] -> [String] -> IO Bool
 runContainer image ps cmd = boolSystem dockercmd $ map Param $
 	"run" : (ps ++ image : cmd)
 
-inContainer :: ContainerId -> [String] -> [String] -> (Handle -> IO a) -> IO a
-inContainer cid ps cmd = withHandle StdoutHandle createProcessSuccess
-	(proc dockercmd ("exec" : ps ++ [fromContainerId cid] ++ cmd))
+inContainerProcess :: ContainerId -> [String] -> [String] -> CreateProcess
+inContainerProcess cid ps cmd = proc dockercmd ("exec" : ps ++ [fromContainerId cid] ++ cmd)
 
 commitContainer :: ContainerId -> IO (Maybe Image)
 commitContainer cid = catchMaybeIO $
@@ -533,10 +534,6 @@ dockerInfo i = mempty { _dockerinfo = i }
 -- the container has the same ident later.
 propellorIdent :: FilePath
 propellorIdent = "/.propellor-ident"
-
--- | Named pipe used for communication with the container.
-namedPipe :: ContainerId -> FilePath
-namedPipe cid = "docker" </> fromContainerId cid
 
 provisionedFlag :: ContainerId -> FilePath
 provisionedFlag cid = "docker" </> fromContainerId cid ++ ".provisioned"
