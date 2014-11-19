@@ -335,7 +335,7 @@ myContainerSuffix = ".propellor"
 containerDesc :: ContainerId -> Property -> Property
 containerDesc cid p = p `describe` desc
   where
-	desc = "[" ++ fromContainerId cid ++ "] " ++ propertyDesc p
+	desc = "container " ++ fromContainerId cid ++ " " ++ propertyDesc p
 
 runningContainer :: ContainerId -> Image -> [RunParam] -> Property
 runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ property "running" $ do
