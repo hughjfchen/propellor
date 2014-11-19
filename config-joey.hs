@@ -312,6 +312,7 @@ containers =
 
 	, Docker.container "simple-debian" "debian"
 		& "/hello" `File.containsLine` "hello"
+		& Docker.publish "8081:80"
 
 	-- git-annex autobuilder containers
 	, GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h"
