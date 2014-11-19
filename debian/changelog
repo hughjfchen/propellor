@@ -9,7 +9,7 @@ propellor (1.0.0) UNRELEASED; urgency=medium
   * Can be used to configure tor hidden services. Thanks, Félix Sipma.
   * When multiple gpg keys are added, ensure that the privdata file
     can be decrypted by all of them.
-  * API: Convert GpgKeyId to newtype.
+  * Convert GpgKeyId to newtype. (API change)
   * DigitalOcean.distroKernel property now reboots into the distribution
     kernel when necessary.
   * Avoid outputting color setting sequences when not run on a terminal.
@@ -33,7 +33,7 @@ propellor (0.9.1) unstable; urgency=medium
 
   * Docker: Add ability to control when containers restart.
   * Docker: Default to always restarting containers, so they come back 
-    up after reboots and docker daemon upgrades.
+    up after reboots and docker daemon upgrades. (API change)
   * Fix loop when a docker host that does not exist was docked.
 
  -- Joey Hess <joeyh@debian.org>  Fri, 24 Oct 2014 09:57:31 -0400
@@ -46,7 +46,7 @@ propellor (0.9.0) unstable; urgency=medium
     Instead, the os property for a stable system includes the suite name
     to use, eg Stable "wheezy".
   * stdSourcesList uses the stable suite name, to avoid unwanted
-    immediate upgrades to the next stable release.
+    immediate upgrades to the next stable release. (API change)
   * debCdn switched from cdn.debian.net to http.debian.net, which seems to be
     better managed now.
   * Docker: Avoid committing container every time it's started up.
@@ -121,7 +121,7 @@ propellor (0.7.0) unstable; urgency=medium
   * combineProperties no longer stops when a property fails; now it continues
     trying to satisfy all properties on the list before propigating the
     failure.
-  * Attr is renamed to Info.
+  * Attr is renamed to Info. (API change)
   * Renamed wrapper to propellor to make cabal installation of propellor work.
   * When git gpg signature of a fetched git branch cannot be verified,
     propellor will now continue running, but without merging in that branch.
@@ -134,7 +134,7 @@ propellor (0.6.0) unstable; urgency=medium
     docked in. So if a docker container sets a DNS alias, every container
     it's docked in will automatically be added to a DNS round-robin,
     when propellor is used to manage DNS for the domain.
-  * Apt.stdSourcesList no longer needs a suite to be specified.
+  * Apt.stdSourcesList no longer needs a suite to be specified. (API change)
   * Added --dump to dump out a field of a host's privdata. Useful for editing
     it.
   * Propellor's output now includes the hostname being provisioned, or
@@ -177,7 +177,7 @@ propellor (0.5.1) unstable; urgency=medium
 propellor (0.5.0) unstable; urgency=medium
 
   * Removed root domain records from SOA. Instead, use RootDomain
-    when calling Dns.primary.
+    when calling Dns.primary. (API change)
   * Dns primary and secondary properties are now revertable.
   * When unattendedUpgrades is enabled on an Unstable or Testing system,
     configure it to allow the upgrades.
@@ -191,8 +191,9 @@ propellor (0.4.0) unstable; urgency=medium
     zone files, which is done by looking at the properties of hosts
     in a domain.
   * The `cname` property was renamed to `alias` as it does not always
-    generate CNAME in the DNS.
+    generate CNAME in the DNS. (API change)
   * Constructor of Property has changed (use `property` function instead).
+    (API change)
   * All Property combinators now combine together their Attr settings.
     So Attr settings can be made inside a propertyList, for example.
   * Run all cron jobs under chronic from moreutils to avoid unnecessary
@@ -228,7 +229,7 @@ propellor (0.3.0) unstable; urgency=medium
   * Include security updates in sources.list for stable and testing.
   * Use ssh connection caching, especially when bootstrapping.
   * Properties now run in a Propellor monad, which provides access to
-    attributes of the host.
+    attributes of the host. (API change)
 
  -- Joey Hess <joeyh@debian.org>  Fri, 11 Apr 2014 01:19:05 -0400
 
