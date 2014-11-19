@@ -53,6 +53,7 @@ darkstar = host "darkstar.kitenet.net"
 	& Apt.buildDep ["git-annex"] `period` Daily
 	& Docker.configured
 	! Docker.docked hosts "android-git-annex"
+	& Docker.docked hosts "simple-debian"
 
 clam :: Host
 clam = standardSystem "clam.kitenet.net" Unstable "amd64"
@@ -308,6 +309,9 @@ containers =
 		& alias "shell.olduse.net"
 		& Docker.publish "4200:4200"
 		& JoeySites.oldUseNetShellBox
+
+	, Docker.container "simple-debian" "debian"
+		& "/hello" `File.containsLine` "hello"
 
 	-- git-annex autobuilder containers
 	, GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h"

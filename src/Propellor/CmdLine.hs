@@ -86,8 +86,7 @@ defaultMain hostlist = do
 	go _ (Edit field context) = editPrivData field context
 	go _ ListFields = listPrivDataFields hostlist
 	go _ (AddKey keyid) = addKey keyid
-	go _ (Chain hn isconsole) = withhost hn $ \h -> do
-		when isconsole forceConsole
+	go _ (Chain hn) = withhost hn $ \h -> do
 		r <- runPropellor h $ ensureProperties $ hostProperties h
 		putStrLn $ "\n" ++ show r
 	go _ (Docker hn) = Docker.chain hn

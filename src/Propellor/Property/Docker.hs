@@ -416,7 +416,7 @@ chain s = case toContainerId s of
 		-- to avoid ever provisioning twice at the same time.
 		whenM (checkProvisionedFlag cid) $ do
 			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
-			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain (containerHostName cid) False]) $
+			unlessM (boolSystem shim [Param "--continue", Param $ show $ Chain (containerHostName cid)]) $
 				warningMessage "Boot provision failed!"
 		void $ async $ job reapzombies
 		void $ async $ job $ simpleSh $ namedPipe cid
@@ -432,36 +432,28 @@ chain s = case toContainerId s of
 
 -- | Once a container is running, propellor can be run inside
 -- it to provision it.
---
--- Note that there is a race here, between the simplesh
--- server starting up in the container, and this property
--- being run. So, retry connections to the client for up to
--- 1 minute.
 provisionContainer :: ContainerId -> Property
 provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ do
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
+	let params = ["--continue", show $ Chain (containerHostName cid)]
 	msgh <- mkMessageHandle
-	let params = ["--continue", show $ Chain (containerHostName cid) (isConsole msgh)]
-	r <- simpleShClientRetry 60 (namedPipe cid) shim params (go Nothing)
+	r <- inContainer cid
+		[ if isConsole msgh then "-it" else "-i" ]
+		(shim : params)
+		(processoutput Nothing)
 	when (r /= FailedChange) $
 		setProvisionedFlag cid 
 	return r
   where
-	go lastline (v:rest) = case v of
-		StdoutLine s -> do
-			maybe noop putStrLn lastline
-			hFlush stdout
-			go (Just s) rest
-		StderrLine s -> do
-			maybe noop putStrLn lastline
-			hFlush stdout
-			hPutStrLn stderr s
-			hFlush stderr
-			go Nothing rest
-		Done -> ret lastline
-	go lastline [] = ret lastline
-
-	ret lastline = pure $ fromMaybe FailedChange $ readish =<< lastline
+	processoutput lastline h = do
+		v <- catchMaybeIO (hGetLine h)
+		case v of
+			Nothing -> pure $ fromMaybe FailedChange $
+				readish =<< lastline
+			Just s -> do
+				maybe noop putStrLn lastline
+				hFlush stdout
+				processoutput (Just s) h
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]
@@ -495,6 +487,10 @@ removeImage image = catchBoolIO $
 runContainer :: Image -> [RunParam] -> [String] -> IO Bool
 runContainer image ps cmd = boolSystem dockercmd $ map Param $
 	"run" : (ps ++ image : cmd)
+
+inContainer :: ContainerId -> [String] -> [String] -> (Handle -> IO a) -> IO a
+inContainer cid ps cmd = withHandle StdinHandle createProcessSuccess
+	(proc dockercmd ("exec" : ps ++ [fromContainerId cid] ++ cmd))
 
 commitContainer :: ContainerId -> IO (Maybe Image)
 commitContainer cid = catchMaybeIO $

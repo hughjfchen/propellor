@@ -145,7 +145,7 @@ data CmdLine
 	| ListFields
 	| AddKey String
 	| Continue CmdLine
-	| Chain HostName Bool
+	| Chain HostName
 	| Update HostName
 	| Docker HostName
 	| GitPush Fd Fd
