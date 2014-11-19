@@ -1,4 +1,4 @@
--- | Specific configuation for Joey Hess's sites. Probably not useful to
+-- | Specific configuration for Joey Hess's sites. Probably not useful to
 -- others except as an example.
 
 module Propellor.Property.SiteSpecific.JoeySites where
