@@ -1,4 +1,4 @@
-propellor (0.9.3) UNRELEASED; urgency=medium
+propellor (1.0.0) UNRELEASED; urgency=medium
 
   * propellor --spin can now be used to update remote hosts, without
     any central git repository needed. The central git repository is
