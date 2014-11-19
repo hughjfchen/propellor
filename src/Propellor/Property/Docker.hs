@@ -489,7 +489,7 @@ runContainer image ps cmd = boolSystem dockercmd $ map Param $
 	"run" : (ps ++ image : cmd)
 
 inContainer :: ContainerId -> [String] -> [String] -> (Handle -> IO a) -> IO a
-inContainer cid ps cmd = withHandle StdinHandle createProcessSuccess
+inContainer cid ps cmd = withHandle StdoutHandle createProcessSuccess
 	(proc dockercmd ("exec" : ps ++ [fromContainerId cid] ++ cmd))
 
 commitContainer :: ContainerId -> IO (Maybe Image)
