@@ -89,6 +89,15 @@ check c p = adjustProperty p $ \satisfy -> ifM (liftIO c)
 	, return NoChange
 	)
 
+-- | Tries the first property, but if it fails to work, instead uses
+-- the second.
+fallback :: Property -> Property -> Property
+fallback p1 p2 = adjustProperty p1 $ \satisfy -> do
+	r <- satisfy
+	if r == FailedChange
+		then propertySatisfy p2
+		else return r
+
 -- | Marks a Property as trivial. It can only return FailedChange or
 -- NoChange. 
 --
