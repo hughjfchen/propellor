@@ -1,4 +1,7 @@
-module Propellor.CmdLine where
+module Propellor.CmdLine (
+	defaultMain,
+	processCmdLine,
+) where
 
 import System.Environment (getArgs)
 import Data.List
@@ -68,6 +71,7 @@ processCmdLine = go =<< getArgs
 		Just pf -> return $ f pf (Context c)
 		Nothing -> errorMessage $ "Unknown privdata field " ++ s
 
+-- | Runs propellor on hosts, as controlled by command-line options.
 defaultMain :: [Host] -> IO ()
 defaultMain hostlist = do
 	DockerShim.cleanEnv

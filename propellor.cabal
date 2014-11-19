@@ -101,6 +101,7 @@ Library
     Propellor.Property.SiteSpecific.GitHome
     Propellor.Property.SiteSpecific.JoeySites
     Propellor.Property.SiteSpecific.GitAnnexBuilder
+    Propellor.CmdLine
     Propellor.Info
     Propellor.Message
     Propellor.PrivData
@@ -112,7 +113,6 @@ Library
     Propellor.Types.PrivData
   Other-Modules:
     Propellor.Types.Info
-    Propellor.CmdLine
     Propellor.Git
     Propellor.Gpg
     Propellor.Server
