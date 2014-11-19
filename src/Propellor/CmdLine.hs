@@ -21,20 +21,23 @@ import qualified Propellor.Property.Docker.Shim as DockerShim
 import Utility.FileMode
 import Utility.SafeCommand
 
-usage :: Handle -> IO a
-usage h = do
-	hPutStrLn h $ unlines 
-		[ "Usage:"
-		, "  propellor"
-		, "  propellor hostname"
-		, "  propellor --spin hostname"
-		, "  propellor --add-key keyid"
-		, "  propellor --set field context"
-		, "  propellor --dump field context"
-		, "  propellor --edit field context"
-		, "  propellor --list-fields"
-		]
-	exitFailure
+usage :: Handle -> IO ()
+usage h = hPutStrLn h $ unlines 
+	[ "Usage:"
+	, "  propellor"
+	, "  propellor hostname"
+	, "  propellor --spin hostname"
+	, "  propellor --add-key keyid"
+	, "  propellor --set field context"
+	, "  propellor --dump field context"
+	, "  propellor --edit field context"
+	, "  propellor --list-fields"
+	]
+
+usageError :: [String] -> IO a
+usageError ps = do
+	usage stderr
+	error ("(Unexpected: " ++ show ps)
 
 processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
@@ -46,21 +49,23 @@ processCmdLine = go =<< getArgs
 	go ("--dump":f:c:[]) = withprivfield f c Dump
 	go ("--edit":f:c:[]) = withprivfield f c Edit
 	go ("--list-fields":[]) = return ListFields
-	go ("--help":_) = usage stdout
+	go ("--help":_) = do	
+		usage stdout
+		exitFailure
 	go ("--update":h:[]) = return $ Update h
 	go ("--boot":h:[]) = return $ Update h -- for back-compat
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage $ "--continue serialization failure (" ++ s ++ ")"
 	go (h:[])
-		| "--" `isPrefixOf` h = usage stderr
+		| "--" `isPrefixOf` h = usageError [h]
 		| otherwise = return $ Run h
 	go [] = do
 		s <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
 		if null s
 			then errorMessage "Cannot determine hostname! Pass it on the command line."
 			else return $ Run s
-	go _ = usage stderr
+	go v = usageError v
 
 	withprivfield s c f = case readish s of
 		Just pf -> return $ f pf (Context c)
