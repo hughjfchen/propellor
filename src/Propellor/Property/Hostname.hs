@@ -7,14 +7,14 @@ import Data.List
 
 -- | Ensures that the hostname is set using best practices.
 --
--- Configures /etc/hostname and the current hostname.
+-- Configures `/etc/hostname` and the current hostname.
 --
--- Configures /etc/mailname with the domain part of the hostname.
+-- Configures `/etc/mailname` with the domain part of the hostname.
 --
--- /etc/hosts is also configured, with an entry for 127.0.1.1, which is
+-- `/etc/hosts` is also configured, with an entry for 127.0.1.1, which is
 -- standard at least on Debian to set the FDQN.
 --
--- Also, the /etc/hosts 127.0.0.1 line is set to localhost. Putting any
+-- Also, the `/etc/hosts` 127.0.0.1 line is set to localhost. Putting any
 -- other hostnames there is not best practices and can lead to annoying
 -- messages from eg, apache.
 sane :: Property
@@ -44,7 +44,7 @@ setTo hn = combineProperties desc go
 		(ip ++ "\t" ++ (unwords names)) : filter (not . hasip ip) ls
 	hasip ip l = headMaybe (words l) == Just ip
 
--- | Makes /etc/resolv.conf contain search and domain lines for 
+-- | Makes `/etc/resolv.conf` contain search and domain lines for 
 -- the domain that the hostname is in.
 searchDomain :: Property
 searchDomain = property desc (ensureProperty . go =<< asks hostName)
