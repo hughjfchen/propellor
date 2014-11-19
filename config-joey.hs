@@ -53,7 +53,7 @@ darkstar = host "darkstar.kitenet.net"
 	& Apt.buildDep ["git-annex"] `period` Daily
 	& Docker.configured
 	! Docker.docked hosts "android-git-annex"
-	! Docker.docked hosts "simple-debian"
+	& Docker.docked hosts "simple-debian"
 
 clam :: Host
 clam = standardSystem "clam.kitenet.net" Unstable "amd64"
