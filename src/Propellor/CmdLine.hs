@@ -21,9 +21,9 @@ import qualified Propellor.Property.Docker.Shim as DockerShim
 import Utility.FileMode
 import Utility.SafeCommand
 
-usage :: IO a
-usage = do
-	putStrLn $ unlines 
+usage :: Handle -> IO a
+usage h = do
+	hPutStrLn h $ unlines 
 		[ "Usage:"
 		, "  propellor"
 		, "  propellor hostname"
@@ -46,21 +46,21 @@ processCmdLine = go =<< getArgs
 	go ("--dump":f:c:[]) = withprivfield f c Dump
 	go ("--edit":f:c:[]) = withprivfield f c Edit
 	go ("--list-fields":[]) = return ListFields
-	go ("--help":_) = usage
+	go ("--help":_) = usage stdout
 	go ("--update":h:[]) = return $ Update h
 	go ("--boot":h:[]) = return $ Update h -- for back-compat
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage $ "--continue serialization failure (" ++ s ++ ")"
 	go (h:[])
-		| "--" `isPrefixOf` h = usage
+		| "--" `isPrefixOf` h = usage stderr
 		| otherwise = return $ Run h
 	go [] = do
 		s <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
 		if null s
 			then errorMessage "Cannot determine hostname! Pass it on the command line."
 			else return $ Run s
-	go _ = usage
+	go _ = usage stderr
 
 	withprivfield s c f = case readish s of
 		Just pf -> return $ f pf (Context c)
