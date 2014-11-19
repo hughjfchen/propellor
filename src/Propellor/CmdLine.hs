@@ -208,6 +208,30 @@ spin hn hst = do
 	runcmd = mkcmd
 		[ "cd " ++ localdir ++ " && ./propellor --continue " ++ shellEscape (show (SimpleRun hn)) ]
 
+-- Update the privdata, repo url, and git repo over the ssh
+-- connection from the client that ran propellor --spin.
+update :: IO ()
+update = do
+	req NeedRepoUrl repoUrlMarker setRepoUrl
+	makePrivDataDir
+	req NeedPrivData privDataMarker $
+		writeFileProtected privDataLocal
+	req NeedGitPush gitPushMarker $ \_ -> do
+		hin <- dup stdInput
+		hout <- dup stdOutput
+		hClose stdin
+		hClose stdout
+		unlessM (boolSystem "git" (pullparams hin hout)) $
+			errorMessage "git pull from client failed"
+  where
+	pullparams hin hout =
+		[ Param "pull"
+		, Param "--progress"
+		, Param "--upload-pack"
+		, Param $ "./propellor --continue " ++ show (GitPush hin hout)
+		, Param "."
+		]
+
 comm :: HostName  -> Host -> (((Handle, Handle) -> IO ()) -> IO ()) -> IO ()
 comm hn hst connect = connect go
   where
@@ -273,30 +297,6 @@ sendGitClone hn = void $ actionMessage ("Cloning git repository to " ++ hn) $ do
 		, "git checkout -b " ++ branch
 		, "git remote rm origin"
 		, "rm -f " ++ remotebundle
-		]
-
--- Update the privdata, repo url, and git repo over the ssh
--- connection from the client that ran propellor --spin.
-update :: IO ()
-update = do
-	req NeedRepoUrl repoUrlMarker setRepoUrl
-	makePrivDataDir
-	req NeedPrivData privDataMarker $
-		writeFileProtected privDataLocal
-	req NeedGitPush gitPushMarker $ \_ -> do
-		hin <- dup stdInput
-		hout <- dup stdOutput
-		hClose stdin
-		hClose stdout
-		unlessM (boolSystem "git" (pullparams hin hout)) $
-			errorMessage "git pull from client failed"
-  where
-	pullparams hin hout =
-		[ Param "pull"
-		, Param "--progress"
-		, Param "--upload-pack"
-		, Param $ "./propellor --continue " ++ show (GitPush hin hout)
-		, Param "."
 		]
 
 -- Shim for git push over the propellor ssh channel.
