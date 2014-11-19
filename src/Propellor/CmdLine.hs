@@ -287,7 +287,7 @@ sendGitUpdate hn fromh toh =
 
 -- Initial git clone, used for bootstrapping.
 sendGitClone :: HostName -> IO ()
-sendGitClone hn = void $ actionMessage ("Cloning git repository to " ++ hn) $ do
+sendGitClone hn = void $ actionMessage ("Clone git repository to " ++ hn) $ do
 	branch <- getCurrentBranch
 	cacheparams <- sshCachingParams hn
 	withTmpFile "propellor.git" $ \tmp _ -> allM id
