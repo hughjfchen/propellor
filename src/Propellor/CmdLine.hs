@@ -57,6 +57,7 @@ processCmdLine = go =<< getArgs
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage $ "--continue serialization failure (" ++ s ++ ")"
+	go ("--gitpush":fin:fout:_) = return $ GitPush (Prelude.read fin) (Prelude.read fout)
 	go (h:[])
 		| "--" `isPrefixOf` h = usageError [h]
 		| otherwise = return $ Run h
@@ -233,7 +234,7 @@ update = do
 		[ Param "pull"
 		, Param "--progress"
 		, Param "--upload-pack"
-		, Param $ "./propellor --continue " ++ show (GitPush hin hout)
+		, Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout
 		, Param "."
 		]
 
