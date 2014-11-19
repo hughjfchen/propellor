@@ -116,7 +116,6 @@ Library
     Propellor.Git
     Propellor.Gpg
     Propellor.Server
-    Propellor.SimpleSh
     Propellor.Ssh
     Propellor.PrivData.Paths
     Propellor.Protocol
