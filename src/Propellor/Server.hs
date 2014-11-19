@@ -10,7 +10,6 @@ import System.PosixCompat
 import System.Posix.IO
 import Control.Concurrent.Async
 import qualified Data.ByteString as B
-import System.Process (std_in, std_out)
 
 import Propellor
 import Propellor.Protocol
