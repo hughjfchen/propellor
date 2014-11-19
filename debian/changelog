@@ -9,7 +9,7 @@ propellor (1.0.0) UNRELEASED; urgency=medium
   * Can be used to configure tor hidden services. Thanks, Félix Sipma.
   * When multiple gpg keys are added, ensure that the privdata file
     can be decrypted by all of them.
-  * Convert GpgKeyId to newtype.
+  * API: Convert GpgKeyId to newtype.
   * DigitalOcean.distroKernel property now reboots into the distribution
     kernel when necessary.
   * Avoid outputting color setting sequences when not run on a terminal.
