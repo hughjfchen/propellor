@@ -10,7 +10,7 @@
 
 module Utility.Process (
 	module X,
-	CreateProcess,
+	CreateProcess(..),
 	StdHandle(..),
 	readProcess,
 	readProcessEnv,
@@ -31,6 +31,7 @@ module Utility.Process (
 	stdinHandle,
 	stdoutHandle,
 	stderrHandle,
+	bothHandles,
 	processHandle,
 	devNull,
 ) where
