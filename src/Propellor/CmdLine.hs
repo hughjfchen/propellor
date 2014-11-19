@@ -51,7 +51,7 @@ processCmdLine = go =<< getArgs
 	go ("--boot":h:[]) = return $ Update h -- for back-compat
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
-		Nothing -> errorMessage "--continue serialization failure"
+		Nothing -> errorMessage $ "--continue serialization failure (" ++ s ++ ")"
 	go (h:[])
 		| "--" `isPrefixOf` h = usage
 		| otherwise = return $ Run h
