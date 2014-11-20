@@ -53,9 +53,11 @@ provisioned c@(Chroot loc system _) = RevertableProperty
 	teardown = undefined
 
 propigateChrootInfo :: Chroot -> Property -> Property
-propigateChrootInfo c@(Chroot loc _ h) p = propigateInfo c p (<> chrootinfo)
-  where
-	chrootinfo = mempty $ mempty { _chroots = M.singleton loc h }
+propigateChrootInfo c p = propigateInfo c p (<> chrootInfo c)
+
+chrootInfo :: Chroot -> Info
+chrootInfo (Chroot loc _ h) =
+	mempty { _chrootinfo = mempty { _chroots = M.singleton loc h } }
 
 -- | Propellor is run inside the chroot to provision it.
 --
