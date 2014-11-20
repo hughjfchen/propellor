@@ -15,7 +15,6 @@ import Control.Applicative
 import Propellor.Types
 import Utility.Monad
 import Utility.Env
-import Utility.FileSystemEncoding
 
 data MessageHandle
 	= ConsoleMessageHandle
@@ -23,7 +22,6 @@ data MessageHandle
 
 mkMessageHandle :: IO MessageHandle
 mkMessageHandle = do
-	fileEncoding stdout
 	ifM (hIsTerminalDevice stdout <||> (isJust <$> getEnv "PROPELLOR_CONSOLE"))
 		( return ConsoleMessageHandle
 		, return TextMessageHandle
@@ -117,6 +115,5 @@ checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
 			setLevel DEBUG .  setHandlers [f]
 	go _ = noop
 
--- Unicode propellor.
 propellorSigel :: String
-propellorSigel = "ꕤ "
+propellorSigel = "* "
