@@ -41,9 +41,9 @@ built target system@(System _ arch) extraparams =
 
 	setupprop = property ("debootstrapped " ++ target) $ liftIO $ do
 		createDirectoryIfMissing True target
-		let suite = case extractSuite system of
-			Nothing -> error $ "don't know how to debootstrap " ++ show system
-			Just s -> s
+		suite <- case extractSuite system of
+			Nothing -> errorMessage $ "don't know how to debootstrap " ++ show system
+			Just s -> pure s
 		let params = extraparams ++
 			[ Param suite
 			, Param target
@@ -63,7 +63,7 @@ built target system@(System _ arch) extraparams =
 			<$> mountPoints
 		forM_ submnts $ \mnt ->
 			unlessM (boolSystem "umount" [ Param "-l", Param mnt ]) $ do
-				error $ "failed unmounting " ++ mnt
+				errorMessage $ "failed unmounting " ++ mnt
 		removeDirectoryRecursive target
 		return MadeChange
 
@@ -108,7 +108,7 @@ sourceInstall' :: IO Result
 sourceInstall' = withTmpDir "debootstrap" $ \tmpd -> do
 	let indexfile = tmpd </> "index.html"
 	unlessM (download baseurl indexfile) $
-		error $ "Failed to download " ++ baseurl
+		errorMessage $ "Failed to download " ++ baseurl
 	urls <- reverse . sort -- highest version first
 		. filter ("debootstrap_" `isInfixOf`)
 		. filter (".tar." `isInfixOf`)
@@ -120,15 +120,15 @@ sourceInstall' = withTmpDir "debootstrap" $ \tmpd -> do
 		(tarurl:_) -> do
 			let f = tmpd </> takeFileName tarurl
 			unlessM (download tarurl f) $
-				error $ "Failed to download " ++ tarurl
+				errorMessage $ "Failed to download " ++ tarurl
 			return f
-		_ -> error $ "Failed to find any debootstrap tarballs listed on " ++ baseurl
+		_ -> errorMessage $ "Failed to find any debootstrap tarballs listed on " ++ baseurl
 
 	createDirectoryIfMissing True localInstallDir
 	bracket getWorkingDirectory changeWorkingDirectory $ \_ -> do
 		changeWorkingDirectory localInstallDir
 		unlessM (boolSystem "tar" [Param "xf", File tarfile]) $
-			error "Failed to extract debootstrap tar file"
+			errorMessage "Failed to extract debootstrap tar file"
 		nukeFile tarfile
 		l <- dirContents "."
 		case l of
@@ -137,7 +137,7 @@ sourceInstall' = withTmpDir "debootstrap" $ \tmpd -> do
 				makeDevicesTarball
 				makeWrapperScript (localInstallDir </> subdir)
 				return MadeChange
-			_ -> error "debootstrap tar file did not contain exactly one dirctory"
+			_ -> errorMessage "debootstrap tar file did not contain exactly one dirctory"
 
 sourceRemove :: Property
 sourceRemove = property "debootstrap not installed from source" $ liftIO $
@@ -183,7 +183,7 @@ makeDevicesTarball = do
 	ok <- boolSystem "sh" [Param "-c", Param tarcmd]
 	nukeFile foreignDevFlag
 	unless ok $
-		error "Failed to tar up /dev to generate devices.tar.gz"
+		errorMessage "Failed to tar up /dev to generate devices.tar.gz"
   where
 	tarcmd = "(cd / && tar cf - dev) | gzip > devices.tar.gz"
 
