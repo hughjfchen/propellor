@@ -32,7 +32,7 @@ built :: FilePath -> System -> [CommandParam] -> RevertableProperty
 built target system@(System _ arch) extraparams =
 	RevertableProperty setup teardown
   where
-	setup = check (unpopulated target) setupprop
+	setup = check (unpopulated target <||> ispartial) setupprop
 		`requires` unrevertable installed
 	
 	teardown = check (not <$> unpopulated target) teardownprop
@@ -58,6 +58,10 @@ built target system@(System _ arch) extraparams =
 			)
 
 	teardownprop = property ("removed debootstrapped " ++ target) $ liftIO $ do
+		removetarget
+		return MadeChange
+
+	removetarget = do
 		submnts <- filter (\p -> simplifyPath p /= simplifyPath target)
 			. filter (dirContains target)
 			<$> mountPoints
@@ -65,7 +69,15 @@ built target system@(System _ arch) extraparams =
 			unlessM (boolSystem "umount" [ Param "-l", Param mnt ]) $ do
 				errorMessage $ "failed unmounting " ++ mnt
 		removeDirectoryRecursive target
-		return MadeChange
+
+	-- A failed debootstrap run will leave a debootstrap directory;
+	-- recover by deleting it and trying again.
+	ispartial = ifM (doesDirectoryExist (target </> "debootstrap"))
+		( do
+			removetarget
+			return True
+		, return False
+		)
 
 mountPoints :: IO [FilePath]
 mountPoints = lines <$> readProcess "findmnt" ["-rn", "--output", "target"]
