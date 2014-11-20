@@ -1,4 +1,4 @@
-[[!meta title="propellor: property-based host configuration management in haskell"]]
+[[!meta title="propellor: deploying properties to hosts with haskell"]]
 
 [[!sidebar content="""
 [[Install]]  
