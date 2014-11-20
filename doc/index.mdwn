@@ -35,5 +35,5 @@ title="propellor news"]]
 
 ## feeds
 
-[[!inline pages="feeds/* and !*/Discussion" show="4" archive=yes
+[[!inline pages="feeds/*/* and !*/Discussion" show="4" archive=yes
 title="propellor blog posts"]]
