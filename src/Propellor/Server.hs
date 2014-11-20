@@ -20,7 +20,7 @@ import Utility.FileMode
 import Utility.SafeCommand
 
 -- Update the privdata, repo url, and git repo over the ssh
--- connection, talking the the user's local propellor instance which is
+-- connection, talking to the user's local propellor instance which is
 -- running the updateServer
 update :: IO ()
 update = do

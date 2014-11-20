@@ -69,7 +69,8 @@ fetchOrigin = do
 	branchref <- getCurrentBranch
 	let originbranch = "origin" </> branchref
 
-	void $ actionMessage "Git fetch" $ boolSystem "git" [Param "fetch"]
+	void $ actionMessage "Pull from central git repository" $
+		boolSystem "git" [Param "fetch"]
 	
 	oldsha <- getCurrentGitSha1 branchref
 	

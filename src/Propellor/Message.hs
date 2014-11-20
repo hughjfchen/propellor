@@ -15,16 +15,19 @@ import Control.Applicative
 import Propellor.Types
 import Utility.Monad
 import Utility.Env
+import Utility.FileSystemEncoding
 
 data MessageHandle
 	= ConsoleMessageHandle
 	| TextMessageHandle
 
 mkMessageHandle :: IO MessageHandle
-mkMessageHandle = ifM (hIsTerminalDevice stdout <||> (isJust <$> getEnv "PROPELLOR_CONSOLE"))
-	( return ConsoleMessageHandle
-	, return TextMessageHandle
-	)
+mkMessageHandle = do
+	fileEncoding stdout
+	ifM (hIsTerminalDevice stdout <||> (isJust <$> getEnv "PROPELLOR_CONSOLE"))
+		( return ConsoleMessageHandle
+		, return TextMessageHandle
+		)
 
 forceConsole :: IO ()
 forceConsole = void $ setEnv "PROPELLOR_CONSOLE" "1" True
