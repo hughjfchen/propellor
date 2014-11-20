@@ -52,7 +52,6 @@ import System.Posix.Process
 import Prelude hiding (init)
 import Data.List hiding (init)
 import Data.List.Utils
-import qualified Data.Set as S
 import qualified Data.Map as M
 
 installed :: Property
@@ -78,8 +77,10 @@ data Container = Container Image Host
 instance Hostlike Container where
 	(Container i h) & p = Container i (h & p)
 	(Container i h) &^ p = Container i (h &^ p)
+	getHost (Container _ h) = h
 
--- | Builds a Container with a given name, image, and properties.
+-- | Defines a Container with a given name, image, and properties.
+-- Properties can be added to configure the Container.
 --
 -- > container "web-server" "debian"
 -- >    & publish "80:80"
@@ -100,11 +101,9 @@ container cn image = Container image (Host cn [] info)
 --
 -- Reverting this property ensures that the container is stopped and
 -- removed.
-docked
-	:: Container
-	-> RevertableProperty
+docked :: Container -> RevertableProperty
 docked ctr@(Container _ h) = RevertableProperty
-	(propigateInfo ctr (go "docked" setup))
+	(propigateContainerInfo ctr (go "docked" setup))
 	(go "undocked" teardown)
   where
 	cn = hostName h
@@ -131,14 +130,12 @@ docked ctr@(Container _ h) = RevertableProperty
 					]
 			]
 
-propigateInfo :: Container -> Property -> Property
-propigateInfo (Container _ h@(Host hn _ containerinfo)) p =
-	combineProperties (propertyDesc p) $ p' : dnsprops ++ privprops
+propigateContainerInfo :: Container -> Property -> Property
+propigateContainerInfo ctr@(Container _ h) p =
+	propigateInfo ctr p (<> dockerinfo)
   where
-	p' = p { propertyInfo = propertyInfo p <> dockerinfo }
-	dockerinfo = dockerInfo $ mempty { _dockerContainers = M.singleton hn h }
-	dnsprops = map addDNS (S.toList $ _dns containerinfo)
-	privprops = map addPrivDataField (S.toList $ _privDataFields containerinfo)
+	dockerinfo = dockerInfo $
+		mempty { _dockerContainers = M.singleton (hostName h) h }
 
 mkContainerInfo :: ContainerId -> Container -> ContainerInfo
 mkContainerInfo cid@(ContainerId hn _cn) (Container img h) = 

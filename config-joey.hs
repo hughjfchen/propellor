@@ -24,7 +24,7 @@ import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
-import qualified Propellor.Property.Debootstrap as Debootstrap
+import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -80,8 +80,12 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	! Ssh.listenPort 80
 	! Ssh.listenPort 443
 
-	& Debootstrap.built "/tmp/chroot" (System (Debian Unstable) "amd64") []
+	& Chroot.provisioned testChroot
 	
+testChroot :: Chroot.Chroot
+testChroot = Chroot.chroot "/tmp/chroot" (System (Debian Unstable) "amd64")
+	& File.hasContent "/foo" ["hello"]
+
 orca :: Host
 orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	[ "Main git-annex build box." ]
