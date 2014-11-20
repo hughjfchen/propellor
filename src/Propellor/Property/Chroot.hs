@@ -109,6 +109,7 @@ chain hostlist hn loc = case findHostNoAlias hostlist hn of
   where
 	go h = do
 		changeWorkingDirectory localdir
+		forceConsole
 		onlyProcess (provisioningLock loc) $ do
 			r <- runPropellor h $ ensureProperties $ hostProperties h
 			putStrLn $ "\n" ++ show r

@@ -77,6 +77,6 @@ processChainOutput h = go Nothing
 			Nothing -> pure $ fromMaybe FailedChange $
 				readish =<< lastline
 			Just s -> do
-				maybe noop putStrLn lastline
+				maybe noop (\l -> unless (null l) (putStrLn l)) lastline
 				hFlush stdout
 				go (Just s)
