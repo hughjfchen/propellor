@@ -1,0 +1,4 @@
+## posts
+
+[[!inline pages="internal(feeds/*) and !*/Discussion" show="4" archive=yes
+title="propellor blog posts"]]

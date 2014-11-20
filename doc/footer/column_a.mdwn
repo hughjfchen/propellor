@@ -1,0 +1,4 @@
+## news
+
+[[!inline pages="news/* and !*/Discussion" show="4" archive=yes
+title="propellor news"]]
