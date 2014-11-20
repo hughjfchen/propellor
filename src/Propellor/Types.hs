@@ -169,7 +169,7 @@ data Info = Info
 	, _dockerinfo :: DockerInfo
 	, _chrootinfo :: ChrootInfo
 	}
-	deriving (Eq, Show)
+	deriving (Show)
 
 instance Monoid Info where
 	mempty = Info mempty mempty mempty mempty mempty mempty mempty mempty
@@ -210,12 +210,6 @@ instance Monoid DockerInfo where
 		, _dockerContainers = M.union (_dockerContainers old) (_dockerContainers new)
 		}
 
-instance Eq DockerInfo where
-	x == y = and
-		[ let simpl v = map (\(DockerRunParam a) -> a "") (_dockerRunParams v)
-		  in simpl x == simpl y
-		]
-
 newtype DockerRunParam = DockerRunParam (HostName -> String)
 
 instance Show DockerRunParam where
@@ -231,8 +225,3 @@ instance Monoid ChrootInfo where
 	mappend old new = ChrootInfo
 		{ _chroots = M.union (_chroots old) (_chroots new)
 		}
-
-instance Eq ChrootInfo where
-	x == y = and
-		[ M.keys (_chroots x) == M.keys (_chroots y)
-		]
