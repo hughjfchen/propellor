@@ -45,9 +45,9 @@ built target system@(System _ arch) extraparams =
 			Nothing -> errorMessage $ "don't know how to debootstrap " ++ show system
 			Just s -> pure s
 		let params = extraparams ++
-			[ Param suite
+			[ Param $ "--arch=" ++ arch
+			, Param suite
 			, Param target
-			, Param $ "--arch=" ++ arch
 			]
 		cmd <- fromMaybe "debootstrap" <$> programPath
 		ifM (boolSystem cmd params)
