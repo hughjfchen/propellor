@@ -1,8 +1,8 @@
 module Propellor.Property.Debootstrap (
 	Url,
-	debootstrapped,
+	built,
 	installed,
-	debootstrapPath,
+	programPath,
 ) where
 
 import Propellor
@@ -28,8 +28,8 @@ type Url = String
 --
 -- Note that reverting this property does not stop any processes
 -- currently running in the chroot.
-debootstrapped :: FilePath -> System -> [CommandParam] -> RevertableProperty
-debootstrapped target system@(System _ arch) extraparams =
+built :: FilePath -> System -> [CommandParam] -> RevertableProperty
+built target system@(System _ arch) extraparams =
 	RevertableProperty setup teardown
   where
 	setup = check (unpopulated target) setupprop
@@ -49,7 +49,7 @@ debootstrapped target system@(System _ arch) extraparams =
 			, Param target
 			, Param $ "--arch=" ++ arch
 			]
-		cmd <- fromMaybe "debootstrap" <$> debootstrapPath
+		cmd <- fromMaybe "debootstrap" <$> programPath
 		ifM (boolSystem cmd params)
 			( do
 				fixForeignDev target
@@ -83,7 +83,7 @@ installed :: RevertableProperty
 installed = RevertableProperty install remove
   where
 	install = withOS "debootstrap installed" $ \o -> 
-		ifM (liftIO $ isJust <$> debootstrapPath)
+		ifM (liftIO $ isJust <$> programPath)
 			( return NoChange
 			, ensureProperty (installon o)
 			)
@@ -157,8 +157,8 @@ wrapperScript = sourceInstallDir </> "debootstrap.wrapper"
 -- | Finds debootstrap in PATH, but fall back to looking for the
 -- wrapper script that is installed, outside the PATH, when debootstrap
 -- is installed from source.
-debootstrapPath :: IO (Maybe FilePath)
-debootstrapPath = getM searchPath
+programPath :: IO (Maybe FilePath)
+programPath = getM searchPath
 	[ "debootstrap"
 	, wrapperScript
 	]
