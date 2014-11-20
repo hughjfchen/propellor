@@ -59,6 +59,7 @@ actionMessage' mhn desc a = do
 	liftIO $ do
 		whenConsole h $
 			setTitle "propellor: running"
+		putStr propellorSigel
 		showhn h mhn
 		putStr $ desc ++ " ... "
 		let (msg, intensity, color) = getActionResult r
@@ -78,12 +79,12 @@ actionMessage' mhn desc a = do
 warningMessage :: MonadIO m => String -> m ()
 warningMessage s = liftIO $ do
 	h <- mkMessageHandle
-	colorLine h Vivid Magenta $ "** warning: " ++ s
+	colorLine h Vivid Magenta $ propellorSigel ++ "** warning: " ++ s
 
 errorMessage :: MonadIO m => String -> m a
 errorMessage s = liftIO $ do
 	h <- mkMessageHandle
-	colorLine h Vivid Red $ "** error: " ++ s
+	colorLine h Vivid Red $ propellorSigel ++ "** error: " ++ s
 	error "Cannot continue!"
 
 colorLine :: MessageHandle -> ColorIntensity -> Color -> String -> IO ()
@@ -112,3 +113,7 @@ checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
 		updateGlobalLogger rootLoggerName $ 
 			setLevel DEBUG .  setHandlers [f]
 	go _ = noop
+
+-- Unicode propellor.
+propellorSigel :: String
+propellorSigel = "ꕤ "
