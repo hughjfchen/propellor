@@ -25,6 +25,7 @@ module Propellor.Types
 	, fromVal
 	, DockerInfo(..)
 	, DockerRunParam(..)
+	, ChrootInfo(..)
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
 	) where
@@ -154,6 +155,7 @@ data CmdLine
 	| Update HostName
 	| DockerInit HostName
 	| DockerChain HostName String
+	| ChrootChain HostName FilePath
 	| GitPush Fd Fd
 	deriving (Read, Show, Eq)
 
@@ -166,11 +168,12 @@ data Info = Info
 	, _dns :: S.Set Dns.Record
 	, _namedconf :: Dns.NamedConfMap
 	, _dockerinfo :: DockerInfo
+	, _chrootinfo :: ChrootInfo
 	}
-	deriving (Eq, Show)
+	deriving (Show)
 
 instance Monoid Info where
-	mempty = Info mempty mempty mempty mempty mempty mempty mempty
+	mempty = Info mempty mempty mempty mempty mempty mempty mempty mempty
 	mappend old new = Info
 		{ _os = _os old <> _os new
 		, _privDataFields = _privDataFields old <> _privDataFields new
@@ -179,6 +182,7 @@ instance Monoid Info where
 		, _dns = _dns old <> _dns new
 		, _namedconf = _namedconf old <> _namedconf new
 		, _dockerinfo = _dockerinfo old <> _dockerinfo new
+		, _chrootinfo = _chrootinfo old <> _chrootinfo new
 		}
 
 data Val a = Val a | NoVal
@@ -207,13 +211,18 @@ instance Monoid DockerInfo where
 		, _dockerContainers = M.union (_dockerContainers old) (_dockerContainers new)
 		}
 
-instance Eq DockerInfo where
-	x == y = and
-		[ let simpl v = map (\(DockerRunParam a) -> a "") (_dockerRunParams v)
-		  in simpl x == simpl y
-		]
-
 newtype DockerRunParam = DockerRunParam (HostName -> String)
 
 instance Show DockerRunParam where
 	show (DockerRunParam a) = a ""
+
+data ChrootInfo = ChrootInfo
+	{ _chroots :: M.Map FilePath Host
+	}
+	deriving (Show)
+
+instance Monoid ChrootInfo where
+	mempty = ChrootInfo mempty
+	mappend old new = ChrootInfo
+		{ _chroots = M.union (_chroots old) (_chroots new)
+		}

@@ -31,3 +31,7 @@ You are encouraged to send patches and improve it. See [[contributing]].
 ## news
 
 [[!inline pages="news/* and !*/Discussion" show="4" archive=yes]]
+
+## feeds
+
+[[!inline pages="feeds/* and !*/Discussion" show="4" archive=yes]]

@@ -15,7 +15,8 @@ import Propellor.Git
 import Propellor.Ssh
 import Propellor.Server
 import qualified Propellor.Property.Docker as Docker
-import qualified Propellor.Property.Docker.Shim as DockerShim
+import qualified Propellor.Property.Chroot as Chroot
+import qualified Propellor.Shim as Shim
 import Utility.SafeCommand
 
 usage :: Handle -> IO ()
@@ -72,7 +73,7 @@ processCmdLine = go =<< getArgs
 -- | Runs propellor on hosts, as controlled by command-line options.
 defaultMain :: [Host] -> IO ()
 defaultMain hostlist = do
-	DockerShim.cleanEnv
+	Shim.cleanEnv
 	checkDebugMode
 	cmdline <- processCmdLine
 	debug ["command line: ", show cmdline]
@@ -85,6 +86,7 @@ defaultMain hostlist = do
 	go _ ListFields = listPrivDataFields hostlist
 	go _ (AddKey keyid) = addKey keyid
 	go _ (DockerChain hn cid) = Docker.chain hostlist hn cid
+	go _ (ChrootChain hn loc) = Chroot.chain hostlist hn loc
 	go _ (DockerInit hn) = Docker.init hn
 	go _ (GitPush fin fout) = gitPushHelper fin fout
 	go _ (Update _) = forceConsole >> fetchFirst (onlyprocess update)
