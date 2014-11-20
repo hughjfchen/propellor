@@ -176,7 +176,7 @@ spin hn hst = do
 
 	-- And now we can run it.
 	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, runcmd])) $
-		error $ "remote propellor failed (running: " ++ runcmd ++")"
+		error $ "remote propellor failed"
   where
 	user = "root@"++hn
 
