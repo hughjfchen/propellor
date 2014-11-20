@@ -15,7 +15,6 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 import Propellor.Types
-import Propellor.Types.Info
 import Propellor.Message
 import Propellor.Info
 import Propellor.Gpg

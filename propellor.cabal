@@ -113,7 +113,6 @@ Library
     Propellor.Types.Dns
     Propellor.Types.PrivData
   Other-Modules:
-    Propellor.Types.Info
     Propellor.Git
     Propellor.Gpg
     Propellor.Server

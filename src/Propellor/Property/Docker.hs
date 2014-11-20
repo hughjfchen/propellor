@@ -39,7 +39,6 @@ module Propellor.Property.Docker (
 ) where
 
 import Propellor hiding (init)
-import Propellor.Types.Info
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Docker.Shim as Shim
@@ -54,6 +53,7 @@ import Prelude hiding (init)
 import Data.List hiding (init)
 import Data.List.Utils
 import qualified Data.Set as S
+import qualified Data.Map as M
 
 installed :: Property
 installed = Apt.installed ["docker.io"]
@@ -86,13 +86,9 @@ instance Hostlike Container where
 -- >    & Apt.installed {"apache2"]
 -- >    & ...
 container :: ContainerName -> Image -> Container
-container cn image = Container image (Host hn [] info)
+container cn image = Container image (Host cn [] info)
   where
 	info = dockerInfo mempty
-	hn = cn2hn cn
-
-cn2hn :: ContainerName -> HostName
-cn2hn cn = cn ++ ".docker"
 
 -- | Ensures that a docker container is set up and running.
 -- 
@@ -108,7 +104,7 @@ docked
 	:: Container
 	-> RevertableProperty
 docked ctr@(Container _ h) = RevertableProperty
-	(propigateInfo h (go "docked" setup))
+	(propigateInfo ctr (go "docked" setup))
 	(go "undocked" teardown)
   where
 	cn = hostName h
@@ -135,10 +131,12 @@ docked ctr@(Container _ h) = RevertableProperty
 					]
 			]
 
-propigateInfo :: Host -> Property -> Property
-propigateInfo (Host _ _ containerinfo) p =
-	combineProperties (propertyDesc p) $ p : dnsprops ++ privprops
+propigateInfo :: Container -> Property -> Property
+propigateInfo (Container _ h@(Host hn _ containerinfo)) p =
+	combineProperties (propertyDesc p) $ p' : dnsprops ++ privprops
   where
+	p' = p { propertyInfo = propertyInfo p <> dockerinfo }
+	dockerinfo = dockerInfo $ mempty { _dockerContainers = M.singleton hn h }
 	dnsprops = map addDNS (S.toList $ _dns containerinfo)
 	privprops = map addPrivDataField (S.toList $ _privDataFields containerinfo)
 
@@ -146,7 +144,8 @@ mkContainerInfo :: ContainerId -> Container -> ContainerInfo
 mkContainerInfo cid@(ContainerId hn _cn) (Container img h) = 
 	ContainerInfo img runparams
   where
-	runparams = map (\mkparam -> mkparam hn) (_dockerRunParams info)
+	runparams = map (\(DockerRunParam mkparam) -> mkparam hn)
+		(_dockerRunParams info)
 	info = _dockerinfo $ hostInfo h'
 	h' = h
 		-- Restart by default so container comes up on
@@ -294,7 +293,10 @@ restartNever = runProp "restart" "no"
 
 -- | A container is identified by its name, and the host
 -- on which it's deployed.
-data ContainerId = ContainerId HostName ContainerName
+data ContainerId = ContainerId 
+	{ containerHostName :: HostName
+	, containerName :: ContainerName
+	}
 	deriving (Eq, Read, Show)
 
 -- | Two containers with the same ContainerIdent were started from
@@ -316,9 +318,6 @@ toContainerId s
 
 fromContainerId :: ContainerId -> String
 fromContainerId (ContainerId hn cn) = cn++"."++hn++myContainerSuffix
-
-containerHostName :: ContainerId -> HostName
-containerHostName (ContainerId _ cn) = cn2hn cn
 
 myContainerSuffix :: String
 myContainerSuffix = ".propellor"
@@ -412,7 +411,7 @@ init s = case toContainerId s of
 		writeFile propellorIdent . show =<< readIdentFile cid
 		whenM (checkProvisionedFlag cid) $ do
 			let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
-			unlessM (boolSystem shim [Param "--continue", Param $ show $ DockerChain (containerHostName cid) (fromContainerId cid)]) $
+			unlessM (boolSystem shim [Param "--continue", Param $ show $ toChain cid]) $
 				warningMessage "Boot provision failed!"
 		void $ async $ job reapzombies
 		job $ do
@@ -430,7 +429,7 @@ init s = case toContainerId s of
 provisionContainer :: ContainerId -> Property
 provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ do
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
-	let params = ["--continue", show $ DockerChain (containerHostName cid) (fromContainerId cid)]
+	let params = ["--continue", show $ toChain cid]
 	msgh <- mkMessageHandle
 	let p = inContainerProcess cid
 		[ if isConsole msgh then "-it" else "-i" ]
@@ -451,14 +450,23 @@ provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ d
 				hFlush stdout
 				processoutput (Just s) h
 
-chain :: String -> Host -> IO ()
-chain s h = case toContainerId s of
-	Just cid -> do
+toChain :: ContainerId -> CmdLine
+toChain cid = DockerChain (containerHostName cid) (fromContainerId cid)
+
+chain :: [Host] -> HostName -> String -> IO ()
+chain hostlist hn s = case toContainerId s of
+	Nothing -> errorMessage "bad container id"
+	Just cid -> case findHostNoAlias hostlist hn of
+		Nothing -> errorMessage ("cannot find host " ++ hn)
+		Just parenthost -> case M.lookup (containerName cid) (_dockerContainers $ _dockerinfo $ hostInfo parenthost) of
+			Nothing -> errorMessage ("cannot find container " ++ containerName cid ++ " docked on host " ++ hn)
+			Just h -> go cid h
+  where
+	go cid h = do
 		changeWorkingDirectory localdir
 		onlyProcess (provisioningLock cid) $ do
 			r <- runPropellor h $ ensureProperties $ hostProperties h
 			putStrLn $ "\n" ++ show r
-	Nothing -> error "bad container id"
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]
@@ -520,13 +528,13 @@ listImages = lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
 runProp :: String -> RunParam -> Property
 runProp field val = pureInfoProperty (param) $ dockerInfo $
-	mempty { _dockerRunParams = [\_ -> "--"++param] }
+	mempty { _dockerRunParams = [DockerRunParam (\_ -> "--"++param)] }
   where
 	param = field++"="++val
 
 genProp :: String -> (HostName -> RunParam) -> Property
 genProp field mkval = pureInfoProperty field $ dockerInfo $
-	mempty { _dockerRunParams = [\hn -> "--"++field++"=" ++ mkval hn] }
+	mempty { _dockerRunParams = [DockerRunParam (\hn -> "--"++field++"=" ++ mkval hn)] }
 
 dockerInfo :: DockerInfo -> Info
 dockerInfo i = mempty { _dockerinfo = i }
