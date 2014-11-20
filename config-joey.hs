@@ -45,7 +45,7 @@ hosts =                --                  (o)  `
 	, kite
 	, diatom
 	, elephant
-	] ++ containers ++ monsters
+	] ++ monsters
 
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net"
@@ -53,8 +53,7 @@ darkstar = host "darkstar.kitenet.net"
 
 	& Apt.buildDep ["git-annex"] `period` Daily
 	& Docker.configured
-	! Docker.docked hosts "android-git-annex"
-	! Docker.docked hosts "simple-debian"
+	! Docker.docked gitAnnexAndroidDev
 
 clam :: Host
 clam = standardSystem "clam.kitenet.net" Unstable "amd64"
@@ -69,7 +68,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
-	& Docker.docked hosts "webserver"
+	& Docker.docked webserver
 	& File.dirExists "/var/www/html"
 	& File.notPresent "/var/www/html/index.html"
 	& "/var/www/index.html" `File.hasContent` ["hello, world"]
@@ -91,11 +90,11 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Apt.unattendedUpgrades
 	& Postfix.satellite
 	& Docker.configured
-	& Docker.docked hosts "amd64-git-annex-builder"
-	& Docker.docked hosts "i386-git-annex-builder"
-	& Docker.docked hosts "android-git-annex-builder"
-	& Docker.docked hosts "armel-git-annex-builder-companion"
-	& Docker.docked hosts "armel-git-annex-builder"
+	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h")
+	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h")
+	& Docker.docked (GitAnnexBuilder.armelCompanionContainer dockerImage)
+	& Docker.docked (GitAnnexBuilder.armelAutoBuilderContainer dockerImage "1 3 * * *" "5h")
+	& Docker.docked (GitAnnexBuilder.androidAutoBuilderContainer dockerImage "1 1 * * *" "3h")
 	& Docker.garbageCollected `period` Daily
 	& Apt.buildDep ["git-annex"] `period` Daily
 	
@@ -258,11 +257,10 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& myDnsSecondary
 	
 	& Docker.configured
-		& Docker.docked hosts "oldusenet-shellbox"
-	& Docker.docked hosts "openid-provider"
+	& Docker.docked oldusenetShellBox
+	& Docker.docked openidProvider
 		`requires` Apt.serviceInstalledRunning "ntp"
-	& Docker.docked hosts "ancient-kitenet"
-
+	& Docker.docked ancientKitenet
 	& Docker.garbageCollected `period` (Weekly (Just 1))
 	
 	-- For https port 443, shellinabox with ssh login to
@@ -284,52 +282,43 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	----------------------- :                    / -----------------------
 	------------------------ \____, o          ,' ------------------------
 	------------------------- '--,___________,'  -------------------------
-containers :: [Host]
-containers =
-	-- Simple web server, publishing the outside host's /var/www
-	[ standardStableContainer "webserver"
-		& Docker.publish "80:80"
-		& Docker.volume "/var/www:/var/www"
-		& Apt.serviceInstalledRunning "apache2"
+-- Simple web server, publishing the outside host's /var/www
+webserver :: Docker.Container
+webserver = standardStableContainer "webserver"
+	& Docker.publish "80:80"
+	& Docker.volume "/var/www:/var/www"
+	& Apt.serviceInstalledRunning "apache2"
 
-	-- My own openid provider. Uses php, so containerized for security
-	-- and administrative sanity.
-	, standardStableContainer "openid-provider"
-		& alias "openid.kitenet.net"
-		& Docker.publish "8081:80"
-		& OpenId.providerFor ["joey", "liw"]
-			"openid.kitenet.net:8081"
+-- My own openid provider. Uses php, so containerized for security
+-- and administrative sanity.
+openidProvider :: Docker.Container
+openidProvider = standardStableContainer "openid-provider"
+	& alias "openid.kitenet.net"
+	& Docker.publish "8081:80"
+	& OpenId.providerFor ["joey", "liw"]
+		"openid.kitenet.net:8081"
 
-	-- Exhibit: kite's 90's website.
-	, standardStableContainer "ancient-kitenet"
-		& alias "ancient.kitenet.net"
-		& Docker.publish "1994:80"
-		& Apt.serviceInstalledRunning "apache2"
-		& Git.cloned "root" "git://kitenet-net.branchable.com/" "/var/www"
-			(Just "remotes/origin/old-kitenet.net")
-	
-	, standardStableContainer "oldusenet-shellbox"
-		& alias "shell.olduse.net"
-		& Docker.publish "4200:4200"
-		& JoeySites.oldUseNetShellBox
+-- Exhibit: kite's 90's website.
+ancientKitenet :: Docker.Container
+ancientKitenet = standardStableContainer "ancient-kitenet"
+	& alias "ancient.kitenet.net"
+	& Docker.publish "1994:80"
+	& Apt.serviceInstalledRunning "apache2"
+	& Git.cloned "root" "git://kitenet-net.branchable.com/" "/var/www"
+		(Just "remotes/origin/old-kitenet.net")
 
-	, Docker.container "simple-debian" "debian"
-		& "/hello" `File.containsLine` "hello"
-		& Docker.publish "8081:80"
+oldusenetShellBox :: Docker.Container
+oldusenetShellBox = standardStableContainer "oldusenet-shellbox"
+	& alias "shell.olduse.net"
+	& Docker.publish "4200:4200"
+	& JoeySites.oldUseNetShellBox
 
-	-- git-annex autobuilder containers
-	, GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h"
-	, GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h"
-	, GitAnnexBuilder.armelCompanionContainer dockerImage
-	, GitAnnexBuilder.armelAutoBuilderContainer dockerImage "1 3 * * *" "5h"
-	, GitAnnexBuilder.androidAutoBuilderContainer dockerImage "1 1 * * *" "3h"
-
-	-- for development of git-annex for android, using my git-annex
-	-- work tree
-	, let gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
-	  in GitAnnexBuilder.androidContainer dockerImage "android-git-annex" doNothing gitannexdir
-		& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
-	]
+-- for development of git-annex for android, using my git-annex work tree
+gitAnnexAndroidDev :: Docker.Container
+gitAnnexAndroidDev = GitAnnexBuilder.androidContainer dockerImage "android-git-annex" doNothing gitannexdir
+	& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
+  where
+	gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
 
 type Motd = [String]
 
@@ -363,11 +352,11 @@ standardSystemUnhardened hn suite arch motd = host hn
 	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
 		`onChange` Apt.autoRemove
 
-standardStableContainer :: Docker.ContainerName -> Host
+standardStableContainer :: Docker.ContainerName -> Docker.Container
 standardStableContainer name = standardContainer name (Stable "wheezy") "amd64"
 
 -- This is my standard container setup, featuring automatic upgrades.
-standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Host
+standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Docker.Container
 standardContainer name suite arch = Docker.container name (dockerImage system)
 	& os system
 	& Apt.stdSourcesList `onChange` Apt.upgrade

@@ -16,6 +16,7 @@ module Propellor.Property.Docker (
 	tweaked,
 	Image,
 	ContainerName,
+	Container,
 	-- * Container configuration
 	dns,
 	hostname,
@@ -71,55 +72,60 @@ configured = prop `requires` installed
 -- only [a-zA-Z0-9_-] are allowed
 type ContainerName = String
 
--- | Starts accumulating the properties of a Docker container.
+-- | A docker container.
+data Container = Container Image Host
+
+instance Hostlike Container where
+	(Container i h) & p = Container i (h & p)
+	(Container i h) &^ p = Container i (h &^ p)
+
+-- | Builds a Container with a given name, image, and properties.
 --
 -- > container "web-server" "debian"
 -- >    & publish "80:80"
 -- >    & Apt.installed {"apache2"]
 -- >    & ...
-container :: ContainerName -> Image -> Host
-container cn image = Host hn [] info
+container :: ContainerName -> Image -> Container
+container cn image = Container image (Host hn [] info)
   where
-	info = dockerInfo $ mempty { _dockerImage = Val image }
+	info = dockerInfo mempty
 	hn = cn2hn cn
 
 cn2hn :: ContainerName -> HostName
 cn2hn cn = cn ++ ".docker"
 
--- | Ensures that a docker container is set up and running, finding
--- its configuration in the passed list of hosts.
+-- | Ensures that a docker container is set up and running.
 -- 
 -- The container has its own Properties which are handled by running
 -- propellor inside the container.
 --
 -- When the container's Properties include DNS info, such as a CNAME,
--- that is propigated to the Info of the host(s) it's docked in.
+-- that is propigated to the Info of the Host it's docked in.
 --
 -- Reverting this property ensures that the container is stopped and
 -- removed.
 docked
-	:: [Host]
-	-> ContainerName
+	:: Container
 	-> RevertableProperty
-docked hosts cn = RevertableProperty
-	((maybe id propigateInfo mhost) (go "docked" setup))
+docked ctr@(Container _ h) = RevertableProperty
+	(propigateInfo h (go "docked" setup))
 	(go "undocked" teardown)
   where
+	cn = hostName h
+
 	go desc a = property (desc ++ " " ++ cn) $ do
 		hn <- asks hostName
 		let cid = ContainerId hn cn
-		ensureProperties [findContainer mhost cid cn $ a cid]
-		
-	mhost = findHostNoAlias hosts (cn2hn cn)
+		ensureProperties [a cid (mkContainerInfo cid ctr)]
 
-	setup cid (Container image runparams) =
+	setup cid (ContainerInfo image runparams) =
 		provisionContainer cid
 			`requires`
 		runningContainer cid image runparams
 			`requires`
 		installed
 
-	teardown cid (Container image _runparams) =
+	teardown cid (ContainerInfo image _runparams) =
 		combineProperties ("undocked " ++ fromContainerId cid)
 			[ stoppedContainer cid
 			, property ("cleaned up " ++ fromContainerId cid) $
@@ -136,26 +142,11 @@ propigateInfo (Host _ _ containerinfo) p =
 	dnsprops = map addDNS (S.toList $ _dns containerinfo)
 	privprops = map addPrivDataField (S.toList $ _privDataFields containerinfo)
 
-findContainer
-	:: Maybe Host
-	-> ContainerId
-	-> ContainerName
-	-> (Container -> Property)
-	-> Property
-findContainer mhost cid cn mk = case mhost of
-	Nothing -> cantfind
-	Just h -> maybe cantfind mk (mkContainer cid h)
+mkContainerInfo :: ContainerId -> Container -> ContainerInfo
+mkContainerInfo cid@(ContainerId hn _cn) (Container img h) = 
+	ContainerInfo img runparams
   where
-	cantfind = containerDesc cid $ property "" $ do
-		liftIO $ warningMessage $
-			"missing definition for docker container \"" ++ cn2hn cn
-		return FailedChange
-
-mkContainer :: ContainerId -> Host -> Maybe Container
-mkContainer cid@(ContainerId hn _cn) h = Container
-	<$> fromVal (_dockerImage info)
-	<*> pure (map (\mkparam -> mkparam hn) (_dockerRunParams info))
-  where
+	runparams = map (\mkparam -> mkparam hn) (_dockerRunParams info)
 	info = _dockerinfo $ hostInfo h'
 	h' = h
 		-- Restart by default so container comes up on
@@ -209,7 +200,7 @@ memoryLimited = "/etc/default/grub" `File.containsLine` cfg
 	cmdline = "cgroup_enable=memory swapaccount=1"
 	cfg = "GRUB_CMDLINE_LINUX_DEFAULT=\""++cmdline++"\""
 
-data Container = Container Image [RunParam]
+data ContainerInfo = ContainerInfo Image [RunParam]
 
 -- | Parameters to pass to `docker run` when creating a container.
 type RunParam = String

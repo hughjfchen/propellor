@@ -45,26 +45,22 @@ fromVal (Val a) = Just a
 fromVal NoVal = Nothing
 
 data DockerInfo = DockerInfo
-	{ _dockerImage :: Val String
-	, _dockerRunParams :: [HostName -> String]
+	{ _dockerRunParams :: [HostName -> String]
 	}
 
 instance Eq DockerInfo where
 	x == y = and
-		[ _dockerImage x == _dockerImage y
-		, let simpl v = map (\a -> a "") (_dockerRunParams v)
+		[ let simpl v = map (\a -> a "") (_dockerRunParams v)
 		  in simpl x == simpl y
 		]
 
 instance Monoid DockerInfo where
-	mempty = DockerInfo mempty mempty
+	mempty = DockerInfo mempty
 	mappend old new = DockerInfo
-		{ _dockerImage = _dockerImage old <> _dockerImage new
-		, _dockerRunParams = _dockerRunParams old <> _dockerRunParams new
+		{ _dockerRunParams = _dockerRunParams old <> _dockerRunParams new
 		}
 
 instance Show DockerInfo where
 	show a = unlines
-		[ "docker image " ++ show (_dockerImage a)
-		, "docker run params " ++ show (map (\mk -> mk "") (_dockerRunParams a))
+		[ "docker run params " ++ show (map (\mk -> mk "") (_dockerRunParams a))
 		]

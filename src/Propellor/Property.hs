@@ -144,27 +144,28 @@ unrevertable (RevertableProperty p1 _p2) = p1
 host :: HostName -> Host
 host hn = Host hn [] mempty
 
--- | Adds a property to a Host
---
--- Can add Properties and RevertableProperties
-(&) :: IsProp p => Host -> p -> Host
-(Host hn ps is) & p = Host hn (ps ++ [toProp p]) (is <> getInfo p)
+class Hostlike h where
+	-- | Adds a property to a Host
+	--
+	-- Can add Properties and RevertableProperties
+	(&) :: IsProp p => h -> p -> h
+	-- | Like (&), but adds the property as the
+	-- first property of the host. Normally, property
+	-- order should not matter, but this is useful
+	-- when it does.
+	(&^) :: IsProp p => h -> p -> h
 
-infixl 1 &
+instance Hostlike Host where
+	(Host hn ps is) &  p = Host hn (ps ++ [toProp p]) (is <> getInfo p)
+	(Host hn ps is) &^ p = Host hn ([toProp p] ++ ps) (getInfo p <> is)
 
 -- | Adds a property to the Host in reverted form.
-(!) :: Host -> RevertableProperty -> Host
+(!) :: Hostlike h => h -> RevertableProperty -> h
 h ! p = h & revert p
 
-infixl 1 !
-
--- | Like (&), but adds the property as the first property of the host.
--- Normally, property order should not matter, but this is useful
--- when it does.
-(&^) :: IsProp p => Host -> p -> Host
-(Host hn ps is) &^ p = Host hn ([toProp p] ++ ps) (getInfo p <> is)
-
 infixl 1 &^
+infixl 1 &
+infixl 1 !
 
 -- Changes the action that is performed to satisfy a property. 
 adjustProperty :: Property -> (Propellor Result -> Propellor Result) -> Property
