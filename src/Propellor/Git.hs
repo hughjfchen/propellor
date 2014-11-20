@@ -62,3 +62,26 @@ verifyOriginBranch originbranch = do
 	nukeFile $ privDataDir </> "pubring.gpg"
 	nukeFile $ privDataDir </> "gpg.conf"
 	return (s == "U\n" || s == "G\n")
+
+-- Returns True if HEAD is changed by fetching and merging from origin.
+fetchOrigin :: IO Bool
+fetchOrigin = do
+	branchref <- getCurrentBranch
+	let originbranch = "origin" </> branchref
+
+	void $ actionMessage "Pull from central git repository" $
+		boolSystem "git" [Param "fetch"]
+	
+	oldsha <- getCurrentGitSha1 branchref
+	
+	whenM (doesFileExist keyring) $
+		ifM (verifyOriginBranch originbranch)
+			( do
+				putStrLn $ "git branch " ++ originbranch ++ " gpg signature verified; merging"
+				hFlush stdout
+				void $ boolSystem "git" [Param "merge", Param originbranch]
+			, warningMessage $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it! (Running with previous configuration instead.)"
+			)
+	
+	newsha <- getCurrentGitSha1 branchref
+	return $ oldsha /= newsha

@@ -15,7 +15,6 @@ module Propellor.Property.Dns (
 import Propellor
 import Propellor.Types.Dns
 import Propellor.Property.File
-import Propellor.Types.Info
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
 import Utility.Applicative

@@ -32,18 +32,19 @@ hosts =
 		& User.hasSomePassword "root" (Context "mybox.example.com")
 		& Network.ipv6to4
 		& File.dirExists "/var/www"
-		& Docker.docked hosts "webserver"
+		& Docker.docked webserverContainer
 		& Docker.garbageCollected `period` Daily
 		& Cron.runPropellor "30 * * * *"
-
-	-- A generic webserver in a Docker container.
-	, Docker.container "webserver" "joeyh/debian-stable"
-		& os (System (Debian (Stable "wheezy")) "amd64")
-		& Apt.stdSourcesList
-		& Docker.publish "80:80"
-		& Docker.volume "/var/www:/var/www"
-		& Apt.serviceInstalledRunning "apache2"
 
 	-- add more hosts here...
 	--, host "foo.example.com" = ...
 	]
+
+-- A generic webserver in a Docker container.
+webserverContainer :: Docker.Container
+webserverContainer = Docker.container "webserver" "joeyh/debian-stable"
+	& os (System (Debian (Stable "wheezy")) "amd64")
+	& Apt.stdSourcesList
+	& Docker.publish "80:80"
+	& Docker.volume "/var/www:/var/www"
+	& Apt.serviceInstalledRunning "apache2"

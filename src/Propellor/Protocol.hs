@@ -2,6 +2,10 @@
 -- a local and remote propellor. It's sent over a ssh channel, and lines of
 -- the protocol can be interspersed with other, non-protocol lines
 -- that should be passed through to be displayed.
+--
+-- Avoid making backwards-incompatible changes to this protocol,
+-- since propellor needs to use this protocol to update itself to new
+-- versions speaking newer versions of the protocol.
 
 module Propellor.Protocol where
 

@@ -8,11 +8,15 @@ import Data.Monoid
 import Control.Applicative
 import System.Console.ANSI
 import "mtl" Control.Monad.Reader
+import Control.Exception (bracket)
+import System.PosixCompat
+import System.Posix.IO
 
 import Propellor.Types
 import Propellor.Message
 import Propellor.Exception
 import Propellor.Info
+import Utility.Exception
 
 runPropellor :: Host -> Propellor a -> IO a
 runPropellor host a = runReaderT (runWithHost a) host
@@ -47,3 +51,14 @@ fromHost l hn getter = case findHost l hn of
 	Nothing -> return Nothing
 	Just h -> liftIO $ Just <$>
 		runReaderT (runWithHost getter) h
+
+onlyProcess :: FilePath -> IO a -> IO a
+onlyProcess lockfile a = bracket lock unlock (const a)
+  where
+	lock = do
+		l <- createFile lockfile stdFileMode
+		setLock l (WriteLock, AbsoluteSeek, 0, 0)
+			`catchIO` const alreadyrunning
+		return l
+	unlock = closeFd
+	alreadyrunning = error "Propellor is already running on this host!"

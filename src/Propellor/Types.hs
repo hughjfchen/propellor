@@ -3,7 +3,7 @@
 
 module Propellor.Types
 	( Host(..)
-	, Info
+	, Info(..)
 	, getInfo
 	, Propellor(..)
 	, Property(..)
@@ -21,6 +21,10 @@ module Propellor.Types
 	, Context(..)
 	, anyContext
 	, SshKeyType(..)
+	, Val(..)
+	, fromVal
+	, DockerInfo(..)
+	, DockerRunParam(..)
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
 	) where
@@ -31,8 +35,10 @@ import System.Console.ANSI
 import System.Posix.Types
 import "mtl" Control.Monad.Reader
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
+import qualified Data.Set as S
+import qualified Data.Map as M
+import qualified Propellor.Types.Dns as Dns
 
-import Propellor.Types.Info
 import Propellor.Types.OS
 import Propellor.Types.Dns
 import Propellor.Types.PrivData
@@ -145,8 +151,69 @@ data CmdLine
 	| ListFields
 	| AddKey String
 	| Continue CmdLine
-	| Chain HostName Bool
 	| Update HostName
-	| Docker HostName
+	| DockerInit HostName
+	| DockerChain HostName String
 	| GitPush Fd Fd
 	deriving (Read, Show, Eq)
+
+-- | Information about a host.
+data Info = Info
+	{ _os :: Val System
+	, _privDataFields :: S.Set (PrivDataField, Context)
+	, _sshPubKey :: Val String
+	, _aliases :: S.Set HostName
+	, _dns :: S.Set Dns.Record
+	, _namedconf :: Dns.NamedConfMap
+	, _dockerinfo :: DockerInfo
+	}
+	deriving (Eq, Show)
+
+instance Monoid Info where
+	mempty = Info mempty mempty mempty mempty mempty mempty mempty
+	mappend old new = Info
+		{ _os = _os old <> _os new
+		, _privDataFields = _privDataFields old <> _privDataFields new
+		, _sshPubKey = _sshPubKey old <> _sshPubKey new
+		, _aliases = _aliases old <> _aliases new
+		, _dns = _dns old <> _dns new
+		, _namedconf = _namedconf old <> _namedconf new
+		, _dockerinfo = _dockerinfo old <> _dockerinfo new
+		}
+
+data Val a = Val a | NoVal
+	deriving (Eq, Show)
+
+instance Monoid (Val a) where
+	mempty = NoVal
+	mappend old new = case new of
+		NoVal -> old
+		_ -> new
+
+fromVal :: Val a -> Maybe a
+fromVal (Val a) = Just a
+fromVal NoVal = Nothing
+
+data DockerInfo = DockerInfo
+	{ _dockerRunParams :: [DockerRunParam]
+	, _dockerContainers :: M.Map String Host
+	}
+	deriving (Show)
+
+instance Monoid DockerInfo where
+	mempty = DockerInfo mempty mempty
+	mappend old new = DockerInfo
+		{ _dockerRunParams = _dockerRunParams old <> _dockerRunParams new
+		, _dockerContainers = M.union (_dockerContainers old) (_dockerContainers new)
+		}
+
+instance Eq DockerInfo where
+	x == y = and
+		[ let simpl v = map (\(DockerRunParam a) -> a "") (_dockerRunParams v)
+		  in simpl x == simpl y
+		]
+
+newtype DockerRunParam = DockerRunParam (HostName -> String)
+
+instance Show DockerRunParam where
+	show (DockerRunParam a) = a ""

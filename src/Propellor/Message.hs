@@ -21,10 +21,11 @@ data MessageHandle
 	| TextMessageHandle
 
 mkMessageHandle :: IO MessageHandle
-mkMessageHandle = ifM (hIsTerminalDevice stdout <||> (isJust <$> getEnv "PROPELLOR_CONSOLE"))
-	( return ConsoleMessageHandle
-	, return TextMessageHandle
-	)
+mkMessageHandle = do
+	ifM (hIsTerminalDevice stdout <||> (isJust <$> getEnv "PROPELLOR_CONSOLE"))
+		( return ConsoleMessageHandle
+		, return TextMessageHandle
+		)
 
 forceConsole :: IO ()
 forceConsole = void $ setEnv "PROPELLOR_CONSOLE" "1" True

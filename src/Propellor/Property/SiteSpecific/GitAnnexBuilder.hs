@@ -88,7 +88,7 @@ cabalDeps = flagFile go cabalupdated
 		go = userScriptProperty builduser ["cabal update && cabal install git-annex --only-dependencies || true"]
 		cabalupdated = homedir </> ".cabal" </> "packages" </> "hackage.haskell.org" </> "00-index.cache"
 
-standardAutoBuilderContainer :: (System -> Docker.Image) -> Architecture -> Int -> TimeOut -> Host
+standardAutoBuilderContainer :: (System -> Docker.Image) -> Architecture -> Int -> TimeOut -> Docker.Container
 standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
 	(dockerImage $ System (Debian Testing) arch)
 	& os (System (Debian Testing) arch)
@@ -101,14 +101,14 @@ standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.conta
 	& autobuilder arch (show buildminute ++ " * * * *") timeout
 	& Docker.tweaked
 
-androidAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
+androidAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Docker.Container
 androidAutoBuilderContainer dockerImage crontimes timeout =
 	androidContainer dockerImage "android-git-annex-builder" (tree "android") builddir
 		& Apt.unattendedUpgrades
 		& autobuilder "android" crontimes timeout
 
 -- Android is cross-built in a Debian i386 container, using the Android NDK.
-androidContainer :: (System -> Docker.Image) -> Docker.ContainerName -> Property -> FilePath -> Host
+androidContainer :: (System -> Docker.Image) -> Docker.ContainerName -> Property -> FilePath -> Docker.Container
 androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.container name
 	(dockerImage osver)
 	& os osver
@@ -137,7 +137,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 -- armel builder has a companion container using amd64 that
 -- runs the build first to get TH splices. They need
 -- to have the same versions of all haskell libraries installed.
-armelCompanionContainer :: (System -> Docker.Image) -> Host
+armelCompanionContainer :: (System -> Docker.Image) -> Docker.Container
 armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-companion"
 	(dockerImage $ System (Debian Unstable) "amd64")
 	& os (System (Debian Testing) "amd64")
@@ -156,7 +156,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	& Ssh.authorizedKeys builduser (Context "armel-git-annex-builder")
 	& Docker.tweaked
 
-armelAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Host
+armelAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Docker.Container
 armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
 	(dockerImage $ System (Debian Unstable) "armel")
 	& os (System (Debian Testing) "armel")
