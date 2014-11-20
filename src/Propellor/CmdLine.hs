@@ -87,6 +87,7 @@ defaultMain hostlist = do
 	go _ (DockerChain hn s) = withhost hn $ Docker.chain s
 	go _ (DockerInit hn) = Docker.init hn
 	go _ (GitPush fin fout) = gitPushHelper fin fout
+	go _ (Update _) = forceConsole >> fetchFirst (onlyprocess update)
 	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin hn) = withhost hn $ spin hn
@@ -96,9 +97,6 @@ defaultMain hostlist = do
 		( onlyprocess $ withhost hn mainProperties
 		, go True (Spin hn)
 		)
-	go False (Update _) = do
-		forceConsole
-		onlyprocess update
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
@@ -127,35 +125,23 @@ buildFirst cmdline next = do
   where
 	getmtime = catchMaybeIO $ getModificationTime "propellor"
 
+fetchFirst :: IO () -> IO ()
+fetchFirst next = do
+	whenM hasOrigin $
+		void fetchOrigin
+	next
+
 updateFirst :: CmdLine -> IO () -> IO ()
 updateFirst cmdline next = ifM hasOrigin (updateFirst' cmdline next, next)
 
 updateFirst' :: CmdLine -> IO () -> IO ()
-updateFirst' cmdline next = do
-	branchref <- getCurrentBranch
-	let originbranch = "origin" </> branchref
-
-	void $ actionMessage "Git fetch" $ boolSystem "git" [Param "fetch"]
-	
-	oldsha <- getCurrentGitSha1 branchref
-	
-	whenM (doesFileExist keyring) $
-		ifM (verifyOriginBranch originbranch)
-			( do
-				putStrLn $ "git branch " ++ originbranch ++ " gpg signature verified; merging"
-				hFlush stdout
-				void $ boolSystem "git" [Param "merge", Param originbranch]
-			, warningMessage $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it! (Running with previous configuration instead.)"
-			)
-	
-	newsha <- getCurrentGitSha1 branchref
-
-	if oldsha == newsha
-		then next
-		else ifM (actionMessage "Propellor build" $ boolSystem "make" [Param "build"])
-			( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
+updateFirst' cmdline next = ifM fetchOrigin
+	( ifM (actionMessage "Propellor build" $ boolSystem "make" [Param "build"])
+		( void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
 			, errorMessage "Propellor build failed!" 
-			)
+		)
+	, next
+	)
 
 spin :: HostName -> Host -> IO ()
 spin hn hst = do
