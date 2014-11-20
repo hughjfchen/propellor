@@ -22,14 +22,24 @@ type Url = String
 --
 -- The System can be any OS and architecture that debootstrap
 -- and the kernel support.
-debootstrapped :: FilePath -> System -> [CommandParam] -> Property
-debootstrapped target system@(System _ arch) extraparams = 
-	check (unpopulated target) prop
-		`requires` unrevertable installed
+--
+-- Reverting this property deletes the chroot and all its contents.
+-- Anything mounted under the filesystem is first unmounted.
+--
+-- Note that reverting this property does not stop any processes
+-- currently running in the chroot.
+debootstrapped :: FilePath -> System -> [CommandParam] -> RevertableProperty
+debootstrapped target system@(System _ arch) extraparams =
+	RevertableProperty setup teardown
   where
+	setup = check (unpopulated target) setupprop
+		`requires` unrevertable installed
+	
+	teardown = check (not <$> unpopulated target) teardownprop
+	
 	unpopulated d = null <$> catchDefaultIO [] (dirContents d)
 
-	prop = property ("debootstrapped " ++ target) $ liftIO $ do
+	setupprop = property ("debootstrapped " ++ target) $ liftIO $ do
 		createDirectoryIfMissing True target
 		let suite = case extractSuite system of
 			Nothing -> error $ "don't know how to debootstrap " ++ show system
@@ -46,6 +56,19 @@ debootstrapped target system@(System _ arch) extraparams =
 				return MadeChange
 			, return FailedChange
 			)
+
+	teardownprop = property ("removed debootstrapped " ++ target) $ liftIO $ do
+		submnts <- filter (\p -> simplifyPath p /= simplifyPath target)
+			. filter (dirContains target)
+			<$> mountPoints
+		forM_ submnts $ \mnt ->
+			unlessM (boolSystem "umount" [ Param "-l", Param mnt ]) $ do
+				error $ "failed unmounting " ++ mnt
+		removeDirectoryRecursive target
+		return MadeChange
+
+mountPoints :: IO [FilePath]
+mountPoints = lines <$> readProcess "findmnt" ["-rn", "--output", "target"]
 
 extractSuite :: System -> Maybe String
 extractSuite (System (Debian s) _) = Just $ Apt.showSuite s
