@@ -81,7 +81,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	! Ssh.listenPort 80
 	! Ssh.listenPort 443
 
-	& Debootstrap.built "/tmp/chroot" (System (Debian Unstable) "amd64") []
+	! Debootstrap.built "/tmp/chroot" (System (Debian Unstable) "amd64") []
 	
 orca :: Host
 orca = standardSystem "orca.kitenet.net" Unstable "amd64"
