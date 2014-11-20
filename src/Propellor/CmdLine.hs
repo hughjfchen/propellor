@@ -145,7 +145,7 @@ updateFirst' cmdline next = ifM fetchOrigin
 
 spin :: HostName -> Host -> IO ()
 spin hn hst = do
-	void $ actionMessage "Git commit (signed)" $
+	void $ actionMessage "Git commit" $
 		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	-- Push to central origin repo first, if possible.
 	-- The remote propellor will pull from there, which avoids
