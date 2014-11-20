@@ -121,7 +121,7 @@ Library
     Propellor.Ssh
     Propellor.PrivData.Paths
     Propellor.Protocol
-    Propellor.Property.Docker.Shim
+    Propellor.Shim
     Utility.Applicative
     Utility.Data
     Utility.Directory

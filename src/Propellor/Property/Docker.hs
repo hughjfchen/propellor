@@ -41,7 +41,7 @@ module Propellor.Property.Docker (
 import Propellor hiding (init)
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
-import qualified Propellor.Property.Docker.Shim as Shim
+import qualified Propellor.Shim as Shim
 import Utility.SafeCommand
 import Utility.Path
 import Utility.ThreadScheduler
@@ -432,20 +432,10 @@ provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ d
 		[ if isConsole msgh then "-it" else "-i" ]
 		(shim : params)
 	r <- withHandle StdoutHandle createProcessSuccess p $
-		processoutput Nothing
+		processChainOutput
 	when (r /= FailedChange) $
 		setProvisionedFlag cid 
 	return r
-  where
-	processoutput lastline h = do
-		v <- catchMaybeIO (hGetLine h)
-		case v of
-			Nothing -> pure $ fromMaybe FailedChange $
-				readish =<< lastline
-			Just s -> do
-				maybe noop putStrLn lastline
-				hFlush stdout
-				processoutput (Just s) h
 
 toChain :: ContainerId -> CmdLine
 toChain cid = DockerChain (containerHostName cid) (fromContainerId cid)

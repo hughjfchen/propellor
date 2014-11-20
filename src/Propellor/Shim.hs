@@ -1,9 +1,10 @@
--- | Support for running propellor, as built outside a docker container,
--- inside the container.
+-- | Support for running propellor, as built outside a container,
+-- inside the container, without needing to install anything into the
+-- container.
 --
 -- Note: This is currently Debian specific, due to glibcLibs.
 
-module Propellor.Property.Docker.Shim (setup, cleanEnv, file) where
+module Propellor.Shim (setup, cleanEnv, file) where
 
 import Propellor
 import Utility.LinuxMkLibs

@@ -155,6 +155,7 @@ data CmdLine
 	| Update HostName
 	| DockerInit HostName
 	| DockerChain HostName String
+	| ChrootChain HostName FilePath
 	| GitPush Fd Fd
 	deriving (Read, Show, Eq)
 
