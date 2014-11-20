@@ -20,6 +20,8 @@ propellor (1.0.0) UNRELEASED; urgency=medium
     Docker.docked. (API change)
   * Added support for using debootstrap from propellor.
   * Propellor can now be used to provision chroots.
+  * systemd-nspawn containers can now be managed by propellor, very similar
+    to its handling of docker containers.
 
  -- Joey Hess <id@joeyh.name>  Mon, 10 Nov 2014 11:15:27 -0400
 

@@ -33,7 +33,7 @@ built target system@(System _ arch) extraparams =
 	RevertableProperty setup teardown
   where
 	setup = check (unpopulated target <||> ispartial) setupprop
-		`requires` unrevertable installed
+		`requires` toProp installed
 	
 	teardown = check (not <$> unpopulated target) teardownprop
 	

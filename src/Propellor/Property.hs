@@ -131,10 +131,6 @@ boolProperty desc a = property desc $ ifM (liftIO a)
 revert :: RevertableProperty -> RevertableProperty
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
--- | Turns a revertable property into a regular property.
-unrevertable :: RevertableProperty -> Property
-unrevertable (RevertableProperty p1 _p2) = p1
-
 -- Changes the action that is performed to satisfy a property. 
 adjustProperty :: Property -> (Propellor Result -> Propellor Result) -> Property
 adjustProperty p f = p { propertySatisfy = f (propertySatisfy p) }

@@ -1,5 +1,5 @@
 module Propellor.Property.Chroot (
-	Chroot,
+	Chroot(..),
 	chroot,
 	provisioned,
 	chain,
@@ -24,7 +24,7 @@ instance Hostlike Chroot where
 -- | Defines a Chroot at the given location, containing the specified
 -- System. Properties can be added to configure the Chroot.
 --
--- > chroot "/srv/chroot/ghc-dev" (System (Debian Unstable) "amd64"
+-- > chroot "/srv/chroot/ghc-dev" (System (Debian Unstable) "amd64")
 -- >    & Apt.installed ["build-essential", "ghc", "haskell-platform"]
 -- >	& ...
 chroot :: FilePath -> System -> Chroot
@@ -48,7 +48,7 @@ provisioned c@(Chroot loc system _) = RevertableProperty
 		(System (Debian _) _) -> debootstrap
 		(System (Ubuntu _) _) -> debootstrap
 
-	debootstrap = unrevertable (Debootstrap.built loc system [])
+	debootstrap = toProp (Debootstrap.built loc system [])
 
 	teardown = undefined
 
