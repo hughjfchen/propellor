@@ -4,6 +4,7 @@
 [[Install]]  
 [API documentation](http://hackage.haskell.org/package/propellor)  
 [Sample config file](http://git.joeyh.name/?p=propellor.git;a=blob;f=config-joey.hs)  
+[[Documentation]]
 [[Security]]  
 [[Todo]]  
 [[Forum]]  

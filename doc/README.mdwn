@@ -55,8 +55,3 @@ see [configuration for the Haskell newbie](https://propellor.branchable.com/hask
 8. Optionally, set up a [centralized git repository](https://propellor.branchable.com/centralized_git_repository/)
    so that multiple hosts can be updated with a simple `git commit -S; git push`
 9. Write some neat new properties and send patches!
-
-## debugging
-
-Set `PROPELLOR_DEBUG=1` to make propellor print out all the commands it runs
-and any other debug messages that Properties choose to emit.
