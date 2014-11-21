@@ -3,6 +3,8 @@ module Propellor.Property.Chroot (
 	chroot,
 	provisioned,
 	-- * Internal use
+	provisioned',
+	propigateChrootInfo,
 	propellChroot,
 	chain,
 ) where
@@ -38,8 +40,11 @@ chroot location system = Chroot location system (Host location [] mempty)
 -- Reverting this property removes the chroot. Note that it does not ensure
 -- that any processes that might be running inside the chroot are stopped.
 provisioned :: Chroot -> RevertableProperty
-provisioned c@(Chroot loc system _) = RevertableProperty
-	(propigateChrootInfo c (go "exists" setup))
+provisioned c = provisioned' (propigateChrootInfo c) c
+
+provisioned' :: (Property -> Property) -> Chroot -> RevertableProperty
+provisioned' propigator c@(Chroot loc system _) = RevertableProperty
+	(propigator $ go "exists" setup)
 	(go "removed" teardown)
   where
 	go desc a = property (chrootDesc c desc) $ ensureProperties [a]

@@ -88,9 +88,9 @@ container name system ps = Container name system ps (Host name [] mempty)
 nspawned :: Container -> RevertableProperty
 nspawned c@(Container name system _ h) = RevertableProperty setup teardown
   where
-	setup = propertyList ("nspawned " ++ name) $
+	setup = combineProperties ("nspawned " ++ name) $
 		map toProp steps ++ [containerprovisioned]
-	teardown = propertyList ("not nspawned " ++ name) $
+	teardown = combineProperties ("not nspawned " ++ name) $
 		map (toProp . revert) (reverse steps)
 	steps =
 		[ enterScript c
@@ -102,16 +102,16 @@ nspawned c@(Container name system _ h) = RevertableProperty setup teardown
 	-- that only has the Property of systemd being installed.
 	-- This is to avoid starting any daemons in the chroot,
 	-- which would not run in the container's namespace.
-	chrootprovisioned = Chroot.provisioned $
+	chrootprovisioned = Chroot.provisioned' (Chroot.propigateChrootInfo chroot) $
 		mkChroot $ h { hostProperties = [installed] }
 
 	-- Use nsenter to enter container and and run propellor to
 	-- finish provisioning.
-	containerprovisioned = Chroot.propellChroot
-		(mkChroot h)
+	containerprovisioned = Chroot.propellChroot chroot
 		(enterContainerProcess c)
 
 	mkChroot = Chroot.Chroot (containerDir name) system
+	chroot = mkChroot h
 
 nspawnService :: Container -> RevertableProperty
 nspawnService (Container name _ ps _) = RevertableProperty setup teardown
