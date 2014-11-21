@@ -88,14 +88,14 @@ container name system ps = Container name system ps (Host name [] mempty)
 nspawned :: Container -> RevertableProperty
 nspawned c@(Container name system _ h) = RevertableProperty setup teardown
   where
-	setup = containerprovisioned
-		`requires` toProp (nspawnService c)
-		`requires` toProp chrootprovisioned
-		`requires` toProp (enterScript c)
-
-	teardown = toProp (revert (chrootprovisioned))
-		`requires` toProp (revert (nspawnService c))
-		`requires` toProp (revert (enterScript c))
+	setup = propertyList ("nspawned " ++ name) (map toProp steps)
+	teardown = propertyList ("not nspawned " ++ name)
+		(map (toProp . revert) (reverse steps))
+	steps =
+		[ enterScript c
+		, chrootprovisioned
+		, nspawnService c
+		]
 
 	-- When provisioning the chroot, pass a version of the Host
 	-- that only has the Property of systemd being installed.
@@ -119,10 +119,8 @@ nspawnService (Container name _ ps _) = RevertableProperty setup teardown
 	servicefile = "/etc/systemd/system/multi-user.target.wants" </> service
 
 	setup = check (not <$> doesFileExist servicefile) $
-		combineProperties ("container running " ++ service)
-			[ enabled service
-			, started service
-			]
+			started service
+				`requires` enabled service
 	-- TODO ^ adjust execStart line to reflect ps
 
 	teardown = undefined
