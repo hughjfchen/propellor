@@ -3,6 +3,7 @@ module Propellor.Property.Systemd (
 	started,
 	stopped,
 	enabled,
+	disabled,
 	persistentJournal,
 	Container,
 	container,
@@ -49,6 +50,11 @@ stopped n = trivial $ cmdProperty "systemctl" ["stop", n]
 enabled :: ServiceName -> Property
 enabled n = trivial $ cmdProperty "systemctl" ["enable", n]
 	`describe` ("service " ++ n ++ " enabled")
+
+-- | Disables a systemd service.
+disabled :: ServiceName -> Property
+disabled n = trivial $ cmdProperty "systemctl" ["distable", n]
+	`describe` ("service " ++ n ++ " disabled")
 
 -- | Enables persistent storage of the journal.
 persistentJournal :: Property
@@ -121,10 +127,12 @@ nspawnService (Container name _ _) = RevertableProperty setup teardown
 	servicefile = "/etc/systemd/system/multi-user.target.wants" </> service
 
 	setup = check (not <$> doesFileExist servicefile) $
-			started service
-				`requires` enabled service
+		started service
+			`requires` enabled service
 
-	teardown = undefined
+	teardown = check (doesFileExist servicefile) $
+		disabled service
+			`requires` stopped service
 
 -- | Installs a "enter-machinename" script that root can use to run a
 -- command inside the container.
