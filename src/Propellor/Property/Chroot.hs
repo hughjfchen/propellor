@@ -42,15 +42,15 @@ provisioned c@(Chroot loc system _) = RevertableProperty
   where
 	go desc a = property (chrootDesc c desc) $ ensureProperties [a]
 
-	setup = provisionChroot c `requires` built
+	setup = provisionChroot c `requires` toProp built
 	
 	built = case system of
 		(System (Debian _) _) -> debootstrap
 		(System (Ubuntu _) _) -> debootstrap
 
-	debootstrap = toProp (Debootstrap.built loc system [])
+	debootstrap = Debootstrap.built loc system []
 
-	teardown = undefined
+	teardown = toProp (revert built)
 
 propigateChrootInfo :: Chroot -> Property -> Property
 propigateChrootInfo c p = propigateInfo c p (<> chrootInfo c)
