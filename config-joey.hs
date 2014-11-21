@@ -87,7 +87,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	
 meow :: Systemd.Container
 meow = Systemd.container "meow" (System (Debian Unstable) "amd64") []
-	& Apt.serviceInstalledRunning ["fingerd"]
+	& Apt.serviceInstalledRunning "fingerd"
 	
 testChroot :: Chroot.Chroot
 testChroot = Chroot.chroot "/tmp/chroot" (System (Debian Unstable) "amd64")

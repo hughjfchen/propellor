@@ -1,6 +1,7 @@
 module Propellor.Property.Systemd (
 	installed,
 	persistentJournal,
+	Container,
 	container,
 	nspawned,
 ) where
