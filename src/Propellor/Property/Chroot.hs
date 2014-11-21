@@ -19,6 +19,7 @@ import Data.List.Utils
 import System.Posix.Directory
 
 data Chroot = Chroot FilePath System Host
+	deriving (Show)
 
 instance Hostlike Chroot where
 	(Chroot l s h) & p = Chroot l s (h & p)
@@ -33,6 +34,7 @@ instance Hostlike Chroot where
 -- >	& ...
 chroot :: FilePath -> System -> Chroot
 chroot location system = Chroot location system (Host location [] mempty)
+	& os system
 
 -- | Ensures that the chroot exists and is provisioned according to its
 -- properties.

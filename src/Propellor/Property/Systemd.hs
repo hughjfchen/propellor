@@ -22,14 +22,12 @@ type ServiceName = String
 
 type MachineName = String
 
-type NspawnParam = CommandParam
-
-data Container = Container MachineName System [CommandParam] Host
+data Container = Container MachineName System Host
 
 instance Hostlike Container where
-        (Container n s ps h) & p = Container n s ps (h & p)
-        (Container n s ps h) &^ p = Container n s ps (h &^ p)
-        getHost (Container _ _ _ h) = h
+        (Container n s h) & p = Container n s (h & p)
+        (Container n s h) &^ p = Container n s (h &^ p)
+        getHost (Container _ _ h) = h
 
 -- dbus is only a Recommends of systemd, but is needed for communication
 -- from the systemd inside a container to the one outside, so make sure it
@@ -67,9 +65,12 @@ persistentJournal = check (not <$> doesDirectoryExist dir) $
 -- | Defines a container with a given machine name, containing the specified
 -- System. Properties can be added to configure the Container.
 --
--- > container "webserver" (System (Debian Unstable) "amd64") []
-container :: MachineName -> System -> [NspawnParam] -> Container
-container name system ps = Container name system ps (Host name [] mempty)
+-- > container "webserver" (System (Debian Unstable) "amd64")
+-- >    & Apt.installedRunning "apache2"
+-- >    & ...
+container :: MachineName -> System -> Container
+container name system = Container name system (Host name [] mempty)
+	& os system
 
 -- | Runs a container using systemd-nspawn.
 --
@@ -86,7 +87,7 @@ container name system ps = Container name system ps (Host name [] mempty)
 -- Reverting this property stops the container, removes the systemd unit,
 -- and deletes the chroot and all its contents.
 nspawned :: Container -> RevertableProperty
-nspawned c@(Container name system _ h) = RevertableProperty setup teardown
+nspawned c@(Container name system h) = RevertableProperty setup teardown
   where
 	setup = combineProperties ("nspawned " ++ name) $
 		map toProp steps ++ [containerprovisioned]
@@ -114,7 +115,7 @@ nspawned c@(Container name system _ h) = RevertableProperty setup teardown
 	chroot = mkChroot h
 
 nspawnService :: Container -> RevertableProperty
-nspawnService (Container name _ ps _) = RevertableProperty setup teardown
+nspawnService (Container name _ _) = RevertableProperty setup teardown
   where
 	service = nspawnServiceName name
 	servicefile = "/etc/systemd/system/multi-user.target.wants" </> service
@@ -122,7 +123,6 @@ nspawnService (Container name _ ps _) = RevertableProperty setup teardown
 	setup = check (not <$> doesFileExist servicefile) $
 			started service
 				`requires` enabled service
-	-- TODO ^ adjust execStart line to reflect ps
 
 	teardown = undefined
 
@@ -132,7 +132,7 @@ nspawnService (Container name _ ps _) = RevertableProperty setup teardown
 -- This uses nsenter to enter the container, by looking up the pid of the
 -- container's init process and using its namespace.
 enterScript :: Container -> RevertableProperty
-enterScript c@(Container name _ _ _) = RevertableProperty setup teardown
+enterScript c@(Container name _ _) = RevertableProperty setup teardown
   where
 	setup = combineProperties ("generated " ++ enterScriptFile c)
 		[ scriptfile `File.hasContent`
@@ -152,7 +152,7 @@ enterScript c@(Container name _ _ _) = RevertableProperty setup teardown
 	scriptfile = enterScriptFile c
 
 enterScriptFile :: Container -> FilePath
-enterScriptFile (Container name _ _ _ ) = "/usr/local/bin/enter-" ++ mungename name
+enterScriptFile (Container name _ _ ) = "/usr/local/bin/enter-" ++ mungename name
 
 enterContainerProcess :: Container -> [String] -> CreateProcess
 enterContainerProcess = proc . enterScriptFile
