@@ -23,11 +23,11 @@ type ServiceName = String
 
 type MachineName = String
 
-data Container = Container MachineName System Host
+data Container = Container MachineName Chroot.Chroot Host
 
 instance Hostlike Container where
-        (Container n s h) & p = Container n s (h & p)
-        (Container n s h) &^ p = Container n s (h &^ p)
+        (Container n c h) & p = Container n c (h & p)
+        (Container n c h) &^ p = Container n c (h &^ p)
         getHost (Container _ _ h) = h
 
 -- dbus is only a Recommends of systemd, but is needed for communication
@@ -68,15 +68,19 @@ persistentJournal = check (not <$> doesDirectoryExist dir) $
   where
 	dir = "/var/log/journal"
 
--- | Defines a container with a given machine name, containing the specified
--- System. Properties can be added to configure the Container.
+-- | Defines a container with a given machine name.
 --
--- > container "webserver" (System (Debian Unstable) "amd64")
+-- Properties can be added to configure the Container.
+--
+-- > container "webserver" (Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty)
 -- >    & Apt.installedRunning "apache2"
 -- >    & ...
-container :: MachineName -> System -> Container
-container name system = Container name system (Host name [] mempty)
+container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
+container name mkchroot = Container name c h
 	& os system
+  where
+	c@(Chroot.Chroot _ system _ _) = mkchroot (containerDir name)
+	h = Host name [] mempty
 
 -- | Runs a container using systemd-nspawn.
 --
@@ -93,7 +97,8 @@ container name system = Container name system (Host name [] mempty)
 -- Reverting this property stops the container, removes the systemd unit,
 -- and deletes the chroot and all its contents.
 nspawned :: Container -> RevertableProperty
-nspawned c@(Container name system h) = RevertableProperty setup teardown
+nspawned c@(Container name (Chroot.Chroot loc system builderconf _) h) =
+	RevertableProperty setup teardown
   where
 	setup = combineProperties ("nspawned " ++ name) $
 		map toProp steps ++ [containerprovisioned]
@@ -117,7 +122,7 @@ nspawned c@(Container name system h) = RevertableProperty setup teardown
 	containerprovisioned = Chroot.propellChroot chroot
 		(enterContainerProcess c)
 
-	mkChroot = Chroot.Chroot (containerDir name) system
+	mkChroot = Chroot.Chroot loc system builderconf
 	chroot = mkChroot h
 
 nspawnService :: Container -> RevertableProperty

@@ -1,5 +1,6 @@
 module Propellor.Property.Debootstrap (
 	Url,
+	DebootstrapConfig(..),
 	built,
 	installed,
 	programPath,
@@ -18,6 +19,27 @@ import System.Posix.Directory
 
 type Url = String
 
+-- | A monoid for debootstrap configuration. 
+-- mempty is a default debootstrapped system.
+data DebootstrapConfig
+	= DefaultConfig
+	| MinBase
+	| BuilddD
+	| DebootstrapParam String
+	| DebootstrapConfig :+ DebootstrapConfig
+	deriving (Show)
+
+instance Monoid DebootstrapConfig where
+        mempty  = DefaultConfig
+        mappend = (:+)
+
+toParams :: DebootstrapConfig -> [CommandParam]
+toParams DefaultConfig = []
+toParams MinBase = [Param "--variant=minbase"]
+toParams BuilddD = [Param "--variant=buildd"]
+toParams (DebootstrapParam p) = [Param p]
+toParams (c1 :+ c2) = toParams c1 <> toParams c2
+
 -- | Builds a chroot in the given directory using debootstrap.
 --
 -- The System can be any OS and architecture that debootstrap
@@ -28,8 +50,8 @@ type Url = String
 --
 -- Note that reverting this property does not stop any processes
 -- currently running in the chroot.
-built :: FilePath -> System -> [CommandParam] -> RevertableProperty
-built target system@(System _ arch) extraparams =
+built :: FilePath -> System -> DebootstrapConfig -> RevertableProperty
+built target system@(System _ arch) config =
 	RevertableProperty setup teardown
   where
 	setup = check (unpopulated target <||> ispartial) setupprop
@@ -44,7 +66,7 @@ built target system@(System _ arch) extraparams =
 		suite <- case extractSuite system of
 			Nothing -> errorMessage $ "don't know how to debootstrap " ++ show system
 			Just s -> pure s
-		let params = extraparams ++
+		let params = toParams config ++
 			[ Param $ "--arch=" ++ arch
 			, Param suite
 			, Param target
