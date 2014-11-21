@@ -16,6 +16,7 @@ import Data.List
 import Data.Char
 import Control.Exception
 import System.Posix.Directory
+import System.Posix.Files
 
 type Url = String
 
@@ -63,6 +64,11 @@ built target system@(System _ arch) config =
 
 	setupprop = property ("debootstrapped " ++ target) $ liftIO $ do
 		createDirectoryIfMissing True target
+		-- Don't allow non-root users to see inside the chroot,
+		-- since doing so can allow them to do various attacks
+		-- including hard link farming suid programs for later
+		-- exploitation.
+		modifyFileMode target (removeModes [otherReadMode, otherExecuteMode, otherWriteMode])
 		suite <- case extractSuite system of
 			Nothing -> errorMessage $ "don't know how to debootstrap " ++ show system
 			Just s -> pure s
