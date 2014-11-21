@@ -1,4 +1,4 @@
 ## news
 
-[[!inline pages="news/* and !*/Discussion" show="4" archive=yes
+[[!inline pages="news/* and !*/Discussion" show=0 archive=yes
 title="propellor news"]]
