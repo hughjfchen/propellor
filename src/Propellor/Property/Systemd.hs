@@ -1,5 +1,8 @@
 module Propellor.Property.Systemd (
 	installed,
+	started,
+	stopped,
+	enabled,
 	persistentJournal,
 	Container,
 	container,
@@ -14,6 +17,8 @@ import Utility.SafeCommand
 import Utility.FileMode
 
 import Data.List.Utils
+
+type ServiceName = String
 
 type MachineName = String
 
@@ -32,12 +37,28 @@ instance Hostlike Container where
 installed :: Property
 installed = Apt.installed ["systemd", "dbus"]
 
+-- | Starts a systemd service.
+started :: ServiceName -> Property
+started n = trivial $ cmdProperty "systemctl" ["start", n]
+	`describe` ("service " ++ n ++ " started")
+
+-- | Stops a systemd service.
+stopped :: ServiceName -> Property
+stopped n = trivial $ cmdProperty "systemctl" ["stop", n]
+	`describe` ("service " ++ n ++ " stopped")
+
+-- | Enables a systemd service.
+enabled :: ServiceName -> Property
+enabled n = trivial $ cmdProperty "systemctl" ["enable", n]
+	`describe` ("service " ++ n ++ " enabled")
+
 -- | Enables persistent storage of the journal.
 persistentJournal :: Property
 persistentJournal = check (not <$> doesDirectoryExist dir) $ 
-	combineProperties "persistent systetemd journal"
+	combineProperties "persistent systemd journal"
 		[ cmdProperty "install" ["-d", "-g", "systemd-journal", dir]
 		, cmdProperty "setfacl" ["-R", "-nm", "g:adm:rx,d:g:adm:rx", dir]
+		, started "systemd-journal-flush"
 		]
 		`requires` Apt.installed ["acl"]
   where
@@ -99,8 +120,8 @@ nspawnService (Container name _ ps _) = RevertableProperty setup teardown
 
 	setup = check (not <$> doesFileExist servicefile) $
 		combineProperties ("container running " ++ service)
-			[ cmdProperty "systemctl" ["enable", service]
-			, cmdProperty "systemctl" ["start", service]
+			[ enabled service
+			, started service
 			]
 	-- TODO ^ adjust execStart line to reflect ps
 
@@ -136,11 +157,11 @@ enterScriptFile (Container name _ _ _ ) = "enter-" ++ mungename name
 enterContainerProcess :: Container -> [String] -> CreateProcess
 enterContainerProcess = proc . enterScriptFile
 
-nspawnServiceName :: MachineName -> String
+nspawnServiceName :: MachineName -> ServiceName
 nspawnServiceName name = "systemd-nspawn@" ++ name ++ ".service"
 
 containerDir :: MachineName -> FilePath
-containerDir name = "/var/lib/container" ++ mungename name
+containerDir name = "/var/lib/container" </> mungename name
 
 mungename :: MachineName -> String
 mungename = replace "/" "_"
