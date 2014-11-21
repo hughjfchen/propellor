@@ -113,8 +113,10 @@ Library
     Propellor.Engine
     Propellor.Exception
     Propellor.Types
-    Propellor.Types.OS
+    Propellor.Types.Chroot
+    Propellor.Types.Docker
     Propellor.Types.Dns
+    Propellor.Types.OS
     Propellor.Types.PrivData
   Other-Modules:
     Propellor.Git
