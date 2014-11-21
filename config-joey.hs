@@ -83,7 +83,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 
 	! Chroot.provisioned testChroot
 	& Systemd.persistentJournal
-	! Systemd.nspawned meow
+	& Systemd.nspawned meow
 	
 meow :: Systemd.Container
 meow = Systemd.container "meow" (Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty)
