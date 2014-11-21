@@ -13,7 +13,6 @@ propellor (1.0.0) UNRELEASED; urgency=medium
   * DigitalOcean.distroKernel property now reboots into the distribution
     kernel when necessary.
   * Avoid outputting color setting sequences when not run on a terminal.
-  * Run remote propellor --spin with a controlling terminal.
   * Docker code simplified by using `docker exec`; needs docker 1.3.1.
   * Docker containers are now a separate data type, cannot be included
     in the main host list, and are instead passed to

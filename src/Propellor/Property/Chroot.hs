@@ -1,12 +1,17 @@
 module Propellor.Property.Chroot (
 	Chroot(..),
-	chroot,
+	debootstrapped,
 	provisioned,
+	-- * Internal use
+	provisioned',
+	propigateChrootInfo,
+	propellChroot,
 	chain,
 ) where
 
 import Propellor
 import qualified Propellor.Property.Debootstrap as Debootstrap
+import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Shim as Shim
 import Utility.SafeCommand
 
@@ -14,21 +19,33 @@ import qualified Data.Map as M
 import Data.List.Utils
 import System.Posix.Directory
 
-data Chroot = Chroot FilePath System Host
+data Chroot = Chroot FilePath System BuilderConf Host
+	deriving (Show)
+
+data BuilderConf
+	= UsingDeboostrap Debootstrap.DebootstrapConfig
+	deriving (Show)
 
 instance Hostlike Chroot where
-	(Chroot l s h) & p = Chroot l s (h & p)
-	(Chroot l s h) &^ p = Chroot l s (h &^ p)
-	getHost (Chroot _ _ h) = h
+	(Chroot l s c h) & p = Chroot l s c (h & p)
+	(Chroot l s c h) &^ p = Chroot l s c (h &^ p)
+	getHost (Chroot _ _ _ h) = h
 
--- | Defines a Chroot at the given location, containing the specified
--- System. Properties can be added to configure the Chroot.
+-- | Defines a Chroot at the given location, built with debootstrap.
 --
--- > chroot "/srv/chroot/ghc-dev" (System (Debian Unstable) "amd64")
--- >    & Apt.installed ["build-essential", "ghc", "haskell-platform"]
+-- Properties can be added to configure the Chroot.
+--
+-- > debootstrapped (System (Debian Unstable) "amd64") Debootstrap.BuildD "/srv/chroot/ghc-dev"
+-- >    & Apt.installed ["ghc", "haskell-platform"]
 -- >	& ...
-chroot :: FilePath -> System -> Chroot
-chroot location system = Chroot location system (Host location [] mempty)
+debootstrapped :: System -> Debootstrap.DebootstrapConfig -> FilePath -> Chroot
+debootstrapped system conf location = case system of
+	(System (Debian _) _) -> mk
+	(System (Ubuntu _) _) -> mk
+  where
+	h = Host location [] mempty
+	mk = Chroot location system (UsingDeboostrap conf) h
+		& os system
 
 -- | Ensures that the chroot exists and is provisioned according to its
 -- properties.
@@ -36,35 +53,36 @@ chroot location system = Chroot location system (Host location [] mempty)
 -- Reverting this property removes the chroot. Note that it does not ensure
 -- that any processes that might be running inside the chroot are stopped.
 provisioned :: Chroot -> RevertableProperty
-provisioned c@(Chroot loc system _) = RevertableProperty
-	(propigateChrootInfo c (go "exists" setup))
+provisioned c = provisioned' (propigateChrootInfo c) c False
+
+provisioned' :: (Property -> Property) -> Chroot -> Bool -> RevertableProperty
+provisioned' propigator c@(Chroot loc system builderconf _) systemdonly = RevertableProperty
+	(propigator $ go "exists" setup)
 	(go "removed" teardown)
   where
 	go desc a = property (chrootDesc c desc) $ ensureProperties [a]
 
-	setup = provisionChroot c `requires` built
+	setup = propellChroot c (inChrootProcess c) systemdonly
+		`requires` toProp built
 	
-	built = case system of
-		(System (Debian _) _) -> debootstrap
-		(System (Ubuntu _) _) -> debootstrap
+	built = case (system, builderconf) of
+		((System (Debian _) _), UsingDeboostrap cf) -> debootstrap cf
+		((System (Ubuntu _) _), UsingDeboostrap cf) -> debootstrap cf
 
-	debootstrap = toProp (Debootstrap.built loc system [])
+	debootstrap = Debootstrap.built loc system
 
-	teardown = undefined
+	teardown = toProp (revert built)
 
 propigateChrootInfo :: Chroot -> Property -> Property
 propigateChrootInfo c p = propigateInfo c p (<> chrootInfo c)
 
 chrootInfo :: Chroot -> Info
-chrootInfo (Chroot loc _ h) =
+chrootInfo (Chroot loc _ _ h) =
 	mempty { _chrootinfo = mempty { _chroots = M.singleton loc h } }
 
 -- | Propellor is run inside the chroot to provision it.
---
--- Strange and wonderful tricks let the host's /usr/local/propellor
--- be used inside the chroot, without needing to install anything.
-provisionChroot :: Chroot -> Property
-provisionChroot c@(Chroot loc _ _) = property (chrootDesc c "provisioned") $ do
+propellChroot :: Chroot -> ([String] -> CreateProcess) -> Bool -> Property
+propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "provisioned") $ do
 	let d = localdir </> shimdir c
 	let me = localdir </> "propellor"
 	shim <- liftIO $ ifM (doesDirectoryExist d)
@@ -89,42 +107,50 @@ provisionChroot c@(Chroot loc _ _) = property (chrootDesc c "provisioned") $ do
 	
 	chainprovision shim = do
 		parenthost <- asks hostName
-		let p = inChrootProcess c
+		cmd <- liftIO $ toChain parenthost c systemdonly
+		let p = mkproc
 			[ shim
 			, "--continue"
-			, show $ toChain parenthost c
+			, show cmd
 			]
 		liftIO $ withHandle StdoutHandle createProcessSuccess p
 			processChainOutput
 
-toChain :: HostName -> Chroot -> CmdLine
-toChain parenthost (Chroot loc _ _) = ChrootChain parenthost loc
+toChain :: HostName -> Chroot -> Bool -> IO CmdLine
+toChain parenthost (Chroot loc _ _ _) systemdonly = do
+	onconsole <- isConsole <$> mkMessageHandle
+	return $ ChrootChain parenthost loc systemdonly onconsole
 
-chain :: [Host] -> HostName -> FilePath -> IO ()
-chain hostlist hn loc = case findHostNoAlias hostlist hn of
-	Nothing -> errorMessage ("cannot find host " ++ hn)
-	Just parenthost -> case M.lookup loc (_chroots $ _chrootinfo $ hostInfo parenthost) of
-		Nothing -> errorMessage ("cannot find chroot " ++ loc ++ " on host " ++ hn)
-		Just h -> go h
+chain :: [Host] -> CmdLine -> IO ()
+chain hostlist (ChrootChain hn loc systemdonly onconsole) = 
+	case findHostNoAlias hostlist hn of
+		Nothing -> errorMessage ("cannot find host " ++ hn)
+		Just parenthost -> case M.lookup loc (_chroots $ _chrootinfo $ hostInfo parenthost) of
+			Nothing -> errorMessage ("cannot find chroot " ++ loc ++ " on host " ++ hn)
+			Just h -> go h
   where
 	go h = do
 		changeWorkingDirectory localdir
-		forceConsole
+		when onconsole forceConsole
 		onlyProcess (provisioningLock loc) $ do
-			r <- runPropellor h $ ensureProperties $ hostProperties h
+			r <- runPropellor h $ ensureProperties $
+				if systemdonly
+					then [Systemd.installed]
+					else hostProperties h
 			putStrLn $ "\n" ++ show r
+chain _ _ = errorMessage "bad chain command"
 
 inChrootProcess :: Chroot -> [String] -> CreateProcess
-inChrootProcess (Chroot loc _ _) cmd = proc "chroot" (loc:cmd)
+inChrootProcess (Chroot loc _ _ _) cmd = proc "chroot" (loc:cmd)
 
 provisioningLock :: FilePath -> FilePath
 provisioningLock containerloc = "chroot" </> mungeloc containerloc ++ ".lock"
 
 shimdir :: Chroot -> FilePath
-shimdir (Chroot loc _ _) = "chroot" </> mungeloc loc ++ ".shim"
+shimdir (Chroot loc _ _ _) = "chroot" </> mungeloc loc ++ ".shim"
 
 mungeloc :: FilePath -> String
 mungeloc = replace "/" "_"
 
 chrootDesc :: Chroot -> String -> String
-chrootDesc (Chroot loc _ _) desc = "chroot " ++ loc ++ " " ++ desc
+chrootDesc (Chroot loc _ _ _) desc = "chroot " ++ loc ++ " " ++ desc

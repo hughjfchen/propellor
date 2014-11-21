@@ -25,6 +25,7 @@ import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Chroot as Chroot
+import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -80,10 +81,17 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	! Ssh.listenPort 80
 	! Ssh.listenPort 443
 
-	& Chroot.provisioned testChroot
+	! Chroot.provisioned testChroot
+	& Systemd.persistentJournal
+	& Systemd.nspawned meow
+	
+meow :: Systemd.Container
+meow = Systemd.container "meow" (Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty)
+	& Apt.serviceInstalledRunning "uptimed"
+	& alias "meow.kitenet.net"
 	
 testChroot :: Chroot.Chroot
-testChroot = Chroot.chroot "/tmp/chroot" (System (Debian Unstable) "amd64")
+testChroot = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty "/tmp/chroot"
 	& File.hasContent "/foo" ["hello"]
 
 orca :: Host
