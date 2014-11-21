@@ -2,6 +2,8 @@ module Propellor.Property.Chroot (
 	Chroot(..),
 	chroot,
 	provisioned,
+	-- * Internal use
+	propellChroot,
 	chain,
 ) where
 
@@ -42,7 +44,7 @@ provisioned c@(Chroot loc system _) = RevertableProperty
   where
 	go desc a = property (chrootDesc c desc) $ ensureProperties [a]
 
-	setup = provisionChroot c `requires` toProp built
+	setup = propellChroot c (inChrootProcess c) `requires` toProp built
 	
 	built = case system of
 		(System (Debian _) _) -> debootstrap
@@ -60,11 +62,8 @@ chrootInfo (Chroot loc _ h) =
 	mempty { _chrootinfo = mempty { _chroots = M.singleton loc h } }
 
 -- | Propellor is run inside the chroot to provision it.
---
--- Strange and wonderful tricks let the host's /usr/local/propellor
--- be used inside the chroot, without needing to install anything.
-provisionChroot :: Chroot -> Property
-provisionChroot c@(Chroot loc _ _) = property (chrootDesc c "provisioned") $ do
+propellChroot :: Chroot -> ([String] -> CreateProcess) -> Property
+propellChroot c@(Chroot loc _ _) mkproc = property (chrootDesc c "provisioned") $ do
 	let d = localdir </> shimdir c
 	let me = localdir </> "propellor"
 	shim <- liftIO $ ifM (doesDirectoryExist d)
@@ -90,7 +89,7 @@ provisionChroot c@(Chroot loc _ _) = property (chrootDesc c "provisioned") $ do
 	chainprovision shim = do
 		parenthost <- asks hostName
 		cmd <- liftIO $ toChain parenthost c
-		let p = inChrootProcess c
+		let p = mkproc
 			[ shim
 			, "--continue"
 			, show cmd
