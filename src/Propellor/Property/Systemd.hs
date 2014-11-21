@@ -1,5 +1,5 @@
 module Propellor.Property.Systemd (
-	installed,
+	module Propellor.Property.Systemd.Core,
 	started,
 	stopped,
 	enabled,
@@ -14,6 +14,7 @@ import Propellor
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
+import Propellor.Property.Systemd.Core
 import Utility.SafeCommand
 import Utility.FileMode
 
@@ -29,12 +30,6 @@ instance Hostlike Container where
         (Container n c h) & p = Container n c (h & p)
         (Container n c h) &^ p = Container n c (h &^ p)
         getHost (Container _ _ h) = h
-
--- dbus is only a Recommends of systemd, but is needed for communication
--- from the systemd inside a container to the one outside, so make sure it
--- gets installed.
-installed :: Property
-installed = Apt.installed ["systemd", "dbus"]
 
 -- | Starts a systemd service.
 started :: ServiceName -> Property
@@ -110,20 +105,18 @@ nspawned c@(Container name (Chroot.Chroot loc system builderconf _) h) =
 		, nspawnService c
 		]
 
-	-- When provisioning the chroot, pass a version of the Host
-	-- that only has the Property of systemd being installed.
-	-- This is to avoid starting any daemons in the chroot,
-	-- which would not run in the container's namespace.
-	chrootprovisioned = Chroot.provisioned' (Chroot.propigateChrootInfo chroot) $
-		mkChroot $ h { hostProperties = [installed] }
+	-- Chroot provisioning is run in systemd-only mode,
+	-- which sets up the chroot and ensures systemd and dbus are
+	-- installed, but does not handle the other provisions.
+	chrootprovisioned = Chroot.provisioned'
+		(Chroot.propigateChrootInfo chroot) chroot True
 
 	-- Use nsenter to enter container and and run propellor to
 	-- finish provisioning.
 	containerprovisioned = Chroot.propellChroot chroot
-		(enterContainerProcess c)
+		(enterContainerProcess c) False
 
-	mkChroot = Chroot.Chroot loc system builderconf
-	chroot = mkChroot h
+	chroot = Chroot.Chroot loc system builderconf h
 
 nspawnService :: Container -> RevertableProperty
 nspawnService (Container name _ _) = RevertableProperty setup teardown

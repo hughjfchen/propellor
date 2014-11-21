@@ -11,6 +11,7 @@ module Propellor.Property.Chroot (
 
 import Propellor
 import qualified Propellor.Property.Debootstrap as Debootstrap
+import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Shim as Shim
 import Utility.SafeCommand
 
@@ -52,16 +53,17 @@ debootstrapped system conf location = case system of
 -- Reverting this property removes the chroot. Note that it does not ensure
 -- that any processes that might be running inside the chroot are stopped.
 provisioned :: Chroot -> RevertableProperty
-provisioned c = provisioned' (propigateChrootInfo c) c
+provisioned c = provisioned' (propigateChrootInfo c) c False
 
-provisioned' :: (Property -> Property) -> Chroot -> RevertableProperty
-provisioned' propigator c@(Chroot loc system builderconf _) = RevertableProperty
+provisioned' :: (Property -> Property) -> Chroot -> Bool -> RevertableProperty
+provisioned' propigator c@(Chroot loc system builderconf _) systemdonly = RevertableProperty
 	(propigator $ go "exists" setup)
 	(go "removed" teardown)
   where
 	go desc a = property (chrootDesc c desc) $ ensureProperties [a]
 
-	setup = propellChroot c (inChrootProcess c) `requires` toProp built
+	setup = propellChroot c (inChrootProcess c) systemdonly
+		`requires` toProp built
 	
 	built = case (system, builderconf) of
 		((System (Debian _) _), UsingDeboostrap cf) -> debootstrap cf
@@ -79,8 +81,8 @@ chrootInfo (Chroot loc _ _ h) =
 	mempty { _chrootinfo = mempty { _chroots = M.singleton loc h } }
 
 -- | Propellor is run inside the chroot to provision it.
-propellChroot :: Chroot -> ([String] -> CreateProcess) -> Property
-propellChroot c@(Chroot loc _ _ _) mkproc = property (chrootDesc c "provisioned") $ do
+propellChroot :: Chroot -> ([String] -> CreateProcess) -> Bool -> Property
+propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "provisioned") $ do
 	let d = localdir </> shimdir c
 	let me = localdir </> "propellor"
 	shim <- liftIO $ ifM (doesDirectoryExist d)
@@ -105,7 +107,7 @@ propellChroot c@(Chroot loc _ _ _) mkproc = property (chrootDesc c "provisioned"
 	
 	chainprovision shim = do
 		parenthost <- asks hostName
-		cmd <- liftIO $ toChain parenthost c
+		cmd <- liftIO $ toChain parenthost c systemdonly
 		let p = mkproc
 			[ shim
 			, "--continue"
@@ -114,24 +116,29 @@ propellChroot c@(Chroot loc _ _ _) mkproc = property (chrootDesc c "provisioned"
 		liftIO $ withHandle StdoutHandle createProcessSuccess p
 			processChainOutput
 
-toChain :: HostName -> Chroot -> IO CmdLine
-toChain parenthost (Chroot loc _ _ _) = do
+toChain :: HostName -> Chroot -> Bool -> IO CmdLine
+toChain parenthost (Chroot loc _ _ _) systemdonly = do
 	onconsole <- isConsole <$> mkMessageHandle
-	return $ ChrootChain parenthost loc onconsole
+	return $ ChrootChain parenthost loc systemdonly onconsole
 
-chain :: [Host] -> HostName -> FilePath -> Bool -> IO ()
-chain hostlist hn loc onconsole = case findHostNoAlias hostlist hn of
-	Nothing -> errorMessage ("cannot find host " ++ hn)
-	Just parenthost -> case M.lookup loc (_chroots $ _chrootinfo $ hostInfo parenthost) of
-		Nothing -> errorMessage ("cannot find chroot " ++ loc ++ " on host " ++ hn)
-		Just h -> go h
+chain :: [Host] -> CmdLine -> IO ()
+chain hostlist (ChrootChain hn loc systemdonly onconsole) = 
+	case findHostNoAlias hostlist hn of
+		Nothing -> errorMessage ("cannot find host " ++ hn)
+		Just parenthost -> case M.lookup loc (_chroots $ _chrootinfo $ hostInfo parenthost) of
+			Nothing -> errorMessage ("cannot find chroot " ++ loc ++ " on host " ++ hn)
+			Just h -> go h
   where
 	go h = do
 		changeWorkingDirectory localdir
 		when onconsole forceConsole
 		onlyProcess (provisioningLock loc) $ do
-			r <- runPropellor h $ ensureProperties $ hostProperties h
+			r <- runPropellor h $ ensureProperties $
+				if systemdonly
+					then [Systemd.installed]
+					else hostProperties h
 			putStrLn $ "\n" ++ show r
+chain _ _ = errorMessage "bad chain command"
 
 inChrootProcess :: Chroot -> [String] -> CreateProcess
 inChrootProcess (Chroot loc _ _ _) cmd = proc "chroot" (loc:cmd)

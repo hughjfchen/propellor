@@ -96,6 +96,7 @@ Library
     Propellor.Property.Ssh
     Propellor.Property.Sudo
     Propellor.Property.Systemd
+    Propellor.Property.Systemd.Core
     Propellor.Property.Tor
     Propellor.Property.User
     Propellor.Property.HostingProvider.CloudAtCost
