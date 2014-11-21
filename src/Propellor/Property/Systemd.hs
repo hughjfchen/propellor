@@ -53,7 +53,7 @@ enabled n = trivial $ cmdProperty "systemctl" ["enable", n]
 
 -- | Disables a systemd service.
 disabled :: ServiceName -> Property
-disabled n = trivial $ cmdProperty "systemctl" ["distable", n]
+disabled n = trivial $ cmdProperty "systemctl" ["disable", n]
 	`describe` ("service " ++ n ++ " disabled")
 
 -- | Enables persistent storage of the journal.
