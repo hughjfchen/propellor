@@ -1,4 +1,4 @@
 ## posts
 
-[[!inline pages="internal(feeds/*) and !*/Discussion" show="4" archive=yes
+[[!inline pages="internal(feeds/*) and !*/Discussion" show=0 archive=yes
 title="propellor blog posts"]]
