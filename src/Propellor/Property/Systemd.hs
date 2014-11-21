@@ -88,9 +88,10 @@ container name system ps = Container name system ps (Host name [] mempty)
 nspawned :: Container -> RevertableProperty
 nspawned c@(Container name system _ h) = RevertableProperty setup teardown
   where
-	setup = propertyList ("nspawned " ++ name) (map toProp steps)
-	teardown = propertyList ("not nspawned " ++ name)
-		(map (toProp . revert) (reverse steps))
+	setup = propertyList ("nspawned " ++ name) $
+		map toProp steps ++ [containerprovisioned]
+	teardown = propertyList ("not nspawned " ++ name) $
+		map (toProp . revert) (reverse steps)
 	steps =
 		[ enterScript c
 		, chrootprovisioned
@@ -141,6 +142,7 @@ enterScript c@(Container name _ _ _) = RevertableProperty setup teardown
 			, "if [ -n \"$pid\" ]; then"
 			, "\tnsenter -p -u -n -i -m -t \"$pid\""
 			, "else"
+			, "\techo container not running >&2"
 			, "\texit 1"
 			, "fi"
 			]
@@ -150,7 +152,7 @@ enterScript c@(Container name _ _ _) = RevertableProperty setup teardown
 	scriptfile = enterScriptFile c
 
 enterScriptFile :: Container -> FilePath
-enterScriptFile (Container name _ _ _ ) = "enter-" ++ mungename name
+enterScriptFile (Container name _ _ _ ) = "/usr/local/bin/enter-" ++ mungename name
 
 enterContainerProcess :: Container -> [String] -> CreateProcess
 enterContainerProcess = proc . enterScriptFile
