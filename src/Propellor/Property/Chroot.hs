@@ -89,19 +89,22 @@ provisionChroot c@(Chroot loc _ _) = property (chrootDesc c "provisioned") $ do
 	
 	chainprovision shim = do
 		parenthost <- asks hostName
+		cmd <- liftIO $ toChain parenthost c
 		let p = inChrootProcess c
 			[ shim
 			, "--continue"
-			, show $ toChain parenthost c
+			, show cmd
 			]
 		liftIO $ withHandle StdoutHandle createProcessSuccess p
 			processChainOutput
 
-toChain :: HostName -> Chroot -> CmdLine
-toChain parenthost (Chroot loc _ _) = ChrootChain parenthost loc
+toChain :: HostName -> Chroot -> IO CmdLine
+toChain parenthost (Chroot loc _ _) = do
+	onconsole <- isConsole <$> mkMessageHandle
+	return $ ChrootChain parenthost loc onconsole
 
-chain :: [Host] -> HostName -> FilePath -> IO ()
-chain hostlist hn loc = case findHostNoAlias hostlist hn of
+chain :: [Host] -> HostName -> FilePath -> Bool -> IO ()
+chain hostlist hn loc onconsole = case findHostNoAlias hostlist hn of
 	Nothing -> errorMessage ("cannot find host " ++ hn)
 	Just parenthost -> case M.lookup loc (_chroots $ _chrootinfo $ hostInfo parenthost) of
 		Nothing -> errorMessage ("cannot find chroot " ++ loc ++ " on host " ++ hn)
@@ -109,7 +112,7 @@ chain hostlist hn loc = case findHostNoAlias hostlist hn of
   where
 	go h = do
 		changeWorkingDirectory localdir
-		forceConsole
+		when onconsole forceConsole
 		onlyProcess (provisioningLock loc) $ do
 			r <- runPropellor h $ ensureProperties $ hostProperties h
 			putStrLn $ "\n" ++ show r
