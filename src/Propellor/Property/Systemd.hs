@@ -23,6 +23,7 @@ import Utility.FileMode
 
 import Data.List
 import Data.List.Utils
+import qualified Data.Map as M
 
 type ServiceName = String
 
@@ -81,6 +82,7 @@ daemonReloaded = trivial $ cmdProperty "systemctl" ["daemon-reload"]
 container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
 container name mkchroot = Container name c h
 	& os system
+	& resolvConfed
   where
 	c@(Chroot.Chroot _ system _ _) = mkchroot (containerDir name)
 	h = Host name [] mempty
@@ -165,7 +167,8 @@ nspawnService (Container name _ _) cfg = RevertableProperty setup teardown
 
 nspawnServiceParams :: ChrootCfg -> [String]
 nspawnServiceParams ChrootCfg = []
-nspawnServiceParams (SystemdNspawnCfg ps) = ps
+nspawnServiceParams (SystemdNspawnCfg ps) =
+	M.keys $ M.filter id $ M.fromList ps
 
 -- | Installs a "enter-machinename" script that root can use to run a
 -- command inside the container.
@@ -212,10 +215,19 @@ mungename = replace "/" "_"
 -- "--link-journal=guest"
 --
 -- When there is no leading dash, "--" is prepended to the parameter.
-containerCfg :: String -> Property
-containerCfg p = pureInfoProperty ("container configured with " ++ p') $
-	mempty { _chrootinfo = mempty { _chrootCfg = SystemdNspawnCfg [p'] } }
+--
+-- Reverting the property will remove a parameter, if it's present.
+containerCfg :: String -> RevertableProperty
+containerCfg p = RevertableProperty (mk True) (mk False)
   where
+	mk b = pureInfoProperty ("container configured " ++ if b then "with " else "without " ++ p') $
+		mempty { _chrootinfo = mempty { _chrootCfg = SystemdNspawnCfg [(p', b)] } }
 	p' = case p of
 		('-':_) -> p
 		_ -> "--" ++ p
+
+-- | Bind mounts /etc/resolv.conf from the host into the container.
+--
+-- This property is enabled by default. Revert it to disable it.
+resolvConfed :: RevertableProperty
+resolvConfed = containerCfg "bind=/etc/resolv.conf"

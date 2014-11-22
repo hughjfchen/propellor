@@ -18,7 +18,7 @@ instance Monoid (ChrootInfo host) where
 
 data ChrootCfg
 	= ChrootCfg
-	| SystemdNspawnCfg [String]
+	| SystemdNspawnCfg [(String, Bool)]
 	deriving (Show)
 
 instance Monoid ChrootCfg where
