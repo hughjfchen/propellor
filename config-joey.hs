@@ -101,6 +101,7 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 
 	& Apt.unattendedUpgrades
 	& Postfix.satellite
+	& Systemd.persistentJournal
 	& Docker.configured
 	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h")
 	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h")
@@ -125,7 +126,8 @@ kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
 	& Apt.installed ["linux-image-amd64"]
 	& Linode.chainPVGrub 5
 	& Apt.unattendedUpgrades
-	& Apt.installed ["systemd"]
+	& Systemd.installed
+	& Systemd.persistentJournal
 	& Ssh.hostKeys (Context "kitenet.net")
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
@@ -241,20 +243,25 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	, "(Encrypt all data stored here.)"
 	]
 	& ipv4 "193.234.225.114"
-		& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
+
+	& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
 	& Postfix.satellite
 	& Apt.unattendedUpgrades
+	& Systemd.installed
+	& Systemd.persistentJournal
 	& Ssh.hostKeys ctx
 	& sshPubKey "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAJkoPRhUGT8EId6m37uBdYEtq42VNwslKnc9mmO+89ody066q6seHKeFY6ImfwjcyIjM30RTzEwftuVNQnbEB0="
 	& Ssh.keyImported SshRsa "joey" ctx
 	& Apt.serviceInstalledRunning "swapspace"
-		& alias "eubackup.kitenet.net"
+
+	& alias "eubackup.kitenet.net"
 	& Apt.installed ["obnam", "sshfs", "rsync"]
 	& JoeySites.obnamRepos ["wren", "pell", "kite"]
 	& JoeySites.githubBackup
 	& JoeySites.rsyncNetBackup hosts
 	& JoeySites.backupsBackedupTo hosts "usbackup.kitenet.net" "lib/backup/eubackup"
-		& alias "podcatcher.kitenet.net"
+
+	& alias "podcatcher.kitenet.net"
 	& JoeySites.podcatcher
 	
 	& alias "znc.kitenet.net"
@@ -262,7 +269,8 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	-- I'd rather this were on diatom, but it needs unstable.
 	& alias "kgb.kitenet.net"
 	& JoeySites.kgbServer
-		& alias "mumble.kitenet.net"
+	
+	& alias "mumble.kitenet.net"
 	& JoeySites.mumbleServer hosts
 	
 	& alias "ns3.kitenet.net"
