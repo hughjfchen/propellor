@@ -17,13 +17,13 @@ instance Monoid (ChrootInfo host) where
 		}
 
 data ChrootCfg
-	= ChrootCfg
+	= NoChrootCfg
 	| SystemdNspawnCfg [(String, Bool)]
 	deriving (Show)
 
 instance Monoid ChrootCfg where
-	mempty = ChrootCfg
-	mappend _ ChrootCfg = ChrootCfg
-	mappend ChrootCfg r = r
+	mempty = NoChrootCfg
+	mappend v NoChrootCfg = v
+	mappend NoChrootCfg v = v
 	mappend (SystemdNspawnCfg l1) (SystemdNspawnCfg l2) =
 		SystemdNspawnCfg (l1 <> l2)

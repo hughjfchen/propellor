@@ -10,6 +10,7 @@ module Propellor.Property.Systemd (
 	container,
 	nspawned,
 	containerCfg,
+	resolvConfed,
 ) where
 
 import Propellor
@@ -30,6 +31,7 @@ type ServiceName = String
 type MachineName = String
 
 data Container = Container MachineName Chroot.Chroot Host
+	deriving (Show)
 
 instance Hostlike Container where
         (Container n c h) & p = Container n c (h & p)
@@ -166,7 +168,7 @@ nspawnService (Container name _ _) cfg = RevertableProperty setup teardown
 		disabled service `requires` stopped service
 
 nspawnServiceParams :: ChrootCfg -> [String]
-nspawnServiceParams ChrootCfg = []
+nspawnServiceParams NoChrootCfg = []
 nspawnServiceParams (SystemdNspawnCfg ps) =
 	M.keys $ M.filter id $ M.fromList ps
 
@@ -220,7 +222,7 @@ mungename = replace "/" "_"
 containerCfg :: String -> RevertableProperty
 containerCfg p = RevertableProperty (mk True) (mk False)
   where
-	mk b = pureInfoProperty ("container configured " ++ if b then "with " else "without " ++ p') $
+	mk b = pureInfoProperty ("container configuration " ++ (if b then "" else "without ") ++ p') $
 		mempty { _chrootinfo = mempty { _chrootCfg = SystemdNspawnCfg [(p', b)] } }
 	p' = case p of
 		('-':_) -> p
