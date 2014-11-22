@@ -128,25 +128,28 @@ sendGitClone hn = void $ actionMessage ("Clone git repository to " ++ hn) $ do
 -- same architecture as the build host.
 sendPrecompiled :: HostName -> IO ()
 sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor as a last resort") $ do
-	cacheparams <- sshCachingParams hn
-	withTmpDir "propellor" $ \tmpdir ->
-		bracket getWorkingDirectory changeWorkingDirectory $ \_ -> do
-			let shimdir = "propellor"
-			createDirectoryIfMissing True (tmpdir </> shimdir)
-			changeWorkingDirectory (tmpdir </> shimdir)
-			me <- readSymbolicLink "/proc/self/exe"
-			shim <- Shim.setup me "."
-			when (shim /= "propellor") $
-				renameFile shim "propellor"
-			changeWorkingDirectory tmpdir
-			withTmpFile "propellor.tar." $ \tarball _ -> allM id
-				[ boolSystem "strip" [File me]
-				, boolSystem "tar" [Param "cf", File tarball, File shimdir]
-				, boolSystem "scp" $ cacheparams ++ [File tarball, Param ("root@"++hn++":"++remotetarball)]
-				, boolSystem "ssh" $ cacheparams ++ [Param ("root@"++hn), Param unpackcmd]
-				]
+	bracket getWorkingDirectory changeWorkingDirectory $ \_ ->
+		withTmpDir "propellor" go
   where
+	go tmpdir = do
+		cacheparams <- sshCachingParams hn
+		let shimdir = takeFileName localdir
+		createDirectoryIfMissing True (tmpdir </> shimdir)
+		changeWorkingDirectory (tmpdir </> shimdir)
+		me <- readSymbolicLink "/proc/self/exe"
+		shim <- Shim.setup me "."
+		when (shim /= "propellor") $
+			renameFile shim "propellor"
+		changeWorkingDirectory tmpdir
+		withTmpFile "propellor.tar." $ \tarball _ -> allM id
+			[ boolSystem "strip" [File me]
+			, boolSystem "tar" [Param "cf", File tarball, File shimdir]
+			, boolSystem "scp" $ cacheparams ++ [File tarball, Param ("root@"++hn++":"++remotetarball)]
+			, boolSystem "ssh" $ cacheparams ++ [Param ("root@"++hn), Param unpackcmd]
+			]
+
 	remotetarball = "/usr/local/propellor.tar"
+
 	unpackcmd = shellWrap $ intercalate " && "
 		[ "cd " ++ takeDirectory remotetarball
 		, "tar xf " ++ remotetarball
