@@ -1,7 +1,7 @@
 {- System.Process enhancements, including additional ways of running
  - processes, and logging.
  -
- - Copyright 2012 Joey Hess <joey@kitenet.net>
+ - Copyright 2012 Joey Hess <id@joeyh.name>
  -
  - License: BSD-2-clause
  -}
