@@ -27,7 +27,3 @@
 hosts :: [Host]        --   *             \ | |              '--------'
 hosts =               --                  (o)  `
 </pre>
-
-Propellor is free software, licensed under the BSD license.
-
-You are encouraged to send patches and improve it. See [[contributing]].
