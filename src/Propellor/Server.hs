@@ -147,7 +147,7 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 		changeWorkingDirectory tmpdir
 		withTmpFile "propellor.tar." $ \tarball _ -> allM id
 			[ boolSystem "strip" [File me]
-			, boolSystem "tar" [Param "cf", File tarball, File shimdir]
+			, boolSystem "tar" [Param "czf", File tarball, File shimdir]
 			, boolSystem "scp" $ cacheparams ++ [File tarball, Param ("root@"++hn++":"++remotetarball)]
 			, boolSystem "ssh" $ cacheparams ++ [Param ("root@"++hn), Param unpackcmd]
 			]
@@ -156,7 +156,7 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 
 	unpackcmd = shellWrap $ intercalate " && "
 		[ "cd " ++ takeDirectory remotetarball
-		, "tar xf " ++ remotetarball
+		, "tar xzf " ++ remotetarball
 		, "rm -f " ++ remotetarball
 		]
 
