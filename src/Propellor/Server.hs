@@ -131,7 +131,7 @@ sendGitUpdate hn fromh toh =
 sendGitClone :: HostName -> IO ()
 sendGitClone hn = void $ actionMessage ("Clone git repository to " ++ hn) $ do
 	branch <- getCurrentBranch
-	cacheparams <- sshCachingParams hn False
+	cacheparams <- sshCachingParams hn
 	withTmpFile "propellor.git" $ \tmp _ -> allM id
 		[ boolSystem "git" [Param "bundle", Param "create", File tmp, Param "HEAD"]
 		, boolSystem "scp" $ cacheparams ++ [File tmp, Param ("root@"++hn++":"++remotebundle)]
@@ -156,7 +156,7 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 		withTmpDir "propellor" go
   where
 	go tmpdir = do
-		cacheparams <- sshCachingParams hn False
+		cacheparams <- sshCachingParams hn
 		let shimdir = takeFileName localdir
 		createDirectoryIfMissing True (tmpdir </> shimdir)
 		changeWorkingDirectory (tmpdir </> shimdir)

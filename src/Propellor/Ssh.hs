@@ -14,17 +14,16 @@ import Data.Time.Clock.POSIX
 -- minutes, and if so stop that ssh process, in order to not try to
 -- use an old stale connection. (atime would be nicer, but there's
 -- a good chance a laptop uses noatime)
-sshCachingParams :: HostName -> Bool -> IO [CommandParam]
-sshCachingParams hn viarelay = do
+sshCachingParams :: HostName -> IO [CommandParam]
+sshCachingParams hn = do
 	home <- myHomeDir
 	let cachedir = home </> ".ssh" </> "propellor"
 	createDirectoryIfMissing False cachedir
 	let socketfile = cachedir </> hn ++ ".sock"
-	let ps = catMaybes
-		[ if viarelay then Just (Param "-A") else Nothing
-		, Just $ Param "-o"
-		, Just $ Param ("ControlPath=" ++ socketfile)
-		, Just $ Params "-o ControlMaster=auto -o ControlPersist=yes"
+	let ps =
+		[ Param "-o"
+		, Param ("ControlPath=" ++ socketfile)
+		, Params "-o ControlMaster=auto -o ControlPersist=yes"
 		]
 
 	maybe noop (expireold ps socketfile)
