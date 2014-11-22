@@ -129,13 +129,13 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 	withTmpDir "propellor" $ \tmpdir ->
 		bracket getWorkingDirectory changeWorkingDirectory $ \_ -> do
 			let shimdir = "propellor"
-			createDirectoryIfMissing True shimdir
-			changeWorkingDirectory shimdir
+			createDirectoryIfMissing True (tmpdir </> shimdir)
+			changeWorkingDirectory (tmpdir </> shimdir)
 			me <- readSymbolicLink "/proc/self/exe"
 			shim <- Shim.setup me "."
+			when (shim /= "propellor") $
+				renameFile shim "propellor"
 			changeWorkingDirectory tmpdir
-			when (shim /= shimdir </> "propellor") $
-				renameFile shim (shimdir </> "propellor")
 			withTmpFile "propellor.tar." $ \tarball _ -> allM id
 				[ boolSystem "strip" [File me]
 				, boolSystem "tar" [Param "cf", File tarball, File shimdir]
