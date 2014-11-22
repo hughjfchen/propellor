@@ -39,6 +39,7 @@ module Propellor.Property.Docker (
 ) where
 
 import Propellor hiding (init)
+import Propellor.Types.Docker
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Shim as Shim
@@ -523,7 +524,7 @@ genProp :: String -> (HostName -> RunParam) -> Property
 genProp field mkval = pureInfoProperty field $ dockerInfo $
 	mempty { _dockerRunParams = [DockerRunParam (\hn -> "--"++field++"=" ++ mkval hn)] }
 
-dockerInfo :: DockerInfo -> Info
+dockerInfo :: DockerInfo Host -> Info
 dockerInfo i = mempty { _dockerinfo = i }
 
 -- | The ContainerIdent of a container is written to

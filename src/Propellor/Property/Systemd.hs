@@ -5,12 +5,16 @@ module Propellor.Property.Systemd (
 	enabled,
 	disabled,
 	persistentJournal,
+	daemonReloaded,
 	Container,
 	container,
 	nspawned,
+	containerCfg,
+	resolvConfed,
 ) where
 
 import Propellor
+import Propellor.Types.Chroot
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
@@ -18,13 +22,16 @@ import Propellor.Property.Systemd.Core
 import Utility.SafeCommand
 import Utility.FileMode
 
+import Data.List
 import Data.List.Utils
+import qualified Data.Map as M
 
 type ServiceName = String
 
 type MachineName = String
 
 data Container = Container MachineName Chroot.Chroot Host
+	deriving (Show)
 
 instance Hostlike Container where
         (Container n c h) & p = Container n c (h & p)
@@ -63,6 +70,10 @@ persistentJournal = check (not <$> doesDirectoryExist dir) $
   where
 	dir = "/var/log/journal"
 
+-- | Causes systemd to reload its configuration files.
+daemonReloaded :: Property
+daemonReloaded = trivial $ cmdProperty "systemctl" ["daemon-reload"]
+
 -- | Defines a container with a given machine name.
 --
 -- Properties can be added to configure the Container.
@@ -73,6 +84,7 @@ persistentJournal = check (not <$> doesDirectoryExist dir) $
 container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
 container name mkchroot = Container name c h
 	& os system
+	& resolvConfed
   where
 	c@(Chroot.Chroot _ system _ _) = mkchroot (containerDir name)
 	h = Host name [] mempty
@@ -102,7 +114,7 @@ nspawned c@(Container name (Chroot.Chroot loc system builderconf _) h) =
 	steps =
 		[ enterScript c
 		, chrootprovisioned
-		, nspawnService c
+		, nspawnService c (_chrootCfg $ _chrootinfo $ hostInfo h)
 		]
 
 	-- Chroot provisioning is run in systemd-only mode,
@@ -118,19 +130,47 @@ nspawned c@(Container name (Chroot.Chroot loc system builderconf _) h) =
 
 	chroot = Chroot.Chroot loc system builderconf h
 
-nspawnService :: Container -> RevertableProperty
-nspawnService (Container name _ _) = RevertableProperty setup teardown
+-- | Sets up the service file for the container, and then starts
+-- it running.
+nspawnService :: Container -> ChrootCfg -> RevertableProperty
+nspawnService (Container name _ _) cfg = RevertableProperty setup teardown
   where
 	service = nspawnServiceName name
 	servicefile = "/etc/systemd/system/multi-user.target.wants" </> service
 
-	setup = check (not <$> doesFileExist servicefile) $
-		started service
-			`requires` enabled service
+	servicefilecontent = do
+		ls <- lines <$> readFile "/lib/systemd/system/systemd-nspawn@.service"
+		return $ unlines $
+			"# deployed by propellor" : map addparams ls
+	addparams l
+		| "ExecStart=" `isPrefixOf` l =
+			l ++ " " ++ unwords (nspawnServiceParams cfg)
+		| otherwise = l
+	
+	goodservicefile = (==)
+		<$> servicefilecontent
+		<*> catchDefaultIO "" (readFile servicefile)
+
+	writeservicefile = property servicefile $ liftIO $ do
+		viaTmp writeFile servicefile =<< servicefilecontent
+		return MadeChange
+
+	setupservicefile = check (not <$> goodservicefile) $
+		-- if it's running, it has the wrong configuration,
+		-- so stop it
+		stopped service
+			`requires` daemonReloaded
+			`requires` writeservicefile
+
+	setup = started service `requires` setupservicefile
 
 	teardown = check (doesFileExist servicefile) $
-		disabled service
-			`requires` stopped service
+		disabled service `requires` stopped service
+
+nspawnServiceParams :: ChrootCfg -> [String]
+nspawnServiceParams NoChrootCfg = []
+nspawnServiceParams (SystemdNspawnCfg ps) =
+	M.keys $ M.filter id $ M.fromList ps
 
 -- | Installs a "enter-machinename" script that root can use to run a
 -- command inside the container.
@@ -171,3 +211,25 @@ containerDir name = "/var/lib/container" </> mungename name
 
 mungename :: MachineName -> String
 mungename = replace "/" "_"
+
+-- | This configures how systemd-nspawn(1) starts the container,
+-- by specifying a parameter, such as "--private-network", or
+-- "--link-journal=guest"
+--
+-- When there is no leading dash, "--" is prepended to the parameter.
+--
+-- Reverting the property will remove a parameter, if it's present.
+containerCfg :: String -> RevertableProperty
+containerCfg p = RevertableProperty (mk True) (mk False)
+  where
+	mk b = pureInfoProperty ("container configuration " ++ (if b then "" else "without ") ++ p') $
+		mempty { _chrootinfo = mempty { _chrootCfg = SystemdNspawnCfg [(p', b)] } }
+	p' = case p of
+		('-':_) -> p
+		_ -> "--" ++ p
+
+-- | Bind mounts /etc/resolv.conf from the host into the container.
+--
+-- This property is enabled by default. Revert it to disable it.
+resolvConfed :: RevertableProperty
+resolvConfed = containerCfg "bind=/etc/resolv.conf"

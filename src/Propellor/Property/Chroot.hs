@@ -10,6 +10,7 @@ module Propellor.Property.Chroot (
 ) where
 
 import Propellor
+import Propellor.Types.Chroot
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Shim as Shim

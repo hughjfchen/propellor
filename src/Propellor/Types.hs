@@ -23,9 +23,6 @@ module Propellor.Types
 	, SshKeyType(..)
 	, Val(..)
 	, fromVal
-	, DockerInfo(..)
-	, DockerRunParam(..)
-	, ChrootInfo(..)
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
 	) where
@@ -37,11 +34,12 @@ import System.Posix.Types
 import "mtl" Control.Monad.Reader
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 import qualified Data.Set as S
-import qualified Data.Map as M
 import qualified Propellor.Types.Dns as Dns
 
 import Propellor.Types.OS
+import Propellor.Types.Chroot
 import Propellor.Types.Dns
+import Propellor.Types.Docker
 import Propellor.Types.PrivData
 
 -- | Everything Propellor knows about a system: Its hostname,
@@ -167,8 +165,8 @@ data Info = Info
 	, _aliases :: S.Set HostName
 	, _dns :: S.Set Dns.Record
 	, _namedconf :: Dns.NamedConfMap
-	, _dockerinfo :: DockerInfo
-	, _chrootinfo :: ChrootInfo
+	, _dockerinfo :: DockerInfo Host
+	, _chrootinfo :: ChrootInfo Host
 	}
 	deriving (Show)
 
@@ -197,32 +195,3 @@ instance Monoid (Val a) where
 fromVal :: Val a -> Maybe a
 fromVal (Val a) = Just a
 fromVal NoVal = Nothing
-
-data DockerInfo = DockerInfo
-	{ _dockerRunParams :: [DockerRunParam]
-	, _dockerContainers :: M.Map String Host
-	}
-	deriving (Show)
-
-instance Monoid DockerInfo where
-	mempty = DockerInfo mempty mempty
-	mappend old new = DockerInfo
-		{ _dockerRunParams = _dockerRunParams old <> _dockerRunParams new
-		, _dockerContainers = M.union (_dockerContainers old) (_dockerContainers new)
-		}
-
-newtype DockerRunParam = DockerRunParam (HostName -> String)
-
-instance Show DockerRunParam where
-	show (DockerRunParam a) = a ""
-
-data ChrootInfo = ChrootInfo
-	{ _chroots :: M.Map FilePath Host
-	}
-	deriving (Show)
-
-instance Monoid ChrootInfo where
-	mempty = ChrootInfo mempty
-	mappend old new = ChrootInfo
-		{ _chroots = M.union (_chroots old) (_chroots new)
-		}
