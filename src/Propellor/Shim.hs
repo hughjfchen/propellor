@@ -45,6 +45,8 @@ setup propellorbin dest = do
 	modifyFileMode shim (addModes executeModes)
 	return shim
 
+-- Called when the shimmed propellor is running, so that commands it runs
+-- don't see it.
 cleanEnv :: IO ()
 cleanEnv = void $ unsetEnv "GCONV_PATH"
 
