@@ -66,51 +66,54 @@ updateServer :: HostName -> Maybe HostName -> Host -> (((Handle, Handle) -> IO (
 updateServer target relay hst connect = connect go
   where
 	hn = fromMaybe target relay
+	relaying = relay == Just target
+
 	go (toh, fromh) = do
 		let loop = go (toh, fromh)
+		let restart = updateServer hn relay hst connect
+		let done = return ()
 		v <- (maybe Nothing readish <$> getMarked fromh statusMarker)
 		case v of
 			(Just NeedRepoUrl) -> do
 				sendRepoUrl toh
 				loop
 			(Just NeedPrivData) -> do
-				sendPrivData hn hst toh relay
+				sendPrivData hn hst toh relaying
 				loop
-			(Just NeedGitPush) -> do
-				sendGitUpdate hn fromh toh
-				-- no more protocol possible after git push
-				hClose fromh
-				hClose toh
 			(Just NeedGitClone) -> do
 				hClose toh
 				hClose fromh
 				sendGitClone hn
-				updateServer hn relay hst connect
+				restart
 			(Just NeedPrecompiled) -> do
 				hClose toh
 				hClose fromh
 				sendPrecompiled hn
-				updateServer hn relay hst connect
-			Nothing -> return ()
+				restart
+			(Just NeedGitPush) -> do
+				sendGitUpdate hn fromh toh
+				hClose fromh
+				hClose toh
+				done
+			Nothing -> done
 
 sendRepoUrl :: Handle -> IO ()
 sendRepoUrl toh = sendMarked toh repoUrlMarker =<< (fromMaybe "" <$> getRepoUrl)
 
-sendPrivData :: HostName -> Host -> Handle -> Maybe HostName -> IO ()
-sendPrivData hn hst toh target = do
+sendPrivData :: HostName -> Host -> Handle -> Bool -> IO ()
+sendPrivData hn hst toh relaying = do
 	privdata <- getdata
 	void $ actionMessage ("Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn) $ do
 		sendMarked toh privDataMarker privdata
 		return True
   where
 	getdata
-		| isNothing target =
-			show . filterPrivData hst <$> decryptPrivData
-		| otherwise = do
+		| relaying = do
 			let f = privDataRelay hn
 			d <- readFileStrictAnyEncoding f
 			nukeFile f
 			return d
+		| otherwise = show . filterPrivData hst <$> decryptPrivData
 
 sendGitUpdate :: HostName -> Handle -> Handle -> IO ()
 sendGitUpdate hn fromh toh =

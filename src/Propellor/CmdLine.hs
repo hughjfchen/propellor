@@ -196,10 +196,10 @@ spin target relay hst = do
 		, "fi"
 		]
 
-	runcmd = mkcmd [ "cd " ++ localdir ++ " && ./propellor " ++ cmd ]
+	runcmd = mkcmd [ "cd " ++ localdir ++ " && ./propellor --continue " ++ shellEscape (show cmd) ]
 	cmd = if isNothing relay
-		then "--continue " ++ shellEscape (show (SimpleRun target))
-		else "--spin " ++ shellEscape target
+		then SimpleRun target
+		else Spin target relay
 	runparams = catMaybes
 		[ if isJust relay then Just "-A" else Nothing
 		, Just "-t"
