@@ -161,10 +161,10 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 		createDirectoryIfMissing True (tmpdir </> shimdir)
 		changeWorkingDirectory (tmpdir </> shimdir)
 		me <- readSymbolicLink "/proc/self/exe"
-		me' <- catchDefaultIO me (readSymbolicLink me)
-		shim <- Shim.setup me' "."
-		when (shim /= "propellor") $
-			renameFile shim "propellor"
+		createDirectoryIfMissing True "bin"
+		unlessM (boolSystem "cp" [File me, File "bin/propellor"]) $
+			errorMessage "failed copying in propellor"
+		void $ Shim.setup "bin/propellor" "."
 		changeWorkingDirectory tmpdir
 		withTmpFile "propellor.tar." $ \tarball _ -> allM id
 			[ boolSystem "strip" [File me]
