@@ -166,8 +166,8 @@ spin target relay hst = do
 			void $ actionMessage "Push to central git repository" $
 				boolSystem "git" [Param "push"]
 	
-	cacheparams <- toCommand <$> sshCachingParams hn
-	when (isJust relay) $
+	cacheparams <- toCommand <$> sshCachingParams hn viarelay
+	when viarelay $
 		void $ boolSystem "ssh-add" []
 
 	-- Install, or update the remote propellor.
@@ -175,12 +175,14 @@ spin target relay hst = do
 		(proc "ssh" $ cacheparams ++ [user, updatecmd])
 
 	-- And now we can run it.
-	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ runparams)) $
+	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, runcmd])) $
 		error $ "remote propellor failed"
   where
 	hn = fromMaybe target relay
 	user = "root@"++hn
+
 	relaying = relay == Just target
+	viarelay = isJust relay && not relaying
 
 	mkcmd = shellWrap . intercalate " ; "
 
@@ -193,22 +195,16 @@ spin target relay hst = do
 		, "else " ++ intercalate " && "
 			[ "cd " ++ localdir
 			, "if ! test -x ./propellor; then make deps build; fi"
-			, if isNothing relay
-				-- Still using --boot for back-compat...
-				then "./propellor --boot " ++ target
-				else "./propellor --continue " ++
+			, if viarelay
+				then "./propellor --continue " ++
 					shellEscape (show (Update (Just target)))
+				-- Still using --boot for back-compat...
+				else "./propellor --boot " ++ target
 			]
 		, "fi"
 		]
 
 	runcmd = mkcmd [ "cd " ++ localdir ++ " && ./propellor " ++ cmd ]
-	cmd = if isNothing relay
-		then "--continue " ++ shellEscape (show (SimpleRun target))
-		else "--serialized " ++ shellEscape (show (Spin target (Just target)))
-	runparams = catMaybes
-		[ if isJust relay then Just "-A" else Nothing
-		, Just "-t"
-		, Just user
-		, Just runcmd
-		]
+	cmd = if viarelay
+		then "--serialized " ++ shellEscape (show (Spin target (Just target)))
+		else "--continue " ++ shellEscape (show (SimpleRun target))
