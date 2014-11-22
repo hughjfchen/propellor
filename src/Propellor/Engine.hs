@@ -11,7 +11,6 @@ import "mtl" Control.Monad.Reader
 import Control.Exception (bracket)
 import System.PosixCompat
 import System.Posix.IO
-import Data.Maybe
 
 import Propellor.Types
 import Propellor.Message
@@ -74,8 +73,14 @@ processChainOutput h = go Nothing
 	go lastline = do
 		v <- catchMaybeIO (hGetLine h)
 		case v of
-			Nothing -> pure $ fromMaybe FailedChange $
-				readish =<< lastline
+			Nothing -> case lastline of
+				Nothing -> pure FailedChange
+				Just l -> case readish l of
+					Just r -> pure r
+					Nothing -> do
+						putStrLn l
+						hFlush stdout
+						return FailedChange
 			Just s -> do
 				maybe noop (\l -> unless (null l) (putStrLn l)) lastline
 				hFlush stdout
