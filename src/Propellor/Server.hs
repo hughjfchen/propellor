@@ -1,3 +1,7 @@
+-- When propellor --spin is running, the local host acts as a server,
+-- which connects to the remote host's propellor and responds to its
+-- requests.
+
 module Propellor.Server (
 	update,
 	updateServer,
