@@ -74,7 +74,7 @@ updateServer target relay hst connect = connect go
 				sendRepoUrl toh
 				loop
 			(Just NeedPrivData) -> do
-				sendPrivData hn hst toh
+				sendPrivData hn hst toh relay
 				loop
 			(Just NeedGitPush) -> do
 				sendGitUpdate hn fromh toh
@@ -96,12 +96,21 @@ updateServer target relay hst connect = connect go
 sendRepoUrl :: Handle -> IO ()
 sendRepoUrl toh = sendMarked toh repoUrlMarker =<< (fromMaybe "" <$> getRepoUrl)
 
-sendPrivData :: HostName -> Host -> Handle -> IO ()
-sendPrivData hn hst toh = do
-	privdata <- show . filterPrivData hst <$> decryptPrivData
+sendPrivData :: HostName -> Host -> Handle -> Maybe HostName -> IO ()
+sendPrivData hn hst toh target = do
+	privdata <- getdata
 	void $ actionMessage ("Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn) $ do
 		sendMarked toh privDataMarker privdata
 		return True
+  where
+	getdata
+		| isNothing target =
+			show . filterPrivData hst <$> decryptPrivData
+		| otherwise = do
+			let f = privDataRelay hn
+			d <- readFileStrictAnyEncoding f
+			nukeFile f
+			return d
 
 sendGitUpdate :: HostName -> Handle -> Handle -> IO ()
 sendGitUpdate hn fromh toh =
