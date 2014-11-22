@@ -53,9 +53,8 @@ processCmdLine = go =<< getArgs
 		exitFailure
 	go ("--update":_:[]) = return $ Update Nothing
 	go ("--boot":_:[]) = return $ Update Nothing -- for back-compat
-	go ("--continue":s:[]) = case readish s of
-		Just cmdline -> return $ Continue cmdline
-		Nothing -> errorMessage $ "--continue serialization failure (" ++ s ++ ")"
+	go ("--serialized":s:[]) = serialized Serialized s
+	go ("--continue":s:[]) = serialized Continue s
 	go ("--gitpush":fin:fout:_) = return $ GitPush (Prelude.read fin) (Prelude.read fout)
 	go (h:[])
 		| "--" `isPrefixOf` h = usageError [h]
@@ -71,6 +70,10 @@ processCmdLine = go =<< getArgs
 		Just pf -> return $ f pf (Context c)
 		Nothing -> errorMessage $ "Unknown privdata field " ++ s
 
+	serialized mk s = case readish s of
+		Just cmdline -> return $ mk cmdline
+		Nothing -> errorMessage $ "serialization failure (" ++ s ++ ")"
+
 -- | Runs propellor on hosts, as controlled by command-line options.
 defaultMain :: [Host] -> IO ()
 defaultMain hostlist = do
@@ -80,6 +83,7 @@ defaultMain hostlist = do
 	debug ["command line: ", show cmdline]
 	go True cmdline
   where
+	go _ (Serialized cmdline) = go True cmdline
 	go _ (Continue cmdline) = go False cmdline
 	go _ (Set field context) = setPrivData field context
 	go _ (Dump field context) = dumpPrivData field context
@@ -196,10 +200,10 @@ spin target relay hst = do
 		, "fi"
 		]
 
-	runcmd = mkcmd [ "cd " ++ localdir ++ " && ./propellor --continue " ++ shellEscape (show cmd) ]
+	runcmd = mkcmd [ "cd " ++ localdir ++ " && ./propellor " ++ cmd ]
 	cmd = if isNothing relay
-		then SimpleRun target
-		else Spin target (Just target)
+		then "--continue " ++ shellEscape (show (SimpleRun target))
+		else "--serialized " ++ shellEscape (show (Spin target (Just target)))
 	runparams = catMaybes
 		[ if isJust relay then Just "-A" else Nothing
 		, Just "-t"
