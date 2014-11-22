@@ -129,6 +129,7 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 	withTmpDir "propellor" $ \tmpdir ->
 		bracket getWorkingDirectory changeWorkingDirectory $ \_ -> do
 			let shimdir = "propellor"
+			createDirectoryIfMissing True shimdir
 			changeWorkingDirectory shimdir
 			me <- readSymbolicLink "/proc/self/exe"
 			shim <- Shim.setup me "."
