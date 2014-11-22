@@ -131,7 +131,7 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 		bracket getWorkingDirectory changeWorkingDirectory $ \_ -> do
 			changeWorkingDirectory tmpdir
 			let shimdir = "propellor"
-			let me = localdir </> "propellor"
+			me <- readSymbolicLink "/proc/self/exe"
 			void $ Shim.setup me shimdir
 			withTmpFile "propellor.tar" $ \tarball _ -> allM id
 				[ boolSystem "strip" [File me]
