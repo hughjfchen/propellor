@@ -8,7 +8,9 @@ import Data.List
 import System.Exit
 import System.PosixCompat
 import System.Posix.IO
+import System.Posix.Directory
 import Control.Concurrent.Async
+import Control.Exception (bracket)
 import qualified Data.ByteString as B
 
 import Propellor
@@ -131,15 +133,15 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 			let shimdir = "propellor"
 			let me = localdir </> "propellor"
 			void $ Shim.setup me shimdir
-			withTmpFile "propellor.tar" $ \tarball -> allM id
+			withTmpFile "propellor.tar" $ \tarball _ -> allM id
 				[ boolSystem "strip" [File me]
-				, boolSystem "tar" [Param "cf", File tmp, File shimdir]
-				, boolSystem "scp" $ cacheparams ++ [File tarball, Param ("root@"++hn++":"++remotetarball)
+				, boolSystem "tar" [Param "cf", File tarball, File shimdir]
+				, boolSystem "scp" $ cacheparams ++ [File tarball, Param ("root@"++hn++":"++remotetarball)]
 				, boolSystem "ssh" $ cacheparams ++ [Param ("root@"++hn), Param unpackcmd]
 				]
   where
 	remotetarball = "/usr/local/propellor.tar"
-	unpackcmd = shellSwap $ intercalate " && "
+	unpackcmd = shellWrap $ intercalate " && "
 		[ "cd " ++ takeDirectory remotetarball
 		, "tar xf " ++ remotetarball
 		, "rm -f " ++ remotetarball

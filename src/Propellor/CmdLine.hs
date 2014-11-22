@@ -176,7 +176,7 @@ spin hn hst = do
 	updatecmd = mkcmd
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then (" ++ intercalate " && "
-			[ "apt-get update"
+			[ "apt-get-fail update"
 			, "apt-get --no-install-recommends --no-upgrade -y install git make"
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			] ++ ") || echo " ++ toMarked statusMarker (show NeedPrecompiled)
