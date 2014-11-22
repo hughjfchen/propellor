@@ -1,0 +1,67 @@
+# NAME
+
+propellor - property-based host configuration management in haskell
+
+# SYNOPSIS
+
+propellor [options]
+
+# DESCRIPTION
+
+`propellor` is a property-based host configuration management program written 
+and configured in haskell.
+
+The first time you run `propellor`, without any options,
+it will set up a `~/.propellor/` repository.
+Edit `~/.propellor/config.hs` to configure it.
+
+Once propellor is configured, running it without any options will take
+action as needed to satisfy the configured properties of the local host.
+
+# OPTIONS
+
+* --spin hostname
+
+  Causes propellor to automatically install itself on the specified host,
+  or if it's already installed there, push any updates. Propellor is then
+  run on the host, to satisfy its configured properties.
+
+* --add-key keyid
+
+  Adds a gpg key, which is used to encrypt the privdata.
+
+  If the gpg secret key is present, git is configured to sign commits
+  using this key. Propellor requires signed commits when pulling from
+  a central git repository.
+
+* --list-fields
+
+  Lists all privdata fields that are used by your propellor configuration.
+  The first 2 columns are the field name and context, and are followed by
+  a list of the hosts that use that privdata value.
+
+* --set field context
+
+  Sets a field of privdata. The content is read in from stdin.
+
+* --dump field context
+
+  Outputs the privdata value to stdout.
+
+* --edit field context
+
+  Opens $EDITOR on the privdata value.
+
+# ENVIRONMENT
+
+Set `PROPELLOR_DEBUG=1` to make propellor output each command it runs and
+other debugging information.
+
+# SH AUTHOR 
+
+Joey Hess <id@joeyh.name>
+
+<https://propellor.branchable.com/>
+
+Warning: Automatically converted into a man page by mdwn2man. Edit with care.
+
