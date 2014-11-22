@@ -181,7 +181,7 @@ spin target relay hst = do
 	updatecmd = mkcmd
 		[ "if [ ! -d " ++ localdir ++ " ]"
 		, "then (" ++ intercalate " && "
-			[ "if ! git --version || ! make --version; the apt-get update && apt-get --no-install-recommends --no-upgrade -y install git make; fi"
+			[ "if ! git --version || ! make --version; then apt-get update && apt-get --no-install-recommends --no-upgrade -y install git make; fi"
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			] ++ ") || echo " ++ toMarked statusMarker (show NeedPrecompiled)
 		, "else " ++ intercalate " && "
