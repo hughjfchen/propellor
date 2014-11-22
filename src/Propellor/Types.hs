@@ -142,7 +142,7 @@ instance ActionResult Result where
 
 data CmdLine
 	= Run HostName
-	| Spin HostName
+	| Spin HostName (Maybe HostName)
 	| SimpleRun HostName
 	| Set PrivDataField Context
 	| Dump PrivDataField Context
@@ -150,7 +150,7 @@ data CmdLine
 	| ListFields
 	| AddKey String
 	| Continue CmdLine
-	| Update HostName
+	| Update (Maybe HostName)
 	| DockerInit HostName
 	| DockerChain HostName String
 	| ChrootChain HostName FilePath Bool Bool

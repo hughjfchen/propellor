@@ -29,13 +29,16 @@ import Utility.SafeCommand
 -- Update the privdata, repo url, and git repo over the ssh
 -- connection, talking to the user's local propellor instance which is
 -- running the updateServer
-update :: IO ()
-update = do
+update :: Maybe HostName -> IO ()
+update forhost = do
 	whenM hasOrigin $
 		req NeedRepoUrl repoUrlMarker setRepoUrl
+
 	makePrivDataDir
+	createDirectoryIfMissing True (takeDirectory privfile)
 	req NeedPrivData privDataMarker $
-		writeFileProtected privDataLocal
+		writeFileProtected privfile
+
 	whenM hasOrigin $
 		req NeedGitPush gitPushMarker $ \_ -> do
 			hin <- dup stdInput
@@ -52,12 +55,17 @@ update = do
 		, Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout
 		, Param "."
 		]
+	
+	-- When --spin --relay is run, get a privdata file
+	-- to be relayed to the target host.
+	privfile = maybe privDataLocal privDataRelay forhost
 
 -- The connect action should ssh to the remote host and run the provided
 -- calback action.
-updateServer :: HostName  -> Host -> (((Handle, Handle) -> IO ()) -> IO ()) -> IO ()
-updateServer hn hst connect = connect go
+updateServer :: HostName -> Maybe HostName -> Host -> (((Handle, Handle) -> IO ()) -> IO ()) -> IO ()
+updateServer target relay hst connect = connect go
   where
+	hn = fromMaybe target relay
 	go (toh, fromh) = do
 		let loop = go (toh, fromh)
 		v <- (maybe Nothing readish <$> getMarked fromh statusMarker)
@@ -77,12 +85,12 @@ updateServer hn hst connect = connect go
 				hClose toh
 				hClose fromh
 				sendGitClone hn
-				updateServer hn hst connect
+				updateServer hn relay hst connect
 			(Just NeedPrecompiled) -> do
 				hClose toh
 				hClose fromh
 				sendPrecompiled hn
-				updateServer hn hst connect
+				updateServer hn relay hst connect
 			Nothing -> return ()
 
 sendRepoUrl :: Handle -> IO ()

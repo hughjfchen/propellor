@@ -20,11 +20,18 @@ action as needed to satisfy the configured properties of the local host.
 
 # OPTIONS
 
-* --spin hostname
+* --spin targethost [--via relayhost]
 
-  Causes propellor to automatically install itself on the specified host,
-  or if it's already installed there, push any updates. Propellor is then
-  run on the host, to satisfy its configured properties.
+  Causes propellor to automatically install itself on the specified target
+  host, or if it's already installed there, push any updates. Propellor is
+  then run on the target host, to satisfy its configured properties.
+
+  When run with --via, propellor sshes to the relay host and runs
+  `propellor --spin hostname` from there. This can be useful when
+  propellor is installing itself, since most of the data transfer
+  is done between relay host and target host. Note that propellor
+  uses ssh agent forwarding to make this work, and the relay host
+  sees any privdata belonging to the target host.
 
 * --add-key keyid
 

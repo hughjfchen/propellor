@@ -24,7 +24,7 @@ usage h = hPutStrLn h $ unlines
 	[ "Usage:"
 	, "  propellor"
 	, "  propellor hostname"
-	, "  propellor --spin hostname"
+	, "  propellor --spin targethost [--via relayhost]"
 	, "  propellor --add-key keyid"
 	, "  propellor --set field context"
 	, "  propellor --dump field context"
@@ -41,7 +41,8 @@ processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
   where
 	go ("--run":h:[]) = return $ Run h
-	go ("--spin":h:[]) = return $ Spin h
+	go ("--spin":h:[]) = return $ Spin h Nothing
+	go ("--spin":h:"--via":r:[]) = return $ Spin h (Just r)
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--dump":f:c:[]) = withprivfield f c Dump
@@ -50,8 +51,8 @@ processCmdLine = go =<< getArgs
 	go ("--help":_) = do	
 		usage stdout
 		exitFailure
-	go ("--update":h:[]) = return $ Update h
-	go ("--boot":h:[]) = return $ Update h -- for back-compat
+	go ("--update":_:[]) = return $ Update Nothing
+	go ("--boot":_:[]) = return $ Update Nothing -- for back-compat
 	go ("--continue":s:[]) = case readish s of
 		Just cmdline -> return $ Continue cmdline
 		Nothing -> errorMessage $ "--continue serialization failure (" ++ s ++ ")"
@@ -89,15 +90,16 @@ defaultMain hostlist = do
 	go _ (DockerChain hn cid) = Docker.chain hostlist hn cid
 	go _ (DockerInit hn) = Docker.init hn
 	go _ (GitPush fin fout) = gitPushHelper fin fout
-	go _ (Update _) = forceConsole >> fetchFirst (onlyprocess update)
-	go True cmdline@(Spin _) = buildFirst cmdline $ go False cmdline
+	go _ (Update Nothing) = forceConsole >> fetchFirst (onlyprocess (update Nothing))
+	go _ (Update (Just h)) = forceConsole >> fetchFirst (update (Just h))
+	go True cmdline@(Spin _ _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
-	go False (Spin hn) = withhost hn $ spin hn
+	go False (Spin hn r) = withhost hn $ spin hn r
 	go False cmdline@(SimpleRun hn) = buildFirst cmdline $
 		go False (Run hn)
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
 		( onlyprocess $ withhost hn mainProperties
-		, go True (Spin hn)
+		, go True (Spin hn Nothing)
 		)
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
@@ -148,8 +150,8 @@ updateFirst' cmdline next = ifM fetchOrigin
 	, next
 	)
 
-spin :: HostName -> Host -> IO ()
-spin hn hst = do
+spin :: HostName -> Maybe HostName -> Host -> IO ()
+spin target relay hst = do
 	void $ actionMessage "Git commit" $
 		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
 	-- Push to central origin repo first, if possible.
@@ -160,15 +162,18 @@ spin hn hst = do
 			boolSystem "git" [Param "push"]
 	
 	cacheparams <- toCommand <$> sshCachingParams hn
+	when (isJust relay) $
+		void $ boolSystem "ssh-add" []
 
 	-- Install, or update the remote propellor.
-	updateServer hn hst $ withBothHandles createProcessSuccess
+	updateServer target relay hst $ withBothHandles createProcessSuccess
 		(proc "ssh" $ cacheparams ++ [user, updatecmd])
 
 	-- And now we can run it.
 	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, runcmd])) $
 		error $ "remote propellor failed"
   where
+	hn = fromMaybe target relay
 	user = "root@"++hn
 
 	mkcmd = shellWrap . intercalate " ; "
@@ -183,10 +188,17 @@ spin hn hst = do
 		, "else " ++ intercalate " && "
 			[ "cd " ++ localdir
 			, "if ! test -x ./propellor; then make deps build; fi"
-			, "./propellor --boot " ++ hn
+			, if isNothing relay
+				-- Still using --boot for back-compat...
+				then "./propellor --boot " ++ target
+				else "./propellor --continue " ++
+					shellEscape (show (Update (Just target)))
 			]
 		, "fi"
 		]
 
-	runcmd = mkcmd
-		[ "cd " ++ localdir ++ " && ./propellor --continue " ++ shellEscape (show (SimpleRun hn)) ]
+	runcmd = mkcmd [ "cd " ++ localdir ++ " && ./propellor " ++ cmd ]
+	cmd = if isNothing relay
+		then "--continue " ++ shellEscape (show (SimpleRun target))
+		else "--spin " ++ shellEscape target
+

@@ -10,3 +10,6 @@ privDataFile = privDataDir </> "privdata.gpg"
 
 privDataLocal :: FilePath
 privDataLocal = privDataDir </> "local"
+
+privDataRelay :: String -> FilePath
+privDataRelay host = privDataDir </> "relay" </> host
