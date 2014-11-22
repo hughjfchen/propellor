@@ -31,7 +31,7 @@ import Utility.SafeCommand
 -- running the updateServer
 update :: Maybe HostName -> IO ()
 update forhost = do
-	whenM hasGitRep $
+	whenM hasGitRepo $
 		req NeedRepoUrl repoUrlMarker setRepoUrl
 
 	makePrivDataDir
