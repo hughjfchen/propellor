@@ -78,7 +78,7 @@ updateServer hn hst connect = connect go
 				hClose toh
 				hClose fromh
 				sendPrecompiled hn
-				loop
+				updateServer hn hst connect
 			Nothing -> return ()
 
 sendRepoUrl :: Handle -> IO ()
