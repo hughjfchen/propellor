@@ -16,8 +16,8 @@ deps:
 	@if [ $$(whoami) = root ]; then apt-get --no-upgrade --no-install-recommends -y install libghc-async-dev || (cabal update; cabal install async); fi || true
 
 dist/setup-config: propellor.cabal
-	if [ "$(CABAL)" = ./Setup ]; then ghc --make Setup; fi
-	$(CABAL) configure
+	@if [ "$(CABAL)" = ./Setup ]; then ghc --make Setup; fi
+	@$(CABAL) configure
 
 install:
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
