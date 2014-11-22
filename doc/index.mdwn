@@ -19,10 +19,6 @@
 </tr>
 </table>
 
-## enjoy
-
-Hope you find Propellor fun and useful!
-
 <pre>
                       --     _         ______`|                          ,-.__ 
  {- Propellor          --  /   \___-=O`/|O`/__|                         (____.'

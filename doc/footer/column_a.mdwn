@@ -2,3 +2,7 @@
 
 [[!inline pages="news/* and !*/Discussion" show=0 archive=yes
 title="propellor news"]]
+
+## enjoy
+
+Hope you find Propellor fun and useful!
