@@ -11,7 +11,6 @@ import "mtl" Control.Monad.Reader
 import Control.Exception (bracket)
 import System.PosixCompat
 import System.Posix.IO
-import Data.Maybe
 
 import Propellor.Types
 import Propellor.Message
@@ -28,7 +27,9 @@ mainProperties :: Host -> IO ()
 mainProperties host = do
 	r <- runPropellor host $
 		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) mempty]
-	setTitle "propellor: done"
+	h <- mkMessageHandle
+        whenConsole h $
+		setTitle "propellor: done"
 	hFlush stdout
 	case r of
 		FailedChange -> exitWith (ExitFailure 1)
@@ -74,8 +75,14 @@ processChainOutput h = go Nothing
 	go lastline = do
 		v <- catchMaybeIO (hGetLine h)
 		case v of
-			Nothing -> pure $ fromMaybe FailedChange $
-				readish =<< lastline
+			Nothing -> case lastline of
+				Nothing -> pure FailedChange
+				Just l -> case readish l of
+					Just r -> pure r
+					Nothing -> do
+						putStrLn l
+						hFlush stdout
+						return FailedChange
 			Just s -> do
 				maybe noop (\l -> unless (null l) (putStrLn l)) lastline
 				hFlush stdout

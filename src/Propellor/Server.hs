@@ -1,3 +1,7 @@
+-- When propellor --spin is running, the local host acts as a server,
+-- which connects to the remote host's propellor and responds to its
+-- requests.
+
 module Propellor.Server (
 	update,
 	updateServer,
@@ -8,7 +12,9 @@ import Data.List
 import System.Exit
 import System.PosixCompat
 import System.Posix.IO
+import System.Posix.Directory
 import Control.Concurrent.Async
+import Control.Exception (bracket)
 import qualified Data.ByteString as B
 
 import Propellor
@@ -16,6 +22,7 @@ import Propellor.Protocol
 import Propellor.PrivData.Paths
 import Propellor.Git
 import Propellor.Ssh
+import qualified Propellor.Shim as Shim
 import Utility.FileMode
 import Utility.SafeCommand
 
@@ -24,17 +31,19 @@ import Utility.SafeCommand
 -- running the updateServer
 update :: IO ()
 update = do
-	req NeedRepoUrl repoUrlMarker setRepoUrl
+	whenM hasOrigin $
+		req NeedRepoUrl repoUrlMarker setRepoUrl
 	makePrivDataDir
 	req NeedPrivData privDataMarker $
 		writeFileProtected privDataLocal
-	req NeedGitPush gitPushMarker $ \_ -> do
-		hin <- dup stdInput
-		hout <- dup stdOutput
-		hClose stdin
-		hClose stdout
-		unlessM (boolSystem "git" (pullparams hin hout)) $
-			errorMessage "git pull from client failed"
+	whenM hasOrigin $
+		req NeedGitPush gitPushMarker $ \_ -> do
+			hin <- dup stdInput
+			hout <- dup stdOutput
+			hClose stdin
+			hClose stdout
+			unlessM (boolSystem "git" (pullparams hin hout)) $
+				errorMessage "git pull from client failed"
   where
 	pullparams hin hout =
 		[ Param "pull"
@@ -68,6 +77,11 @@ updateServer hn hst connect = connect go
 				hClose toh
 				hClose fromh
 				sendGitClone hn
+				updateServer hn hst connect
+			(Just NeedPrecompiled) -> do
+				hClose toh
+				hClose fromh
+				sendPrecompiled hn
 				updateServer hn hst connect
 			Nothing -> return ()
 
@@ -111,6 +125,39 @@ sendGitClone hn = void $ actionMessage ("Clone git repository to " ++ hn) $ do
 		, "git checkout -b " ++ branch
 		, "git remote rm origin"
 		, "rm -f " ++ remotebundle
+		]
+
+-- Send a tarball containing the precompiled propellor, and libraries.
+-- This should be reasonably portable, as long as the remote host has the
+-- same architecture as the build host.
+sendPrecompiled :: HostName -> IO ()
+sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor as a last resort") $ do
+	bracket getWorkingDirectory changeWorkingDirectory $ \_ ->
+		withTmpDir "propellor" go
+  where
+	go tmpdir = do
+		cacheparams <- sshCachingParams hn
+		let shimdir = takeFileName localdir
+		createDirectoryIfMissing True (tmpdir </> shimdir)
+		changeWorkingDirectory (tmpdir </> shimdir)
+		me <- readSymbolicLink "/proc/self/exe"
+		shim <- Shim.setup me "."
+		when (shim /= "propellor") $
+			renameFile shim "propellor"
+		changeWorkingDirectory tmpdir
+		withTmpFile "propellor.tar." $ \tarball _ -> allM id
+			[ boolSystem "strip" [File me]
+			, boolSystem "tar" [Param "czf", File tarball, File shimdir]
+			, boolSystem "scp" $ cacheparams ++ [File tarball, Param ("root@"++hn++":"++remotetarball)]
+			, boolSystem "ssh" $ cacheparams ++ [Param ("root@"++hn), Param unpackcmd]
+			]
+
+	remotetarball = "/usr/local/propellor.tar"
+
+	unpackcmd = shellWrap $ intercalate " && "
+		[ "cd " ++ takeDirectory remotetarball
+		, "tar xzf " ++ remotetarball
+		, "rm -f " ++ remotetarball
 		]
 
 -- Shim for git push over the propellor ssh channel.

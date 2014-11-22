@@ -114,16 +114,19 @@ unknownhost h hosts = errorMessage $ unlines
 	]
 
 buildFirst :: CmdLine -> IO () -> IO ()
-buildFirst cmdline next = do
-	oldtime <- getmtime
-	ifM (actionMessage "Propellor build" $ boolSystem "make" [Param "build"])
-		( do
-			newtime <- getmtime
-			if newtime == oldtime
-				then next
-				else void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
-		, errorMessage "Propellor build failed!" 
-		)
+buildFirst cmdline next = ifM (doesFileExist "Makefile")
+	( do
+		oldtime <- getmtime
+		ifM (actionMessage "Propellor build" $ boolSystem "make" [Param "build"])
+			( do
+				newtime <- getmtime
+				if newtime == oldtime
+					then next
+					else void $ boolSystem "./propellor" [Param "--continue", Param (show cmdline)]
+			, errorMessage "Propellor build failed!" 
+			)
+	, next
+	)
   where
 	getmtime = catchMaybeIO $ getModificationTime "propellor"
 
@@ -172,11 +175,11 @@ spin hn hst = do
 
 	updatecmd = mkcmd
 		[ "if [ ! -d " ++ localdir ++ " ]"
-		, "then " ++ intercalate " && "
+		, "then (" ++ intercalate " && "
 			[ "apt-get update"
 			, "apt-get --no-install-recommends --no-upgrade -y install git make"
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
-			]
+			] ++ ") || echo " ++ toMarked statusMarker (show NeedPrecompiled)
 		, "else " ++ intercalate " && "
 			[ "cd " ++ localdir
 			, "if ! test -x ./propellor; then make deps build; fi"

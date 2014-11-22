@@ -16,10 +16,10 @@ deps:
 	@if [ $$(whoami) = root ]; then apt-get --no-upgrade --no-install-recommends -y install libghc-async-dev || (cabal update; cabal install async); fi || true
 
 dist/setup-config: propellor.cabal
-	if [ "$(CABAL)" = ./Setup ]; then ghc --make Setup; fi
-	$(CABAL) configure
+	@if [ "$(CABAL)" = ./Setup ]; then ghc --make Setup; fi
+	@$(CABAL) configure
 
-install:
+install: propellor.1
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
 	install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin/propellor
 	mkdir -p dist/gittmp
@@ -34,8 +34,11 @@ install:
 		&& git show-ref master --hash > $(DESTDIR)/usr/src/propellor/head
 	rm -rf dist/gittmp
 
+propellor.1: doc/usage.mdwn doc/mdwn2man
+	doc/mdwn2man propellor 1 < doc/usage.mdwn > propellor.1
+
 clean:
-	rm -rf dist Setup tags propellor privdata/local
+	rm -rf dist Setup tags propellor propellor.1 privdata/local
 	find -name \*.o -exec rm {} \;
 	find -name \*.hi -exec rm {} \;
 

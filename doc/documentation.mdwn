@@ -3,6 +3,7 @@ Propellor's modules is the most important docuemntation of propellor.
 
 Other documentation:
 
+* [[man page|usage]]
 * [[Haskell Newbie]]
 * [[Centralized Git Repository]]
 * [[Contributing]]
