@@ -1,4 +1,4 @@
-propellor (1.0.0) UNRELEASED; urgency=medium
+propellor (1.0.0) unstable; urgency=medium
 
   * propellor --spin can now be used to update remote hosts, without
     any central git repository needed. The central git repository is
@@ -22,7 +22,7 @@ propellor (1.0.0) UNRELEASED; urgency=medium
   * systemd-nspawn containers can now be managed by propellor, very similar
     to its handling of docker containers.
 
- -- Joey Hess <id@joeyh.name>  Mon, 10 Nov 2014 11:15:27 -0400
+ -- Joey Hess <joeyh@debian.org>  Fri, 21 Nov 2014 20:58:02 -0400
 
 propellor (0.9.2) unstable; urgency=medium
 
