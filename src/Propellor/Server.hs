@@ -161,7 +161,8 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 		createDirectoryIfMissing True (tmpdir </> shimdir)
 		changeWorkingDirectory (tmpdir </> shimdir)
 		me <- readSymbolicLink "/proc/self/exe"
-		shim <- Shim.setup me "."
+		me' <- catchDefaultIO me (readSymbolicLink me)
+		shim <- Shim.setup me' "."
 		when (shim /= "propellor") $
 			renameFile shim "propellor"
 		changeWorkingDirectory tmpdir
