@@ -27,7 +27,9 @@ mainProperties :: Host -> IO ()
 mainProperties host = do
 	r <- runPropellor host $
 		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) mempty]
-	setTitle "propellor: done"
+	h <- mkMessageHandle
+        whenConsole h $
+		setTitle "propellor: done"
 	hFlush stdout
 	case r of
 		FailedChange -> exitWith (ExitFailure 1)
