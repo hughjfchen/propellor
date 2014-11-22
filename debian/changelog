@@ -4,8 +4,8 @@ propellor (1.0.1) UNRELEASED; urgency=medium
     git, ghc, or apt-get. This is accomplished by uploading a fairly
     portable precompiled tarball of propellor.
   * --spin target --via relay causes propellor to bounce through an
-    intermediate relay host, which handles any necessary provisioning
-    of the target host.
+    intermediate relay host, which handles any necessary uploads
+    when provisioning the target host.
 
  -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
 
