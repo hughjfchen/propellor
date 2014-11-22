@@ -16,7 +16,7 @@ Build-Depends:
 	libghc-quickcheck2-dev,
 	libghc-mtl-dev,
 	libghc-monadcatchio-transformers-dev,
-Maintainer: Debian QA Group <packages@qa.debian.org>
+Maintainer: Gergely Nagy <algernon@madhouse-project.org>
 Standards-Version: 3.9.5
 Vcs-Git: git://git.kitenet.net/propellor
 Homepage: http://propellor.branchable.com/

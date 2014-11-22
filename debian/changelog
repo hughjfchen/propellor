@@ -21,6 +21,7 @@ propellor (1.0.0) unstable; urgency=medium
   * Propellor can now be used to provision chroots.
   * systemd-nspawn containers can now be managed by propellor, very similar
     to its handling of docker containers.
+  * Debian package will be maintained by Gergely Nagy.
 
  -- Joey Hess <joeyh@debian.org>  Fri, 21 Nov 2014 20:58:02 -0400
 
