@@ -135,7 +135,7 @@ nspawnService (Container name _ _) cfg = RevertableProperty setup teardown
 	servicefile = "/etc/systemd/system/multi-user.target.wants" </> service
 
 	servicefilecontent = do
-		ls <- lines <$> readFile "/lib/systemd/system/ssh.service"
+		ls <- lines <$> readFile "/lib/systemd/system/systemd-nspawn@.service"
 		return $ unlines $
 			"# deployed by propellor" : map addparams ls
 	addparams l
