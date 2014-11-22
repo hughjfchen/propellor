@@ -7,6 +7,7 @@ import System.Environment (getArgs)
 import Data.List
 import System.Exit
 import System.PosixCompat
+import qualified Network.BSD
 
 import Propellor
 import Propellor.Protocol
@@ -40,9 +41,8 @@ usageError ps = do
 processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
   where
-	go ("--run":h:[]) = return $ Run h
-	go ("--spin":h:[]) = return $ Spin h Nothing
-	go ("--spin":h:"--via":r:[]) = return $ Spin h (Just r)
+	go ("--spin":h:[]) = Spin <$> hostname h <*> pure Nothing
+	go ("--spin":h:"--via":r:[]) = Spin <$> hostname h <*> pure (Just r)
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--dump":f:c:[]) = withprivfield f c Dump
@@ -56,9 +56,10 @@ processCmdLine = go =<< getArgs
 	go ("--serialized":s:[]) = serialized Serialized s
 	go ("--continue":s:[]) = serialized Continue s
 	go ("--gitpush":fin:fout:_) = return $ GitPush (Prelude.read fin) (Prelude.read fout)
+	go ("--run":h:[]) = go [h]
 	go (h:[])
 		| "--" `isPrefixOf` h = usageError [h]
-		| otherwise = return $ Run h
+		| otherwise = Run <$> hostname h
 	go [] = do
 		s <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
 		if null s
@@ -210,3 +211,10 @@ spin target relay hst = do
 	cmd = if viarelay
 		then "--serialized " ++ shellEscape (show (Spin target (Just target)))
 		else "--continue " ++ shellEscape (show (SimpleRun target))
+
+hostname :: String -> IO HostName
+hostname s
+	| "." `isInfixOf` s = pure s
+	| otherwise = do
+		h <- Network.BSD.getHostByName s
+		return (Network.BSD.hostName h)

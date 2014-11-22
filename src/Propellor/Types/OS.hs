@@ -1,6 +1,17 @@
-module Propellor.Types.OS where
+module Propellor.Types.OS (
+	HostName,
+	UserName,
+	GroupName,
+	System(..),
+	Distribution(..),
+	DebianSuite(..),
+	isStable,
+	Release,
+	Architecture,
+) where
 
-type HostName = String
+import Network.BSD (HostName)
+
 type UserName = String
 type GroupName = String
 

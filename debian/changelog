@@ -6,6 +6,8 @@ propellor (1.0.1) UNRELEASED; urgency=medium
   * --spin target --via relay causes propellor to bounce through an
     intermediate relay host, which handles any necessary uploads
     when provisioning the target host.
+  * Hostname parameters not containing dots are looked up in the DNS to
+    find the full hostname.
 
  -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
 
