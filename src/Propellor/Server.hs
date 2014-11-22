@@ -76,7 +76,6 @@ updateServer hn hst connect = connect go
 				hClose toh
 				hClose fromh
 				sendPrecompiled hn
-				updateServer hn hst connect
 			Nothing -> return ()
 
 sendRepoUrl :: Handle -> IO ()
@@ -125,14 +124,16 @@ sendGitClone hn = void $ actionMessage ("Clone git repository to " ++ hn) $ do
 -- This should be reasonably portable, as long as the remote host has the
 -- same architecture as the build host.
 sendPrecompiled :: HostName -> IO ()
-sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor as a last resort " ++ hn) $ do
+sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor as a last resort") $ do
 	cacheparams <- sshCachingParams hn
 	withTmpDir "propellor" $ \tmpdir ->
 		bracket getWorkingDirectory changeWorkingDirectory $ \_ -> do
 			changeWorkingDirectory tmpdir
 			let shimdir = "propellor"
 			me <- readSymbolicLink "/proc/self/exe"
-			void $ Shim.setup me shimdir
+			shim <- Shim.setup me shimdir
+			when (shim /= shimdir </> "propellor") $
+				renameFile shim (shimdir </> "propellor")
 			withTmpFile "propellor.tar" $ \tarball _ -> allM id
 				[ boolSystem "strip" [File me]
 				, boolSystem "tar" [Param "cf", File tarball, File shimdir]
