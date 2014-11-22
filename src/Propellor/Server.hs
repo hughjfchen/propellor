@@ -27,17 +27,19 @@ import Utility.SafeCommand
 -- running the updateServer
 update :: IO ()
 update = do
-	req NeedRepoUrl repoUrlMarker setRepoUrl
+	whenM hasOrigin $
+		req NeedRepoUrl repoUrlMarker setRepoUrl
 	makePrivDataDir
 	req NeedPrivData privDataMarker $
 		writeFileProtected privDataLocal
-	req NeedGitPush gitPushMarker $ \_ -> do
-		hin <- dup stdInput
-		hout <- dup stdOutput
-		hClose stdin
-		hClose stdout
-		unlessM (boolSystem "git" (pullparams hin hout)) $
-			errorMessage "git pull from client failed"
+	whenM hasOrigin $
+		req NeedGitPush gitPushMarker $ \_ -> do
+			hin <- dup stdInput
+			hout <- dup stdOutput
+			hClose stdin
+			hClose stdout
+			unlessM (boolSystem "git" (pullparams hin hout)) $
+				errorMessage "git pull from client failed"
   where
 	pullparams hin hout =
 		[ Param "pull"
@@ -76,6 +78,7 @@ updateServer hn hst connect = connect go
 				hClose toh
 				hClose fromh
 				sendPrecompiled hn
+				loop
 			Nothing -> return ()
 
 sendRepoUrl :: Handle -> IO ()
