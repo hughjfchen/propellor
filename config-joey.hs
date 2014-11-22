@@ -81,18 +81,17 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	! Ssh.listenPort 80
 	! Ssh.listenPort 443
 
-	! Chroot.provisioned testChroot
 	& Systemd.persistentJournal
-	& Systemd.nspawned meow
+	! Systemd.nspawned meow
 	
 meow :: Systemd.Container
 meow = Systemd.container "meow" (Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty)
 	& Apt.serviceInstalledRunning "uptimed"
 	& alias "meow.kitenet.net"
-	
-testChroot :: Chroot.Chroot
-testChroot = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty "/tmp/chroot"
-	& File.hasContent "/foo" ["hello"]
+
+alien :: Host
+alien = host "alien.kitenet.net"
+	& ipv4 "104.131.106.199"
 
 orca :: Host
 orca = standardSystem "orca.kitenet.net" Unstable "amd64"
