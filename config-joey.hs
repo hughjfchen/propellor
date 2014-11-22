@@ -89,7 +89,7 @@ meow :: Systemd.Container
 meow = Systemd.container "meow" (Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty)
 	& Apt.serviceInstalledRunning "uptimed"
 	& alias "meow.kitenet.net"
-	& Systemd.containerCfg "private-network"
+	-- & Systemd.containerCfg "private-network"
 	
 testChroot :: Chroot.Chroot
 testChroot = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty "/tmp/chroot"
