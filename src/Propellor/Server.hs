@@ -128,13 +128,14 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 	cacheparams <- sshCachingParams hn
 	withTmpDir "propellor" $ \tmpdir ->
 		bracket getWorkingDirectory changeWorkingDirectory $ \_ -> do
-			changeWorkingDirectory tmpdir
 			let shimdir = "propellor"
+			changeWorkingDirectory shimdir
 			me <- readSymbolicLink "/proc/self/exe"
-			shim <- Shim.setup me shimdir
+			shim <- Shim.setup me "."
+			changeWorkingDirectory tmpdir
 			when (shim /= shimdir </> "propellor") $
 				renameFile shim (shimdir </> "propellor")
-			withTmpFile "propellor.tar" $ \tarball _ -> allM id
+			withTmpFile "propellor.tar." $ \tarball _ -> allM id
 				[ boolSystem "strip" [File me]
 				, boolSystem "tar" [Param "cf", File tarball, File shimdir]
 				, boolSystem "scp" $ cacheparams ++ [File tarball, Param ("root@"++hn++":"++remotetarball)]
