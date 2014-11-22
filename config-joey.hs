@@ -46,6 +46,7 @@ hosts =                --                  (o)  `
 	, kite
 	, diatom
 	, elephant
+	, alien
 	] ++ monsters
 
 darkstar :: Host
@@ -90,7 +91,7 @@ meow = Systemd.container "meow" (Chroot.debootstrapped (System (Debian Unstable)
 	& alias "meow.kitenet.net"
 
 alien :: Host
-alien = host "alien.kitenet.net"
+alien = host "alientest.kitenet.net"
 	& ipv4 "104.131.106.199"
 
 orca :: Host
