@@ -170,7 +170,7 @@ spin target relay hst = do
 		(proc "ssh" $ cacheparams ++ [user, updatecmd])
 
 	-- And now we can run it.
-	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, runcmd])) $
+	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ runparams)) $
 		error $ "remote propellor failed"
   where
 	hn = fromMaybe target relay
@@ -200,4 +200,9 @@ spin target relay hst = do
 	cmd = if isNothing relay
 		then "--continue " ++ shellEscape (show (SimpleRun target))
 		else "--spin " ++ shellEscape target
-
+	runparams = catMaybes
+		[ if isJust relay then Just "-A" else Nothing
+		, Just "-t"
+		, Just user
+		, Just runcmd
+		]
