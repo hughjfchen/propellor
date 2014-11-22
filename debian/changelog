@@ -23,7 +23,7 @@ propellor (1.0.0) unstable; urgency=medium
     to its handling of docker containers.
   * Debian package will be maintained by Gergely Nagy.
 
- -- Joey Hess <joeyh@debian.org>  Fri, 21 Nov 2014 20:58:02 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 21 Nov 2014 20:58:02 -0400
 
 propellor (0.9.2) unstable; urgency=medium
 
