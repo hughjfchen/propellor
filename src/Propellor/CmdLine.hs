@@ -156,14 +156,15 @@ updateFirst' cmdline next = ifM fetchOrigin
 
 spin :: HostName -> Maybe HostName -> Host -> IO ()
 spin target relay hst = do
-	void $ actionMessage "Git commit" $
-		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
-	-- Push to central origin repo first, if possible.
-	-- The remote propellor will pull from there, which avoids
-	-- us needing to send stuff directly to the remote host.
-	whenM hasOrigin $
-		void $ actionMessage "Push to central git repository" $
-			boolSystem "git" [Param "push"]
+	unless relaying $ do
+		void $ actionMessage "Git commit" $
+			gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
+		-- Push to central origin repo first, if possible.
+		-- The remote propellor will pull from there, which avoids
+		-- us needing to send stuff directly to the remote host.
+		whenM hasOrigin $
+			void $ actionMessage "Push to central git repository" $
+				boolSystem "git" [Param "push"]
 	
 	cacheparams <- toCommand <$> sshCachingParams hn
 	when (isJust relay) $
@@ -179,6 +180,7 @@ spin target relay hst = do
   where
 	hn = fromMaybe target relay
 	user = "root@"++hn
+	relaying = relay == Just target
 
 	mkcmd = shellWrap . intercalate " ; "
 
