@@ -59,6 +59,13 @@ action as needed to satisfy the configured properties of the local host.
 
   Opens $EDITOR on the privdata value.
 
+* hostname
+
+  When run with a hostname and no other options, propellor will
+  provision the local host with the configuration of that hostname.
+  This is useful when the local host doesn't yet have its hostname set
+  correctly.
+
 # ENVIRONMENT
 
 Set `PROPELLOR_DEBUG=1` to make propellor output each command it runs and
