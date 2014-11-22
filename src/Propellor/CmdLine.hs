@@ -166,7 +166,7 @@ spin target relay hst = do
 			void $ actionMessage "Push to central git repository" $
 				boolSystem "git" [Param "push"]
 	
-	cacheparams <- if relaying
+	cacheparams <- if relaying || viarelay
 		then pure []
 		else toCommand <$> sshCachingParams hn viarelay
 	when viarelay $
