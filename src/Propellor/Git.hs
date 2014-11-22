@@ -42,6 +42,9 @@ hasOrigin = catchDefaultIO False $ do
 	rs <- lines <$> readProcess "git" ["remote"]
 	return $ "origin" `elem` rs
 
+hasGitRepo :: IO Bool
+hasGitRepo = doesFileExist ".git/HEAD"
+
 {- To verify origin branch commit's signature, have to convince gpg
  - to use our keyring.
  - While running git log. Which has no way to pass options to gpg.

@@ -31,7 +31,7 @@ import Utility.SafeCommand
 -- running the updateServer
 update :: Maybe HostName -> IO ()
 update forhost = do
-	whenM hasOrigin $
+	whenM hasGitRep $
 		req NeedRepoUrl repoUrlMarker setRepoUrl
 
 	makePrivDataDir
@@ -39,7 +39,7 @@ update forhost = do
 	req NeedPrivData privDataMarker $
 		writeFileProtected privfile
 
-	whenM hasOrigin $
+	whenM hasGitRepo $
 		req NeedGitPush gitPushMarker $ \_ -> do
 			hin <- dup stdInput
 			hout <- dup stdOutput
