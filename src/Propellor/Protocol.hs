@@ -13,7 +13,7 @@ import Data.List
 
 import Propellor
 
-data Stage = NeedGitClone | NeedRepoUrl | NeedPrivData | NeedGitPush
+data Stage = NeedGitClone | NeedRepoUrl | NeedPrivData | NeedGitPush | NeedPrecompiled
 	deriving (Read, Show, Eq)
 
 type Marker = String

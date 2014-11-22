@@ -16,6 +16,7 @@ import Propellor.Protocol
 import Propellor.PrivData.Paths
 import Propellor.Git
 import Propellor.Ssh
+import qualified Propellor.Shim as Shim
 import Utility.FileMode
 import Utility.SafeCommand
 
@@ -69,6 +70,11 @@ updateServer hn hst connect = connect go
 				hClose fromh
 				sendGitClone hn
 				updateServer hn hst connect
+			(Just NeedPrecompiled) -> do
+				hClose toh
+				hClose fromh
+				sendPrecompiled hn
+				updateServer hn hst connect
 			Nothing -> return ()
 
 sendRepoUrl :: Handle -> IO ()
@@ -111,6 +117,32 @@ sendGitClone hn = void $ actionMessage ("Clone git repository to " ++ hn) $ do
 		, "git checkout -b " ++ branch
 		, "git remote rm origin"
 		, "rm -f " ++ remotebundle
+		]
+
+-- Send a tarball containing the precompiled propellor, and libraries.
+-- This should be reasonably portable, as long as the remote host has the
+-- same architecture as the build host.
+sendPrecompiled :: HostName -> IO ()
+sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor as a last resort " ++ hn) $ do
+	cacheparams <- sshCachingParams hn
+	withTmpDir "propellor" $ \tmpdir ->
+		bracket getWorkingDirectory changeWorkingDirectory $ \_ -> do
+			changeWorkingDirectory tmpdir
+			let shimdir = "propellor"
+			let me = localdir </> "propellor"
+			void $ Shim.setup me shimdir
+			withTmpFile "propellor.tar" $ \tarball -> allM id
+				[ boolSystem "strip" [File me]
+				, boolSystem "tar" [Param "cf", File tmp, File shimdir]
+				, boolSystem "scp" $ cacheparams ++ [File tarball, Param ("root@"++hn++":"++remotetarball)
+				, boolSystem "ssh" $ cacheparams ++ [Param ("root@"++hn), Param unpackcmd]
+				]
+  where
+	remotetarball = "/usr/local/propellor.tar"
+	unpackcmd = shellSwap $ intercalate " && "
+		[ "cd " ++ takeDirectory remotetarball
+		, "tar xf " ++ remotetarball
+		, "rm -f " ++ remotetarball
 		]
 
 -- Shim for git push over the propellor ssh channel.

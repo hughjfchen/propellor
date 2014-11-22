@@ -38,7 +38,7 @@ getRepoUrl = getM get urls
 			_ -> Nothing
 
 hasOrigin :: IO Bool
-hasOrigin = do
+hasOrigin = catchDefaultIO False $ do
 	rs <- lines <$> readProcess "git" ["remote"]
 	return $ "origin" `elem` rs
 

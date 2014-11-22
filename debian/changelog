@@ -1,3 +1,11 @@
+propellor (1.0.1) UNRELEASED; urgency=medium
+
+  * propellor --spin can now deploy propellor to hosts that do not have 
+    git, ghc, or apt-get. This is accomplished by uploading a fairly
+    portable precompiled tarball of propellor.
+
+ -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
+
 propellor (1.0.0) unstable; urgency=medium
 
   * propellor --spin can now be used to update remote hosts, without
