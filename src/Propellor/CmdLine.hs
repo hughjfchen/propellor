@@ -39,8 +39,11 @@ usageError ps = do
 processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
   where
-	go ("--spin":h:[]) = Spin <$> hostname h <*> pure Nothing
-	go ("--spin":h:"--via":r:[]) = Spin <$> hostname h <*> pure (Just r)
+	go ("--spin":ps) = case reverse ps of
+		(r:"--via":hs) -> Spin 
+			<$> mapM hostname (reverse hs) 
+			<*> pure (Just r)
+		_ -> Spin <$> mapM hostname ps <*> pure Nothing
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--dump":f:c:[]) = withprivfield f c Dump
@@ -97,12 +100,14 @@ defaultMain hostlist = do
 	go _ (Update (Just h)) = forceConsole >> fetchFirst (update (Just h))
 	go True cmdline@(Spin _ _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
-	go False (Spin hn r) = withhost hn $ spin hn r
+	go False (Spin hs r) = do
+		commitSpin
+		forM_ hs $ \hn -> withhost hn $ spin hn r
 	go False cmdline@(SimpleRun hn) = buildFirst cmdline $
 		go False (Run hn)
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
 		( onlyprocess $ withhost hn mainProperties
-		, go True (Spin hn Nothing)
+		, go True (Spin [hn] Nothing)
 		)
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
