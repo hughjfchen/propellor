@@ -141,8 +141,26 @@ installed = RevertableProperty install remove
 	aptremove = Apt.removed ["debootstrap"]
 
 sourceInstall :: Property
-sourceInstall = property "debootstrap installed from source"
-	(liftIO sourceInstall')
+sourceInstall = property "debootstrap installed from source" (liftIO sourceInstall')
+	`requires` perlInstalled
+	`requires` arInstalled
+
+perlInstalled :: Property
+perlInstalled = check (not <$> inPath "perl") $ property "perl installed" $ do
+	v <- liftIO $ firstM id
+		[ yumInstall "perl"
+		]
+	if isJust v then return MadeChange else return FailedChange
+
+arInstalled :: Property
+arInstalled = check (not <$> inPath "ar") $ property "ar installed" $ do
+	v <- liftIO $ firstM id
+		[ yumInstall "binutils"
+		]
+	if isJust v then return MadeChange else return FailedChange
+
+yumInstall :: String -> IO Bool
+yumInstall p = boolSystem "yum" [Param "-y", Param "install", Param p]
 
 sourceInstall' :: IO Result
 sourceInstall' = withTmpDir "debootstrap" $ \tmpd -> do
