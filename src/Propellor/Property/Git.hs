@@ -94,3 +94,23 @@ cloned owner url dir mbranch = check originurl (property desc checkout)
 
 isGitDir :: FilePath -> IO Bool
 isGitDir dir = isNothing <$> catchMaybeIO (readProcess "git" ["rev-parse", "--resolve-git-dir", dir])
+
+data GitShared = Shared GroupName | SharedAll | NotShared
+
+bareRepo :: FilePath -> UserName -> GitShared -> Property
+bareRepo repo user gitshared = check (isRepo repo) $ propertyList ("git repo: " ++ repo) $
+	dirExists repo : case gitshared of
+		NotShared ->
+			[ ownerGroup repo user user
+			, userScriptProperty user ["git", "init", "--bare", "--shared=false", repo]
+			]
+		SharedAll ->
+			[ ownerGroup repo user user
+			, userScriptProperty user ["git", "init", "--bare", "--shared=all", repo]
+			]
+		Shared group' ->
+			[ ownerGroup repo user group'
+			, userScriptProperty user ["git", "init", "--bare", "--shared=group", repo]
+			]
+  where
+	isRepo repo' = isNothing <$> catchMaybeIO (readProcess "git" ["rev-parse", "--resolve-git-dir", repo'])
