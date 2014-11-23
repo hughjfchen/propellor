@@ -108,15 +108,6 @@ built target system@(System _ arch) config =
 		, return False
 		)
 
--- workaround for http://bugs.debian.org/770658
-debootstrapEnv :: IO [(String, String)]
-debootstrapEnv = do
-	path <- getEnvDefault "PATH" "/bin"
-	addEntry "PATH" (path ++ debianPath)
-		<$> getEnvironment
-  where
-	debianPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
 mountPoints :: IO [FilePath]
 mountPoints = lines <$> readProcess "findmnt" ["-rn", "--output", "target"]
 
@@ -243,6 +234,15 @@ makeWrapperScript dir = do
 		]
 	modifyFileMode wrapperScript (addModes $ readModes ++ executeModes)
 
+-- workaround for http://bugs.debian.org/770658
+debootstrapEnv :: IO [(String, String)]
+debootstrapEnv = do
+	path <- getEnvDefault "PATH" "/bin"
+	addEntry "PATH" (path ++ debianPath)
+		<$> getEnvironment
+  where
+	debianPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
 -- Work around for http://bugs.debian.org/770217
 makeDevicesTarball :: IO ()
 makeDevicesTarball = do
@@ -256,8 +256,9 @@ makeDevicesTarball = do
 	tarcmd = "(cd / && tar cf - dev) | gzip > devices.tar.gz"
 
 fixForeignDev :: FilePath -> IO ()
-fixForeignDev target = whenM (doesFileExist (target ++ foreignDevFlag)) $ 
-	void $ boolSystem "chroot"
+fixForeignDev target = whenM (doesFileExist (target ++ foreignDevFlag)) $ do
+	de <- debootstrapEnv
+	void $ boolSystemEnv "chroot"
 		[ File target
 		, Param "sh"
 		, Param "-c"
@@ -268,6 +269,7 @@ fixForeignDev target = whenM (doesFileExist (target ++ foreignDevFlag)) $
 			, "/sbin/MAKEDEV std ptmx fd consoleonly"
 			]
 		]
+		(Just de)
 
 foreignDevFlag :: FilePath
 foreignDevFlag = "/dev/.propellor-foreign-dev"
