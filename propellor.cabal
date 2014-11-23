@@ -126,6 +126,7 @@ Library
     Propellor.PrivData.Paths
     Propellor.Protocol
     Propellor.Shim
+    Propellor.Property.Chroot.Util
     Utility.Applicative
     Utility.Data
     Utility.Directory

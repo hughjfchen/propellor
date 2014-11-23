@@ -8,6 +8,7 @@ module Propellor.Property.Debootstrap (
 
 import Propellor
 import qualified Propellor.Property.Apt as Apt
+import Propellor.Property.Chroot.Util
 import Utility.Path
 import Utility.SafeCommand
 import Utility.FileMode
@@ -78,7 +79,7 @@ built target system@(System _ arch) config =
 			, Param target
 			]
 		cmd <- fromMaybe "debootstrap" <$> programPath
-		de <- debootstrapEnv
+		de <- standardPathEnv
 		ifM (boolSystemEnv cmd params (Just de))
 			( do
 				fixForeignDev target
@@ -234,15 +235,6 @@ makeWrapperScript dir = do
 		]
 	modifyFileMode wrapperScript (addModes $ readModes ++ executeModes)
 
--- workaround for http://bugs.debian.org/770658
-debootstrapEnv :: IO [(String, String)]
-debootstrapEnv = do
-	path <- getEnvDefault "PATH" "/bin"
-	addEntry "PATH" (path ++ debianPath)
-		<$> getEnvironment
-  where
-	debianPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
 -- Work around for http://bugs.debian.org/770217
 makeDevicesTarball :: IO ()
 makeDevicesTarball = do
@@ -257,7 +249,7 @@ makeDevicesTarball = do
 
 fixForeignDev :: FilePath -> IO ()
 fixForeignDev target = whenM (doesFileExist (target ++ foreignDevFlag)) $ do
-	de <- debootstrapEnv
+	de <- standardPathEnv
 	void $ boolSystemEnv "chroot"
 		[ File target
 		, Param "sh"
