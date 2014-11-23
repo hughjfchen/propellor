@@ -10,8 +10,13 @@ getCurrentBranch :: IO String
 getCurrentBranch = takeWhile (/= '\n') 
 	<$> readProcess "git" ["symbolic-ref", "--short", "HEAD"]
 
+getCurrentBranchRef :: IO String
+getCurrentBranchRef = takeWhile (/= '\n') 
+	<$> readProcess "git" ["symbolic-ref", "HEAD"]
+
 getCurrentGitSha1 :: String -> IO String
-getCurrentGitSha1 branchref = readProcess "git" ["show-ref", "--hash", branchref]
+getCurrentGitSha1 branchref = takeWhile (/= '\n')
+	<$> readProcess "git" ["show-ref", "--hash", branchref]
 
 setRepoUrl :: String -> IO ()
 setRepoUrl "" = return ()

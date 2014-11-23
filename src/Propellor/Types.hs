@@ -149,6 +149,7 @@ data CmdLine
 	| Edit PrivDataField Context
 	| ListFields
 	| AddKey String
+	| Merge
 	| Serialized CmdLine
 	| Continue CmdLine
 	| Update (Maybe HostName)
