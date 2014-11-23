@@ -83,14 +83,18 @@ addKey keyid = exitBool =<< allM (uncurry actionMessage)
 		, Param "propellor addkey"
 		]
 
+-- Adds --gpg-sign if there's a keyring.
+gpgSignParams :: [CommandParam] -> IO [CommandParam]
+gpgSignParams ps = ifM (doesFileExist keyring)
+	( return (ps ++ [Param "--gpg-sign"])
+	, return ps
+	)
+
 -- Automatically sign the commit if there'a a keyring.
 gitCommit :: [CommandParam] -> IO Bool
 gitCommit ps = do
-	k <- doesFileExist keyring
-	boolSystem "git" $ catMaybes $
-		[ Just (Param "commit")
-		, if k then Just (Param "--gpg-sign") else Nothing
-		] ++ map Just ps
+	ps' <- gpgSignParams ps
+	boolSystem "git" (Param "commit" : ps')
 
 gpgDecrypt :: FilePath -> IO String
 gpgDecrypt f = ifM (doesFileExist f)

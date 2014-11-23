@@ -29,6 +29,7 @@ usage h = hPutStrLn h $ unlines
 	, "  propellor --dump field context"
 	, "  propellor --edit field context"
 	, "  propellor --list-fields"
+	, "  propellor --merge"
 	]
 
 usageError :: [String] -> IO a
@@ -49,6 +50,7 @@ processCmdLine = go =<< getArgs
 	go ("--dump":f:c:[]) = withprivfield f c Dump
 	go ("--edit":f:c:[]) = withprivfield f c Edit
 	go ("--list-fields":[]) = return ListFields
+	go ("--merge":[]) = return Merge
 	go ("--help":_) = do	
 		usage stdout
 		exitFailure
@@ -98,6 +100,7 @@ defaultMain hostlist = do
 	go _ (GitPush fin fout) = gitPushHelper fin fout
 	go _ (Update Nothing) = forceConsole >> fetchFirst (onlyprocess (update Nothing))
 	go _ (Update (Just h)) = forceConsole >> fetchFirst (update (Just h))
+	go _ Merge = mergeSpin
 	go True cmdline@(Spin _ _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin hs r) = do

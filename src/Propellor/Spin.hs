@@ -2,7 +2,8 @@ module Propellor.Spin (
 	commitSpin,
 	spin,
 	update,
-	gitPushHelper
+	gitPushHelper,
+	mergeSpin,
 ) where
 
 import Data.List
@@ -27,7 +28,7 @@ import Utility.SafeCommand
 commitSpin :: IO ()
 commitSpin = do
 	void $ actionMessage "Git commit" $
-		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
+		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param spinCommitMessage]
 	-- Push to central origin repo first, if possible.
 	-- The remote propellor will pull from there, which avoids
 	-- us needing to send stuff directly to the remote host.
@@ -269,3 +270,30 @@ gitPushHelper hin hout = void $ fromstdin `concurrently` tostdout
 				B.hPut toh b
 				hFlush toh
 				connect fromh toh
+
+mergeSpin :: IO ()
+mergeSpin = do
+	branch <- getCurrentBranch
+	branchref <- getCurrentBranchRef
+	old_head <- getCurrentGitSha1 branch
+	old_commit <- findLastNonSpinCommit
+	rungit "reset" [Param old_commit]
+	rungit "commit" [Param "-a"]
+	rungit "merge" =<< gpgSignParams [Param "-s", Param "ours", Param old_head]
+	current_commit <- getCurrentGitSha1 branch
+	rungit "update-ref" [Param branchref, Param current_commit]
+	rungit "checkout" [Param branch]
+  where
+	rungit cmd ps = unlessM (boolSystem "git" (Param cmd:ps)) $
+		error ("git " ++ cmd ++ " failed")
+
+findLastNonSpinCommit :: IO String
+findLastNonSpinCommit = do
+	commits <- map (separate (== ' ')) . lines
+		<$> readProcess "git" ["log", "--oneline", "--no-abbrev-commit"]
+	case dropWhile (\(_, msg) -> msg == spinCommitMessage) commits of
+		((sha, _):_) -> return sha
+		_ -> error $ "Did not find any previous commit that was not a " ++ show spinCommitMessage
+
+spinCommitMessage :: String
+spinCommitMessage = "propellor spin"

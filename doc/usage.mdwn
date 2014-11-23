@@ -65,6 +65,22 @@ action as needed to satisfy the configured properties of the local host.
 
   Opens $EDITOR on the privdata value.
 
+* --merge
+
+  Combine multiple --spin commits into a single, more useful commit.
+
+  When using propellor, you may find yourself repeatedly running
+  `propellor --spin` until you get things working the way you like.
+  This results in a lot of git commits being made, with incremental
+  changes.
+  
+  To clean that up to a single commit, use `propellor --merge`. A normal
+  interactive git commit will then be made, consisting of all changes
+  that have been previously committed by --spin, since the last time a
+  normal git commit was made.
+
+  (This will result in a trapezoid pattern in gitk.)
+
 * hostname
 
   When run with a hostname and no other options, propellor will
