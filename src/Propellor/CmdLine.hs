@@ -190,7 +190,7 @@ spin target relay hst = do
 	mkcmd = shellWrap . intercalate " ; "
 
 	updatecmd = mkcmd
-		[ "if [ ! -d " ++ localdir ++ " ]"
+		[ "if [ ! -d " ++ localdir ++ "/.git ]"
 		, "then (" ++ intercalate " && "
 			[ "if ! git --version || ! make --version; then apt-get update && apt-get --no-install-recommends --no-upgrade -y install git make; fi"
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
