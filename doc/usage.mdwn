@@ -20,11 +20,17 @@ action as needed to satisfy the configured properties of the local host.
 
 # OPTIONS
 
-* --spin targethost [--via relayhost]
+* --spin targethost [targethost ...] [--via relayhost]
 
   Causes propellor to automatically install itself on the specified target
   host, or if it's already installed there, push any updates. Propellor is
   then run on the target host, to satisfy its configured properties.
+
+  A signed git commit is made by --spin, so that any changes you have made
+  get propigated to the target host.
+
+  Multiple target hosts can be specified; propellor will run on each of
+  them in sequence.
 
   When run with --via, propellor sshes to the relay host and runs
   `propellor --spin hostname` from there. This can be useful when

@@ -6,6 +6,8 @@ propellor (1.0.1) UNRELEASED; urgency=medium
   * --spin target --via relay causes propellor to bounce through an
     intermediate relay host, which handles any necessary uploads
     when provisioning the target host.
+  * --spin can be passed multiple hosts, and it will provision each host
+    in turn.
   * Hostname parameters not containing dots are looked up in the DNS to
     find the full hostname.
   * Added group-related properties. Thanks, Félix Sipma.

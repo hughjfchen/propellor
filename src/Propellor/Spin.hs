@@ -1,4 +1,5 @@
 module Propellor.Spin (
+	commitSpin,
 	spin,
 	update,
 	gitPushHelper
@@ -23,18 +24,19 @@ import qualified Propellor.Shim as Shim
 import Utility.FileMode
 import Utility.SafeCommand
 
+commitSpin :: IO ()
+commitSpin = do
+	void $ actionMessage "Git commit" $
+		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
+	-- Push to central origin repo first, if possible.
+	-- The remote propellor will pull from there, which avoids
+	-- us needing to send stuff directly to the remote host.
+	whenM hasOrigin $
+		void $ actionMessage "Push to central git repository" $
+			boolSystem "git" [Param "push"]
+
 spin :: HostName -> Maybe HostName -> Host -> IO ()
 spin target relay hst = do
-	unless relaying $ do
-		void $ actionMessage "Git commit" $
-			gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
-		-- Push to central origin repo first, if possible.
-		-- The remote propellor will pull from there, which avoids
-		-- us needing to send stuff directly to the remote host.
-		whenM hasOrigin $
-			void $ actionMessage "Push to central git repository" $
-				boolSystem "git" [Param "push"]
-	
 	cacheparams <- if viarelay
 		then pure ["-A"]
 		else toCommand <$> sshCachingParams hn
@@ -78,7 +80,7 @@ spin target relay hst = do
 
 	runcmd = "cd " ++ localdir ++ " && ./propellor " ++ cmd
 	cmd = if viarelay
-		then "--serialized " ++ shellEscape (show (Spin target (Just target)))
+		then "--serialized " ++ shellEscape (show (Spin [target] (Just target)))
 		else "--continue " ++ shellEscape (show (SimpleRun target))
 
 -- Update the privdata, repo url, and git repo over the ssh
