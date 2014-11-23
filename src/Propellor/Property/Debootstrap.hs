@@ -111,7 +111,7 @@ built target system@(System _ arch) config =
 -- workaround for http://bugs.debian.org/770658
 debootstrapEnv :: IO [(String, String)]
 debootstrapEnv = do
-	path <- getEnvDefault "/bin" "PATH"
+	path <- getEnvDefault "PATH" "/bin"
 	addEntry "PATH" (path ++ debianPath)
 		<$> getEnvironment
   where
