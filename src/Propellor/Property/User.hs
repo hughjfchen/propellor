@@ -68,4 +68,4 @@ hasGroup user group' = check test $ cmdProperty "adduser"
 	]
 	`describe` unwords ["user", user, "in group", group']
   where
-	test = not <$> elem group' <$> words <$> readProcess "groups" [user]
+	test = not . elem group' . words <$> readProcess "groups" [user]
