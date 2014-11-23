@@ -121,7 +121,7 @@ Library
   Other-Modules:
     Propellor.Git
     Propellor.Gpg
-    Propellor.Server
+    Propellor.Spin
     Propellor.Ssh
     Propellor.PrivData.Paths
     Propellor.Protocol

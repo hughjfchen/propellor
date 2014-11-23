@@ -10,11 +10,9 @@ import System.PosixCompat
 import qualified Network.BSD
 
 import Propellor
-import Propellor.Protocol
 import Propellor.Gpg
 import Propellor.Git
-import Propellor.Ssh
-import Propellor.Server
+import Propellor.Spin
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Shim as Shim
@@ -154,63 +152,6 @@ updateFirst' cmdline next = ifM fetchOrigin
 		)
 	, next
 	)
-
-spin :: HostName -> Maybe HostName -> Host -> IO ()
-spin target relay hst = do
-	unless relaying $ do
-		void $ actionMessage "Git commit" $
-			gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
-		-- Push to central origin repo first, if possible.
-		-- The remote propellor will pull from there, which avoids
-		-- us needing to send stuff directly to the remote host.
-		whenM hasOrigin $
-			void $ actionMessage "Push to central git repository" $
-				boolSystem "git" [Param "push"]
-	
-	cacheparams <- if viarelay
-		then pure ["-A"]
-		else toCommand <$> sshCachingParams hn
-	when viarelay $
-		void $ boolSystem "ssh-add" []
-
-	-- Install, or update the remote propellor.
-	updateServer target relay hst $ withBothHandles createProcessSuccess
-		(proc "ssh" $ cacheparams ++ [user, updatecmd])
-
-	-- And now we can run it.
-	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, runcmd])) $
-		error $ "remote propellor failed"
-  where
-	hn = fromMaybe target relay
-	user = "root@"++hn
-
-	relaying = relay == Just target
-	viarelay = isJust relay && not relaying
-
-	mkcmd = shellWrap . intercalate " ; "
-
-	updatecmd = mkcmd
-		[ "if [ ! -d " ++ localdir ++ "/.git ]"
-		, "then (" ++ intercalate " && "
-			[ "if ! git --version || ! make --version; then apt-get update && apt-get --no-install-recommends --no-upgrade -y install git make; fi"
-			, "echo " ++ toMarked statusMarker (show NeedGitClone)
-			] ++ ") || echo " ++ toMarked statusMarker (show NeedPrecompiled)
-		, "else " ++ intercalate " && "
-			[ "cd " ++ localdir
-			, "if ! test -x ./propellor; then make deps build; fi"
-			, if viarelay
-				then "./propellor --continue " ++
-					shellEscape (show (Update (Just target)))
-				-- Still using --boot for back-compat...
-				else "./propellor --boot " ++ target
-			]
-		, "fi"
-		]
-
-	runcmd = mkcmd [ "cd " ++ localdir ++ " && ./propellor " ++ cmd ]
-	cmd = if viarelay
-		then "--serialized " ++ shellEscape (show (Spin target (Just target)))
-		else "--continue " ++ shellEscape (show (SimpleRun target))
 
 hostname :: String -> IO HostName
 hostname s
