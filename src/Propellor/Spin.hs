@@ -217,7 +217,7 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
   where
 	go tmpdir = do
 		cacheparams <- sshCachingParams hn
-		let shimdir = takeFileName localdir </> "shim"
+		let shimdir = takeFileName localdir
 		createDirectoryIfMissing True (tmpdir </> shimdir)
 		changeWorkingDirectory (tmpdir </> shimdir)
 		me <- readSymbolicLink "/proc/self/exe"
@@ -237,10 +237,9 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 
 	unpackcmd = shellWrap $ intercalate " && "
 		[ "cd " ++ takeDirectory remotetarball
-		, "rm -rf " ++ localdir </> "shim"
+		, "rm -rf " ++ localdir
 		, "tar xzf " ++ remotetarball
 		, "rm -f " ++ remotetarball
-		, "ln -sf shim/propellor propellor/propellor"
 		]
 
 -- Shim for git push over the propellor ssh channel.
