@@ -83,6 +83,7 @@ Library
     Propellor.Property.Firewall
     Propellor.Property.Git
     Propellor.Property.Gpg
+    Propellor.Property.Group
     Propellor.Property.Grub
     Propellor.Property.Network
     Propellor.Property.Nginx
