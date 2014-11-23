@@ -278,7 +278,7 @@ mergeSpin = do
 	old_head <- getCurrentGitSha1 branch
 	old_commit <- findLastNonSpinCommit
 	rungit "reset" [Param old_commit]
-	rungit "commit" [Param "-a"]
+	rungit "commit" [Param "-a", "--allow-empty"]
 	rungit "merge" =<< gpgSignParams [Param "-s", Param "ours", Param old_head]
 	current_commit <- getCurrentGitSha1 branch
 	rungit "update-ref" [Param branchref, Param current_commit]
