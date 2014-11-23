@@ -1,4 +1,4 @@
-propellor (1.0.1) UNRELEASED; urgency=medium
+propellor (1.1.0) UNRELEASED; urgency=medium
 
   * propellor --spin can now deploy propellor to hosts that do not have 
     git, ghc, or apt-get. This is accomplished by uploading a fairly
@@ -12,6 +12,9 @@ propellor (1.0.1) UNRELEASED; urgency=medium
     find the full hostname.
   * Added group-related properties. Thanks, Félix Sipma.
   * Added Git.barerepo. Thanks, Félix Sipma.
+  * hasSomePassword and hasPassword now default to using the name of the
+    host as the Context for the password. To specify a different context,
+    use hasSomePassword' and hasPassword' (API change)
 
  -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
 

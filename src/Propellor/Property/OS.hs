@@ -17,6 +17,10 @@ import qualified Propellor.Property.Debootstrap as Debootstrap
 -- This can replace one Linux distribution with different one.
 -- But, it can also fail and leave the system in an unbootable state.
 --
+-- To avoid this property being accidentially used, you have to provide
+-- a Context containing the name of the host that you intend to apply the
+-- property to.
+--
 -- This property only runs once. The cleanly installed system will have
 -- a file /etc/propellor-cleaninstall, which indicates it was cleanly
 -- installed.
@@ -26,7 +30,7 @@ import qualified Propellor.Property.Debootstrap as Debootstrap
 -- working system. For example:
 --
 -- > & os (System (Debian Unstable) "amd64")
--- > & cleanInstall (confirm "com.example.foo") (BackupOldOS <> UseOldKernel)
+-- > & cleanInstall (Context "foo.example.com") (BackupOldOS <> UseOldKernel)
 -- >    `onChange` propertyList "fixing up after clean install"
 -- >        [ fixupNetworkInterfaces
 -- >        , fixupRootSsh
@@ -34,37 +38,32 @@ import qualified Propellor.Property.Debootstrap as Debootstrap
 -- >        -- , installGrub
 -- >        ]
 -- > & Apt.installed ["ssh"]
+-- > & User.hasSomePassword "root"
+-- > & User.accountFor "joey"
+-- > & User.hasSomePassword "joey"
 -- > -- rest of system properties here
-cleanInstallOnce :: Confirmation -> Exceptions -> Property
-cleanInstallOnce c = check (not <$> doesFileExist flagfile) $
+cleanInstallOnce :: Context -> Exceptions -> Property
+cleanInstallOnce (Context c) = check (not <$> doesFileExist flagfile) $
 	Property "OS cleanly installed" $ do
-		confirm c
+		hostname <- asks hostName
+		when (hostname /= c) $
+			error "Run with bad context, not matching hostname. Not running cleanInstalOnce!"
 		error "TODO"
-		-- debootstrap /new-os chroot; avoid running
-		--   propellor inside the chroot yet
+		-- debootstrap /new-os chroot, but don't run propellor
+		--   inside the chroot.
 		-- unmount all mounts
 		-- move all directories to /old-os,
 		--   except for /boot and /lib/modules
 		-- move /new-os to /
-		-- touch /etc/propellor-cleaninstall
+		-- touch flagfile
 		-- re-bootstrap propellor in /usr/local/propellor,
 		--   (using git repo bundle, privdata file, and possibly
 		--   git repo url, which all need to be arranged to
 		--   be present in /old-os's /usr/local/propellor)
+		-- enable shadow passwords (to avoid foot-shooting)
 		-- return MadeChange
   where
 	flagfile = "/etc/propellor-cleaninstall"
-
--- | To confirm you really intend to apply a dangerous Property to a
--- system, and have not copied and pasted it in by accident, you must
--- provide as confirmation, the hostname of the system you intend
--- to apply the Property to, written in the form form "com.example.somehost"
-newtype Confirmation = Confirmation String
-
-confirm :: String -> Confirmation
-confirm (Confirmation c) h
-	| h ==(intercalate "." $ reverse $ split "." c) = return ()
-	| otherwise = error "Bad confirmation of dangerous Property; see the documentation to fix this."
 
 -- | Sometimes you want an almost clean install, but with some exceptions.
 data Exceptions

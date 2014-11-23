@@ -24,12 +24,27 @@ nuked user _ = check (isJust <$> catchMaybeIO (homedir user)) $ cmdProperty "use
 
 -- | Only ensures that the user has some password set. It may or may
 -- not be the password from the PrivData.
-hasSomePassword :: UserName -> Context -> Property
-hasSomePassword user context = check ((/= HasPassword) <$> getPasswordStatus user) $
-	hasPassword user context
+hasSomePassword :: UserName -> Property
+hasSomePassword user = property (user ++ "has password") $ do
+	hostname <- asks hostName
+	ensureProperty $ hasSomePassword' user (Context hostname)
 
-hasPassword :: UserName -> Context -> Property
-hasPassword user context = withPrivData (Password user) context $ \getpassword ->
+-- | While hasSomePassword uses the name of the host as context,
+-- this allows specifying a different context. This is useful when
+-- you want to use the same password on multiple hosts, for example.
+hasSomePassword' :: UserName -> Context -> Property
+hasSomePassword' user context = check ((/= HasPassword) <$> getPasswordStatus user) $
+	hasPassword' user context
+
+-- | Ensures that a user's password is set to the password from the PrivData.
+-- (Will change any existing password.)
+hasPassword :: UserName -> Property
+hasPassword user = property (user ++ "has password") $ do
+	hostname <- asks hostName
+	ensureProperty $ hasPassword' user (Context hostname)
+
+hasPassword' :: UserName -> Context -> Property
+hasPassword' user context = withPrivData (Password user) context $ \getpassword ->
 	property (user ++ " has password") $
 		getpassword $ \password -> makeChange $
 			withHandle StdinHandle createProcessSuccess

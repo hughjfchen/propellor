@@ -366,9 +366,9 @@ standardSystemUnhardened hn suite arch motd = host hn
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
 	& GitHome.installedFor "root"
-	& User.hasSomePassword "root" (Context hn)
+	& User.hasSomePassword "root"
 	& User.accountFor "joey"
-	& User.hasSomePassword "joey" (Context hn)
+	& User.hasSomePassword "joey"
 	& Sudo.enabledFor "joey"
 	& GitHome.installedFor "joey"
 	& Apt.installed ["vim", "screen", "less"]
