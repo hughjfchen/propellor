@@ -6,7 +6,7 @@
 Here's a almost-script to do it, which worked when it did it by hand:
 
 <pre>
-get old-head
+get old-head (git show-ref HEAD -s)
 get curr-branch (refs/heads/master eg)
 find old-commit (look back through git log for the first commit that was not "propellor spin")
 git reset old-commit
