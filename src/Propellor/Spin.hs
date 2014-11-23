@@ -42,11 +42,12 @@ spin target relay hst = do
 		void $ boolSystem "ssh-add" []
 
 	-- Install, or update the remote propellor.
-	updateServer target relay hst $ withBothHandles createProcessSuccess
-		(proc "ssh" $ cacheparams ++ [user, updatecmd])
+	updateServer target relay hst
+		(proc "ssh" $ cacheparams ++ [user, shellWrap probecmd])
+		(proc "ssh" $ cacheparams ++ [user, shellWrap updatecmd])
 
 	-- And now we can run it.
-	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, runcmd])) $
+	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, shellWrap runcmd])) $
 		error $ "remote propellor failed"
   where
 	hn = fromMaybe target relay
@@ -55,27 +56,27 @@ spin target relay hst = do
 	relaying = relay == Just target
 	viarelay = isJust relay && not relaying
 
-	mkcmd = shellWrap . intercalate " ; "
-
-	updatecmd = mkcmd
+	probecmd = intercalate " ; "
 		[ "if [ ! -d " ++ localdir ++ "/.git ]"
 		, "then (" ++ intercalate " && "
 			[ "if ! git --version || ! make --version; then apt-get update && apt-get --no-install-recommends --no-upgrade -y install git make; fi"
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			] ++ ") || echo " ++ toMarked statusMarker (show NeedPrecompiled)
-		, "else " ++ intercalate " && "
-			[ "cd " ++ localdir
-			, "if ! test -x ./propellor; then make deps build; fi"
-			, if viarelay
-				then "./propellor --continue " ++
-					shellEscape (show (Update (Just target)))
-				-- Still using --boot for back-compat...
-				else "./propellor --boot " ++ target
-			]
+		, "else " ++ updatecmd
 		, "fi"
 		]
+	
+	updatecmd = intercalate " && "
+		[ "cd " ++ localdir
+		, "if ! test -x ./propellor; then make deps build; fi"
+		, if viarelay
+			then "./propellor --continue " ++
+				shellEscape (show (Update (Just target)))
+			-- Still using --boot for back-compat...
+			else "./propellor --boot " ++ target
+		]
 
-	runcmd = mkcmd [ "cd " ++ localdir ++ " && ./propellor " ++ cmd ]
+	runcmd = "cd " ++ localdir ++ " && ./propellor " ++ cmd
 	cmd = if viarelay
 		then "--serialized " ++ shellEscape (show (Spin target (Just target)))
 		else "--continue " ++ shellEscape (show (SimpleRun target))
@@ -114,17 +115,22 @@ update forhost = do
 	-- to be relayed to the target host.
 	privfile = maybe privDataLocal privDataRelay forhost
 
--- The connect action should ssh to the remote host and run the provided
--- calback action.
-updateServer :: HostName -> Maybe HostName -> Host -> (((Handle, Handle) -> IO ()) -> IO ()) -> IO ()
-updateServer target relay hst connect = connect go
+updateServer
+	:: HostName
+	-> Maybe HostName
+	-> Host
+	-> CreateProcess
+	-> CreateProcess
+	-> IO ()
+updateServer target relay hst connect haveprecompiled =
+	withBothHandles createProcessSuccess connect go
   where
 	hn = fromMaybe target relay
 	relaying = relay == Just target
 
 	go (toh, fromh) = do
 		let loop = go (toh, fromh)
-		let restart = updateServer hn relay hst connect
+		let restart = updateServer hn relay hst connect haveprecompiled
 		let done = return ()
 		v <- (maybe Nothing readish <$> getMarked fromh statusMarker)
 		case v of
@@ -143,7 +149,7 @@ updateServer target relay hst connect = connect go
 				hClose toh
 				hClose fromh
 				sendPrecompiled hn
-				restart
+				updateServer hn relay hst haveprecompiled (error "loop")
 			(Just NeedGitPush) -> do
 				sendGitUpdate hn fromh toh
 				hClose fromh
