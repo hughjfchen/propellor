@@ -78,7 +78,8 @@ built target system@(System _ arch) config =
 			, Param target
 			]
 		cmd <- fromMaybe "debootstrap" <$> programPath
-		ifM (boolSystem cmd params)
+		de <- debootstrapEnv
+		ifM (boolSystemEnv cmd params (Just de))
 			( do
 				fixForeignDev target
 				return MadeChange
@@ -106,6 +107,15 @@ built target system@(System _ arch) config =
 			return True
 		, return False
 		)
+
+-- workaround for http://bugs.debian.org/770658
+debootstrapEnv :: IO [(String, String)]
+debootstrapEnv = do
+	path <- getEnvDefault "/bin" "PATH"
+	addEntry "PATH" (path ++ debianPath)
+		<$> getEnvironment
+  where
+	debianPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 mountPoints :: IO [FilePath]
 mountPoints = lines <$> readProcess "findmnt" ["-rn", "--output", "target"]
