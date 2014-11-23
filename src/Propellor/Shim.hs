@@ -11,14 +11,18 @@ import Utility.LinuxMkLibs
 import Utility.SafeCommand
 import Utility.Path
 import Utility.FileMode
+import Utility.FileSystemEncoding
 
 import Data.List
 import System.Posix.Files
 
 -- | Sets up a shimmed version of the program, in a directory, and
 -- returns its path.
+--
+-- Propellor may be running from an existing shim, in which case it's
+-- simply reused.
 setup :: FilePath -> FilePath -> IO FilePath
-setup propellorbin dest = do
+setup propellorbin dest = checkAlreadyShimmed propellorbin $ do
 	createDirectoryIfMissing True dest
 
 	libs <- parseLdd <$> readProcess "ldd" [propellorbin]
@@ -36,7 +40,7 @@ setup propellorbin dest = do
 	let linkerparams = ["--library-path", intercalate ":" libdirs ]
 	let shim = file propellorbin dest
 	writeFile shim $ unlines
-		[ "#!/bin/sh"
+		[ shebang
 		, "GCONV_PATH=" ++ shellEscape gconvdir
 		, "export GCONV_PATH"
 		, "exec " ++ unwords (map shellEscape $ linker : linkerparams) ++ 
@@ -44,6 +48,17 @@ setup propellorbin dest = do
 		]
 	modifyFileMode shim (addModes executeModes)
 	return shim
+
+shebang :: String
+shebang = "#!/bin/sh"
+
+checkAlreadyShimmed :: FilePath -> IO FilePath -> IO FilePath
+checkAlreadyShimmed f nope = withFile f ReadMode $ \h -> do
+	fileEncoding h
+	s <- hGetLine h
+	if s == shebang
+		then return f
+		else nope
 
 -- Called when the shimmed propellor is running, so that commands it runs
 -- don't see it.
