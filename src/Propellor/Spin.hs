@@ -237,7 +237,6 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 
 	unpackcmd = shellWrap $ intercalate " && "
 		[ "cd " ++ takeDirectory remotetarball
-		, "rm -rf " ++ localdir
 		, "tar xzf " ++ remotetarball
 		, "rm -f " ++ remotetarball
 		]
