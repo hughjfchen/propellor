@@ -20,8 +20,9 @@ sshCachingParams hn = do
 	let cachedir = home </> ".ssh" </> "propellor"
 	createDirectoryIfMissing False cachedir
 	let socketfile = cachedir </> hn ++ ".sock"
-	let ps = 
-		[ Param "-o", Param ("ControlPath=" ++ socketfile)
+	let ps =
+		[ Param "-o"
+		, Param ("ControlPath=" ++ socketfile)
 		, Params "-o ControlMaster=auto -o ControlPersist=yes"
 		]
 

@@ -30,7 +30,7 @@ hasSomePassword user context = check ((/= HasPassword) <$> getPasswordStatus use
 
 hasPassword :: UserName -> Context -> Property
 hasPassword user context = withPrivData (Password user) context $ \getpassword ->
-	property (user ++ " has password") $ 
+	property (user ++ " has password") $
 		getpassword $ \password -> makeChange $
 			withHandle StdinHandle createProcessSuccess
 				(proc "chpasswd" []) $ \h -> do
@@ -60,3 +60,12 @@ isLockedPassword user = (== LockedPassword) <$> getPasswordStatus user
 
 homedir :: UserName -> IO FilePath
 homedir user = homeDirectory <$> getUserEntryForName user
+
+hasGroup :: UserName -> GroupName -> Property
+hasGroup user group' = check test $ cmdProperty "adduser"
+	[ user
+	, group'
+	]
+	`describe` unwords ["user", user, "in group", group']
+  where
+	test = not . elem group' . words <$> readProcess "groups" [user]

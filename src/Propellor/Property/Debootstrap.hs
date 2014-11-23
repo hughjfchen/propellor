@@ -8,6 +8,7 @@ module Propellor.Property.Debootstrap (
 
 import Propellor
 import qualified Propellor.Property.Apt as Apt
+import Propellor.Property.Chroot.Util
 import Utility.Path
 import Utility.SafeCommand
 import Utility.FileMode
@@ -78,7 +79,8 @@ built target system@(System _ arch) config =
 			, Param target
 			]
 		cmd <- fromMaybe "debootstrap" <$> programPath
-		ifM (boolSystem cmd params)
+		de <- standardPathEnv
+		ifM (boolSystemEnv cmd params (Just de))
 			( do
 				fixForeignDev target
 				return MadeChange
@@ -141,8 +143,26 @@ installed = RevertableProperty install remove
 	aptremove = Apt.removed ["debootstrap"]
 
 sourceInstall :: Property
-sourceInstall = property "debootstrap installed from source"
-	(liftIO sourceInstall')
+sourceInstall = property "debootstrap installed from source" (liftIO sourceInstall')
+	`requires` perlInstalled
+	`requires` arInstalled
+
+perlInstalled :: Property
+perlInstalled = check (not <$> inPath "perl") $ property "perl installed" $ do
+	v <- liftIO $ firstM id
+		[ yumInstall "perl"
+		]
+	if isJust v then return MadeChange else return FailedChange
+
+arInstalled :: Property
+arInstalled = check (not <$> inPath "ar") $ property "ar installed" $ do
+	v <- liftIO $ firstM id
+		[ yumInstall "binutils"
+		]
+	if isJust v then return MadeChange else return FailedChange
+
+yumInstall :: String -> IO Bool
+yumInstall p = boolSystem "yum" [Param "-y", Param "install", Param p]
 
 sourceInstall' :: IO Result
 sourceInstall' = withTmpDir "debootstrap" $ \tmpd -> do
@@ -228,18 +248,23 @@ makeDevicesTarball = do
 	tarcmd = "(cd / && tar cf - dev) | gzip > devices.tar.gz"
 
 fixForeignDev :: FilePath -> IO ()
-fixForeignDev target = whenM (doesFileExist (target ++ foreignDevFlag)) $ 
-	void $ boolSystem "chroot"
+fixForeignDev target = whenM (doesFileExist (target ++ foreignDevFlag)) $ do
+	de <- standardPathEnv
+	void $ boolSystemEnv "chroot"
 		[ File target
 		, Param "sh"
 		, Param "-c"
 		, Param $ intercalate " && "
-			[ "rm -rf /dev"
+			[ "apt-get update"
+			, "apt-get -y install makedev"
+			, "rm -rf /dev"
 			, "mkdir /dev"
 			, "cd /dev"
+			, "mount -t proc proc /proc"
 			, "/sbin/MAKEDEV std ptmx fd consoleonly"
 			]
 		]
+		(Just de)
 
 foreignDevFlag :: FilePath
 foreignDevFlag = "/dev/.propellor-foreign-dev"

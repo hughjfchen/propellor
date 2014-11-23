@@ -83,6 +83,7 @@ Library
     Propellor.Property.Firewall
     Propellor.Property.Git
     Propellor.Property.Gpg
+    Propellor.Property.Group
     Propellor.Property.Grub
     Propellor.Property.Network
     Propellor.Property.Nginx
@@ -121,11 +122,12 @@ Library
   Other-Modules:
     Propellor.Git
     Propellor.Gpg
-    Propellor.Server
+    Propellor.Spin
     Propellor.Ssh
     Propellor.PrivData.Paths
     Propellor.Protocol
     Propellor.Shim
+    Propellor.Property.Chroot.Util
     Utility.Applicative
     Utility.Data
     Utility.Directory

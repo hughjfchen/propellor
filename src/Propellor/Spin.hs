@@ -1,10 +1,6 @@
--- When propellor --spin is running, the local host acts as a server,
--- which connects to the remote host's propellor and responds to its
--- requests.
-
-module Propellor.Server (
+module Propellor.Spin (
+	spin,
 	update,
-	updateServer,
 	gitPushHelper
 ) where
 
@@ -22,21 +18,83 @@ import Propellor.Protocol
 import Propellor.PrivData.Paths
 import Propellor.Git
 import Propellor.Ssh
+import Propellor.Gpg
 import qualified Propellor.Shim as Shim
 import Utility.FileMode
 import Utility.SafeCommand
 
+spin :: HostName -> Maybe HostName -> Host -> IO ()
+spin target relay hst = do
+	unless relaying $ do
+		void $ actionMessage "Git commit" $
+			gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param "propellor spin"]
+		-- Push to central origin repo first, if possible.
+		-- The remote propellor will pull from there, which avoids
+		-- us needing to send stuff directly to the remote host.
+		whenM hasOrigin $
+			void $ actionMessage "Push to central git repository" $
+				boolSystem "git" [Param "push"]
+	
+	cacheparams <- if viarelay
+		then pure ["-A"]
+		else toCommand <$> sshCachingParams hn
+	when viarelay $
+		void $ boolSystem "ssh-add" []
+
+	-- Install, or update the remote propellor.
+	updateServer target relay hst
+		(proc "ssh" $ cacheparams ++ [user, shellWrap probecmd])
+		(proc "ssh" $ cacheparams ++ [user, shellWrap updatecmd])
+
+	-- And now we can run it.
+	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, shellWrap runcmd])) $
+		error $ "remote propellor failed"
+  where
+	hn = fromMaybe target relay
+	user = "root@"++hn
+
+	relaying = relay == Just target
+	viarelay = isJust relay && not relaying
+
+	probecmd = intercalate " ; "
+		[ "if [ ! -d " ++ localdir ++ "/.git ]"
+		, "then (" ++ intercalate " && "
+			[ "if ! git --version || ! make --version; then apt-get update && apt-get --no-install-recommends --no-upgrade -y install git make; fi"
+			, "echo " ++ toMarked statusMarker (show NeedGitClone)
+			] ++ ") || echo " ++ toMarked statusMarker (show NeedPrecompiled)
+		, "else " ++ updatecmd
+		, "fi"
+		]
+	
+	updatecmd = intercalate " && "
+		[ "cd " ++ localdir
+		, "if ! test -x ./propellor; then make deps build; fi"
+		, if viarelay
+			then "./propellor --continue " ++
+				shellEscape (show (Update (Just target)))
+			-- Still using --boot for back-compat...
+			else "./propellor --boot " ++ target
+		]
+
+	runcmd = "cd " ++ localdir ++ " && ./propellor " ++ cmd
+	cmd = if viarelay
+		then "--serialized " ++ shellEscape (show (Spin target (Just target)))
+		else "--continue " ++ shellEscape (show (SimpleRun target))
+
 -- Update the privdata, repo url, and git repo over the ssh
 -- connection, talking to the user's local propellor instance which is
 -- running the updateServer
-update :: IO ()
-update = do
-	whenM hasOrigin $
+update :: Maybe HostName -> IO ()
+update forhost = do
+	whenM hasGitRepo $
 		req NeedRepoUrl repoUrlMarker setRepoUrl
+
 	makePrivDataDir
+	createDirectoryIfMissing True (takeDirectory privfile)
 	req NeedPrivData privDataMarker $
-		writeFileProtected privDataLocal
-	whenM hasOrigin $
+		writeFileProtected privfile
+
+	whenM hasGitRepo $
 		req NeedGitPush gitPushMarker $ \_ -> do
 			hin <- dup stdInput
 			hout <- dup stdOutput
@@ -52,48 +110,70 @@ update = do
 		, Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout
 		, Param "."
 		]
+	
+	-- When --spin --relay is run, get a privdata file
+	-- to be relayed to the target host.
+	privfile = maybe privDataLocal privDataRelay forhost
 
--- The connect action should ssh to the remote host and run the provided
--- calback action.
-updateServer :: HostName  -> Host -> (((Handle, Handle) -> IO ()) -> IO ()) -> IO ()
-updateServer hn hst connect = connect go
+updateServer
+	:: HostName
+	-> Maybe HostName
+	-> Host
+	-> CreateProcess
+	-> CreateProcess
+	-> IO ()
+updateServer target relay hst connect haveprecompiled =
+	withBothHandles createProcessSuccess connect go
   where
+	hn = fromMaybe target relay
+	relaying = relay == Just target
+
 	go (toh, fromh) = do
 		let loop = go (toh, fromh)
+		let restart = updateServer hn relay hst connect haveprecompiled
+		let done = return ()
 		v <- (maybe Nothing readish <$> getMarked fromh statusMarker)
 		case v of
 			(Just NeedRepoUrl) -> do
 				sendRepoUrl toh
 				loop
 			(Just NeedPrivData) -> do
-				sendPrivData hn hst toh
+				sendPrivData hn hst toh relaying
 				loop
-			(Just NeedGitPush) -> do
-				sendGitUpdate hn fromh toh
-				-- no more protocol possible after git push
-				hClose fromh
-				hClose toh
 			(Just NeedGitClone) -> do
 				hClose toh
 				hClose fromh
 				sendGitClone hn
-				updateServer hn hst connect
+				restart
 			(Just NeedPrecompiled) -> do
 				hClose toh
 				hClose fromh
 				sendPrecompiled hn
-				updateServer hn hst connect
-			Nothing -> return ()
+				updateServer hn relay hst haveprecompiled (error "loop")
+			(Just NeedGitPush) -> do
+				sendGitUpdate hn fromh toh
+				hClose fromh
+				hClose toh
+				done
+			Nothing -> done
 
 sendRepoUrl :: Handle -> IO ()
 sendRepoUrl toh = sendMarked toh repoUrlMarker =<< (fromMaybe "" <$> getRepoUrl)
 
-sendPrivData :: HostName -> Host -> Handle -> IO ()
-sendPrivData hn hst toh = do
-	privdata <- show . filterPrivData hst <$> decryptPrivData
+sendPrivData :: HostName -> Host -> Handle -> Bool -> IO ()
+sendPrivData hn hst toh relaying = do
+	privdata <- getdata
 	void $ actionMessage ("Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn) $ do
 		sendMarked toh privDataMarker privdata
 		return True
+  where
+	getdata
+		| relaying = do
+			let f = privDataRelay hn
+			d <- readFileStrictAnyEncoding f
+			nukeFile f
+			return d
+		| otherwise = show . filterPrivData hst <$> decryptPrivData
 
 sendGitUpdate :: HostName -> Handle -> Handle -> IO ()
 sendGitUpdate hn fromh toh =
@@ -141,9 +221,12 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 		createDirectoryIfMissing True (tmpdir </> shimdir)
 		changeWorkingDirectory (tmpdir </> shimdir)
 		me <- readSymbolicLink "/proc/self/exe"
-		shim <- Shim.setup me "."
-		when (shim /= "propellor") $
-			renameFile shim "propellor"
+		createDirectoryIfMissing True "bin"
+		unlessM (boolSystem "cp" [File me, File "bin/propellor"]) $
+			errorMessage "failed copying in propellor"
+		let bin = "bin/propellor"
+		let binpath = Just $ localdir </> bin
+		void $ Shim.setup bin binpath "."
 		changeWorkingDirectory tmpdir
 		withTmpFile "propellor.tar." $ \tarball _ -> allM id
 			[ boolSystem "strip" [File me]

@@ -11,6 +11,7 @@ module Propellor.Property.Chroot (
 
 import Propellor
 import Propellor.Types.Chroot
+import Propellor.Property.Chroot.Util
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Shim as Shim
@@ -88,7 +89,7 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 	let me = localdir </> "propellor"
 	shim <- liftIO $ ifM (doesDirectoryExist d)
 		( pure (Shim.file me d)
-		, Shim.setup me d
+		, Shim.setup me Nothing d
 		)
 	ifM (liftIO $ bindmount shim)
 		( chainprovision shim
@@ -109,12 +110,14 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 	chainprovision shim = do
 		parenthost <- asks hostName
 		cmd <- liftIO $ toChain parenthost c systemdonly
+		pe <- liftIO standardPathEnv
 		let p = mkproc
 			[ shim
 			, "--continue"
 			, show cmd
 			]
-		liftIO $ withHandle StdoutHandle createProcessSuccess p
+		let p' = p { env = Just pe }
+		liftIO $ withHandle StdoutHandle createProcessSuccess p'
 			processChainOutput
 
 toChain :: HostName -> Chroot -> Bool -> IO CmdLine

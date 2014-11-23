@@ -26,6 +26,7 @@ import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Systemd as Systemd
+import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -46,6 +47,7 @@ hosts =                --                  (o)  `
 	, kite
 	, diatom
 	, elephant
+	, alien
 	] ++ monsters
 
 darkstar :: Host
@@ -81,18 +83,21 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	! Ssh.listenPort 80
 	! Ssh.listenPort 443
 
-	! Chroot.provisioned testChroot
 	& Systemd.persistentJournal
-	& Systemd.nspawned meow
+	! Systemd.nspawned meow
 	
 meow :: Systemd.Container
 meow = Systemd.container "meow" (Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty)
 	& Apt.serviceInstalledRunning "uptimed"
 	& alias "meow.kitenet.net"
-	
-testChroot :: Chroot.Chroot
-testChroot = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty "/tmp/chroot"
-	& File.hasContent "/foo" ["hello"]
+
+alien :: Host
+alien = host "alientest.kitenet.net"
+	& ipv4 "104.131.106.199"
+	& Chroot.provisioned
+		( Chroot.debootstrapped (System (Debian Unstable) "amd64") Debootstrap.MinBase "/debian"
+			& Apt.serviceInstalledRunning "uptimed"
+		)
 
 orca :: Host
 orca = standardSystem "orca.kitenet.net" Unstable "amd64"
