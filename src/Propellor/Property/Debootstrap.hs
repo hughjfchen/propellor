@@ -263,10 +263,12 @@ fixForeignDev target = whenM (doesFileExist (target ++ foreignDevFlag)) $ do
 		, Param "sh"
 		, Param "-c"
 		, Param $ intercalate " && "
-			[ "apt-get -y install makedev"
+			[ "apt-get update"
+			, "apt-get -y install makedev"
 			, "rm -rf /dev"
 			, "mkdir /dev"
 			, "cd /dev"
+			, "mount -t proc proc /proc"
 			, "/sbin/MAKEDEV std ptmx fd consoleonly"
 			]
 		]

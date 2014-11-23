@@ -11,6 +11,8 @@ import "mtl" Control.Monad.Reader
 import Control.Exception (bracket)
 import System.PosixCompat
 import System.Posix.IO
+import System.FilePath
+import System.Directory
 
 import Propellor.Types
 import Propellor.Message
@@ -60,6 +62,7 @@ onlyProcess :: FilePath -> IO a -> IO a
 onlyProcess lockfile a = bracket lock unlock (const a)
   where
 	lock = do
+		createDirectoryIfMissing True (takeDirectory lockfile)
 		l <- createFile lockfile stdFileMode
 		setLock l (WriteLock, AbsoluteSeek, 0, 0)
 			`catchIO` const alreadyrunning
