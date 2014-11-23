@@ -224,7 +224,7 @@ sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor
 		createDirectoryIfMissing True "bin"
 		unlessM (boolSystem "cp" [File me, File "bin/propellor"]) $
 			errorMessage "failed copying in propellor"
-		void $ Shim.setup "bin/propellor" "."
+		void $ Shim.setup "bin/propellor" (localdir </> "bin/propellor") "."
 		changeWorkingDirectory tmpdir
 		withTmpFile "propellor.tar." $ \tarball _ -> allM id
 			[ boolSystem "strip" [File me]

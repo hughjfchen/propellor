@@ -88,7 +88,7 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 	let me = localdir </> "propellor"
 	shim <- liftIO $ ifM (doesDirectoryExist d)
 		( pure (Shim.file me d)
-		, Shim.setup me d
+		, Shim.setup me Nothing d
 		)
 	ifM (liftIO $ bindmount shim)
 		( chainprovision shim

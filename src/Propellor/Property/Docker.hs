@@ -377,7 +377,7 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 		liftIO $ do
 			clearProvisionedFlag cid
 			createDirectoryIfMissing True (takeDirectory $ identFile cid)
-		shim <- liftIO $ Shim.setup (localdir </> "propellor") (localdir </> shimdir cid)
+		shim <- liftIO $ Shim.setup (localdir </> "propellor") Nothing (localdir </> shimdir cid)
 		liftIO $ writeFile (identFile cid) (show ident)
 		ensureProperty $ boolProperty "run" $ runContainer img
 			(runps ++ ["-i", "-d", "-t"])

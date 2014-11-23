@@ -21,8 +21,8 @@ import System.Posix.Files
 --
 -- Propellor may be running from an existing shim, in which case it's
 -- simply reused.
-setup :: FilePath -> FilePath -> IO FilePath
-setup propellorbin dest = checkAlreadyShimmed propellorbin $ do
+setup :: FilePath -> Maybe FilePath -> FilePath -> IO FilePath
+setup propellorbin propellorbinpath dest = checkAlreadyShimmed propellorbin $ do
 	createDirectoryIfMissing True dest
 
 	libs <- parseLdd <$> readProcess "ldd" [propellorbin]
@@ -44,7 +44,7 @@ setup propellorbin dest = checkAlreadyShimmed propellorbin $ do
 		, "GCONV_PATH=" ++ shellEscape gconvdir
 		, "export GCONV_PATH"
 		, "exec " ++ unwords (map shellEscape $ linker : linkerparams) ++ 
-			" " ++ shellEscape propellorbin ++ " \"$@\""
+			" " ++ shellEscape (fromMaybe propellorbin propellorbinpath) ++ " \"$@\""
 		]
 	modifyFileMode shim (addModes executeModes)
 	return shim
