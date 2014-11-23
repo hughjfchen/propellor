@@ -3,7 +3,9 @@ module Propellor.Property.OS (
 	Confirmation
 	confirm,
 	fixupNetworkAddresses,
-	fixupRootSsh,
+	rootSshAuthorized,
+	grubBoots,
+	kernelInstalled,
 	oldOSRemoved,
 ) where
 
@@ -33,9 +35,9 @@ import qualified Propellor.Property.Debootstrap as Debootstrap
 -- > & cleanInstall (Context "foo.example.com") (BackupOldOS <> UseOldKernel)
 -- >    `onChange` propertyList "fixing up after clean install"
 -- >        [ fixupNetworkInterfaces
--- >        , fixupRootSsh
--- >        -- , installDistroKernel
--- >        -- , installGrub
+-- >        , rootSshAuthorized
+-- >        -- , kernelInstalled
+-- >        -- , grubBoots "hd0"
 -- >        ]
 -- > & Apt.installed ["ssh"]
 -- > & User.hasSomePassword "root"
@@ -85,16 +87,16 @@ fixupNetworkInterfaces :: Property
 fixupNetworkInterfaces = undefined
 
 -- /root/.ssh/authorized_keys is copied from the old os
-fixupRootSsh :: Property
-fixupRootSsh = undefined
+rootSshAuthorized :: Property
+rootSshAuthorized = undefined
 
 -- Installs an appropriate kernel from the distribution.
-installDistroKernel :: Property
-installDistroKernel = undefined
+kernelInstalled :: Property
+kernelInstalled = undefined
 
 -- Installs grub to boot the system.
-installGrub :: Property
-installGrub = undefined
+grubBoots :: GrubDev -> Property
+grubBoots = undefined
 
 -- Removes the old OS's backup from /old-os
 oldOSRemoved :: Property
