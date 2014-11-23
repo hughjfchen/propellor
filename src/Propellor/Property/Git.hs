@@ -57,8 +57,9 @@ type Branch = String
 
 -- | Specified git repository is cloned to the specified directory.
 --
--- If the firectory exists with some other content, it will be recursively
--- deleted.
+-- If the directory exists with some other content (either a non-git
+-- repository, or a git repository cloned from some other location),
+-- it will be recursively deleted first.
 --
 -- A branch can be specified, to check out.
 cloned :: UserName -> RepoUrl -> FilePath -> Maybe Branch -> Property
