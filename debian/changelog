@@ -8,7 +8,8 @@ propellor (1.0.1) UNRELEASED; urgency=medium
     when provisioning the target host.
   * Hostname parameters not containing dots are looked up in the DNS to
     find the full hostname.
-  * Added group-related properties. Thanks, Thanks, Félix Sipma.
+  * Added group-related properties. Thanks, Félix Sipma.
+  * Added Git.barerepo. Thanks, Félix Sipma.
 
  -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
 
