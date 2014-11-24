@@ -13,9 +13,8 @@ import Propellor
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Ssh as Ssh
 import Utility.FileMode
-
-import Utility.PosixFiles
 
 -- | Replaces whatever OS was installed before with a clean installation
 -- of the OS that the Host is configured to have.
@@ -95,15 +94,10 @@ rootSshAuthorized :: Property
 rootSshAuthorized = check (doesDirectoryExist oldloc) $
 	property (newloc ++ " copied from old OS") $ do
 		ks <- liftIO $ lines <$> readFile oldloc
-		ensureProperty $
-			newloc `File.containsLines` ks
-				`requires` File.dirExists (takeDirectory newloc)
-				`onChange` File.mode newloc mode
+		ensureProperties (map (Ssh.authorizedKey "root") ks)
   where
 	newloc = "/root/.ssh/authorized_keys"
 	oldloc = oldOsDir ++ newloc
-	-- ssh requires the file mode be locked down
-	mode = combineModes [ownerWriteMode, ownerReadMode]
 
 -- Installs an appropriate kernel from the OS distribution.
 kernelInstalled :: Property
