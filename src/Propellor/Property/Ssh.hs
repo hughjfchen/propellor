@@ -3,6 +3,7 @@ module Propellor.Property.Ssh (
 	permitRootLogin,
 	passwordAuthentication,
 	hasAuthorizedKeys,
+	authorizedKey,
 	restarted,
 	randomHostKeys,
 	hostKeys,
@@ -155,6 +156,8 @@ knownHost hosts hn user = property desc $
 		return FailedChange
 
 -- | Makes a user have authorized_keys from the PrivData
+--
+-- This removes any other lines from the file.
 authorizedKeys :: UserName -> Context -> Property
 authorizedKeys user context = withPrivData (SshAuthorizedKeys user) context $ \get ->
 	property (user ++ " has authorized_keys") $ get $ \v -> do
@@ -166,6 +169,16 @@ authorizedKeys user context = withPrivData (SshAuthorizedKeys user) context $ \g
 			[ File.ownerGroup f user user
 			, File.ownerGroup (takeDirectory f) user user
 			] 
+
+-- | Ensures that a user's authorized_keys contains a line.
+-- Any other lines in the file are preserved as-is.
+authorizedKey :: UserName -> String -> Property
+authorizedKey user l = property (user ++ " has autorized_keys line " ++ l) $ do
+	f <- liftIO $ dotFile "authorized_keys" user
+	ensureProperty $
+		f `File.containsLine` l
+			`requires` File.dirExists (takeDirectory f)
+			`onChange` File.mode f (combineModes [ownerWriteMode, ownerReadMode])
 
 -- | Makes the ssh server listen on a given port, in addition to any other
 -- ports it is configured to listen on.
