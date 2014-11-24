@@ -1,8 +1,8 @@
 module Propellor.Property.OS (
 	cleanInstallOnce,
 	Confirmed(..),
-	fixupNetworkInterfaces,
-	rootSshAuthorized,
+	preserveNetworkInterfaces,
+	preserveRootSshAuthorized,
 	grubBoots,
 	GrubDev(..),
 	kernelInstalled,
@@ -37,8 +37,8 @@ import Utility.FileMode
 -- > & os (System (Debian Unstable) "amd64")
 -- > & cleanInstall (Confirmed "foo.example.com") [BackupOldOS, UseOldKernel]
 -- >    `onChange` propertyList "fixing up after clean install"
--- >        [ fixupNetworkInterfaces
--- >        , rootSshAuthorized
+-- >        [ preserveNetworkInterfaces
+-- >        , preserverRootSshAuthorized
 -- >        -- , kernelInstalled
 -- >        -- , grubBoots "hd0"
 -- >        ]
@@ -84,14 +84,14 @@ data Tweak
 
 -- /etc/network/interfaces is configured to bring up all interfaces that
 -- are currently up, using the same IP addresses.
-fixupNetworkInterfaces :: Property
-fixupNetworkInterfaces = undefined
+preserveNetworkInterfaces :: Property
+preserveNetworkInterfaces = undefined
 
 -- Root's .ssh/authorized_keys has added to it any ssh keys that
 -- were authorized in the old OS. Any other contents of the file are
 -- retained.
-rootSshAuthorized :: Property
-rootSshAuthorized = check (doesDirectoryExist oldloc) $
+preserveRootSshAuthorized :: Property
+preserveRootSshAuthorized = check (doesDirectoryExist oldloc) $
 	property (newloc ++ " copied from old OS") $ do
 		ks <- liftIO $ lines <$> readFile oldloc
 		ensureProperties (map (Ssh.authorizedKey "root") ks)
