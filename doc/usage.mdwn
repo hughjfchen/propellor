@@ -101,6 +101,18 @@ and configured in haskell.
 Set `PROPELLOR_DEBUG=1` to make propellor output each command it runs and
 other debugging information.
 
+# GIT CONFIGURATION
+
+`git config propellor.debug 1` will configure propellor to output debugging
+information.
+
+The usual git configuration controls which centralized repository (if any)
+propellor pushes and pulls from. 
+
+Additionally, the url of a remote named "deploy", if it exists
+in your ~/.propellor/ repository, is used as the origin url for
+the other repositories.
+
 # SH AUTHOR 
 
 Joey Hess <id@joeyh.name>
