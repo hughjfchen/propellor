@@ -11,14 +11,22 @@ propellor [options]
 `propellor` is a property-based host configuration management program written 
 and configured in haskell.
 
-The first time you run `propellor`, without any options,
-it will set up a `~/.propellor/` repository.
-Edit `~/.propellor/config.hs` to configure it.
+# MODES OF OPERATION
 
-Once propellor is configured, running it without any options will take
-action as needed to satisfy the configured properties of the local host.
+* The first time you run `propellor`, without any options,
+  it will set up a `~/.propellor/` repository.
+  Edit `~/.propellor/config.hs` to configure it.
 
-# OPTIONS
+* Once propellor is configured, running it without any options will take
+  action as needed to satisfy the configured properties of the local host.
+
+  If there's a central git repository, it will first fetch from the
+  repository, check the gpg signature and merge, and rebuild propellor,
+  so that any configuration changes will immediately take effect.
+
+  If propellor is run by a non-root user without any options, this is
+  the same  as running propellor --spin with the hostname of the local
+  host.
 
 * --spin targethost [targethost ...] [--via relayhost]
 
