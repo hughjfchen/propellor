@@ -17,6 +17,8 @@ propellor (1.1.0) UNRELEASED; urgency=medium
     use hasSomePassword' and hasPassword' (API change)
   * Add --merge, to combine multiple --spin commits into a single, more useful
     commit.
+  * cron.runPropellor now runs propellor, rather than using its Makefile.
+    This is more robust.
 
  -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
 

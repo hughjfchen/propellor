@@ -2,6 +2,8 @@ CABAL?=cabal
 
 DEBDEPS=gnupg ghc cabal-install libghc-missingh-dev libghc-ansi-terminal-dev libghc-ifelse-dev libghc-unix-compat-dev libghc-hslogger-dev libghc-network-dev libghc-quickcheck2-dev libghc-mtl-dev libghc-monadcatchio-transformers-dev
 
+# this target is provided to keep old versions of the propellor cron job
+# working, and will eventually be removed
 run: deps build
 	./propellor
 
