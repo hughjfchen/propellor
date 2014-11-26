@@ -11,10 +11,14 @@ import System.Log.Handler.Simple
 import "mtl" Control.Monad.Reader
 import Data.Maybe
 import Control.Applicative
+import System.Directory
+import Control.Monad.IfElse
 
 import Propellor.Types
 import Utility.Monad
 import Utility.Env
+import Utility.Process
+import Utility.Exception
 
 data MessageHandle
 	= ConsoleMessageHandle
@@ -99,17 +103,24 @@ colorLine h intensity color msg = do
 	putStrLn ""
 	hFlush stdout
 
--- | Causes a debug message to be displayed when PROPELLOR_DEBUG=1
 debug :: [String] -> IO ()
 debug = debugM "propellor" . unwords
 
 checkDebugMode :: IO ()
 checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
   where
-	go (Just "1") = do
-		f <- setFormatter
-			<$> streamHandler stderr DEBUG
-			<*> pure (simpleLogFormatter "[$time] $msg")
-		updateGlobalLogger rootLoggerName $ 
-			setLevel DEBUG .  setHandlers [f]
-	go _ = noop
+	go (Just "1") = enableDebugMode
+	go (Just _) = noop
+	go Nothing = whenM (doesDirectoryExist ".git") $
+		whenM (any (== "1") . lines <$> getgitconfig) $
+			enableDebugMode
+	getgitconfig = catchDefaultIO "" $
+		readProcess "git" ["config", "propellor.debug"]
+
+enableDebugMode :: IO ()
+enableDebugMode = do
+	f <- setFormatter
+		<$> streamHandler stderr DEBUG
+		<*> pure (simpleLogFormatter "[$time] $msg")
+	updateGlobalLogger rootLoggerName $ 
+		setLevel DEBUG .  setHandlers [f]
