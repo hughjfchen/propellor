@@ -18,6 +18,7 @@ import Propellor.Types
 import Utility.Monad
 import Utility.Env
 import Utility.Process
+import Utility.Exception
 
 data MessageHandle
 	= ConsoleMessageHandle
@@ -113,7 +114,8 @@ checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
 	go Nothing = whenM (doesDirectoryExist ".git") $
 		whenM (any (== "1") . lines <$> getgitconfig) $
 			enableDebugMode
-	getgitconfig = readProcess "git" ["config", "propellor.debug"]
+	getgitconfig = catchDefaultIO "" $
+		readProcess "git" ["config", "propellor.debug"]
 
 enableDebugMode :: IO ()
 enableDebugMode = do
