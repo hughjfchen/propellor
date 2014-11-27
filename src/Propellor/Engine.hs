@@ -80,10 +80,13 @@ processChainOutput h = go Nothing
 		debug ["read from chained propellor: ", show v]
 		case v of
 			Nothing -> case lastline of
-				Nothing -> pure FailedChange
+				Nothing -> do
+					debug ["chained propellor output nothing; assuming it failed"]
+					return FailedChange
 				Just l -> case readish l of
 					Just r -> pure r
 					Nothing -> do
+						debug ["chained propellor output did not end with a Result; assuming it failed"]
 						putStrLn l
 						hFlush stdout
 						return FailedChange
