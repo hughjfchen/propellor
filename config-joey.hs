@@ -24,9 +24,10 @@ import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
-import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Systemd as Systemd
+import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Debootstrap as Debootstrap
+import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -48,7 +49,16 @@ hosts =                --                  (o)  `
 	, diatom
 	, elephant
 	, alien
+	, testvm
 	] ++ monsters
+
+testvm :: Host
+testvm = host "testvm.kitenet.net"
+	& Chroot.provisioned (Chroot.debootstrapped (System (Debian Unstable) "amd64") Debootstrap.DefaultConfig "/new-os")
+	-- & OS.cleanInstall (OS.Confirmed "foo.example.com") []
+	-- 	`onChange` propertyList "fixing up after clean install"
+	-- 		[
+	-- 		]
 
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net"
