@@ -77,6 +77,7 @@ processChainOutput h = go Nothing
   where
 	go lastline = do
 		v <- catchMaybeIO (hGetLine h)
+		debug ["read from chained propellor: ", show v]
 		case v of
 			Nothing -> case lastline of
 				Nothing -> pure FailedChange
