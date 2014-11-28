@@ -130,7 +130,7 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 -- multiuser system with eg, user passwords that are not deployed
 -- with propellor.
 kite :: Host
-kite = standardSystemUnhardened "kite.kitenet.net" Unstable "amd64"
+kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	[ "Welcome to the new kitenet.net server!"
 	]
 	& ipv4 "66.228.36.95"
