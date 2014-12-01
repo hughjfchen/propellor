@@ -430,7 +430,7 @@ provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ d
 	let params = ["--continue", show $ toChain cid]
 	msgh <- mkMessageHandle
 	let p = inContainerProcess cid
-		[ if isConsole msgh then "-it" else "-i" ]
+		(if isConsole msgh then ["-it"] else [])
 		(shim : params)
 	r <- withHandle StdoutHandle createProcessSuccess p $
 		processChainOutput
