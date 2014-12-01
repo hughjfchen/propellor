@@ -193,13 +193,15 @@ isInstalled p = (== [True]) <$> isInstalled' [p]
 -- even vary. If apt does not know about a package at all, it will not
 -- be included in the result list.
 isInstalled' :: [Package] -> IO [Bool]
-isInstalled' ps = catMaybes . map parse . lines
-	<$> readProcess "apt-cache" ("policy":ps)
+isInstalled' ps = catMaybes . map parse . lines <$> policy
   where
 	parse l
 		| "Installed: (none)" `isInfixOf` l = Just False
 		| "Installed: " `isInfixOf` l = Just True
 		| otherwise = Nothing
+	policy = do
+		environ <- addEntry "LANG" "C" <$> getEnvironment
+		readProcessEnv "apt-cache" ("policy":ps) (Just environ)
 
 autoRemove :: Property
 autoRemove = runApt ["-y", "autoremove"]
