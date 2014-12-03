@@ -1,4 +1,4 @@
-## news
+## [[news]]
 
 [[!inline feeds=no template=bare pages=news]]
 
