@@ -76,7 +76,7 @@ buildDepsNoHaskellLibs = Apt.installed
 	"debhelper", "ghc", "curl", "openssh-client", "git-remote-gcrypt",
 	"liblockfile-simple-perl", "cabal-install", "vim", "less",
 	-- needed by haskell libs
-	"libxml2-dev", "libidn11-dev", "libgsasl7-dev", "libgnutls-dev",
+	"libxml2-dev", "libidn11-dev", "libgsasl7-dev", "libgnutls28-dev",
 	"alex", "happy", "c2hs"
 	]
 
