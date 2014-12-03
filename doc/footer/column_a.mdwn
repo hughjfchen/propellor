@@ -1,7 +1,6 @@
 ## news
 
-[[!inline pages="news/* and !*/Discussion" show=0 archive=yes
-title="propellor news"]]
+[[!inline feeds=no template=bare pages=news]]
 
 ## enjoy
 
