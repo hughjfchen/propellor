@@ -73,21 +73,21 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		Debootstrap.built "/new-os" targetos Debootstrap.DefaultConfig
 	
 	transitioned = property "/new-os moved into place" $
-		error "TODO"
+		return NoChange
 		-- unmount all mounts
 		-- move all directories to /old-os,
 		-- move /new-os to /
 		-- touch flagfile
 	
 	propellorbootstrapped = property "propellor re-debootstrapped in new os" $
-		error "TODO"
+		return NoChange
 		-- re-bootstrap propellor in /usr/local/propellor,
 		--   (using git repo bundle, privdata file, and possibly
 		--   git repo url, which all need to be arranged to
 		--   be present in /old-os's /usr/local/propellor)
 	
 	finalized = property "clean install finalized" $ do
-		liftIO $ writeFile flagfile ""
+		--liftIO $ writeFile flagfile ""
 		return MadeChange
 
 	flagfile = "/etc/propellor-cleaninstall"
