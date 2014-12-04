@@ -52,7 +52,7 @@ import qualified Propellor.Property.User as User
 -- > -- rest of system properties here
 cleanInstallOnce :: Confirmation -> Property
 cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
-	confirmed
+	confirmed "clean install confirmed" confirmation
 		`before`
 	osbootstrapped
 		`before`
@@ -64,10 +64,6 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		`before`
 	finalized
   where
-	confirmed = property "clean install confirmed" $ do
-		checkConfirmed confirmation
-		return NoChange
-	
 	osbootstrapped = withOS "/new-os bootstrapped" $ \o -> case o of
 		(Just d@(System (Debian _) _)) -> debootstrap d
 		(Just u@(System (Ubuntu _) _)) -> debootstrap u
@@ -97,11 +93,14 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 
 data Confirmation = Confirmed HostName
 
-checkConfirmed :: Confirmation -> Propellor ()
-checkConfirmed (Confirmed c) = do
+confirmed :: Desc -> Confirmation -> Property
+confirmed desc (Confirmed c) = property desc $ do
 	hostname <- asks hostName
-	when (hostname /= c) $
-		errorMessage "Run with a bad confirmation, not matching hostname."
+	if hostname /= c
+		then do
+			warningMessage "Run with a bad confirmation, not matching hostname."
+			return FailedChange
+		else return NoChange
 
 -- /etc/network/interfaces is configured to bring up all interfaces that
 -- are currently up, using the same IP addresses.
@@ -142,9 +141,10 @@ type GrubDev = String
 
 -- Removes the old OS's backup from /old-os
 oldOSRemoved :: Confirmation -> Property
-oldOSRemoved confirmed = check (doesDirectoryExist oldOsDir) $
-	property "old OS backup removed" $ do
-		checkConfirmed confirmed
+oldOSRemoved confirmation = check (doesDirectoryExist oldOsDir) $
+	go `requires` confirmed "old OS backup removal confirmed" confirmation
+  where
+	go = property "old OS backup removed" $ do
 		liftIO $ removeDirectoryRecursive oldOsDir
 		return MadeChange
 
