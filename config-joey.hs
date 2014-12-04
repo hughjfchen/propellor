@@ -55,7 +55,7 @@ hosts =                --                  (o)  `
 testvm :: Host
 testvm = host "testvm.kitenet.net"
 	& os (System (Debian Unstable) "amd64")
-	& OS.cleanInstallOnce (OS.Confirmed "testvm.kitenet.netno")
+	& OS.cleanInstallOnce (OS.Confirmed "testvm.kitenet.net")
 	 	`onChange` propertyList "fixing up after clean install"
 	 		[ OS.preserveRootSshAuthorized
 	 		]
