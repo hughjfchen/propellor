@@ -52,9 +52,9 @@ import qualified Propellor.Property.User as User
 -- > -- rest of system properties here
 cleanInstallOnce :: Confirmation -> Property
 cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
-	confirmed "clean install confirmed" confirmation
-		`before`
 	osbootstrapped
+		`requires`
+	confirmed "clean install confirmed" confirmation
 		`before`
 	transitioned
 		`before`
