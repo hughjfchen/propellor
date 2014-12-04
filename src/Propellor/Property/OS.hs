@@ -55,15 +55,15 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	go `requires` confirmed "clean install confirmed" confirmation
   where
 	go = 
-		osbootstrapped
-			`before`
-		transitioned
-			`before`
-		User.shadowConfig True
-			`before`
-		propellorbootstrapped
-			`before`
 		finalized
+			`requires`
+		propellorbootstrapped
+			`requires`
+		User.shadowConfig True
+			`requires`
+		flipped
+			`requires`
+		osbootstrapped
 
 	osbootstrapped = withOS "/new-os bootstrapped" $ \o -> case o of
 		(Just d@(System (Debian _) _)) -> debootstrap d
@@ -72,7 +72,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	debootstrap targetos = ensureProperty $ toProp $
 		Debootstrap.built "/new-os" targetos Debootstrap.DefaultConfig
 	
-	transitioned = property "/new-os moved into place" $
+	flipped = property "/new-os moved into place" $
 		return FailedChange
 		-- unmount all mounts
 		-- move all directories to /old-os,
