@@ -52,18 +52,19 @@ import qualified Propellor.Property.User as User
 -- > -- rest of system properties here
 cleanInstallOnce :: Confirmation -> Property
 cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
-	osbootstrapped
-		`requires`
-	confirmed "clean install confirmed" confirmation
-		`before`
-	transitioned
-		`before`
-	User.shadowConfig True
-		`before`
-	propellorbootstrapped
-		`before`
-	finalized
+	go `requires` confirmed "clean install confirmed" confirmation
   where
+	go = 
+		osbootstrapped
+			`before`
+		transitioned
+			`before`
+		User.shadowConfig True
+			`before`
+		propellorbootstrapped
+			`before`
+		finalized
+
 	osbootstrapped = withOS "/new-os bootstrapped" $ \o -> case o of
 		(Just d@(System (Debian _) _)) -> debootstrap d
 		(Just u@(System (Ubuntu _) _)) -> debootstrap u
