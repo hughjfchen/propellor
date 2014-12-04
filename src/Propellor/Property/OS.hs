@@ -77,7 +77,8 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	
 	umountall = property "mount points unmounted" $ liftIO $ do
 		mnts <- filter (`notElem` ["/", "/proc"]) <$> mountPoints
-		forM_ mnts umountLazy
+		-- reverse so that deeper mount points come first
+		forM_ (reverse mnts) umountLazy
 		return $ if null mnts then NoChange else MadeChange
 
 	flipped = property (newOSDir ++ " moved into place") $ liftIO $ do
