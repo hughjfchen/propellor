@@ -75,8 +75,8 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	debootstrap targetos = ensureProperty $ toProp $
 		Debootstrap.built newOSDir targetos Debootstrap.DefaultConfig
 	
-	umountall = property "all mount points unmounted" $ liftIO $ do
-		mnts <- filter (/= "/") <$> mountPoints
+	umountall = property "mount points unmounted" $ liftIO $ do
+		mnts <- filter (`notElem` ["/", "/proc"]) <$> mountPoints
 		forM_ mnts umountLazy
 		return $ if null mnts then NoChange else MadeChange
 
@@ -84,11 +84,13 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		createDirectoryIfMissing True oldOSDir
 		rootcontents <- dirContents "/"
 		forM_ rootcontents $ \d ->
-			when (d /= oldOSDir && d /= newOSDir) $
+			when (d `notElem` [oldOSDir, newOSDir, "/proc"]) $
 				renameDirectory d (oldOSDir ++ d)
 		newrootcontents <- dirContents newOSDir
-		forM_ newrootcontents $ \d ->
-			renameDirectory d ("/" ++ takeFileName d)
+		forM_ newrootcontents $ \d -> do
+			let dest = "/" ++ takeFileName d
+			whenM (not <$> doesDirectoryExist dest) $
+				renameDirectory d dest
 		removeDirectory newOSDir
 		return MadeChange
 	
