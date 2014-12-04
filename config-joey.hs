@@ -54,11 +54,11 @@ hosts =                --                  (o)  `
 
 testvm :: Host
 testvm = host "testvm.kitenet.net"
-	& Chroot.provisioned (Chroot.debootstrapped (System (Debian Unstable) "amd64") Debootstrap.DefaultConfig "/new-os")
-	-- & OS.cleanInstall (OS.Confirmed "foo.example.com") []
-	-- 	`onChange` propertyList "fixing up after clean install"
-	-- 		[
-	-- 		]
+	& os (System (Debian Unstable) "amd64")
+	& OS.cleanInstallOnce (OS.Confirmed "testvm.kitenet.netno")
+	 	`onChange` propertyList "fixing up after clean install"
+	 		[ OS.preserveRootSshAuthorized
+	 		]
 
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net"
