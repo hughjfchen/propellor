@@ -4,8 +4,8 @@ module Propellor.Property.OS (
 	preserveNetworkInterfaces,
 	preserveRootSshAuthorized,
 	grubBoots,
-	GrubDev(..),
-	oldOSKernelPreserved,
+	GrubDev,
+	rebootForced,
 	kernelInstalled,
 	oldOSRemoved,
 ) where
@@ -15,6 +15,7 @@ import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.User as User
 import Propellor.Property.Mount
+import Propellor.Property.Chroot.Util (stdPATH)
 
 import System.Posix.Files (rename, fileExist)
 
@@ -24,29 +25,29 @@ import System.Posix.Files (rename, fileExist)
 -- This can replace one Linux distribution with different one.
 -- But, it can also fail and leave the system in an unbootable state.
 --
--- The files from the old os will be left in /old-os
---
 -- To avoid this property being accidentially used, you have to provide
--- a Confirmation containing the name of the host that you intend to apply the
--- property to.
+-- a Confirmation containing the name of the host that you intend to apply
+-- the property to.
 --
 -- This property only runs once. The cleanly installed system will have
 -- a file /etc/propellor-cleaninstall, which indicates it was cleanly
 -- installed.
+-- 
+-- The files from the old os will be left in /old-os
 --
 -- You will typically want to run some more properties after the clean
--- install, to bootstrap from the cleanly installed system to a fully
--- working system. For example:
+-- install succeeds, to bootstrap from the cleanly installed system to
+-- a fully working system. For example:
 --
 -- > & os (System (Debian Unstable) "amd64")
 -- > & cleanInstall (Confirmed "foo.example.com")
 -- >    `onChange` propertyList "fixing up after clean install"
 -- >        [ preserveNetworkInterfaces
 -- >        , preserverRootSshAuthorized
--- >        , oldOSKernelPreserved
 -- >        -- , kernelInstalled
 -- >        -- , grubBoots "hd0"
--- >        -- , oldOsRemoved
+-- >        -- , oldOsRemoved (Confirmed "foo.example.com")
+-- >        -- , rebootForced
 -- >        ]
 -- > & Apt.installed ["ssh"]
 -- > & User.hasSomePassword "root"
@@ -95,7 +96,26 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 			whenM (not <$> fileExist dest) $
 				rename d dest
 		removeDirectoryRecursive newOSDir
+
+		-- Prepare environment for running additional properties.
+		liftIO $ writeFile flagfile ""
+		void $ setEnv "PATH" stdPATH True
+
 		return MadeChange
+
+	propellorbootstrapped = property "propellor re-debootstrapped in new os" $
+		return NoChange
+		-- re-bootstrap propellor in /usr/local/propellor,
+		--   (using git repo bundle, privdata file, and possibly
+		--   git repo url, which all need to be arranged to
+		--   be present in /old-os's /usr/local/propellor)
+		-- TODO
+	
+	-- Ensure that MadeChange is returned by the overall property,
+	-- so that anything hooking in onChange will run afterwards.
+	finalized = property "clean OS installed" $ return MadeChange
+
+	flagfile = "/etc/propellor-cleaninstall"
 	
 	trickydirs = 
 		-- /tmp can contain X's sockets, which prevent moving it
@@ -104,19 +124,6 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		-- /proc is left mounted
 		, "/proc"
 		]
-
-	propellorbootstrapped = property "propellor re-debootstrapped in new os" $
-		return NoChange
-		-- re-bootstrap propellor in /usr/local/propellor,
-		--   (using git repo bundle, privdata file, and possibly
-		--   git repo url, which all need to be arranged to
-		--   be present in /old-os's /usr/local/propellor)
-	
-	finalized = property "clean OS installed" $ do
-		liftIO $ writeFile flagfile ""
-		return MadeChange
-
-	flagfile = "/etc/propellor-cleaninstall"
 
 data Confirmation = Confirmed HostName
 
@@ -129,12 +136,12 @@ confirmed desc (Confirmed c) = property desc $ do
 			return FailedChange
 		else return NoChange
 
--- /etc/network/interfaces is configured to bring up all interfaces that
+-- | /etc/network/interfaces is configured to bring up all interfaces that
 -- are currently up, using the same IP addresses.
 preserveNetworkInterfaces :: Property
 preserveNetworkInterfaces = undefined
 
--- Root's .ssh/authorized_keys has added to it any ssh keys that
+-- | Root's .ssh/authorized_keys has added to it any ssh keys that
 -- were authorized in the old OS. Any other contents of the file are
 -- retained.
 preserveRootSshAuthorized :: Property
@@ -146,18 +153,11 @@ preserveRootSshAuthorized = check (doesDirectoryExist oldloc) $
 	newloc = "/root/.ssh/authorized_keys"
 	oldloc = oldOSDir ++ newloc
 
--- Installs an appropriate kernel from the OS distribution.
+-- | Installs an appropriate kernel from the OS distribution.
 kernelInstalled :: Property
 kernelInstalled = undefined
 
--- Copies kernel images, initrds, and modules from /old-os
--- into the new system.
---
--- TODO: grub config?
-oldOSKernelPreserved :: Property
-oldOSKernelPreserved = undefined
-
--- Installs grub onto a device to boot the system.
+-- | Installs grub onto a device to boot the system.
 --
 -- You may want to install grub to multiple devices; eg for a system
 -- that uses software RAID.
@@ -165,6 +165,12 @@ grubBoots :: GrubDev -> Property
 grubBoots = undefined
 
 type GrubDev = String
+
+-- | Forces an immediate reboot, without contacting the init system.
+--
+-- Can be used after cleanInstallOnce.
+rebootForced :: Property
+rebootForced = cmdProperty "reboot" [ "--force" ]
 
 -- Removes the old OS's backup from /old-os
 oldOSRemoved :: Confirmation -> Property
