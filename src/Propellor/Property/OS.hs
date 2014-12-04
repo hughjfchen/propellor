@@ -94,7 +94,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 			let dest = "/" ++ takeFileName d
 			whenM (not <$> fileExist dest) $
 				rename d dest
-		removeDirectory newOSDir
+		removeDirectoryRecursive newOSDir
 		return MadeChange
 	
 	trickydirs = 
