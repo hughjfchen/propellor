@@ -76,7 +76,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		Debootstrap.built newOSDir targetos Debootstrap.DefaultConfig
 	
 	umountall = property "mount points unmounted" $ liftIO $ do
-		mnts <- filter (`notElem` ["/", "/proc"]) <$> mountPoints
+		mnts <- filter (`notElem` ("/": trickydirs)) <$> mountPoints
 		-- reverse so that deeper mount points come first
 		forM_ (reverse mnts) umountLazy
 		return $ if null mnts then NoChange else MadeChange
@@ -85,7 +85,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		createDirectoryIfMissing True oldOSDir
 		rootcontents <- dirContents "/"
 		forM_ rootcontents $ \d ->
-			when (d `notElem` [oldOSDir, newOSDir, "/proc"]) $
+			when (d `notElem` (oldOSDir:newOSDir:trickydirs)) $
 				renameDirectory d (oldOSDir ++ d)
 		newrootcontents <- dirContents newOSDir
 		forM_ newrootcontents $ \d -> do
@@ -95,6 +95,14 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		removeDirectory newOSDir
 		return MadeChange
 	
+	trickydirs = 
+		-- /tmp can contain X's sockets, which prevent moving it
+		-- so it's left as-is.
+		[ "/tmp"
+		-- /proc is left mounted
+		, "/proc"
+		]
+
 	propellorbootstrapped = property "propellor re-debootstrapped in new os" $
 		return NoChange
 		-- re-bootstrap propellor in /usr/local/propellor,
