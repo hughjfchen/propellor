@@ -1,27 +1,30 @@
 propellor (1.1.0) UNRELEASED; urgency=medium
 
-  * propellor --spin can now deploy propellor to hosts that do not have 
-    git, ghc, or apt-get. This is accomplished by uploading a fairly
-    portable precompiled tarball of propellor.
   * --spin target --via relay causes propellor to bounce through an
     intermediate relay host, which handles any necessary uploads
     when provisioning the target host.
   * --spin can be passed multiple hosts, and it will provision each host
     in turn.
+  * Add --merge, to combine multiple --spin commits into a single, more useful
+    commit.
   * Hostname parameters not containing dots are looked up in the DNS to
     find the full hostname.
+  * propellor --spin can now deploy propellor to hosts that do not have 
+    git, ghc, or apt-get. This is accomplished by uploading a fairly
+    portable precompiled tarball of propellor.
+  * Propellor.Property.OS contains properties that can be used to do a clean
+    reinstall of the OS of an existing host. This can be used, for example,
+    to do an in-place conversion from Fedora to Debian. Use with caution!
   * Added group-related properties. Thanks, Félix Sipma.
   * Added Git.barerepo. Thanks, Félix Sipma.
   * hasSomePassword and hasPassword now default to using the name of the
     host as the Context for the password. To specify a different context,
     use hasSomePassword' and hasPassword' (API change)
-  * Add --merge, to combine multiple --spin commits into a single, more useful
-    commit.
   * cron.runPropellor now runs propellor, rather than using its Makefile.
     This is more robust.
   * propellor.debug can be set in the git config to enable more persistent
     debugging output.
-  * Run apt-cache policy with LANG=C.
+  * Run apt-cache policy with LANG=C so it works on other locales.
 
  -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
 
