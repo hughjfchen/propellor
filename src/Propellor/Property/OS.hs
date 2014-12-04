@@ -16,6 +16,8 @@ import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.User as User
 import Propellor.Property.Mount
 
+import System.Posix.Files (rename, fileExist)
+
 -- | Replaces whatever OS was installed before with a clean installation
 -- of the OS that the Host is configured to have.
 --
@@ -86,12 +88,12 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		rootcontents <- dirContents "/"
 		forM_ rootcontents $ \d ->
 			when (d `notElem` (oldOSDir:newOSDir:trickydirs)) $
-				renameDirectory d (oldOSDir ++ d)
+				rename d (oldOSDir ++ d)
 		newrootcontents <- dirContents newOSDir
 		forM_ newrootcontents $ \d -> do
 			let dest = "/" ++ takeFileName d
-			whenM (not <$> doesDirectoryExist dest) $
-				renameDirectory d dest
+			whenM (not <$> fileExist dest) $
+				rename d dest
 		removeDirectory newOSDir
 		return MadeChange
 	
