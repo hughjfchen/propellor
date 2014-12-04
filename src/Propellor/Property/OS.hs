@@ -14,6 +14,7 @@ import Propellor
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.User as User
+import Propellor.Property.Mount
 
 -- | Replaces whatever OS was installed before with a clean installation
 -- of the OS that the Host is configured to have.
@@ -63,30 +64,42 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 			`requires`
 		flipped
 			`requires`
+		umountall
+			`requires`
 		osbootstrapped
 
-	osbootstrapped = withOS "/new-os bootstrapped" $ \o -> case o of
+	osbootstrapped = withOS (newOSDir ++ " bootstrapped") $ \o -> case o of
 		(Just d@(System (Debian _) _)) -> debootstrap d
 		(Just u@(System (Ubuntu _) _)) -> debootstrap u
 		_ -> error "os is not declared to be Debian or Ubuntu"
 	debootstrap targetos = ensureProperty $ toProp $
-		Debootstrap.built "/new-os" targetos Debootstrap.DefaultConfig
+		Debootstrap.built newOSDir targetos Debootstrap.DefaultConfig
 	
-	flipped = property "/new-os moved into place" $
-		return FailedChange
-		-- unmount all mounts
-		-- move all directories to /old-os,
-		-- move /new-os to /
-		-- touch flagfile
+	umountall = property "all mount points unmounted" $ liftIO $ do
+		mnts <- filter (/= "/") <$> mountPoints
+		forM_ mnts umountLazy
+		return $ if null mnts then NoChange else MadeChange
+
+	flipped = property (newOSDir ++ " moved into place") $ liftIO $ do
+		createDirectoryIfMissing True oldOSDir
+		rootcontents <- dirContents "/"
+		forM_ rootcontents $ \d ->
+			when (d /= oldOSDir && d /= newOSDir) $
+				renameDirectory d (oldOSDir ++ d)
+		newrootcontents <- dirContents newOSDir
+		forM_ newrootcontents $ \d ->
+			renameDirectory d ("/" ++ takeFileName d)
+		removeDirectory newOSDir
+		return MadeChange
 	
 	propellorbootstrapped = property "propellor re-debootstrapped in new os" $
-		return FailedChange
+		return NoChange
 		-- re-bootstrap propellor in /usr/local/propellor,
 		--   (using git repo bundle, privdata file, and possibly
 		--   git repo url, which all need to be arranged to
 		--   be present in /old-os's /usr/local/propellor)
 	
-	finalized = property "clean install finalized" $ do
+	finalized = property "clean OS installed" $ do
 		liftIO $ writeFile flagfile ""
 		return MadeChange
 
@@ -118,7 +131,7 @@ preserveRootSshAuthorized = check (doesDirectoryExist oldloc) $
 		ensureProperties (map (Ssh.authorizedKey "root") ks)
   where
 	newloc = "/root/.ssh/authorized_keys"
-	oldloc = oldOsDir ++ newloc
+	oldloc = oldOSDir ++ newloc
 
 -- Installs an appropriate kernel from the OS distribution.
 kernelInstalled :: Property
@@ -142,12 +155,15 @@ type GrubDev = String
 
 -- Removes the old OS's backup from /old-os
 oldOSRemoved :: Confirmation -> Property
-oldOSRemoved confirmation = check (doesDirectoryExist oldOsDir) $
+oldOSRemoved confirmation = check (doesDirectoryExist oldOSDir) $
 	go `requires` confirmed "old OS backup removal confirmed" confirmation
   where
 	go = property "old OS backup removed" $ do
-		liftIO $ removeDirectoryRecursive oldOsDir
+		liftIO $ removeDirectoryRecursive oldOSDir
 		return MadeChange
 
-oldOsDir :: FilePath
-oldOsDir = "/old-os"
+oldOSDir :: FilePath
+oldOSDir = "/old-os"
+
+newOSDir :: FilePath
+newOSDir = "/new-os"

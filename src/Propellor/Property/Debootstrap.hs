@@ -9,6 +9,7 @@ module Propellor.Property.Debootstrap (
 import Propellor
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Chroot.Util
+import Propellor.Property.Mount
 import Utility.Path
 import Utility.SafeCommand
 import Utility.FileMode
@@ -95,9 +96,7 @@ built target system@(System _ arch) config =
 		submnts <- filter (\p -> simplifyPath p /= simplifyPath target)
 			. filter (dirContains target)
 			<$> mountPoints
-		forM_ submnts $ \mnt ->
-			unlessM (boolSystem "umount" [ Param "-l", Param mnt ]) $ do
-				errorMessage $ "failed unmounting " ++ mnt
+		forM_ submnts umountLazy
 		removeDirectoryRecursive target
 
 	-- A failed debootstrap run will leave a debootstrap directory;
@@ -108,9 +107,6 @@ built target system@(System _ arch) config =
 			return True
 		, return False
 		)
-
-mountPoints :: IO [FilePath]
-mountPoints = lines <$> readProcess "findmnt" ["-rn", "--output", "target"]
 
 extractSuite :: System -> Maybe String
 extractSuite (System (Debian s) _) = Just $ Apt.showSuite s
