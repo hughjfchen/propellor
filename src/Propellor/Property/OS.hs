@@ -45,8 +45,7 @@ import Control.Exception (throw)
 -- > & os (System (Debian Unstable) "amd64")
 -- > & cleanInstallOnce (Confirmed "foo.example.com")
 -- >    `onChange` propertyList "fixing up after clean install"
--- >        [ User.shadowConfig True
--- >        , preserveNetworkInterfaces
+-- >        [ preserveNetworkInterfaces
 -- >        , preserveResolvConf
 -- >        , preserverRootSshAuthorized
 -- >        , Apt.update

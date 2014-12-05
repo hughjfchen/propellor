@@ -57,8 +57,7 @@ testvm = host "testvm.kitenet.net"
 	& os (System (Debian Unstable) "amd64")
 	& OS.cleanInstallOnce (OS.Confirmed "testvm.kitenet.net")
 	 	`onChange` propertyList "fixing up after clean install"
-	 		[ User.shadowConfig True
-			, OS.preserveRootSshAuthorized
+	 		[ OS.preserveRootSshAuthorized
 			, OS.preserveResolvConf
 			, Apt.update
 			, Grub.boots "/dev/sda"

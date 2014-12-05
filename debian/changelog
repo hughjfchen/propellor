@@ -21,6 +21,8 @@ propellor (1.1.0) UNRELEASED; urgency=medium
   * hasSomePassword and hasPassword now default to using the name of the
     host as the Context for the password. To specify a different context,
     use hasSomePassword' and hasPassword' (API change)
+  * hasSomePassword and hasPassword now check to make sure shadow passwords
+    are enabled.
   * cron.runPropellor now runs propellor, rather than using its Makefile.
     This is more robust.
   * propellor.debug can be set in the git config to enable more persistent
