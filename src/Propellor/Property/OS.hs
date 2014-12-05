@@ -137,7 +137,8 @@ massRename :: [(FilePath, FilePath)] -> IO ()
 massRename = go []
   where
 	go _ [] = return ()
-	go undo ((from, to):rest) =
+	go undo ((from, to):rest) = do
+		warningMessage $ show ("rename", from, to)
 		tryNonAsync (rename from to)
 			>>= either
 				(rollback undo)
