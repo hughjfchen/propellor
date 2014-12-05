@@ -57,8 +57,16 @@ testvm = host "testvm.kitenet.net"
 	& os (System (Debian Unstable) "amd64")
 	& OS.cleanInstallOnce (OS.Confirmed "testvm.kitenet.net")
 	 	`onChange` propertyList "fixing up after clean install"
-	 		[ OS.preserveRootSshAuthorized
+	 		[ User.shadowConfig True
+			, OS.preserveRootSshAuthorized
+			, OS.preserveResolvConf
+			, Grub.boots "/dev/sda"
+				`requires` Grub.installed Grub.PC
 	 		]
+	& Hostname.sane
+	& Hostname.searchDomain
+	& Apt.installed ["linux-image-amd64"]
+	& Apt.installed ["ssh"]
 
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net"
