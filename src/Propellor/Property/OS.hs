@@ -18,6 +18,7 @@ import Propellor.Property.Mount
 import Propellor.Property.Chroot.Util (stdPATH)
 
 import System.Posix.Files (rename, fileExist)
+import Control.Exception (throw)
 
 -- | Replaces whatever OS was installed before with a clean installation
 -- of the OS that the Host is configured to have.
@@ -85,16 +86,20 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		return $ if null mnts then NoChange else MadeChange
 
 	flipped = property (newOSDir ++ " moved into place") $ liftIO $ do
-		createDirectoryIfMissing True oldOSDir
 		rootcontents <- dirContents "/"
-		forM_ rootcontents $ \d ->
-			when (d `notElem` (oldOSDir:newOSDir:trickydirs)) $
-				rename d (oldOSDir ++ d)
 		newrootcontents <- dirContents newOSDir
-		forM_ newrootcontents $ \d -> do
+		createDirectoryIfMissing True oldOSDir
+		renamesout <- forM rootcontents $ \d ->
+			if d `notElem` (oldOSDir:newOSDir:trickydirs)
+				then return $ Just (d, oldOSDir ++ d)
+				else return Nothing
+		renamesin <- forM newrootcontents $ \d -> do
 			let dest = "/" ++ takeFileName d
-			whenM (not <$> fileExist dest) $
-				rename d dest
+			ifM (not <$> fileExist dest)
+				( return $ Just (d, dest)
+				, return Nothing
+				)
+		massRename $ catMaybes (renamesout ++ renamesin)
 		removeDirectoryRecursive newOSDir
 
 		-- Prepare environment for running additional properties.
@@ -124,6 +129,22 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		-- /proc is left mounted
 		, "/proc"
 		]
+
+-- Performs all the renames. If any rename fails, rolls back all
+-- previous renames. Thus, this either successfully performs all
+-- the renames, or does not change the system state at all.
+massRename :: [(FilePath, FilePath)] -> IO ()
+massRename = go []
+  where
+	go _ [] = return ()
+	go undo ((from, to):rest) =
+		tryNonAsync (rename from to)
+			>>= either
+				(rollback undo)
+				(const $ go ((to, from):undo) rest)
+	rollback undo e = do
+		mapM_ (uncurry rename) undo
+		throw e
 
 data Confirmation = Confirmed HostName
 
