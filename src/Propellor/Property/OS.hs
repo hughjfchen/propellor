@@ -37,19 +37,21 @@ import Control.Exception (throw)
 -- 
 -- The files from the old os will be left in /old-os
 --
+-- TODO: A forced reboot should be schedued to run after propellor finishes
+-- ensuring all properties of the host.
+--
 -- You will typically want to run some more properties after the clean
 -- install succeeds, to bootstrap from the cleanly installed system to
 -- a fully working system. For example:
 --
 -- > & os (System (Debian Unstable) "amd64")
--- > & cleanInstall (Confirmed "foo.example.com")
+-- > & cleanInstallOnce (Confirmed "foo.example.com")
 -- >    `onChange` propertyList "fixing up after clean install"
 -- >        [ preserveNetworkInterfaces
 -- >        , preserverRootSshAuthorized
 -- >        -- , kernelInstalled
 -- >        -- , grubBoots "hd0"
 -- >        -- , oldOsRemoved (Confirmed "foo.example.com")
--- >        -- , rebootForced
 -- >        ]
 -- > & Apt.installed ["ssh"]
 -- > & User.hasSomePassword "root"
@@ -166,7 +168,7 @@ preserveNetworkInterfaces = undefined
 -- were authorized in the old OS. Any other contents of the file are
 -- retained.
 preserveRootSshAuthorized :: Property
-preserveRootSshAuthorized = check (doesDirectoryExist oldloc) $
+preserveRootSshAuthorized = check (fileExist oldloc) $
 	property (newloc ++ " copied from old OS") $ do
 		ks <- liftIO $ lines <$> readFile oldloc
 		ensureProperties (map (Ssh.authorizedKey "root") ks)
