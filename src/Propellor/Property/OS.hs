@@ -16,6 +16,7 @@ import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.User as User
 import Propellor.Property.Mount
 import Propellor.Property.Chroot.Util (stdPATH)
+import Utility.SafeCommand
 
 import System.Posix.Files (rename, fileExist)
 import Control.Exception (throw)
@@ -68,8 +69,6 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 			`requires`
 		flipped
 			`requires`
-		umountall
-			`requires`
 		osbootstrapped
 
 	osbootstrapped = withOS (newOSDir ++ " bootstrapped") $ \o -> case o of
@@ -79,26 +78,32 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	debootstrap targetos = ensureProperty $ toProp $
 		Debootstrap.built newOSDir targetos Debootstrap.DefaultConfig
 	
-	umountall = property "mount points unmounted" $ liftIO $ do
+	flipped = property (newOSDir ++ " moved into place") $ liftIO $ do
+		-- First, unmount most mount points, lazily, so
+		-- they don't interfere with moving things around.
+		devfstype <- fromMaybe "devtmpfs" <$> getFsType "/dev"
 		mnts <- filter (`notElem` ("/": trickydirs)) <$> mountPoints
 		-- reverse so that deeper mount points come first
 		forM_ (reverse mnts) umountLazy
-		return $ if null mnts then NoChange else MadeChange
 
-	flipped = property (newOSDir ++ " moved into place") $ liftIO $ do
 		renamesout <- map (\d -> (d, oldOSDir ++ d, pure $ d `notElem` (oldOSDir:newOSDir:trickydirs)))
 			<$> dirContents "/"
 		renamesin <- map (\d -> let dest = "/" ++ takeFileName d in (d, dest, not <$> fileExist dest))
 			<$> dirContents newOSDir
-
 		createDirectoryIfMissing True oldOSDir
 		massRename (renamesout ++ renamesin)
 		removeDirectoryRecursive newOSDir
-
+		
 		-- Prepare environment for running additional properties.
-		liftIO $ writeFile flagfile ""
 		void $ setEnv "PATH" stdPATH True
 
+		-- Remount /dev, so that block devices etc are
+		-- available for other properties to use.
+		unlessM (mount devfstype devfstype "/dev") $ do
+			warningMessage $ "failed mounting /dev using " ++ devfstype ++ "; falling back to MAKEDEV generic"
+			void $ boolSystem "sh" [Param "-c", Param "cd /dev && /sbin/MAKEDEV generic"]
+
+		liftIO $ writeFile flagfile ""
 		return MadeChange
 
 	propellorbootstrapped = property "propellor re-debootstrapped in new os" $
