@@ -2,7 +2,9 @@ module Propellor.Property.Debootstrap (
 	Url,
 	DebootstrapConfig(..),
 	built,
+	built',
 	installed,
+	sourceInstall,
 	programPath,
 ) where
 
@@ -54,11 +56,14 @@ toParams (c1 :+ c2) = toParams c1 <> toParams c2
 -- Note that reverting this property does not stop any processes
 -- currently running in the chroot.
 built :: FilePath -> System -> DebootstrapConfig -> RevertableProperty
-built target system@(System _ arch) config =
+built = built' (toProp installed)
+
+built' :: Property -> FilePath -> System -> DebootstrapConfig -> RevertableProperty
+built' installprop target system@(System _ arch) config =
 	RevertableProperty setup teardown
   where
 	setup = check (unpopulated target <||> ispartial) setupprop
-		`requires` toProp installed
+		`requires` installprop
 	
 	teardown = check (not <$> unpopulated target) teardownprop
 	

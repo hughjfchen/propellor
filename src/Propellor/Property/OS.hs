@@ -45,8 +45,7 @@ import Control.Exception (throw)
 -- > & os (System (Debian Unstable) "amd64")
 -- > & cleanInstallOnce (Confirmed "foo.example.com")
 -- >    `onChange` propertyList "fixing up after clean install"
--- >        [ User.shadowConfig True
--- >        , preserveNetworkInterfaces
+-- >        [ preserveNetworkInterfaces
 -- >        , preserveResolvConf
 -- >        , preserverRootSshAuthorized
 -- >        , Apt.update
@@ -78,9 +77,19 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		(Just d@(System (Debian _) _)) -> debootstrap d
 		(Just u@(System (Ubuntu _) _)) -> debootstrap u
 		_ -> error "os is not declared to be Debian or Ubuntu"
-	debootstrap targetos = ensureProperty $ toProp $
-		Debootstrap.built newOSDir targetos Debootstrap.DefaultConfig
 	
+	debootstrap targetos = ensureProperty $ toProp $
+		-- Ignore the os setting, and install debootstrap from
+		-- source, since we don't know what OS we're running in yet.
+		Debootstrap.built' Debootstrap.sourceInstall
+			newOSDir targetos Debootstrap.DefaultConfig
+		-- debootstrap, I wish it was faster.. 
+		-- TODO eatmydata to speed it up
+		-- Problem: Installing eatmydata on some random OS like
+		-- Fedora may be difficult. Maybe configure dpkg to not
+		-- sync instead?
+
+	-- This is the fun bit.
 	flipped = property (newOSDir ++ " moved into place") $ liftIO $ do
 		-- First, unmount most mount points, lazily, so
 		-- they don't interfere with moving things around.
@@ -173,7 +182,7 @@ confirmed desc (Confirmed c) = property desc $ do
 -- | /etc/network/interfaces is configured to bring up all interfaces that
 -- are currently up, using the same IP addresses.
 preserveNetworkInterfaces :: Property
-preserveNetworkInterfaces = undefined
+preserveNetworkInterfaces = undefined -- TODO
 
 -- | /etc/resolv.conf is copied the from the old OS
 preserveResolvConf :: Property

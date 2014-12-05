@@ -44,13 +44,15 @@ hasPassword user = property (user ++ "has password") $ do
 	ensureProperty $ hasPassword' user (Context hostname)
 
 hasPassword' :: UserName -> Context -> Property
-hasPassword' user context = withPrivData (Password user) context $ \getpassword ->
-	property (user ++ " has password") $
-		getpassword $ \password -> makeChange $
-			withHandle StdinHandle createProcessSuccess
-				(proc "chpasswd" []) $ \h -> do
-					hPutStrLn h $ user ++ ":" ++ password
-					hClose h
+hasPassword' user context = go `requires` shadowConfig True
+  where
+	go = withPrivData (Password user) context $ \getpassword ->
+		property (user ++ " has password") $
+			getpassword $ \password -> makeChange $
+				withHandle StdinHandle createProcessSuccess
+					(proc "chpasswd" []) $ \h -> do
+						hPutStrLn h $ user ++ ":" ++ password
+						hClose h
 
 lockedPassword :: UserName -> Property
 lockedPassword user = check (not <$> isLockedPassword user) $ cmdProperty "passwd"
