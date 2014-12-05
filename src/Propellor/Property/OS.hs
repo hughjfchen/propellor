@@ -86,20 +86,13 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		return $ if null mnts then NoChange else MadeChange
 
 	flipped = property (newOSDir ++ " moved into place") $ liftIO $ do
-		rootcontents <- dirContents "/"
-		newrootcontents <- dirContents newOSDir
+		renamesout <- map (\d -> (d, oldOSDir ++ d, pure $ d `notElem` (oldOSDir:newOSDir:trickydirs)))
+			<$> dirContents "/"
+		renamesin <- map (\d -> let dest = "/" ++ takeFileName d in (d, dest, not <$> fileExist dest))
+			<$> dirContents newOSDir
+
 		createDirectoryIfMissing True oldOSDir
-		renamesout <- forM rootcontents $ \d ->
-			if d `notElem` (oldOSDir:newOSDir:trickydirs)
-				then return $ Just (d, oldOSDir ++ d)
-				else return Nothing
-		renamesin <- forM newrootcontents $ \d -> do
-			let dest = "/" ++ takeFileName d
-			ifM (not <$> fileExist dest)
-				( return $ Just (d, dest)
-				, return Nothing
-				)
-		massRename $ catMaybes (renamesout ++ renamesin)
+		massRename (renamesout ++ renamesin)
 		removeDirectoryRecursive newOSDir
 
 		-- Prepare environment for running additional properties.
@@ -133,16 +126,17 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 -- Performs all the renames. If any rename fails, rolls back all
 -- previous renames. Thus, this either successfully performs all
 -- the renames, or does not change the system state at all.
-massRename :: [(FilePath, FilePath)] -> IO ()
+massRename :: [(FilePath, FilePath, IO Bool)] -> IO ()
 massRename = go []
   where
 	go _ [] = return ()
-	go undo ((from, to):rest) = do
-		warningMessage $ show ("rename", from, to)
-		tryNonAsync (rename from to)
+	go undo ((from, to, test):rest) = ifM test
+		( tryNonAsync (rename from to)
 			>>= either
 				(rollback undo)
 				(const $ go ((to, from):undo) rest)
+		, go undo rest
+		)
 	rollback undo e = do
 		mapM_ (uncurry rename) undo
 		throw e
