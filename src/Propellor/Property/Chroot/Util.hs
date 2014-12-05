@@ -9,7 +9,8 @@ import Control.Applicative
 standardPathEnv :: IO [(String, String)]
 standardPathEnv = do
 	path <- getEnvDefault "PATH" "/bin"
-	addEntry "PATH" (path ++ std)
+	addEntry "PATH" (path ++ stdPATH)
 		<$> getEnvironment
-  where
-	std = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+stdPATH :: String
+stdPATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"

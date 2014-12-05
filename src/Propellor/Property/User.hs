@@ -84,3 +84,15 @@ hasGroup user group' = check test $ cmdProperty "adduser"
 	`describe` unwords ["user", user, "in group", group']
   where
 	test = not . elem group' . words <$> readProcess "groups" [user]
+
+-- | Controls whether shadow passwords are enabled or not.
+shadowConfig :: Bool -> Property
+shadowConfig True = check (not <$> shadowExists) $
+	cmdProperty "shadowconfig" ["on"]
+		`describe` "shadow passwords enabled"
+shadowConfig False = check shadowExists $
+	cmdProperty "shadowconfig" ["off"]
+		`describe` "shadow passwords disabled"
+
+shadowExists :: IO Bool
+shadowExists = doesFileExist "/etc/shadow"
