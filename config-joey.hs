@@ -60,6 +60,7 @@ testvm = host "testvm.kitenet.net"
 	 		[ User.shadowConfig True
 			, OS.preserveRootSshAuthorized
 			, OS.preserveResolvConf
+			, Apt.update
 			, Grub.boots "/dev/sda"
 				`requires` Grub.installed Grub.PC
 	 		]
