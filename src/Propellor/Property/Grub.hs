@@ -7,7 +7,45 @@ import qualified Propellor.Property.Apt as Apt
 -- | Eg, hd0,0 or xen/xvda1
 type GrubDevice = String
 
+-- | Eg, /dev/sda
+type OSDevice = String
+
 type TimeoutSecs = Int
+
+-- | Types of machines that grub can boot.
+data BIOS = PC | EFI64 | EFI32 | Coreboot | Xen
+
+-- | Installs the grub package. This does not make grub be used as the
+-- bootloader.
+--
+-- This includes running update-grub, so that the grub boot menu is
+-- created. It will be automatically updated when kernel packages are
+-- installed.
+installed :: BIOS -> Property
+installed bios = 
+	Apt.installed [pkg] `describe` "grub package installed"
+		`before`
+	cmdProperty "update-grub" []
+  where
+	pkg = case bios of
+		PC -> "grub-pc"
+		EFI64 -> "grub-efi-amd64"
+		EFI32 -> "grub-efi-ia32"
+		Coreboot -> "grub-coreboot"
+		Xen -> "grub-xen"
+
+-- | Installs grub onto a device, so the system can boot from that device.
+--
+-- You may want to install grub to multiple devices; eg for a system
+-- that uses software RAID.
+--
+-- Note that this property does not check if grub is already installed
+-- on the device; it always does the work to reinstall it. It's a good idea
+-- to arrange for this property to only run once, by eg making it be run
+-- onChange after OS.cleanInstallOnce.
+boots :: OSDevice -> Property
+boots dev = cmdProperty "grub-install" [dev]
+	`describe` ("grub boots " ++ dev)
 
 -- | Use PV-grub chaining to boot
 --
@@ -31,8 +69,8 @@ chainPVGrub rootdev bootdev timeout = combineProperties desc
 		]
 	, "/boot/load.cf" `File.hasContent`
 		[ "configfile (" ++ bootdev ++ ")/boot/grub/grub.cfg" ]
-	, Apt.installed ["grub-xen"]
-	, flagFile (scriptProperty ["update-grub; grub-mkimage --prefix '(" ++ bootdev ++ ")/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]) "/boot/xen-shim"
+	, installed Xen
+	, flagFile (scriptProperty ["grub-mkimage --prefix '(" ++ bootdev ++ ")/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]) "/boot/xen-shim"
 			`describe` "/boot-xen-shim"
 	]
   where

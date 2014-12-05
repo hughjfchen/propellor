@@ -17,6 +17,7 @@ propellor (1.1.0) UNRELEASED; urgency=medium
     to do an in-place conversion from Fedora to Debian. Use with caution!
   * Added group-related properties. Thanks, Félix Sipma.
   * Added Git.barerepo. Thanks, Félix Sipma.
+  * Added Grub.installed and Grub.boots properties.
   * hasSomePassword and hasPassword now default to using the name of the
     host as the Context for the password. To specify a different context,
     use hasSomePassword' and hasPassword' (API change)
