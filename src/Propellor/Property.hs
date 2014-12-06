@@ -149,6 +149,5 @@ noChange :: Propellor Result
 noChange = return NoChange
 
 -- | Registers an action that should be run at the very end,
--- and only when all configured Properties of the host succeed.
-endAction :: Desc -> Propellor Result -> Propellor ()
+endAction :: Desc -> (Result -> Propellor Result) -> Propellor ()
 endAction desc a = tell [EndAction desc a]

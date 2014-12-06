@@ -43,13 +43,13 @@ mainProperties host = do
 -- are then also run.
 runPropellor :: Host -> Propellor Result -> IO Result
 runPropellor host a = do
-	(ret, _s, endactions) <- runRWST (runWithHost a) host ()
-	endrets <- mapM (runEndAction host) endactions
-	return $ mconcat (ret:endrets)
+	(res, _s, endactions) <- runRWST (runWithHost a) host ()
+	endres <- mapM (runEndAction host res) endactions
+	return $ mconcat (res:endres)
 
-runEndAction :: Host -> EndAction -> IO Result
-runEndAction host (EndAction desc a) = actionMessageOn (hostName host) desc $ do
-	(ret, _s, _) <- runRWST (runWithHost (catchPropellor a)) host ()
+runEndAction :: Host -> Result -> EndAction -> IO Result
+runEndAction host res (EndAction desc a) = actionMessageOn (hostName host) desc $ do
+	(ret, _s, _) <- runRWST (runWithHost (catchPropellor (a res))) host ()
 	return ret
 
 -- | Ensures a list of Properties, with a display of each as it runs.

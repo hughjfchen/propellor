@@ -204,5 +204,5 @@ fromVal NoVal = Nothing
 type RunLog = [EndAction]
 
 -- | An action that Propellor runs at the end, after trying to satisfy all
--- properties.
-data EndAction = EndAction Desc (Propellor Result)
+-- properties. It's passed the combined Result of the entire Propellor run.
+data EndAction = EndAction Desc (Result -> Propellor Result)

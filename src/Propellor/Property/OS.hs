@@ -11,6 +11,7 @@ import Propellor
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Reboot as Reboot
 import Propellor.Property.Mount
 import Propellor.Property.Chroot.Util (stdPATH)
 import Utility.SafeCommand
@@ -66,6 +67,8 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
   where
 	go = 
 		finalized
+			`requires`
+		Reboot.atEnd True (/= FailedChange)
 			`requires`
 		propellorbootstrapped
 			`requires`
@@ -137,11 +140,6 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	
 	finalized = property "clean OS installed" $ do
 		liftIO $ writeFile flagfile ""
-		endAction "rebooting into new OS" $ liftIO $ 
-			ifM (boolSystem "reboot" [ Param "--force" ])
-				( return MadeChange
-				, return FailedChange
-				)
 		return MadeChange
 
 	flagfile = "/etc/propellor-cleaninstall"
