@@ -1,7 +1,7 @@
 module Propellor.Property.OS (
 	cleanInstallOnce,
 	Confirmation(..),
-	preserveNetworkInterfaces,
+	preserveNetwork,
 	preserveResolvConf,
 	preserveRootSshAuthorized,
 	oldOSRemoved,
@@ -46,7 +46,7 @@ import Control.Exception (throw)
 -- > & os (System (Debian Unstable) "amd64")
 -- > & cleanInstallOnce (Confirmed "foo.example.com")
 -- >    `onChange` propertyList "fixing up after clean install"
--- >        [ preserveNetworkInterfaces
+-- >        [ preserveNetwork
 -- >        , preserveResolvConf
 -- >        , preserverRootSshAuthorized
 -- >        , Apt.update
@@ -181,10 +181,11 @@ confirmed desc (Confirmed c) = property desc $ do
 			return FailedChange
 		else return NoChange
 
--- | /etc/network/interfaces is configured to bring up all interfaces that
--- are currently up, using the same IP addresses.
-preserveNetworkInterfaces :: Property
-preserveNetworkInterfaces = undefined -- TODO
+-- | /etc/network/interfaces is configured to bring up the network 
+-- interface that currently has a default route configured, using
+-- the same (static) IP address.
+preserveNetwork :: Property
+preserveNetwork = undefined -- TODO
 
 -- | /etc/resolv.conf is copied the from the old OS
 preserveResolvConf :: Property
