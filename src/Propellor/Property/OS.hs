@@ -10,6 +10,7 @@ module Propellor.Property.OS (
 import Propellor
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Ssh as Ssh
+import qualified Propellor.Property.User as User
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Reboot as Reboot
 import Propellor.Property.Mount
@@ -68,6 +69,10 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	go = 
 		finalized
 			`requires`
+		-- easy to forget and system may not boot without shadow pw!
+		User.shadowConfig True
+			`requires`
+		-- reboot at end if the rest of the propellor run succeeds
 		Reboot.atEnd True (/= FailedChange)
 			`requires`
 		propellorbootstrapped
