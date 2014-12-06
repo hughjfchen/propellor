@@ -4,7 +4,6 @@ module Propellor.Property.OS (
 	preserveNetworkInterfaces,
 	preserveResolvConf,
 	preserveRootSshAuthorized,
-	rebootForced,
 	oldOSRemoved,
 ) where
 
@@ -35,8 +34,9 @@ import Control.Exception (throw)
 -- 
 -- The files from the old os will be left in /old-os
 --
--- TODO: A forced reboot should be schedued to run after propellor finishes
--- ensuring all properties of the host.
+-- After the OS is installed, and if all properties of the host have
+-- been successfully satisfied, the host will be rebooted to properly load
+-- the new OS.
 --
 -- You will typically want to run some more properties after the clean
 -- install succeeds, to bootstrap from the cleanly installed system to
@@ -125,7 +125,6 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		unlessM (mount "devpts" "devpts" "/dev/pts") $
 			warningMessage "failed mounting /dev/pts"
 
-		liftIO $ writeFile flagfile ""
 		return MadeChange
 
 	propellorbootstrapped = property "propellor re-debootstrapped in new os" $
@@ -136,9 +135,14 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		--   be present in /old-os's /usr/local/propellor)
 		-- TODO
 	
-	-- Ensure that MadeChange is returned by the overall property,
-	-- so that anything hooking in onChange will run afterwards.
-	finalized = property "clean OS installed" $ return MadeChange
+	finalized = property "clean OS installed" $ do
+		liftIO $ writeFile flagfile ""
+		endAction "rebooting into new OS" $ liftIO $ 
+			ifM (boolSystem "reboot" [ Param "--force" ])
+				( return MadeChange
+				, return FailedChange
+				)
+		return MadeChange
 
 	flagfile = "/etc/propellor-cleaninstall"
 	
@@ -205,12 +209,6 @@ preserveRootSshAuthorized = check (fileExist oldloc) $
   where
 	newloc = "/root/.ssh/authorized_keys"
 	oldloc = oldOSDir ++ newloc
-
--- | Forces an immediate reboot, without contacting the init system.
---
--- Can be used after cleanInstallOnce.
-rebootForced :: Property
-rebootForced = cmdProperty "reboot" [ "--force" ]
 
 -- Removes the old OS's backup from /old-os
 oldOSRemoved :: Confirmation -> Property
