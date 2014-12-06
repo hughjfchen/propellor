@@ -67,6 +67,7 @@ testvm = host "testvm.kitenet.net"
 	& Hostname.searchDomain
 	& Apt.installed ["linux-image-amd64"]
 	& Apt.installed ["ssh"]
+	& User.hasPassword "root"
 
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net"
