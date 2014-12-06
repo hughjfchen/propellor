@@ -28,6 +28,8 @@ propellor (1.1.0) UNRELEASED; urgency=medium
   * propellor.debug can be set in the git config to enable more persistent
     debugging output.
   * Run apt-cache policy with LANG=C so it works on other locales.
+  * endAction can be used to register an action to run once propellor
+    has successfully run on a host.
 
  -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
 

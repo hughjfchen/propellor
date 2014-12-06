@@ -7,7 +7,7 @@ import System.IO
 import Data.Monoid
 import Control.Applicative
 import System.Console.ANSI
-import "mtl" Control.Monad.Reader
+import "mtl" Control.Monad.RWS.Strict
 import Control.Exception (bracket)
 import System.PosixCompat
 import System.Posix.IO
@@ -22,21 +22,37 @@ import Utility.Exception
 import Utility.PartialPrelude
 import Utility.Monad
 
-runPropellor :: Host -> Propellor a -> IO a
-runPropellor host a = runReaderT (runWithHost a) host
-
+-- | Gets the Properties of a Host, and ensures them all,
+-- with nice display of what's being done.
 mainProperties :: Host -> IO ()
 mainProperties host = do
-	r <- runPropellor host $
+	ret <- runPropellor host $
 		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) mempty]
 	h <- mkMessageHandle
         whenConsole h $
 		setTitle "propellor: done"
 	hFlush stdout
-	case r of
+	case ret of
 		FailedChange -> exitWith (ExitFailure 1)
 		_ -> exitWith ExitSuccess
 
+-- | Runs a Propellor action with the specified host.
+--
+-- If the Result is not FailedChange, any EndActions
+-- that were accumulated while running the action
+-- are then also run.
+runPropellor :: Host -> Propellor Result -> IO Result
+runPropellor host a = do
+	(ret, _s, endactions) <- runRWST (runWithHost a) host ()
+	endrets <- mapM (runEndAction host) endactions
+	return $ mconcat (ret:endrets)
+
+runEndAction :: Host -> EndAction -> IO Result
+runEndAction host (EndAction desc a) = actionMessageOn (hostName host) desc $ do
+	(ret, _s, _) <- runRWST (runWithHost (catchPropellor a)) host ()
+	return ret
+
+-- | Ensures a list of Properties, with a display of each as it runs.
 ensureProperties :: [Property] -> Propellor Result
 ensureProperties ps = ensure ps NoChange
   where
@@ -46,6 +62,8 @@ ensureProperties ps = ensure ps NoChange
 		r <- actionMessageOn hn (propertyDesc l) (ensureProperty l)
 		ensure ls (r <> rs)
 
+-- | For when code running in the Propellor monad needs to ensure a
+-- Property.
 ensureProperty :: Property -> Propellor Result
 ensureProperty = catchPropellor . propertySatisfy
 
@@ -55,8 +73,11 @@ ensureProperty = catchPropellor . propertySatisfy
 fromHost :: [Host] -> HostName -> Propellor a -> Propellor (Maybe a)
 fromHost l hn getter = case findHost l hn of
 	Nothing -> return Nothing
-	Just h -> liftIO $ Just <$>
-		runReaderT (runWithHost getter) h
+	Just h -> do
+		(ret, _s, runlog) <- liftIO $
+			runRWST (runWithHost getter) h ()
+		tell runlog
+		return (Just ret)
 
 onlyProcess :: FilePath -> IO a -> IO a
 onlyProcess lockfile a = bracket lock unlock (const a)

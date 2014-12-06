@@ -23,6 +23,8 @@ module Propellor.Types
 	, SshKeyType(..)
 	, Val(..)
 	, fromVal
+	, RunLog
+	, EndAction(..)
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
 	) where
@@ -31,7 +33,7 @@ import Data.Monoid
 import Control.Applicative
 import System.Console.ANSI
 import System.Posix.Types
-import "mtl" Control.Monad.Reader
+import "mtl" Control.Monad.RWS.Strict
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 import qualified Data.Set as S
 import qualified Propellor.Types.Dns as Dns
@@ -52,13 +54,14 @@ data Host = Host
 	deriving (Show)
 
 -- | Propellor's monad provides read-only access to info about the host
--- it's running on.
-newtype Propellor p = Propellor { runWithHost :: ReaderT Host IO p }
+-- it's running on, and a writer to accumulate logs about the run.
+newtype Propellor p = Propellor { runWithHost :: RWST Host RunLog () IO p }
 	deriving
 		( Monad
 		, Functor
 		, Applicative
 		, MonadReader Host
+		, MonadWriter RunLog
 		, MonadIO
 		, MonadCatchIO
 		)
@@ -197,3 +200,9 @@ instance Monoid (Val a) where
 fromVal :: Val a -> Maybe a
 fromVal (Val a) = Just a
 fromVal NoVal = Nothing
+
+type RunLog = [EndAction]
+
+-- | An action that Propellor runs at the end, after trying to satisfy all
+-- properties.
+data EndAction = EndAction Desc (Propellor Result)
