@@ -3,6 +3,10 @@ module Propellor.Property.Reboot where
 import Propellor
 import Utility.SafeCommand
 
+now :: Property
+now = cmdProperty "reboot" []
+	`describe` "reboot now"
+
 -- | Schedules a reboot at the end of the current propellor run.
 --
 -- The Result code of the endire propellor run can be checked;
