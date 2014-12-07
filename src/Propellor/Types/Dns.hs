@@ -1,6 +1,7 @@
 module Propellor.Types.Dns where
 
 import Propellor.Types.OS (HostName)
+import Propellor.Types.Empty
 
 import Data.Word
 import Data.Monoid
@@ -107,6 +108,9 @@ instance Monoid NamedConfMap where
 		combiner n o = case (confDnsServerType n, confDnsServerType o) of
 			(Secondary, Master) -> o
 			_  -> n
+
+instance Empty NamedConfMap where
+	isEmpty (NamedConfMap m) = isEmpty m
 
 fromNamedConfMap :: NamedConfMap -> M.Map Domain NamedConf
 fromNamedConfMap (NamedConfMap m) = m

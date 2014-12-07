@@ -1,3 +1,10 @@
+propellor (1.1.1) UNRELEASED; urgency=medium
+
+  * Display a warning when ensureProperty is used on a property which has
+    Info and is so prevented from propigating it.
+
+ -- Joey Hess <id@joeyh.name>  Sun, 07 Dec 2014 17:08:55 -0400
+
 propellor (1.1.0) unstable; urgency=medium
 
   * --spin target --via relay causes propellor to bounce through an

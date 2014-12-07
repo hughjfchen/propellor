@@ -1,6 +1,14 @@
 {-# LANGUAGE PackageImports #-}
 
-module Propellor.Engine where
+module Propellor.Engine (
+	mainProperties,
+	runPropellor,
+	ensureProperty,
+	ensureProperties,
+	fromHost,
+	onlyProcess,
+	processChainOutput,
+) where
 
 import System.Exit
 import System.IO
@@ -15,6 +23,7 @@ import System.FilePath
 import System.Directory
 
 import Propellor.Types
+import Propellor.Types.Empty
 import Propellor.Message
 import Propellor.Exception
 import Propellor.Info
@@ -27,7 +36,7 @@ import Utility.Monad
 mainProperties :: Host -> IO ()
 mainProperties host = do
 	ret <- runPropellor host $
-		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) mempty]
+		ensureProperties [Property "overall" (ensurePropertiesWith ensureProperty' $ hostProperties host) mempty]
 	h <- mkMessageHandle
         whenConsole h $
 		setTitle "propellor: done"
@@ -52,20 +61,33 @@ runEndAction host res (EndAction desc a) = actionMessageOn (hostName host) desc 
 	(ret, _s, _) <- runRWST (runWithHost (catchPropellor (a res))) host ()
 	return ret
 
--- | Ensures a list of Properties, with a display of each as it runs.
-ensureProperties :: [Property] -> Propellor Result
-ensureProperties ps = ensure ps NoChange
-  where
-	ensure [] rs = return rs
-	ensure (l:ls) rs = do
-		hn <- asks hostName
-		r <- actionMessageOn hn (propertyDesc l) (ensureProperty l)
-		ensure ls (r <> rs)
-
 -- | For when code running in the Propellor monad needs to ensure a
 -- Property.
+--
+-- Note that any info of the Property is not propigated out to
+-- the enclosing Property, and so will not be available for propellor to
+-- use. A warning message will be printed if this is detected.
 ensureProperty :: Property -> Propellor Result
-ensureProperty = catchPropellor . propertySatisfy
+ensureProperty p = do
+	unless (isEmpty (getInfo p)) $
+		warningMessage $ "ensureProperty called on " ++ show p ++ "; will not propigate its info: " ++ show (getInfo p)
+	ensureProperty' p
+
+ensureProperty' :: Property -> Propellor Result
+ensureProperty' = catchPropellor . propertySatisfy
+
+-- | Ensures a list of Properties, with a display of each as it runs.
+ensureProperties :: [Property] -> Propellor Result
+ensureProperties = ensurePropertiesWith ensureProperty
+
+ensurePropertiesWith :: (Property -> Propellor Result) -> [Property] -> Propellor Result
+ensurePropertiesWith a ps = ensure ps NoChange
+  where
+	ensure [] rs = return rs
+	ensure (p:ls) rs = do
+		hn <- asks hostName
+		r <- actionMessageOn hn (propertyDesc p) (a p)
+		ensure ls (r <> rs)
 
 -- | Lifts an action into a different host.
 --

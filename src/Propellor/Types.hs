@@ -43,6 +43,7 @@ import Propellor.Types.Chroot
 import Propellor.Types.Dns
 import Propellor.Types.Docker
 import Propellor.Types.PrivData
+import Propellor.Types.Empty
 
 -- | Everything Propellor knows about a system: Its hostname,
 -- properties and other info.
@@ -188,6 +189,18 @@ instance Monoid Info where
 		, _chrootinfo = _chrootinfo old <> _chrootinfo new
 		}
 
+instance Empty Info where
+	isEmpty i = and
+		[ isEmpty (_os i)
+		, isEmpty (_privDataFields i)
+		, isEmpty (_sshPubKey i)
+		, isEmpty (_aliases i)
+		, isEmpty (_dns i)
+		, isEmpty (_namedconf i)
+		, isEmpty (_dockerinfo i)
+		, isEmpty (_chrootinfo i)
+		]
+
 data Val a = Val a | NoVal
 	deriving (Eq, Show)
 
@@ -196,6 +209,10 @@ instance Monoid (Val a) where
 	mappend old new = case new of
 		NoVal -> old
 		_ -> new
+
+instance Empty (Val a) where
+	isEmpty NoVal = True
+	isEmpty _ = False
 
 fromVal :: Val a -> Maybe a
 fromVal (Val a) = Just a
