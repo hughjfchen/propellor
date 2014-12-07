@@ -1,6 +1,0 @@
-propellor 0.9.1 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Docker: Add ability to control when containers restart.
-   * Docker: Default to always restarting containers, so they come back
-     up after reboots and docker daemon upgrades.
-   * Fix loop when a docker host that does not exist was docked."""]]
