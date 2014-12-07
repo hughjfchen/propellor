@@ -165,7 +165,7 @@ data CmdLine
 -- | Information about a host.
 data Info = Info
 	{ _os :: Val System
-	, _privDataFields :: S.Set (PrivDataField, Context)
+	, _privDataFields :: S.Set (PrivDataField, HostContext)
 	, _sshPubKey :: Val String
 	, _aliases :: S.Set HostName
 	, _dns :: S.Set Dns.Record

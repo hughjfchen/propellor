@@ -88,7 +88,7 @@ hostKeys ctx = propertyList "known ssh host keys"
 	]
 
 -- | Sets a single ssh host key from the privdata.
-hostKey :: SshKeyType -> Context -> Property
+hostKey :: IsContext c => SshKeyType -> c -> Property
 hostKey keytype context = combineProperties desc
 	[ installkey (SshPubKey keytype "")  (install writeFile ".pub")
 	, installkey (SshPrivKey keytype "") (install writeFileProtected "")
@@ -107,7 +107,7 @@ hostKey keytype context = combineProperties desc
 
 -- | Sets up a user with a ssh private key and public key pair from the
 -- PrivData.
-keyImported :: SshKeyType -> UserName -> Context -> Property
+keyImported :: IsContext c => SshKeyType -> UserName -> c -> Property
 keyImported keytype user context = combineProperties desc
 	[ installkey (SshPubKey keytype user) (install writeFile ".pub")
 	, installkey (SshPrivKey keytype user) (install writeFileProtected "")
@@ -158,7 +158,7 @@ knownHost hosts hn user = property desc $
 -- | Makes a user have authorized_keys from the PrivData
 --
 -- This removes any other lines from the file.
-authorizedKeys :: UserName -> Context -> Property
+authorizedKeys :: IsContext c => UserName -> c -> Property
 authorizedKeys user context = withPrivData (SshAuthorizedKeys user) context $ \get ->
 	property (user ++ " has authorized_keys") $ get $ \v -> do
 		f <- liftIO $ dotFile "authorized_keys" user
