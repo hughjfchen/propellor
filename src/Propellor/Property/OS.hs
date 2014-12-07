@@ -1,17 +1,18 @@
 module Propellor.Property.OS (
 	cleanInstallOnce,
 	Confirmation(..),
-	preserveNetworkInterfaces,
+	preserveNetwork,
 	preserveResolvConf,
 	preserveRootSshAuthorized,
-	rebootForced,
 	oldOSRemoved,
 ) where
 
 import Propellor
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Ssh as Ssh
+import qualified Propellor.Property.User as User
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Reboot as Reboot
 import Propellor.Property.Mount
 import Propellor.Property.Chroot.Util (stdPATH)
 import Utility.SafeCommand
@@ -35,8 +36,9 @@ import Control.Exception (throw)
 -- 
 -- The files from the old os will be left in /old-os
 --
--- TODO: A forced reboot should be schedued to run after propellor finishes
--- ensuring all properties of the host.
+-- After the OS is installed, and if all properties of the host have
+-- been successfully satisfied, the host will be rebooted to properly load
+-- the new OS.
 --
 -- You will typically want to run some more properties after the clean
 -- install succeeds, to bootstrap from the cleanly installed system to
@@ -45,7 +47,7 @@ import Control.Exception (throw)
 -- > & os (System (Debian Unstable) "amd64")
 -- > & cleanInstallOnce (Confirmed "foo.example.com")
 -- >    `onChange` propertyList "fixing up after clean install"
--- >        [ preserveNetworkInterfaces
+-- >        [ preserveNetwork
 -- >        , preserveResolvConf
 -- >        , preserverRootSshAuthorized
 -- >        , Apt.update
@@ -66,6 +68,12 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
   where
 	go = 
 		finalized
+			`requires`
+		-- easy to forget and system may not boot without shadow pw!
+		User.shadowConfig True
+			`requires`
+		-- reboot at end if the rest of the propellor run succeeds
+		Reboot.atEnd True (/= FailedChange)
 			`requires`
 		propellorbootstrapped
 			`requires`
@@ -125,7 +133,6 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		unlessM (mount "devpts" "devpts" "/dev/pts") $
 			warningMessage "failed mounting /dev/pts"
 
-		liftIO $ writeFile flagfile ""
 		return MadeChange
 
 	propellorbootstrapped = property "propellor re-debootstrapped in new os" $
@@ -136,9 +143,9 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		--   be present in /old-os's /usr/local/propellor)
 		-- TODO
 	
-	-- Ensure that MadeChange is returned by the overall property,
-	-- so that anything hooking in onChange will run afterwards.
-	finalized = property "clean OS installed" $ return MadeChange
+	finalized = property "clean OS installed" $ do
+		liftIO $ writeFile flagfile ""
+		return MadeChange
 
 	flagfile = "/etc/propellor-cleaninstall"
 	
@@ -179,10 +186,11 @@ confirmed desc (Confirmed c) = property desc $ do
 			return FailedChange
 		else return NoChange
 
--- | /etc/network/interfaces is configured to bring up all interfaces that
--- are currently up, using the same IP addresses.
-preserveNetworkInterfaces :: Property
-preserveNetworkInterfaces = undefined -- TODO
+-- | /etc/network/interfaces is configured to bring up the network 
+-- interface that currently has a default route configured, using
+-- the same (static) IP address.
+preserveNetwork :: Property
+preserveNetwork = undefined -- TODO
 
 -- | /etc/resolv.conf is copied the from the old OS
 preserveResolvConf :: Property
@@ -205,12 +213,6 @@ preserveRootSshAuthorized = check (fileExist oldloc) $
   where
 	newloc = "/root/.ssh/authorized_keys"
 	oldloc = oldOSDir ++ newloc
-
--- | Forces an immediate reboot, without contacting the init system.
---
--- Can be used after cleanInstallOnce.
-rebootForced :: Property
-rebootForced = cmdProperty "reboot" [ "--force" ]
 
 -- Removes the old OS's backup from /old-os
 oldOSRemoved :: Confirmation -> Property

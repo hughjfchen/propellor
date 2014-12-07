@@ -7,7 +7,7 @@ import System.FilePath
 import Control.Monad
 import Data.Monoid
 import Control.Monad.IfElse
-import "mtl" Control.Monad.Reader
+import "mtl" Control.Monad.RWS.Strict
 
 import Propellor.Types
 import Propellor.Info
@@ -131,11 +131,11 @@ boolProperty desc a = property desc $ ifM (liftIO a)
 revert :: RevertableProperty -> RevertableProperty
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
--- Changes the action that is performed to satisfy a property. 
+-- | Changes the action that is performed to satisfy a property. 
 adjustProperty :: Property -> (Propellor Result -> Propellor Result) -> Property
 adjustProperty p f = p { propertySatisfy = f (propertySatisfy p) }
 
--- Combines the Info of two properties.
+-- | Combines the Info of two properties.
 combineInfo :: (IsProp p, IsProp q) => p -> q -> Info
 combineInfo p q = getInfo p <> getInfo q
 
@@ -147,3 +147,7 @@ makeChange a = liftIO a >> return MadeChange
 
 noChange :: Propellor Result
 noChange = return NoChange
+
+-- | Registers an action that should be run at the very end,
+endAction :: Desc -> (Result -> Propellor Result) -> Propellor ()
+endAction desc a = tell [EndAction desc a]

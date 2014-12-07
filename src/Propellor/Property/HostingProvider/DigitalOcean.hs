@@ -5,6 +5,7 @@ module Propellor.Property.HostingProvider.DigitalOcean (
 import Propellor
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Reboot as Reboot
 
 import Data.List
 
@@ -24,9 +25,8 @@ distroKernel = propertyList "digital ocean distro kernel hack"
 		[ "LOAD_KEXEC=true"
 		, "USE_GRUB_CONFIG=true"
 		] `describe` "kexec configured"
-	, check (not <$> runningInstalledKernel)
-		(cmdProperty "reboot" [])
-			`describe` "running installed kernel"
+	, check (not <$> runningInstalledKernel) Reboot.now
+		`describe` "running installed kernel"
 	]
 
 runningInstalledKernel :: IO Bool

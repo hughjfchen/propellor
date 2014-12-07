@@ -15,7 +15,7 @@ import Network.BSD (HostName)
 type UserName = String
 type GroupName = String
 
--- | High level descritption of a operating system.
+-- | High level description of a operating system.
 data System = System Distribution Architecture
 	deriving (Show, Eq)
 
