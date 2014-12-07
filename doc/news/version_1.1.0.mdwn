@@ -1,0 +1,33 @@
+propellor 1.1.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * --spin target --via relay causes propellor to bounce through an
+     intermediate relay host, which handles any necessary uploads
+     when provisioning the target host.
+   * --spin can be passed multiple hosts, and it will provision each host
+     in turn.
+   * Add --merge, to combine multiple --spin commits into a single, more useful
+     commit.
+   * Hostname parameters not containing dots are looked up in the DNS to
+     find the full hostname.
+   * propellor --spin can now deploy propellor to hosts that do not have
+     git, ghc, or apt-get. This is accomplished by uploading a fairly
+     portable precompiled tarball of propellor.
+   * Propellor.Property.OS contains properties that can be used to do a clean
+     reinstall of the OS of an existing host. This can be used, for example,
+     to do an in-place conversion from Fedora to Debian.
+     This is experimental; use with caution!
+   * Added group-related properties. Thanks, Félix Sipma.
+   * Added Git.barerepo. Thanks, Félix Sipma.
+   * Added Grub.installed and Grub.boots properties.
+   * New HostContext can be specified when a PrivData value varies per host.
+   * hasSomePassword and hasPassword now default to using HostContext.
+     To specify a different context, use hasSomePassword' and
+     hasPassword' (API change)
+   * hasSomePassword and hasPassword now make sure shadow passwords are enabled.
+   * cron.runPropellor now runs propellor, rather than using its Makefile.
+     This is more robust.
+   * propellor.debug can be set in the git config to enable more persistent
+     debugging output.
+   * Run apt-cache policy with LANG=C so it works on other locales.
+   * endAction can be used to register an action to run once propellor
+     has successfully run on a host."""]]
