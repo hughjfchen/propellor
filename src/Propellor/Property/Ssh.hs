@@ -80,7 +80,7 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 			[ "DPKG_MAINTSCRIPT_NAME=postinst DPKG_MAINTSCRIPT_PACKAGE=openssh-server /var/lib/dpkg/info/openssh-server.postinst configure" ]
 
 -- | Sets all types of ssh host keys from the privdata.
-hostKeys :: Context -> Property
+hostKeys :: IsContext c => c -> Property
 hostKeys ctx = propertyList "known ssh host keys"
 	[ hostKey SshDsa ctx
 	, hostKey SshRsa ctx

@@ -209,7 +209,7 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& ipv4 "107.170.31.195"
 
 	& DigitalOcean.distroKernel
-	& Ssh.hostKeys (Context "diatom.kitenet.net")
+	& Ssh.hostKeys hostContext
 	& Apt.unattendedUpgrades
 	& Apt.serviceInstalledRunning "ntp"
 	& Postfix.satellite
@@ -273,9 +273,9 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& Apt.unattendedUpgrades
 	& Systemd.installed
 	& Systemd.persistentJournal
-	& Ssh.hostKeys ctx
+	& Ssh.hostKeys hostContext
 	& sshPubKey "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAJkoPRhUGT8EId6m37uBdYEtq42VNwslKnc9mmO+89ody066q6seHKeFY6ImfwjcyIjM30RTzEwftuVNQnbEB0="
-	& Ssh.keyImported SshRsa "joey" ctx
+	& Ssh.keyImported SshRsa "joey" hostContext
 	& Apt.serviceInstalledRunning "swapspace"
 
 	& alias "eubackup.kitenet.net"
@@ -315,8 +315,6 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	-- that port for ssh, for traveling on bad networks that
 	-- block 22.
 	& Ssh.listenPort 80
-  where
-	ctx = Context "elephant.kitenet.net"
 
 
 	    --'                        __|II|      ,.
