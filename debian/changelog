@@ -1,4 +1,4 @@
-propellor (1.1.0) UNRELEASED; urgency=medium
+propellor (1.1.0) unstable; urgency=medium
 
   * --spin target --via relay causes propellor to bounce through an
     intermediate relay host, which handles any necessary uploads
@@ -32,7 +32,7 @@ propellor (1.1.0) UNRELEASED; urgency=medium
   * endAction can be used to register an action to run once propellor
     has successfully run on a host.
 
- -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 07 Dec 2014 15:23:59 -0400
 
 propellor (1.0.0) unstable; urgency=medium
 
