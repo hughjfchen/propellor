@@ -22,7 +22,7 @@ You can add a central git repository to your existing propellor setup easily:
    `cd ~/.propellor/; git remote add deploy git://git.example.com/propellor.git`
 
 2. Add a property to your hosts like:
-   `Cron.runPropellor "30 * * * *"`
+   `Cron.runPropellor "*/30 * * * *"`
 
 3. Let your hosts know about the changed configuration (including the url
    to the central repository), by running `propellor --spin $HOST` for each
