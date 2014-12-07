@@ -52,6 +52,15 @@ runEndAction host res (EndAction desc a) = actionMessageOn (hostName host) desc 
 	(ret, _s, _) <- runRWST (runWithHost (catchPropellor (a res))) host ()
 	return ret
 
+-- | For when code running in the Propellor monad needs to ensure a
+-- Property.
+--
+-- Note that any info of the Property is not propigated out to
+-- the enclosing Property, and so will not be available for propellor to
+-- use.
+ensureProperty :: Property -> Propellor Result
+ensureProperty = catchPropellor . propertySatisfy
+
 -- | Ensures a list of Properties, with a display of each as it runs.
 ensureProperties :: [Property] -> Propellor Result
 ensureProperties ps = ensure ps NoChange
@@ -61,11 +70,6 @@ ensureProperties ps = ensure ps NoChange
 		hn <- asks hostName
 		r <- actionMessageOn hn (propertyDesc l) (ensureProperty l)
 		ensure ls (r <> rs)
-
--- | For when code running in the Propellor monad needs to ensure a
--- Property.
-ensureProperty :: Property -> Propellor Result
-ensureProperty = catchPropellor . propertySatisfy
 
 -- | Lifts an action into a different host.
 --
