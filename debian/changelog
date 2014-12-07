@@ -1,4 +1,4 @@
-propellor (1.1.0) UNRELEASED; urgency=medium
+propellor (1.1.0) unstable; urgency=medium
 
   * --spin target --via relay causes propellor to bounce through an
     intermediate relay host, which handles any necessary uploads
@@ -14,15 +14,16 @@ propellor (1.1.0) UNRELEASED; urgency=medium
     portable precompiled tarball of propellor.
   * Propellor.Property.OS contains properties that can be used to do a clean
     reinstall of the OS of an existing host. This can be used, for example,
-    to do an in-place conversion from Fedora to Debian. Use with caution!
+    to do an in-place conversion from Fedora to Debian.
+    This is experimental; use with caution!
   * Added group-related properties. Thanks, Félix Sipma.
   * Added Git.barerepo. Thanks, Félix Sipma.
   * Added Grub.installed and Grub.boots properties.
-  * hasSomePassword and hasPassword now default to using the name of the
-    host as the Context for the password. To specify a different context,
-    use hasSomePassword' and hasPassword' (API change)
-  * hasSomePassword and hasPassword now check to make sure shadow passwords
-    are enabled.
+  * New HostContext can be specified when a PrivData value varies per host.
+  * hasSomePassword and hasPassword now default to using HostContext.
+    To specify a different context, use hasSomePassword' and
+    hasPassword' (API change)
+  * hasSomePassword and hasPassword now make sure shadow passwords are enabled.
   * cron.runPropellor now runs propellor, rather than using its Makefile.
     This is more robust.
   * propellor.debug can be set in the git config to enable more persistent
@@ -30,9 +31,8 @@ propellor (1.1.0) UNRELEASED; urgency=medium
   * Run apt-cache policy with LANG=C so it works on other locales.
   * endAction can be used to register an action to run once propellor
     has successfully run on a host.
-  * Fixed privdata introspection for User.hasPassword and User.hasSomePassword
 
- -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 07 Dec 2014 15:23:59 -0400
 
 propellor (1.0.0) unstable; urgency=medium
 

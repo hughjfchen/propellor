@@ -21,6 +21,8 @@ data PrivDataField
 -- Context "www.example.com" could be used for the SSL cert
 -- for the web server serving that domain. Multiple hosts might
 -- use that privdata.
+--
+-- This appears in serlialized privdata files.
 newtype Context = Context String
 	deriving (Read, Show, Ord, Eq)
 
