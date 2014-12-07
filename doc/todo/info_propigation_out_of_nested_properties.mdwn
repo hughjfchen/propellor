@@ -14,8 +14,8 @@ Of course, only one of them will be run, and only its info should be propigated
 out..
 
 This commonly afflicts eg, privData. For example, `User.hasPassword'`
-has this problem, and this prevents --list-fields from listing privdata
-that's not set from that property.
+used to have this problem, which prevented --list-fields from listing privdata
+that's not set from that property. (That was worked around.)
 
 One approach might be to make the Propellor monad be able to be run in two
 modes. In one mode, it actually perform IO, etc. In the other mode, all
