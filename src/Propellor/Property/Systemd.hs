@@ -151,9 +151,8 @@ nspawnService (Container name _ _) cfg = RevertableProperty setup teardown
 		<$> servicefilecontent
 		<*> catchDefaultIO "" (readFile servicefile)
 
-	writeservicefile = property servicefile $ liftIO $ do
+	writeservicefile = property servicefile $ makeChange $
 		viaTmp writeFile servicefile =<< servicefilecontent
-		return MadeChange
 
 	setupservicefile = check (not <$> goodservicefile) $
 		-- if it's running, it has the wrong configuration,

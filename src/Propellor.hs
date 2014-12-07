@@ -36,6 +36,7 @@ module Propellor (
 	, module Propellor.Host
 	, module Propellor.Info
 	, module Propellor.PrivData
+	, module Propellor.Types.PrivData
 	, module Propellor.Engine
 	, module Propellor.Exception
 	, module Propellor.Message
@@ -49,6 +50,7 @@ import Propellor.Property
 import Propellor.Engine
 import Propellor.Property.Cmd
 import Propellor.PrivData
+import Propellor.Types.PrivData
 import Propellor.Message
 import Propellor.Exception
 import Propellor.Info

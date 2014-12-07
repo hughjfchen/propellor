@@ -17,17 +17,17 @@ f `hasContent` newcontent = fileProperty ("replace " ++ f)
 --
 -- The file's permissions are preserved if the file already existed.
 -- Otherwise, they're set to 600.
-hasPrivContent :: FilePath -> Context -> Property
+hasPrivContent :: IsContext c => FilePath -> c -> Property
 hasPrivContent = hasPrivContent' writeFileProtected
 
 -- | Leaves the file at its default or current mode,
 -- allowing "private" data to be read.
 --
 -- Use with caution!
-hasPrivContentExposed :: FilePath -> Context -> Property
+hasPrivContentExposed :: IsContext c => FilePath -> c -> Property
 hasPrivContentExposed = hasPrivContent' writeFile
 
-hasPrivContent' :: (String -> FilePath -> IO ()) -> FilePath -> Context -> Property
+hasPrivContent' :: IsContext c => (String -> FilePath -> IO ()) -> FilePath -> c -> Property
 hasPrivContent' writer f context = 
 	withPrivData (PrivFile f) context $ \getcontent -> 
 		property desc $ getcontent $ \privcontent -> 

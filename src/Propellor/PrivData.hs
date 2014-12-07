@@ -15,6 +15,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 import Propellor.Types
+import Propellor.Types.PrivData
 import Propellor.Message
 import Propellor.Info
 import Propellor.Gpg
@@ -30,7 +31,7 @@ import Utility.Env
 import Utility.Table
 
 -- | Allows a Property to access the value of a specific PrivDataField,
--- for use in a specific Context.
+-- for use in a specific Context or HostContext.
 --
 -- Example use:
 --
@@ -47,20 +48,26 @@ import Utility.Table
 -- being used, which is necessary to ensure that the privdata is sent to
 -- the remote host by propellor.
 withPrivData
-	:: PrivDataField
-	-> Context
+	:: IsContext c
+	=> PrivDataField
+	-> c
 	-> (((PrivData -> Propellor Result) -> Propellor Result) -> Property)
 	-> Property
-withPrivData field context@(Context cname) mkprop = addinfo $ mkprop $ \a ->
-	maybe missing a =<< liftIO (getLocalPrivData field context)
+withPrivData field c mkprop = addinfo $ mkprop $ \a ->
+	maybe missing a =<< get
   where
-	missing = liftIO $ do
+  	get = do
+		context <- mkHostContext hc <$> asks hostName
+		liftIO $ getLocalPrivData field context
+	missing = do
+		Context cname <- mkHostContext hc <$> asks hostName
 		warningMessage $ "Missing privdata " ++ show field ++ " (for " ++ cname ++ ")"
-		putStrLn $ "Fix this by running: propellor --set '" ++ show field ++ "' '" ++ cname ++ "'"
+		liftIO $ putStrLn $ "Fix this by running: propellor --set '" ++ show field ++ "' '" ++ cname ++ "'"
 		return FailedChange
-	addinfo p = p { propertyInfo = propertyInfo p <> mempty { _privDataFields = S.singleton (field, context) } }
+	addinfo p = p { propertyInfo = propertyInfo p <> mempty { _privDataFields = S.singleton (field, hc) } }
+	hc = asHostContext c
 
-addPrivDataField :: (PrivDataField, Context) -> Property
+addPrivDataField :: (PrivDataField, HostContext) -> Property
 addPrivDataField v = pureInfoProperty (show v) $
 	mempty { _privDataFields = S.singleton v }
 
@@ -78,7 +85,8 @@ type PrivMap = M.Map (PrivDataField, Context) PrivData
 filterPrivData :: Host -> PrivMap -> PrivMap
 filterPrivData host = M.filterWithKey (\k _v -> S.member k used)
   where
-	used = _privDataFields $ hostInfo host
+	used = S.map (\(f, c) -> (f, mkHostContext c (hostName host))) $
+		_privDataFields $ hostInfo host
 
 getPrivData :: PrivDataField -> Context -> PrivMap -> Maybe PrivData
 getPrivData field context = M.lookup (field, context)
@@ -119,7 +127,7 @@ listPrivDataFields hosts = do
 		, shellEscape context
 		, intercalate ", " $ sort $ fromMaybe [] $ M.lookup k usedby
 		]
-	mkhostmap host = M.fromList $ map (\k -> (k, [hostName host])) $
+	mkhostmap host = M.fromList $ map (\(f, c) -> ((f, mkHostContext c (hostName host)), [hostName host])) $
 		S.toList $ _privDataFields $ hostInfo host
 	usedby = M.unionsWith (++) $ map mkhostmap hosts
 	wantedmap = M.fromList $ zip (M.keys usedby) (repeat "")

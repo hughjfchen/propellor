@@ -44,7 +44,7 @@ hiddenService hn port = mainConfig `File.containsLines`
 	`describe` unwords ["hidden service available:", hn, show port]
 	`onChange` restarted
 
-hiddenServiceData :: HiddenServiceName -> Context -> Property
+hiddenServiceData :: IsContext c => HiddenServiceName -> c -> Property
 hiddenServiceData hn context = combineProperties desc
 	[ installonion "hostname"
 	, installonion "private_key"

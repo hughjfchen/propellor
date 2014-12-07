@@ -30,6 +30,7 @@ propellor (1.1.0) UNRELEASED; urgency=medium
   * Run apt-cache policy with LANG=C so it works on other locales.
   * endAction can be used to register an action to run once propellor
     has successfully run on a host.
+  * Fixed privdata introspection for User.hasPassword and User.hasSomePassword
 
  -- Joey Hess <joeyh@debian.org>  Sat, 22 Nov 2014 00:12:35 -0400
 

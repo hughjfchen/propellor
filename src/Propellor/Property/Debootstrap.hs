@@ -93,9 +93,8 @@ built' installprop target system@(System _ arch) config =
 			, return FailedChange
 			)
 
-	teardownprop = property ("removed debootstrapped " ++ target) $ liftIO $ do
-		removetarget
-		return MadeChange
+	teardownprop = property ("removed debootstrapped " ++ target) $
+		makeChange removetarget
 
 	removetarget = do
 		submnts <- filter (\p -> simplifyPath p /= simplifyPath target)

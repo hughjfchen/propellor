@@ -25,34 +25,32 @@ nuked user _ = check (isJust <$> catchMaybeIO (homedir user)) $ cmdProperty "use
 -- | Only ensures that the user has some password set. It may or may
 -- not be the password from the PrivData.
 hasSomePassword :: UserName -> Property
-hasSomePassword user = property (user ++ "has password") $ do
-	hostname <- asks hostName
-	ensureProperty $ hasSomePassword' user (Context hostname)
+hasSomePassword user = hasSomePassword' user hostContext
 
 -- | While hasSomePassword uses the name of the host as context,
 -- this allows specifying a different context. This is useful when
 -- you want to use the same password on multiple hosts, for example.
-hasSomePassword' :: UserName -> Context -> Property
+hasSomePassword' :: IsContext c => UserName -> c -> Property
 hasSomePassword' user context = check ((/= HasPassword) <$> getPasswordStatus user) $
 	hasPassword' user context
 
 -- | Ensures that a user's password is set to the password from the PrivData.
 -- (Will change any existing password.)
 hasPassword :: UserName -> Property
-hasPassword user = property (user ++ "has password") $ do
-	hostname <- asks hostName
-	ensureProperty $ hasPassword' user (Context hostname)
+hasPassword user = hasPassword' user hostContext
 
-hasPassword' :: UserName -> Context -> Property
+hasPassword' :: IsContext c => UserName -> c -> Property
 hasPassword' user context = go `requires` shadowConfig True
   where
-	go = withPrivData (Password user) context $ \getpassword ->
-		property (user ++ " has password") $
-			getpassword $ \password -> makeChange $
-				withHandle StdinHandle createProcessSuccess
-					(proc "chpasswd" []) $ \h -> do
-						hPutStrLn h $ user ++ ":" ++ password
-						hClose h
+	go = withPrivData (Password user) context $
+		property (user ++ " has password") . setPassword user
+
+setPassword :: UserName -> ((PrivData -> Propellor Result) -> Propellor Result) -> Propellor Result
+setPassword user getpassword = getpassword $ \password -> makeChange $
+	withHandle StdinHandle createProcessSuccess
+		(proc "chpasswd" []) $ \h -> do
+			hPutStrLn h $ user ++ ":" ++ password
+			hClose h
 
 lockedPassword :: UserName -> Property
 lockedPassword user = check (not <$> isLockedPassword user) $ cmdProperty "passwd"
