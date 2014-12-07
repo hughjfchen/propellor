@@ -12,6 +12,13 @@ This works, but it's error-prone. Consider this example:
 Here, the Info of `foo` is not propigated out. Nor is `bar`'s Info. Of
 course, only one of them will be run, and only its info should be
 propigated out..
+----
+
+Currently, ensureProperty detects if it's called on a property with a
+non-empty Info, and prints a warning. Would prefer to handle this at the
+type level though..
+
+----
 
 One approach might be to make the Propellor monad be able to be run in two
 modes. In run mode, it actually performs IO, etc. In introspection mode, all
@@ -29,6 +36,8 @@ That is surely doable, but consider this example:
 In introspection mode, the liftIO is a no-op, but needs to return a Bool.
 That seems unlikely (how to pick which?), but even if some defaulting is
 used, only one of foo or bar's info will be seen.
+
+----
 
 Another approach could be something like this:
 
@@ -58,6 +67,27 @@ Also it has the problem that it doesn't support this:
 
 ----
 
-Currently, ensureProperty detects if it's called on a property with a
-non-empty Info, and prints a warning. Would prefer to handle this at the
-type level though..
+Another approach would be to add a new SimpleProperty, which is a property
+that has no Info. Only allow calling ensureProperty on this new type.
+
+(Or, remove propertyInfo from Property, and add a new InfoProperty that
+has the info.)
+
+This would surely work, but it adds a lot of complexity to property
+combiators. Also, propertyList could only contain one type at a time,
+not a mixed list of Property and SimpleProperty.
+
+Could a GADT be used instead?
+
+	{-# LANGUAGE GADTs #-}
+	{-# LANGUAGE EmptyDataDecls #-}
+
+	data HasInfo
+	data NoInfo
+
+	data Property i where
+	        InfoProperty :: Desc -> Propellor Result -> Info -> Property HasInfo
+	        SimpleProperty :: Desc -> Propellor Result -> Property NoInfo
+
+	ensureProperty :: Property NoInfo -> Propellor Result
+	ensureProperty (SimpleProperty d r) = r
