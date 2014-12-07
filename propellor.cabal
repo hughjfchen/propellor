@@ -118,6 +118,7 @@ Library
     Propellor.Types.Chroot
     Propellor.Types.Docker
     Propellor.Types.Dns
+    Propellor.Types.Empty
     Propellor.Types.OS
     Propellor.Types.PrivData
   Other-Modules:
