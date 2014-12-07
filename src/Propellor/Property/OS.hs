@@ -22,6 +22,8 @@ import Control.Exception (throw)
 
 -- | Replaces whatever OS was installed before with a clean installation
 -- of the OS that the Host is configured to have.
+-- 
+-- This is experimental; use with caution!
 --
 -- This can replace one Linux distribution with different one.
 -- But, it can also fail and leave the system in an unbootable state.

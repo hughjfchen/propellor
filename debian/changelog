@@ -14,7 +14,8 @@ propellor (1.1.0) UNRELEASED; urgency=medium
     portable precompiled tarball of propellor.
   * Propellor.Property.OS contains properties that can be used to do a clean
     reinstall of the OS of an existing host. This can be used, for example,
-    to do an in-place conversion from Fedora to Debian. Use with caution!
+    to do an in-place conversion from Fedora to Debian.
+    This is experimental; use with caution!
   * Added group-related properties. Thanks, Félix Sipma.
   * Added Git.barerepo. Thanks, Félix Sipma.
   * Added Grub.installed and Grub.boots properties.
