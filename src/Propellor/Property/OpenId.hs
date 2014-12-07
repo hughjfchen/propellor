@@ -23,7 +23,7 @@ providerFor users baseurl = propertyList desc $
 			"define('SIMPLEID_BASE_URL', '"++url++"');"
 		| otherwise = l
 	
-	-- the identitites directory controls access, so open up
+	-- the identities directory controls access, so open up
 	-- file mode
 	identfile u = File.hasPrivContentExposed
 		(concat [ "/var/lib/simpleid/identities/", u, ".identity" ])
