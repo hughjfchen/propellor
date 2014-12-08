@@ -20,11 +20,8 @@ atEnd force resultok = property "scheduled reboot at end of propellor run" $ do
 	return NoChange
   where
 	atend r
-		| resultok r = liftIO $
-			ifM (boolSystem "reboot" rebootparams)
-				( return MadeChange
-				, return FailedChange
-				)
+		| resultok r = liftIO $ toResult
+			<$> boolSystem "reboot" rebootparams
 		| otherwise = do
 			warningMessage "Not rebooting, due to status of propellor run."
 			return FailedChange
