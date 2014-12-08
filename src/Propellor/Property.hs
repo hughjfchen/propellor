@@ -121,12 +121,6 @@ doNothing = property "noop property" noChange
 withOS :: Desc -> (Maybe System -> Propellor Result) -> Property
 withOS desc a = property desc $ a =<< getOS
 
-boolProperty :: Desc -> IO Bool -> Property
-boolProperty desc a = property desc $ ifM (liftIO a)
-	( return MadeChange
-	, return FailedChange
-	)
-
 -- | Undoes the effect of a property.
 revert :: RevertableProperty -> RevertableProperty
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1

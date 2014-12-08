@@ -13,7 +13,6 @@ import "mtl" Control.Monad.Reader
 
 import Propellor.Types
 import Propellor.Property
-import Utility.Monad
 import Utility.SafeCommand
 import Utility.Env
 
@@ -28,10 +27,7 @@ cmdProperty cmd params = cmdProperty' cmd params []
 cmdProperty' :: String -> [String] -> [(String, String)] -> Property
 cmdProperty' cmd params env = property desc $ liftIO $ do
 	env' <- addEntries env <$> getEnvironment
-	ifM (boolSystemEnv cmd (map Param params) (Just env'))
-		( return MadeChange
-		, return FailedChange
-		)
+	toResult <$> boolSystemEnv cmd (map Param params) (Just env')
   where
 	desc = unwords $ cmd : params
 

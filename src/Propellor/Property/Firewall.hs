@@ -33,8 +33,7 @@ rule c t rs = property ("firewall rule: " <> show r) addIpTable
 		exist <- boolSystem "iptables" (chk args)
 		if exist
 			then return NoChange
-			else ifM (boolSystem "iptables" (add args))
-				( return MadeChange , return FailedChange)
+			else toResult <$> boolSystem "iptables" (add args)
 	add params = (Param "-A") : params
 	chk params = (Param "-C") : params
 
