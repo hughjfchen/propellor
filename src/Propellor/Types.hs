@@ -14,6 +14,7 @@ module Propellor.Types
 	, requires
 	, Desc
 	, Result(..)
+	, ToResult(..)
 	, ActionResult(..)
 	, CmdLine(..)
 	, PrivDataField(..)
@@ -130,6 +131,13 @@ instance Monoid Result where
 	mappend MadeChange _ = MadeChange
 	mappend _ MadeChange = MadeChange
 	mappend NoChange NoChange = NoChange
+
+class ToResult t where
+	toResult :: t -> Result
+
+instance ToResult Bool where
+	toResult False = FailedChange
+	toResult True = MadeChange
 
 -- | Results of actions, with color.
 class ActionResult a where

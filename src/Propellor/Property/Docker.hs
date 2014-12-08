@@ -379,9 +379,10 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 			createDirectoryIfMissing True (takeDirectory $ identFile cid)
 		shim <- liftIO $ Shim.setup (localdir </> "propellor") Nothing (localdir </> shimdir cid)
 		liftIO $ writeFile (identFile cid) (show ident)
-		ensureProperty $ boolProperty "run" $ runContainer img
-			(runps ++ ["-i", "-d", "-t"])
-			[shim, "--continue", show (DockerInit (fromContainerId cid))]
+		ensureProperty $ property "run" $ liftIO $
+			toResult <$> runContainer img
+				(runps ++ ["-i", "-d", "-t"])
+				[shim, "--continue", show (DockerInit (fromContainerId cid))]
 
 -- | Called when propellor is running inside a docker container.
 -- The string should be the container's ContainerId.
@@ -466,7 +467,7 @@ stoppedContainer :: ContainerId -> Property
 stoppedContainer cid = containerDesc cid $ property desc $ 
 	ifM (liftIO $ elem cid <$> listContainers RunningContainers)
 		( liftIO cleanup `after` ensureProperty 
-			(boolProperty desc $ stopContainer cid)
+			(property desc $ liftIO $ toResult <$> stopContainer cid)
 		, return NoChange
 		)
   where
