@@ -148,18 +148,16 @@ sourceInstall = property "debootstrap installed from source" (liftIO sourceInsta
 	`requires` arInstalled
 
 perlInstalled :: Property
-perlInstalled = check (not <$> inPath "perl") $ property "perl installed" $ do
-	v <- liftIO $ firstM id
+perlInstalled = check (not <$> inPath "perl") $ property "perl installed" $
+	liftIO $ toResult . isJust <$> firstM id
 		[ yumInstall "perl"
 		]
-	if isJust v then return MadeChange else return FailedChange
 
 arInstalled :: Property
-arInstalled = check (not <$> inPath "ar") $ property "ar installed" $ do
-	v <- liftIO $ firstM id
+arInstalled = check (not <$> inPath "ar") $ property "ar installed" $
+	liftIO $ toResult . isJust <$> firstM id
 		[ yumInstall "binutils"
 		]
-	if isJust v then return MadeChange else return FailedChange
 
 yumInstall :: String -> IO Bool
 yumInstall p = boolSystem "yum" [Param "-y", Param "install", Param p]
