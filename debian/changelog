@@ -1,7 +1,8 @@
-propellor (1.1.1) UNRELEASED; urgency=medium
+propellor (1.2.0) UNRELEASED; urgency=medium
 
   * Display a warning when ensureProperty is used on a property which has
     Info and is so prevented from propigating it.
+  * Removed boolProperty; instead the new toResult can be used. (API change)
 
  -- Joey Hess <id@joeyh.name>  Sun, 07 Dec 2014 17:08:55 -0400
 
