@@ -5,6 +5,8 @@ propellor (1.2.0) unstable; urgency=medium
   * Removed boolProperty; instead the new toResult can be used. (API change)
   * Include Propellor.Property.OS, which was accidentially left out of the
     cabal file in the last release.
+  * Fix Apache.siteEnabled to update the config file and reload apache when
+    configuration has changed.
 
  -- Joey Hess <id@joeyh.name>  Tue, 09 Dec 2014 00:05:09 -0400
 
