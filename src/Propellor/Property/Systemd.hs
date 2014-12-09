@@ -227,7 +227,7 @@ containerCfg p = RevertableProperty (mk True) (mk False)
 		('-':_) -> p
 		_ -> "--" ++ p
 
--- | Bind mounts /etc/resolv.conf from the host into the container.
+-- | Bind mounts </etc/resolv.conf> from the host into the container.
 --
 -- This property is enabled by default. Revert it to disable it.
 resolvConfed :: RevertableProperty

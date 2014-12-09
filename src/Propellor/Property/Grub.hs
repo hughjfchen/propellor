@@ -4,10 +4,10 @@ import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 
--- | Eg, hd0,0 or xen/xvda1
+-- | Eg, "hd0,0" or "xen/xvda1"
 type GrubDevice = String
 
--- | Eg, /dev/sda
+-- | Eg, "/dev/sda"
 type OSDevice = String
 
 type TimeoutSecs = Int
@@ -51,7 +51,7 @@ boots dev = cmdProperty "grub-install" [dev]
 --
 -- Useful when the VPS's pv-grub is too old to boot a modern kernel image.
 --
--- http://notes.pault.ag/linode-pv-grub-chainning/
+-- <http://notes.pault.ag/linode-pv-grub-chainning/>
 --
 -- The rootdev should be in the form "hd0", while the bootdev is in the form
 -- "xen/xvda".

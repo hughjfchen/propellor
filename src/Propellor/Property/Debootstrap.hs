@@ -233,7 +233,7 @@ makeWrapperScript dir = do
 		]
 	modifyFileMode wrapperScript (addModes $ readModes ++ executeModes)
 
--- Work around for http://bugs.debian.org/770217
+-- Work around for <http://bugs.debian.org/770217>
 makeDevicesTarball :: IO ()
 makeDevicesTarball = do
 	-- TODO append to tarball; avoid writing to /dev

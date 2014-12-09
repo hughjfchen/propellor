@@ -176,7 +176,7 @@ garbageCollected = propertyList "docker garbage collected"
 -- | Tweaks a container to work well with docker.
 --
 -- Currently, this consists of making pam_loginuid lines optional in
--- the pam config, to work around https://github.com/docker/docker/issues/5663
+-- the pam config, to work around <https://github.com/docker/docker/issues/5663>
 -- which affects docker 1.2.0.
 tweaked :: Property
 tweaked = trivial $
@@ -529,7 +529,7 @@ dockerInfo :: DockerInfo Host -> Info
 dockerInfo i = mempty { _dockerinfo = i }
 
 -- | The ContainerIdent of a container is written to
--- /.propellor-ident inside it. This can be checked to see if
+-- </.propellor-ident> inside it. This can be checked to see if
 -- the container has the same ident later.
 propellorIdent :: FilePath
 propellorIdent = "/.propellor-ident"

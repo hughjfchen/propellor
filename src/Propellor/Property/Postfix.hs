@@ -50,7 +50,7 @@ mappedFile f setup = setup f
 	`onChange` cmdProperty "postmap" [f]
 
 -- | Run newaliases command, which should be done after changing
--- /etc/aliases.
+-- </etc/aliases>.
 newaliases :: Property
 newaliases = trivial $ cmdProperty "newaliases" []
 
