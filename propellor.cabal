@@ -1,5 +1,5 @@
 Name: propellor
-Version: 1.1.0
+Version: 1.2.0
 Cabal-Version: >= 1.6
 License: BSD3
 Maintainer: Joey Hess <id@joeyh.name>
@@ -90,6 +90,7 @@ Library
     Propellor.Property.Nginx
     Propellor.Property.Obnam
     Propellor.Property.OpenId
+    Propellor.Property.OS
     Propellor.Property.Postfix
     Propellor.Property.Prosody
     Propellor.Property.Reboot
