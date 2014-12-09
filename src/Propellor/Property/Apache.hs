@@ -11,12 +11,15 @@ type ConfigFile = [String]
 siteEnabled :: HostName -> ConfigFile -> RevertableProperty
 siteEnabled hn cf = RevertableProperty enable disable
   where
-	enable = check (not <$> isenabled) $
-		cmdProperty "a2ensite" ["--quiet", hn]
-			`describe` ("apache site enabled " ++ hn)
-			`requires` siteAvailable hn cf
+	enable = combineProperties ("apache site enabled " ++ hn)
+		[ siteAvailable hn cf
 			`requires` installed
 			`onChange` reloaded
+		, check (not <$> isenabled) $
+			cmdProperty "a2ensite" ["--quiet", hn]
+				`requires` installed
+				`onChange` reloaded
+		]
 	disable = combineProperties
 		("apache site disabled " ++ hn) 
 		(map File.notPresent (siteCfg hn))

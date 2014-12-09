@@ -76,6 +76,20 @@ darkstar = host "darkstar.kitenet.net"
 	& Apt.buildDep ["git-annex"] `period` Daily
 	& Docker.configured
 	! Docker.docked gitAnnexAndroidDev
+	& website "foo"
+
+website :: String -> RevertableProperty
+website hn = Apache.siteEnabled hn apachecfg
+        where
+          apachecfg = [ "<VirtualHost *>"
+                      , "DocumentRoot /tmp/xx"
+                      , "<Directory  /tmp/xx>"
+                      , "  Options Indexes FollowSymLinks Multiviews"
+                      , "  Order allow,deny"
+                      , Apache.allowAll
+                      , "</Directory>"
+                      , "</VirtualHost>"
+                      ]
 
 clam :: Host
 clam = standardSystem "clam.kitenet.net" Unstable "amd64"

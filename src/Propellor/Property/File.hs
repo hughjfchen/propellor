@@ -62,11 +62,11 @@ fileProperty' :: (FilePath -> String -> IO ()) -> Desc -> ([Line] -> [Line]) -> 
 fileProperty' writer desc a f = property desc $ go =<< liftIO (doesFileExist f)
   where
 	go True = do
-		ls <- liftIO $ lines <$> readFile f
-		let ls' = a ls
-		if ls' == ls
+		old <- liftIO $ readFile f
+		let new = unlines (a (lines old))
+		if old == new
 			then noChange
-			else makeChange $ viaTmp updatefile f (unlines ls')
+			else makeChange $ viaTmp updatefile f new
 	go False = makeChange $ writer f (unlines $ a [])
 
 	-- viaTmp makes the temp file mode 600.
