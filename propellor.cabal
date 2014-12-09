@@ -18,7 +18,6 @@ Extra-Source-Files:
   config-simple.hs
   config-joey.hs
   config.hs
-  propellor.1
   debian/changelog
   debian/README.Debian
   debian/compat
