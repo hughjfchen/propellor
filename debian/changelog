@@ -1,4 +1,4 @@
-propellor (1.2.0) UNRELEASED; urgency=medium
+propellor (1.2.0) unstable; urgency=medium
 
   * Display a warning when ensureProperty is used on a property which has
     Info and is so prevented from propigating it.
@@ -6,7 +6,7 @@ propellor (1.2.0) UNRELEASED; urgency=medium
   * Include Propellor.Property.OS, which was accidentially left out of the
     cabal file in the last release.
 
- -- Joey Hess <id@joeyh.name>  Sun, 07 Dec 2014 17:08:55 -0400
+ -- Joey Hess <id@joeyh.name>  Tue, 09 Dec 2014 00:05:09 -0400
 
 propellor (1.1.0) unstable; urgency=medium
 
