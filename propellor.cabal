@@ -90,6 +90,7 @@ Library
     Propellor.Property.Nginx
     Propellor.Property.Obnam
     Propellor.Property.OpenId
+    Propellor.Property.OS
     Propellor.Property.Postfix
     Propellor.Property.Prosody
     Propellor.Property.Reboot
