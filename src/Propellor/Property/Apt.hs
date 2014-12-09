@@ -90,7 +90,7 @@ stdSourcesListFor suite = stdSourcesList' suite []
 -- | Adds additional sources.list generators.
 --
 -- Note that if a Property needs to enable an apt source, it's better
--- to do so via a separate file in /etc/apt/sources.list.d/
+-- to do so via a separate file in </etc/apt/sources.list.d/>
 stdSourcesList' :: DebianSuite -> [SourcesGenerator] -> Property
 stdSourcesList' suite more = setSourcesList
 	(concatMap (\gen -> gen suite) generators)

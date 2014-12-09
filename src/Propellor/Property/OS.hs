@@ -33,10 +33,10 @@ import Control.Exception (throw)
 -- the property to.
 --
 -- This property only runs once. The cleanly installed system will have
--- a file /etc/propellor-cleaninstall, which indicates it was cleanly
+-- a file </etc/propellor-cleaninstall>, which indicates it was cleanly
 -- installed.
 -- 
--- The files from the old os will be left in /old-os
+-- The files from the old os will be left in </old-os>
 --
 -- After the OS is installed, and if all properties of the host have
 -- been successfully satisfied, the host will be rebooted to properly load
@@ -188,13 +188,13 @@ confirmed desc (Confirmed c) = property desc $ do
 			return FailedChange
 		else return NoChange
 
--- | /etc/network/interfaces is configured to bring up the network 
+-- | </etc/network/interfaces> is configured to bring up the network 
 -- interface that currently has a default route configured, using
 -- the same (static) IP address.
 preserveNetwork :: Property
 preserveNetwork = undefined -- TODO
 
--- | /etc/resolv.conf is copied the from the old OS
+-- | </etc/resolv.conf> is copied from the old OS
 preserveResolvConf :: Property
 preserveResolvConf = check (fileExist oldloc) $
 	property (newloc ++ " copied from old OS") $ do
@@ -204,7 +204,7 @@ preserveResolvConf = check (fileExist oldloc) $
 	newloc = "/etc/resolv.conf"
 	oldloc = oldOSDir ++ newloc
 
--- | Root's .ssh/authorized_keys has added to it any ssh keys that
+-- | </root/.ssh/authorized_keys> has added to it any ssh keys that
 -- were authorized in the old OS. Any other contents of the file are
 -- retained.
 preserveRootSshAuthorized :: Property
@@ -216,7 +216,7 @@ preserveRootSshAuthorized = check (fileExist oldloc) $
 	newloc = "/root/.ssh/authorized_keys"
 	oldloc = oldOSDir ++ newloc
 
--- Removes the old OS's backup from /old-os
+-- Removes the old OS's backup from </old-os>
 oldOSRemoved :: Confirmation -> Property
 oldOSRemoved confirmation = check (doesDirectoryExist oldOSDir) $
 	go `requires` confirmed "old OS backup removal confirmed" confirmation
