@@ -23,7 +23,7 @@ nuked user _ = check (isJust <$> catchMaybeIO (homedir user)) $ cmdProperty "use
 	`describe` ("nuked user " ++ user)
 
 -- | Only ensures that the user has some password set. It may or may
--- not be the password from the PrivData.
+-- not be a password from the PrivData.
 hasSomePassword :: UserName -> Property
 hasSomePassword user = hasSomePassword' user hostContext
 
@@ -34,22 +34,31 @@ hasSomePassword' :: IsContext c => UserName -> c -> Property
 hasSomePassword' user context = check ((/= HasPassword) <$> getPasswordStatus user) $
 	hasPassword' user context
 
--- | Ensures that a user's password is set to the password from the PrivData.
+-- | Ensures that a user's password is set to a password from the PrivData.
 -- (Will change any existing password.)
+--
+-- A user's password can be stored in the PrivData in either of two forms;
+-- the full cleartext <Password> or a <CryptPassword> hash. The latter
+-- is obviously more secure.
 hasPassword :: UserName -> Property
 hasPassword user = hasPassword' user hostContext
 
 hasPassword' :: IsContext c => UserName -> c -> Property
 hasPassword' user context = go `requires` shadowConfig True
   where
-	go = withPrivData (Password user) context $
-		property (user ++ " has password") . setPassword user
+	go = withSomePrivData [CryptPassword user, Password user] context $
+		property (user ++ " has password") . setPassword
 
-setPassword :: UserName -> ((PrivData -> Propellor Result) -> Propellor Result) -> Propellor Result
-setPassword user getpassword = getpassword $ \password -> makeChange $
-	withHandle StdinHandle createProcessSuccess
-		(proc "chpasswd" []) $ \h -> do
-			hPutStrLn h $ user ++ ":" ++ password
+setPassword :: (((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Propellor Result
+setPassword getpassword = getpassword $ go
+  where
+	go (Password user, password) = set user password []
+	go (CryptPassword user, hash) = set user hash ["--encrypted"]
+	go (f, _) = error $ "Unexpected type of privdata: " ++ show f
+
+	set user v ps = makeChange $ withHandle StdinHandle createProcessSuccess
+		(proc "chpasswd" ps) $ \h -> do
+			hPutStrLn h $ user ++ ":" ++ v
 			hClose h
 
 lockedPassword :: UserName -> Property

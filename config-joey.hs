@@ -78,6 +78,9 @@ darkstar = host "darkstar.kitenet.net"
 	! Docker.docked gitAnnexAndroidDev
 	& website "foo"
 
+	& User.accountFor "tester"
+	& User.hasSomePassword "tester"
+
 website :: String -> RevertableProperty
 website hn = Apache.siteEnabled hn apachecfg
         where

@@ -53,18 +53,43 @@ withPrivData
 	-> c
 	-> (((PrivData -> Propellor Result) -> Propellor Result) -> Property)
 	-> Property
-withPrivData field c mkprop = addinfo $ mkprop $ \a ->
-	maybe missing a =<< get
+withPrivData field = withPrivData' snd [field]
+
+-- Like withPrivData, but here any of a list of PrivDataFields can be used.
+withSomePrivData
+	:: IsContext c
+	=> [PrivDataField]
+	-> c
+	-> ((((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Property)
+	-> Property
+withSomePrivData = withPrivData' id
+
+withPrivData' 
+	:: IsContext c
+	=> ((PrivDataField, PrivData) -> v)
+	-> [PrivDataField]
+	-> c
+	-> (((v -> Propellor Result) -> Propellor Result) -> Property)
+	-> Property
+withPrivData' feed fieldlist c mkprop = addinfo $ mkprop $ \a ->
+	maybe missing (a . feed) =<< getM get fieldlist
   where
-  	get = do
+  	get field = do
 		context <- mkHostContext hc <$> asks hostName
-		liftIO $ getLocalPrivData field context
+		maybe Nothing (\privdata -> Just (field, privdata))
+			<$> liftIO (getLocalPrivData field context)
 	missing = do
 		Context cname <- mkHostContext hc <$> asks hostName
-		warningMessage $ "Missing privdata " ++ show field ++ " (for " ++ cname ++ ")"
-		liftIO $ putStrLn $ "Fix this by running: propellor --set '" ++ show field ++ "' '" ++ cname ++ "'"
+		warningMessage $ "Missing privdata " ++ intercalate " or " fieldnames ++ " (for " ++ cname ++ ")"
+		liftIO $ putStrLn $ "Fix this by running:"
+		liftIO $ forM_ fieldlist $ \f -> do
+			putStrLn $ "  propellor --set '" ++ show f ++ "' '" ++ cname ++ "'"
+			putStrLn $ "    < ( " ++ howtoMkPrivDataField f ++ " )"
+			putStrLn ""
 		return FailedChange
-	addinfo p = p { propertyInfo = propertyInfo p <> mempty { _privDataFields = S.singleton (field, hc) } }
+	addinfo p = p { propertyInfo = propertyInfo p <> mempty { _privDataFields = fieldset } }
+	fieldnames = map show fieldlist
+	fieldset = S.fromList $ zip fieldlist (repeat hc)
 	hc = asHostContext c
 
 addPrivDataField :: (PrivDataField, HostContext) -> Property
