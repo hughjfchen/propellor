@@ -63,9 +63,11 @@ installed = Apt.installed ["docker.io"]
 configured :: Property
 configured = prop `requires` installed
   where
-	prop = withPrivData DockerAuthentication anyContext $ \getcfg ->
+	prop = withPrivData src anyContext $ \getcfg ->
 		property "docker configured" $ getcfg $ \cfg -> ensureProperty $ 
 			"/root/.dockercfg" `File.hasContent` (lines cfg)
+	src = PrivDataSourceFileFromCommand DockerAuthentication
+		"/root/.dockercfg" "docker login"
 
 -- | A short descriptive name for a container.
 -- Should not contain whitespace or other unusual characters,

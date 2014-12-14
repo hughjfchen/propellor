@@ -28,13 +28,14 @@ keyImported (GpgKeyId keyid) user = flagFile' prop genflag
 	genflag = do
 		d <- dotDir user
 		return $ d </> ".propellor-imported-keyid-" ++ keyid
-	prop = withPrivData GpgKey (Context keyid) $ \getkey ->
+	prop = withPrivData src (Context keyid) $ \getkey ->
 		property desc $ getkey $ \key -> makeChange $
 			withHandle StdinHandle createProcessSuccess
 				(proc "su" ["-c", "gpg --import", user]) $ \h -> do
 					fileEncoding h
 					hPutStr h key
 					hClose h
+	src = PrivDataSource GpgKey "Either a gpg public key, exported with gpg --export -a, or a gpg private key, exported with gpg --export-secret-key -a"
 
 dotDir :: UserName -> IO FilePath
 dotDir user = do

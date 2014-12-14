@@ -48,30 +48,30 @@ import Utility.Table
 -- being used, which is necessary to ensure that the privdata is sent to
 -- the remote host by propellor.
 withPrivData
-	:: IsContext c
-	=> PrivDataField
+	:: (IsContext c, IsPrivDataSource s)
+	=> s
 	-> c
 	-> (((PrivData -> Propellor Result) -> Propellor Result) -> Property)
 	-> Property
-withPrivData field = withPrivData' snd [field]
+withPrivData s = withPrivData' snd [s]
 
 -- Like withPrivData, but here any of a list of PrivDataFields can be used.
 withSomePrivData
-	:: IsContext c
-	=> [PrivDataField]
+	:: (IsContext c, IsPrivDataSource s)
+	=> [s]
 	-> c
 	-> ((((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Property)
 	-> Property
 withSomePrivData = withPrivData' id
 
 withPrivData' 
-	:: IsContext c
+	:: (IsContext c, IsPrivDataSource s)
 	=> ((PrivDataField, PrivData) -> v)
-	-> [PrivDataField]
+	-> [s]
 	-> c
 	-> (((v -> Propellor Result) -> Propellor Result) -> Property)
 	-> Property
-withPrivData' feed fieldlist c mkprop = addinfo $ mkprop $ \a ->
+withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 	maybe missing (a . feed) =<< getM get fieldlist
   where
   	get field = do
@@ -82,14 +82,15 @@ withPrivData' feed fieldlist c mkprop = addinfo $ mkprop $ \a ->
 		Context cname <- mkHostContext hc <$> asks hostName
 		warningMessage $ "Missing privdata " ++ intercalate " or " fieldnames ++ " (for " ++ cname ++ ")"
 		liftIO $ putStrLn $ "Fix this by running:"
-		liftIO $ forM_ fieldlist $ \f -> do
-			putStrLn $ "  propellor --set '" ++ show f ++ "' '" ++ cname ++ "'"
-			putStrLn $ "    < ( " ++ howtoMkPrivDataField f ++ " )"
+		liftIO $ forM_ srclist $ \src -> do
+			putStrLn $ "  propellor --set '" ++ show (privDataField src) ++ "' '" ++ cname ++ "'"
+			maybe noop (\d -> putStrLn $ "    " ++ d) (describePrivDataSource src)
 			putStrLn ""
 		return FailedChange
 	addinfo p = p { propertyInfo = propertyInfo p <> mempty { _privDataFields = fieldset } }
 	fieldnames = map show fieldlist
 	fieldset = S.fromList $ zip fieldlist (repeat hc)
+	fieldlist = map privDataField srclist
 	hc = asHostContext c
 
 addPrivDataField :: (PrivDataField, HostContext) -> Property

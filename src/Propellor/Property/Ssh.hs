@@ -90,8 +90,8 @@ hostKeys ctx = propertyList "known ssh host keys"
 -- | Sets a single ssh host key from the privdata.
 hostKey :: IsContext c => SshKeyType -> c -> Property
 hostKey keytype context = combineProperties desc
-	[ installkey (SshPubKey keytype "")  (install writeFile ".pub")
-	, installkey (SshPrivKey keytype "") (install writeFileProtected "")
+	[ installkey (keysrc ".pub" (SshPubKey keytype ""))  (install writeFile ".pub")
+	, installkey (keysrc "" (SshPrivKey keytype "")) (install writeFileProtected "")
 	]
 	`onChange` restarted
   where
@@ -104,6 +104,8 @@ hostKey keytype context = combineProperties desc
 		if s == key
 			then noChange
 			else makeChange $ writer f key
+	keysrc ext field = PrivDataSourceFileFromCommand field ("sshkey"++ext)
+		("ssh-keygen -t " ++ sshKeyTypeParam keytype ++ " -f sshkey")
 
 -- | Sets up a user with a ssh private key and public key pair from the
 -- PrivData.

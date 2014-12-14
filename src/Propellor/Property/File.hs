@@ -29,7 +29,7 @@ hasPrivContentExposed = hasPrivContent' writeFile
 
 hasPrivContent' :: IsContext c => (String -> FilePath -> IO ()) -> FilePath -> c -> Property
 hasPrivContent' writer f context = 
-	withPrivData (PrivFile f) context $ \getcontent -> 
+	withPrivData (PrivDataSourceFile (PrivFile f) f) context $ \getcontent -> 
 		property desc $ getcontent $ \privcontent -> 
 			ensureProperty $ fileProperty' writer desc
 				(\_oldcontent -> lines privcontent) f
