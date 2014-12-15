@@ -76,10 +76,7 @@ darkstar = host "darkstar.kitenet.net"
 	& Apt.buildDep ["git-annex"] `period` Daily
 	& Docker.configured
 	! Docker.docked gitAnnexAndroidDev
-	& website "foo"
-
-	& User.accountFor "tester"
-	& User.hasSomePassword "tester"
+	! website "foo"
 
 website :: String -> RevertableProperty
 website hn = Apache.siteEnabled hn apachecfg
