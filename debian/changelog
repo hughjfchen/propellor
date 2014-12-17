@@ -1,11 +1,11 @@
-propellor (1.2.1) UNRELEASED; urgency=medium
+propellor (1.2.1) unstable; urgency=medium
 
   * Added CryptPassword to PrivDataField, for password hashes as produced 
     by crypt(3).
   * User.hasPassword and User.hasSomePassword will now use either
     a CryptPassword or a Password from privdata, depending on which is set.
 
- -- Joey Hess <id@joeyh.name>  Sun, 14 Dec 2014 13:51:01 -0400
+ -- Joey Hess <id@joeyh.name>  Wed, 17 Dec 2014 16:30:44 -0400
 
 propellor (1.2.0) unstable; urgency=medium
 
