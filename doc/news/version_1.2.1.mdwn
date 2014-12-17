@@ -1,0 +1,6 @@
+propellor 1.2.1 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Added CryptPassword to PrivDataField, for password hashes as produced
+     by crypt(3).
+   * User.hasPassword and User.hasSomePassword will now use either
+     a CryptPassword or a Password from privdata, depending on which is set."""]]
