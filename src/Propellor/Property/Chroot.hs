@@ -137,7 +137,7 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 		changeWorkingDirectory localdir
 		when onconsole forceConsole
 		onlyProcess (provisioningLock loc) $ do
-			r <- runPropellor h $ ensureProperties $
+			r <- runPropellor h $ ensurePropertiesWith ensureProperty' $
 				if systemdonly
 					then [Systemd.installed]
 					else hostProperties h

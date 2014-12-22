@@ -4,7 +4,9 @@ module Propellor.Engine (
 	mainProperties,
 	runPropellor,
 	ensureProperty,
+	ensureProperty',
 	ensureProperties,
+	ensurePropertiesWith,
 	fromHost,
 	onlyProcess,
 	processChainOutput,
@@ -73,6 +75,7 @@ ensureProperty p = do
 		warningMessage $ "ensureProperty called on " ++ show p ++ "; will not propigate its info: " ++ show (getInfo p)
 	ensureProperty' p
 
+-- | ensureProperty without the warning message.
 ensureProperty' :: Property -> Propellor Result
 ensureProperty' = catchPropellor . propertySatisfy
 
