@@ -358,15 +358,24 @@ githubBackup = propertyList "github-backup box"
 			, "cd github"
 			, ". $HOME/.github-keys"
 			, "github-backup joeyh"
-			] ++ map gitriddance mirrors
+			] ++ map gitriddance githubMirrors
 	]
   where
 	gitriddance (r, msg) = "(cd " ++ r ++ " && gitriddance " ++ shellEscape msg ++ ")"
-	-- these repos are only mirrored on github, I don't want
-	-- all the proprietary features
-	mirrors =
-		[ ("ikiwiki", "please submit changes to http://ikiwiki.info/todo/ instead of using github pull requests")
-		]
+
+
+-- these repos are only mirrored on github, I don't want
+-- all the proprietary features
+githubMirrors :: [(String, String)]
+githubMirrors =
+	[ ("ikiwiki", plzuseurl "http://ikiwiki.info/todo/")
+	, ("git-annex", plzuseurl "http://git-annex.branchable.com/todo/")
+	, ("myrepos", plzuseurl "http://myrepos.branchable.com/todo/")
+	, ("propellor", plzuseurl "http://propellor.branchable.com/todo/")
+	, ("etckeeper", plzuseurl "http://etckeeper.branchable.com/todo/")
+	]
+  where
+	plzuseurl u = "please submit changes to " ++ u ++ " instead of using github pull requests"
 
 rsyncNetBackup :: [Host] -> Property
 rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" "30 5 * * *"
