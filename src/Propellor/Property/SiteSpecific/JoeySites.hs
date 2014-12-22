@@ -353,12 +353,20 @@ githubBackup = propertyList "github-backup box"
 	  in File.hasPrivContent f anyContext
 		`onChange` File.ownerGroup f "joey" "joey"
 	, Cron.niceJob "github-backup run" "30 4 * * *" "joey"
-		"/home/joey/lib/backup" $ intercalate "&&"
+		"/home/joey/lib/backup" $ intercalate "&&" $
 			[ "mkdir -p github"
 			, "cd github"
-			, ". $HOME/.github-keys && github-backup joeyh"
-			]
+			, ". $HOME/.github-keys"
+			, "github-backup joeyh"
+			] ++ map gitriddance mirrors
 	]
+  where
+	gitriddance (r, msg) = "(cd " ++ r ++ " && gitriddance " ++ shellEscape msg ++ ")"
+	-- these repos are only mirrored on github, I don't want
+	-- all the proprietary features
+	mirrors =
+		[ ("ikiwiki", "please submit changes to http://ikiwiki.info/todo/ instead of using github pull requests")
+		]
 
 rsyncNetBackup :: [Host] -> Property
 rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" "30 5 * * *"
