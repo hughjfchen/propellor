@@ -15,12 +15,6 @@ propigated out..
 
 ----
 
-Currently, ensureProperty detects if it's called on a property with a
-non-empty Info, and prints a warning. Would prefer to handle this at the
-type level though..
-
-----
-
 One approach might be to make the Propellor monad be able to be run in two
 modes. In run mode, it actually performs IO, etc. In introspection mode, all
 liftIO is a no-op, but all Info encountered is accumulated using a Reader.
