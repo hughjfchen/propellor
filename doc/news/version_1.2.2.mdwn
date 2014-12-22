@@ -1,0 +1,4 @@
+propellor 1.2.2 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Revert ensureProperty warning message, too many false positives in places
+     where Info is correctly propigated. Better approach needed."""]]
