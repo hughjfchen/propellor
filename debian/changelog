@@ -1,3 +1,10 @@
+propellor (1.2.2) UNRELEASED; urgency=medium
+
+  * Revert ensureProperty warning message, too many false positives in places
+    where Info is correctly propigated. Better approach needed.
+
+ -- Joey Hess <id@joeyh.name>  Sun, 21 Dec 2014 21:11:45 -0400
+
 propellor (1.2.1) unstable; urgency=medium
 
   * Added CryptPassword to PrivDataField, for password hashes as produced 

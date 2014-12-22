@@ -109,6 +109,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& File.notPresent "/var/www/html/index.html"
 	& "/var/www/index.html" `File.hasContent` ["hello, world"]
 	& alias "helloworld.kitenet.net"
+	& Docker.docked oldusenetShellBox
 	
 	-- ssh on some extra ports to deal with horrible networks
 	-- while travelling
@@ -216,6 +217,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
+	& Docker.docked oldusenetShellBox
 
 diatom :: Host
 diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
