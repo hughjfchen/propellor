@@ -4,9 +4,7 @@ module Propellor.Engine (
 	mainProperties,
 	runPropellor,
 	ensureProperty,
-	ensureProperty',
 	ensureProperties,
-	ensurePropertiesWith,
 	fromHost,
 	onlyProcess,
 	processChainOutput,
@@ -25,7 +23,6 @@ import System.FilePath
 import System.Directory
 
 import Propellor.Types
-import Propellor.Types.Empty
 import Propellor.Message
 import Propellor.Exception
 import Propellor.Info
@@ -38,7 +35,7 @@ import Utility.Monad
 mainProperties :: Host -> IO ()
 mainProperties host = do
 	ret <- runPropellor host $
-		ensureProperties [Property "overall" (ensurePropertiesWith ensureProperty' $ hostProperties host) mempty]
+		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) mempty]
 	h <- mkMessageHandle
         whenConsole h $
 		setTitle "propellor: done"
@@ -65,31 +62,17 @@ runEndAction host res (EndAction desc a) = actionMessageOn (hostName host) desc 
 
 -- | For when code running in the Propellor monad needs to ensure a
 -- Property.
---
--- Note that any info of the Property is not propigated out to
--- the enclosing Property, and so will not be available for propellor to
--- use. A warning message will be printed if this is detected.
 ensureProperty :: Property -> Propellor Result
-ensureProperty p = do
-	unless (isEmpty (getInfo p)) $
-		warningMessage $ "ensureProperty called on " ++ show p ++ "; will not propigate its info: " ++ show (getInfo p)
-	ensureProperty' p
-
--- | ensureProperty without the warning message.
-ensureProperty' :: Property -> Propellor Result
-ensureProperty' = catchPropellor . propertySatisfy
+ensureProperty = catchPropellor . propertySatisfy
 
 -- | Ensures a list of Properties, with a display of each as it runs.
 ensureProperties :: [Property] -> Propellor Result
-ensureProperties = ensurePropertiesWith ensureProperty
-
-ensurePropertiesWith :: (Property -> Propellor Result) -> [Property] -> Propellor Result
-ensurePropertiesWith a ps = ensure ps NoChange
+ensureProperties ps = ensure ps NoChange
   where
 	ensure [] rs = return rs
 	ensure (p:ls) rs = do
 		hn <- asks hostName
-		r <- actionMessageOn hn (propertyDesc p) (a p)
+		r <- actionMessageOn hn (propertyDesc p) (ensureProperty p)
 		ensure ls (r <> rs)
 
 -- | Lifts an action into a different host.
