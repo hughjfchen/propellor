@@ -358,11 +358,15 @@ githubBackup = propertyList "github-backup box"
 			, "cd github"
 			, ". $HOME/.github-keys"
 			, "github-backup joeyh"
+			]
+	, Cron.niceJob "gitriddance" "30 4 * * *" "joey"
+		"/home/joey/lib/backup" $ intercalate "&&" $
+			[ "cd github"
+			, ". $HOME/.github-keys"
 			] ++ map gitriddance githubMirrors
 	]
   where
 	gitriddance (r, msg) = "(cd " ++ r ++ " && gitriddance " ++ shellEscape msg ++ ")"
-
 
 -- these repos are only mirrored on github, I don't want
 -- all the proprietary features
