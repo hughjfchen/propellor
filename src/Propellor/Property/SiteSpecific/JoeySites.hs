@@ -88,9 +88,6 @@ oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 			, "dpkg -i ../" ++ pkg ++ "_*.deb || true"
 			, "apt-get -fy install" -- dependencies
 			, "rm -rf /root/tmp/oldusenet"
-			-- screen fails unless the directory has this mode.
-			-- not sure what's going on.
-			, "chmod 777 /var/run/screen"
 			] `describe` "olduse.net built"
 		]
 
@@ -353,12 +350,33 @@ githubBackup = propertyList "github-backup box"
 	  in File.hasPrivContent f anyContext
 		`onChange` File.ownerGroup f "joey" "joey"
 	, Cron.niceJob "github-backup run" "30 4 * * *" "joey"
-		"/home/joey/lib/backup" $ intercalate "&&"
+		"/home/joey/lib/backup" $ intercalate "&&" $
 			[ "mkdir -p github"
 			, "cd github"
-			, ". $HOME/.github-keys && github-backup joeyh"
+			, ". $HOME/.github-keys"
+			, "github-backup joeyh"
 			]
+	, Cron.niceJob "gitriddance" "30 4 * * *" "joey"
+		"/home/joey/lib/backup" $ intercalate "&&" $
+			[ "cd github"
+			, ". $HOME/.github-keys"
+			] ++ map gitriddance githubMirrors
 	]
+  where
+	gitriddance (r, msg) = "(cd " ++ r ++ " && gitriddance " ++ shellEscape msg ++ ")"
+
+-- these repos are only mirrored on github, I don't want
+-- all the proprietary features
+githubMirrors :: [(String, String)]
+githubMirrors =
+	[ ("ikiwiki", plzuseurl "http://ikiwiki.info/todo/")
+	, ("git-annex", plzuseurl "http://git-annex.branchable.com/todo/")
+	, ("myrepos", plzuseurl "http://myrepos.branchable.com/todo/")
+	, ("propellor", plzuseurl "http://propellor.branchable.com/todo/")
+	, ("etckeeper", plzuseurl "http://etckeeper.branchable.com/todo/")
+	]
+  where
+	plzuseurl u = "please submit changes to " ++ u ++ " instead of using github pull requests"
 
 rsyncNetBackup :: [Host] -> Property
 rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" "30 5 * * *"
