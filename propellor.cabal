@@ -154,4 +154,4 @@ Library
 
 source-repository head
   type: git
-  location: git://git.kitenet.net/propellor.git
+  location: git://git.joeyh.name/propellor.git
