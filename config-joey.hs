@@ -191,6 +191,10 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& alias "pop.kitenet.net"
 	& alias "mail.kitenet.net"
 	& JoeySites.kiteMailServer
+	
+	& alias "ns4.kitenet.net"
+	& myDnsSecondary
+	& branchableSecondary
 
 	& JoeySites.legacyWebSites
 
