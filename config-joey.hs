@@ -452,9 +452,8 @@ myDnsPrimary domain extras = Dns.primary hosts domain
 	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
 	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
-	-- SPF only allows IP address of domain to send email,
-	-- and hard-fails on email from other IPs.
-	, (RootDomain, TXT "v=spf1 a -all")
+	-- SPF only allows IP address of kitenet.net to send mail.
+	, (RootDomain, TXT "v=spf1 a ip4:66.228.36.95 -all")
 	] ++ extras
 
 
