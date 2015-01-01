@@ -105,7 +105,11 @@ getSshTarget target hst
 
 	matchingtarget a = (==) target <$> inet_ntoa a
 
-	useip = return $ fromMaybe target configip
+	useip = case configip of
+		Nothing -> return target
+		Just ip -> do
+			warningMessage $ "DNS seems out of date for " ++ target ++ "; using IP address from configuration instead."
+			return ip
 
 	configip = case mapMaybe getIPAddr (S.toList (_dns (hostInfo hst))) of
 		[] -> Nothing
