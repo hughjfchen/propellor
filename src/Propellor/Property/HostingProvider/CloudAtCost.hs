@@ -18,6 +18,7 @@ decruft = propertyList "cloudatcost cleanup"
 	, combineProperties "nuked cloudatcost cruft"
 		[ File.notPresent "/etc/rc.local"
 		, File.notPresent "/etc/init.d/S97-setup.sh"
+		, File.notPresent "/zang-debian.sh"
 		, User.nuked "user" User.YesReallyDeleteHome
 		]
 	]
