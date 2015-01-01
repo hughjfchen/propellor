@@ -48,7 +48,6 @@ hosts =                --                  (o)  `
 	, kite
 	, diatom
 	, elephant
-	, alien
 	, testvm
 	] ++ monsters
 
@@ -94,7 +93,7 @@ website hn = Apache.siteEnabled hn apachecfg
 clam :: Host
 clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	[ "Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "162.248.9.29"
+	& ipv4 "162.244.28.85"
 
 	& CloudAtCost.decruft
 	& Apt.unattendedUpgrades
@@ -118,20 +117,6 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	! Ssh.listenPort 443
 
 	& Systemd.persistentJournal
-	! Systemd.nspawned meow
-	
-meow :: Systemd.Container
-meow = Systemd.container "meow" (Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty)
-	& Apt.serviceInstalledRunning "uptimed"
-	& alias "meow.kitenet.net"
-
-alien :: Host
-alien = host "alientest.kitenet.net"
-	& ipv4 "104.131.106.199"
-	& Chroot.provisioned
-		( Chroot.debootstrapped (System (Debian Unstable) "amd64") Debootstrap.MinBase "/debian"
-			& Apt.serviceInstalledRunning "uptimed"
-		)
 
 orca :: Host
 orca = standardSystem "orca.kitenet.net" Unstable "amd64"
