@@ -26,8 +26,13 @@ getOS = askInfo _os
 
 -- | Indidate that a host has an A record in the DNS.
 --
--- TODO check at run time if the host really has this address.
--- (Can't change the host's address, but as a sanity check.)
+-- When propellor is used to deploy a DNS server for a domain,
+-- the hosts in the domain are found by looking for these
+-- and similar properites.
+--
+-- When propellor --spin is used to deploy a host, it checks
+-- if the host's IP Property matches the DNS. If the DNS is missing or
+-- out of date, the host will instead be contacted directly by IP address.
 ipv4 :: String -> Property
 ipv4 = addDNS . Address . IPv4
 

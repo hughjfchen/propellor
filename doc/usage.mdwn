@@ -49,6 +49,10 @@ and configured in haskell.
   uses ssh agent forwarding to make this work, and the relay host
   sees any privdata belonging to the target host.
 
+  Propellor configuration typically uses the FQDN of hosts.
+  The hostname given to --spin can be a short name, which is
+  then looked up in the DNS to find the FQDN.
+
 * propellor --add-key keyid
 
   Adds a gpg key, which is used to encrypt the privdata.
