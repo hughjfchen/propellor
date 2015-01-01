@@ -96,19 +96,19 @@ spin target relay hst = do
 -- the host in it at all, use one of the Host's IPs instead.
 getSshTarget :: HostName -> Host -> IO String
 getSshTarget target hst
-	| isJust configip = go =<< catchMaybeIO (BSD.getHostByName target)
+	| isJust configip = go =<< tryIO (BSD.getHostByName target)
 	| otherwise = return target
   where
-	go Nothing = useip
-	go (Just hostentry) = maybe useip (const $ return target)
+	go (Left e) = useip (show e)
+	go (Right hostentry) = maybe (useip $ "none matching " ++ fromMaybe "missing" configip) (const $ return target)
 		=<< firstM matchingtarget (BSD.hostAddresses hostentry)
 
 	matchingtarget a = (==) target <$> inet_ntoa a
 
-	useip = case configip of
+	useip why = case configip of
 		Nothing -> return target
 		Just ip -> do
-			warningMessage $ "DNS seems out of date for " ++ target ++ "; using IP address from configuration instead."
+			warningMessage $ "DNS seems out of date for " ++ target ++ "(" ++ why ++ "); using IP address from configuration instead."
 			return ip
 
 	configip = case mapMaybe getIPAddr (S.toList (_dns (hostInfo hst))) of
