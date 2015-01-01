@@ -351,29 +351,44 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 	-- Check if the ident has changed; if so the
 	-- parameters of the container differ and it must
 	-- be restarted.
-	checkident runningident
+	checkident (Right runningident)
 		| runningident == Just ident = noChange
 		| otherwise = do
 			void $ liftIO $ stopContainer cid
 			restartcontainer
+	checkident (Left errmsg) = do
+		warningMessage errmsg
+		return FailedChange
 
 	restartcontainer = do
 		oldimage <- liftIO $ fromMaybe image <$> commitContainer cid
 		void $ liftIO $ removeContainer cid
 		go oldimage
 
-	getrunningident = readish
-		<$> readProcess' (inContainerProcess cid [] ["cat", propellorIdent])
+	getrunningident = withTmpFile "dockerrunsane" $ \t h -> do
+		-- detect #774376 which caused docker exec to not enter
+		-- the container namespace, and be able to access files
+		-- outside
+		hClose h
+		void . checkSuccessProcess . processHandle =<<
+			createProcess (inContainerProcess cid []
+				["rm", "-f", t])
+		ifM (doesFileExist t)
+			( Right . readish <$>
+				readProcess' (inContainerProcess cid []
+					["cat", propellorIdent])
+			, return $ Left "docker exec failed to enter chroot properly (maybe an old kernel version?)"
+			)
 
-	retry :: Int -> IO (Maybe a) -> IO (Maybe a)
-	retry 0 _ = return Nothing
+	retry :: Int -> IO (Either e (Maybe a)) -> IO (Either e (Maybe a))
+	retry 0 _ = return (Right Nothing)
 	retry n a = do
 		v <- a
 		case v of
-			Just _ -> return v
-			Nothing -> do
-				threadDelaySeconds (Seconds 1)				
+			Right Nothing -> do
+				threadDelaySeconds (Seconds 1)		
 				retry (n-1) a
+			_ -> return v
 
 	go img = do
 		liftIO $ do
