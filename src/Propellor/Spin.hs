@@ -100,15 +100,19 @@ getSshTarget target hst
 	| otherwise = return target
   where
 	go (Left e) = useip (show e)
-	go (Right hostentry) = maybe (useip $ "none matching " ++ fromMaybe "missing" configip) (const $ return target)
-		=<< firstM matchingtarget (BSD.hostAddresses hostentry)
+	go (Right hostentry) = ifM (anyM matchingtarget (BSD.hostAddresses hostentry))
+		( return target
+		, do
+			ips <- mapM inet_ntoa (BSD.hostAddresses hostentry)
+			useip ("DNS " ++ show ips ++ " /= configured " ++ show (maybeToList configip))
+		)
 
 	matchingtarget a = (==) target <$> inet_ntoa a
 
 	useip why = case configip of
 		Nothing -> return target
 		Just ip -> do
-			warningMessage $ "DNS seems out of date for " ++ target ++ "(" ++ why ++ "); using IP address from configuration instead."
+			warningMessage $ "DNS seems out of date for " ++ target ++ " (" ++ why ++ "); using IP address from configuration instead."
 			return ip
 
 	configip = case mapMaybe getIPAddr (S.toList (_dns (hostInfo hst))) of
