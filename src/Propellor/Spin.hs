@@ -80,7 +80,7 @@ spin target relay hst = do
 		, "if ! test -x ./propellor; then make deps build; fi"
 		, if viarelay
 			then "./propellor --continue " ++
-				shellEscape (show (Update (Just target)))
+				shellEscape (show (Relay target))
 			-- Still using --boot for back-compat...
 			else "./propellor --boot " ++ target
 		]

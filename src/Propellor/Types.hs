@@ -165,6 +165,7 @@ data CmdLine
 	| Serialized CmdLine
 	| Continue CmdLine
 	| Update (Maybe HostName)
+	| Relay HostName
 	| DockerInit HostName
 	| DockerChain HostName String
 	| ChrootChain HostName FilePath Bool Bool
