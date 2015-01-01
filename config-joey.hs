@@ -93,7 +93,7 @@ website hn = Apache.siteEnabled hn apachecfg
 clam :: Host
 clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	[ "Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "162.244.28.85"
+	& ipv4 "167.88.41.54"
 
 	& CloudAtCost.decruft
 	& Apt.unattendedUpgrades
