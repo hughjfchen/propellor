@@ -101,7 +101,9 @@ getSshTarget target hst
   where
 	go (Left e) = useip (show e)
 	go (Right hostentry) = ifM (anyM matchingconfig (BSD.hostAddresses hostentry))
-		( return target
+		( do
+			print "MATCHING IP"
+			return target
 		, do
 			ips <- mapM inet_ntoa (BSD.hostAddresses hostentry)
 			useip ("DNS " ++ show ips ++ " vs configured " ++ show configips)
