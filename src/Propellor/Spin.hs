@@ -14,6 +14,9 @@ import System.Posix.Directory
 import Control.Concurrent.Async
 import Control.Exception (bracket)
 import qualified Data.ByteString as B
+import qualified Data.Set as S
+import qualified Network.BSD as BSD
+import Network.Socket (inet_ntoa)
 
 import Propellor
 import Propellor.Protocol
@@ -44,17 +47,20 @@ spin target relay hst = do
 	when viarelay $
 		void $ boolSystem "ssh-add" []
 
+	sshtarget <- ("root@" ++) <$> case relay of
+		Just r -> pure r
+		Nothing -> getSshTarget target hst
+
 	-- Install, or update the remote propellor.
 	updateServer target relay hst
-		(proc "ssh" $ cacheparams ++ [user, shellWrap probecmd])
-		(proc "ssh" $ cacheparams ++ [user, shellWrap updatecmd])
+		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap probecmd])
+		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap updatecmd])
 
 	-- And now we can run it.
-	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, shellWrap runcmd])) $
+	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", sshtarget, shellWrap runcmd])) $
 		error $ "remote propellor failed"
   where
 	hn = fromMaybe target relay
-	user = "root@"++hn
 
 	relaying = relay == Just target
 	viarelay = isJust relay && not relaying
@@ -83,6 +89,28 @@ spin target relay hst = do
 	cmd = if viarelay
 		then "--serialized " ++ shellEscape (show (Spin [target] (Just target)))
 		else "--continue " ++ shellEscape (show (SimpleRun target))
+
+-- Check if the Host contains an IP address that matches one of the IPs
+-- in the DNS for the HostName. If so, the HostName is used as-is, 
+-- but if the DNS is out of sync with the Host config, or doesn't have
+-- the host in it at all, use one of the Host's IPs instead.
+getSshTarget :: HostName -> Host -> IO String
+getSshTarget target hst
+	| isJust configip = go =<< catchMaybeIO (BSD.getHostByName target)
+	| otherwise = return target
+  where
+	go Nothing = useip
+	go (Just hostentry) = maybe useip (const $ return target)
+		=<< firstM matchingtarget (BSD.hostAddresses hostentry)
+
+	matchingtarget a = (==) target <$> inet_ntoa a
+
+	useip = return $ fromMaybe target configip
+
+	configip = case mapMaybe getIPAddr (S.toList (_dns (hostInfo hst))) of
+		[] -> Nothing
+		(IPv4 a:_) -> Just a
+		(IPv6 a:_) -> Just a
 
 -- Update the privdata, repo url, and git repo over the ssh
 -- connection, talking to the user's local propellor instance which is

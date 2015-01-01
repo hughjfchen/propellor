@@ -1,3 +1,10 @@
+propellor (1.2.3) UNRELEASED; urgency=medium
+
+  * --spin checks if the DNS matches any configured IP address property
+    of the host, and if not, sshes to the host by IP address.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 01 Jan 2015 13:27:23 -0400
+
 propellor (1.2.2) unstable; urgency=medium
 
   * Revert ensureProperty warning message, too many false positives in places
