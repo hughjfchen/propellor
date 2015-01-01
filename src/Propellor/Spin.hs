@@ -96,29 +96,27 @@ spin target relay hst = do
 -- the host in it at all, use one of the Host's IPs instead.
 getSshTarget :: HostName -> Host -> IO String
 getSshTarget target hst
-	| isJust configip = go =<< tryIO (BSD.getHostByName target)
+	| null configips = go =<< tryIO (BSD.getHostByName target)
 	| otherwise = return target
   where
 	go (Left e) = useip (show e)
-	go (Right hostentry) = ifM (anyM matchingtarget (BSD.hostAddresses hostentry))
+	go (Right hostentry) = ifM (anyM matchingconfig (BSD.hostAddresses hostentry))
 		( return target
 		, do
 			ips <- mapM inet_ntoa (BSD.hostAddresses hostentry)
-			useip ("DNS " ++ show ips ++ " /= configured " ++ show (maybeToList configip))
+			useip ("DNS " ++ show ips ++ " vs configured " ++ show configips)
 		)
 
-	matchingtarget a = (==) target <$> inet_ntoa a
+	matchingconfig a = flip elem configips <$> inet_ntoa a
 
-	useip why = case configip of
+	useip why = case headMaybe configips of
 		Nothing -> return target
 		Just ip -> do
 			warningMessage $ "DNS seems out of date for " ++ target ++ " (" ++ why ++ "); using IP address from configuration instead."
 			return ip
 
-	configip = case mapMaybe getIPAddr (S.toList (_dns (hostInfo hst))) of
-		[] -> Nothing
-		(IPv4 a:_) -> Just a
-		(IPv6 a:_) -> Just a
+	configips = map fromIPAddr $ mapMaybe getIPAddr $
+		S.toList $ _dns $ hostInfo hst
 
 -- Update the privdata, repo url, and git repo over the ssh
 -- connection, talking to the user's local propellor instance which is
