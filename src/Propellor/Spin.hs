@@ -96,14 +96,12 @@ spin target relay hst = do
 -- the host in it at all, use one of the Host's IPs instead.
 getSshTarget :: HostName -> Host -> IO String
 getSshTarget target hst
-	| null configips = go =<< tryIO (BSD.getHostByName target)
-	| otherwise = return target
+	| null configips = return target
+	| otherwise = go =<< tryIO (BSD.getHostByName target)
   where
 	go (Left e) = useip (show e)
 	go (Right hostentry) = ifM (anyM matchingconfig (BSD.hostAddresses hostentry))
-		( do
-			print "MATCHING IP"
-			return target
+		( return target
 		, do
 			ips <- mapM inet_ntoa (BSD.hostAddresses hostentry)
 			useip ("DNS " ++ show ips ++ " vs configured " ++ show configips)
