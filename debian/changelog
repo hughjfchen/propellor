@@ -5,6 +5,7 @@ propellor (1.2.3) UNRELEASED; urgency=medium
   * Detect #774376 and refuse to use docker if the system is so broken
     that docker exec doesn't enter a chroot.
   * Update intermediary propellor in --spin --via
+  * Added support for DNSSEC.
 
  -- Joey Hess <id@joeyh.name>  Thu, 01 Jan 2015 13:27:23 -0400
 

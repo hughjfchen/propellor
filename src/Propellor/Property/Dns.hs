@@ -1,6 +1,7 @@
 module Propellor.Property.Dns (
 	module Propellor.Types.Dns,
 	primary,
+	signedPrimary,
 	secondary,
 	secondaryFor,
 	mkSOA,
@@ -17,6 +18,8 @@ import Propellor.Types.Dns
 import Propellor.Property.File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
+import Propellor.Property.Scheduled
+import Propellor.Property.DnsSec
 import Utility.Applicative
 
 import qualified Data.Map as M
@@ -96,6 +99,30 @@ primary hosts domain soa rs = RevertableProperty setup cleanup
 				let oldserial = sSerial (zSOA oldzone)
 				    z = zone { zSOA = (zSOA zone) { sSerial = oldserial } }
 				in z /= oldzone || oldserial < sSerial (zSOA zone)
+
+-- | Primary dns server for a domain, secured with DNSSEC.
+--
+-- This is like `primary`, except the resulting zone
+-- file is signed.
+-- The Zone Signing Key (ZSK) and Key Signing Key (KSK)
+-- used in signing it are taken from the PrivData.
+--
+-- As a side effect of signing the zone, a
+-- </var/cache/bind/dsset-domain.>
+-- file will be created. This file contains the DS records
+-- which need to be communicated to your domain registrar
+-- to make DNSSEC be used for your domain. Doing so is outside
+-- the scope of propellor (currently). See for example the tutorial
+-- <https://www.digitalocean.com/community/tutorials/how-to-setup-dnssec-on-an-authoritative-bind-dns-server--2>
+--
+-- The 'Recurrance' controls how frequently the signature
+-- should be regenerated, using a new random salt, to prevent
+-- zone walking attacks. `Daily` is a reasonable choice.
+signedPrimary :: Recurrance -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
+signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
+  where
+	setup = undefined
+	cleanup = undefined
 
 -- | Secondary dns server for a domain.
 --
