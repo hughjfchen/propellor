@@ -127,6 +127,14 @@ cleanupPrimary zonefile domain = check (doesFileExist zonefile) $
 -- The 'Recurrance' controls how frequently the signature
 -- should be regenerated, using a new random salt, to prevent
 -- zone walking attacks. `Weekly Nothing` is a reasonable choice.
+--
+-- To transition from 'primary' to 'signedPrimary', you can revert
+-- the 'primary' property, and add this property.
+--
+-- Note that DNSSEC zone files use a serial number based on the unix epoch.
+-- This is different from the serial number used by 'primary', so if you
+-- want to later disable DNSSEC you will need to adjust the serial number
+-- passed to mkSOA to ensure it is larger.
 signedPrimary :: Recurrance -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
 signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
   where
