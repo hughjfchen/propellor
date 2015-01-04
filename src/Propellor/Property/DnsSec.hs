@@ -78,7 +78,11 @@ forceZoneSigned domain zonefile = property ("zone signed for " ++ domain) $ lift
  	let p = proc "dnssec-signzone"
 		[ "-A"
 		, "-3", salt
-		, "-N", "keep"
+		-- The serial number needs to be increased each time the
+		-- zone is resigned, even if there are no other changes,
+		-- so that it will propigate to secondaries. So, use the
+		-- unixtime serial format.
+		, "-N", "unixtime"
 		, "-o", domain
 		, zonefile
 		-- the ordering of these key files does not matter
