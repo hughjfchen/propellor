@@ -39,6 +39,9 @@ import Data.List
 -- Will cause that hostmame and its alias to appear in the zone file,
 -- with the configured IP address.
 --
+-- Also, if a host has a ssh public key configured, a SSHFP record will
+-- be automatically generated for it.
+--
 -- The [(BindDomain, Record)] list can be used for additional records
 -- that cannot be configured elsewhere. This often includes NS records,
 -- TXT records and perhaps CNAMEs pointing at hosts that propellor does
@@ -77,8 +80,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 	baseprop = Property ("dns primary for " ++ domain) satisfy
 		(addNamedConf conf)
 	satisfy = do
-		sshfps <- zip (repeat (AbsDomain domain)) . concat
-			<$> mapM genSSHFP indomain
+		sshfps <- concat <$> mapM genSSHFP indomain
 		let zone = partialzone
 			{ zHosts = zHosts partialzone ++ rs ++ sshfps }
 		ifM (liftIO $ needupdate zone)
@@ -419,10 +421,11 @@ type WarningMessage = String
 -- ssh public keys.
 --
 -- This is done using ssh-keygen, so sadly needs IO.
-genSSHFP :: Host -> Propellor [Record]
-genSSHFP h = concat <$> (gen =<< get)
+genSSHFP :: Host -> Propellor [(BindDomain, Record)]
+genSSHFP h = map (\r -> (AbsDomain hostname, r)) . concat <$> (gen =<< get)
   where
-	get =  fromHost [h] (hostName h) Ssh.getPubKey
+	hostname = hostName h
+	get =  fromHost [h] hostname Ssh.getPubKey
 	gen = liftIO . mapM go . M.elems . fromMaybe M.empty
 	go pubkey = withTmpFile "sshfp" $ \tmp tmph -> do
 		hPutStrLn tmph pubkey
