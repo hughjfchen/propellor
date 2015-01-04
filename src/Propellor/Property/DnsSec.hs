@@ -27,7 +27,7 @@ keysInstalled domain = RevertableProperty setup cleanup
 	keysrc k = PrivDataSource (DnsSec k) $ unwords
 		[ "The file with extension"
 		, keyExt k
-		, " created by running:"
+		, "created by running:"
 		, if isZoneSigningKey k
 			then "dnssec-keygen -a RSASHA256 -b 2048 -n ZONE " ++ domain
 			else "dnssec-keygen -f KSK -a RSASHA256 -b 4096 -n ZONE " ++ domain
