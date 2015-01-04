@@ -96,7 +96,7 @@ saltSha1 = readProcess "sh"
 
 -- | The file used for a given key.
 keyFn :: Domain -> DnsSecKey -> FilePath
-keyFn domain k =  "/etc/bind/propellor" </>
+keyFn domain k =  "/etc/bind/propellor/dnssec" </>
 	"K" ++ domain ++ "." ++ show k ++ keyExt k
 
 -- | These are the extensions that dnssec-keygen looks for.
