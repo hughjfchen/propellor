@@ -81,7 +81,6 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 		(addNamedConf conf)
 	satisfy = do
 		sshfps <- concat <$> mapM genSSHFP indomain
-		liftIO $ print sshfps
 		let zone = partialzone
 			{ zHosts = zHosts partialzone ++ rs ++ sshfps }
 		ifM (liftIO $ needupdate zone)

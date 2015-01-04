@@ -1,11 +1,11 @@
-propellor (1.3.1) UNRELEASED; urgency=medium
+propellor (1.3.1) unstable; urgency=medium
 
   * Fix bug that prevented deploying ssh host keys when the file for the
     key didn't already exist.
   * DNS records for hosts with known ssh public keys now automatically
     include SSHFP records.
 
- -- Joey Hess <id@joeyh.name>  Sun, 04 Jan 2015 18:19:30 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 04 Jan 2015 19:51:34 -0400
 
 propellor (1.3.0) unstable; urgency=medium
 
