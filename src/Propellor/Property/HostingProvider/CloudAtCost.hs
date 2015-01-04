@@ -10,7 +10,6 @@ import qualified Propellor.Property.User as User
 decruft :: Property
 decruft = propertyList "cloudatcost cleanup"
 	[ Hostname.sane
-	, Ssh.randomHostKeys
 	, "worked around grub/lvm boot bug #743126" ==>
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []

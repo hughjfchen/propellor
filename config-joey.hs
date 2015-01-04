@@ -94,6 +94,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& ipv4 "167.88.41.194"
 
 	& CloudAtCost.decruft
+	& Ssh.randomHostKeys
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
 	& Tor.isBridge
