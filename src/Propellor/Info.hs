@@ -70,13 +70,6 @@ addDNS r = pureInfoProperty (rdesc r) $ mempty { _dns = S.singleton r }
 	ddesc (RelDomain domain) = domain
 	ddesc RootDomain = "@"
 
-sshPubKey :: String -> Property
-sshPubKey k = pureInfoProperty ("ssh pubkey known") $
-	mempty { _sshPubKey = Val k }
-
-getSshPubKey :: Propellor (Maybe String)
-getSshPubKey = askInfo _sshPubKey
-
 hostMap :: [Host] -> M.Map HostName Host
 hostMap l = M.fromList $ zip (map hostName l) l 
 

@@ -6,6 +6,7 @@ module Propellor.Property.Ssh (
 	authorizedKey,
 	restarted,
 	randomHostKeys,
+	pubKey,
 	hostKeys,
 	hostKey,
 	keyImported,
@@ -79,7 +80,16 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 		ensureProperty $ scriptProperty 
 			[ "DPKG_MAINTSCRIPT_NAME=postinst DPKG_MAINTSCRIPT_PACKAGE=openssh-server /var/lib/dpkg/info/openssh-server.postinst configure" ]
 
--- | Sets all types of ssh host keys from the privdata.
+-- | When a host has a well-known public key, this can be used to indicate
+-- what the key is. It does not cause the key to be installed.
+pubKey :: String -> Property
+pubKey k = pureInfoProperty ("ssh pubkey known") $
+	mempty { _sshPubKey = Val k }
+
+getPubKey :: Propellor (Maybe String)
+getPubKey = askInfo _sshPubKey
+
+-- | Installs all commonly used types of ssh host keys from the privdata.
 hostKeys :: IsContext c => c -> Property
 hostKeys ctx = propertyList "known ssh host keys"
 	[ hostKey SshDsa ctx
@@ -87,7 +97,7 @@ hostKeys ctx = propertyList "known ssh host keys"
 	, hostKey SshEcdsa ctx
 	]
 
--- | Sets a single ssh host key from the privdata.
+-- | Installs a single ssh host key from the privdata.
 hostKey :: IsContext c => SshKeyType -> c -> Property
 hostKey keytype context = combineProperties desc
 	[ installkey (keysrc ".pub" (SshPubKey keytype ""))  (install writeFile ".pub")
@@ -140,10 +150,11 @@ fromKeyType SshDsa = "dsa"
 fromKeyType SshEcdsa = "ecdsa"
 fromKeyType SshEd25519 = "ed25519"
 
--- | Puts some host's ssh public key into the known_hosts file for a user.
+-- | Puts some host's ssh public key, as set using 'pubKey',
+-- into the known_hosts file for a user.
 knownHost :: [Host] -> HostName -> UserName -> Property
 knownHost hosts hn user = property desc $
-	go =<< fromHost hosts hn getSshPubKey
+	go =<< fromHost hosts hn getPubKey
   where
 	desc = user ++ " knows ssh key for " ++ hn
 	go (Just (Just k)) = do

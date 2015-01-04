@@ -1,4 +1,4 @@
-propellor (1.2.3) UNRELEASED; urgency=medium
+propellor (1.3.0) UNRELEASED; urgency=medium
 
   * --spin checks if the DNS matches any configured IP address property
     of the host, and if not, sshes to the host by IP address.
@@ -6,6 +6,7 @@ propellor (1.2.3) UNRELEASED; urgency=medium
     that docker exec doesn't enter a chroot.
   * Update intermediary propellor in --spin --via
   * Added support for DNSSEC.
+  * sshPubKey is renamed to Ssh.pubKey
   * Fix build with process 1.2.1.0.
 
  -- Joey Hess <id@joeyh.name>  Thu, 01 Jan 2015 13:27:23 -0400
