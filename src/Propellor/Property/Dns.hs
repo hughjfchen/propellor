@@ -81,6 +81,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 		(addNamedConf conf)
 	satisfy = do
 		sshfps <- concat <$> mapM genSSHFP indomain
+		liftIO $ print sshfps
 		let zone = partialzone
 			{ zHosts = zHosts partialzone ++ rs ++ sshfps }
 		ifM (liftIO $ needupdate zone)
@@ -425,14 +426,17 @@ genSSHFP :: Host -> Propellor [(BindDomain, Record)]
 genSSHFP h = map (\r -> (AbsDomain hostname, r)) . concat <$> (gen =<< get)
   where
 	hostname = hostName h
-	get =  fromHost [h] hostname Ssh.getPubKey
-	gen = liftIO . mapM go . M.elems . fromMaybe M.empty
-	go pubkey = withTmpFile "sshfp" $ \tmp tmph -> do
+	get = fromHost [h] hostname Ssh.getPubKey
+	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
+
+genSSHFP' :: String -> IO [Record]
+genSSHFP' pubkey = withTmpFile "sshfp" $ \tmp tmph -> do
 		hPutStrLn tmph pubkey
 		hClose tmph
 		s <- catchDefaultIO "" $
 			readProcess "ssh-keygen" ["-r", "dummy", "-f", tmp]
 		return $ mapMaybe (parse . words) $ lines s
+  where
 	parse ("dummy":"IN":"SSHFP":x:y:s:[]) = do
 		x' <- readish x
 		y' <- readish y
