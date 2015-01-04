@@ -95,7 +95,7 @@ hostKeys ctx l = propertyList desc $ catMaybes $
 	desc = "ssh host keys configured " ++ typelist (map fst l)
 	typelist tl = "(" ++ unwords (map fromKeyType tl) ++ ")"
 	alltypes = [minBound..maxBound]
-	staletypes = filter (`notElem` alltypes) (map fst l)
+	staletypes = let have = map fst l in filter (`notElem` have) alltypes
 	removestale b = map (File.notPresent . flip keyFile b) staletypes
 	cleanup
 		| null staletypes = Nothing
