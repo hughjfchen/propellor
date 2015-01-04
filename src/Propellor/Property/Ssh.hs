@@ -95,21 +95,25 @@ hostKeys :: IsContext c => c -> Property
 hostKeys ctx = propertyList "known ssh host keys" $
 	map (flip hostKey ctx) [minBound..maxBound]
 
--- | Installs a single ssh host key.
+-- | Installs a single ssh host key of a particular type.
 --
--- The private key comes from the privdata.
---
--- The public key is set using 'pubKey'.
+-- The private key comes from the privdata; 
+-- the public key is set using 'pubKey'.
 hostKey :: IsContext c => SshKeyType -> c -> Property
 hostKey keytype context = combineProperties desc
-	[ installkey (keysrc ".pub" (SshPubKey keytype ""))  (install writeFile ".pub")
-	, installkey (keysrc "" (SshPrivKey keytype "")) (install writeFileProtected "")
+	[ property desc $ do
+		v <- M.lookup keytype <$> getPubKey
+		case v of
+			Just k -> install writeFile ".pub" k
+			Nothing -> do
+				warningMessage $ "Missing ssh pubKey " ++ show keytype
+				return FailedChange
+	, withPrivData (keysrc "" (SshPrivKey keytype "")) context $ \getkey ->
+		property desc $ getkey $ install writeFileProtected ""
 	]
 	`onChange` restarted
   where
 	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
-	installkey p a = withPrivData p context $ \getkey ->
-		property desc $ getkey a
 	install writer ext key = do
 		let f = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++ ext
 		s <- liftIO $ readFileStrict f
