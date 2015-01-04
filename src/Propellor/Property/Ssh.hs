@@ -99,7 +99,7 @@ hostKeys ctx l = propertyList desc $ catMaybes $
 	removestale b = map (File.notPresent . flip keyFile b) staletypes
 	cleanup
 		| null staletypes = Nothing
-		| otherwise = Just $ property ("stale keys removed " ++ typelist staletypes) $
+		| otherwise = Just $ property ("stale host keys removed " ++ typelist staletypes) $
 			ensureProperty $
 				combineProperties desc (removestale True ++ removestale False)
 				`onChange` restarted
