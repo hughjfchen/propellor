@@ -3,7 +3,6 @@ module Propellor.Property.HostingProvider.CloudAtCost where
 import Propellor
 import qualified Propellor.Property.Hostname as Hostname
 import qualified Propellor.Property.File as File
-import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.User as User
 
 -- Clean up a system as installed by cloudatcost.com

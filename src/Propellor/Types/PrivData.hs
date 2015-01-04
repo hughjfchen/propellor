@@ -7,8 +7,8 @@ import Propellor.Types.OS
 -- It's fine to add new constructors.
 data PrivDataField
 	= DockerAuthentication
-	| SshPubKey SshKeyType UserName -- ^ For host key, use empty UserName
-	| SshPrivKey SshKeyType UserName
+	| SshPubKey SshKeyType UserName
+	| SshPrivKey SshKeyType UserName -- ^ For host key, use empty UserName
 	| SshAuthorizedKeys UserName
 	| Password UserName
 	| CryptPassword UserName
