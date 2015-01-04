@@ -73,20 +73,6 @@ darkstar = host "darkstar.kitenet.net"
 	& Apt.buildDep ["git-annex"] `period` Daily
 	& Docker.configured
 	! Docker.docked gitAnnexAndroidDev
-	! website "foo"
-
-website :: String -> RevertableProperty
-website hn = Apache.siteEnabled hn apachecfg
-        where
-          apachecfg = [ "<VirtualHost *>"
-                      , "DocumentRoot /tmp/xx"
-                      , "<Directory  /tmp/xx>"
-                      , "  Options Indexes FollowSymLinks Multiviews"
-                      , "  Order allow,deny"
-                      , Apache.allowAll
-                      , "</Directory>"
-                      , "</VirtualHost>"
-                      ]
 
 clam :: Host
 clam = standardSystem "clam.kitenet.net" Unstable "amd64"
@@ -133,30 +119,29 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Docker.docked (GitAnnexBuilder.androidAutoBuilderContainer dockerImage "1 1 * * *" "3h")
 	& Docker.garbageCollected `period` Daily
 	& Apt.buildDep ["git-annex"] `period` Daily
-	
+
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
 -- with propellor.
 kite :: Host
 kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
-	[ "Welcome to the new kitenet.net server!"
-	]
+	[ "Welcome to the new kitenet.net server!" ]
 	& ipv4 "66.228.36.95"
 	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 	& alias "kitenet.net"
 	& alias "wren.kitenet.net" -- temporary
-
-	& Apt.installed ["linux-image-amd64"]
-	& Linode.chainPVGrub 5
-	& Apt.unattendedUpgrades
-	& Systemd.installed
-	& Systemd.persistentJournal
 	& Ssh.hostKeys (Context "kitenet.net")
 		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBAO9tnPUT4p+9z7K6/OYuiBNHaij4Nzv5YVBih1vMl+ALz0gYAj8RWJzXmqp5buFAyfgOoLw+H9s1bBS01Sy3i07Dm6cx1fWG4RXL/E/3w1tavX99GD2bBxDBu890ebA5Tp+eFRJkS9+JwSvFiF6CP7NbVjifCagoUO56Ig048RwDAAAAFQDPY2xM3q6KwsVQliel23nrd0rV2QAAAIEAga3hj1hL00rYPNnAUzT8GAaSP62S4W68lusErH+KPbsMwFBFY/Ib1FVf8k6Zn6dZLh/HH/RtJi0JwdzPI1IFW+lwVbKfwBvhQ1lw9cH2rs1UIVgi7Wxdgfy8gEWxf+QIqn62wG+Ulf/HkWGvTrRpoJqlYRNS/gnOWj9Z/4s99koAAACBAM/uJIo2I0nK15wXiTYs/NYUZA7wcErugFn70TRbSgduIFH6U/CQa3rgHJw9DCPCQJLq7pwCnFH7too/qaK+czDk04PsgqV0+Jc7957gU5miPg50d60eJMctHV4eQ1FpwmGGfXxRBR9k2ZvikWYatYir3L6/x1ir7M0bA9IzNU45")
 		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEA2QAJEuvbTmaN9ex9i9bjPhMGj+PHUYq2keIiaIImJ+8mo+yKSaGUxebG4tpuDPx6KZjdycyJt74IXfn1voGUrfzwaEY9NkqOP3v6OWTC3QeUGqDCeJ2ipslbEd9Ep9XBp+/ldDQm60D0XsIZdmDeN6MrHSbKF4fXv1bqpUoUILk=")
 		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLF+dzqBJZix+CWUkAd3Bd3cofFCKwHMNRIfwx1G7dL4XFe6fMKxmrNetQcodo2edyufwoPmCPr3NmnwON9vyh0=")
 		, (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFZftKMnH/zH29BHMKbcBO4QsgTrstYFVhbrzrlRzBO3")
 		]
+
+	& Apt.installed ["linux-image-amd64"]
+	& Linode.chainPVGrub 5
+	& Apt.unattendedUpgrades
+	& Systemd.installed
+	& Systemd.persistentJournal
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
 	& Apt.serviceInstalledRunning "fail2ban"
@@ -201,7 +186,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 		`onChange` Service.restarted "bitlbee"
 
 	& Apt.installed
-		["git-annex", "myrepos"
+		[ "git-annex", "myrepos"
 		, "build-essential", "make"
 		, "rss2email", "archivemail"
 		, "devscripts"
@@ -217,12 +202,12 @@ diatom :: Host
 diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	[ "Important stuff that needs not too much memory or CPU." ]
 	& ipv4 "107.170.31.195"
-
-	& DigitalOcean.distroKernel
 	& Ssh.hostKeys hostContext
 		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBAO9tnPUT4p+9z7K6/OYuiBNHaij4Nzv5YVBih1vMl+ALz0gYAj8RWJzXmqp5buFAyfgOoLw+H9s1bBS01Sy3i07Dm6cx1fWG4RXL/E/3w1tavX99GD2bBxDBu890ebA5Tp+eFRJkS9+JwSvFiF6CP7NbVjifCagoUO56Ig048RwDAAAAFQDPY2xM3q6KwsVQliel23nrd0rV2QAAAIEAga3hj1hL00rYPNnAUzT8GAaSP62S4W68lusErH+KPbsMwFBFY/Ib1FVf8k6Zn6dZLh/HH/RtJi0JwdzPI1IFW+lwVbKfwBvhQ1lw9cH2rs1UIVgi7Wxdgfy8gEWxf+QIqn62wG+Ulf/HkWGvTrRpoJqlYRNS/gnOWj9Z/4s99koAAACBAM/uJIo2I0nK15wXiTYs/NYUZA7wcErugFn70TRbSgduIFH6U/CQa3rgHJw9DCPCQJLq7pwCnFH7too/qaK+czDk04PsgqV0+Jc7957gU5miPg50d60eJMctHV4eQ1FpwmGGfXxRBR9k2ZvikWYatYir3L6/x1ir7M0bA9IzNU45")
 		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEA2QAJEuvbTmaN9ex9i9bjPhMGj+PHUYq2keIiaIImJ+8mo+yKSaGUxebG4tpuDPx6KZjdycyJt74IXfn1voGUrfzwaEY9NkqOP3v6OWTC3QeUGqDCeJ2ipslbEd9Ep9XBp+/ldDQm60D0XsIZdmDeN6MrHSbKF4fXv1bqpUoUILk=")
 		]
+
+	& DigitalOcean.distroKernel
 	& Apt.unattendedUpgrades
 	& Apt.serviceInstalledRunning "ntp"
 	& Postfix.satellite
@@ -280,18 +265,18 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	, "(Encrypt all data stored here.)"
 	]
 	& ipv4 "193.234.225.114"
-
-	& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
-	& Postfix.satellite
-	& Apt.unattendedUpgrades
-	& Systemd.installed
-	& Systemd.persistentJournal
 	& Ssh.hostKeys hostContext
 		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBANxXGWac0Yz58akI3UbLkphAa8VPDCGswTS0CT3D5xWyL9OeArISAi/OKRIvxA4c+9XnWtNXS7nYVFDJmzzg8v3ZMx543AxXK82kXCfvTOc/nAlVz9YKJAA+FmCloxpmOGrdiTx1k36FE+uQgorslGW/QTxnOcO03fDZej/ppJifAAAAFQCnenyJIw6iJB1+zuF/1TSLT8UAeQAAAIEA1WDrI8rKnxnh2rGaQ0nk+lOcVMLEr7AxParnZjgC4wt2mm/BmkF/feI1Fjft2z4D+V1W7MJHOqshliuproxhFUNGgX9fTbstFJf66p7h7OLAlwK8ZkpRk/uV3h5cIUPel6aCwjL5M2gN6/yq+gcCTXeHLq9OPyUTmlN77SBL71UAAACBAJJiCHWxPAGooe7Vv3W7EIBbsDyf7b2kDH3bsIlo+XFcKIN6jysBu4kn9utjFlrlPeHUDzGQHe+DmSqTUQQ0JPCRGcAcuJL8XUqhJi6A6ye51M9hVt51cJMXmERx9TjLOP/adkEuxpv3Fj20FxRUr1HOmvRvewSHrJ1GeA1bjbYL")
 		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrEQ7aNmRYyLKY7xHILQsyV/w0B3++D98vn5IvjHkDnitrUWjB+vPxlS7LYKLzN9Jx7Hb14R2lg7+wdgtFMxLZZukA8b0tqFpTdRFBvBYGh8IM8Id1iE/6io/NZl+hTQEDp0LJP+RljH1CLfz7J3qtc+v6NbfTP5cOgH104mWYoLWzJGaZ4p53jz6THRWnVXy5nPO3dSBr2f/SQgRuJQWHNIh0jicRGD8H2kzOQzilpo+Y46PWtkufl3Yu3UsP5UMAyLRIXwZ6nNRZqRiVWrX44hoNfDbooTdFobbHlqMl+y6291bOXaOA6PACk8B4IVcC89/gmc9Oe4EaDuszU5kD")
 		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAJkoPRhUGT8EId6m37uBdYEtq42VNwslKnc9mmO+89ody066q6seHKeFY6ImfwjcyIjM30RTzEwftuVNQnbEB0=")
 		, (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB6VtXi0uygxZeCo26n6PuCTlSFCBcwRifv6N8HdWh2Z")
 		]
+
+	& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
+	& Postfix.satellite
+	& Apt.unattendedUpgrades
+	& Systemd.installed
+	& Systemd.persistentJournal
 	& Ssh.keyImported SshRsa "joey" hostContext
 	& Apt.serviceInstalledRunning "swapspace"
 
@@ -414,7 +399,7 @@ standardSystemUnhardened hn suite arch motd = host hn
 standardStableContainer :: Docker.ContainerName -> Docker.Container
 standardStableContainer name = standardContainer name (Stable "wheezy") "amd64"
 
--- This is my standard container setup, featuring automatic upgrades.
+-- This is my standard container setup, Featuring automatic upgrades.
 standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Docker.Container
 standardContainer name suite arch = Docker.container name (dockerImage system)
 	& os system
@@ -484,14 +469,10 @@ monsters =            -- but do want to track their public keys etc.
 		& alias "backup.kitenet.net"
 		& alias "usbackup.kitenet.net"
 		& Ssh.pubKey SshRsa "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
-	, host "old.kitenet.net"
-		& ipv4 "80.68.85.49"
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
 	, host "beaver.kitenet.net"
 		& ipv6 "2001:4830:1600:195::2"
-	, host "hydra.kitenet.net"
-		& ipv4 "192.25.206.60"
 	, host "branchable.com"
 		& ipv4 "66.228.46.55"
 		& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
