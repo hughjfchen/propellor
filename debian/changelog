@@ -6,12 +6,13 @@ propellor (1.3.0) UNRELEASED; urgency=medium
     that docker exec doesn't enter a chroot.
   * Update intermediary propellor in --spin --via
   * Added support for DNSSEC.
+  * Ssh.hostKey and Ssh.hostKeys no longer install public keys from
+    the privdata. Instead, the public keys are included in the
+    configuration. (API change)
+  * Ssh.hostKeys now removes any host keys of types that the host is not
+    configured to have.
   * sshPubKey is renamed to Ssh.pubKey, and has an added SshKeyType
     parameter. (API change)
-  * Ssh.hostKey and Ssh.hostKeys no longer install public keys from
-    the privdata. Instead, the public keys of a host should be set using
-    Ssh.pubKey.
-  * Ssh.hostKeys now also installs any available SshEd25519 keys.
   * Fix build with process 1.2.1.0.
 
  -- Joey Hess <id@joeyh.name>  Thu, 01 Jan 2015 13:27:23 -0400

@@ -6,9 +6,9 @@ module Propellor.Property.Ssh (
 	authorizedKey,
 	restarted,
 	randomHostKeys,
-	pubKey,
 	hostKeys,
 	hostKey,
+	pubKey,
 	keyImported,
 	knownHost,
 	authorizedKeys,
@@ -24,6 +24,8 @@ import Utility.FileMode
 
 import System.PosixCompat
 import qualified Data.Map as M
+
+type PubKeyText = String
 
 sshBool :: Bool -> String
 sshBool True = "yes"
@@ -81,47 +83,64 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 		ensureProperty $ scriptProperty 
 			[ "DPKG_MAINTSCRIPT_NAME=postinst DPKG_MAINTSCRIPT_PACKAGE=openssh-server /var/lib/dpkg/info/openssh-server.postinst configure" ]
 
--- | When a host has a well-known public host key, this can be used
--- to indicate what the key is. It does not cause the key to be installed.
-pubKey :: SshKeyType -> String -> Property
-pubKey t k = pureInfoProperty ("ssh pubkey known") $
-	mempty { _sshPubKey = M.singleton t k }
-
-getPubKey :: Propellor (M.Map SshKeyType String)
-getPubKey = asks (_sshPubKey . hostInfo)
-
--- | Installs all available types of ssh host keys.
-hostKeys :: IsContext c => c -> Property
-hostKeys ctx = propertyList "known ssh host keys" $
-	map (flip hostKey ctx) [minBound..maxBound]
+-- | Installs the specified list of ssh host keys.
+--
+-- The corresponding private keys come from the privdata.
+--
+-- Any host keysthat are not in the list are removed from the host.
+hostKeys :: IsContext c => c -> [(SshKeyType, PubKeyText)] -> Property
+hostKeys ctx l = propertyList desc $ catMaybes $
+	map (\(t, pub) -> Just $ hostKey ctx t pub) l ++ [cleanup]
+  where
+	desc = "ssh host keys configured " ++ typelist (map fst l)
+	typelist tl = "(" ++ unwords (map fromKeyType tl) ++ ")"
+	alltypes = [minBound..maxBound]
+	staletypes = filter (`notElem` alltypes) (map fst l)
+	removestale b = map (File.notPresent . flip keyFile b) staletypes
+	cleanup
+		| null staletypes = Nothing
+		| otherwise = Just $ property ("stale keys removed " ++ typelist staletypes) $
+			ensureProperty $
+				combineProperties desc (removestale True ++ removestale False)
+				`onChange` restarted
 
 -- | Installs a single ssh host key of a particular type.
 --
--- The private key comes from the privdata; 
--- the public key is set using 'pubKey'.
-hostKey :: IsContext c => SshKeyType -> c -> Property
-hostKey keytype context = combineProperties desc
-	[ property desc $ do
-		v <- M.lookup keytype <$> getPubKey
-		case v of
-			Just k -> install writeFile ".pub" k
-			Nothing -> do
-				warningMessage $ "Missing ssh pubKey " ++ show keytype
-				return FailedChange
+-- The public key is provided to this function;
+-- the private key comes from the privdata; 
+hostKey :: IsContext c => c -> SshKeyType -> PubKeyText -> Property
+hostKey context keytype pub = combineProperties desc
+	[ pubKey keytype pub
+	, property desc $ install writeFile True pub
 	, withPrivData (keysrc "" (SshPrivKey keytype "")) context $ \getkey ->
-		property desc $ getkey $ install writeFileProtected ""
+		property desc $ getkey $ install writeFileProtected False
 	]
 	`onChange` restarted
   where
-	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
-	install writer ext key = do
-		let f = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++ ext
+	desc = "ssh host key configured (" ++ fromKeyType keytype ++ ")"
+	install writer ispub key = do
+		let f = keyFile keytype ispub
 		s <- liftIO $ readFileStrict f
 		if s == key
 			then noChange
 			else makeChange $ writer f key
 	keysrc ext field = PrivDataSourceFileFromCommand field ("sshkey"++ext)
 		("ssh-keygen -t " ++ sshKeyTypeParam keytype ++ " -f sshkey")
+
+keyFile :: SshKeyType -> Bool -> FilePath
+keyFile keytype ispub = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++ ext
+  where
+	ext = if ispub then ".pub" else ""
+
+-- | Indicates the host key that is used by a Host, but does not actually
+-- configure the host to use it. Normally this does not need to be used;
+-- use 'hostKey' instead.
+pubKey :: SshKeyType -> PubKeyText -> Property
+pubKey t k = pureInfoProperty ("ssh pubkey known") $
+	mempty { _sshPubKey = M.singleton t k }
+
+getPubKey :: Propellor (M.Map SshKeyType String)
+getPubKey = asks (_sshPubKey . hostInfo)
 
 -- | Sets up a user with a ssh private key and public key pair from the
 -- PrivData.
