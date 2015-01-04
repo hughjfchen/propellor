@@ -90,7 +90,7 @@ hostContext = HostContext Context
 type PrivData = String
 
 data SshKeyType = SshRsa | SshDsa | SshEcdsa | SshEd25519
-	deriving (Read, Show, Ord, Eq)
+	deriving (Read, Show, Ord, Eq, Enum, Bounded)
 
 -- | Parameter that would be passed to ssh-keygen to generate key of this type
 sshKeyTypeParam :: SshKeyType -> String

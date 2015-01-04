@@ -7,7 +7,8 @@ propellor (1.3.0) UNRELEASED; urgency=medium
   * Update intermediary propellor in --spin --via
   * Added support for DNSSEC.
   * sshPubKey is renamed to Ssh.pubKey, and has an added SshKeyType
-    parameter.
+    parameter. (API change)
+  * Ssh.hostKeys now also installs any available SshEd25519 keys.
   * Fix build with process 1.2.1.0.
 
  -- Joey Hess <id@joeyh.name>  Thu, 01 Jan 2015 13:27:23 -0400

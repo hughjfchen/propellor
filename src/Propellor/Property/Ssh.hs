@@ -90,13 +90,10 @@ pubKey t k = pureInfoProperty ("ssh pubkey known") $
 getPubKey :: Propellor (M.Map SshKeyType String)
 getPubKey = asks (_sshPubKey . hostInfo)
 
--- | Installs all commonly used types of ssh host keys.
+-- | Installs all available types of ssh host keys.
 hostKeys :: IsContext c => c -> Property
-hostKeys ctx = propertyList "known ssh host keys"
-	[ hostKey SshDsa ctx
-	, hostKey SshRsa ctx
-	, hostKey SshEcdsa ctx
-	]
+hostKeys ctx = propertyList "known ssh host keys" $
+	map (flip hostKey ctx) [minBound..maxBound]
 
 -- | Installs a single ssh host key.
 --
