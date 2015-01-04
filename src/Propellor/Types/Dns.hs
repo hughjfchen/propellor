@@ -62,6 +62,7 @@ data Record
 	| NS BindDomain
 	| TXT String
 	| SRV Word16 Word16 Word16 BindDomain
+	| SSHFP Int Int String
 	| INCLUDE FilePath
 	deriving (Read, Show, Eq, Ord)
 

@@ -9,6 +9,7 @@ module Propellor.Property.Ssh (
 	hostKeys,
 	hostKey,
 	pubKey,
+	getPubKey,
 	keyImported,
 	knownHost,
 	authorizedKeys,
@@ -120,7 +121,7 @@ hostKey context keytype pub = combineProperties desc
 	desc = "ssh host key configured (" ++ fromKeyType keytype ++ ")"
 	install writer ispub key = do
 		let f = keyFile keytype ispub
-		s <- liftIO $ readFileStrict f
+		s <- liftIO $ catchDefaultIO "" $ readFileStrict f
 		if s == key
 			then noChange
 			else makeChange $ writer f key

@@ -17,6 +17,7 @@ import Propellor
 import Propellor.Types.Dns
 import Propellor.Property.File
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Service as Service
 import Propellor.Property.Scheduled
 import Propellor.Property.DnsSec
@@ -37,6 +38,9 @@ import Data.List
 --
 -- Will cause that hostmame and its alias to appear in the zone file,
 -- with the configured IP address.
+--
+-- Also, if a host has a ssh public key configured, a SSHFP record will
+-- be automatically generated for it.
 --
 -- The [(BindDomain, Record)] list can be used for additional records
 -- that cannot be configured elsewhere. This often includes NS records,
@@ -65,17 +69,27 @@ primary hosts domain soa rs = RevertableProperty setup cleanup
 
 setupPrimary :: FilePath -> (FilePath -> FilePath) -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
 setupPrimary zonefile mknamedconffile hosts domain soa rs = 
-	withwarnings (check needupdate baseprop)
+	withwarnings baseprop
 		`requires` servingZones
   where
-	(partialzone, zonewarnings) = genZone hosts domain soa
-	zone = partialzone { zHosts = zHosts partialzone ++ rs }
-	baseprop = Property ("dns primary for " ++ domain)
-		(makeChange $ writeZoneFile zone zonefile)
+	hostmap = hostMap hosts
+	-- Known hosts with hostname located in the domain.
+	indomain = M.elems $ M.filterWithKey (\hn _ -> inDomain domain $ AbsDomain $ hn) hostmap
+	
+	(partialzone, zonewarnings) = genZone indomain hostmap domain soa
+	baseprop = Property ("dns primary for " ++ domain) satisfy
 		(addNamedConf conf)
-	withwarnings p = adjustProperty p $ \satisfy -> do
+	satisfy = do
+		sshfps <- concat <$> mapM genSSHFP indomain
+		let zone = partialzone
+			{ zHosts = zHosts partialzone ++ rs ++ sshfps }
+		ifM (liftIO $ needupdate zone)
+			( makeChange $ writeZoneFile zone zonefile
+			, noChange
+			)
+	withwarnings p = adjustProperty p $ \a -> do
 		mapM_ warningMessage $ zonewarnings ++ secondarywarnings
-		satisfy
+		a
 	conf = NamedConf
 		{ confDomain = domain
 		, confDnsServerType = Master
@@ -92,7 +106,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 	nssecondaries = mapMaybe (domainHostName <=< getNS) rootRecords
 	rootRecords = map snd $
 		filter (\(d, _r) -> d == RootDomain || d == AbsDomain domain) rs
-	needupdate = do
+	needupdate zone = do
 		v <- readZonePropellorFile zonefile
 		return $ case v of
 			Nothing -> True
@@ -278,6 +292,7 @@ rField (MX _ _) = "MX"
 rField (NS _) = "NS"
 rField (TXT _) = "TXT"
 rField (SRV _ _ _ _) = "SRV"
+rField (SSHFP _ _ _) = "SSHFP"
 rField (INCLUDE _) = "$INCLUDE"
 
 rValue :: Record -> String
@@ -291,6 +306,11 @@ rValue (SRV priority weight port target) = unwords
 	, show weight
 	, show port
 	, dValue target
+	]
+rValue (SSHFP x y s) = unwords
+	[ show x
+	, show y
+	, s
 	]
 rValue (INCLUDE f) = f
 rValue (TXT s) = [q] ++ filter (/= q) s ++ [q]
@@ -397,21 +417,44 @@ com s = "; " ++ s
 
 type WarningMessage = String
 
+-- | Generates SSHFP records for hosts that have configured
+-- ssh public keys.
+--
+-- This is done using ssh-keygen, so sadly needs IO.
+genSSHFP :: Host -> Propellor [(BindDomain, Record)]
+genSSHFP h = map (\r -> (AbsDomain hostname, r)) . concat <$> (gen =<< get)
+  where
+	hostname = hostName h
+	get = fromHost [h] hostname Ssh.getPubKey
+	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
+
+genSSHFP' :: String -> IO [Record]
+genSSHFP' pubkey = withTmpFile "sshfp" $ \tmp tmph -> do
+		hPutStrLn tmph pubkey
+		hClose tmph
+		s <- catchDefaultIO "" $
+			readProcess "ssh-keygen" ["-r", "dummy", "-f", tmp]
+		return $ mapMaybe (parse . words) $ lines s
+  where
+	parse ("dummy":"IN":"SSHFP":x:y:s:[]) = do
+		x' <- readish x
+		y' <- readish y
+		return $ SSHFP x' y' s
+	parse _ = Nothing
+
 -- | Generates a Zone for a particular Domain from the DNS properies of all
 -- hosts that propellor knows about that are in that Domain.
-genZone :: [Host] -> Domain -> SOA -> (Zone, [WarningMessage])
-genZone hosts zdomain soa =
+--
+-- Does not include SSHFP records.
+genZone :: [Host] -> M.Map HostName Host -> Domain -> SOA -> (Zone, [WarningMessage])
+genZone inzdomain hostmap zdomain soa =
 	let (warnings, zhosts) = partitionEithers $ concat $ map concat
 		[ map hostips inzdomain
 		, map hostrecords inzdomain
-		, map addcnames (M.elems m)
+		, map addcnames (M.elems hostmap)
 		]
 	in (Zone zdomain soa (simplify zhosts), warnings)
   where
-	m = hostMap hosts
-	-- Known hosts with hostname located in the zone's domain.
-	inzdomain = M.elems $ M.filterWithKey (\hn _ -> inDomain zdomain $ AbsDomain $ hn) m
-	
 	-- Each host with a hostname located in the zdomain
 	-- should have 1 or more IPAddrs in its Info.
 	--
