@@ -1,4 +1,4 @@
-propellor (1.3.0) UNRELEASED; urgency=medium
+propellor (1.3.0) unstable; urgency=medium
 
   * --spin checks if the DNS matches any configured IP address property
     of the host, and if not, sshes to the host by IP address.
@@ -16,7 +16,7 @@ propellor (1.3.0) UNRELEASED; urgency=medium
   * CloudAtCost.deCruft no longer forces randomHostKeys.
   * Fix build with process 1.2.1.0.
 
- -- Joey Hess <id@joeyh.name>  Thu, 01 Jan 2015 13:27:23 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 04 Jan 2015 17:17:44 -0400
 
 propellor (1.2.2) unstable; urgency=medium
 
