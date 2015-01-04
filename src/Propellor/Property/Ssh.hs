@@ -98,8 +98,8 @@ hostKeys ctx l = propertyList desc $ catMaybes $
 	staletypes = let have = map fst l in filter (`notElem` have) alltypes
 	removestale b = map (File.notPresent . flip keyFile b) staletypes
 	cleanup
-		| null staletypes = Nothing
-		| otherwise = Just $ property ("stale host keys removed " ++ typelist staletypes) $
+		| null staletypes || null l = Nothing
+		| otherwise = Just $ property ("any other ssh host keys removed " ++ typelist staletypes) $
 			ensureProperty $
 				combineProperties desc (removestale True ++ removestale False)
 				`onChange` restarted
