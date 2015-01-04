@@ -104,4 +104,4 @@ data DnsSecKey
 	| PrivZSK -- ^ DNSSEC Zone Signing Key (private)
 	| PubKSK -- ^ DNSSEC Key Signing Key (public)
 	| PrivKSK -- ^ DNSSEC Key Signing Key (private)
-	deriving (Read, Show, Ord, Eq)
+	deriving (Read, Show, Ord, Eq, Bounded, Enum)

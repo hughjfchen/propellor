@@ -53,15 +53,18 @@ zoneSigned domain zonefile = RevertableProperty setup cleanup
 	dssetfile = dir </> "-" ++ domain ++ "."
 	dir = takeDirectory zonefile
 
-	-- Need to update the signed zone if the zone file
-	-- has a newer timestamp.
+	-- Need to update the signed zone file if the zone file or
+	-- any of the keys have a newer timestamp.
 	needupdate = do
 		v <- catchMaybeIO $ getModificationTime signedzonefile
 		case v of
 			Nothing -> return True
-			Just t1 -> do
-				t2 <- getModificationTime zonefile
-				return (t2 >= t1)
+			Just t1 -> anyM (newerthan t1) $
+				zonefile : map (keyFn domain) [minBound..maxBound]
+
+	newerthan t1 f = do
+		t2 <- getModificationTime f
+		return (t2 >= t1)
 
 forceZoneSigned :: Domain -> FilePath -> Property
 forceZoneSigned domain zonefile = property ("zone signed for " ++ domain) $ liftIO $ do

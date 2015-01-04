@@ -136,7 +136,6 @@ signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
 	-- TODO put signed zone file in named.conf.
 	-- TODO enable dnssec options.
 	-- 	dnssec-enable yes; dnssec-validation yes; dnssec-lookaside auto;
-	-- TODO if keys change, resign zone file.
 	-- TODO write to entirely different files than does primary,
 	-- so that primary can be reverted and signedPrimary enabled,
 	-- or vice-versa, without conflicts.
