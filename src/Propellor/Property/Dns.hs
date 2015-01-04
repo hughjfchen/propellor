@@ -133,7 +133,7 @@ signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
 	-- TODO enable dnssec options.
 	-- 	dnssec-enable yes; dnssec-validation yes; dnssec-lookaside auto;
 	setup = combineProperties ("dns primary for " ++ domain ++ " (signed)")
-		[ setupPrimary zonefile signedZoneFile hosts domain soa rs'
+		[ setupPrimary zonefile signedZoneFile hosts domain soa rs
 		, toProp (zoneSigned domain zonefile)
 		]
 		`onChange` Service.reloaded "bind9"
@@ -142,10 +142,6 @@ signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
 		`onChange` toProp (revert (zoneSigned domain zonefile))
 		`onChange` Service.reloaded "bind9"
 	
-	-- Include the public keys into the zone file.
-	rs' = include PubKSK : include PubZSK : rs
-	include k = (RootDomain, INCLUDE (keyFn domain k))
-
 	-- Put DNSSEC zone files in a different directory than is used for
 	-- the regular ones. This allows 'primary' to be reverted and
 	-- 'signedPrimary' enabled, without the reverted property stomping
@@ -271,7 +267,6 @@ rField (MX _ _) = "MX"
 rField (NS _) = "NS"
 rField (TXT _) = "TXT"
 rField (SRV _ _ _ _) = "SRV"
-rField (INCLUDE _) = "$INCLUDE"
 
 rValue :: Record -> String
 rValue (Address (IPv4 addr)) = addr
@@ -285,7 +280,6 @@ rValue (SRV priority weight port target) = unwords
 	, show port
 	, dValue target
 	]
-rValue (INCLUDE f) = f
 rValue (TXT s) = [q] ++ filter (/= q) s ++ [q]
   where
 	q = '"'

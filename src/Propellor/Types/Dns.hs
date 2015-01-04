@@ -62,7 +62,6 @@ data Record
 	| NS BindDomain
 	| TXT String
 	| SRV Word16 Word16 Word16 BindDomain
-	| INCLUDE FilePath
 	deriving (Read, Show, Eq, Ord)
 
 getIPAddr :: Record -> Maybe IPAddr

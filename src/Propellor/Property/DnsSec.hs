@@ -41,6 +41,7 @@ zoneSigned :: Domain -> FilePath -> RevertableProperty
 zoneSigned domain zonefile = RevertableProperty setup cleanup
   where
 	setup = check needupdate (forceZoneSigned domain zonefile)
+		`requires` includePubKeys domain zonefile
 		`requires` toProp (keysInstalled domain)
 	
 	cleanup = combineProperties ("removed signed zone for " ++ domain)
@@ -64,6 +65,12 @@ zoneSigned domain zonefile = RevertableProperty setup cleanup
 	newerthan t1 f = do
 		t2 <- getModificationTime f
 		return (t2 >= t1)
+
+includePubKeys :: Domain -> FilePath -> Property
+includePubKeys domain zonefile = File.containsLines zonefile $
+	map mkinclude [PubKSK, PubZSK]
+  where
+	mkinclude k = "$INCLUDE " ++ keyFn domain k
 
 forceZoneSigned :: Domain -> FilePath -> Property
 forceZoneSigned domain zonefile = property ("zone signed for " ++ domain) $ liftIO $ do
@@ -95,8 +102,11 @@ saltSha1 = readProcess "sh"
 
 -- | The file used for a given key.
 keyFn :: Domain -> DnsSecKey -> FilePath
-keyFn domain k =  "/etc/bind/propellor/dnssec" </>
-	"K" ++ domain ++ "." ++ show k ++ keyExt k
+keyFn domain k =  "/etc/bind/propellor/dnssec" </> concat
+	[ "K" ++ domain ++ "."
+	, if isZoneSigningKey k then "ZSK" else "KSK"
+	, keyExt k
+	]
 
 -- | These are the extensions that dnssec-keygen looks for.
 keyExt :: DnsSecKey -> String

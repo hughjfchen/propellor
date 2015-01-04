@@ -64,7 +64,6 @@ addDNS r = pureInfoProperty (rdesc r) $ mempty { _dns = S.singleton r }
 	rdesc (NS d) = unwords ["NS", ddesc d]
 	rdesc (TXT s) = unwords ["TXT", s]
 	rdesc (SRV x y z d) = unwords ["SRV", show x, show y, show z, ddesc d]
-	rdesc (INCLUDE f) = unwords ["$INCLUDE", f]
 
 	ddesc (AbsDomain domain) = domain
 	ddesc (RelDomain domain) = domain
