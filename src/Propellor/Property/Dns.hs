@@ -132,8 +132,10 @@ signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
   where
 	-- TODO enable dnssec options.
 	-- 	dnssec-enable yes; dnssec-validation yes; dnssec-lookaside auto;
-	setup = setupPrimary zonefile signedZoneFile hosts domain soa rs'
-		`onChange` toProp (zoneSigned domain zonefile)
+	setup = combineProperties ("dns primary for " ++ domain ++ " (signed)")
+		[ setupPrimary zonefile signedZoneFile hosts domain soa rs'
+		, toProp (zoneSigned domain zonefile)
+		]
 		`onChange` Service.reloaded "bind9"
 	
 	cleanup = cleanupPrimary zonefile domain
