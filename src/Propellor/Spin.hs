@@ -14,6 +14,9 @@ import System.Posix.Directory
 import Control.Concurrent.Async
 import Control.Exception (bracket)
 import qualified Data.ByteString as B
+import qualified Data.Set as S
+import qualified Network.BSD as BSD
+import Network.Socket (inet_ntoa)
 
 import Propellor
 import Propellor.Protocol
@@ -44,17 +47,20 @@ spin target relay hst = do
 	when viarelay $
 		void $ boolSystem "ssh-add" []
 
+	sshtarget <- ("root@" ++) <$> case relay of
+		Just r -> pure r
+		Nothing -> getSshTarget target hst
+
 	-- Install, or update the remote propellor.
 	updateServer target relay hst
-		(proc "ssh" $ cacheparams ++ [user, shellWrap probecmd])
-		(proc "ssh" $ cacheparams ++ [user, shellWrap updatecmd])
+		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap probecmd])
+		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap updatecmd])
 
 	-- And now we can run it.
-	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", user, shellWrap runcmd])) $
+	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", sshtarget, shellWrap runcmd])) $
 		error $ "remote propellor failed"
   where
 	hn = fromMaybe target relay
-	user = "root@"++hn
 
 	relaying = relay == Just target
 	viarelay = isJust relay && not relaying
@@ -74,7 +80,7 @@ spin target relay hst = do
 		, "if ! test -x ./propellor; then make deps build; fi"
 		, if viarelay
 			then "./propellor --continue " ++
-				shellEscape (show (Update (Just target)))
+				shellEscape (show (Relay target))
 			-- Still using --boot for back-compat...
 			else "./propellor --boot " ++ target
 		]
@@ -83,6 +89,34 @@ spin target relay hst = do
 	cmd = if viarelay
 		then "--serialized " ++ shellEscape (show (Spin [target] (Just target)))
 		else "--continue " ++ shellEscape (show (SimpleRun target))
+
+-- Check if the Host contains an IP address that matches one of the IPs
+-- in the DNS for the HostName. If so, the HostName is used as-is, 
+-- but if the DNS is out of sync with the Host config, or doesn't have
+-- the host in it at all, use one of the Host's IPs instead.
+getSshTarget :: HostName -> Host -> IO String
+getSshTarget target hst
+	| null configips = return target
+	| otherwise = go =<< tryIO (BSD.getHostByName target)
+  where
+	go (Left e) = useip (show e)
+	go (Right hostentry) = ifM (anyM matchingconfig (BSD.hostAddresses hostentry))
+		( return target
+		, do
+			ips <- mapM inet_ntoa (BSD.hostAddresses hostentry)
+			useip ("DNS " ++ show ips ++ " vs configured " ++ show configips)
+		)
+
+	matchingconfig a = flip elem configips <$> inet_ntoa a
+
+	useip why = case headMaybe configips of
+		Nothing -> return target
+		Just ip -> do
+			warningMessage $ "DNS seems out of date for " ++ target ++ " (" ++ why ++ "); using IP address from configuration instead."
+			return ip
+
+	configips = map fromIPAddr $ mapMaybe getIPAddr $
+		S.toList $ _dns $ hostInfo hst
 
 -- Update the privdata, repo url, and git repo over the ssh
 -- connection, talking to the user's local propellor instance which is

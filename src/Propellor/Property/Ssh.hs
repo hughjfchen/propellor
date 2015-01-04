@@ -8,6 +8,7 @@ module Propellor.Property.Ssh (
 	randomHostKeys,
 	hostKeys,
 	hostKey,
+	pubKey,
 	keyImported,
 	knownHost,
 	authorizedKeys,
@@ -22,6 +23,9 @@ import Utility.SafeCommand
 import Utility.FileMode
 
 import System.PosixCompat
+import qualified Data.Map as M
+
+type PubKeyText = String
 
 sshBool :: Bool -> String
 sshBool True = "yes"
@@ -79,33 +83,64 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 		ensureProperty $ scriptProperty 
 			[ "DPKG_MAINTSCRIPT_NAME=postinst DPKG_MAINTSCRIPT_PACKAGE=openssh-server /var/lib/dpkg/info/openssh-server.postinst configure" ]
 
--- | Sets all types of ssh host keys from the privdata.
-hostKeys :: IsContext c => c -> Property
-hostKeys ctx = propertyList "known ssh host keys"
-	[ hostKey SshDsa ctx
-	, hostKey SshRsa ctx
-	, hostKey SshEcdsa ctx
-	]
+-- | Installs the specified list of ssh host keys.
+--
+-- The corresponding private keys come from the privdata.
+--
+-- Any host keysthat are not in the list are removed from the host.
+hostKeys :: IsContext c => c -> [(SshKeyType, PubKeyText)] -> Property
+hostKeys ctx l = propertyList desc $ catMaybes $
+	map (\(t, pub) -> Just $ hostKey ctx t pub) l ++ [cleanup]
+  where
+	desc = "ssh host keys configured " ++ typelist (map fst l)
+	typelist tl = "(" ++ unwords (map fromKeyType tl) ++ ")"
+	alltypes = [minBound..maxBound]
+	staletypes = let have = map fst l in filter (`notElem` have) alltypes
+	removestale b = map (File.notPresent . flip keyFile b) staletypes
+	cleanup
+		| null staletypes || null l = Nothing
+		| otherwise = Just $ property ("any other ssh host keys removed " ++ typelist staletypes) $
+			ensureProperty $
+				combineProperties desc (removestale True ++ removestale False)
+				`onChange` restarted
 
--- | Sets a single ssh host key from the privdata.
-hostKey :: IsContext c => SshKeyType -> c -> Property
-hostKey keytype context = combineProperties desc
-	[ installkey (keysrc ".pub" (SshPubKey keytype ""))  (install writeFile ".pub")
-	, installkey (keysrc "" (SshPrivKey keytype "")) (install writeFileProtected "")
+-- | Installs a single ssh host key of a particular type.
+--
+-- The public key is provided to this function;
+-- the private key comes from the privdata; 
+hostKey :: IsContext c => c -> SshKeyType -> PubKeyText -> Property
+hostKey context keytype pub = combineProperties desc
+	[ pubKey keytype pub
+	, property desc $ install writeFile True pub
+	, withPrivData (keysrc "" (SshPrivKey keytype "")) context $ \getkey ->
+		property desc $ getkey $ install writeFileProtected False
 	]
 	`onChange` restarted
   where
-	desc = "known ssh host key (" ++ fromKeyType keytype ++ ")"
-	installkey p a = withPrivData p context $ \getkey ->
-		property desc $ getkey a
-	install writer ext key = do
-		let f = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++ ext
+	desc = "ssh host key configured (" ++ fromKeyType keytype ++ ")"
+	install writer ispub key = do
+		let f = keyFile keytype ispub
 		s <- liftIO $ readFileStrict f
 		if s == key
 			then noChange
 			else makeChange $ writer f key
 	keysrc ext field = PrivDataSourceFileFromCommand field ("sshkey"++ext)
 		("ssh-keygen -t " ++ sshKeyTypeParam keytype ++ " -f sshkey")
+
+keyFile :: SshKeyType -> Bool -> FilePath
+keyFile keytype ispub = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++ ext
+  where
+	ext = if ispub then ".pub" else ""
+
+-- | Indicates the host key that is used by a Host, but does not actually
+-- configure the host to use it. Normally this does not need to be used;
+-- use 'hostKey' instead.
+pubKey :: SshKeyType -> PubKeyText -> Property
+pubKey t k = pureInfoProperty ("ssh pubkey known") $
+	mempty { _sshPubKey = M.singleton t k }
+
+getPubKey :: Propellor (M.Map SshKeyType String)
+getPubKey = asks (_sshPubKey . hostInfo)
 
 -- | Sets up a user with a ssh private key and public key pair from the
 -- PrivData.
@@ -140,21 +175,23 @@ fromKeyType SshDsa = "dsa"
 fromKeyType SshEcdsa = "ecdsa"
 fromKeyType SshEd25519 = "ed25519"
 
--- | Puts some host's ssh public key into the known_hosts file for a user.
+-- | Puts some host's ssh public key(s), as set using 'pubKey',
+-- into the known_hosts file for a user.
 knownHost :: [Host] -> HostName -> UserName -> Property
 knownHost hosts hn user = property desc $
-	go =<< fromHost hosts hn getSshPubKey
+	go =<< fromHost hosts hn getPubKey
   where
 	desc = user ++ " knows ssh key for " ++ hn
-	go (Just (Just k)) = do
+	go (Just m) | not (M.null m) = do
 		f <- liftIO $ dotFile "known_hosts" user
 		ensureProperty $ combineProperties desc
 			[ File.dirExists (takeDirectory f)
-			, f `File.containsLine` (hn ++ " " ++ k)
+			, f `File.containsLines`
+				(map (\k -> hn ++ " " ++ k) (M.elems m))
 			, File.ownerGroup f user user
 			]
 	go _ = do
-		warningMessage $ "no configred sshPubKey for " ++ hn
+		warningMessage $ "no configred pubKey for " ++ hn
 		return FailedChange
 
 -- | Makes a user have authorized_keys from the PrivData

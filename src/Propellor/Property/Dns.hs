@@ -1,6 +1,7 @@
 module Propellor.Property.Dns (
 	module Propellor.Types.Dns,
 	primary,
+	signedPrimary,
 	secondary,
 	secondaryFor,
 	mkSOA,
@@ -17,6 +18,8 @@ import Propellor.Types.Dns
 import Propellor.Property.File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
+import Propellor.Property.Scheduled
+import Propellor.Property.DnsSec
 import Utility.Applicative
 
 import qualified Data.Map as M
@@ -53,18 +56,20 @@ import Data.List
 primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
 primary hosts domain soa rs = RevertableProperty setup cleanup
   where
-	setup = withwarnings (check needupdate baseprop)
-		`requires` servingZones
+	setup = setupPrimary zonefile id hosts domain soa rs
 		`onChange` Service.reloaded "bind9"
-	cleanup = check (doesFileExist zonefile) $
-		property ("removed dns primary for " ++ domain)
-			(makeChange $ removeZoneFile zonefile)
-			`requires` namedConfWritten
-			`onChange` Service.reloaded "bind9"
+	cleanup = cleanupPrimary zonefile domain
+		`onChange` Service.reloaded "bind9"
 
+	zonefile = "/etc/bind/propellor/db." ++ domain
+
+setupPrimary :: FilePath -> (FilePath -> FilePath) -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
+setupPrimary zonefile mknamedconffile hosts domain soa rs = 
+	withwarnings (check needupdate baseprop)
+		`requires` servingZones
+  where
 	(partialzone, zonewarnings) = genZone hosts domain soa
 	zone = partialzone { zHosts = zHosts partialzone ++ rs }
-	zonefile = "/etc/bind/propellor/db." ++ domain
 	baseprop = Property ("dns primary for " ++ domain)
 		(makeChange $ writeZoneFile zone zonefile)
 		(addNamedConf conf)
@@ -74,7 +79,7 @@ primary hosts domain soa rs = RevertableProperty setup cleanup
 	conf = NamedConf
 		{ confDomain = domain
 		, confDnsServerType = Master
-		, confFile = zonefile
+		, confFile = mknamedconffile zonefile
 		, confMasters = []
 		, confAllowTransfer = nub $
 			concatMap (\h -> hostAddresses h hosts) $
@@ -96,6 +101,63 @@ primary hosts domain soa rs = RevertableProperty setup cleanup
 				let oldserial = sSerial (zSOA oldzone)
 				    z = zone { zSOA = (zSOA zone) { sSerial = oldserial } }
 				in z /= oldzone || oldserial < sSerial (zSOA zone)
+
+
+cleanupPrimary :: FilePath -> Domain -> Property
+cleanupPrimary zonefile domain = check (doesFileExist zonefile) $
+	property ("removed dns primary for " ++ domain)
+		(makeChange $ removeZoneFile zonefile)
+		`requires` namedConfWritten
+
+-- | Primary dns server for a domain, secured with DNSSEC.
+--
+-- This is like `primary`, except the resulting zone
+-- file is signed.
+-- The Zone Signing Key (ZSK) and Key Signing Key (KSK)
+-- used in signing it are taken from the PrivData.
+--
+-- As a side effect of signing the zone, a
+-- </var/cache/bind/dsset-domain.>
+-- file will be created. This file contains the DS records
+-- which need to be communicated to your domain registrar
+-- to make DNSSEC be used for your domain. Doing so is outside
+-- the scope of propellor (currently). See for example the tutorial
+-- <https://www.digitalocean.com/community/tutorials/how-to-setup-dnssec-on-an-authoritative-bind-dns-server--2>
+--
+-- The 'Recurrance' controls how frequently the signature
+-- should be regenerated, using a new random salt, to prevent
+-- zone walking attacks. `Weekly Nothing` is a reasonable choice.
+--
+-- To transition from 'primary' to 'signedPrimary', you can revert
+-- the 'primary' property, and add this property.
+--
+-- Note that DNSSEC zone files use a serial number based on the unix epoch.
+-- This is different from the serial number used by 'primary', so if you
+-- want to later disable DNSSEC you will need to adjust the serial number
+-- passed to mkSOA to ensure it is larger.
+signedPrimary :: Recurrance -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
+signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
+  where
+	setup = combineProperties ("dns primary for " ++ domain ++ " (signed)")
+		[ setupPrimary zonefile signedZoneFile hosts domain soa rs'
+		, toProp (zoneSigned domain zonefile)
+		, forceZoneSigned domain zonefile `period` recurrance
+		]
+		`onChange` Service.reloaded "bind9"
+	
+	cleanup = cleanupPrimary zonefile domain
+		`onChange` toProp (revert (zoneSigned domain zonefile))
+		`onChange` Service.reloaded "bind9"
+	
+	-- Include the public keys into the zone file.
+	rs' = include PubKSK : include PubZSK : rs
+	include k = (RootDomain, INCLUDE (keyFn domain k))
+
+	-- Put DNSSEC zone files in a different directory than is used for
+	-- the regular ones. This allows 'primary' to be reverted and
+	-- 'signedPrimary' enabled, without the reverted property stomping
+	-- on the new one's settings.
+	zonefile = "/etc/bind/propellor/dnssec/db." ++ domain
 
 -- | Secondary dns server for a domain.
 --
@@ -216,6 +278,7 @@ rField (MX _ _) = "MX"
 rField (NS _) = "NS"
 rField (TXT _) = "TXT"
 rField (SRV _ _ _ _) = "SRV"
+rField (INCLUDE _) = "$INCLUDE"
 
 rValue :: Record -> String
 rValue (Address (IPv4 addr)) = addr
@@ -229,6 +292,7 @@ rValue (SRV priority weight port target) = unwords
 	, show port
 	, dValue target
 	]
+rValue (INCLUDE f) = f
 rValue (TXT s) = [q] ++ filter (/= q) s ++ [q]
   where
 	q = '"'
@@ -294,12 +358,16 @@ genZoneFile (Zone zdomain soa rs) = unlines $
 	header = com $ "BIND zone file for " ++ zdomain ++ ". Generated by propellor, do not edit."
 
 genRecord :: Domain -> (BindDomain, Record) -> String
+genRecord _ (_, record@(INCLUDE _)) = intercalate "\t"
+		[ rField record
+		, rValue record
+		]
 genRecord zdomain (domain, record) = intercalate "\t"
-	[ domainHost zdomain domain
-	, "IN"
-	, rField record
-	, rValue record
-	]
+		[ domainHost zdomain domain
+		, "IN"
+		, rField record
+		, rValue record
+		]
 
 genSOA :: SOA -> [String]
 genSOA soa = 

@@ -2,18 +2,19 @@ module Propellor.Types.PrivData where
 
 import Propellor.Types.OS
 
--- | Note that removing or changing field names will break the
+-- | Note that removing or changing constructors will break the
 -- serialized privdata files, so don't do that!
--- It's fine to add new fields.
+-- It's fine to add new constructors.
 data PrivDataField
 	= DockerAuthentication
-	| SshPubKey SshKeyType UserName
+	| SshPubKey SshKeyType UserName -- ^ For host key, use empty UserName
 	| SshPrivKey SshKeyType UserName
 	| SshAuthorizedKeys UserName
 	| Password UserName
 	| CryptPassword UserName
 	| PrivFile FilePath
 	| GpgKey
+	| DnsSec DnsSecKey
 	deriving (Read, Show, Ord, Eq)
 
 -- | Combines a PrivDataField with a description of how to generate
@@ -49,7 +50,7 @@ instance IsPrivDataSource PrivDataSource where
 -- for the web server serving that domain. Multiple hosts might
 -- use that privdata.
 --
--- This appears in serlialized privdata files.
+-- This appears in serialized privdata files.
 newtype Context = Context String
 	deriving (Read, Show, Ord, Eq)
 
@@ -89,7 +90,7 @@ hostContext = HostContext Context
 type PrivData = String
 
 data SshKeyType = SshRsa | SshDsa | SshEcdsa | SshEd25519
-	deriving (Read, Show, Ord, Eq)
+	deriving (Read, Show, Ord, Eq, Enum, Bounded)
 
 -- | Parameter that would be passed to ssh-keygen to generate key of this type
 sshKeyTypeParam :: SshKeyType -> String
@@ -98,3 +99,9 @@ sshKeyTypeParam SshDsa = "DSA"
 sshKeyTypeParam SshEcdsa = "ECDSA"
 sshKeyTypeParam SshEd25519 = "ED25519"
 
+data DnsSecKey
+	= PubZSK -- ^ DNSSEC Zone Signing Key (public)
+	| PrivZSK -- ^ DNSSEC Zone Signing Key (private)
+	| PubKSK -- ^ DNSSEC Key Signing Key (public)
+	| PrivKSK -- ^ DNSSEC Key Signing Key (private)
+	deriving (Read, Show, Ord, Eq, Bounded, Enum)

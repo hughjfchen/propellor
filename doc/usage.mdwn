@@ -13,11 +13,13 @@ and configured in haskell.
 
 # MODES OF OPERATION
 
-* The first time you run `propellor`, without any options,
-  it will set up a `~/.propellor/` repository.
-  Edit `~/.propellor/config.hs` to configure it.
+* propellor
 
-* Once propellor is configured, running it without any options will take
+  The first time you run `propellor`, without any options,
+  it will set up a `~/.propellor/` repository. Edit `~/.propellor/config.hs`
+  to configure it.
+
+  Once propellor is configured, running it without any options will take
   action as needed to satisfy the configured properties of the local host.
 
   If there's a central git repository, it will first fetch from the
@@ -28,7 +30,7 @@ and configured in haskell.
   the same  as running propellor --spin with the hostname of the local
   host.
 
-* --spin targethost [targethost ...] [--via relayhost]
+* propellor --spin targethost [targethost ...] [--via relayhost]
 
   Causes propellor to automatically install itself on the specified target
   host, or if it's already installed there, push any updates. Propellor is
@@ -47,7 +49,11 @@ and configured in haskell.
   uses ssh agent forwarding to make this work, and the relay host
   sees any privdata belonging to the target host.
 
-* --add-key keyid
+  Propellor configuration typically uses the FQDN of hosts.
+  The hostname given to --spin can be a short name, which is
+  then looked up in the DNS to find the FQDN.
+
+* propellor --add-key keyid
 
   Adds a gpg key, which is used to encrypt the privdata.
 
@@ -55,25 +61,25 @@ and configured in haskell.
   using this key. Propellor requires signed commits when pulling from
   a central git repository.
 
-* --list-fields
+* propellor --list-fields
 
   Lists all privdata fields that are used by your propellor configuration.
   The first 2 columns are the field name and context, and are followed by
   a list of the hosts that use that privdata value.
 
-* --set field context
+* propellor --set field context
 
   Sets a field of privdata. The content is read in from stdin.
 
-* --dump field context
+* propellor --dump field context
 
   Outputs the privdata value to stdout.
 
-* --edit field context
+* propellor --edit field context
 
   Opens $EDITOR on the privdata value.
 
-* --merge
+* propellor --merge
 
   Combine multiple --spin commits into a single, more useful commit.
 
@@ -89,7 +95,7 @@ and configured in haskell.
 
   (This will result in a trapezoid pattern in gitk.)
 
-* hostname
+* propellor hostname
 
   When run with a hostname and no other options, propellor will
   provision the local host with the configuration of that hostname.

@@ -10,7 +10,6 @@ import qualified Propellor.Property.User as User
 decruft :: Property
 decruft = propertyList "cloudatcost cleanup"
 	[ Hostname.sane
-	, Ssh.randomHostKeys
 	, "worked around grub/lvm boot bug #743126" ==>
 		"/etc/default/grub" `File.containsLine` "GRUB_DISABLE_LINUX_UUID=true"
 		`onChange` cmdProperty "update-grub" []
@@ -18,6 +17,7 @@ decruft = propertyList "cloudatcost cleanup"
 	, combineProperties "nuked cloudatcost cruft"
 		[ File.notPresent "/etc/rc.local"
 		, File.notPresent "/etc/init.d/S97-setup.sh"
+		, File.notPresent "/zang-debian.sh"
 		, User.nuked "user" User.YesReallyDeleteHome
 		]
 	]

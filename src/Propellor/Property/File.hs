@@ -18,18 +18,26 @@ f `hasContent` newcontent = fileProperty ("replace " ++ f)
 -- The file's permissions are preserved if the file already existed.
 -- Otherwise, they're set to 600.
 hasPrivContent :: IsContext c => FilePath -> c -> Property
-hasPrivContent = hasPrivContent' writeFileProtected
+hasPrivContent f = hasPrivContentFrom (PrivDataSourceFile (PrivFile f) f) f
+
+-- | Like hasPrivContent, but allows specifying a source
+-- for PrivData, rather than using PrivDataSourceFile.
+hasPrivContentFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property
+hasPrivContentFrom = hasPrivContent' writeFileProtected
 
 -- | Leaves the file at its default or current mode,
 -- allowing "private" data to be read.
 --
 -- Use with caution!
 hasPrivContentExposed :: IsContext c => FilePath -> c -> Property
-hasPrivContentExposed = hasPrivContent' writeFile
+hasPrivContentExposed f = hasPrivContentExposedFrom (PrivDataSourceFile (PrivFile f) f) f
 
-hasPrivContent' :: IsContext c => (String -> FilePath -> IO ()) -> FilePath -> c -> Property
-hasPrivContent' writer f context = 
-	withPrivData (PrivDataSourceFile (PrivFile f) f) context $ \getcontent -> 
+hasPrivContentExposedFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property
+hasPrivContentExposedFrom = hasPrivContent' writeFile
+
+hasPrivContent' :: (IsContext c, IsPrivDataSource s) => (String -> FilePath -> IO ()) -> s -> FilePath -> c -> Property
+hasPrivContent' writer source f context = 
+	withPrivData source context $ \getcontent -> 
 		property desc $ getcontent $ \privcontent -> 
 			ensureProperty $ fileProperty' writer desc
 				(\_oldcontent -> lines privcontent) f

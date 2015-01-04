@@ -55,7 +55,7 @@ withPrivData
 	-> Property
 withPrivData s = withPrivData' snd [s]
 
--- Like withPrivData, but here any of a list of PrivDataFields can be used.
+-- Like withPrivData, but here any one of a list of PrivDataFields can be used.
 withSomePrivData
 	:: (IsContext c, IsPrivDataSource s)
 	=> [s]

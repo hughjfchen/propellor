@@ -26,8 +26,13 @@ getOS = askInfo _os
 
 -- | Indidate that a host has an A record in the DNS.
 --
--- TODO check at run time if the host really has this address.
--- (Can't change the host's address, but as a sanity check.)
+-- When propellor is used to deploy a DNS server for a domain,
+-- the hosts in the domain are found by looking for these
+-- and similar properites.
+--
+-- When propellor --spin is used to deploy a host, it checks
+-- if the host's IP Property matches the DNS. If the DNS is missing or
+-- out of date, the host will instead be contacted directly by IP address.
 ipv4 :: String -> Property
 ipv4 = addDNS . Address . IPv4
 
@@ -59,17 +64,11 @@ addDNS r = pureInfoProperty (rdesc r) $ mempty { _dns = S.singleton r }
 	rdesc (NS d) = unwords ["NS", ddesc d]
 	rdesc (TXT s) = unwords ["TXT", s]
 	rdesc (SRV x y z d) = unwords ["SRV", show x, show y, show z, ddesc d]
+	rdesc (INCLUDE f) = unwords ["$INCLUDE", f]
 
 	ddesc (AbsDomain domain) = domain
 	ddesc (RelDomain domain) = domain
 	ddesc RootDomain = "@"
-
-sshPubKey :: String -> Property
-sshPubKey k = pureInfoProperty ("ssh pubkey known") $
-	mempty { _sshPubKey = Val k }
-
-getSshPubKey :: Propellor (Maybe String)
-getSshPubKey = askInfo _sshPubKey
 
 hostMap :: [Host] -> M.Map HostName Host
 hostMap l = M.fromList $ zip (map hostName l) l 
