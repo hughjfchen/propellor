@@ -253,10 +253,10 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& JoeySites.oldUseNetServer hosts
 	
 	& alias "ns2.kitenet.net"
-	& myDnsPrimary "kitenet.net" []
-	& myDnsPrimary' "joeyh.name" []
-	& myDnsPrimary "ikiwiki.info" []
-	& myDnsPrimary "olduse.net"
+	& myDnsPrimary False "kitenet.net" []
+	& myDnsPrimary True "joeyh.name" []
+	& myDnsPrimary False "ikiwiki.info" []
+	& myDnsPrimary False "olduse.net"
 		[ (RelDomain "article",
 			CNAME $ AbsDomain "virgil.koldfront.dk") ]
 
@@ -433,18 +433,8 @@ branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 -- Currently using diatom (ns2) as primary with secondaries
 -- elephant (ns3) and gandi.
 -- kite handles all mail.
-myDnsPrimary :: Domain -> [(BindDomain, Record)] -> RevertableProperty
-myDnsPrimary domain extras = Dns.primary hosts domain
-	(Dns.mkSOA "ns2.kitenet.net" 100) $
-	[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
-	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
-	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
-	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
-	-- SPF only allows IP address of kitenet.net to send mail.
-	, (RootDomain, TXT "v=spf1 a:kitenet.net -all")
-	] ++ extras
-myDnsPrimary' :: Domain -> [(BindDomain, Record)] -> RevertableProperty
-myDnsPrimary' domain extras = Dns.signedPrimary Daily hosts domain
+myDnsPrimary :: Bool -> Domain -> [(BindDomain, Record)] -> RevertableProperty
+myDnsPrimary dnssec domain extras = (if dnssec then Dns.signedPrimary (Weekly Nothing) else Dns.primary) hosts domain
 	(Dns.mkSOA "ns2.kitenet.net" 100) $
 	[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")

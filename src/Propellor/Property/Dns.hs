@@ -126,15 +126,14 @@ cleanupPrimary zonefile domain = check (doesFileExist zonefile) $
 --
 -- The 'Recurrance' controls how frequently the signature
 -- should be regenerated, using a new random salt, to prevent
--- zone walking attacks. `Daily` is a reasonable choice.
+-- zone walking attacks. `Weekly Nothing` is a reasonable choice.
 signedPrimary :: Recurrance -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
 signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
   where
-	-- TODO enable dnssec options.
-	-- 	dnssec-enable yes; dnssec-validation yes; dnssec-lookaside auto;
 	setup = combineProperties ("dns primary for " ++ domain ++ " (signed)")
 		[ setupPrimary zonefile signedZoneFile hosts domain soa rs'
 		, toProp (zoneSigned domain zonefile)
+		, forceZoneSigned domain zonefile `period` recurrance
 		]
 		`onChange` Service.reloaded "bind9"
 	
