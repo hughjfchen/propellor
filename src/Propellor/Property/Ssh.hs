@@ -9,6 +9,7 @@ module Propellor.Property.Ssh (
 	hostKeys,
 	hostKey,
 	pubKey,
+	getPubKey,
 	keyImported,
 	knownHost,
 	authorizedKeys,
