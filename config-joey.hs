@@ -25,8 +25,6 @@ import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
-import qualified Propellor.Property.Chroot as Chroot
-import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
@@ -256,7 +254,7 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	
 	& alias "ns2.kitenet.net"
 	& myDnsPrimary "kitenet.net" []
-	& myDnsPrimary "joeyh.name" []
+	& myDnsPrimary' "joeyh.name" []
 	& myDnsPrimary "ikiwiki.info" []
 	& myDnsPrimary "olduse.net"
 		[ (RelDomain "article",
@@ -437,6 +435,16 @@ branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 -- kite handles all mail.
 myDnsPrimary :: Domain -> [(BindDomain, Record)] -> RevertableProperty
 myDnsPrimary domain extras = Dns.primary hosts domain
+	(Dns.mkSOA "ns2.kitenet.net" 100) $
+	[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
+	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
+	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
+	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
+	-- SPF only allows IP address of kitenet.net to send mail.
+	, (RootDomain, TXT "v=spf1 a:kitenet.net -all")
+	] ++ extras
+myDnsPrimary' :: Domain -> [(BindDomain, Record)] -> RevertableProperty
+myDnsPrimary' domain extras = Dns.signedPrimary Daily hosts domain
 	(Dns.mkSOA "ns2.kitenet.net" 100) $
 	[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
