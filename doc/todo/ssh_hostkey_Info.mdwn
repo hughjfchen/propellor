@@ -5,3 +5,5 @@
   the PrivData, and instead configured using the info.
   Getting the ssh host key into the info will allow automatically
   exporting it via DNS (SSHFP record)
+
+[[done]]; although I did not implement SSHFTP yet, it should be doable now.
