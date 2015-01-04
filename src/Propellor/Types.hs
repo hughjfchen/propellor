@@ -37,6 +37,7 @@ import System.Posix.Types
 import "mtl" Control.Monad.RWS.Strict
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 import qualified Data.Set as S
+import qualified Data.Map as M
 import qualified Propellor.Types.Dns as Dns
 
 import Propellor.Types.OS
@@ -176,7 +177,7 @@ data CmdLine
 data Info = Info
 	{ _os :: Val System
 	, _privDataFields :: S.Set (PrivDataField, HostContext)
-	, _sshPubKey :: Val String
+	, _sshPubKey :: M.Map SshKeyType String
 	, _aliases :: S.Set HostName
 	, _dns :: S.Set Dns.Record
 	, _namedconf :: Dns.NamedConfMap
@@ -190,7 +191,7 @@ instance Monoid Info where
 	mappend old new = Info
 		{ _os = _os old <> _os new
 		, _privDataFields = _privDataFields old <> _privDataFields new
-		, _sshPubKey = _sshPubKey old <> _sshPubKey new
+		, _sshPubKey = _sshPubKey new `M.union` _sshPubKey old
 		, _aliases = _aliases old <> _aliases new
 		, _dns = _dns old <> _dns new
 		, _namedconf = _namedconf old <> _namedconf new
