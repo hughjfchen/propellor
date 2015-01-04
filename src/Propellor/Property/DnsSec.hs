@@ -1,7 +1,7 @@
 module Propellor.Property.DnsSec where
 
 import Propellor
-import Propellor.Property.File
+import qualified Propellor.Property.File as File
 
 -- | Puts the DNSSEC key files in place from PrivData.
 --
@@ -14,10 +14,13 @@ keysInstalled domain = RevertableProperty setup cleanup
 		map installkey keys
 
 	cleanup = propertyList "DNSSEC keys removed" $
-		map (notPresent . keyFn domain) keys
+		map (File.notPresent . keyFn domain) keys
 
-	installkey k = (if isPublic k then hasPrivContentExposedFrom else hasPrivContentFrom)
-		(keysrc k) (keyFn domain k) (Context domain)
+	installkey k = writer (keysrc k) (keyFn domain k) (Context domain)
+	  where
+		writer
+			| isPublic k = File.hasPrivContentExposedFrom
+			| otherwise = File.hasPrivContentFrom
 
 	keys = [ PubZSK, PrivZSK, PubKSK, PrivKSK ]
 
@@ -29,6 +32,64 @@ keysInstalled domain = RevertableProperty setup cleanup
 			then "dnssec-keygen -a RSASHA256 -b 2048 -n ZONE " ++ domain
 			else "dnssec-keygen -f KSK -a RSASHA256 -b 4096 -n ZONE " ++ domain
 		]
+
+-- | Uses dnssec-signzone to sign a domain's zone file.
+--
+-- signedPrimary uses this, so this property does not normally need to be
+-- used directly.
+zoneSigned :: Domain -> FilePath -> RevertableProperty
+zoneSigned domain zonefile = RevertableProperty setup cleanup
+  where
+	setup = check needupdate (forceZoneSigned domain zonefile)
+		`requires` toProp (keysInstalled domain)
+	
+	cleanup = combineProperties ("removed signed zone for " ++ domain)
+		[ File.notPresent signedzonefile
+		, File.notPresent dssetfile
+		, toProp (revert (keysInstalled domain))
+		]
+	
+	signedzonefile = dir </> domain ++ ".signed"
+	dssetfile = dir </> "-" ++ domain ++ "."
+	dir = takeDirectory zonefile
+
+	-- Need to update the signed zone if the zone file
+	-- has a newer timestamp.
+	needupdate = do
+		v <- catchMaybeIO $ getModificationTime signedzonefile
+		case v of
+			Nothing -> return True
+			Just t1 -> do
+				t2 <- getModificationTime zonefile
+				return (t2 >= t1)
+
+forceZoneSigned :: Domain -> FilePath -> Property
+forceZoneSigned domain zonefile = property ("zone signed for " ++ domain) $ liftIO $ do
+	salt <- take 16 <$> saltSha1
+ 	let p = proc "dnssec-signzone"
+		[ "-A"
+		, "-3", salt
+		, "-N", "keep"
+		, "-o", domain
+		, zonefile
+		-- the ordering of these key files does not matter
+		, keyFn domain PubZSK  
+		, keyFn domain PubKSK
+		]
+	-- Run in the same directory as the zonefile, so it will 
+	-- write the dsset file there.
+	(_, _, _, h) <- createProcess $ 
+		p { cwd = Just (takeDirectory zonefile) }
+	ifM (checkSuccessProcess h)
+		( return MadeChange
+		, return FailedChange
+		)
+
+saltSha1 :: IO String
+saltSha1 = readProcess "sh"
+	[ "-c"
+	, "head -c 1024 /dev/urandom | sha1sum | cut -d ' ' -f 1"
+	]
 
 -- | The file used for a given key.
 keyFn :: Domain -> DnsSecKey -> FilePath

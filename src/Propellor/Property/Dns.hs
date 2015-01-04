@@ -56,18 +56,18 @@ import Data.List
 primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
 primary hosts domain soa rs = RevertableProperty setup cleanup
   where
-	setup = withwarnings (check needupdate baseprop)
-		`requires` servingZones
+	setup = setupPrimary hosts domain soa rs
 		`onChange` Service.reloaded "bind9"
-	cleanup = check (doesFileExist zonefile) $
-		property ("removed dns primary for " ++ domain)
-			(makeChange $ removeZoneFile zonefile)
-			`requires` namedConfWritten
-			`onChange` Service.reloaded "bind9"
+	cleanup = cleanupPrimary domain
+		`onChange` Service.reloaded "bind9"
 
+setupPrimary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
+setupPrimary hosts domain soa rs = withwarnings (check needupdate baseprop)
+		`requires` servingZones
+  where
 	(partialzone, zonewarnings) = genZone hosts domain soa
 	zone = partialzone { zHosts = zHosts partialzone ++ rs }
-	zonefile = "/etc/bind/propellor/db." ++ domain
+	zonefile = zoneFile domain
 	baseprop = Property ("dns primary for " ++ domain)
 		(makeChange $ writeZoneFile zone zonefile)
 		(addNamedConf conf)
@@ -100,6 +100,18 @@ primary hosts domain soa rs = RevertableProperty setup cleanup
 				    z = zone { zSOA = (zSOA zone) { sSerial = oldserial } }
 				in z /= oldzone || oldserial < sSerial (zSOA zone)
 
+
+cleanupPrimary :: Domain -> Property
+cleanupPrimary domain = check (doesFileExist zonefile) $
+	property ("removed dns primary for " ++ domain)
+		(makeChange $ removeZoneFile zonefile)
+		`requires` namedConfWritten
+  where
+	zonefile = zoneFile domain
+
+zoneFile :: Domain -> FilePath
+zoneFile domain = "/etc/bind/propellor/db." ++ domain
+
 -- | Primary dns server for a domain, secured with DNSSEC.
 --
 -- This is like `primary`, except the resulting zone
@@ -121,8 +133,24 @@ primary hosts domain soa rs = RevertableProperty setup cleanup
 signedPrimary :: Recurrance -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
 signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
   where
-	setup = undefined
-	cleanup = undefined
+	-- TODO put signed zone file in named.conf.
+	-- TODO enable dnssec options.
+	-- 	dnssec-enable yes; dnssec-validation yes; dnssec-lookaside auto;
+	-- TODO if keys change, resign zone file.
+	-- TODO write to entirely different files than does primary,
+	-- so that primary can be reverted and signedPrimary enabled,
+	-- or vice-versa, without conflicts.
+	setup = setupPrimary hosts domain soa rs'
+		`onChange` toProp (zoneSigned domain (zoneFile domain))
+		`onChange` Service.reloaded "bind9"
+	
+	cleanup = cleanupPrimary domain
+		`onChange` toProp (revert (zoneSigned domain (zoneFile domain)))
+		`onChange` Service.reloaded "bind9"
+	
+	-- Include the public keys into the zone file.
+	rs' = include PubKSK : include PubZSK : rs
+	include k = (RootDomain, INCLUDE (keyFn domain k))
 
 -- | Secondary dns server for a domain.
 --
@@ -243,6 +271,7 @@ rField (MX _ _) = "MX"
 rField (NS _) = "NS"
 rField (TXT _) = "TXT"
 rField (SRV _ _ _ _) = "SRV"
+rField (INCLUDE _) = "$INCLUDE"
 
 rValue :: Record -> String
 rValue (Address (IPv4 addr)) = addr
@@ -256,6 +285,7 @@ rValue (SRV priority weight port target) = unwords
 	, show port
 	, dValue target
 	]
+rValue (INCLUDE f) = f
 rValue (TXT s) = [q] ++ filter (/= q) s ++ [q]
   where
 	q = '"'

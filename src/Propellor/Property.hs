@@ -26,8 +26,7 @@ propertyList :: Desc -> [Property] -> Property
 propertyList desc ps = Property desc (ensureProperties ps) (combineInfos ps)
 
 -- | Combines a list of properties, resulting in one property that
--- ensures each in turn. Does not stop on failure; does propigate
--- overall success/failure.
+-- ensures each in turn. Stops if a property fails.
 combineProperties :: Desc -> [Property] -> Property
 combineProperties desc ps = Property desc (go ps NoChange) (combineInfos ps)
   where
