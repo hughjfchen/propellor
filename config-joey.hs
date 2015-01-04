@@ -442,13 +442,14 @@ branchableSecondary :: RevertableProperty
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 
 -- Currently using diatom (ns2) as primary with secondaries
--- elephant (ns3) and gandi.
+-- elephant (ns3), kite (ns4) and gandi.
 -- kite handles all mail.
 myDnsPrimary :: Bool -> Domain -> [(BindDomain, Record)] -> RevertableProperty
 myDnsPrimary dnssec domain extras = (if dnssec then Dns.signedPrimary (Weekly Nothing) else Dns.primary) hosts domain
 	(Dns.mkSOA "ns2.kitenet.net" 100) $
 	[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
+	, (RootDomain, NS $ AbsDomain "ns4.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
 	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
 	-- SPF only allows IP address of kitenet.net to send mail.
