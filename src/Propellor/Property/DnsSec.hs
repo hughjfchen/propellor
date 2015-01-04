@@ -44,19 +44,18 @@ zoneSigned domain zonefile = RevertableProperty setup cleanup
 		`requires` toProp (keysInstalled domain)
 	
 	cleanup = combineProperties ("removed signed zone for " ++ domain)
-		[ File.notPresent signedzonefile
+		[ File.notPresent (signedZoneFile zonefile)
 		, File.notPresent dssetfile
 		, toProp (revert (keysInstalled domain))
 		]
 	
-	signedzonefile = dir </> domain ++ ".signed"
 	dssetfile = dir </> "-" ++ domain ++ "."
 	dir = takeDirectory zonefile
 
 	-- Need to update the signed zone file if the zone file or
 	-- any of the keys have a newer timestamp.
 	needupdate = do
-		v <- catchMaybeIO $ getModificationTime signedzonefile
+		v <- catchMaybeIO $ getModificationTime (signedZoneFile zonefile)
 		case v of
 			Nothing -> return True
 			Just t1 -> anyM (newerthan t1) $
@@ -110,3 +109,7 @@ isPublic k = k `elem` [PubZSK, PubKSK]
 
 isZoneSigningKey :: DnsSecKey -> Bool
 isZoneSigningKey k = k `elem` [PubZSK, PrivZSK]
+
+-- | dnssec-signzone makes a .signed file
+signedZoneFile :: FilePath -> FilePath
+signedZoneFile zonefile = zonefile ++ ".signed"

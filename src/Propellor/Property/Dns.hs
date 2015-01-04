@@ -56,15 +56,15 @@ import Data.List
 primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
 primary hosts domain soa rs = RevertableProperty setup cleanup
   where
-	setup = setupPrimary zonefile hosts domain soa rs
+	setup = setupPrimary zonefile id hosts domain soa rs
 		`onChange` Service.reloaded "bind9"
 	cleanup = cleanupPrimary zonefile domain
 		`onChange` Service.reloaded "bind9"
 
 	zonefile = "/etc/bind/propellor/db." ++ domain
 
-setupPrimary :: FilePath -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
-setupPrimary zonefile hosts domain soa rs = 
+setupPrimary :: FilePath -> (FilePath -> FilePath) -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
+setupPrimary zonefile mknamedconffile hosts domain soa rs = 
 	withwarnings (check needupdate baseprop)
 		`requires` servingZones
   where
@@ -79,7 +79,7 @@ setupPrimary zonefile hosts domain soa rs =
 	conf = NamedConf
 		{ confDomain = domain
 		, confDnsServerType = Master
-		, confFile = zonefile
+		, confFile = mknamedconffile zonefile
 		, confMasters = []
 		, confAllowTransfer = nub $
 			concatMap (\h -> hostAddresses h hosts) $
@@ -132,7 +132,7 @@ signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
   where
 	-- TODO enable dnssec options.
 	-- 	dnssec-enable yes; dnssec-validation yes; dnssec-lookaside auto;
-	setup = setupPrimary zonefile hosts domain soa rs'
+	setup = setupPrimary zonefile signedZoneFile hosts domain soa rs'
 		`onChange` toProp (zoneSigned domain zonefile)
 		`onChange` Service.reloaded "bind9"
 	
