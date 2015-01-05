@@ -80,7 +80,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 	baseprop = Property ("dns primary for " ++ domain) satisfy
 		(addNamedConf conf)
 	satisfy = do
-		sshfps <- concat <$> mapM genSSHFP indomain
+		sshfps <- concat <$> mapM (genSSHFP domain) (M.elems hostmap)
 		let zone = partialzone
 			{ zHosts = zHosts partialzone ++ rs ++ sshfps }
 		ifM (liftIO $ needupdate zone)
@@ -417,31 +417,6 @@ com s = "; " ++ s
 
 type WarningMessage = String
 
--- | Generates SSHFP records for hosts that have configured
--- ssh public keys.
---
--- This is done using ssh-keygen, so sadly needs IO.
-genSSHFP :: Host -> Propellor [(BindDomain, Record)]
-genSSHFP h = map (\r -> (AbsDomain hostname, r)) . concat <$> (gen =<< get)
-  where
-	hostname = hostName h
-	get = fromHost [h] hostname Ssh.getPubKey
-	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
-
-genSSHFP' :: String -> IO [Record]
-genSSHFP' pubkey = withTmpFile "sshfp" $ \tmp tmph -> do
-		hPutStrLn tmph pubkey
-		hClose tmph
-		s <- catchDefaultIO "" $
-			readProcess "ssh-keygen" ["-r", "dummy", "-f", tmp]
-		return $ mapMaybe (parse . words) $ lines s
-  where
-	parse ("dummy":"IN":"SSHFP":x:y:s:[]) = do
-		x' <- readish x
-		y' <- readish y
-		return $ SSHFP x' y' s
-	parse _ = Nothing
-
 -- | Generates a Zone for a particular Domain from the DNS properies of all
 -- hosts that propellor knows about that are in that Domain.
 --
@@ -534,3 +509,32 @@ addNamedConf conf = mempty { _namedconf = NamedConfMap (M.singleton domain conf)
 
 getNamedConf :: Propellor (M.Map Domain NamedConf)
 getNamedConf = asks $ fromNamedConfMap . _namedconf . hostInfo
+
+-- | Generates SSHFP records for hosts in the domain (or with CNAMES
+-- in the domain) that have configured ssh public keys.
+--
+-- This is done using ssh-keygen, so sadly needs IO.
+genSSHFP :: Domain -> Host -> Propellor [(BindDomain, Record)]
+genSSHFP domain h = concatMap mk . concat <$> (gen =<< get)
+  where
+	get = fromHost [h] hostname Ssh.getPubKey
+	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
+	mk r = mapMaybe (\d -> if inDomain domain d then Just (d, r) else Nothing)
+		(AbsDomain hostname : cnames)
+	cnames = mapMaybe getCNAME $ S.toList $ _dns info
+	hostname = hostName h
+	info = hostInfo h
+
+genSSHFP' :: String -> IO [Record]
+genSSHFP' pubkey = withTmpFile "sshfp" $ \tmp tmph -> do
+		hPutStrLn tmph pubkey
+		hClose tmph
+		s <- catchDefaultIO "" $
+			readProcess "ssh-keygen" ["-r", "dummy", "-f", tmp]
+		return $ mapMaybe (parse . words) $ lines s
+  where
+	parse ("dummy":"IN":"SSHFP":x:y:s:[]) = do
+		x' <- readish x
+		y' <- readish y
+		return $ SSHFP x' y' s
+	parse _ = Nothing
