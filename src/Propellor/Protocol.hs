@@ -41,6 +41,7 @@ fromMarked marker s
 
 sendMarked :: Handle -> Marker -> String -> IO ()
 sendMarked h marker s = do
+	debug ["sent req", marker]
 	-- Prefix string with newline because sometimes a
 	-- incomplete line has been output, and the marker needs to
 	-- come at the start of a line.
