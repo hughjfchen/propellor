@@ -80,7 +80,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 	baseprop = Property ("dns primary for " ++ domain) satisfy
 		(addNamedConf conf)
 	satisfy = do
-		sshfps <- concat <$> mapM genSSHFP indomain
+		sshfps <- concat <$> mapM (genSSHFP domain) indomain
 		let zone = partialzone
 			{ zHosts = zHosts partialzone ++ rs ++ sshfps }
 		ifM (liftIO $ needupdate zone)
@@ -514,12 +514,16 @@ getNamedConf = asks $ fromNamedConfMap . _namedconf . hostInfo
 -- ssh public keys.
 --
 -- This is done using ssh-keygen, so sadly needs IO.
-genSSHFP :: Host -> Propellor [(BindDomain, Record)]
-genSSHFP h = map (\r -> (AbsDomain hostname, r)) . concat <$> (gen =<< get)
+genSSHFP :: Domain -> Host -> Propellor [(BindDomain, Record)]
+genSSHFP domain h = concatMap mk . concat <$> (gen =<< get)
   where
-	hostname = hostName h
 	get = fromHost [h] hostname Ssh.getPubKey
 	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
+	mk r = map (\d -> (d, r)) (AbsDomain hostname : cnames)
+	cnames = filter (inDomain domain) $
+		mapMaybe getCNAME $ S.toList $ _dns info
+	hostname = hostName h
+	info = hostInfo h
 
 genSSHFP' :: String -> IO [Record]
 genSSHFP' pubkey = withTmpFile "sshfp" $ \tmp tmph -> do
