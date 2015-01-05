@@ -80,7 +80,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 	baseprop = Property ("dns primary for " ++ domain) satisfy
 		(addNamedConf conf)
 	satisfy = do
-		sshfps <- concat <$> mapM (genSSHFP domain) indomain
+		sshfps <- concat <$> mapM (genSSHFP domain) (M.elems hostmap)
 		let zone = partialzone
 			{ zHosts = zHosts partialzone ++ rs ++ sshfps }
 		ifM (liftIO $ needupdate zone)
@@ -510,8 +510,8 @@ addNamedConf conf = mempty { _namedconf = NamedConfMap (M.singleton domain conf)
 getNamedConf :: Propellor (M.Map Domain NamedConf)
 getNamedConf = asks $ fromNamedConfMap . _namedconf . hostInfo
 
--- | Generates SSHFP records for hosts that have configured
--- ssh public keys.
+-- | Generates SSHFP records for hosts in the domain (or with CNAMES
+-- in the domain) that have configured ssh public keys.
 --
 -- This is done using ssh-keygen, so sadly needs IO.
 genSSHFP :: Domain -> Host -> Propellor [(BindDomain, Record)]
@@ -519,9 +519,9 @@ genSSHFP domain h = concatMap mk . concat <$> (gen =<< get)
   where
 	get = fromHost [h] hostname Ssh.getPubKey
 	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
-	mk r = map (\d -> (d, r)) (AbsDomain hostname : cnames)
-	cnames = filter (inDomain domain) $
-		mapMaybe getCNAME $ S.toList $ _dns info
+	mk r = mapMaybe (\d -> if inDomain domain d then Just (d, r) else Nothing)
+		(AbsDomain hostname : cnames)
+	cnames = mapMaybe getCNAME $ S.toList $ _dns info
 	hostname = hostName h
 	info = hostInfo h
 
