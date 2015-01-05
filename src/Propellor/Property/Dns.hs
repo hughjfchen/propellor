@@ -417,31 +417,6 @@ com s = "; " ++ s
 
 type WarningMessage = String
 
--- | Generates SSHFP records for hosts that have configured
--- ssh public keys.
---
--- This is done using ssh-keygen, so sadly needs IO.
-genSSHFP :: Host -> Propellor [(BindDomain, Record)]
-genSSHFP h = map (\r -> (AbsDomain hostname, r)) . concat <$> (gen =<< get)
-  where
-	hostname = hostName h
-	get = fromHost [h] hostname Ssh.getPubKey
-	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
-
-genSSHFP' :: String -> IO [Record]
-genSSHFP' pubkey = withTmpFile "sshfp" $ \tmp tmph -> do
-		hPutStrLn tmph pubkey
-		hClose tmph
-		s <- catchDefaultIO "" $
-			readProcess "ssh-keygen" ["-r", "dummy", "-f", tmp]
-		return $ mapMaybe (parse . words) $ lines s
-  where
-	parse ("dummy":"IN":"SSHFP":x:y:s:[]) = do
-		x' <- readish x
-		y' <- readish y
-		return $ SSHFP x' y' s
-	parse _ = Nothing
-
 -- | Generates a Zone for a particular Domain from the DNS properies of all
 -- hosts that propellor knows about that are in that Domain.
 --
@@ -534,3 +509,28 @@ addNamedConf conf = mempty { _namedconf = NamedConfMap (M.singleton domain conf)
 
 getNamedConf :: Propellor (M.Map Domain NamedConf)
 getNamedConf = asks $ fromNamedConfMap . _namedconf . hostInfo
+
+-- | Generates SSHFP records for hosts that have configured
+-- ssh public keys.
+--
+-- This is done using ssh-keygen, so sadly needs IO.
+genSSHFP :: Host -> Propellor [(BindDomain, Record)]
+genSSHFP h = map (\r -> (AbsDomain hostname, r)) . concat <$> (gen =<< get)
+  where
+	hostname = hostName h
+	get = fromHost [h] hostname Ssh.getPubKey
+	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
+
+genSSHFP' :: String -> IO [Record]
+genSSHFP' pubkey = withTmpFile "sshfp" $ \tmp tmph -> do
+		hPutStrLn tmph pubkey
+		hClose tmph
+		s <- catchDefaultIO "" $
+			readProcess "ssh-keygen" ["-r", "dummy", "-f", tmp]
+		return $ mapMaybe (parse . words) $ lines s
+  where
+	parse ("dummy":"IN":"SSHFP":x:y:s:[]) = do
+		x' <- readish x
+		y' <- readish y
+		return $ SSHFP x' y' s
+	parse _ = Nothing
