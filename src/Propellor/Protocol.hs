@@ -41,7 +41,7 @@ fromMarked marker s
 
 sendMarked :: Handle -> Marker -> String -> IO ()
 sendMarked h marker s = do
-	debug ["sent req", marker]
+	debug ["sent marked", marker]
 	-- Prefix string with newline because sometimes a
 	-- incomplete line has been output, and the marker needs to
 	-- come at the start of a line.
@@ -57,7 +57,9 @@ getMarked h marker = go =<< catchMaybeIO (hGetLine h)
 			unless (null l) $
 				hPutStrLn stderr l
 			getMarked h marker
-		Just v -> return (Just v)
+		Just v -> do
+			debug ["received marked", marker]
+			return (Just v)
 
 req :: Stage -> Marker -> (String -> IO ()) -> IO ()
 req stage marker a = do
