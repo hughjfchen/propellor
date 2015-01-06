@@ -234,13 +234,20 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 		`requires` Ssh.keyImported SshRsa "joey" (Context "downloads.kitenet.net")
 		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "joey"
 	& JoeySites.gitAnnexDistributor
-		& alias "tmp.kitenet.net"
+
+	& alias "tmp.kitenet.net"
 	& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
 		"tmp.kitenet.net"
 		"26fd6e38-1226-11e2-a75f-ff007033bdba"
 		[]
 	& JoeySites.twitRss
 	& JoeySites.pumpRss
+	
+	& alias "user-liberation.joeyh.name"
+	& JoeySites.annexWebSite "/srv/git/joey/user_liberation.git"
+		"user-liberation.kitenet.net"
+		"da89f112-808b-420a-b468-d990ae2e5b52"
+		[]
 		
 	& alias "nntp.olduse.net"
 	& alias "resources.olduse.net"
