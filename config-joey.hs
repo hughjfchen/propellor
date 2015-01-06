@@ -244,7 +244,7 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& JoeySites.pumpRss
 	
 	& alias "user-liberation.joeyh.name"
-	& JoeySites.annexWebSite "/srv/git/joey/user_liberation.git"
+	& JoeySites.annexWebSite "/srv/git/user_liberation.git"
 		"user-liberation.kitenet.net"
 		"da89f112-808b-420a-b468-d990ae2e5b52"
 		[]
