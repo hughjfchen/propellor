@@ -209,6 +209,7 @@ annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-ann
 		, "git config annex.uuid " ++ shellEscape uuid
 		] ++ map addremote remotes ++
 		[ "git annex get"
+		, "git update-server-info"
 		]
 	addremote (name, url) = "git remote add " ++ shellEscape name ++ " " ++ shellEscape url
 	setupapache = toProp $ Apache.siteEnabled hn $ apachecfg hn True $ 
