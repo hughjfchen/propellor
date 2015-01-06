@@ -226,7 +226,6 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& alias "git.joeyh.name"
 	& JoeySites.gitServer hosts
 	
-	& alias "downloads.kitenet.net"
 	& JoeySites.annexWebSite "/srv/git/downloads.git"
 		"downloads.kitenet.net"
 		"840760dc-08f0-11e2-8c61-576b7e66acfd"
@@ -235,7 +234,6 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "joey"
 	& JoeySites.gitAnnexDistributor
 
-	& alias "tmp.kitenet.net"
 	& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
 		"tmp.kitenet.net"
 		"26fd6e38-1226-11e2-a75f-ff007033bdba"
@@ -243,7 +241,6 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& JoeySites.twitRss
 	& JoeySites.pumpRss
 	
-	& alias "user-liberation.joeyh.name"
 	& JoeySites.annexWebSite "/srv/git/user-liberation.git"
 		"user-liberation.joeyh.name"
 		"da89f112-808b-420a-b468-d990ae2e5b52"

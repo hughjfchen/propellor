@@ -193,6 +193,7 @@ annexWebSite :: Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] 
 annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-annex")
 	[ Git.cloned "joey" origin dir Nothing
 		`onChange` setup
+	, alias hn
 	, postupdatehook `File.hasContent`
 		[ "#!/bin/sh"
 		, "exec git update-server-info"
