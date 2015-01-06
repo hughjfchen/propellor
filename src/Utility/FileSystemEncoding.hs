@@ -1,6 +1,6 @@
 {- GHC File system encoding handling.
  -
- - Copyright 2012-2014 Joey Hess <id@joeyh.name>
+ - Copyright 2012-2014 Joey Hess <joey@kitenet.net>
  -
  - License: BSD-2-clause
  -}
@@ -111,7 +111,7 @@ truncateFilePath :: Int -> FilePath -> FilePath
 #ifndef mingw32_HOST_OS
 truncateFilePath n = go . reverse
   where
-  	go f =
+	go f =
 		let bytes = decodeW8 f
 		in if length bytes <= n
 			then reverse f

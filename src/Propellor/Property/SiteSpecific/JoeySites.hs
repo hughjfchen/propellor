@@ -17,7 +17,6 @@ import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import Utility.SafeCommand
 import Utility.FileMode
-import Utility.Path
 
 import Data.List
 import System.Posix.Files
@@ -313,6 +312,7 @@ twitRss = combineProperties "twitter rss"
 		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
 
 -- Work around for expired ssl cert.
+-- (no longer expired, TODO remove this and change urls)
 pumpRss :: Property
 pumpRss = Cron.job "pump rss" "15 * * * *" "joey" "/srv/web/tmp.kitenet.net/"
 	"wget https://pump2rss.com/feed/joeyh@identi.ca.atom -O pump.atom --no-check-certificate 2>/dev/null"
@@ -321,7 +321,7 @@ ircBouncer :: Property
 ircBouncer = propertyList "IRC bouncer"
 	[ Apt.installed ["znc"]
 	, User.accountFor "znc"
-	, File.dirExists (parentDir conf)
+	, File.dirExists (takeDirectory conf)
 	, File.hasPrivContent conf anyContext
 	, File.ownerGroup conf "znc" "znc"
 	, Cron.job "znconboot" "@reboot" "znc" "~" "znc"

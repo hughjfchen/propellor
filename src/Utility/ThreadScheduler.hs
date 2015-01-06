@@ -1,6 +1,6 @@
 {- thread scheduling
  -
- - Copyright 2012, 2013 Joey Hess <id@joeyh.name>
+ - Copyright 2012, 2013 Joey Hess <joey@kitenet.net>
  - Copyright 2011 Bas van Dijk & Roel van Dijk
  -
  - License: BSD-2-clause
@@ -57,8 +57,7 @@ unboundDelay time = do
 waitForTermination :: IO ()
 waitForTermination = do
 #ifdef mingw32_HOST_OS
-	runEvery (Seconds 600) $
-		void getLine
+	forever $ threadDelaySeconds (Seconds 6000)
 #else
 	lock <- newEmptyMVar
 	let check sig = void $

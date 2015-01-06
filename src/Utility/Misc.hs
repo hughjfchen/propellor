@@ -1,6 +1,6 @@
 {- misc utility functions
  -
- - Copyright 2010-2011 Joey Hess <id@joeyh.name>
+ - Copyright 2010-2011 Joey Hess <joey@kitenet.net>
  -
  - License: BSD-2-clause
  -}

@@ -2,7 +2,7 @@
  -
  - This is like System.PosixCompat.Files, except with a fixed rename.
  -
- - Copyright 2014 Joey Hess <id@joeyh.name>
+ - Copyright 2014 Joey Hess <joey@kitenet.net>
  -
  - License: BSD-2-clause
  -}
