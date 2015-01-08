@@ -376,6 +376,7 @@ jerryPlay = standardContainer "jerryplay" Unstable "amd64"
 	& Docker.publish "8001:80"
 	& Apt.installed ["ssh"]
 	& User.hasSomePassword "root"
+	& Ssh.permitRootLogin True
 
 type Motd = [String]
 
