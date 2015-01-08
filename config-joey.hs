@@ -311,6 +311,7 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& Docker.docked openidProvider
 		`requires` Apt.serviceInstalledRunning "ntp"
 	& Docker.docked ancientKitenet
+	& Docker.docked jerryPlay
 	& Docker.garbageCollected `period` (Weekly (Just 1))
 	
 	-- For https port 443, shellinabox with ssh login to
@@ -367,6 +368,14 @@ gitAnnexAndroidDev = GitAnnexBuilder.androidContainer dockerImage "android-git-a
 	& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
   where
 	gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
+	
+jerryPlay :: Docker.Container
+jerryPlay = standardContainer "jerryplay" Unstable "amd64"
+	& alias "jerryplay.kitenet.net"
+	& Docker.publish "2202:22"
+	& Docker.publish "8001:80"
+	& Apt.installed ["ssh"]
+	& User.hasSomePassword "root"
 
 type Motd = [String]
 
