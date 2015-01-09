@@ -445,6 +445,21 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`describe` "amavisd-milter configured for postfix"
 	, Apt.serviceInstalledRunning "clamav-freshclam"
 
+	, Apt.serviceInstalledRunning "opendkim"
+	, propertyList "opendkim configured"
+		[ "/etc/default/opendkim" `File.containsLine`
+			"SOCKET=\"inet:8891@localhost\""
+		, "/etc/opendkim.conf" `File.containsLines`
+			[ "KeyFile /etc/mail/dkim.key"
+			, "SubDomains yes"
+			, "Domain *"
+			, "Selector mail"
+			]
+		, File.hasPrivContent "/etc/mail/dkim.key" ctx
+		, File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
+		]
+		`onChange` Service.restarted "opendkum"
+
 	, Apt.installed ["maildrop"]
 	, "/etc/maildroprc" `File.hasContent`
 		[ "# Global maildrop filter file (deployed with propellor)"
@@ -475,7 +490,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`describe` "postfix mydomain file configured"
 	, "/etc/postfix/obscure_client_relay.pcre" `File.hasContent`
 		-- Remove received lines for mails relayed from trusted
-		-- clients. These can be a privacy vilation, or trigger
+		-- clients. These can be a privacy violation, or trigger
 		-- spam filters.
 		[ "/^Received: from ([^.]+)\\.kitenet\\.net.*using TLS.*by kitenet\\.net \\(([^)]+)\\) with (E?SMTPS?A?) id ([A-F[:digit:]]+)(.*)/ IGNORE"
 		-- Munge local Received line for postfix running on a
