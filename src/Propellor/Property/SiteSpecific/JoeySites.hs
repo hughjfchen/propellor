@@ -622,6 +622,7 @@ dkimMilter = Postfix.mainCfFile `File.containsLines`
 dkimInstalled :: Property
 dkimInstalled = propertyList "opendkim installed"
 	[ Apt.serviceInstalledRunning "opendkim"
+	, File.dirExists "/etc/mail"
 	, File.hasPrivContent "/etc/mail/dkim.key" (Context "kitenet.net")
 	, File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
 	, "/etc/default/opendkim" `File.containsLine`
