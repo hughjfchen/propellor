@@ -483,7 +483,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		-- Munge local Received line for postfix running on a
 		-- trusted client that relays through. These can trigger
 		-- spam filters.
-		, "/^Received: by ([^.]+)\\.kitenet\\.net.*/ REPLACE Received: by kitenet.net"
+		, "/^Received: by ([^.]+)\\.kitenet\\.net.*/ REPLACE X-Question: 42"
 		]
 		`onChange` Postfix.reloaded
 		`describe` "postfix obscure_client_relay file configured"
@@ -603,7 +603,7 @@ dkimInstalled = propertyList "opendkim installed"
 	, File.hasPrivContent "/etc/mail/dkim.key" (Context "kitenet.net")
 	, File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
 	]
-	`onChange` Service.restarted "opendkum"
+	`onChange` Service.restarted "opendkim"
 
 -- This is the dkim public key, corresponding with /etc/mail/dkim.key
 -- This value can be included in a domain's additional records to make
