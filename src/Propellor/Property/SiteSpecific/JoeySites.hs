@@ -605,24 +605,6 @@ postfixClientRelay ctx = Postfix.mainCfFile `File.containsLines`
 	`requires` hasJoeyCAChain
 	`requires` hasPostfixCert ctx
 
--- This does not configure postfix to use the dkim milter,
--- nor does it set up domainkey DNS.
-dkimInstalled :: Property
-dkimInstalled = propertyList "opendkim installed"
-	[ Apt.serviceInstalledRunning "opendkim"
-	, "/etc/default/opendkim" `File.containsLine`
-		"SOCKET=\"inet:8891@localhost\""
-	, "/etc/opendkim.conf" `File.containsLines`
-		[ "KeyFile /etc/mail/dkim.key"
-		, "SubDomains yes"
-		, "Domain *"
-		, "Selector mail"
-		]
-	, File.hasPrivContent "/etc/mail/dkim.key" (Context "kitenet.net")
-	, File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
-	]
-	`onChange` Service.restarted "opendkim"
-
 -- Configures postfix to have the dkim milter, and no other milters.
 dkimMilter :: Property
 dkimMilter = Postfix.mainCfFile `File.containsLines`
@@ -633,6 +615,25 @@ dkimMilter = Postfix.mainCfFile `File.containsLines`
 	`describe` "postfix dkim milter"
 	`onChange` Postfix.dedupMainCf
 	`onChange` Postfix.reloaded
+	`requires` dkimInstalled
+
+-- This does not configure postfix to use the dkim milter,
+-- nor does it set up domainkey DNS.
+dkimInstalled :: Property
+dkimInstalled = propertyList "opendkim installed"
+	[ Apt.serviceInstalledRunning "opendkim"
+	, File.hasPrivContent "/etc/mail/dkim.key" (Context "kitenet.net")
+	, File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
+	, "/etc/default/opendkim" `File.containsLine`
+		"SOCKET=\"inet:8891@localhost\""
+	, "/etc/opendkim.conf" `File.containsLines`
+		[ "KeyFile /etc/mail/dkim.key"
+		, "SubDomains yes"
+		, "Domain *"
+		, "Selector mail"
+		]
+	]
+	`onChange` Service.restarted "opendkim"
 
 -- This is the dkim public key, corresponding with /etc/mail/dkim.key
 -- This value can be included in a domain's additional records to make

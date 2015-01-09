@@ -74,7 +74,6 @@ darkstar = host "darkstar.kitenet.net"
 	& Docker.configured
 	! Docker.docked gitAnnexAndroidDev
 
-	& JoeySites.dkimInstalled
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
 	& JoeySites.dkimMilter
 
