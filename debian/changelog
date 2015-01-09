@@ -2,6 +2,7 @@ propellor (1.3.2) UNRELEASED; urgency=medium
 
   * SSHFP records are also generated for CNAMES of hosts.
   * Merge Utiity modules from git-annex.
+  * Ignore bogus DNS when spinning the local host.
 
  -- Joey Hess <id@joeyh.name>  Sun, 04 Jan 2015 21:25:42 -0400
 
