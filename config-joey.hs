@@ -455,6 +455,7 @@ myDnsPrimary dnssec domain extras = (if dnssec then Dns.signedPrimary (Weekly No
 	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
 	-- SPF only allows IP address of kitenet.net to send mail.
 	, (RootDomain, TXT "v=spf1 a:kitenet.net -all")
+	, JoeySites.domainKey
 	] ++ extras
 
 

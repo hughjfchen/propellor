@@ -445,20 +445,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`describe` "amavisd-milter configured for postfix"
 	, Apt.serviceInstalledRunning "clamav-freshclam"
 
-	, Apt.serviceInstalledRunning "opendkim"
-	, propertyList "opendkim configured"
-		[ "/etc/default/opendkim" `File.containsLine`
-			"SOCKET=\"inet:8891@localhost\""
-		, "/etc/opendkim.conf" `File.containsLines`
-			[ "KeyFile /etc/mail/dkim.key"
-			, "SubDomains yes"
-			, "Domain *"
-			, "Selector mail"
-			]
-		, File.hasPrivContent "/etc/mail/dkim.key" ctx
-		, File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
-		]
-		`onChange` Service.restarted "opendkum"
+	, dkimInstalled
 
 	, Apt.installed ["maildrop"]
 	, "/etc/maildroprc" `File.hasContent`
@@ -528,9 +515,13 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "# Enable postgrey."
 		, "smtpd_recipient_restrictions = permit_tls_clientcerts,permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
 
-		, "# Enable spamass-milter and amavis-milter."
-		, "smtpd_milters = unix:/spamass/spamass.sock unix:amavis/amavis.sock"
+		, "# Enable spamass-milter, amavis-milter, opendkim"
+		, "smtpd_milters = unix:/spamass/spamass.sock unix:amavis/amavis.sock inet:localhost:8891"
+		, "# opendkim is used for outgoing mail"
+		, "non_smtpd_milters = inet:localhost:8891"
 		, "milter_connect_macros = j {daemon_name} v {if_name} _"
+		, "# If a milter is broken, fall back to just accepting mail."
+		, "milter_default_action = accept"
 
 		, "# TLS setup -- server"
 		, "smtpd_tls_CAfile = /etc/ssl/certs/joeyca.pem"
@@ -597,6 +588,28 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	ctx = Context "kitenet.net"
 	pinescript = "/usr/local/bin/pine"
 	dovecotusers = "/etc/dovecot/users"
+
+dkimInstalled :: Property
+dkimInstalled = propertyList "opendkim installed"
+	[ Apt.serviceInstalledRunning "opendkim"
+	, "/etc/default/opendkim" `File.containsLine`
+		"SOCKET=\"inet:8891@localhost\""
+	, "/etc/opendkim.conf" `File.containsLines`
+		[ "KeyFile /etc/mail/dkim.key"
+		, "SubDomains yes"
+		, "Domain *"
+		, "Selector mail"
+		]
+	, File.hasPrivContent "/etc/mail/dkim.key" (Context "kitenet.net")
+	, File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
+	]
+	`onChange` Service.restarted "opendkum"
+
+-- This is the dkim public key, corresponding with /etc/mail/dkim.key
+-- This value can be included in a domain's additional records to make
+-- it use this domainkey.
+domainKey :: (BindDomain, Record)
+domainKey = (RelDomain "mail._domainkey", TXT "v=DKIM1; k=rsa; t=y; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCc+/rfzNdt5DseBBmfB3C6sVM7FgVvf4h1FeCfyfwPpVcmPdW6M2I+NtJsbRkNbEICxiP6QY2UM0uoo9TmPqLgiCCG2vtuiG6XMsS0Y/gGwqKM7ntg/7vT1Go9vcquOFFuLa5PnzpVf8hB9+PMFdS4NPTvWL2c5xxshl/RJzICnQIDAQAB")
 
 hasJoeyCAChain :: Property
 hasJoeyCAChain = "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed`
