@@ -465,8 +465,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	, "/etc/aliases" `File.hasPrivContentExposed` ctx
 		`onChange` Postfix.newaliases
 	, hasJoeyCAChain
-	, "/etc/ssl/certs/postfix.pem" `File.hasPrivContentExposed` ctx
-	, "/etc/ssl/private/postfix.pem" `File.hasPrivContent` ctx
+	, hasPostfixCert ctx
 
 	, "/etc/postfix/mydomain" `File.containsLines`
 		[ "/.*\\.kitenet\\.net/\tOK"
@@ -589,6 +588,25 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	pinescript = "/usr/local/bin/pine"
 	dovecotusers = "/etc/dovecot/users"
 
+-- Configures postfix to relay outgoing mail to kitenet.net, with
+-- verification via tls cert.
+postfixClientRelay :: Context -> Property
+postfixClientRelay ctx = Postfix.mainCfFile `File.containsLines`
+	[ "relayhost = kitenet.net"
+	, "smtp_tls_CAfile = /etc/ssl/certs/joeyca.pem"
+	, "smtp_tls_cert_file = /etc/ssl/certs/postfix.pem"
+	, "smtp_tls_key_file = /etc/ssl/private/postfix.pem"
+	, "smtp_tls_loglevel = 0"
+	, "smtp_use_tls = yes"
+	]
+	`describe` "postfix client relay"
+	`onChange` Postfix.dedupMainCf
+	`onChange` Postfix.reloaded
+	`requires` hasJoeyCAChain
+	`requires` hasPostfixCert ctx
+
+-- This does not configure postfix to use the dkim milter,
+-- nor does it set up domainkey DNS.
 dkimInstalled :: Property
 dkimInstalled = propertyList "opendkim installed"
 	[ Apt.serviceInstalledRunning "opendkim"
@@ -605,6 +623,17 @@ dkimInstalled = propertyList "opendkim installed"
 	]
 	`onChange` Service.restarted "opendkim"
 
+-- Configures postfix to have the dkim milter, and no other milters.
+dkimMilter :: Property
+dkimMilter = Postfix.mainCfFile `File.containsLines`
+	[ "inet:localhost:8891"
+	, "non_smtpd_milters = inet:localhost:8891"
+	, "milter_default_action = accept"
+	]
+	`describe` "postfix dkim milter"
+	`onChange` Postfix.dedupMainCf
+	`onChange` Postfix.reloaded
+
 -- This is the dkim public key, corresponding with /etc/mail/dkim.key
 -- This value can be included in a domain's additional records to make
 -- it use this domainkey.
@@ -614,6 +643,12 @@ domainKey = (RelDomain "mail._domainkey", TXT "v=DKIM1; k=rsa; t=y; p=MIGfMA0GCS
 hasJoeyCAChain :: Property
 hasJoeyCAChain = "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed`
 	Context "joeyca.pem"
+
+hasPostfixCert :: Context -> Property
+hasPostfixCert ctx = combineProperties "postfix tls cert installed"
+	[ "/etc/ssl/certs/postfix.pem" `File.hasPrivContentExposed` ctx
+	, "/etc/ssl/private/postfix.pem" `File.hasPrivContent` ctx
+	]
 
 kitenetHttps :: Property
 kitenetHttps = propertyList "kitenet.net https certs"

@@ -74,6 +74,10 @@ darkstar = host "darkstar.kitenet.net"
 	& Docker.configured
 	! Docker.docked gitAnnexAndroidDev
 
+	& JoeySites.dkimInstalled
+	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
+	& JoeySites.dkimMilter
+
 clam :: Host
 clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	[ "Unreliable server. Anything here may be lost at any time!" ]
