@@ -608,7 +608,7 @@ postfixClientRelay ctx = Postfix.mainCfFile `File.containsLines`
 -- Configures postfix to have the dkim milter, and no other milters.
 dkimMilter :: Property
 dkimMilter = Postfix.mainCfFile `File.containsLines`
-	[ "inet:localhost:8891"
+	[ "smtpd_milters = inet:localhost:8891"
 	, "non_smtpd_milters = inet:localhost:8891"
 	, "milter_default_action = accept"
 	]

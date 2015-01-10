@@ -257,9 +257,9 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& myDnsPrimary False "kitenet.net" []
 	& myDnsPrimary True "joeyh.name" []
 	& myDnsPrimary False "ikiwiki.info" []
-	& myDnsPrimary False "olduse.net"
-		[ (RelDomain "article",
-			CNAME $ AbsDomain "virgil.koldfront.dk") ]
+	& myDnsPrimary True "olduse.net"
+		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
+		]
 
 	& alias "ns3.branchable.com"
 	& branchableSecondary
