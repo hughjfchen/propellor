@@ -256,7 +256,7 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& alias "ns2.kitenet.net"
 	& myDnsPrimary False "kitenet.net" []
 	& myDnsPrimary True "joeyh.name" []
-	& myDnsPrimary False "ikiwiki.info" []
+	& myDnsPrimary True "ikiwiki.info" []
 	& myDnsPrimary True "olduse.net"
 		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
 		]
