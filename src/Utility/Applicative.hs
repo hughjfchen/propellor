@@ -1,6 +1,6 @@
 {- applicative stuff
  -
- - Copyright 2012 Joey Hess <id@joeyh.name>
+ - Copyright 2012 Joey Hess <joey@kitenet.net>
  -
  - License: BSD-2-clause
  -}

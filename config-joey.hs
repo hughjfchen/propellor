@@ -74,6 +74,9 @@ darkstar = host "darkstar.kitenet.net"
 	& Docker.configured
 	! Docker.docked gitAnnexAndroidDev
 
+	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
+	& JoeySites.dkimMilter
+
 clam :: Host
 clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	[ "Unreliable server. Anything here may be lost at any time!" ]
@@ -226,7 +229,6 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& alias "git.joeyh.name"
 	& JoeySites.gitServer hosts
 	
-	& alias "downloads.kitenet.net"
 	& JoeySites.annexWebSite "/srv/git/downloads.git"
 		"downloads.kitenet.net"
 		"840760dc-08f0-11e2-8c61-576b7e66acfd"
@@ -234,13 +236,18 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 		`requires` Ssh.keyImported SshRsa "joey" (Context "downloads.kitenet.net")
 		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "joey"
 	& JoeySites.gitAnnexDistributor
-		& alias "tmp.kitenet.net"
+
 	& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
 		"tmp.kitenet.net"
 		"26fd6e38-1226-11e2-a75f-ff007033bdba"
 		[]
 	& JoeySites.twitRss
 	& JoeySites.pumpRss
+	
+	& JoeySites.annexWebSite "/srv/git/user-liberation.git"
+		"user-liberation.joeyh.name"
+		"da89f112-808b-420a-b468-d990ae2e5b52"
+		[]
 		
 	& alias "nntp.olduse.net"
 	& alias "resources.olduse.net"
@@ -249,10 +256,10 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& alias "ns2.kitenet.net"
 	& myDnsPrimary False "kitenet.net" []
 	& myDnsPrimary True "joeyh.name" []
-	& myDnsPrimary False "ikiwiki.info" []
-	& myDnsPrimary False "olduse.net"
-		[ (RelDomain "article",
-			CNAME $ AbsDomain "virgil.koldfront.dk") ]
+	& myDnsPrimary True "ikiwiki.info" []
+	& myDnsPrimary True "olduse.net"
+		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
+		]
 
 	& alias "ns3.branchable.com"
 	& branchableSecondary
@@ -307,6 +314,7 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& Docker.docked openidProvider
 		`requires` Apt.serviceInstalledRunning "ntp"
 	& Docker.docked ancientKitenet
+	& Docker.docked jerryPlay
 	& Docker.garbageCollected `period` (Weekly (Just 1))
 	
 	-- For https port 443, shellinabox with ssh login to
@@ -363,6 +371,15 @@ gitAnnexAndroidDev = GitAnnexBuilder.androidContainer dockerImage "android-git-a
 	& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
   where
 	gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
+	
+jerryPlay :: Docker.Container
+jerryPlay = standardContainer "jerryplay" Unstable "amd64"
+	& alias "jerryplay.kitenet.net"
+	& Docker.publish "2202:22"
+	& Docker.publish "8001:80"
+	& Apt.installed ["ssh"]
+	& User.hasSomePassword "root"
+	& Ssh.permitRootLogin True
 
 type Motd = [String]
 
@@ -441,6 +458,7 @@ myDnsPrimary dnssec domain extras = (if dnssec then Dns.signedPrimary (Weekly No
 	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
 	-- SPF only allows IP address of kitenet.net to send mail.
 	, (RootDomain, TXT "v=spf1 a:kitenet.net -all")
+	, JoeySites.domainKey
 	] ++ extras
 
 

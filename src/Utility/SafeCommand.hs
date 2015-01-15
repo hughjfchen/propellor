@@ -1,6 +1,6 @@
 {- safely running shell commands
  -
- - Copyright 2010-2013 Joey Hess <id@joeyh.name>
+ - Copyright 2010-2013 Joey Hess <joey@kitenet.net>
  -
  - License: BSD-2-clause
  -}

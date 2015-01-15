@@ -83,7 +83,7 @@ withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 		warningMessage $ "Missing privdata " ++ intercalate " or " fieldnames ++ " (for " ++ cname ++ ")"
 		liftIO $ putStrLn $ "Fix this by running:"
 		liftIO $ forM_ srclist $ \src -> do
-			putStrLn $ "  propellor --set '" ++ show (privDataField src) ++ "' '" ++ cname ++ "'"
+			putStrLn $ "  propellor --set '" ++ show (privDataField src) ++ "' '" ++ cname ++ "' \\"
 			maybe noop (\d -> putStrLn $ "    " ++ d) (describePrivDataSource src)
 			putStrLn ""
 		return FailedChange

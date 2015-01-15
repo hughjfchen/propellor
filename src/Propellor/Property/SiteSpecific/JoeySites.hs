@@ -17,7 +17,6 @@ import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import Utility.SafeCommand
 import Utility.FileMode
-import Utility.Path
 
 import Data.List
 import System.Posix.Files
@@ -193,6 +192,7 @@ annexWebSite :: Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] 
 annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-annex")
 	[ Git.cloned "joey" origin dir Nothing
 		`onChange` setup
+	, alias hn
 	, postupdatehook `File.hasContent`
 		[ "#!/bin/sh"
 		, "exec git update-server-info"
@@ -209,6 +209,7 @@ annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-ann
 		, "git config annex.uuid " ++ shellEscape uuid
 		] ++ map addremote remotes ++
 		[ "git annex get"
+		, "git update-server-info"
 		]
 	addremote (name, url) = "git remote add " ++ shellEscape name ++ " " ++ shellEscape url
 	setupapache = toProp $ Apache.siteEnabled hn $ apachecfg hn True $ 
@@ -311,6 +312,7 @@ twitRss = combineProperties "twitter rss"
 		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
 
 -- Work around for expired ssl cert.
+-- (no longer expired, TODO remove this and change urls)
 pumpRss :: Property
 pumpRss = Cron.job "pump rss" "15 * * * *" "joey" "/srv/web/tmp.kitenet.net/"
 	"wget https://pump2rss.com/feed/joeyh@identi.ca.atom -O pump.atom --no-check-certificate 2>/dev/null"
@@ -319,7 +321,7 @@ ircBouncer :: Property
 ircBouncer = propertyList "IRC bouncer"
 	[ Apt.installed ["znc"]
 	, User.accountFor "znc"
-	, File.dirExists (parentDir conf)
+	, File.dirExists (takeDirectory conf)
 	, File.hasPrivContent conf anyContext
 	, File.ownerGroup conf "znc" "znc"
 	, Cron.job "znconboot" "@reboot" "znc" "~" "znc"
@@ -443,6 +445,8 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`describe` "amavisd-milter configured for postfix"
 	, Apt.serviceInstalledRunning "clamav-freshclam"
 
+	, dkimInstalled
+
 	, Apt.installed ["maildrop"]
 	, "/etc/maildroprc" `File.hasContent`
 		[ "# Global maildrop filter file (deployed with propellor)"
@@ -461,8 +465,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	, "/etc/aliases" `File.hasPrivContentExposed` ctx
 		`onChange` Postfix.newaliases
 	, hasJoeyCAChain
-	, "/etc/ssl/certs/postfix.pem" `File.hasPrivContentExposed` ctx
-	, "/etc/ssl/private/postfix.pem" `File.hasPrivContent` ctx
+	, hasPostfixCert ctx
 
 	, "/etc/postfix/mydomain" `File.containsLines`
 		[ "/.*\\.kitenet\\.net/\tOK"
@@ -473,13 +476,13 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`describe` "postfix mydomain file configured"
 	, "/etc/postfix/obscure_client_relay.pcre" `File.hasContent`
 		-- Remove received lines for mails relayed from trusted
-		-- clients. These can be a privacy vilation, or trigger
+		-- clients. These can be a privacy violation, or trigger
 		-- spam filters.
 		[ "/^Received: from ([^.]+)\\.kitenet\\.net.*using TLS.*by kitenet\\.net \\(([^)]+)\\) with (E?SMTPS?A?) id ([A-F[:digit:]]+)(.*)/ IGNORE"
 		-- Munge local Received line for postfix running on a
 		-- trusted client that relays through. These can trigger
 		-- spam filters.
-		, "/^Received: by ([^.]+)\\.kitenet\\.net.*/ REPLACE Received: by kitenet.net"
+		, "/^Received: by ([^.]+)\\.kitenet\\.net.*/ REPLACE X-Question: 42"
 		]
 		`onChange` Postfix.reloaded
 		`describe` "postfix obscure_client_relay file configured"
@@ -511,9 +514,13 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		, "# Enable postgrey."
 		, "smtpd_recipient_restrictions = permit_tls_clientcerts,permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
 
-		, "# Enable spamass-milter and amavis-milter."
-		, "smtpd_milters = unix:/spamass/spamass.sock unix:amavis/amavis.sock"
+		, "# Enable spamass-milter, amavis-milter, opendkim"
+		, "smtpd_milters = unix:/spamass/spamass.sock unix:amavis/amavis.sock inet:localhost:8891"
+		, "# opendkim is used for outgoing mail"
+		, "non_smtpd_milters = inet:localhost:8891"
 		, "milter_connect_macros = j {daemon_name} v {if_name} _"
+		, "# If a milter is broken, fall back to just accepting mail."
+		, "milter_default_action = accept"
 
 		, "# TLS setup -- server"
 		, "smtpd_tls_CAfile = /etc/ssl/certs/joeyca.pem"
@@ -581,9 +588,69 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	pinescript = "/usr/local/bin/pine"
 	dovecotusers = "/etc/dovecot/users"
 
+-- Configures postfix to relay outgoing mail to kitenet.net, with
+-- verification via tls cert.
+postfixClientRelay :: Context -> Property
+postfixClientRelay ctx = Postfix.mainCfFile `File.containsLines`
+	[ "relayhost = kitenet.net"
+	, "smtp_tls_CAfile = /etc/ssl/certs/joeyca.pem"
+	, "smtp_tls_cert_file = /etc/ssl/certs/postfix.pem"
+	, "smtp_tls_key_file = /etc/ssl/private/postfix.pem"
+	, "smtp_tls_loglevel = 0"
+	, "smtp_use_tls = yes"
+	]
+	`describe` "postfix client relay"
+	`onChange` Postfix.dedupMainCf
+	`onChange` Postfix.reloaded
+	`requires` hasJoeyCAChain
+	`requires` hasPostfixCert ctx
+
+-- Configures postfix to have the dkim milter, and no other milters.
+dkimMilter :: Property
+dkimMilter = Postfix.mainCfFile `File.containsLines`
+	[ "smtpd_milters = inet:localhost:8891"
+	, "non_smtpd_milters = inet:localhost:8891"
+	, "milter_default_action = accept"
+	]
+	`describe` "postfix dkim milter"
+	`onChange` Postfix.dedupMainCf
+	`onChange` Postfix.reloaded
+	`requires` dkimInstalled
+
+-- This does not configure postfix to use the dkim milter,
+-- nor does it set up domainkey DNS.
+dkimInstalled :: Property
+dkimInstalled = propertyList "opendkim installed"
+	[ Apt.serviceInstalledRunning "opendkim"
+	, File.dirExists "/etc/mail"
+	, File.hasPrivContent "/etc/mail/dkim.key" (Context "kitenet.net")
+	, File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
+	, "/etc/default/opendkim" `File.containsLine`
+		"SOCKET=\"inet:8891@localhost\""
+	, "/etc/opendkim.conf" `File.containsLines`
+		[ "KeyFile /etc/mail/dkim.key"
+		, "SubDomains yes"
+		, "Domain *"
+		, "Selector mail"
+		]
+	]
+	`onChange` Service.restarted "opendkim"
+
+-- This is the dkim public key, corresponding with /etc/mail/dkim.key
+-- This value can be included in a domain's additional records to make
+-- it use this domainkey.
+domainKey :: (BindDomain, Record)
+domainKey = (RelDomain "mail._domainkey", TXT "v=DKIM1; k=rsa; t=y; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCc+/rfzNdt5DseBBmfB3C6sVM7FgVvf4h1FeCfyfwPpVcmPdW6M2I+NtJsbRkNbEICxiP6QY2UM0uoo9TmPqLgiCCG2vtuiG6XMsS0Y/gGwqKM7ntg/7vT1Go9vcquOFFuLa5PnzpVf8hB9+PMFdS4NPTvWL2c5xxshl/RJzICnQIDAQAB")
+
 hasJoeyCAChain :: Property
 hasJoeyCAChain = "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed`
 	Context "joeyca.pem"
+
+hasPostfixCert :: Context -> Property
+hasPostfixCert ctx = combineProperties "postfix tls cert installed"
+	[ "/etc/ssl/certs/postfix.pem" `File.hasPrivContentExposed` ctx
+	, "/etc/ssl/private/postfix.pem" `File.hasPrivContent` ctx
+	]
 
 kitenetHttps :: Property
 kitenetHttps = propertyList "kitenet.net https certs"

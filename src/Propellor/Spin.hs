@@ -112,8 +112,14 @@ getSshTarget target hst
 	useip why = case headMaybe configips of
 		Nothing -> return target
 		Just ip -> do
-			warningMessage $ "DNS seems out of date for " ++ target ++ " (" ++ why ++ "); using IP address from configuration instead."
-			return ip
+			-- If we're being asked to run on the local host,
+			-- ignore DNS.
+			s <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
+			if s == target
+				then return target
+				else do
+					warningMessage $ "DNS seems out of date for " ++ target ++ " (" ++ why ++ "); using IP address from configuration instead."
+					return ip
 
 	configips = map fromIPAddr $ mapMaybe getIPAddr $
 		S.toList $ _dns $ hostInfo hst

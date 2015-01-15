@@ -9,7 +9,6 @@ module Propellor.Shim (setup, cleanEnv, file) where
 import Propellor
 import Utility.LinuxMkLibs
 import Utility.SafeCommand
-import Utility.Path
 import Utility.FileMode
 import Utility.FileSystemEncoding
 
@@ -34,7 +33,7 @@ setup propellorbin propellorbinpath dest = checkAlreadyShimmed propellorbin $ do
 	let linker = (dest ++) $ 
 		fromMaybe (error "cannot find ld-linux linker") $
 			headMaybe $ filter ("ld-linux" `isInfixOf`) libs'
-	let gconvdir = (dest ++) $ parentDir $
+	let gconvdir = (dest ++) $ takeDirectory $
 		fromMaybe (error "cannot find gconv directory") $
 			headMaybe $ filter ("/gconv/" `isInfixOf`) glibclibs
 	let linkerparams = ["--library-path", intercalate ":" libdirs ]
@@ -75,5 +74,5 @@ installFile top f = do
 	createLink f dest `catchIO` (const copy)
   where
 	copy = void $ boolSystem "cp" [Param "-a", Param f, Param dest]
-	destdir = inTop top $ parentDir f
+	destdir = inTop top $ takeDirectory f
 	dest = inTop top f
