@@ -22,7 +22,8 @@ formatTable table = map (\r -> unwords (map pad (zip r rowsizes))) table
   where
 	pad (cell, size) = cell ++ take (size - length cell) padding
 	padding = repeat ' '
-	rowsizes = sumrows (map (map length) table)
+	rowsizes = reverse $ (0:) $ drop 1 $ reverse $
+		sumrows (map (map length) table)
 	sumrows [] = repeat 0
 	sumrows [r] = r
 	sumrows (r1:r2:rs) = sumrows $ map (uncurry max) (zip r1 r2) : rs
