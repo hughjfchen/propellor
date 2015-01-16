@@ -61,4 +61,4 @@ propigateInfo hl p f = combineProperties (propertyDesc p) $
 	p' = p { propertyInfo = f (propertyInfo p) }
 	i = hostInfo (getHost hl)
 	dnsprops = map addDNS (S.toList $ _dns i)
-	privprops = map addPrivDataField (S.toList $ _privDataFields i)
+	privprops = map addPrivData (S.toList $ _privData i)

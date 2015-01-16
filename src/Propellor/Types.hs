@@ -176,7 +176,7 @@ data CmdLine
 -- | Information about a host.
 data Info = Info
 	{ _os :: Val System
-	, _privDataFields :: S.Set (PrivDataField, HostContext)
+	, _privData :: S.Set (PrivDataField, Maybe PrivDataSourceDesc, HostContext)
 	, _sshPubKey :: M.Map SshKeyType String
 	, _aliases :: S.Set HostName
 	, _dns :: S.Set Dns.Record
@@ -190,7 +190,7 @@ instance Monoid Info where
 	mempty = Info mempty mempty mempty mempty mempty mempty mempty mempty
 	mappend old new = Info
 		{ _os = _os old <> _os new
-		, _privDataFields = _privDataFields old <> _privDataFields new
+		, _privData = _privData old <> _privData new
 		, _sshPubKey = _sshPubKey new `M.union` _sshPubKey old
 		, _aliases = _aliases old <> _aliases new
 		, _dns = _dns old <> _dns new
@@ -202,7 +202,7 @@ instance Monoid Info where
 instance Empty Info where
 	isEmpty i = and
 		[ isEmpty (_os i)
-		, isEmpty (_privDataFields i)
+		, isEmpty (_privData i)
 		, isEmpty (_sshPubKey i)
 		, isEmpty (_aliases i)
 		, isEmpty (_dns i)
