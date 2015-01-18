@@ -419,7 +419,6 @@ kiteMailServer = propertyList "kitenet.net mail server"
 	, "/etc/default/spamassassin" `File.containsLines`
 		[ "# Propellor deployed"
 		, "ENABLED=1"
-		, "CRON=1"
 		, "OPTIONS=\"--create-prefs --max-children 5 --helper-home-dir\""
 		, "CRON=1"
 		, "NICE=\"--nicelevel 15\""

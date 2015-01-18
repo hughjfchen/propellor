@@ -3,12 +3,9 @@
 module Propellor.Host where
 
 import Data.Monoid
-import qualified Data.Set as S
 
 import Propellor.Types
-import Propellor.Info
 import Propellor.Property
-import Propellor.PrivData
 
 -- | Starts accumulating the properties of a Host.
 --
@@ -35,8 +32,10 @@ class Hostlike h where
 	getHost :: h -> Host
 
 instance Hostlike Host where
-	(Host hn ps is) &  p = Host hn (ps ++ [toProp p]) (is <> getInfo p)
-	(Host hn ps is) &^ p = Host hn ([toProp p] ++ ps) (getInfo p <> is)
+	(Host hn ps is) &  p = Host hn (ps ++ [toProp p])
+		(is <> getInfoRecursive p)
+	(Host hn ps is) &^ p = Host hn ([toProp p] ++ ps)
+		(getInfoRecursive p <> is)
 	getHost h = h
 
 -- | Adds a property in reverted form.
@@ -47,18 +46,29 @@ infixl 1 &^
 infixl 1 &
 infixl 1 !
 
--- | When eg, docking a container, some of the Info about the container
--- should propigate out to the Host it's on. This includes DNS info,
--- so that eg, aliases of the container are reflected in the dns for the
--- host where it runs.
+-- | Adjust the provided Property, adding to its
+-- propertyChidren the properties of the Hostlike.
+
+-- The Info of the propertyChildren is adjusted to only include 
+-- info that should be propigated out to the Property.
 --
--- This adjusts the Property that docks a container, to include such info
--- from the container.
-propigateInfo :: Hostlike hl => hl -> Property -> (Info -> Info) -> Property
-propigateInfo hl p f = combineProperties (propertyDesc p) $
-	p' : dnsprops ++ privprops
+-- DNS Info is propigated, so that eg, aliases of a Hostlike
+-- are reflected in the dns for the host where it runs.
+--
+-- PrivData Info is propigated, so that properties used inside a
+-- Hostlike will have the necessary PrivData available.
+propigateHostLike :: Hostlike hl => hl -> Property -> Property
+propigateHostLike hl prop = prop
+	{ propertyChildren = propertyChildren prop ++ hostprops
+	}
   where
-	p' = p { propertyInfo = f (propertyInfo p) }
-	i = hostInfo (getHost hl)
-	dnsprops = map addDNS (S.toList $ _dns i)
-	privprops = map addPrivData (S.toList $ _privData i)
+	hostprops = map go $ hostProperties $ getHost hl
+	go p = 
+		let i = propertyInfo p
+		in p
+			{ propertyInfo = mempty
+				{ _dns = _dns i
+				, _privData = _privData i
+				}
+			, propertyChildren = map go (propertyChildren p)
+			}

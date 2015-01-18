@@ -4,7 +4,7 @@
 module Propellor.Types
 	( Host(..)
 	, Info(..)
-	, getInfo
+	, getInfoRecursive
 	, Propellor(..)
 	, Property(..)
 	, RevertableProperty(..)
@@ -38,7 +38,6 @@ import "mtl" Control.Monad.RWS.Strict
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 import qualified Data.Set as S
 import qualified Data.Map as M
-import qualified Propellor.Types.Dns as Dns
 
 import Propellor.Types.OS
 import Propellor.Types.Chroot
@@ -46,9 +45,10 @@ import Propellor.Types.Dns
 import Propellor.Types.Docker
 import Propellor.Types.PrivData
 import Propellor.Types.Empty
+import qualified Propellor.Types.Dns as Dns
 
 -- | Everything Propellor knows about a system: Its hostname,
--- properties and other info.
+-- properties and their collected info.
 data Host = Host
 	{ hostName :: HostName
 	, hostProperties :: [Property]
@@ -77,7 +77,15 @@ data Property = Property
 	, propertySatisfy :: Propellor Result
 	-- ^ must be idempotent; may run repeatedly
 	, propertyInfo :: Info
-	-- ^ a property can add info to the host.
+	-- ^ info associated with the property
+	, propertyChildren :: [Property]
+	-- ^ A property can include a list of child properties.
+	-- This allows them to be introspected to collect their info,
+	-- etc.
+	--
+	-- Note that listing Properties here does not ensure that
+	-- their propertySatisfy is run when satisfying the parent
+	-- property; it's up to the parent's propertySatisfy to do that.
 	}
 
 instance Show Property where
@@ -93,21 +101,22 @@ class IsProp p where
 	-- | Indicates that the first property can only be satisfied
 	-- once the second one is.
 	requires :: p -> Property -> p
-	getInfo :: p -> Info
+	-- | Gets the info of the property, combined with all info
+	-- of all children properties.
+	getInfoRecursive :: p -> Info
 
 instance IsProp Property where
 	describe p d = p { propertyDesc = d }
 	toProp p = p
-	getInfo = propertyInfo
-	x `requires` y = Property (propertyDesc x) satisfy info
-	  where
-		info = getInfo y <> getInfo x
-		satisfy = do
+	getInfoRecursive p = propertyInfo p <> mconcat (map getInfoRecursive (propertyChildren p))
+	x `requires` y = x 
+		{ propertySatisfy = do
 			r <- propertySatisfy y
 			case r of
 				FailedChange -> return FailedChange
 				_ -> propertySatisfy x
-			
+		, propertyChildren = y : propertyChildren x
+		}
 
 instance IsProp RevertableProperty where
 	-- | Sets the description of both sides.
@@ -117,7 +126,7 @@ instance IsProp RevertableProperty where
 	(RevertableProperty p1 p2) `requires` y =
 		RevertableProperty (p1 `requires` y) p2
 	-- | Return the Info of the currently active side.
-	getInfo (RevertableProperty p1 _p2) = getInfo p1
+	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
 
 type Desc = String
 

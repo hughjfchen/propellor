@@ -16,19 +16,19 @@ import Utility.Monad
 
 -- Constructs a Property.
 property :: Desc -> Propellor Result -> Property
-property d s = Property d s mempty
+property d s = Property d s mempty mempty
 
 -- | Combines a list of properties, resulting in a single property
 -- that when run will run each property in the list in turn,
 -- and print out the description of each as it's run. Does not stop
 -- on failure; does propigate overall success/failure.
 propertyList :: Desc -> [Property] -> Property
-propertyList desc ps = Property desc (ensureProperties ps) (combineInfos ps)
+propertyList desc ps = Property desc (ensureProperties ps) mempty ps
 
 -- | Combines a list of properties, resulting in one property that
 -- ensures each in turn. Stops if a property fails.
 combineProperties :: Desc -> [Property] -> Property
-combineProperties desc ps = Property desc (go ps NoChange) (combineInfos ps)
+combineProperties desc ps = Property desc (go ps NoChange) mempty ps
   where
 	go [] rs = return rs
 	go (l:ls) rs = do
@@ -67,15 +67,16 @@ flagFile' p getflagfile = adjustProperty p $ \satisfy -> do
 --- | Whenever a change has to be made for a Property, causes a hook
 -- Property to also be run, but not otherwise.
 onChange :: Property -> Property -> Property
-p `onChange` hook = Property (propertyDesc p) satisfy (combineInfo p hook)
-  where
-	satisfy = do
+p `onChange` hook = p
+	{ propertySatisfy = do
 		r <- ensureProperty p
 		case r of
 			MadeChange -> do
 				r' <- ensureProperty hook
 				return $ r <> r'
 			_ -> return r
+	, propertyChildren = propertyChildren p ++ [hook]
+	}
 
 (==>) :: Desc -> Property -> Property
 (==>) = flip describe
@@ -127,13 +128,6 @@ revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 -- | Changes the action that is performed to satisfy a property. 
 adjustProperty :: Property -> (Propellor Result -> Propellor Result) -> Property
 adjustProperty p f = p { propertySatisfy = f (propertySatisfy p) }
-
--- | Combines the Info of two properties.
-combineInfo :: (IsProp p, IsProp q) => p -> q -> Info
-combineInfo p q = getInfo p <> getInfo q
-
-combineInfos :: IsProp p => [p] -> Info
-combineInfos = mconcat . map getInfo
 
 makeChange :: IO () -> Propellor Result
 makeChange a = liftIO a >> return MadeChange

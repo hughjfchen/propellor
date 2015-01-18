@@ -35,7 +35,7 @@ import Utility.Monad
 mainProperties :: Host -> IO ()
 mainProperties host = do
 	ret <- runPropellor host $
-		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) mempty]
+		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) mempty mempty]
 	h <- mkMessageHandle
         whenConsole h $
 		setTitle "propellor: done"

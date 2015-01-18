@@ -78,7 +78,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 	
 	(partialzone, zonewarnings) = genZone indomain hostmap domain soa
 	baseprop = Property ("dns primary for " ++ domain) satisfy
-		(addNamedConf conf)
+		(addNamedConf conf) []
 	satisfy = do
 		sshfps <- concat <$> mapM (genSSHFP domain) (M.elems hostmap)
 		let zone = partialzone
