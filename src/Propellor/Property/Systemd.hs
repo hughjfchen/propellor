@@ -33,10 +33,10 @@ type MachineName = String
 data Container = Container MachineName Chroot.Chroot Host
 	deriving (Show)
 
-instance Hostlike Container where
-        (Container n c h) & p = Container n c (h & p)
-        (Container n c h) &^ p = Container n c (h &^ p)
-        getHost (Container _ _ h) = h
+instance PropAccum Container where
+	(Container n c h) & p = Container n c (h & p)
+	(Container n c h) &^ p = Container n c (h &^ p)
+	getProperties (Container _ _ h) = hostProperties h
 
 -- | Starts a systemd service.
 started :: ServiceName -> Property

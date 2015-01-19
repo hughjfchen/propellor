@@ -77,10 +77,10 @@ type ContainerName = String
 -- | A docker container.
 data Container = Container Image Host
 
-instance Hostlike Container where
+instance PropAccum Container where
 	(Container i h) & p = Container i (h & p)
 	(Container i h) &^ p = Container i (h &^ p)
-	getHost (Container _ h) = h
+	getProperties (Container _ h) = hostProperties h
 
 -- | Defines a Container with a given name, image, and properties.
 -- Properties can be added to configure the Container.
@@ -134,7 +134,7 @@ docked ctr@(Container _ h) = RevertableProperty
 			]
 
 propigateContainerInfo :: Container -> Property -> Property
-propigateContainerInfo ctr@(Container _ h) p = propigateHostLike ctr p'
+propigateContainerInfo ctr@(Container _ h) p = propigateContainer ctr p'
   where
 	p' = p { propertyInfo = propertyInfo p <> dockerinfo }
 	dockerinfo = dockerInfo $

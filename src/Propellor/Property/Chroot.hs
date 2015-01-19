@@ -28,10 +28,10 @@ data BuilderConf
 	= UsingDeboostrap Debootstrap.DebootstrapConfig
 	deriving (Show)
 
-instance Hostlike Chroot where
+instance PropAccum Chroot where
 	(Chroot l s c h) & p = Chroot l s c (h & p)
 	(Chroot l s c h) &^ p = Chroot l s c (h &^ p)
-	getHost (Chroot _ _ _ h) = h
+	getProperties (Chroot _ _ _ h) = hostProperties h
 
 -- | Defines a Chroot at the given location, built with debootstrap.
 --
@@ -76,7 +76,7 @@ provisioned' propigator c@(Chroot loc system builderconf _) systemdonly = Revert
 	teardown = toProp (revert built)
 
 propigateChrootInfo :: Chroot -> Property -> Property
-propigateChrootInfo c p = propigateHostLike c p'
+propigateChrootInfo c p = propigateContainer c p'
   where
 	p' = p { propertyInfo = propertyInfo p <> chrootInfo c }
 

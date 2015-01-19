@@ -1,6 +1,6 @@
 {-# LANGUAGE PackageImports #-}
 
-module Propellor.Host where
+module Propellor.PropAccum where
 
 import Data.Monoid
 
@@ -17,7 +17,7 @@ host :: HostName -> Host
 host hn = Host hn [] mempty
 
 -- | Something that can accumulate properties.
-class Hostlike h where
+class PropAccum h where
 	-- | Adds a property.
 	--
 	-- Can add Properties and RevertableProperties
@@ -29,17 +29,17 @@ class Hostlike h where
 	-- when it does.
 	(&^) :: IsProp p => h -> p -> h
 
-	getHost :: h -> Host
+	getProperties :: h -> [Property]
 
-instance Hostlike Host where
+instance PropAccum Host where
 	(Host hn ps is) &  p = Host hn (ps ++ [toProp p])
 		(is <> getInfoRecursive p)
 	(Host hn ps is) &^ p = Host hn ([toProp p] ++ ps)
 		(getInfoRecursive p <> is)
-	getHost h = h
+	getProperties = hostProperties
 
 -- | Adds a property in reverted form.
-(!) :: Hostlike h => h -> RevertableProperty -> h
+(!) :: PropAccum h => h -> RevertableProperty -> h
 h ! p = h & revert p
 
 infixl 1 &^
@@ -47,22 +47,22 @@ infixl 1 &
 infixl 1 !
 
 -- | Adjust the provided Property, adding to its
--- propertyChidren the properties of the Hostlike.
+-- propertyChidren the properties of the provided container.
 
 -- The Info of the propertyChildren is adjusted to only include 
 -- info that should be propigated out to the Property.
 --
--- DNS Info is propigated, so that eg, aliases of a Hostlike
+-- DNS Info is propigated, so that eg, aliases of a PropAccum
 -- are reflected in the dns for the host where it runs.
 --
 -- PrivData Info is propigated, so that properties used inside a
--- Hostlike will have the necessary PrivData available.
-propigateHostLike :: Hostlike hl => hl -> Property -> Property
-propigateHostLike hl prop = prop
+-- PropAccum will have the necessary PrivData available.
+propigateContainer :: PropAccum container => container -> Property -> Property
+propigateContainer c prop = prop
 	{ propertyChildren = propertyChildren prop ++ hostprops
 	}
   where
-	hostprops = map go $ hostProperties $ getHost hl
+	hostprops = map go $ getProperties c
 	go p = 
 		let i = propertyInfo p
 		in p
