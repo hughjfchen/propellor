@@ -48,7 +48,7 @@ infixl 1 !
 
 -- | Adjust the provided Property, adding to its
 -- propertyChidren the properties of the provided container.
-
+-- 
 -- The Info of the propertyChildren is adjusted to only include 
 -- info that should be propigated out to the Property.
 --
