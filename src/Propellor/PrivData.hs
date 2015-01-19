@@ -1,6 +1,18 @@
 {-# LANGUAGE PackageImports #-}
 
-module Propellor.PrivData where
+module Propellor.PrivData (
+	withPrivData,
+	withSomePrivData,
+	addPrivData,
+	setPrivData,
+	dumpPrivData,
+	editPrivData,
+	filterPrivData,
+	listPrivDataFields,
+	makePrivDataDir,
+	decryptPrivData,
+	PrivMap,
+) where
 
 import Control.Applicative
 import System.IO
@@ -111,7 +123,7 @@ getLocalPrivData field context =
 
 type PrivMap = M.Map (PrivDataField, Context) PrivData
 
-{- Get only the set of PrivData that the Host's Info says it uses. -}
+-- | Get only the set of PrivData that the Host's Info says it uses.
 filterPrivData :: Host -> PrivMap -> PrivMap
 filterPrivData host = M.filterWithKey (\k _v -> S.member k used)
   where
