@@ -1,5 +1,7 @@
 module Propellor.Property.Systemd (
 	module Propellor.Property.Systemd.Core,
+	ServiceName,
+	MachineName,
 	started,
 	stopped,
 	enabled,

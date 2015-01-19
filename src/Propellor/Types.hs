@@ -4,14 +4,10 @@
 module Propellor.Types
 	( Host(..)
 	, Info(..)
-	, getInfoRecursive
 	, Propellor(..)
 	, Property(..)
 	, RevertableProperty(..)
-	, IsProp
-	, describe
-	, toProp
-	, requires
+	, IsProp(..)
 	, Desc
 	, Result(..)
 	, ToResult(..)

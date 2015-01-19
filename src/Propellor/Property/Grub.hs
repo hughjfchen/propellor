@@ -4,10 +4,10 @@ import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 
--- | Eg, "hd0,0" or "xen/xvda1"
+-- | Eg, \"hd0,0\" or \"xen/xvda1\"
 type GrubDevice = String
 
--- | Eg, "/dev/sda"
+-- | Eg, \"\/dev/sda\"
 type OSDevice = String
 
 type TimeoutSecs = Int

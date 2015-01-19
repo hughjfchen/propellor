@@ -1,4 +1,5 @@
 module Propellor.Property.Ssh (
+	PubKeyText,
 	setSshdConfig,
 	permitRootLogin,
 	passwordAuthentication,

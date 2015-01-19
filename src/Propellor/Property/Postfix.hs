@@ -77,8 +77,8 @@ getMainCf name = parse . lines <$> readProcess "postconf" [name]
 			(_, v) -> v
 	parse [] = Nothing
 
--- | Checks if a main.cf field is set. A field that is set to "" 
--- is considered not set.
+-- | Checks if a main.cf field is set. A field that is set to
+-- the empty string is considered not set.
 mainCfIsSet :: String -> IO Bool
 mainCfIsSet name = do
 	v <- getMainCf name

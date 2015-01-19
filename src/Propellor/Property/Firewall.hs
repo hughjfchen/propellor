@@ -9,6 +9,7 @@ module Propellor.Property.Firewall (
 	Target(..),
 	Proto(..),
 	Rules(..),
+	Port,
 	ConnectionState(..)
 ) where
 
