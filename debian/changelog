@@ -4,6 +4,7 @@ propellor (1.4.0) UNRELEASED; urgency=medium
   * Properties now form a tree, instead of the flat list used before.
     This includes the properties used inside a container.
     (API change)
+  * Fix info propigation from fallback combinator's second Property.
 
  -- Joey Hess <id@joeyh.name>  Thu, 15 Jan 2015 20:14:29 -0400
 
