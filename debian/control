@@ -18,7 +18,7 @@ Build-Depends:
 	libghc-monadcatchio-transformers-dev,
 Maintainer: Gergely Nagy <algernon@madhouse-project.org>
 Standards-Version: 3.9.6
-Vcs-Git: git://git.kitenet.net/propellor
+Vcs-Git: git://git.joeyh.name/propellor
 Homepage: http://propellor.branchable.com/
 
 Package: propellor

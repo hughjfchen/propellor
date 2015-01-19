@@ -27,7 +27,7 @@
 --
 -- See config.hs for a more complete example, and clone Propellor's
 -- git repository for a deployable system using Propellor:
--- git clone <git://git.kitenet.net/propellor>
+-- git clone <git://git.joeyh.name/propellor>
 
 module Propellor (
 	  module Propellor.Types
