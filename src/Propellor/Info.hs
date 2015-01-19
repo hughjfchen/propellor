@@ -3,6 +3,7 @@
 module Propellor.Info where
 
 import Propellor.Types
+import Propellor.Types.Val
 
 import "mtl" Control.Monad.Reader
 import qualified Data.Set as S

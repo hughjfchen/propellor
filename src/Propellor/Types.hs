@@ -3,33 +3,21 @@
 
 module Propellor.Types
 	( Host(..)
-	, Info(..)
 	, Propellor(..)
 	, Property(..)
 	, RevertableProperty(..)
 	, IsProp(..)
 	, Desc
-	, Result(..)
-	, ToResult(..)
-	, ActionResult(..)
-	, CmdLine(..)
-	, PrivDataField(..)
-	, PrivData
-	, Context(..)
-	, anyContext
-	, SshKeyType(..)
-	, Val(..)
-	, fromVal
+	, Info(..)
 	, RunLog
 	, EndAction(..)
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
+	, module Propellor.Types.Result
 	) where
 
 import Data.Monoid
 import Control.Applicative
-import System.Console.ANSI
-import System.Posix.Types
 import "mtl" Control.Monad.RWS.Strict
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 import qualified Data.Set as S
@@ -41,6 +29,8 @@ import Propellor.Types.Dns
 import Propellor.Types.Docker
 import Propellor.Types.PrivData
 import Propellor.Types.Empty
+import Propellor.Types.Val
+import Propellor.Types.Result
 import qualified Propellor.Types.Dns as Dns
 
 -- | Everything Propellor knows about a system: Its hostname,
@@ -126,58 +116,6 @@ instance IsProp RevertableProperty where
 
 type Desc = String
 
-data Result = NoChange | MadeChange | FailedChange
-	deriving (Read, Show, Eq)
-
-instance Monoid Result where
-	mempty = NoChange
-
-	mappend FailedChange _ = FailedChange
-	mappend _ FailedChange = FailedChange
-	mappend MadeChange _ = MadeChange
-	mappend _ MadeChange = MadeChange
-	mappend NoChange NoChange = NoChange
-
-class ToResult t where
-	toResult :: t -> Result
-
-instance ToResult Bool where
-	toResult False = FailedChange
-	toResult True = MadeChange
-
--- | Results of actions, with color.
-class ActionResult a where
-	getActionResult :: a -> (String, ColorIntensity, Color)
-
-instance ActionResult Bool where
-	getActionResult False = ("failed", Vivid, Red)
-	getActionResult True = ("done", Dull, Green)
-
-instance ActionResult Result where
-	getActionResult NoChange = ("ok", Dull, Green)
-	getActionResult MadeChange = ("done", Vivid, Green)
-	getActionResult FailedChange = ("failed", Vivid, Red)
-
-data CmdLine
-	= Run HostName
-	| Spin [HostName] (Maybe HostName)
-	| SimpleRun HostName
-	| Set PrivDataField Context
-	| Dump PrivDataField Context
-	| Edit PrivDataField Context
-	| ListFields
-	| AddKey String
-	| Merge
-	| Serialized CmdLine
-	| Continue CmdLine
-	| Update (Maybe HostName)
-	| Relay HostName
-	| DockerInit HostName
-	| DockerChain HostName String
-	| ChrootChain HostName FilePath Bool Bool
-	| GitPush Fd Fd
-	deriving (Read, Show, Eq)
-
 -- | Information about a host.
 data Info = Info
 	{ _os :: Val System
@@ -215,23 +153,6 @@ instance Empty Info where
 		, isEmpty (_dockerinfo i)
 		, isEmpty (_chrootinfo i)
 		]
-
-data Val a = Val a | NoVal
-	deriving (Eq, Show)
-
-instance Monoid (Val a) where
-	mempty = NoVal
-	mappend old new = case new of
-		NoVal -> old
-		_ -> new
-
-instance Empty (Val a) where
-	isEmpty NoVal = True
-	isEmpty _ = False
-
-fromVal :: Val a -> Maybe a
-fromVal (Val a) = Just a
-fromVal NoVal = Nothing
 
 type RunLog = [EndAction]
 

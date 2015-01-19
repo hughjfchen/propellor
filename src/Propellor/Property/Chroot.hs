@@ -10,6 +10,7 @@ module Propellor.Property.Chroot (
 ) where
 
 import Propellor
+import Propellor.Types.CmdLine
 import Propellor.Types.Chroot
 import Propellor.Property.Chroot.Util
 import qualified Propellor.Property.Debootstrap as Debootstrap

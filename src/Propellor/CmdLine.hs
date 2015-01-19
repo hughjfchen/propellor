@@ -13,6 +13,7 @@ import Propellor
 import Propellor.Gpg
 import Propellor.Git
 import Propellor.Spin
+import Propellor.Types.CmdLine
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Shim as Shim

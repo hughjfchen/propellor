@@ -77,7 +77,7 @@ ensureProperties ps = ensure ps NoChange
 
 -- | Lifts an action into a different host.
 --
--- For example, `fromHost hosts "otherhost" getPubKey`
+-- > fromHost hosts "otherhost" getPubKey
 fromHost :: [Host] -> HostName -> Propellor a -> Propellor (Maybe a)
 fromHost l hn getter = case findHost l hn of
 	Nothing -> return Nothing

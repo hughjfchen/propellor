@@ -40,6 +40,7 @@ module Propellor.Property.Docker (
 
 import Propellor hiding (init)
 import Propellor.Types.Docker
+import Propellor.Types.CmdLine
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Shim as Shim

@@ -24,6 +24,7 @@ import Propellor.PrivData.Paths
 import Propellor.Git
 import Propellor.Ssh
 import Propellor.Gpg
+import Propellor.Types.CmdLine
 import qualified Propellor.Shim as Shim
 import Utility.FileMode
 import Utility.SafeCommand

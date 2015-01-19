@@ -122,6 +122,9 @@ Library
     Propellor.Types.Empty
     Propellor.Types.OS
     Propellor.Types.PrivData
+    Propellor.Types.Val
+    Propellor.Types.Result
+    Propellor.Types.CmdLine
   Other-Modules:
     Propellor.Git
     Propellor.Gpg
