@@ -3,13 +3,12 @@
 
 module Propellor.Types
 	( Host(..)
-	, Propellor(..)
 	, Property(..)
 	, RevertableProperty(..)
 	, IsProp(..)
 	, Desc
 	, Info(..)
-	, RunLog
+	, Propellor(..)
 	, EndAction(..)
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
@@ -43,17 +42,21 @@ data Host = Host
 	deriving (Show)
 
 -- | Propellor's monad provides read-only access to info about the host
--- it's running on, and a writer to accumulate logs about the run.
-newtype Propellor p = Propellor { runWithHost :: RWST Host RunLog () IO p }
+-- it's running on, and a writer to accumulate EndActions.
+newtype Propellor p = Propellor { runWithHost :: RWST Host [EndAction] () IO p }
 	deriving
 		( Monad
 		, Functor
 		, Applicative
 		, MonadReader Host
-		, MonadWriter RunLog
+		, MonadWriter [EndAction]
 		, MonadIO
 		, MonadCatchIO
 		)
+
+-- | An action that Propellor runs at the end, after trying to satisfy all
+-- properties. It's passed the combined Result of the entire Propellor run.
+data EndAction = EndAction Desc (Result -> Propellor Result)
 
 -- | The core data type of Propellor, this represents a property
 -- that the system should have, and an action to ensure it has the
@@ -153,9 +156,3 @@ instance Empty Info where
 		, isEmpty (_dockerinfo i)
 		, isEmpty (_chrootinfo i)
 		]
-
-type RunLog = [EndAction]
-
--- | An action that Propellor runs at the end, after trying to satisfy all
--- properties. It's passed the combined Result of the entire Propellor run.
-data EndAction = EndAction Desc (Result -> Propellor Result)
