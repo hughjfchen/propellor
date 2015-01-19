@@ -1,5 +1,6 @@
 module Propellor.Property.Chroot (
 	Chroot(..),
+	BuilderConf(..),
 	debootstrapped,
 	provisioned,
 	-- * Internal use
