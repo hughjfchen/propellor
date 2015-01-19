@@ -62,6 +62,9 @@ runEndAction host res (EndAction desc a) = actionMessageOn (hostName host) desc 
 
 -- | For when code running in the Propellor monad needs to ensure a
 -- Property.
+--
+-- Note that the Info of the Property is not propigated out, so it will
+-- not be visible to propellor, unless you arrange for it to be propigated.
 ensureProperty :: Property -> Propellor Result
 ensureProperty = catchPropellor . propertySatisfy
 
