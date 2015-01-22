@@ -6,7 +6,11 @@ module Propellor.Property.Systemd (
 	stopped,
 	enabled,
 	disabled,
+	restarted,
 	persistentJournal,
+	Option,
+	configured,
+	journaldConfigured,
 	daemonReloaded,
 	Container,
 	container,
@@ -60,6 +64,11 @@ disabled :: ServiceName -> Property
 disabled n = trivial $ cmdProperty "systemctl" ["disable", n]
 	`describe` ("service " ++ n ++ " disabled")
 
+-- | Restarts a systemd service.
+restarted :: ServiceName -> Property
+restarted n = trivial $ cmdProperty "systemctl" ["restart", n]
+	`describe` ("service " ++ n ++ " restarted")
+
 -- | Enables persistent storage of the journal.
 persistentJournal :: Property
 persistentJournal = check (not <$> doesDirectoryExist dir) $ 
@@ -71,6 +80,33 @@ persistentJournal = check (not <$> doesDirectoryExist dir) $
 		`requires` Apt.installed ["acl"]
   where
 	dir = "/var/log/journal"
+
+type Option = String
+
+-- | Ensures that an option is configured in one of systemd's config files.
+-- Does not ensure that the relevant daemon notices the change immediately.
+--
+-- This assumes that there is only one [Header] per file, which is
+-- currently the case. And it assumes the file already exists with
+-- the right [Header], so new lines can just be appended to the end.
+configured :: FilePath -> Option -> String -> Property
+configured cfgfile option value = combineProperties desc
+	[ File.fileProperty desc (mapMaybe removeother) cfgfile
+	, File.containsLine cfgfile line
+	]
+  where
+	setting = option ++ "="
+	line = setting ++ value
+	desc = cfgfile ++ " " ++ line
+	removeother l
+		| setting `isPrefixOf` l = Nothing
+		| otherwise = Just l
+
+-- | Configures journald, restarting it so the changes take effect.
+journaldConfigured :: Option -> String -> Property
+journaldConfigured option value =
+	configured "/etc/systemd/journald.conf" option value
+		`onChange` restarted "systemd-journald"
 
 -- | Causes systemd to reload its configuration files.
 daemonReloaded :: Property

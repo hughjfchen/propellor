@@ -145,6 +145,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Apt.unattendedUpgrades
 	& Systemd.installed
 	& Systemd.persistentJournal
+	& Systemd.journaldConfigured "SystemMaxUse" "500M"
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
 	& Apt.serviceInstalledRunning "fail2ban"
