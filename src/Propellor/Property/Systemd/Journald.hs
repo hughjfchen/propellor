@@ -1,7 +1,6 @@
 module Propellor.Property.Systemd.Journald where
 import Propellor
 import qualified Propellor.Property.Systemd as Systemd
-import qualified Propellor.Property.File as File
 import Utility.DataUnits
 
 -- | Configures journald, restarting it so the changes take effect.
@@ -39,7 +38,7 @@ runtimeMaxFileSize = configuredSize "RuntimeMaxFileSize"
 
 -- Generates size units as used in journald.conf.
 systemdSizeUnits :: Integer -> String
-systemdSizeUnits n = filter (/= ' ') (roughSize cfgfileunits True n)
+systemdSizeUnits sz = filter (/= ' ') (roughSize cfgfileunits True sz)
   where
 	cfgfileunits :: [Unit]
 	cfgfileunits =

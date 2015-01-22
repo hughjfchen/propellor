@@ -25,6 +25,7 @@ import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
+import qualified Propellor.Property.Systemd.Journald as Journald
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
@@ -145,7 +146,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Apt.unattendedUpgrades
 	& Systemd.installed
 	& Systemd.persistentJournal
-	& Systemd.journaldConfigured "SystemMaxUse" "500M"
+	& Journald.systemMaxUse "500MiB"
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
 	& Apt.serviceInstalledRunning "fail2ban"
