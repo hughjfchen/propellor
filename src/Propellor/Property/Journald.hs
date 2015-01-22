@@ -1,4 +1,4 @@
-module Propellor.Property.Systemd.Journald where
+module Propellor.Property.Journald where
 import Propellor
 import qualified Propellor.Property.Systemd as Systemd
 import Utility.DataUnits
