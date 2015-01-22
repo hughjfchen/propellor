@@ -6,6 +6,7 @@ propellor (1.4.0) UNRELEASED; urgency=medium
     (API change)
   * Fix info propigation from fallback combinator's second Property.
   * Added systemd configuration properties.
+  * Added journald configuration properties.
 
  -- Joey Hess <id@joeyh.name>  Thu, 15 Jan 2015 20:14:29 -0400
 

@@ -100,6 +100,7 @@ Library
     Propellor.Property.Sudo
     Propellor.Property.Systemd
     Propellor.Property.Systemd.Core
+    Propellor.Property.Systemd.Journald
     Propellor.Property.Tor
     Propellor.Property.User
     Propellor.Property.HostingProvider.CloudAtCost
@@ -136,11 +137,13 @@ Library
     Propellor.Property.Chroot.Util
     Utility.Applicative
     Utility.Data
+    Utility.DataUnits
     Utility.Directory
     Utility.Env
     Utility.Exception
     Utility.FileMode
     Utility.FileSystemEncoding
+    Utility.HumanNumber
     Utility.LinuxMkLibs
     Utility.Misc
     Utility.Monad
