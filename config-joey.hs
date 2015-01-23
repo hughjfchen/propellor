@@ -141,6 +141,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 		, (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFZftKMnH/zH29BHMKbcBO4QsgTrstYFVhbrzrlRzBO3")
 		]
 
+	& Network.static "eth0" `requires` Network.cleanInterfacesFile
 	& Apt.installed ["linux-image-amd64"]
 	& Linode.chainPVGrub 5
 	& Apt.unattendedUpgrades
