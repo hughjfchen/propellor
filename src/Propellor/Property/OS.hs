@@ -10,6 +10,7 @@ module Propellor.Property.OS (
 import Propellor
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Ssh as Ssh
+import qualified Propellor.Property.Network as Network
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Reboot as Reboot
@@ -51,7 +52,7 @@ import Control.Exception (throw)
 -- >    `onChange` propertyList "fixing up after clean install"
 -- >        [ preserveNetwork
 -- >        , preserveResolvConf
--- >        , preserverRootSshAuthorized
+-- >        , preserveRootSshAuthorized
 -- >        , Apt.update
 -- >        -- , Grub.boots "/dev/sda"
 -- >        --   `requires` Grub.installed Grub.PC
@@ -192,7 +193,17 @@ confirmed desc (Confirmed c) = property desc $ do
 -- interface that currently has a default route configured, using
 -- the same (static) IP address.
 preserveNetwork :: Property
-preserveNetwork = undefined -- TODO
+preserveNetwork = go `requires` Network.cleanInterfacesFile
+  where
+	go = property "preserve network configuration" $ do
+		ls <- liftIO $ lines <$> readProcess "ip"
+			["route", "list", "scope", "global"]
+		case words <$> headMaybe ls of
+			Just ("default":"via":_:"dev":iface:_) ->
+				ensureProperty $ Network.static iface
+			_ -> do
+				warningMessage "did not find any default ipv4 route"
+				return FailedChange 
 
 -- | </etc/resolv.conf> is copied from the old OS
 preserveResolvConf :: Property

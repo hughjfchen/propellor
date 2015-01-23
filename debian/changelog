@@ -8,6 +8,7 @@ propellor (1.4.0) UNRELEASED; urgency=medium
   * Added systemd configuration properties.
   * Added journald configuration properties.
   * Added more network interface configuration properties.
+  * Implemented OS.preserveNetwork.
 
  -- Joey Hess <id@joeyh.name>  Thu, 15 Jan 2015 20:14:29 -0400
 
