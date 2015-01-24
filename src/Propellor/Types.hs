@@ -3,22 +3,29 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Propellor.Types
 	( Host(..)
+	, Desc
 	, Property(..)
 	, HasInfo
 	, NoInfo
-	, Desc
-	, mkProperty
-	, propertyDesc
+	, hasInfo
+	, CInfo
+	, infoProperty
+	, simpleProperty
 	, propertySatisfy
+	, adjustPropertySatisfy
 	, propertyInfo
 	, propertyChildren
 	, RevertableProperty(..)
-	, mkRevertableProperty
-	, requires
+	, (<!>)
+	, Combines(..)
+	, before
+	, combineWith
 	, IsProp(..)
 	, Info(..)
 	, Propellor(..)
@@ -84,14 +91,29 @@ data Property i where
 data HasInfo
 data NoInfo
 
--- | Constructs a Property
-mkProperty 
+hasInfo :: Property i -> Bool
+hasInfo (IProperty {}) = True
+hasInfo _ = False
+
+-- | Type level calculation of the combintion of HasInfo and/or NoInfo
+type family CInfo x y
+type instance CInfo HasInfo HasInfo = HasInfo
+type instance CInfo HasInfo NoInfo = HasInfo
+type instance CInfo NoInfo HasInfo = HasInfo
+type instance CInfo NoInfo NoInfo = NoInfo
+
+-- | Constructs a Property with associated Info.
+infoProperty 
 	:: Desc -- ^ description of the property
 	-> Propellor Result -- ^ action to run to satisfy the property (must be idempotent; may run repeatedly)
 	-> Info -- ^ info associated with the property
 	-> [Property i] -- ^ child properties
 	-> Property HasInfo
-mkProperty d a i cs = IProperty d a i (map toIProperty cs)
+infoProperty d a i cs = IProperty d a i (map toIProperty cs)
+
+-- | Constructs a Property with no Info.
+simpleProperty :: Desc -> Propellor Result -> [Property NoInfo] -> Property NoInfo
+simpleProperty = SProperty
 
 toIProperty :: Property i -> Property HasInfo
 toIProperty p@(IProperty {}) = p
@@ -103,19 +125,22 @@ toSProperty p@(SProperty {}) = p
 
 -- | Makes a version of a Proprty without its Info.
 -- Use with caution!
-ignoreInfo :: Property HasInfo -> Property NoInfo
+ignoreInfo :: Property i -> Property NoInfo
 ignoreInfo = toSProperty
 
-instance Show (Property i) where
+instance Show (Property NoInfo) where
         show p = "property " ++ show (propertyDesc p)
-
-propertyDesc :: Property i -> Desc
-propertyDesc (IProperty d _ _ _) = d
-propertyDesc (SProperty d _ _) = d
+instance Show (Property HasInfo) where
+        show p = "property " ++ show (propertyDesc p)
 
 propertySatisfy :: Property i -> Propellor Result
 propertySatisfy (IProperty _ a _ _) = a
 propertySatisfy (SProperty _ a _) = a
+
+-- | Changes the action that is performed to satisfy a property. 
+adjustPropertySatisfy :: Property i -> (Propellor Result -> Propellor Result) -> Property i
+adjustPropertySatisfy (IProperty d s i cs) f = IProperty d (f s) i cs
+adjustPropertySatisfy (SProperty d s cs) f = SProperty d (f s) cs
 
 propertyInfo :: Property i -> Info
 propertyInfo (IProperty _ _ i _) = i
@@ -130,12 +155,15 @@ propertyChildren (SProperty _ _ cs) = cs
 -- | A property that can be reverted.
 data RevertableProperty = RevertableProperty (Property HasInfo) (Property HasInfo)
 
-mkRevertableProperty :: Property i1 -> Property i2 -> RevertableProperty
-mkRevertableProperty p1 p2 = RevertableProperty (toIProperty p1) (toIProperty p2)
+-- | Makes a revertable property; the first Property is run
+-- normally and the second is run when it's reverted.
+(<!>) :: Property i1 -> Property i2 -> RevertableProperty
+p1 <!> p2 = RevertableProperty (toIProperty p1) (toIProperty p2)
 
 class IsProp p where
 	-- | Sets description.
 	describe :: p -> Desc -> p
+	propertyDesc :: p -> Desc
 	toProp :: p -> Property HasInfo
 	-- | Gets the info of the property, combined with all info
 	-- of all children properties.
@@ -143,11 +171,13 @@ class IsProp p where
 
 instance IsProp (Property HasInfo) where
 	describe (IProperty _ a i cs) d = IProperty d a i cs
+	propertyDesc (IProperty d _ _ _) = d
 	toProp = id
 	getInfoRecursive (IProperty _ _ i cs) = 
 		i <> mconcat (map getInfoRecursive cs)
 instance IsProp (Property NoInfo) where
 	describe (SProperty _ a cs) d = SProperty d a cs
+	propertyDesc (SProperty d _ _) = d
 	toProp = toIProperty
 	getInfoRecursive _ = mempty
 
@@ -155,39 +185,67 @@ instance IsProp RevertableProperty where
 	-- | Sets the description of both sides.
 	describe (RevertableProperty p1 p2) d = 
 		RevertableProperty (describe p1 d) (describe p2 ("not " ++ d))
+	propertyDesc (RevertableProperty p1 _) = propertyDesc p1
 	toProp (RevertableProperty p1 _) = p1
 	-- | Return the Info of the currently active side.
 	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
 
-class Requires x y r where
-	-- Indicates that the first property depends on the second,
-	-- so before the first is ensured, the second will be ensured.
-	requires :: x -> y -> r
+-- Type level calculation of the type that results from combining two types
+-- with `requires`.
+type family CombinedType x y
+type instance CombinedType (Property x) (Property y) = Property (CInfo x y)
+type instance CombinedType RevertableProperty (Property NoInfo) = RevertableProperty
+type instance CombinedType RevertableProperty (Property HasInfo) = RevertableProperty
+type instance CombinedType RevertableProperty RevertableProperty = RevertableProperty
 
-instance Requires (Property HasInfo) (Property HasInfo) (Property HasInfo) where
+class Combines x y where
+	-- | Indicates that the first property depends on the second,
+	-- so before the first is ensured, the second will be ensured.
+	requires :: x -> y -> CombinedType x y
+	
+-- | Combines together two properties, resulting in one property
+-- that ensures the first, and if the first succeeds, ensures the second.
+-- The property uses the description of the first property.
+before :: (IsProp x, Combines y x, IsProp (CombinedType y x)) => x -> y -> CombinedType y x
+before x y = (y `requires` x) `describe` (propertyDesc x)
+
+-- | Combines together two properties, yielding a property that
+-- has the description and info of the first, and that has the second
+-- property as a child. The two actions to satisfy the properties
+-- are passed to a function that can combine them in arbitrary ways.
+combineWith
+	:: (Combines (Property x) (Property y))
+	=> (Propellor Result -> Propellor Result -> Propellor Result)
+	-> Property x
+	-> Property y
+	-> CombinedType (Property x) (Property y)
+combineWith f x y = adjustPropertySatisfy (x `requires` y) $ \_ ->
+	f (propertySatisfy $ toSProperty x) (propertySatisfy $ toSProperty y)
+
+instance Combines (Property HasInfo) (Property HasInfo) where
 	requires (IProperty d1 a1 i1 cs1) y@(IProperty _d2 a2 _i2 _cs2) =
 		IProperty d1 (a2 `andThen` a1) i1 (y : cs1)
 
-instance Requires (Property HasInfo) (Property NoInfo) (Property HasInfo) where
+instance Combines (Property HasInfo) (Property NoInfo) where
 	requires (IProperty d1 a1 i1 cs1) y@(SProperty _d2 a2 _cs2) =
 		IProperty d1 (a2 `andThen` a1) i1 (toIProperty y : cs1)
 
-instance Requires (Property NoInfo) (Property HasInfo) (Property HasInfo) where
+instance Combines (Property NoInfo) (Property HasInfo) where
 	requires x y = requires y x
 
-instance Requires (Property NoInfo) (Property NoInfo) (Property NoInfo) where
+instance Combines (Property NoInfo) (Property NoInfo) where
 	requires (SProperty d1 a1  cs1) y@(SProperty _d2 a2 _cs2) =
 		SProperty d1 (a2 `andThen` a1) (y : cs1)
 
-instance Requires RevertableProperty (Property HasInfo) RevertableProperty where
+instance Combines RevertableProperty (Property HasInfo) where
 	requires (RevertableProperty p1 p2) y =
 		RevertableProperty (p1 `requires` y) p2
 
-instance Requires RevertableProperty (Property NoInfo) RevertableProperty where
+instance Combines RevertableProperty (Property NoInfo) where
 	requires (RevertableProperty p1 p2) y =
 		RevertableProperty (p1 `requires` toIProperty y) p2
 
-instance Requires RevertableProperty RevertableProperty RevertableProperty where
+instance Combines RevertableProperty RevertableProperty where
 	requires (RevertableProperty x1 x2) (RevertableProperty y1 y2) =
 		RevertableProperty
 			(x1 `requires` y1)
