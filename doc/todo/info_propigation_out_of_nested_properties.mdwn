@@ -1,17 +1,14 @@
-Currently, Info about a Host's Properties is manually gathered and
-propigated. propertyList combines the Info of the Properties in the list;
-Docker.docked extracts relevant Info from the Properties of the container
-(but not al of it, intentionally!); etc.
+Currently, Info about a Host's Properties is propigated to the host by
+examining the tree of Properties.
 
-This works, but it's error-prone. Consider this example:
+This works, but there's one problem. Consider this example:
 
 	withOS desc $ \o -> case o of
                 (Just (System (Debian Unstable) _)) -> ensureProperty foo
 		_ -> ensureProperty bar
 
-Here, the Info of `foo` is not propigated out. Nor is `bar`'s Info. Of
-course, only one of them will be run, and only its info should be
-propigated out..
+Here, the Info of `foo` is not propigated out. Nor is `bar`'s Info.
+It's not really clear if just one Info, or both should be propigated out.
 
 ----
 
@@ -26,11 +23,14 @@ That is surely doable, but consider this example:
 		needfoo <- liftIO checkFoo
 		if needfoo
 			then ensureProperty foo
-			else ensureProperty bar
+			else ensureProperty . bar =<< liftIO (getBarParam)
 
 In introspection mode, the liftIO is a no-op, but needs to return a Bool.
 That seems unlikely (how to pick which?), but even if some defaulting is
 used, only one of foo or bar's info will be seen.
+
+Worse, the bar property is not fully known until IO can be performed to get
+its parameter.
 
 ----
 
@@ -44,21 +44,14 @@ Another approach could be something like this:
 					then callfoo
 					else callbar
 
-Here withInfoFrom is able to add foo and bar's Info to the info of the
-property that (may) call them.
+Here withInfoFrom adds foo and bar as child properties of the demo property
+that (may) call them.
 
 This approach is not fully type safe; it would be possible to call
 withInfoFrom in a way that didn't let it propigate the info.
 
-Also it has the problem that it doesn't support this:
-
-	property "demo" = do
-		needfoo <- liftIO checkFoo
-		if needfoo
-			then do
-				foop <- liftIO getFooParam
-				ensureProperty (foo foop)
-			else ensureProperty bar
+And again this doesn't solve the problem that IO can be needed to get
+a parameter of a child property.
 
 ----
 
@@ -93,6 +86,9 @@ to the point that Property.File compiles, but is otherwise
 unfinished. Most definitions of `Property` need to be changed to
 `GProperty NoInfo`, so that ensureProperty can call them. It's a big,
 intrusive change, and it may complicate propellor too much. 
+
+I've tried to make this change a couple times now, and not been completely
+successful so far.
 
 (I may need to make instances of Prop for `GProperty NoInfo` and `GProperty
 HasInfo`, if that's possible, and make more Property combinators work on
