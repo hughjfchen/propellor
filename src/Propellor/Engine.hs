@@ -45,7 +45,7 @@ mainProperties host = do
 		FailedChange -> exitWith (ExitFailure 1)
 		_ -> exitWith ExitSuccess
   where
-	ps = hostProperties host
+	ps = map ignoreInfo $ hostProperties host
 
 -- | Runs a Propellor action with the specified host.
 --
@@ -66,13 +66,12 @@ runEndAction host res (EndAction desc a) = actionMessageOn (hostName host) desc 
 -- | For when code running in the Propellor monad needs to ensure a
 -- Property.
 --
--- Note that the Info of the Property is not propigated out, so it will
--- not be visible to propellor, unless you arrange for it to be propigated.
-ensureProperty :: Property -> Propellor Result
+-- This can only be used on a Property that has NoInfo.
+ensureProperty :: Property NoInfo -> Propellor Result
 ensureProperty = catchPropellor . propertySatisfy
 
 -- | Ensures a list of Properties, with a display of each as it runs.
-ensureProperties :: [Property] -> Propellor Result
+ensureProperties :: [Property NoInfo] -> Propellor Result
 ensureProperties ps = ensure ps NoChange
   where
 	ensure [] rs = return rs

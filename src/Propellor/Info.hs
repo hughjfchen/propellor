@@ -12,13 +12,13 @@ import Data.Maybe
 import Data.Monoid
 import Control.Applicative
 
-pureInfoProperty :: Desc -> Info -> Property 
+pureInfoProperty :: Desc -> Info -> Property HasInfo
 pureInfoProperty desc i = mkProperty ("has " ++ desc) (return NoChange) i mempty
 
 askInfo :: (Info -> Val a) -> Propellor (Maybe a)
 askInfo f = asks (fromVal . f . hostInfo)
 
-os :: System -> Property
+os :: System -> Property HasInfo
 os system = pureInfoProperty ("Operating " ++ show system) $
 	mempty { _os = Val system }
 
@@ -34,11 +34,11 @@ getOS = askInfo _os
 -- When propellor --spin is used to deploy a host, it checks
 -- if the host's IP Property matches the DNS. If the DNS is missing or
 -- out of date, the host will instead be contacted directly by IP address.
-ipv4 :: String -> Property
+ipv4 :: String -> Property HasInfo
 ipv4 = addDNS . Address . IPv4
 
 -- | Indidate that a host has an AAAA record in the DNS.
-ipv6 :: String -> Property
+ipv6 :: String -> Property HasInfo
 ipv6 = addDNS . Address . IPv6
 
 -- | Indicates another name for the host in the DNS.
@@ -47,7 +47,7 @@ ipv6 = addDNS . Address . IPv6
 -- to use their address, rather than using a CNAME. This avoids various
 -- problems with CNAMEs, and also means that when multiple hosts have the
 -- same alias, a DNS round-robin is automatically set up.
-alias :: Domain -> Property
+alias :: Domain -> Property HasInfo
 alias d = pureInfoProperty ("alias " ++ d) $ mempty
 	{ _aliases = S.singleton d
 	-- A CNAME is added here, but the DNS setup code converts it to an
@@ -55,7 +55,7 @@ alias d = pureInfoProperty ("alias " ++ d) $ mempty
 	, _dns = S.singleton $ CNAME $ AbsDomain d
 	} 
 
-addDNS :: Record -> Property
+addDNS :: Record -> Property HasInfo
 addDNS r = pureInfoProperty (rdesc r) $ mempty { _dns = S.singleton r }
   where
 	rdesc (CNAME d) = unwords ["alias", ddesc d]
