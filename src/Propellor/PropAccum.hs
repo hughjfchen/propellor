@@ -58,17 +58,18 @@ infixl 1 !
 -- PrivData Info is propigated, so that properties used inside a
 -- PropAccum will have the necessary PrivData available.
 propigateContainer :: PropAccum container => container -> Property -> Property
-propigateContainer c prop = prop
-	{ propertyChildren = propertyChildren prop ++ hostprops
-	}
+propigateContainer c prop = mkProperty
+	(propertyDesc prop)
+	(propertySatisfy prop)
+	(propertyInfo prop)
+	(propertyChildren prop ++ hostprops)
   where
 	hostprops = map go $ getProperties c
 	go p = 
 		let i = propertyInfo p
-		in p
-			{ propertyInfo = mempty
-				{ _dns = _dns i
-				, _privData = _privData i
-				}
-			, propertyChildren = map go (propertyChildren p)
+		    i' = mempty
+			{ _dns = _dns i
+			, _privData = _privData i
 			}
+		    cs = map go (propertyChildren p)
+		in mkProperty (propertyDesc p) (propertySatisfy p) i' cs

@@ -97,7 +97,11 @@ withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 		liftIO $ showSet $
 			map (\s -> (privDataField s, Context cname, describePrivDataSource s)) srclist
 		return FailedChange
-	addinfo p = p { propertyInfo = propertyInfo p <> mempty { _privData = privset } }
+	addinfo p = mkProperty
+		(propertyDesc p)
+		(propertySatisfy p)
+		(propertyInfo p <> mempty { _privData = privset })
+		(propertyChildren p)
 	privset = S.fromList $ map (\s -> (privDataField s, describePrivDataSource s, hc)) srclist
 	fieldnames = map show fieldlist
 	fieldlist = map privDataField srclist

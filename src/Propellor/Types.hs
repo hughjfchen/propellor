@@ -1,9 +1,16 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE EmptyDataDecls #-}
 
 module Propellor.Types
 	( Host(..)
 	, Property(..)
+	, mkProperty
+	, propertyDesc
+	, propertySatisfy
+	, propertyInfo
+	, propertyChildren
 	, RevertableProperty(..)
 	, IsProp(..)
 	, Desc
@@ -61,24 +68,49 @@ data EndAction = EndAction Desc (Result -> Propellor Result)
 -- | The core data type of Propellor, this represents a property
 -- that the system should have, and an action to ensure it has the
 -- property.
-data Property = Property
-	{ propertyDesc :: Desc
-	, propertySatisfy :: Propellor Result
-	-- ^ must be idempotent; may run repeatedly
-	, propertyInfo :: Info
-	-- ^ info associated with the property
-	, propertyChildren :: [Property]
-	-- ^ A property can include a list of child properties.
-	-- This allows them to be introspected to collect their info,
-	-- etc.
-	--
-	-- Note that listing Properties here does not ensure that
-	-- their propertySatisfy is run when satisfying the parent
-	-- property; it's up to the parent's propertySatisfy to do that.
-	}
+data Property = IProperty (GProperty HasInfo) | SProperty (GProperty NoInfo)
+
+-- | Constructs a Property
+mkProperty 
+	:: Desc -- ^ description of the property
+	-> Propellor Result -- ^ action to run to satisfy the property (must be idempotent; may run repeatedly)
+	-> Info -- ^ info associated with the property
+	-> [Property] -- ^ child properties
+	-> Property
+mkProperty d a i cs
+	| isEmpty i && all isEmpty (map propertyInfo cs) = 
+		SProperty (GSProperty d a cs)
+	| otherwise = IProperty (GIProperty d a i cs)
 
 instance Show Property where
-	show p = "property " ++ show (propertyDesc p)
+        show p = "property " ++ show (propertyDesc p)
+
+-- | This GADT allows creating operations that only act on Properties
+-- that do not add Info to their Host.
+data GProperty i where
+	GIProperty :: Desc -> Propellor Result -> Info -> [Property] -> GProperty HasInfo
+	GSProperty :: Desc -> Propellor Result -> [Property] -> GProperty NoInfo
+
+data HasInfo
+data NoInfo
+
+propertyDesc :: Property -> Desc
+propertyDesc (IProperty (GIProperty d _ _ _)) = d
+propertyDesc (SProperty (GSProperty d _ _)) = d
+
+propertySatisfy :: Property -> Propellor Result
+propertySatisfy (IProperty (GIProperty _ a _ _)) = a
+propertySatisfy (SProperty (GSProperty _ a _)) = a
+
+propertyInfo :: Property -> Info
+propertyInfo (IProperty (GIProperty _ _ i _)) = i
+propertyInfo (SProperty _) = mempty
+
+-- | A Property can include a list of child properties that it also
+-- satisfies. This allows them to be introspected to collect their info, etc.
+propertyChildren :: Property -> [Property]
+propertyChildren (IProperty (GIProperty _ _ _ cs)) = cs
+propertyChildren (SProperty (GSProperty _ _ cs)) = cs
 
 -- | A property that can be reverted.
 data RevertableProperty = RevertableProperty Property Property
@@ -95,17 +127,22 @@ class IsProp p where
 	getInfoRecursive :: p -> Info
 
 instance IsProp Property where
-	describe p d = p { propertyDesc = d }
+	describe (IProperty (GIProperty _ a i cs)) d = 
+		IProperty (GIProperty d a i cs)
+	describe (SProperty (GSProperty _ a cs)) d =
+		SProperty (GSProperty d a cs)
 	toProp p = p
-	getInfoRecursive p = propertyInfo p <> mconcat (map getInfoRecursive (propertyChildren p))
-	x `requires` y = x 
-		{ propertySatisfy = do
+	getInfoRecursive (IProperty (GIProperty _ _ i cs)) = 
+		i <> mconcat (map getInfoRecursive cs)
+	getInfoRecursive (SProperty _) = mempty
+	x `requires` y = mkProperty (propertyDesc x) satisfy (propertyInfo x) cs
+	  where
+		satisfy = do
 			r <- propertySatisfy y
 			case r of
 				FailedChange -> return FailedChange
 				_ -> propertySatisfy x
-		, propertyChildren = y : propertyChildren x
-		}
+		cs = y : propertyChildren x
 
 instance IsProp RevertableProperty where
 	-- | Sets the description of both sides.

@@ -137,7 +137,11 @@ docked ctr@(Container _ h) = RevertableProperty
 propigateContainerInfo :: Container -> Property -> Property
 propigateContainerInfo ctr@(Container _ h) p = propigateContainer ctr p'
   where
-	p' = p { propertyInfo = propertyInfo p <> dockerinfo }
+	p' = mkProperty
+		(propertyDesc p)
+		(propertySatisfy p)
+		(propertyInfo p <> dockerinfo)
+		(propertyChildren p)
 	dockerinfo = dockerInfo $
 		mempty { _dockerContainers = M.singleton (hostName h) h }
 

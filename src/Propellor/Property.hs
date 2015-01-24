@@ -16,19 +16,19 @@ import Utility.Monad
 
 -- Constructs a Property.
 property :: Desc -> Propellor Result -> Property
-property d s = Property d s mempty mempty
+property d s = mkProperty d s mempty mempty
 
 -- | Combines a list of properties, resulting in a single property
 -- that when run will run each property in the list in turn,
 -- and print out the description of each as it's run. Does not stop
 -- on failure; does propigate overall success/failure.
 propertyList :: Desc -> [Property] -> Property
-propertyList desc ps = Property desc (ensureProperties ps) mempty ps
+propertyList desc ps = mkProperty desc (ensureProperties ps) mempty ps
 
 -- | Combines a list of properties, resulting in one property that
 -- ensures each in turn. Stops if a property fails.
 combineProperties :: Desc -> [Property] -> Property
-combineProperties desc ps = Property desc (go ps NoChange) mempty ps
+combineProperties desc ps = mkProperty desc (go ps NoChange) mempty ps
   where
 	go [] rs = return rs
 	go (l:ls) rs = do
@@ -67,16 +67,16 @@ flagFile' p getflagfile = adjustProperty p $ \satisfy -> do
 --- | Whenever a change has to be made for a Property, causes a hook
 -- Property to also be run, but not otherwise.
 onChange :: Property -> Property -> Property
-p `onChange` hook = p
-	{ propertySatisfy = do
+p `onChange` hook = mkProperty (propertyDesc p) satisfy (propertyInfo p) cs
+  where
+	satisfy = do
 		r <- ensureProperty p
 		case r of
 			MadeChange -> do
 				r' <- ensureProperty hook
 				return $ r <> r'
 			_ -> return r
-	, propertyChildren = propertyChildren p ++ [hook]
-	}
+	cs = propertyChildren p ++ [hook]
 
 (==>) :: Desc -> Property -> Property
 (==>) = flip describe
@@ -92,10 +92,11 @@ check c p = adjustProperty p $ \satisfy -> ifM (liftIO c)
 -- | Tries the first property, but if it fails to work, instead uses
 -- the second.
 fallback :: Property -> Property -> Property
-fallback p1 p2 = p1' { propertyChildren = p2 : propertyChildren p1' }
+fallback p1 p2 = mkProperty (propertyDesc p1) satisfy (propertyInfo p1) cs
   where
-	p1' = adjustProperty p1 $ \satisfy -> do
-		r <- satisfy
+	cs = p2 : propertyChildren p1
+	satisfy = do
+		r <- propertySatisfy p1
 		if r == FailedChange
 			then propertySatisfy p2
 			else return r
@@ -129,7 +130,11 @@ revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
 -- | Changes the action that is performed to satisfy a property. 
 adjustProperty :: Property -> (Propellor Result -> Propellor Result) -> Property
-adjustProperty p f = p { propertySatisfy = f (propertySatisfy p) }
+adjustProperty p f = mkProperty
+	(propertyDesc p)
+	(f (propertySatisfy p))
+	(propertyInfo p)
+	(propertyChildren p)
 
 makeChange :: IO () -> Propellor Result
 makeChange a = liftIO a >> return MadeChange

@@ -80,7 +80,11 @@ provisioned' propigator c@(Chroot loc system builderconf _) systemdonly = Revert
 propigateChrootInfo :: Chroot -> Property -> Property
 propigateChrootInfo c p = propigateContainer c p'
   where
-	p' = p { propertyInfo = propertyInfo p <> chrootInfo c }
+	p' = mkProperty
+		(propertyDesc p)
+		(propertySatisfy p)
+		(propertyInfo p <> chrootInfo c)
+		(propertyChildren p)
 
 chrootInfo :: Chroot -> Info
 chrootInfo (Chroot loc _ _ h) =

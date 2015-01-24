@@ -1,4 +1,5 @@
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE GADTs #-}
 
 module Propellor.Engine (
 	mainProperties,
@@ -35,7 +36,7 @@ import Utility.Monad
 mainProperties :: Host -> IO ()
 mainProperties host = do
 	ret <- runPropellor host $
-		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) mempty mempty]
+		ensureProperties [mkProperty "overall" (ensureProperties ps) mempty mempty]
 	h <- mkMessageHandle
         whenConsole h $
 		setTitle "propellor: done"
@@ -43,6 +44,8 @@ mainProperties host = do
 	case ret of
 		FailedChange -> exitWith (ExitFailure 1)
 		_ -> exitWith ExitSuccess
+  where
+	ps = hostProperties host
 
 -- | Runs a Propellor action with the specified host.
 --
