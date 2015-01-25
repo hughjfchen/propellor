@@ -16,3 +16,6 @@ a mouthful!
 Since only 2 places in the propellor source code currently need to deal
 with this, it doesn't currently seem worth making the change, unless a less
 intrusive way can be found.
+
+Hmm, if RevertableProperty were made a constructor in the Property GADT,
+this would need to be done, and that would also allow for 
