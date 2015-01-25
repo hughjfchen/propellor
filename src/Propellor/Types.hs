@@ -18,6 +18,7 @@ module Propellor.Types
 	, simpleProperty
 	, adjustPropertySatisfy
 	, propertyInfo
+	, propertyDesc
 	, propertyChildren
 	, RevertableProperty(..)
 	, (<!>)
@@ -144,9 +145,7 @@ propertySatisfy :: Property i -> Propellor Result
 propertySatisfy (IProperty _ a _ _) = a
 propertySatisfy (SProperty _ a _) = a
 
-instance Show (Property NoInfo) where
-        show p = "property " ++ show (propertyDesc p)
-instance Show (Property HasInfo) where
+instance Show (Property i) where
         show p = "property " ++ show (propertyDesc p)
 
 -- | Changes the action that is performed to satisfy a property. 
@@ -157,6 +156,10 @@ adjustPropertySatisfy (SProperty d s cs) f = SProperty d (f s) cs
 propertyInfo :: Property i -> Info
 propertyInfo (IProperty _ _ i _) = i
 propertyInfo (SProperty {}) = mempty
+
+propertyDesc :: Property i -> Desc
+propertyDesc (IProperty d _ _ _) = d
+propertyDesc (SProperty d _ _) = d
 
 -- | A Property can include a list of child properties that it also
 -- satisfies. This allows them to be introspected to collect their info, etc.
@@ -175,24 +178,24 @@ p1 <!> p2 = RevertableProperty (toIProperty p1) (toIProperty p2)
 class IsProp p where
 	-- | Sets description.
 	describe :: p -> Desc -> p
-	propertyDesc :: p -> Desc
 	toProp :: p -> Property HasInfo
 	toSimpleProp :: p -> Maybe (Property NoInfo)
+	getDesc :: p -> Desc
 	-- | Gets the info of the property, combined with all info
 	-- of all children properties.
 	getInfoRecursive :: p -> Info
 
 instance IsProp (Property HasInfo) where
 	describe (IProperty _ a i cs) d = IProperty d a i cs
-	propertyDesc (IProperty d _ _ _) = d
 	toProp = id
 	toSimpleProp _ = Nothing
+	getDesc = propertyDesc
 	getInfoRecursive (IProperty _ _ i cs) = 
 		i <> mconcat (map getInfoRecursive cs)
 instance IsProp (Property NoInfo) where
 	describe (SProperty _ a cs) d = SProperty d a cs
-	propertyDesc (SProperty d _ _) = d
 	toProp = toIProperty
+	getDesc = propertyDesc
 	toSimpleProp = Just
 	getInfoRecursive _ = mempty
 
@@ -200,7 +203,7 @@ instance IsProp RevertableProperty where
 	-- | Sets the description of both sides.
 	describe (RevertableProperty p1 p2) d = 
 		RevertableProperty (describe p1 d) (describe p2 ("not " ++ d))
-	propertyDesc (RevertableProperty p1 _) = propertyDesc p1
+	getDesc (RevertableProperty p1 _) = getDesc p1
 	toProp (RevertableProperty p1 _) = p1
 	toSimpleProp = toSimpleProp . toProp
 	-- | Return the Info of the currently active side.
@@ -223,7 +226,7 @@ class Combines x y where
 -- that ensures the first, and if the first succeeds, ensures the second.
 -- The property uses the description of the first property.
 before :: (IsProp x, Combines y x, IsProp (CombinedType y x)) => x -> y -> CombinedType y x
-before x y = (y `requires` x) `describe` (propertyDesc x)
+before x y = (y `requires` x) `describe` (getDesc x)
 
 -- | Combines together two properties, yielding a property that
 -- has the description and info of the first, and that has the second
