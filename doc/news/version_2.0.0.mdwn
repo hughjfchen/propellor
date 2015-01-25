@@ -1,0 +1,25 @@
+propellor 2.0.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Property has been converted to a GADT, and will be Property NoInfo
+     or Property HasInfo.
+     This was done to make sure that ensureProperty is only used on
+     properties that do not have Info.
+     Transition guide:
+     - Change all "Property" to "Property NoInfo" or "Property WithInfo"
+       (The compiler can tell you if you got it wrong!)
+     - To construct a RevertableProperty, it is useful to use the new
+       (&lt;!&gt;) operator
+     - Constructing a list of properties can be problimatic, since
+       Property NoInto and Property WithInfo are different types and cannot
+       appear in the same list. To deal with this, "props" has been added,
+       and can built up a list of properties of different types,
+       using the same (&amp;) and (!) operators that are used to build
+       up a host's properties.
+   * Add descriptions of how to set missing fields to --list-fields output.
+   * Properties now form a tree, instead of the flat list used before.
+     This includes the properties used inside a container.
+   * Fix info propagation from fallback combinator's second Property.
+   * Added systemd configuration properties.
+   * Added journald configuration properties.
+   * Added more network interface configuration properties.
+   * Implemented OS.preserveNetwork."""]]
