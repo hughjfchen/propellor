@@ -2,7 +2,7 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Source: native package
 
 Files: *
-Copyright: © 2010-2014 Joey Hess <id@joeyh.name> and contributors
+Copyright: © 2010-2015 Joey Hess <id@joeyh.name> and contributors
 License: BSD-2-clause
 
 License: BSD-2-clause
