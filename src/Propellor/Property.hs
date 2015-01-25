@@ -43,8 +43,8 @@ flagFile' p getflagfile = adjustPropertySatisfy p $ \satisfy -> do
 onChange
 	:: (Combines (Property x) (Property y))
 	=> Property x
-        => Property y
-        => CombinedType (Property x) (Property y)
+        -> Property y
+        -> CombinedType (Property x) (Property y)
 onChange = combineWith $ \p hook -> do
 	r <- p
 	case r of
