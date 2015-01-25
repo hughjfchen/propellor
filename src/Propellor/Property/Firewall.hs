@@ -22,10 +22,10 @@ import Utility.SafeCommand
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
 
-installed :: Property
+installed :: Property NoInfo
 installed = Apt.installed ["iptables"]
 
-rule :: Chain -> Target -> Rules -> Property
+rule :: Chain -> Target -> Rules -> Property NoInfo
 rule c t rs = property ("firewall rule: " <> show r) addIpTable
   where
 	r = Rule c t rs

@@ -58,7 +58,7 @@ import Data.List
 -- In either case, the secondary dns server Host should have an ipv4 and/or
 -- ipv6 property defined.
 primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
-primary hosts domain soa rs = RevertableProperty setup cleanup
+primary hosts domain soa rs = setup <!> cleanup
   where
 	setup = setupPrimary zonefile id hosts domain soa rs
 		`onChange` Service.reloaded "bind9"
@@ -67,7 +67,7 @@ primary hosts domain soa rs = RevertableProperty setup cleanup
 
 	zonefile = "/etc/bind/propellor/db." ++ domain
 
-setupPrimary :: FilePath -> (FilePath -> FilePath) -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property
+setupPrimary :: FilePath -> (FilePath -> FilePath) -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property HasInfo
 setupPrimary zonefile mknamedconffile hosts domain soa rs = 
 	withwarnings baseprop
 		`requires` servingZones
@@ -77,7 +77,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 	indomain = M.elems $ M.filterWithKey (\hn _ -> inDomain domain $ AbsDomain $ hn) hostmap
 	
 	(partialzone, zonewarnings) = genZone indomain hostmap domain soa
-	baseprop = mkProperty ("dns primary for " ++ domain) satisfy
+	baseprop = infoProperty ("dns primary for " ++ domain) satisfy
 		(addNamedConf conf) []
 	satisfy = do
 		sshfps <- concat <$> mapM (genSSHFP domain) (M.elems hostmap)
@@ -87,7 +87,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 			( makeChange $ writeZoneFile zone zonefile
 			, noChange
 			)
-	withwarnings p = adjustProperty p $ \a -> do
+	withwarnings p = adjustPropertySatisfy p $ \a -> do
 		mapM_ warningMessage $ zonewarnings ++ secondarywarnings
 		a
 	conf = NamedConf
@@ -117,7 +117,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 				in z /= oldzone || oldserial < sSerial (zSOA zone)
 
 
-cleanupPrimary :: FilePath -> Domain -> Property
+cleanupPrimary :: FilePath -> Domain -> Property NoInfo
 cleanupPrimary zonefile domain = check (doesFileExist zonefile) $
 	property ("removed dns primary for " ++ domain)
 		(makeChange $ removeZoneFile zonefile)
@@ -150,13 +150,14 @@ cleanupPrimary zonefile domain = check (doesFileExist zonefile) $
 -- want to later disable DNSSEC you will need to adjust the serial number
 -- passed to mkSOA to ensure it is larger.
 signedPrimary :: Recurrance -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
-signedPrimary recurrance hosts domain soa rs = RevertableProperty setup cleanup
+signedPrimary recurrance hosts domain soa rs = setup <!> cleanup
   where
-	setup = combineProperties ("dns primary for " ++ domain ++ " (signed)")
-		[ setupPrimary zonefile signedZoneFile hosts domain soa rs'
-		, toProp (zoneSigned domain zonefile)
-		, forceZoneSigned domain zonefile `period` recurrance
-		]
+	setup = combineProperties ("dns primary for " ++ domain ++ " (signed)") 
+		(props
+			& setupPrimary zonefile signedZoneFile hosts domain soa rs'
+			& zoneSigned domain zonefile
+			& forceZoneSigned domain zonefile `period` recurrance
+		)
 		`onChange` Service.reloaded "bind9"
 	
 	cleanup = cleanupPrimary zonefile domain
@@ -186,7 +187,7 @@ secondary hosts domain = secondaryFor (otherServers Master hosts domain) hosts d
 -- | This variant is useful if the primary server does not have its DNS
 -- configured via propellor.
 secondaryFor :: [HostName] -> [Host] -> Domain -> RevertableProperty
-secondaryFor masters hosts domain = RevertableProperty setup cleanup
+secondaryFor masters hosts domain = setup <!> cleanup
   where
 	setup = pureInfoProperty desc (addNamedConf conf)
 		`requires` servingZones
@@ -214,12 +215,12 @@ otherServers wantedtype hosts domain =
 -- | Rewrites the whole named.conf.local file to serve the zones
 -- configured by `primary` and `secondary`, and ensures that bind9 is
 -- running.
-servingZones :: Property
+servingZones :: Property NoInfo
 servingZones = namedConfWritten
 	`onChange` Service.reloaded "bind9"
 	`requires` Apt.serviceInstalledRunning "bind9"
 
-namedConfWritten :: Property
+namedConfWritten :: Property NoInfo
 namedConfWritten = property "named.conf configured" $ do
 	zs <- getNamedConf
 	ensureProperty $

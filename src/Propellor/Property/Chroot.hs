@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Propellor.Property.Chroot (
 	Chroot(..),
 	BuilderConf(..),
@@ -59,12 +61,13 @@ debootstrapped system conf location = case system of
 provisioned :: Chroot -> RevertableProperty
 provisioned c = provisioned' (propigateChrootInfo c) c False
 
-provisioned' :: (Property -> Property) -> Chroot -> Bool -> RevertableProperty
-provisioned' propigator c@(Chroot loc system builderconf _) systemdonly = RevertableProperty
+provisioned' :: (Property HasInfo -> Property HasInfo) -> Chroot -> Bool -> RevertableProperty
+provisioned' propigator c@(Chroot loc system builderconf _) systemdonly =
 	(propigator $ go "exists" setup)
+		<!>
 	(go "removed" teardown)
   where
-	go desc a = property (chrootDesc c desc) $ ensureProperties [a]
+	go desc a = propertyList (chrootDesc c desc) [a]
 
 	setup = propellChroot c (inChrootProcess c) systemdonly
 		`requires` toProp built
@@ -77,10 +80,10 @@ provisioned' propigator c@(Chroot loc system builderconf _) systemdonly = Revert
 
 	teardown = toProp (revert built)
 
-propigateChrootInfo :: Chroot -> Property -> Property
+propigateChrootInfo :: (IsProp (Property i)) => Chroot -> Property i -> Property HasInfo
 propigateChrootInfo c p = propigateContainer c p'
   where
-	p' = mkProperty
+	p' = infoProperty
 		(propertyDesc p)
 		(propertySatisfy p)
 		(propertyInfo p <> chrootInfo c)
@@ -91,7 +94,7 @@ chrootInfo (Chroot loc _ _ h) =
 	mempty { _chrootinfo = mempty { _chroots = M.singleton loc h } }
 
 -- | Propellor is run inside the chroot to provision it.
-propellChroot :: Chroot -> ([String] -> CreateProcess) -> Bool -> Property
+propellChroot :: Chroot -> ([String] -> CreateProcess) -> Bool -> Property NoInfo
 propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "provisioned") $ do
 	let d = localdir </> shimdir c
 	let me = localdir </> "propellor"
@@ -148,7 +151,8 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 			r <- runPropellor h $ ensureProperties $
 				if systemdonly
 					then [Systemd.installed]
-					else hostProperties h
+					else map ignoreInfo $
+						hostProperties h
 			putStrLn $ "\n" ++ show r
 chain _ _ = errorMessage "bad chain command"
 

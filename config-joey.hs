@@ -438,13 +438,12 @@ dockerImage (System (Debian Testing) arch) = "joeyh/debian-unstable-" ++ arch
 dockerImage (System (Debian (Stable _)) arch) = "joeyh/debian-stable-" ++ arch
 dockerImage _ = "debian-stable-official" -- does not currently exist!
 
-myDnsSecondary :: Property
-myDnsSecondary = propertyList "dns secondary for all my domains" $ map toProp
-	[ Dns.secondary hosts "kitenet.net"
-	, Dns.secondary hosts "joeyh.name"
-	, Dns.secondary hosts "ikiwiki.info"
-	, Dns.secondary hosts "olduse.net"
-	]
+myDnsSecondary :: Property HasInfo
+myDnsSecondary = propertyList "dns secondary for all my domains" $ props
+	& Dns.secondary hosts "kitenet.net"
+	& Dns.secondary hosts "joeyh.name"
+	& Dns.secondary hosts "ikiwiki.info"
+	& Dns.secondary hosts "olduse.net"
 
 branchableSecondary :: RevertableProperty
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"

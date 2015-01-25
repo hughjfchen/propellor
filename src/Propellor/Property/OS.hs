@@ -65,7 +65,7 @@ import Control.Exception (throw)
 -- > & User.accountFor "joey"
 -- > & User.hasSomePassword "joey"
 -- > -- rest of system properties here
-cleanInstallOnce :: Confirmation -> Property
+cleanInstallOnce :: Confirmation -> Property NoInfo
 cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	go `requires` confirmed "clean install confirmed" confirmation
   where
@@ -89,10 +89,10 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		(Just u@(System (Ubuntu _) _)) -> debootstrap u
 		_ -> error "os is not declared to be Debian or Ubuntu"
 	
-	debootstrap targetos = ensureProperty $ toProp $
+	debootstrap targetos = ensureProperty $ fromJust $ toSimpleProp $
 		-- Ignore the os setting, and install debootstrap from
 		-- source, since we don't know what OS we're running in yet.
-		Debootstrap.built' Debootstrap.sourceInstall
+		Debootstrap.built' (toProp Debootstrap.sourceInstall)
 			newOSDir targetos Debootstrap.DefaultConfig
 		-- debootstrap, I wish it was faster.. 
 		-- TODO eatmydata to speed it up
@@ -180,7 +180,7 @@ massRename = go []
 
 data Confirmation = Confirmed HostName
 
-confirmed :: Desc -> Confirmation -> Property
+confirmed :: Desc -> Confirmation -> Property NoInfo
 confirmed desc (Confirmed c) = property desc $ do
 	hostname <- asks hostName
 	if hostname /= c
@@ -192,7 +192,7 @@ confirmed desc (Confirmed c) = property desc $ do
 -- | </etc/network/interfaces> is configured to bring up the network 
 -- interface that currently has a default route configured, using
 -- the same (static) IP address.
-preserveNetwork :: Property
+preserveNetwork :: Property NoInfo
 preserveNetwork = go `requires` Network.cleanInterfacesFile
   where
 	go = property "preserve network configuration" $ do
@@ -206,7 +206,7 @@ preserveNetwork = go `requires` Network.cleanInterfacesFile
 				return FailedChange 
 
 -- | </etc/resolv.conf> is copied from the old OS
-preserveResolvConf :: Property
+preserveResolvConf :: Property NoInfo
 preserveResolvConf = check (fileExist oldloc) $
 	property (newloc ++ " copied from old OS") $ do
 		ls <- liftIO $ lines <$> readFile oldloc
@@ -218,7 +218,7 @@ preserveResolvConf = check (fileExist oldloc) $
 -- | </root/.ssh/authorized_keys> has added to it any ssh keys that
 -- were authorized in the old OS. Any other contents of the file are
 -- retained.
-preserveRootSshAuthorized :: Property
+preserveRootSshAuthorized :: Property NoInfo
 preserveRootSshAuthorized = check (fileExist oldloc) $
 	property (newloc ++ " copied from old OS") $ do
 		ks <- liftIO $ lines <$> readFile oldloc
@@ -228,7 +228,7 @@ preserveRootSshAuthorized = check (fileExist oldloc) $
 	oldloc = oldOSDir ++ newloc
 
 -- Removes the old OS's backup from </old-os>
-oldOSRemoved :: Confirmation -> Property
+oldOSRemoved :: Confirmation -> Property NoInfo
 oldOSRemoved confirmation = check (doesDirectoryExist oldOSDir) $
 	go `requires` confirmed "old OS backup removal confirmed" confirmation
   where

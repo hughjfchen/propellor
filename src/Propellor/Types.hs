@@ -10,29 +10,29 @@
 module Propellor.Types
 	( Host(..)
 	, Desc
-	, Property(..)
+	, Property
 	, HasInfo
 	, NoInfo
-	, hasInfo
 	, CInfo
 	, infoProperty
 	, simpleProperty
-	, propertySatisfy
 	, adjustPropertySatisfy
 	, propertyInfo
 	, propertyChildren
 	, RevertableProperty(..)
 	, (<!>)
+	, IsProp(..)
 	, Combines(..)
+	, CombinedType
 	, before
 	, combineWith
-	, IsProp(..)
 	, Info(..)
 	, Propellor(..)
 	, EndAction(..)
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
 	, module Propellor.Types.Result
+	, propertySatisfy
 	, ignoreInfo
 	) where
 
@@ -75,6 +75,17 @@ newtype Propellor p = Propellor { runWithHost :: RWST Host [EndAction] () IO p }
 		, MonadCatchIO
 		)
 
+instance Monoid (Propellor Result) where
+	mempty = return NoChange
+	-- | The second action is only run if the first action does not fail.
+	mappend x y = do
+		rx <- x
+		case rx of
+			FailedChange -> return FailedChange
+			_ -> do
+				ry <- y
+				return (rx <> ry)
+
 -- | An action that Propellor runs at the end, after trying to satisfy all
 -- properties. It's passed the combined Result of the entire Propellor run.
 data EndAction = EndAction Desc (Result -> Propellor Result)
@@ -88,14 +99,12 @@ data Property i where
 	IProperty :: Desc -> Propellor Result -> Info -> [Property HasInfo] -> Property HasInfo
 	SProperty :: Desc -> Propellor Result -> [Property NoInfo] -> Property NoInfo
 
+-- | Indicates that a Property has associated Info.
 data HasInfo
+-- | Indicates that a Property does not have Info.
 data NoInfo
 
-hasInfo :: Property i -> Bool
-hasInfo (IProperty {}) = True
-hasInfo _ = False
-
--- | Type level calculation of the combintion of HasInfo and/or NoInfo
+-- | Type level calculation of the combination of HasInfo and/or NoInfo
 type family CInfo x y
 type instance CInfo HasInfo HasInfo = HasInfo
 type instance CInfo HasInfo NoInfo = HasInfo
@@ -128,14 +137,17 @@ toSProperty p@(SProperty {}) = p
 ignoreInfo :: Property i -> Property NoInfo
 ignoreInfo = toSProperty
 
+-- | Gets the action that can be run to satisfy a Property.
+-- You should never run this action directly. Use
+-- 'Propellor.Engine.ensureProperty` instead.
+propertySatisfy :: Property i -> Propellor Result
+propertySatisfy (IProperty _ a _ _) = a
+propertySatisfy (SProperty _ a _) = a
+
 instance Show (Property NoInfo) where
         show p = "property " ++ show (propertyDesc p)
 instance Show (Property HasInfo) where
         show p = "property " ++ show (propertyDesc p)
-
-propertySatisfy :: Property i -> Propellor Result
-propertySatisfy (IProperty _ a _ _) = a
-propertySatisfy (SProperty _ a _) = a
 
 -- | Changes the action that is performed to satisfy a property. 
 adjustPropertySatisfy :: Property i -> (Propellor Result -> Propellor Result) -> Property i
@@ -165,6 +177,7 @@ class IsProp p where
 	describe :: p -> Desc -> p
 	propertyDesc :: p -> Desc
 	toProp :: p -> Property HasInfo
+	toSimpleProp :: p -> Maybe (Property NoInfo)
 	-- | Gets the info of the property, combined with all info
 	-- of all children properties.
 	getInfoRecursive :: p -> Info
@@ -173,12 +186,14 @@ instance IsProp (Property HasInfo) where
 	describe (IProperty _ a i cs) d = IProperty d a i cs
 	propertyDesc (IProperty d _ _ _) = d
 	toProp = id
+	toSimpleProp _ = Nothing
 	getInfoRecursive (IProperty _ _ i cs) = 
 		i <> mconcat (map getInfoRecursive cs)
 instance IsProp (Property NoInfo) where
 	describe (SProperty _ a cs) d = SProperty d a cs
 	propertyDesc (SProperty d _ _) = d
 	toProp = toIProperty
+	toSimpleProp = Just
 	getInfoRecursive _ = mempty
 
 instance IsProp RevertableProperty where
@@ -187,10 +202,11 @@ instance IsProp RevertableProperty where
 		RevertableProperty (describe p1 d) (describe p2 ("not " ++ d))
 	propertyDesc (RevertableProperty p1 _) = propertyDesc p1
 	toProp (RevertableProperty p1 _) = p1
+	toSimpleProp = toSimpleProp . toProp
 	-- | Return the Info of the currently active side.
 	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
 
--- Type level calculation of the type that results from combining two types
+-- | Type level calculation of the type that results from combining two types
 -- with `requires`.
 type family CombinedType x y
 type instance CombinedType (Property x) (Property y) = Property (CInfo x y)
@@ -224,18 +240,18 @@ combineWith f x y = adjustPropertySatisfy (x `requires` y) $ \_ ->
 
 instance Combines (Property HasInfo) (Property HasInfo) where
 	requires (IProperty d1 a1 i1 cs1) y@(IProperty _d2 a2 _i2 _cs2) =
-		IProperty d1 (a2 `andThen` a1) i1 (y : cs1)
+		IProperty d1 (a2 <> a1) i1 (y : cs1)
 
 instance Combines (Property HasInfo) (Property NoInfo) where
 	requires (IProperty d1 a1 i1 cs1) y@(SProperty _d2 a2 _cs2) =
-		IProperty d1 (a2 `andThen` a1) i1 (toIProperty y : cs1)
+		IProperty d1 (a2 <> a1) i1 (toIProperty y : cs1)
 
 instance Combines (Property NoInfo) (Property HasInfo) where
 	requires x y = requires y x
 
 instance Combines (Property NoInfo) (Property NoInfo) where
 	requires (SProperty d1 a1  cs1) y@(SProperty _d2 a2 _cs2) =
-		SProperty d1 (a2 `andThen` a1) (y : cs1)
+		SProperty d1 (a2 <> a1) (y : cs1)
 
 instance Combines RevertableProperty (Property HasInfo) where
 	requires (RevertableProperty p1 p2) y =
@@ -251,13 +267,6 @@ instance Combines RevertableProperty RevertableProperty where
 			(x1 `requires` y1)
 			-- when reverting, run actions in reverse order
 			(y2 `requires` x2)
-
-andThen :: Propellor Result -> Propellor Result -> Propellor Result
-x `andThen` y = do
-	r <- x
-	case r of
-		FailedChange -> return FailedChange
-		_ -> y
 
 -- | Information about a host.
 data Info = Info

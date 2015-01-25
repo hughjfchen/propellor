@@ -36,7 +36,7 @@ sshBool False = "no"
 sshdConfig :: FilePath
 sshdConfig = "/etc/ssh/sshd_config"
 
-setSshdConfig :: String -> Bool -> Property
+setSshdConfig :: String -> Bool -> Property NoInfo
 setSshdConfig setting allowed = combineProperties "sshd config"
 	[ sshdConfig `File.lacksLine` (sshline $ not allowed)
 	, sshdConfig `File.containsLine` (sshline allowed)
@@ -46,10 +46,10 @@ setSshdConfig setting allowed = combineProperties "sshd config"
   where
 	sshline v = setting ++ " " ++ sshBool v
 
-permitRootLogin :: Bool -> Property
+permitRootLogin :: Bool -> Property NoInfo
 permitRootLogin = setSshdConfig "PermitRootLogin"
 
-passwordAuthentication :: Bool -> Property
+passwordAuthentication :: Bool -> Property NoInfo
 passwordAuthentication = setSshdConfig "PasswordAuthentication"
 
 dotDir :: UserName -> IO FilePath
@@ -67,13 +67,13 @@ hasAuthorizedKeys = go <=< dotFile "authorized_keys"
   where
 	go f = not . null <$> catchDefaultIO "" (readFile f)
 
-restarted :: Property
+restarted :: Property NoInfo
 restarted = Service.restarted "ssh"
 
 -- | Blows away existing host keys and make new ones.
 -- Useful for systems installed from an image that might reuse host keys.
 -- A flag file is used to only ever do this once.
-randomHostKeys :: Property
+randomHostKeys :: Property NoInfo
 randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 	`onChange` restarted
   where
@@ -90,7 +90,7 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 -- The corresponding private keys come from the privdata.
 --
 -- Any host keysthat are not in the list are removed from the host.
-hostKeys :: IsContext c => c -> [(SshKeyType, PubKeyText)] -> Property
+hostKeys :: IsContext c => c -> [(SshKeyType, PubKeyText)] -> Property HasInfo
 hostKeys ctx l = propertyList desc $ catMaybes $
 	map (\(t, pub) -> Just $ hostKey ctx t pub) l ++ [cleanup]
   where
@@ -101,19 +101,20 @@ hostKeys ctx l = propertyList desc $ catMaybes $
 	removestale b = map (File.notPresent . flip keyFile b) staletypes
 	cleanup
 		| null staletypes || null l = Nothing
-		| otherwise = Just $ property ("any other ssh host keys removed " ++ typelist staletypes) $
-			ensureProperty $
-				combineProperties desc (removestale True ++ removestale False)
-				`onChange` restarted
+		| otherwise = Just $ toProp $
+			property ("any other ssh host keys removed " ++ typelist staletypes) $
+				ensureProperty $
+					combineProperties desc (removestale True ++ removestale False)
+					`onChange` restarted
 
 -- | Installs a single ssh host key of a particular type.
 --
 -- The public key is provided to this function;
 -- the private key comes from the privdata; 
-hostKey :: IsContext c => c -> SshKeyType -> PubKeyText -> Property
+hostKey :: IsContext c => c -> SshKeyType -> PubKeyText -> Property HasInfo
 hostKey context keytype pub = combineProperties desc
 	[ pubKey keytype pub
-	, property desc $ install writeFile True pub
+	, toProp $ property desc $ install writeFile True pub
 	, withPrivData (keysrc "" (SshPrivKey keytype "")) context $ \getkey ->
 		property desc $ getkey $ install writeFileProtected False
 	]
@@ -137,7 +138,7 @@ keyFile keytype ispub = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++
 -- | Indicates the host key that is used by a Host, but does not actually
 -- configure the host to use it. Normally this does not need to be used;
 -- use 'hostKey' instead.
-pubKey :: SshKeyType -> PubKeyText -> Property
+pubKey :: SshKeyType -> PubKeyText -> Property HasInfo
 pubKey t k = pureInfoProperty ("ssh pubkey known") $
 	mempty { _sshPubKey = M.singleton t k }
 
@@ -146,7 +147,7 @@ getPubKey = asks (_sshPubKey . hostInfo)
 
 -- | Sets up a user with a ssh private key and public key pair from the
 -- PrivData.
-keyImported :: IsContext c => SshKeyType -> UserName -> c -> Property
+keyImported :: IsContext c => SshKeyType -> UserName -> c -> Property HasInfo
 keyImported keytype user context = combineProperties desc
 	[ installkey (SshPubKey keytype user) (install writeFile ".pub")
 	, installkey (SshPrivKey keytype user) (install writeFileProtected "")
@@ -179,7 +180,7 @@ fromKeyType SshEd25519 = "ed25519"
 
 -- | Puts some host's ssh public key(s), as set using 'pubKey',
 -- into the known_hosts file for a user.
-knownHost :: [Host] -> HostName -> UserName -> Property
+knownHost :: [Host] -> HostName -> UserName -> Property NoInfo
 knownHost hosts hn user = property desc $
 	go =<< fromHost hosts hn getPubKey
   where
@@ -199,7 +200,7 @@ knownHost hosts hn user = property desc $
 -- | Makes a user have authorized_keys from the PrivData
 --
 -- This removes any other lines from the file.
-authorizedKeys :: IsContext c => UserName -> c -> Property
+authorizedKeys :: IsContext c => UserName -> c -> Property HasInfo
 authorizedKeys user context = withPrivData (SshAuthorizedKeys user) context $ \get ->
 	property (user ++ " has authorized_keys") $ get $ \v -> do
 		f <- liftIO $ dotFile "authorized_keys" user
@@ -213,7 +214,7 @@ authorizedKeys user context = withPrivData (SshAuthorizedKeys user) context $ \g
 
 -- | Ensures that a user's authorized_keys contains a line.
 -- Any other lines in the file are preserved as-is.
-authorizedKey :: UserName -> String -> Property
+authorizedKey :: UserName -> String -> Property NoInfo
 authorizedKey user l = property (user ++ " has autorized_keys line " ++ l) $ do
 	f <- liftIO $ dotFile "authorized_keys" user
 	ensureProperty $
@@ -226,7 +227,7 @@ authorizedKey user l = property (user ++ " has autorized_keys line " ++ l) $ do
 --
 -- Revert to prevent it listening on a particular port.
 listenPort :: Int -> RevertableProperty
-listenPort port = RevertableProperty enable disable
+listenPort port = enable <!> disable
   where
 	portline = "Port " ++ show port
 	enable = sshdConfig `File.containsLine` portline

@@ -5,7 +5,7 @@ import Propellor.Property.File
 
 type Interface = String
 
-ifUp :: Interface -> Property
+ifUp :: Interface -> Property NoInfo
 ifUp iface = cmdProperty "ifup" [iface]
 
 -- | Resets /etc/network/interfaces to a clean and empty state,
@@ -15,7 +15,7 @@ ifUp iface = cmdProperty "ifup" [iface]
 -- This can be used as a starting point to defining other interfaces.
 --
 -- No interfaces are brought up or down by this property.
-cleanInterfacesFile :: Property
+cleanInterfacesFile :: Property NoInfo
 cleanInterfacesFile = hasContent interfacesFile
 	[ "# Deployed by propellor, do not edit."
 	, ""
@@ -38,7 +38,7 @@ cleanInterfacesFile = hasContent interfacesFile
 -- 
 -- (ipv6 addresses are not included because it's assumed they come up
 -- automatically in most situations.)
-static :: Interface -> Property
+static :: Interface -> Property NoInfo
 static iface = check (not <$> doesFileExist f) setup
 	`describe` desc
 	`requires` interfacesDEnabled
@@ -69,7 +69,7 @@ static iface = check (not <$> doesFileExist f) setup
 			_ -> Nothing
 
 -- | 6to4 ipv6 connection, should work anywhere
-ipv6to4 :: Property
+ipv6to4 :: Property NoInfo
 ipv6to4 = hasContent (interfaceDFile "sit0")
 	[ "# Deployed by propellor, do not edit."
 	, "iface sit0 inet6 static"
@@ -90,6 +90,6 @@ interfaceDFile :: Interface -> FilePath
 interfaceDFile iface = "/etc/network/interfaces.d" </> iface
 
 -- | Ensures that files in the the interfaces.d directory are used.
-interfacesDEnabled :: Property
+interfacesDEnabled :: Property NoInfo
 interfacesDEnabled = containsLine interfacesFile "source-directory interfaces.d"
 	`describe` "interfaces.d directory enabled"

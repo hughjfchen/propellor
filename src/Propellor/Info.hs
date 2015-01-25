@@ -13,7 +13,7 @@ import Data.Monoid
 import Control.Applicative
 
 pureInfoProperty :: Desc -> Info -> Property HasInfo
-pureInfoProperty desc i = mkProperty ("has " ++ desc) (return NoChange) i mempty
+pureInfoProperty desc i = infoProperty ("has " ++ desc) (return NoChange) i mempty
 
 askInfo :: (Info -> Val a) -> Propellor (Maybe a)
 askInfo f = asks (fromVal . f . hostInfo)

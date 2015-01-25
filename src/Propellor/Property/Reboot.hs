@@ -3,7 +3,7 @@ module Propellor.Property.Reboot where
 import Propellor
 import Utility.SafeCommand
 
-now :: Property
+now :: Property NoInfo
 now = cmdProperty "reboot" []
 	`describe` "reboot now"
 
@@ -14,7 +14,7 @@ now = cmdProperty "reboot" []
 --
 -- The reboot can be forced to run, which bypasses the init system. Useful
 -- if the init system might not be running for some reason.
-atEnd :: Bool -> (Result -> Bool) -> Property
+atEnd :: Bool -> (Result -> Bool) -> Property NoInfo
 atEnd force resultok = property "scheduled reboot at end of propellor run" $ do
 	endAction "rebooting" atend
 	return NoChange

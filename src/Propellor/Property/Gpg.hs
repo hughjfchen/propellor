@@ -6,7 +6,7 @@ import Utility.FileSystemEncoding
 
 import System.PosixCompat
 
-installed :: Property
+installed :: Property NoInfo
 installed = Apt.installed ["gnupg"]
 
 -- A numeric id, or a description of the key, in a form understood by gpg.
@@ -20,7 +20,7 @@ newtype GpgKeyId = GpgKeyId { getGpgKeyId :: String }
 --
 -- Recommend only using this for low-value dedicated role keys.
 -- No attempt has been made to scrub the key out of memory once it's used.
-keyImported :: GpgKeyId -> UserName -> Property
+keyImported :: GpgKeyId -> UserName -> Property HasInfo
 keyImported (GpgKeyId keyid) user = flagFile' prop genflag
 	`requires` installed
   where

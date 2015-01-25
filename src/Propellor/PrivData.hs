@@ -1,4 +1,5 @@
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Propellor.PrivData (
 	withPrivData,
@@ -60,29 +61,29 @@ import Utility.Table
 -- being used, which is necessary to ensure that the privdata is sent to
 -- the remote host by propellor.
 withPrivData
-	:: (IsContext c, IsPrivDataSource s)
+	:: (IsContext c, IsPrivDataSource s, IsProp (Property i))
 	=> s
 	-> c
-	-> (((PrivData -> Propellor Result) -> Propellor Result) -> Property)
-	-> Property
+	-> (((PrivData -> Propellor Result) -> Propellor Result) -> Property i)
+	-> Property HasInfo
 withPrivData s = withPrivData' snd [s]
 
 -- Like withPrivData, but here any one of a list of PrivDataFields can be used.
 withSomePrivData
-	:: (IsContext c, IsPrivDataSource s)
+	:: (IsContext c, IsPrivDataSource s, IsProp (Property i))
 	=> [s]
 	-> c
-	-> ((((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Property)
-	-> Property
+	-> ((((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Property i)
+	-> Property HasInfo
 withSomePrivData = withPrivData' id
 
 withPrivData' 
-	:: (IsContext c, IsPrivDataSource s)
+	:: (IsContext c, IsPrivDataSource s, IsProp (Property i))
 	=> ((PrivDataField, PrivData) -> v)
 	-> [s]
 	-> c
-	-> (((v -> Propellor Result) -> Propellor Result) -> Property)
-	-> Property
+	-> (((v -> Propellor Result) -> Propellor Result) -> Property i)
+	-> Property HasInfo
 withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 	maybe missing (a . feed) =<< getM get fieldlist
   where
@@ -97,7 +98,7 @@ withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 		liftIO $ showSet $
 			map (\s -> (privDataField s, Context cname, describePrivDataSource s)) srclist
 		return FailedChange
-	addinfo p = mkProperty
+	addinfo p = infoProperty
 		(propertyDesc p)
 		(propertySatisfy p)
 		(propertyInfo p <> mempty { _privData = privset })
@@ -113,7 +114,7 @@ showSet l = forM_ l $ \(f, Context c, md) -> do
 	maybe noop (\d -> putStrLn $ "    " ++ d) md
 	putStrLn ""
 
-addPrivData :: (PrivDataField, Maybe PrivDataSourceDesc, HostContext) -> Property
+addPrivData :: (PrivDataField, Maybe PrivDataSourceDesc, HostContext) -> Property HasInfo
 addPrivData v = pureInfoProperty (show v) $
 	mempty { _privData = S.singleton v }
 

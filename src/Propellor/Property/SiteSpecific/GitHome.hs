@@ -6,7 +6,7 @@ import Propellor.Property.User
 import Utility.SafeCommand
 
 -- | Clones Joey Hess's git home directory, and runs its fixups script.
-installedFor :: UserName -> Property
+installedFor :: UserName -> Property NoInfo
 installedFor user = check (not <$> hasGitDir user) $ 
 	property ("githome " ++ user) (go =<< liftIO (homedir user))
 		`requires` Apt.installed ["git"]

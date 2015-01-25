@@ -16,6 +16,15 @@ import Propellor.Property
 host :: HostName -> Host
 host hn = Host hn [] mempty
 
+-- | Starts accumulating a list of properties.
+--
+-- > propertyList "foo" $ props
+-- > 	& someproperty
+-- > 	! oldproperty
+-- > 	& otherproperty
+props :: PropList
+props = PropList []
+
 -- | Something that can accumulate properties.
 class PropAccum h where
 	-- | Adds a property.
@@ -23,13 +32,10 @@ class PropAccum h where
 	-- Can add Properties and RevertableProperties
 	(&) :: IsProp p => h -> p -> h
 
-	-- | Like (&), but adds the property as the
-	-- first property of the host. Normally, property
-	-- order should not matter, but this is useful
-	-- when it does.
+	-- | Like (&), but adds the property at the front of the list.
 	(&^) :: IsProp p => h -> p -> h
 
-	getProperties :: h -> [Property]
+	getProperties :: h -> [Property HasInfo]
 
 instance PropAccum Host where
 	(Host hn ps is) &  p = Host hn (ps ++ [toProp p])
@@ -37,6 +43,13 @@ instance PropAccum Host where
 	(Host hn ps is) &^ p = Host hn ([toProp p] ++ ps)
 		(getInfoRecursive p <> is)
 	getProperties = hostProperties
+
+data PropList = PropList [Property HasInfo]
+
+instance PropAccum PropList where
+	PropList l &  p = PropList (l ++ [toProp p])
+	PropList l &^ p = PropList ([toProp p] ++ l)
+	getProperties (PropList l) = l
 
 -- | Adds a property in reverted form.
 (!) :: PropAccum h => h -> RevertableProperty -> h
@@ -57,8 +70,12 @@ infixl 1 !
 --
 -- PrivData Info is propigated, so that properties used inside a
 -- PropAccum will have the necessary PrivData available.
-propigateContainer :: PropAccum container => container -> Property -> Property
-propigateContainer c prop = mkProperty
+propigateContainer
+	:: (PropAccum container)
+	=> container
+	-> Property HasInfo
+	-> Property HasInfo
+propigateContainer c prop = infoProperty
 	(propertyDesc prop)
 	(propertySatisfy prop)
 	(propertyInfo prop)
@@ -72,4 +89,4 @@ propigateContainer c prop = mkProperty
 			, _privData = _privData i
 			}
 		    cs = map go (propertyChildren p)
-		in mkProperty (propertyDesc p) (propertySatisfy p) i' cs
+		in infoProperty (propertyDesc p) (propertySatisfy p) i' cs

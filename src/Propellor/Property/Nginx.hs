@@ -9,7 +9,7 @@ import System.Posix.Files
 type ConfigFile = [String]
 
 siteEnabled :: HostName -> ConfigFile -> RevertableProperty
-siteEnabled hn cf = RevertableProperty enable disable
+siteEnabled hn cf = enable <!> disable
   where
 	enable = check test prop
 		`describe` ("nginx site enabled " ++ hn)
@@ -27,7 +27,7 @@ siteEnabled hn cf = RevertableProperty enable disable
 		`requires` installed
 		`onChange` reloaded
 
-siteAvailable :: HostName -> ConfigFile -> Property
+siteAvailable :: HostName -> ConfigFile -> Property NoInfo
 siteAvailable hn cf = ("nginx site available " ++ hn) ==>
 	siteCfg hn `File.hasContent` (comment : cf)
   where
@@ -42,11 +42,11 @@ siteVal hn = "/etc/nginx/sites-enabled/" ++ hn
 siteValRelativeCfg :: HostName -> FilePath
 siteValRelativeCfg hn = "../sites-available/" ++ hn
 
-installed :: Property
+installed :: Property NoInfo
 installed = Apt.installed ["nginx"]
 
-restarted :: Property
+restarted :: Property NoInfo
 restarted = Service.restarted "nginx"
 
-reloaded :: Property
+reloaded :: Property NoInfo
 reloaded = Service.reloaded "nginx"

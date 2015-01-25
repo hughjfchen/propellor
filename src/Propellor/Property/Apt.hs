@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Propellor.Property.Apt where
 
 import Data.Maybe
@@ -77,36 +79,36 @@ securityUpdates suite
 --
 -- Since the CDN is sometimes unreliable, also adds backup lines using
 -- kernel.org.
-stdSourcesList :: Property
+stdSourcesList :: Property NoInfo
 stdSourcesList = withOS ("standard sources.list") $ \o ->
 	case o of
 		(Just (System (Debian suite) _)) ->
 			ensureProperty $ stdSourcesListFor suite
 		_ -> error "os is not declared to be Debian"
 
-stdSourcesListFor :: DebianSuite -> Property
+stdSourcesListFor :: DebianSuite -> Property NoInfo
 stdSourcesListFor suite = stdSourcesList' suite []
 
 -- | Adds additional sources.list generators.
 --
 -- Note that if a Property needs to enable an apt source, it's better
 -- to do so via a separate file in </etc/apt/sources.list.d/>
-stdSourcesList' :: DebianSuite -> [SourcesGenerator] -> Property
+stdSourcesList' :: DebianSuite -> [SourcesGenerator] -> Property NoInfo
 stdSourcesList' suite more = setSourcesList
 	(concatMap (\gen -> gen suite) generators)
 	`describe` ("standard sources.list for " ++ show suite)
   where
 	generators = [debCdn, kernelOrg, securityUpdates] ++ more
 
-setSourcesList :: [Line] -> Property
+setSourcesList :: [Line] -> Property NoInfo
 setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
 
-setSourcesListD :: [Line] -> FilePath -> Property
+setSourcesListD :: [Line] -> FilePath -> Property NoInfo
 setSourcesListD ls basename = f `File.hasContent` ls `onChange` update
   where
 	f = "/etc/apt/sources.list.d/" ++ basename ++ ".list"
 
-runApt :: [String] -> Property
+runApt :: [String] -> Property NoInfo
 runApt ps = cmdProperty' "apt-get" ps noninteractiveEnv
 
 noninteractiveEnv :: [(String, String)]
@@ -115,26 +117,26 @@ noninteractiveEnv =
 		, ("APT_LISTCHANGES_FRONTEND", "none")
 		]
 
-update :: Property
+update :: Property NoInfo
 update = runApt ["update"]
 	`describe` "apt update"
 
-upgrade :: Property
+upgrade :: Property NoInfo
 upgrade = runApt ["-y", "dist-upgrade"]
 	`describe` "apt dist-upgrade"
 
 type Package = String
 
-installed :: [Package] -> Property
+installed :: [Package] -> Property NoInfo
 installed = installed' ["-y"]
 
-installed' :: [String] -> [Package] -> Property
+installed' :: [String] -> [Package] -> Property NoInfo
 installed' params ps = robustly $ check (isInstallable ps) go
 	`describe` (unwords $ "apt installed":ps)
   where
 	go = runApt $ params ++ ["install"] ++ ps
 
-installedBackport :: [Package] -> Property
+installedBackport :: [Package] -> Property NoInfo
 installedBackport ps = trivial $ withOS desc $ \o -> case o of
 	Nothing -> error "cannot install backports; os not declared"
 	(Just (System (Debian suite) _)) -> case backportSuite suite of
@@ -147,16 +149,16 @@ installedBackport ps = trivial $ withOS desc $ \o -> case o of
 	notsupported o = error $ "backports not supported on " ++ show o
 
 -- | Minimal install of package, without recommends.
-installedMin :: [Package] -> Property
+installedMin :: [Package] -> Property NoInfo
 installedMin = installed' ["--no-install-recommends", "-y"]
 
-removed :: [Package] -> Property
+removed :: [Package] -> Property NoInfo
 removed ps = check (or <$> isInstalled' ps) go
 	`describe` (unwords $ "apt removed":ps)
   where
 	go = runApt $ ["-y", "remove"] ++ ps
 
-buildDep :: [Package] -> Property
+buildDep :: [Package] -> Property NoInfo
 buildDep ps = robustly go
 	`describe` (unwords $ "apt build-dep":ps)
   where
@@ -165,7 +167,7 @@ buildDep ps = robustly go
 -- | Installs the build deps for the source package unpacked
 -- in the specifed directory, with a dummy package also
 -- installed so that autoRemove won't remove them.
-buildDepIn :: FilePath -> Property
+buildDepIn :: FilePath -> Property NoInfo
 buildDepIn dir = go `requires` installedMin ["devscripts", "equivs"]
   where
 	go = cmdProperty' "sh" ["-c", "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"]
@@ -173,11 +175,13 @@ buildDepIn dir = go `requires` installedMin ["devscripts", "equivs"]
 
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
-robustly :: Property -> Property
-robustly p = adjustProperty p $ \satisfy -> do
+robustly :: (Combines (Property i) (Property NoInfo)) => Property i -> Property i
+robustly p = adjustPropertySatisfy p $ \satisfy -> do
 	r <- satisfy
 	if r == FailedChange
-		then ensureProperty $ p `requires` update
+		-- Safe to use ignoreInfo because we're re-running
+		-- the same property.
+		then ensureProperty $ ignoreInfo $ p `requires` update
 		else return r
 
 isInstallable :: [Package] -> IO Bool
@@ -203,13 +207,13 @@ isInstalled' ps = catMaybes . map parse . lines <$> policy
 		environ <- addEntry "LANG" "C" <$> getEnvironment
 		readProcessEnv "apt-cache" ("policy":ps) (Just environ)
 
-autoRemove :: Property
+autoRemove :: Property NoInfo
 autoRemove = runApt ["-y", "autoremove"]
 	`describe` "apt autoremove"
 
 -- | Enables unattended upgrades. Revert to disable.
 unattendedUpgrades :: RevertableProperty
-unattendedUpgrades = RevertableProperty enable disable
+unattendedUpgrades = enable <!> disable
   where
 	enable = setup True
 		`before` Service.running "cron"
@@ -237,7 +241,7 @@ unattendedUpgrades = RevertableProperty enable disable
 
 -- | Preseeds debconf values and reconfigures the package so it takes
 -- effect.
-reConfigure :: Package -> [(String, String, String)] -> Property
+reConfigure :: Package -> [(String, String, String)] -> Property NoInfo
 reConfigure package vals = reconfigure `requires` setselections
 	`describe` ("reconfigure " ++ package)
   where
@@ -253,7 +257,7 @@ reConfigure package vals = reconfigure `requires` setselections
 --
 -- Assumes that there is a 1:1 mapping between service names and apt
 -- package names.
-serviceInstalledRunning :: Package -> Property
+serviceInstalledRunning :: Package -> Property NoInfo
 serviceInstalledRunning svc = Service.running svc `requires` installed [svc]
 
 data AptKey = AptKey
@@ -262,7 +266,7 @@ data AptKey = AptKey
 	}
 
 trustsKey :: AptKey -> RevertableProperty
-trustsKey k = RevertableProperty trust untrust
+trustsKey k = trust <!> untrust
   where
 	desc = "apt trusts key " ++ keyname k
 	f = "/etc/apt/trusted.gpg.d" </> keyname k ++ ".gpg"
@@ -276,6 +280,6 @@ trustsKey k = RevertableProperty trust untrust
 
 -- | Cleans apt's cache of downloaded packages to avoid using up disk
 -- space.
-cacheCleaned :: Property
+cacheCleaned :: Property NoInfo
 cacheCleaned = trivial $ cmdProperty "apt-get" ["clean"]
 	`describe` "apt cache cleaned"

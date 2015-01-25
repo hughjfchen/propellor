@@ -6,7 +6,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.User as User
 
 -- Clean up a system as installed by cloudatcost.com
-decruft :: Property
+decruft :: Property NoInfo
 decruft = propertyList "cloudatcost cleanup"
 	[ Hostname.sane
 	, "worked around grub/lvm boot bug #743126" ==>

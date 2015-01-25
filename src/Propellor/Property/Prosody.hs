@@ -11,7 +11,7 @@ type ConfigFile = [String]
 type Conf = String
 
 confEnabled :: Conf -> ConfigFile -> RevertableProperty
-confEnabled conf cf = RevertableProperty enable disable
+confEnabled conf cf = enable <!> disable
   where
 	enable = check test prop
 		`describe` ("prosody conf enabled " ++ conf)
@@ -30,7 +30,7 @@ confEnabled conf cf = RevertableProperty enable disable
 		`requires` installed
 		`onChange` reloaded
 
-confAvailable :: Conf -> ConfigFile -> Property
+confAvailable :: Conf -> ConfigFile -> Property NoInfo
 confAvailable conf cf = ("prosody conf available " ++ conf) ==>
 	confAvailPath conf `File.hasContent` (comment : cf)
   where
@@ -42,11 +42,11 @@ confAvailPath conf = "/etc/prosody/conf.avail" </> conf <.> "cfg.lua"
 confValPath :: Conf -> FilePath
 confValPath conf = "/etc/prosody/conf.d" </> conf <.> "cfg.lua"
 
-installed :: Property
+installed :: Property NoInfo
 installed = Apt.installed ["prosody"]
 
-restarted :: Property
+restarted :: Property NoInfo
 restarted = Service.restarted "prosody"
 
-reloaded :: Property
+reloaded :: Property NoInfo
 reloaded = Service.reloaded "prosody"

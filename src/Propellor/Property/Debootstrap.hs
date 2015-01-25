@@ -58,9 +58,8 @@ toParams (c1 :+ c2) = toParams c1 <> toParams c2
 built :: FilePath -> System -> DebootstrapConfig -> RevertableProperty
 built = built' (toProp installed)
 
-built' :: Property -> FilePath -> System -> DebootstrapConfig -> RevertableProperty
-built' installprop target system@(System _ arch) config =
-	RevertableProperty setup teardown
+built' :: Property HasInfo -> FilePath -> System -> DebootstrapConfig -> RevertableProperty
+built' installprop target system@(System _ arch) config = setup <!> teardown
   where
 	setup = check (unpopulated target <||> ispartial) setupprop
 		`requires` installprop
@@ -122,7 +121,7 @@ extractSuite (System (Ubuntu r) _) = Just r
 -- Note that installation from source is done by downloading the tarball
 -- from a Debian mirror, with no cryptographic verification.
 installed :: RevertableProperty
-installed = RevertableProperty install remove
+installed = install <!> remove
   where
 	install = withOS "debootstrap installed" $ \o -> 
 		ifM (liftIO $ isJust <$> programPath)
@@ -142,18 +141,18 @@ installed = RevertableProperty install remove
 	aptinstall = Apt.installed ["debootstrap"]
 	aptremove = Apt.removed ["debootstrap"]
 
-sourceInstall :: Property
+sourceInstall :: Property NoInfo
 sourceInstall = property "debootstrap installed from source" (liftIO sourceInstall')
 	`requires` perlInstalled
 	`requires` arInstalled
 
-perlInstalled :: Property
+perlInstalled :: Property NoInfo
 perlInstalled = check (not <$> inPath "perl") $ property "perl installed" $
 	liftIO $ toResult . isJust <$> firstM id
 		[ yumInstall "perl"
 		]
 
-arInstalled :: Property
+arInstalled :: Property NoInfo
 arInstalled = check (not <$> inPath "ar") $ property "ar installed" $
 	liftIO $ toResult . isJust <$> firstM id
 		[ yumInstall "binutils"
@@ -197,7 +196,7 @@ sourceInstall' = withTmpDir "debootstrap" $ \tmpd -> do
 				return MadeChange
 			_ -> errorMessage "debootstrap tar file did not contain exactly one dirctory"
 
-sourceRemove :: Property
+sourceRemove :: Property NoInfo
 sourceRemove = property "debootstrap not installed from source" $ liftIO $
 	ifM (doesDirectoryExist sourceInstallDir)
 		( do

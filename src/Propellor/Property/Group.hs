@@ -4,7 +4,7 @@ import Propellor
 
 type GID = Int
 
-exists :: GroupName -> Maybe GID -> Property
+exists :: GroupName -> Maybe GID -> Property NoInfo
 exists group' mgid = check test (cmdProperty "addgroup" $ args mgid)
 	`describe` unwords ["group", group']
   where

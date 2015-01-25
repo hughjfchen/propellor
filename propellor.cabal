@@ -95,6 +95,7 @@ Library
     Propellor.Property.Postfix
     Propellor.Property.Prosody
     Propellor.Property.Reboot
+    Propellor.Property.List
     Propellor.Property.Scheduled
     Propellor.Property.Service
     Propellor.Property.Ssh
