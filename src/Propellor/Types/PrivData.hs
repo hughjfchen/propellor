@@ -24,9 +24,11 @@ data PrivDataSource
 	| PrivDataSourceFileFromCommand PrivDataField FilePath String
 	| PrivDataSource PrivDataField String
 
+type PrivDataSourceDesc = String
+
 class IsPrivDataSource s where
 	privDataField :: s -> PrivDataField
-	describePrivDataSource :: s -> Maybe String
+	describePrivDataSource :: s -> Maybe PrivDataSourceDesc
 
 instance IsPrivDataSource PrivDataField where
 	privDataField = id

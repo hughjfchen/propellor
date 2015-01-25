@@ -25,6 +25,7 @@ import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
+import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
@@ -46,7 +47,6 @@ hosts =                --                  (o)  `
 	, kite
 	, diatom
 	, elephant
-	, testvm
 	] ++ monsters
 
 testvm :: Host
@@ -140,11 +140,13 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 		, (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFZftKMnH/zH29BHMKbcBO4QsgTrstYFVhbrzrlRzBO3")
 		]
 
+	& Network.static "eth0" `requires` Network.cleanInterfacesFile
 	& Apt.installed ["linux-image-amd64"]
 	& Linode.chainPVGrub 5
 	& Apt.unattendedUpgrades
 	& Systemd.installed
 	& Systemd.persistentJournal
+	& Journald.systemMaxUse "500MiB"
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
 	& Apt.serviceInstalledRunning "fail2ban"
@@ -254,7 +256,7 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& JoeySites.oldUseNetServer hosts
 	
 	& alias "ns2.kitenet.net"
-	& myDnsPrimary False "kitenet.net" []
+	& myDnsPrimary True "kitenet.net" []
 	& myDnsPrimary True "joeyh.name" []
 	& myDnsPrimary True "ikiwiki.info" []
 	& myDnsPrimary True "olduse.net"
@@ -327,13 +329,14 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& Ssh.listenPort 80
 
 
-	    --'                        __|II|      ,.
-	  ----                      __|II|II|__   (  \_,/\
-	 ------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-
-	----------------------- |      [Docker]       / ----------------------
-	----------------------- :                    / -----------------------
-	------------------------ \____, o          ,' ------------------------
-	------------------------- '--,___________,'  -------------------------
+       --'                        __|II|      ,.
+     ----                      __|II|II|__   (  \_,/\
+--'-------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-.-'-
+-------------------------- |      [Docker]       / --------------------------
+-------------------------- :                    / ---------------------------
+--------------------------- \____, o          ,' ----------------------------
+---------------------------- '--,___________,'  -----------------------------
+
 -- Simple web server, publishing the outside host's /var/www
 webserver :: Docker.Container
 webserver = standardStableContainer "webserver"
@@ -434,13 +437,12 @@ dockerImage (System (Debian Testing) arch) = "joeyh/debian-unstable-" ++ arch
 dockerImage (System (Debian (Stable _)) arch) = "joeyh/debian-stable-" ++ arch
 dockerImage _ = "debian-stable-official" -- does not currently exist!
 
-myDnsSecondary :: Property
-myDnsSecondary = propertyList "dns secondary for all my domains" $ map toProp
-	[ Dns.secondary hosts "kitenet.net"
-	, Dns.secondary hosts "joeyh.name"
-	, Dns.secondary hosts "ikiwiki.info"
-	, Dns.secondary hosts "olduse.net"
-	]
+myDnsSecondary :: Property HasInfo
+myDnsSecondary = propertyList "dns secondary for all my domains" $ props
+	& Dns.secondary hosts "kitenet.net"
+	& Dns.secondary hosts "joeyh.name"
+	& Dns.secondary hosts "ikiwiki.info"
+	& Dns.secondary hosts "olduse.net"
 
 branchableSecondary :: RevertableProperty
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
@@ -456,21 +458,9 @@ myDnsPrimary dnssec domain extras = (if dnssec then Dns.signedPrimary (Weekly No
 	, (RootDomain, NS $ AbsDomain "ns4.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
 	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
-	-- SPF only allows IP address of kitenet.net to send mail.
-	, (RootDomain, TXT "v=spf1 a:kitenet.net -all")
+	, (RootDomain, TXT "v=spf1 a a:kitenet.net ~all")
 	, JoeySites.domainKey
 	] ++ extras
-
-
-                          --                                o
-                          --             ___                 o              o
-                       {-----\          / o \              ___o            o
-                       {      \    __   \   /   _        (X___>--         __o
-  _____________________{ ______\___  \__/ | \__/ \____                  |X__>
- <                                  \___//|\\___/\     \____________   _
-  \                                  ___/ | \___    # #             \ (-)
-   \    O      O      O             #     |     \ #                  >=)
-    \______________________________# #   /       #__________________/ (-}
 
 
 monsters :: [Host]    -- Systems I don't manage with propellor,
@@ -508,3 +498,17 @@ monsters =            -- but do want to track their public keys etc.
 		& ipv4 "76.7.162.101"
 		& ipv4 "76.7.162.186"
 	]
+
+
+
+                          --                                o
+                          --             ___                 o              o
+                       {-----\          / o \              ___o            o
+                       {      \    __   \   /   _        (X___>--         __o
+  _____________________{ ______\___  \__/ | \__/ \____                  |X__>
+ <                                  \___//|\\___/\     \____________   _
+  \                                  ___/ | \___    # #             \ (-)
+   \    O      O      O             #     |     \ #                  >=)
+    \______________________________# #   /       #__________________/ (-}
+
+

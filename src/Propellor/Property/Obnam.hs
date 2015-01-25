@@ -36,7 +36,7 @@ data NumClients = OnlyClient | MultipleClients
 -- >		`requires` Ssh.keyImported SshRsa "root" (Context hostname)
 --
 -- How awesome is that?
-backup :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property
+backup :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property NoInfo
 backup dir crontimes params numclients =
 	backup' dir crontimes params numclients
 		`requires` restored dir params
@@ -46,7 +46,7 @@ backup dir crontimes params numclients =
 --
 -- The gpg secret key will be automatically imported
 -- into root's keyring using Propellor.Property.Gpg.keyImported
-backupEncrypted :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Gpg.GpgKeyId -> Property
+backupEncrypted :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Gpg.GpgKeyId -> Property HasInfo
 backupEncrypted dir crontimes params numclients keyid =
 	backup dir crontimes params' numclients
 		`requires` Gpg.keyImported keyid "root"
@@ -54,7 +54,7 @@ backupEncrypted dir crontimes params numclients keyid =
 	params' = ("--encrypt-with=" ++ Gpg.getGpgKeyId keyid) : params
 
 -- | Does a backup, but does not automatically restore.
-backup' :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property
+backup' :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property NoInfo
 backup' dir crontimes params numclients = cronjob `describe` desc
   where
 	desc = dir ++ " backed up by obnam"
@@ -80,7 +80,7 @@ backup' dir crontimes params numclients = cronjob `describe` desc
 --
 -- The restore is performed atomically; restoring to a temp directory
 -- and then moving it to the directory.
-restored :: FilePath -> [ObnamParam] -> Property
+restored :: FilePath -> [ObnamParam] -> Property NoInfo
 restored dir params = property (dir ++ " restored by obnam") go
 	`requires` installed
   where
@@ -108,17 +108,17 @@ restored dir params = property (dir ++ " restored by obnam") go
 			, return FailedChange
 			)
 
-installed :: Property
+installed :: Property NoInfo
 installed = Apt.installed ["obnam"]
 
 -- | Ensures that a recent version of obnam gets installed.
 --
 -- Only does anything for Debian Stable.
-latestVersion :: Property
+latestVersion :: Property NoInfo
 latestVersion = withOS "obnam latest version" $ \o -> case o of
 	(Just (System (Debian suite) _)) | isStable suite -> ensureProperty $
 		Apt.setSourcesListD (stablesources suite) "obnam"
-			`requires` toProp (Apt.trustsKey key)
+			`requires` Apt.trustsKey' key
 	_ -> noChange
   where
 	stablesources suite = 

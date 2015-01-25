@@ -16,13 +16,14 @@ tableWithHeader header rows = header : map linesep header : rows
   where
 	linesep = map (const '-')
 
--- | Formats a table to lines, automatically padding rows to the same size.
+-- | Formats a table to lines, automatically padding columns to the same size.
 formatTable :: Table -> [String]
-formatTable table = map (\r -> unwords (map pad (zip r rowsizes))) table
+formatTable table = map (\r -> unwords (map pad (zip r colsizes))) table
   where
 	pad (cell, size) = cell ++ take (size - length cell) padding
 	padding = repeat ' '
-	rowsizes = sumrows (map (map length) table)
-	sumrows [] = repeat 0
-	sumrows [r] = r
-	sumrows (r1:r2:rs) = sumrows $ map (uncurry max) (zip r1 r2) : rs
+	colsizes = reverse $ (0:) $ drop 1 $ reverse $
+		sumcols (map (map length) table)
+	sumcols [] = repeat 0
+	sumcols [r] = r
+	sumcols (r1:r2:rs) = sumcols $ map (uncurry max) (zip r1 r2) : rs

@@ -1,4 +1,5 @@
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE GADTs #-}
 
 module Propellor.Engine (
 	mainProperties,
@@ -35,7 +36,7 @@ import Utility.Monad
 mainProperties :: Host -> IO ()
 mainProperties host = do
 	ret <- runPropellor host $
-		ensureProperties [Property "overall" (ensureProperties $ hostProperties host) mempty]
+		ensureProperties [ignoreInfo $ infoProperty "overall" (ensureProperties ps) mempty mempty]
 	h <- mkMessageHandle
         whenConsole h $
 		setTitle "propellor: done"
@@ -43,6 +44,8 @@ mainProperties host = do
 	case ret of
 		FailedChange -> exitWith (ExitFailure 1)
 		_ -> exitWith ExitSuccess
+  where
+	ps = map ignoreInfo $ hostProperties host
 
 -- | Runs a Propellor action with the specified host.
 --
@@ -62,11 +65,13 @@ runEndAction host res (EndAction desc a) = actionMessageOn (hostName host) desc 
 
 -- | For when code running in the Propellor monad needs to ensure a
 -- Property.
-ensureProperty :: Property -> Propellor Result
+--
+-- This can only be used on a Property that has NoInfo.
+ensureProperty :: Property NoInfo -> Propellor Result
 ensureProperty = catchPropellor . propertySatisfy
 
 -- | Ensures a list of Properties, with a display of each as it runs.
-ensureProperties :: [Property] -> Propellor Result
+ensureProperties :: [Property NoInfo] -> Propellor Result
 ensureProperties ps = ensure ps NoChange
   where
 	ensure [] rs = return rs
@@ -77,7 +82,7 @@ ensureProperties ps = ensure ps NoChange
 
 -- | Lifts an action into a different host.
 --
--- For example, `fromHost hosts "otherhost" getPubKey`
+-- > fromHost hosts "otherhost" getPubKey
 fromHost :: [Host] -> HostName -> Propellor a -> Propellor (Maybe a)
 fromHost l hn getter = case findHost l hn of
 	Nothing -> return Nothing

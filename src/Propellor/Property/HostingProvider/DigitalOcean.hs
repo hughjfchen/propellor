@@ -18,7 +18,7 @@ import Data.List
 -- If the power is cycled, the non-distro kernel still boots up.
 -- So, this property also checks if the running kernel is present in /boot,
 -- and if not, reboots immediately into a distro kernel.
-distroKernel :: Property
+distroKernel :: Property NoInfo
 distroKernel = propertyList "digital ocean distro kernel hack"
 	[ Apt.installed ["grub-pc", "kexec-tools", "file"]
 	, "/etc/default/kexec" `File.containsLines`

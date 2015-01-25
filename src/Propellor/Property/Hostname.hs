@@ -17,10 +17,10 @@ import Data.List
 -- Also, the </etc/hosts> 127.0.0.1 line is set to localhost. Putting any
 -- other hostnames there is not best practices and can lead to annoying
 -- messages from eg, apache.
-sane :: Property
+sane :: Property NoInfo
 sane = property ("sane hostname") (ensureProperty . setTo =<< asks hostName)
 
-setTo :: HostName -> Property
+setTo :: HostName -> Property NoInfo
 setTo hn = combineProperties desc go
   where
 	desc = "hostname " ++ hn
@@ -46,7 +46,7 @@ setTo hn = combineProperties desc go
 
 -- | Makes </etc/resolv.conf> contain search and domain lines for 
 -- the domain that the hostname is in.
-searchDomain :: Property
+searchDomain :: Property NoInfo
 searchDomain = property desc (ensureProperty . go =<< asks hostName)
   where
 	desc = "resolv.conf search and domain configured"

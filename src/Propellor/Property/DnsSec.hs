@@ -8,7 +8,7 @@ import qualified Propellor.Property.File as File
 -- signedPrimary uses this, so this property does not normally need to be
 -- used directly.
 keysInstalled :: Domain -> RevertableProperty
-keysInstalled domain = RevertableProperty setup cleanup
+keysInstalled domain = setup <!> cleanup
   where
 	setup = propertyList "DNSSEC keys installed" $
 		map installkey keys
@@ -38,16 +38,14 @@ keysInstalled domain = RevertableProperty setup cleanup
 -- signedPrimary uses this, so this property does not normally need to be
 -- used directly.
 zoneSigned :: Domain -> FilePath -> RevertableProperty
-zoneSigned domain zonefile = RevertableProperty setup cleanup
+zoneSigned domain zonefile = setup <!> cleanup
   where
 	setup = check needupdate (forceZoneSigned domain zonefile)
 		`requires` toProp (keysInstalled domain)
 	
-	cleanup = combineProperties ("removed signed zone for " ++ domain)
-		[ File.notPresent (signedZoneFile zonefile)
-		, File.notPresent dssetfile
-		, toProp (revert (keysInstalled domain))
-		]
+	cleanup = File.notPresent (signedZoneFile zonefile)
+		`before` File.notPresent dssetfile
+		`before` toProp (revert (keysInstalled domain))
 	
 	dssetfile = dir </> "-" ++ domain ++ "."
 	dir = takeDirectory zonefile
@@ -65,7 +63,7 @@ zoneSigned domain zonefile = RevertableProperty setup cleanup
 		t2 <- getModificationTime f
 		return (t2 >= t1)
 
-forceZoneSigned :: Domain -> FilePath -> Property
+forceZoneSigned :: Domain -> FilePath -> Property NoInfo
 forceZoneSigned domain zonefile = property ("zone signed for " ++ domain) $ liftIO $ do
 	salt <- take 16 <$> saltSha1
  	let p = proc "dnssec-signzone"

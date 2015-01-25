@@ -1,3 +1,5 @@
+> Now [[fixed|done]]!! --[[Joey]]
+
 Currently, Info about a Host's Properties is propigated to the host by
 examining the tree of Properties.
 

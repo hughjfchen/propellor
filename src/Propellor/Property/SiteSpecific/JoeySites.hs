@@ -22,22 +22,18 @@ import Data.List
 import System.Posix.Files
 import Data.String.Utils
 
-oldUseNetServer :: [Host] -> Property
-oldUseNetServer hosts = propertyList ("olduse.net server")
-	[ oldUseNetInstalled "oldusenet-server"
-	, Obnam.latestVersion
-	, Obnam.backup datadir "33 4 * * *"
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/olduse.net"
-		, "--client-name=spool"
-		] Obnam.OnlyClient
-		`requires` Ssh.keyImported SshRsa "root" (Context "olduse.net")
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
-	, check (not . isSymbolicLink <$> getSymbolicLinkStatus newsspool) $
-		property "olduse.net spool in place" $ makeChange $ do
+oldUseNetServer :: [Host] -> Property HasInfo
+oldUseNetServer hosts = propertyList "olduse.net server" $ props
+	& oldUseNetInstalled "oldusenet-server"
+	& Obnam.latestVersion
+	& oldUseNetBackup
+	& check (not . isSymbolicLink <$> getSymbolicLinkStatus newsspool)
+		(property "olduse.net spool in place" $ makeChange $ do
 			removeDirectoryRecursive newsspool
 			createSymbolicLink (datadir </> "news") newsspool
-	, Apt.installed ["leafnode"]
-	, "/etc/news/leafnode/config" `File.hasContent` 
+		)
+	& Apt.installed ["leafnode"]
+	& "/etc/news/leafnode/config" `File.hasContent` 
 		[ "# olduse.net configuration (deployed by propellor)"
 		, "expire = 1000000" -- no expiry via texpire
 		, "server = " -- no upstream server
@@ -45,17 +41,22 @@ oldUseNetServer hosts = propertyList ("olduse.net server")
 		, "allowSTRANGERS = 42" -- lets anyone connect
 		, "nopost = 1" -- no new posting (just gather them)
 		]
-	, "/etc/hosts.deny" `File.lacksLine` "leafnode: ALL"
-	, Apt.serviceInstalledRunning "openbsd-inetd"
-	, File.notPresent "/etc/cron.daily/leafnode"
-	, File.notPresent "/etc/cron.d/leafnode"
-	, Cron.niceJob "oldusenet-expire" "11 1 * * *" "news" newsspool $ intercalate ";"
+	& "/etc/hosts.deny" `File.lacksLine` "leafnode: ALL"
+	& Apt.serviceInstalledRunning "openbsd-inetd"
+	& File.notPresent "/etc/cron.daily/leafnode"
+	& File.notPresent "/etc/cron.d/leafnode"
+	& Cron.niceJob "oldusenet-expire" "11 1 * * *" "news" newsspool expirecommand
+	& Cron.niceJob "oldusenet-uucp" "*/5 * * * *" "news" "/" uucpcommand
+	& Apache.siteEnabled "nntp.olduse.net" nntpcfg
+  where
+	newsspool = "/var/spool/news"
+	datadir = "/var/spool/oldusenet"
+	expirecommand = intercalate ";"
 		[ "find \\( -path ./out.going -or -path ./interesting.groups -or -path './*/.overview' \\) -prune -or -type f -ctime +60  -print | xargs --no-run-if-empty rm"
 		, "find -type d -empty | xargs --no-run-if-empty rmdir"
 		]
-	, Cron.niceJob "oldusenet-uucp" "*/5 * * * *" "news" "/" $
-		"/usr/bin/uucp " ++ datadir
-	, toProp $ Apache.siteEnabled "nntp.olduse.net" $ apachecfg "nntp.olduse.net" False
+	uucpcommand = "/usr/bin/uucp " ++ datadir
+	nntpcfg = apachecfg "nntp.olduse.net" False
 		[ "  DocumentRoot " ++ datadir ++ "/"
 		, "  <Directory " ++ datadir ++ "/>"
 		, "    Options Indexes FollowSymlinks"
@@ -63,23 +64,25 @@ oldUseNetServer hosts = propertyList ("olduse.net server")
 		, Apache.allowAll
 		, "  </Directory>"
 		]
-	]
-  where
-	newsspool = "/var/spool/news"
-	datadir = "/var/spool/oldusenet"
 
-oldUseNetShellBox :: Property
-oldUseNetShellBox = propertyList "olduse.net shellbox"
-	[ oldUseNetInstalled "oldusenet"
-	, Service.running "shellinabox"
-	]
+	oldUseNetBackup = Obnam.backup datadir "33 4 * * *"
+		[ "--repository=sftp://2318@usw-s002.rsync.net/~/olduse.net"
+		, "--client-name=spool"
+		] Obnam.OnlyClient
+		`requires` Ssh.keyImported SshRsa "root" (Context "olduse.net")
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 
-oldUseNetInstalled :: Apt.Package -> Property
+oldUseNetShellBox :: Property HasInfo
+oldUseNetShellBox = propertyList "olduse.net shellbox" $ props
+	& oldUseNetInstalled "oldusenet"
+	& Service.running "shellinabox"
+
+oldUseNetInstalled :: Apt.Package -> Property HasInfo
 oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
-	propertyList ("olduse.net " ++ pkg)
-		[ Apt.installed (words "build-essential devscripts debhelper git libncursesw5-dev libpcre3-dev pkg-config bison libicu-dev libidn11-dev libcanlock2-dev libuu-dev ghc libghc-strptime-dev libghc-hamlet-dev libghc-ifelse-dev libghc-hxt-dev libghc-utf8-string-dev libghc-missingh-dev libghc-sha-dev")
+	propertyList ("olduse.net " ++ pkg) $ props
+		& Apt.installed (words "build-essential devscripts debhelper git libncursesw5-dev libpcre3-dev pkg-config bison libicu-dev libidn11-dev libcanlock2-dev libuu-dev ghc libghc-strptime-dev libghc-hamlet-dev libghc-ifelse-dev libghc-hxt-dev libghc-utf8-string-dev libghc-missingh-dev libghc-sha-dev")
 			`describe` "olduse.net build deps"
-		, scriptProperty
+		& scriptProperty
 			[ "rm -rf /root/tmp/oldusenet" -- idenpotency
 			, "git clone git://olduse.net/ /root/tmp/oldusenet/source"
 			, "cd /root/tmp/oldusenet/source/"
@@ -88,12 +91,15 @@ oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 			, "apt-get -fy install" -- dependencies
 			, "rm -rf /root/tmp/oldusenet"
 			] `describe` "olduse.net built"
-		]
 
-
-kgbServer :: Property
-kgbServer = propertyList desc
-	[ withOS desc $ \o -> case o of
+kgbServer :: Property HasInfo
+kgbServer = propertyList desc $ props
+	& installed
+	& File.hasPrivContent "/etc/kgb-bot/kgb.conf" anyContext
+		`onChange` Service.restarted "kgb-bot"
+  where
+	desc = "kgb.kitenet.net setup"
+	installed = withOS desc $ \o -> case o of
 		(Just (System (Debian Unstable) _)) ->
 			ensureProperty $ propertyList desc
 				[ Apt.serviceInstalledRunning "kgb-bot"
@@ -102,28 +108,22 @@ kgbServer = propertyList desc
 					`onChange` Service.running "kgb-bot"
 				]
 		_ -> error "kgb server needs Debian unstable (for kgb-bot 1.31+)"
-	, File.hasPrivContent "/etc/kgb-bot/kgb.conf" anyContext
-		`onChange` Service.restarted "kgb-bot"
-	]
-  where
-	desc = "kgb.kitenet.net setup"
 
-mumbleServer :: [Host] -> Property
-mumbleServer hosts = combineProperties hn
-	[ Apt.serviceInstalledRunning "mumble-server"
-	, Obnam.latestVersion
-	, Obnam.backup "/var/lib/mumble-server" "55 5 * * *"
+mumbleServer :: [Host] -> Property HasInfo
+mumbleServer hosts = combineProperties hn $ props
+	& Apt.serviceInstalledRunning "mumble-server"
+	& Obnam.latestVersion
+	& Obnam.backup "/var/lib/mumble-server" "55 5 * * *"
 		[ "--repository=sftp://joey@usbackup.kitenet.net/~/lib/backup/" ++ hn ++ ".obnam"
 		, "--client-name=mumble"
 		] Obnam.OnlyClient
 		`requires` Ssh.keyImported SshRsa "root" (Context hn)
 		`requires` Ssh.knownHost hosts "usbackup.kitenet.net" "root"
-	, trivial $ cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
-	]
+	& trivial (cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"])
   where
 	hn = "mumble.debian.net"
 
-obnamLowMem :: Property
+obnamLowMem :: Property NoInfo
 obnamLowMem = combineProperties "obnam tuned for low memory use"
 	[ Obnam.latestVersion
 	, "/etc/obnam.conf" `File.containsLines`
@@ -135,10 +135,10 @@ obnamLowMem = combineProperties "obnam tuned for low memory use"
 	]
 
 -- git.kitenet.net and git.joeyh.name
-gitServer :: [Host] -> Property
-gitServer hosts = propertyList "git.kitenet.net setup"
-	[ Obnam.latestVersion
-	, Obnam.backupEncrypted "/srv/git" "33 3 * * *"
+gitServer :: [Host] -> Property HasInfo
+gitServer hosts = propertyList "git.kitenet.net setup" $ props
+	& Obnam.latestVersion
+	& Obnam.backupEncrypted "/srv/git" "33 3 * * *"
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
 		, "--client-name=wren" -- historical
 		] Obnam.OnlyClient (Gpg.GpgKeyId "1B169BE1")
@@ -146,14 +146,14 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 		`requires` Ssh.authorizedKeys "family" (Context "git.kitenet.net")
 		`requires` User.accountFor "family"
-	, Apt.installed ["git", "rsync", "gitweb"]
+	& Apt.installed ["git", "rsync", "gitweb"]
 	-- backport avoids channel flooding on branch merge
-	, Apt.installedBackport ["kgb-client"]
+	& Apt.installedBackport ["kgb-client"]
 	-- backport supports ssh event notification
-	, Apt.installedBackport ["git-annex"]
-	, File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf" anyContext
-	, toProp $ Git.daemonRunning "/srv/git"
-	, "/etc/gitweb.conf" `File.containsLines`
+	& Apt.installedBackport ["git-annex"]
+	& File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf" anyContext
+	& Git.daemonRunning "/srv/git"
+	& "/etc/gitweb.conf" `File.containsLines`
 		[ "$projectroot = '/srv/git';"
 		, "@git_base_url_list = ('git://git.kitenet.net', 'http://git.kitenet.net/git', 'https://git.kitenet.net/git', 'ssh://git.kitenet.net/srv/git');"
 		, "# disable snapshot download; overloads server"
@@ -161,15 +161,14 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 		]
 		`describe` "gitweb configured"
 	-- Repos push on to github.
-	, Ssh.knownHost hosts "github.com" "joey"
+	& Ssh.knownHost hosts "github.com" "joey"
 	-- I keep the website used for gitweb checked into git..
-	, Git.cloned "root" "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
-	, website "git.kitenet.net"
-	, website "git.joeyh.name"
-	, toProp $ Apache.modEnabled "cgi"
-	]
+	& Git.cloned "root" "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
+	& website "git.kitenet.net"
+	& website "git.joeyh.name"
+	& Apache.modEnabled "cgi"
   where
-	website hn = toProp $ Apache.siteEnabled hn $ apachecfg hn True
+	website hn = apacheSite hn True
 		[ "  DocumentRoot /srv/web/git.kitenet.net/"
 		, "  <Directory /srv/web/git.kitenet.net/>"
 		, "    Options Indexes ExecCGI FollowSymlinks"
@@ -188,18 +187,17 @@ gitServer hosts = propertyList "git.kitenet.net setup"
 type AnnexUUID = String
 
 -- | A website, with files coming from a git-annex repository.
-annexWebSite :: Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] -> Property
-annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-annex")
-	[ Git.cloned "joey" origin dir Nothing
+annexWebSite :: Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] -> Property HasInfo
+annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-annex") $ props
+	& Git.cloned "joey" origin dir Nothing
 		`onChange` setup
-	, alias hn
-	, postupdatehook `File.hasContent`
+	& alias hn
+	& postupdatehook `File.hasContent`
 		[ "#!/bin/sh"
 		, "exec git update-server-info"
 		] `onChange`
 			(postupdatehook `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
-	, setupapache
-	]
+	& setupapache
   where
 	dir = "/srv/web/" ++ hn
 	postupdatehook = dir </> ".git/hooks/post-update"
@@ -212,7 +210,7 @@ annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-ann
 		, "git update-server-info"
 		]
 	addremote (name, url) = "git remote add " ++ shellEscape name ++ " " ++ shellEscape url
-	setupapache = toProp $ Apache.siteEnabled hn $ apachecfg hn True $ 
+	setupapache = apacheSite hn True
 		[ "  ServerAlias www."++hn
 		, ""
 		, "  DocumentRoot /srv/web/"++hn
@@ -229,6 +227,9 @@ annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-ann
 		, "    allow from all"
 		, "  </Directory>"
 		]
+
+apacheSite :: HostName -> Bool -> Apache.ConfigFile -> RevertableProperty
+apacheSite hn withssl middle = Apache.siteEnabled hn $ apachecfg hn withssl middle
 
 apachecfg :: HostName -> Bool -> Apache.ConfigFile -> Apache.ConfigFile
 apachecfg hn withssl middle
@@ -268,20 +269,19 @@ mainhttpscert True =
 	, "  SSLCertificateChainFile /etc/ssl/certs/startssl.pem"
 	]
 		
-gitAnnexDistributor :: Property
-gitAnnexDistributor = combineProperties "git-annex distributor, including rsync server and signer"
-	[ Apt.installed ["rsync"]
-	, File.hasPrivContent "/etc/rsyncd.conf" (Context "git-annex distributor")
+gitAnnexDistributor :: Property HasInfo
+gitAnnexDistributor = combineProperties "git-annex distributor, including rsync server and signer" $ props
+	& Apt.installed ["rsync"]
+	& File.hasPrivContent "/etc/rsyncd.conf" (Context "git-annex distributor")
 		`onChange` Service.restarted "rsync"
-	, File.hasPrivContent "/etc/rsyncd.secrets" (Context "git-annex distributor")
+	& File.hasPrivContent "/etc/rsyncd.secrets" (Context "git-annex distributor")
 		`onChange` Service.restarted "rsync"
-	, "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
+	& "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
 		`onChange` Service.running "rsync"
-	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
-	, endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-mavericks"
+	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
+	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-mavericks"
 	-- git-annex distribution signing key
-	, Gpg.keyImported (Gpg.GpgKeyId "89C809CB") "joey"
-	]
+	& Gpg.keyImported (Gpg.GpgKeyId "89C809CB") "joey"
   where
 	endpoint d = combineProperties ("endpoint " ++ d)
 		[ File.dirExists d
@@ -289,50 +289,48 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 		]
 
 -- Twitter, you kill us.
-twitRss :: Property
-twitRss = combineProperties "twitter rss"
-	[ Git.cloned "joey" "git://git.kitenet.net/twitrss.git" dir Nothing
-	, check (not <$> doesFileExist (dir </> "twitRss")) $
-		userScriptProperty "joey"
-			[ "cd " ++ dir
-			, "ghc --make twitRss" 
-			]
-			`requires` Apt.installed
-				[ "libghc-xml-dev"
-				, "libghc-feed-dev"
-				, "libghc-tagsoup-dev"
-				]
-	, feed "http://twitter.com/search/realtime?q=git-annex" "git-annex-twitter"
-	, feed "http://twitter.com/search/realtime?q=olduse+OR+git-annex+OR+debhelper+OR+etckeeper+OR+ikiwiki+-ashley_ikiwiki" "twittergrep"
-	]
+twitRss :: Property HasInfo
+twitRss = combineProperties "twitter rss" $ props
+	& Git.cloned "joey" "git://git.kitenet.net/twitrss.git" dir Nothing
+	& check (not <$> doesFileExist (dir </> "twitRss")) compiled
+	& feed "http://twitter.com/search/realtime?q=git-annex" "git-annex-twitter"
+	& feed "http://twitter.com/search/realtime?q=olduse+OR+git-annex+OR+debhelper+OR+etckeeper+OR+ikiwiki+-ashley_ikiwiki" "twittergrep"
   where
 	dir = "/srv/web/tmp.kitenet.net/twitrss"
 	crontime = "15 * * * *"
 	feed url desc = Cron.job desc crontime "joey" dir $
 		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
+	compiled = userScriptProperty "joey"
+		[ "cd " ++ dir
+		, "ghc --make twitRss" 
+		]
+		`requires` Apt.installed
+			[ "libghc-xml-dev"
+			, "libghc-feed-dev"
+			, "libghc-tagsoup-dev"
+			]
 
 -- Work around for expired ssl cert.
 -- (no longer expired, TODO remove this and change urls)
-pumpRss :: Property
+pumpRss :: Property NoInfo
 pumpRss = Cron.job "pump rss" "15 * * * *" "joey" "/srv/web/tmp.kitenet.net/"
 	"wget https://pump2rss.com/feed/joeyh@identi.ca.atom -O pump.atom --no-check-certificate 2>/dev/null"
 
-ircBouncer :: Property
-ircBouncer = propertyList "IRC bouncer"
-	[ Apt.installed ["znc"]
-	, User.accountFor "znc"
-	, File.dirExists (takeDirectory conf)
-	, File.hasPrivContent conf anyContext
-	, File.ownerGroup conf "znc" "znc"
-	, Cron.job "znconboot" "@reboot" "znc" "~" "znc"
+ircBouncer :: Property HasInfo
+ircBouncer = propertyList "IRC bouncer" $ props
+	& Apt.installed ["znc"]
+	& User.accountFor "znc"
+	& File.dirExists (takeDirectory conf)
+	& File.hasPrivContent conf anyContext
+	& File.ownerGroup conf "znc" "znc"
+	& Cron.job "znconboot" "@reboot" "znc" "~" "znc"
 	-- ensure running if it was not already
-	, trivial $ userScriptProperty "znc" ["znc || true"]
+	& trivial (userScriptProperty "znc" ["znc || true"])
 		`describe` "znc running"
-	]
   where
 	conf = "/home/znc/.znc/configs/znc.conf"
 
-kiteShellBox :: Property
+kiteShellBox :: Property NoInfo
 kiteShellBox = propertyList "kitenet.net shellinabox"
 	[ Apt.installed ["shellinabox"]
 	, File.hasContent "/etc/default/shellinabox"
@@ -345,27 +343,33 @@ kiteShellBox = propertyList "kitenet.net shellinabox"
 	, Service.running "shellinabox"
 	]
 
-githubBackup :: Property
-githubBackup = propertyList "github-backup box"
-	[ Apt.installed ["github-backup", "moreutils"]
-	, let f = "/home/joey/.github-keys"
-	  in File.hasPrivContent f anyContext
-		`onChange` File.ownerGroup f "joey" "joey"
-	, Cron.niceJob "github-backup run" "30 4 * * *" "joey"
-		"/home/joey/lib/backup" $ intercalate "&&" $
-			[ "mkdir -p github"
-			, "cd github"
-			, ". $HOME/.github-keys"
-			, "github-backup joeyh"
-			]
-	, Cron.niceJob "gitriddance" "30 4 * * *" "joey"
-		"/home/joey/lib/backup" $ intercalate "&&" $
-			[ "cd github"
-			, ". $HOME/.github-keys"
-			] ++ map gitriddance githubMirrors
-	]
+githubBackup :: Property HasInfo
+githubBackup = propertyList "github-backup box" $ props
+	& Apt.installed ["github-backup", "moreutils"]
+	& githubKeys
+	& Cron.niceJob "github-backup run" "30 4 * * *" "joey"
+		"/home/joey/lib/backup" backupcmd
+	& Cron.niceJob "gitriddance" "30 4 * * *" "joey"
+		"/home/joey/lib/backup" gitriddancecmd
   where
+	backupcmd = intercalate "&&" $
+		[ "mkdir -p github"
+		, "cd github"
+		, ". $HOME/.github-keys"
+		, "github-backup joeyh"
+		]
+	gitriddancecmd = intercalate "&&" $
+		[ "cd github"
+		, ". $HOME/.github-keys"
+		] ++ map gitriddance githubMirrors
 	gitriddance (r, msg) = "(cd " ++ r ++ " && gitriddance " ++ shellEscape msg ++ ")"
+
+githubKeys :: Property HasInfo
+githubKeys = 
+	let f = "/home/joey/.github-keys"
+	in File.hasPrivContent f anyContext
+		`onChange` File.ownerGroup f "joey" "joey"
+
 
 -- these repos are only mirrored on github, I don't want
 -- all the proprietary features
@@ -380,12 +384,12 @@ githubMirrors =
   where
 	plzuseurl u = "please submit changes to " ++ u ++ " instead of using github pull requests"
 
-rsyncNetBackup :: [Host] -> Property
+rsyncNetBackup :: [Host] -> Property NoInfo
 rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" "30 5 * * *"
 	"joey" "/home/joey/lib/backup" "mkdir -p rsync.net && rsync --delete -az 2318@usw-s002.rsync.net: rsync.net"
 	`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
 
-backupsBackedupTo :: [Host] -> HostName -> FilePath -> Property
+backupsBackedupTo :: [Host] -> HostName -> FilePath -> Property NoInfo
 backupsBackedupTo hosts desthost destdir = Cron.niceJob desc
 	"1 1 * * 3" "joey" "/" cmd
 	`requires` Ssh.knownHost hosts desthost "joey"
@@ -393,7 +397,7 @@ backupsBackedupTo hosts desthost destdir = Cron.niceJob desc
 	desc = "backups copied to " ++ desthost ++ " weekly"
 	cmd = "rsync -az --delete /home/joey/lib/backup " ++ desthost ++ ":" ++ destdir
 
-obnamRepos :: [String] -> Property
+obnamRepos :: [String] -> Property NoInfo
 obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
 	(mkbase : map mkrepo rs)
   where
@@ -403,23 +407,22 @@ obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
 	mkdir d = File.dirExists d
 		`before` File.ownerGroup d "joey" "joey"
 
-podcatcher :: Property
+podcatcher :: Property NoInfo
 podcatcher = Cron.niceJob "podcatcher run hourly" "55 * * * *"
 	"joey" "/home/joey/lib/sound/podcasts"
 	"xargs git-annex importfeed -c annex.genmetadata=true < feeds; mr --quiet update"
 	`requires` Apt.installed ["git-annex", "myrepos"]
 
-kiteMailServer :: Property
-kiteMailServer = propertyList "kitenet.net mail server"
-	[ Postfix.installed
-	, Apt.installed ["postfix-pcre"]
-	, Apt.serviceInstalledRunning "postgrey"
+kiteMailServer :: Property HasInfo
+kiteMailServer = propertyList "kitenet.net mail server" $ props
+	& Postfix.installed
+	& Apt.installed ["postfix-pcre"]
+	& Apt.serviceInstalledRunning "postgrey"
 
-	, Apt.serviceInstalledRunning "spamassassin"
-	, "/etc/default/spamassassin" `File.containsLines`
+	& Apt.serviceInstalledRunning "spamassassin"
+	& "/etc/default/spamassassin" `File.containsLines`
 		[ "# Propellor deployed"
 		, "ENABLED=1"
-		, "CRON=1"
 		, "OPTIONS=\"--create-prefs --max-children 5 --helper-home-dir\""
 		, "CRON=1"
 		, "NICE=\"--nicelevel 15\""
@@ -427,15 +430,15 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`describe` "spamd enabled"
 		`requires` Apt.serviceInstalledRunning "cron"
 	
-	, Apt.serviceInstalledRunning "spamass-milter"
+	& Apt.serviceInstalledRunning "spamass-milter"
 	-- Add -m to prevent modifying messages Subject or body.
-	, "/etc/default/spamass-milter" `File.containsLine`
+	& "/etc/default/spamass-milter" `File.containsLine`
 		"OPTIONS=\"-m -u spamass-milter -i 127.0.0.1\""
 		`onChange` Service.restarted "spamass-milter"
 		`describe` "spamass-milter configured"
 	
-	, Apt.serviceInstalledRunning "amavisd-milter"
-	, "/etc/default/amavisd-milter" `File.containsLines`
+	& Apt.serviceInstalledRunning "amavisd-milter"
+	& "/etc/default/amavisd-milter" `File.containsLines`
 		[ "# Propellor deployed"
 		, "MILTERSOCKET=/var/spool/postfix/amavis/amavis.sock"
 		, "MILTERSOCKETOWNER=\"postfix:postfix\""
@@ -443,12 +446,12 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		]
 		`onChange` Service.restarted "amavisd-milter"
 		`describe` "amavisd-milter configured for postfix"
-	, Apt.serviceInstalledRunning "clamav-freshclam"
+	& Apt.serviceInstalledRunning "clamav-freshclam"
 
-	, dkimInstalled
+	& dkimInstalled
 
-	, Apt.installed ["maildrop"]
-	, "/etc/maildroprc" `File.hasContent`
+	& Apt.installed ["maildrop"]
+	& "/etc/maildroprc" `File.hasContent`
 		[ "# Global maildrop filter file (deployed with propellor)"
 		, "DEFAULT=\"$HOME/Maildir\""
 		, "MAILBOX=\"$DEFAULT/.\""
@@ -462,19 +465,19 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		]
 		`describe` "maildrop configured"
 
-	, "/etc/aliases" `File.hasPrivContentExposed` ctx
+	& "/etc/aliases" `File.hasPrivContentExposed` ctx
 		`onChange` Postfix.newaliases
-	, hasJoeyCAChain
-	, hasPostfixCert ctx
+	& hasJoeyCAChain
+	& hasPostfixCert ctx
 
-	, "/etc/postfix/mydomain" `File.containsLines`
+	& "/etc/postfix/mydomain" `File.containsLines`
 		[ "/.*\\.kitenet\\.net/\tOK"
 		, "/ikiwiki\\.info/\tOK"
 		, "/joeyh\\.name/\tOK"
 		]
 		`onChange` Postfix.reloaded
 		`describe` "postfix mydomain file configured"
-	, "/etc/postfix/obscure_client_relay.pcre" `File.hasContent`
+	& "/etc/postfix/obscure_client_relay.pcre" `File.hasContent`
 		-- Remove received lines for mails relayed from trusted
 		-- clients. These can be a privacy violation, or trigger
 		-- spam filters.
@@ -486,16 +489,16 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		]
 		`onChange` Postfix.reloaded
 		`describe` "postfix obscure_client_relay file configured"
-	, Postfix.mappedFile "/etc/postfix/virtual"
+	& Postfix.mappedFile "/etc/postfix/virtual"
 		(flip File.containsLines
 			[ "# *@joeyh.name to joey"
 			, "@joeyh.name\tjoey"
 			]
 		) `describe` "postfix virtual file configured"
 		`onChange` Postfix.reloaded
-	, Postfix.mappedFile "/etc/postfix/relay_clientcerts" $
-		flip File.hasPrivContentExposed ctx
-	, Postfix.mainCfFile `File.containsLines`
+	& Postfix.mappedFile "/etc/postfix/relay_clientcerts"
+		(flip File.hasPrivContentExposed ctx)
+	& Postfix.mainCfFile `File.containsLines`
 		[ "myhostname = kitenet.net"
 		, "mydomain = $myhostname"
 		, "append_dot_mydomain = no"
@@ -544,24 +547,24 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`onChange` Postfix.reloaded
 		`describe` "postfix configured"
 	
-	, Apt.serviceInstalledRunning "dovecot-imapd"
-	, Apt.serviceInstalledRunning "dovecot-pop3d"
-	, "/etc/dovecot/conf.d/10-mail.conf" `File.containsLine`
+	& Apt.serviceInstalledRunning "dovecot-imapd"
+	& Apt.serviceInstalledRunning "dovecot-pop3d"
+	& "/etc/dovecot/conf.d/10-mail.conf" `File.containsLine`
 		"mail_location = maildir:~/Maildir"
 		`onChange` Service.reloaded "dovecot"
 		`describe` "dovecot mail.conf"
-	, "/etc/dovecot/conf.d/10-auth.conf" `File.containsLine`
+	& "/etc/dovecot/conf.d/10-auth.conf" `File.containsLine`
 		"!include auth-passwdfile.conf.ext"
 		`onChange` Service.restarted "dovecot"
 		`describe` "dovecot auth.conf"
-	, File.hasPrivContent dovecotusers ctx
+	& File.hasPrivContent dovecotusers ctx
 		`onChange` (dovecotusers `File.mode`
 			combineModes [ownerReadMode, groupReadMode])
-	, File.ownerGroup dovecotusers "root" "dovecot"
+	& File.ownerGroup dovecotusers "root" "dovecot"
 
-	, Apt.installed ["mutt", "bsd-mailx", "alpine"]
+	& Apt.installed ["mutt", "bsd-mailx", "alpine"]
 
-	, pinescript `File.hasContent`
+	& pinescript `File.hasContent`
 		[ "#!/bin/sh"
 		, "# deployed with propellor"
 		, "set -e"
@@ -575,14 +578,13 @@ kiteMailServer = propertyList "kitenet.net mail server"
 		`onChange` (pinescript `File.mode`
 			combineModes (readModes ++ executeModes))
 		`describe` "pine wrapper script"
-	, "/etc/pine.conf" `File.hasContent`
+	& "/etc/pine.conf" `File.hasContent`
 		[ "# deployed with propellor"
 		, "inbox-path={localhost/novalidate-cert/NoRsh}inbox"
 		]
 		`describe` "pine configured to use local imap server"
 	
-	, Apt.serviceInstalledRunning "mailman"
-	]
+	& Apt.serviceInstalledRunning "mailman"
   where
 	ctx = Context "kitenet.net"
 	pinescript = "/usr/local/bin/pine"
@@ -590,7 +592,7 @@ kiteMailServer = propertyList "kitenet.net mail server"
 
 -- Configures postfix to relay outgoing mail to kitenet.net, with
 -- verification via tls cert.
-postfixClientRelay :: Context -> Property
+postfixClientRelay :: Context -> Property HasInfo
 postfixClientRelay ctx = Postfix.mainCfFile `File.containsLines`
 	[ "relayhost = kitenet.net"
 	, "smtp_tls_CAfile = /etc/ssl/certs/joeyca.pem"
@@ -606,7 +608,7 @@ postfixClientRelay ctx = Postfix.mainCfFile `File.containsLines`
 	`requires` hasPostfixCert ctx
 
 -- Configures postfix to have the dkim milter, and no other milters.
-dkimMilter :: Property
+dkimMilter :: Property HasInfo
 dkimMilter = Postfix.mainCfFile `File.containsLines`
 	[ "smtpd_milters = inet:localhost:8891"
 	, "non_smtpd_milters = inet:localhost:8891"
@@ -619,22 +621,22 @@ dkimMilter = Postfix.mainCfFile `File.containsLines`
 
 -- This does not configure postfix to use the dkim milter,
 -- nor does it set up domainkey DNS.
-dkimInstalled :: Property
-dkimInstalled = propertyList "opendkim installed"
-	[ Apt.serviceInstalledRunning "opendkim"
-	, File.dirExists "/etc/mail"
-	, File.hasPrivContent "/etc/mail/dkim.key" (Context "kitenet.net")
-	, File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
-	, "/etc/default/opendkim" `File.containsLine`
-		"SOCKET=\"inet:8891@localhost\""
-	, "/etc/opendkim.conf" `File.containsLines`
-		[ "KeyFile /etc/mail/dkim.key"
-		, "SubDomains yes"
-		, "Domain *"
-		, "Selector mail"
-		]
-	]
-	`onChange` Service.restarted "opendkim"
+dkimInstalled :: Property HasInfo
+dkimInstalled = go `onChange` Service.restarted "opendkim"
+  where
+	go = propertyList "opendkim installed" $ props
+		& Apt.serviceInstalledRunning "opendkim"
+		& File.dirExists "/etc/mail"
+		& File.hasPrivContent "/etc/mail/dkim.key" (Context "kitenet.net")
+		& File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
+		& "/etc/default/opendkim" `File.containsLine`
+			"SOCKET=\"inet:8891@localhost\""
+		& "/etc/opendkim.conf" `File.containsLines`
+			[ "KeyFile /etc/mail/dkim.key"
+			, "SubDomains yes"
+			, "Domain *"
+			, "Selector mail"
+			]
 
 -- This is the dkim public key, corresponding with /etc/mail/dkim.key
 -- This value can be included in a domain's additional records to make
@@ -642,37 +644,36 @@ dkimInstalled = propertyList "opendkim installed"
 domainKey :: (BindDomain, Record)
 domainKey = (RelDomain "mail._domainkey", TXT "v=DKIM1; k=rsa; t=y; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCc+/rfzNdt5DseBBmfB3C6sVM7FgVvf4h1FeCfyfwPpVcmPdW6M2I+NtJsbRkNbEICxiP6QY2UM0uoo9TmPqLgiCCG2vtuiG6XMsS0Y/gGwqKM7ntg/7vT1Go9vcquOFFuLa5PnzpVf8hB9+PMFdS4NPTvWL2c5xxshl/RJzICnQIDAQAB")
 
-hasJoeyCAChain :: Property
+hasJoeyCAChain :: Property HasInfo
 hasJoeyCAChain = "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed`
 	Context "joeyca.pem"
 
-hasPostfixCert :: Context -> Property
+hasPostfixCert :: Context -> Property HasInfo
 hasPostfixCert ctx = combineProperties "postfix tls cert installed"
 	[ "/etc/ssl/certs/postfix.pem" `File.hasPrivContentExposed` ctx
 	, "/etc/ssl/private/postfix.pem" `File.hasPrivContent` ctx
 	]
 
-kitenetHttps :: Property
-kitenetHttps = propertyList "kitenet.net https certs"
-	[ File.hasPrivContent "/etc/ssl/certs/web.pem" ctx
-	, File.hasPrivContent "/etc/ssl/private/web.pem" ctx
-	, File.hasPrivContent "/etc/ssl/certs/startssl.pem" ctx
-	, toProp $ Apache.modEnabled "ssl"
-	]
+kitenetHttps :: Property HasInfo
+kitenetHttps = propertyList "kitenet.net https certs" $ props
+	& File.hasPrivContent "/etc/ssl/certs/web.pem" ctx
+	& File.hasPrivContent "/etc/ssl/private/web.pem" ctx
+	& File.hasPrivContent "/etc/ssl/certs/startssl.pem" ctx
+	& Apache.modEnabled "ssl"
   where
 	ctx = Context "kitenet.net"
 
 -- Legacy static web sites and redirections from kitenet.net to newer
 -- sites.
-legacyWebSites :: Property
-legacyWebSites = propertyList "legacy web sites"
-	[ Apt.serviceInstalledRunning "apache2"
-	, toProp $ Apache.modEnabled "rewrite"
-	, toProp $ Apache.modEnabled "cgi"
-	, toProp $ Apache.modEnabled "speling"
-	, userDirHtml
-	, kitenetHttps
-	, toProp $ Apache.siteEnabled "kitenet.net" $ apachecfg "kitenet.net" True
+legacyWebSites :: Property HasInfo
+legacyWebSites = propertyList "legacy web sites" $ props
+	& Apt.serviceInstalledRunning "apache2"
+	& Apache.modEnabled "rewrite"
+	& Apache.modEnabled "cgi"
+	& Apache.modEnabled "speling"
+	& userDirHtml
+	& kitenetHttps
+	& apacheSite "kitenet.net" True
 		-- /var/www is empty
 		[ "DocumentRoot /var/www"
 		, "<Directory /var/www>"
@@ -759,8 +760,8 @@ legacyWebSites = propertyList "legacy web sites"
 		, "rewriterule /~kyle/family/wiki/(.*).rss http://macleawiki.branchable.com/$1/index.rss [L]"
 		, "rewriterule /~kyle/family/wiki(.*) http://macleawiki.branchable.com$1 [L]"
 		]
-	, alias "anna.kitenet.net"
-	, toProp $ Apache.siteEnabled "anna.kitenet.net" $ apachecfg "anna.kitenet.net" False
+	& alias "anna.kitenet.net"
+	& apacheSite "anna.kitenet.net" False
 		[ "DocumentRoot /home/anna/html"
 		, "<Directory /home/anna/html/>"
 		, "  Options Indexes ExecCGI"
@@ -768,9 +769,9 @@ legacyWebSites = propertyList "legacy web sites"
 		, Apache.allowAll
 		, "</Directory>"
 		]
-	, alias "sows-ear.kitenet.net"
-	, alias "www.sows-ear.kitenet.net"
-	, toProp $ Apache.siteEnabled "sows-ear.kitenet.net" $ apachecfg "sows-ear.kitenet.net" False
+	& alias "sows-ear.kitenet.net"
+	& alias "www.sows-ear.kitenet.net"
+	& apacheSite "sows-ear.kitenet.net" False
 		[ "ServerAlias www.sows-ear.kitenet.net"
 		, "DocumentRoot /srv/web/sows-ear.kitenet.net"
 		, "<Directory /srv/web/sows-ear.kitenet.net>"
@@ -779,9 +780,9 @@ legacyWebSites = propertyList "legacy web sites"
 		, Apache.allowAll
 		, "</Directory>"
 		]
-	, alias "wortroot.kitenet.net"
-	, alias "www.wortroot.kitenet.net"
-	, toProp $ Apache.siteEnabled "wortroot.kitenet.net" $ apachecfg "wortroot.kitenet.net" False
+	& alias "wortroot.kitenet.net"
+	& alias "www.wortroot.kitenet.net"
+	& apacheSite "wortroot.kitenet.net" False
 		[ "ServerAlias www.wortroot.kitenet.net"
 		, "DocumentRoot /srv/web/wortroot.kitenet.net"
 		, "<Directory /srv/web/wortroot.kitenet.net>"
@@ -790,8 +791,8 @@ legacyWebSites = propertyList "legacy web sites"
 		, Apache.allowAll
 		, "</Directory>"
 		]
-	, alias "creeksidepress.com"
-	, toProp $ Apache.siteEnabled "creeksidepress.com" $ apachecfg "creeksidepress.com" False
+	& alias "creeksidepress.com"
+	& apacheSite "creeksidepress.com" False
 		[ "ServerAlias www.creeksidepress.com"
 		, "DocumentRoot /srv/web/www.creeksidepress.com"
 		, "<Directory /srv/web/www.creeksidepress.com>"
@@ -800,8 +801,8 @@ legacyWebSites = propertyList "legacy web sites"
 		, Apache.allowAll
 		, "</Directory>"
 		]
-	, alias "joey.kitenet.net"
-	, toProp $ Apache.siteEnabled "joey.kitenet.net" $ apachecfg "joey.kitenet.net" False
+	& alias "joey.kitenet.net"
+	& apacheSite "joey.kitenet.net" False
 		[ "DocumentRoot /var/www"
 		, "<Directory /var/www/>"
 		, "  Options Indexes ExecCGI"
@@ -821,12 +822,12 @@ legacyWebSites = propertyList "legacy web sites"
 		, "# Redirect all to joeyh.name."
 		, "rewriterule (.*) http://joeyh.name$1 [r]"
 		]
-	]
 
-userDirHtml :: Property
+userDirHtml :: Property HasInfo
 userDirHtml = File.fileProperty "apache userdir is html" (map munge) conf
 	`onChange` Apache.reloaded
 	`requires` (toProp $ Apache.modEnabled "userdir")
   where
 	munge = replace "public_html" "html"
 	conf = "/etc/apache2/mods-available/userdir.conf"
+

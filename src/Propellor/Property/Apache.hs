@@ -9,7 +9,7 @@ import Utility.SafeCommand
 type ConfigFile = [String]
 
 siteEnabled :: HostName -> ConfigFile -> RevertableProperty
-siteEnabled hn cf = RevertableProperty enable disable
+siteEnabled hn cf = enable <!> disable
   where
 	enable = combineProperties ("apache site enabled " ++ hn)
 		[ siteAvailable hn cf
@@ -28,14 +28,14 @@ siteEnabled hn cf = RevertableProperty enable disable
 		`onChange` reloaded
 	isenabled = boolSystem "a2query" [Param "-q", Param "-s", Param hn]
 
-siteAvailable :: HostName -> ConfigFile -> Property
+siteAvailable :: HostName -> ConfigFile -> Property NoInfo
 siteAvailable hn cf = combineProperties ("apache site available " ++ hn) $
 	map (`File.hasContent` (comment:cf)) (siteCfg hn)
   where
 	comment = "# deployed with propellor, do not modify"
 
 modEnabled :: String -> RevertableProperty
-modEnabled modname = RevertableProperty enable disable
+modEnabled modname = enable <!> disable
   where
 	enable = check (not <$> isenabled) $
 		cmdProperty "a2enmod" ["--quiet", modname]
@@ -59,18 +59,18 @@ siteCfg hn =
 	, "/etc/apache2/sites-available/" ++ hn ++ ".conf"
 	] 
 
-installed :: Property
+installed :: Property NoInfo
 installed = Apt.installed ["apache2"]
 
-restarted :: Property
+restarted :: Property NoInfo
 restarted = Service.restarted "apache2"
 
-reloaded :: Property
+reloaded :: Property NoInfo
 reloaded = Service.reloaded "apache2"
 
 -- | Configure apache to use SNI to differentiate between
 -- https hosts.
-multiSSL :: Property
+multiSSL :: Property NoInfo
 multiSSL = "/etc/apache2/conf.d/ssl" `File.hasContent`
 	[ "NameVirtualHost *:443"
 	, "SSLStrictSNIVHostCheck off"

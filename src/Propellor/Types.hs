@@ -1,44 +1,48 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Propellor.Types
 	( Host(..)
-	, Info(..)
-	, getInfo
-	, Propellor(..)
-	, Property(..)
-	, RevertableProperty(..)
-	, IsProp
-	, describe
-	, toProp
-	, requires
 	, Desc
-	, Result(..)
-	, ToResult(..)
-	, ActionResult(..)
-	, CmdLine(..)
-	, PrivDataField(..)
-	, PrivData
-	, Context(..)
-	, anyContext
-	, SshKeyType(..)
-	, Val(..)
-	, fromVal
-	, RunLog
+	, Property
+	, HasInfo
+	, NoInfo
+	, CInfo
+	, infoProperty
+	, simpleProperty
+	, adjustPropertySatisfy
+	, propertyInfo
+	, propertyDesc
+	, propertyChildren
+	, RevertableProperty(..)
+	, (<!>)
+	, IsProp(..)
+	, Combines(..)
+	, CombinedType
+	, before
+	, combineWith
+	, Info(..)
+	, Propellor(..)
 	, EndAction(..)
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
+	, module Propellor.Types.Result
+	, propertySatisfy
+	, ignoreInfo
 	) where
 
 import Data.Monoid
 import Control.Applicative
-import System.Console.ANSI
-import System.Posix.Types
 import "mtl" Control.Monad.RWS.Strict
 import "MonadCatchIO-transformers" Control.Monad.CatchIO
 import qualified Data.Set as S
 import qualified Data.Map as M
-import qualified Propellor.Types.Dns as Dns
 
 import Propellor.Types.OS
 import Propellor.Types.Chroot
@@ -46,137 +50,228 @@ import Propellor.Types.Dns
 import Propellor.Types.Docker
 import Propellor.Types.PrivData
 import Propellor.Types.Empty
+import Propellor.Types.Val
+import Propellor.Types.Result
+import qualified Propellor.Types.Dns as Dns
 
 -- | Everything Propellor knows about a system: Its hostname,
--- properties and other info.
+-- properties and their collected info.
 data Host = Host
 	{ hostName :: HostName
-	, hostProperties :: [Property]
+	, hostProperties :: [Property HasInfo]
 	, hostInfo :: Info
 	}
 	deriving (Show)
 
 -- | Propellor's monad provides read-only access to info about the host
--- it's running on, and a writer to accumulate logs about the run.
-newtype Propellor p = Propellor { runWithHost :: RWST Host RunLog () IO p }
+-- it's running on, and a writer to accumulate EndActions.
+newtype Propellor p = Propellor { runWithHost :: RWST Host [EndAction] () IO p }
 	deriving
 		( Monad
 		, Functor
 		, Applicative
 		, MonadReader Host
-		, MonadWriter RunLog
+		, MonadWriter [EndAction]
 		, MonadIO
 		, MonadCatchIO
 		)
 
+instance Monoid (Propellor Result) where
+	mempty = return NoChange
+	-- | The second action is only run if the first action does not fail.
+	mappend x y = do
+		rx <- x
+		case rx of
+			FailedChange -> return FailedChange
+			_ -> do
+				ry <- y
+				return (rx <> ry)
+
+-- | An action that Propellor runs at the end, after trying to satisfy all
+-- properties. It's passed the combined Result of the entire Propellor run.
+data EndAction = EndAction Desc (Result -> Propellor Result)
+
+type Desc = String
+
 -- | The core data type of Propellor, this represents a property
 -- that the system should have, and an action to ensure it has the
 -- property.
-data Property = Property
-	{ propertyDesc :: Desc
-	, propertySatisfy :: Propellor Result
-	-- ^ must be idempotent; may run repeatedly
-	, propertyInfo :: Info
-	-- ^ a property can add info to the host.
-	}
+data Property i where
+	IProperty :: Desc -> Propellor Result -> Info -> [Property HasInfo] -> Property HasInfo
+	SProperty :: Desc -> Propellor Result -> [Property NoInfo] -> Property NoInfo
 
-instance Show Property where
-	show p = "property " ++ show (propertyDesc p)
+-- | Indicates that a Property has associated Info.
+data HasInfo
+-- | Indicates that a Property does not have Info.
+data NoInfo
+
+-- | Type level calculation of the combination of HasInfo and/or NoInfo
+type family CInfo x y
+type instance CInfo HasInfo HasInfo = HasInfo
+type instance CInfo HasInfo NoInfo = HasInfo
+type instance CInfo NoInfo HasInfo = HasInfo
+type instance CInfo NoInfo NoInfo = NoInfo
+
+-- | Constructs a Property with associated Info.
+infoProperty 
+	:: Desc -- ^ description of the property
+	-> Propellor Result -- ^ action to run to satisfy the property (must be idempotent; may run repeatedly)
+	-> Info -- ^ info associated with the property
+	-> [Property i] -- ^ child properties
+	-> Property HasInfo
+infoProperty d a i cs = IProperty d a i (map toIProperty cs)
+
+-- | Constructs a Property with no Info.
+simpleProperty :: Desc -> Propellor Result -> [Property NoInfo] -> Property NoInfo
+simpleProperty = SProperty
+
+toIProperty :: Property i -> Property HasInfo
+toIProperty p@(IProperty {}) = p
+toIProperty (SProperty d s cs) = IProperty d s mempty (map toIProperty cs)
+
+toSProperty :: Property i -> Property NoInfo
+toSProperty (IProperty d s _ cs) = SProperty d s (map toSProperty cs)
+toSProperty p@(SProperty {}) = p
+
+-- | Makes a version of a Proprty without its Info.
+-- Use with caution!
+ignoreInfo :: Property i -> Property NoInfo
+ignoreInfo = toSProperty
+
+-- | Gets the action that can be run to satisfy a Property.
+-- You should never run this action directly. Use
+-- 'Propellor.Engine.ensureProperty` instead.
+propertySatisfy :: Property i -> Propellor Result
+propertySatisfy (IProperty _ a _ _) = a
+propertySatisfy (SProperty _ a _) = a
+
+instance Show (Property i) where
+        show p = "property " ++ show (propertyDesc p)
+
+-- | Changes the action that is performed to satisfy a property. 
+adjustPropertySatisfy :: Property i -> (Propellor Result -> Propellor Result) -> Property i
+adjustPropertySatisfy (IProperty d s i cs) f = IProperty d (f s) i cs
+adjustPropertySatisfy (SProperty d s cs) f = SProperty d (f s) cs
+
+propertyInfo :: Property i -> Info
+propertyInfo (IProperty _ _ i _) = i
+propertyInfo (SProperty {}) = mempty
+
+propertyDesc :: Property i -> Desc
+propertyDesc (IProperty d _ _ _) = d
+propertyDesc (SProperty d _ _) = d
+
+-- | A Property can include a list of child properties that it also
+-- satisfies. This allows them to be introspected to collect their info, etc.
+propertyChildren :: Property i -> [Property i]
+propertyChildren (IProperty _ _ _ cs) = cs
+propertyChildren (SProperty _ _ cs) = cs
 
 -- | A property that can be reverted.
-data RevertableProperty = RevertableProperty Property Property
+data RevertableProperty = RevertableProperty (Property HasInfo) (Property HasInfo)
+
+-- | Makes a revertable property; the first Property is run
+-- normally and the second is run when it's reverted.
+(<!>) :: Property i1 -> Property i2 -> RevertableProperty
+p1 <!> p2 = RevertableProperty (toIProperty p1) (toIProperty p2)
 
 class IsProp p where
 	-- | Sets description.
 	describe :: p -> Desc -> p
-	toProp :: p -> Property
-	-- | Indicates that the first property can only be satisfied
-	-- once the second one is.
-	requires :: p -> Property -> p
-	getInfo :: p -> Info
+	toProp :: p -> Property HasInfo
+	getDesc :: p -> Desc
+	-- | Gets the info of the property, combined with all info
+	-- of all children properties.
+	getInfoRecursive :: p -> Info
 
-instance IsProp Property where
-	describe p d = p { propertyDesc = d }
-	toProp p = p
-	getInfo = propertyInfo
-	x `requires` y = Property (propertyDesc x) satisfy info
-	  where
-		info = getInfo y <> getInfo x
-		satisfy = do
-			r <- propertySatisfy y
-			case r of
-				FailedChange -> return FailedChange
-				_ -> propertySatisfy x
-			
+instance IsProp (Property HasInfo) where
+	describe (IProperty _ a i cs) d = IProperty d a i cs
+	toProp = id
+	getDesc = propertyDesc
+	getInfoRecursive (IProperty _ _ i cs) = 
+		i <> mconcat (map getInfoRecursive cs)
+instance IsProp (Property NoInfo) where
+	describe (SProperty _ a cs) d = SProperty d a cs
+	toProp = toIProperty
+	getDesc = propertyDesc
+	getInfoRecursive _ = mempty
 
 instance IsProp RevertableProperty where
 	-- | Sets the description of both sides.
 	describe (RevertableProperty p1 p2) d = 
 		RevertableProperty (describe p1 d) (describe p2 ("not " ++ d))
+	getDesc (RevertableProperty p1 _) = getDesc p1
 	toProp (RevertableProperty p1 _) = p1
-	(RevertableProperty p1 p2) `requires` y =
-		RevertableProperty (p1 `requires` y) p2
 	-- | Return the Info of the currently active side.
-	getInfo (RevertableProperty p1 _p2) = getInfo p1
+	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
 
-type Desc = String
+-- | Type level calculation of the type that results from combining two types
+-- with `requires`.
+type family CombinedType x y
+type instance CombinedType (Property x) (Property y) = Property (CInfo x y)
+type instance CombinedType RevertableProperty (Property NoInfo) = RevertableProperty
+type instance CombinedType RevertableProperty (Property HasInfo) = RevertableProperty
+type instance CombinedType RevertableProperty RevertableProperty = RevertableProperty
 
-data Result = NoChange | MadeChange | FailedChange
-	deriving (Read, Show, Eq)
+class Combines x y where
+	-- | Indicates that the first property depends on the second,
+	-- so before the first is ensured, the second will be ensured.
+	requires :: x -> y -> CombinedType x y
+	
+-- | Combines together two properties, resulting in one property
+-- that ensures the first, and if the first succeeds, ensures the second.
+-- The property uses the description of the first property.
+before :: (IsProp x, Combines y x, IsProp (CombinedType y x)) => x -> y -> CombinedType y x
+before x y = (y `requires` x) `describe` (getDesc x)
 
-instance Monoid Result where
-	mempty = NoChange
+-- | Combines together two properties, yielding a property that
+-- has the description and info of the first, and that has the second
+-- property as a child. The two actions to satisfy the properties
+-- are passed to a function that can combine them in arbitrary ways.
+combineWith
+	:: (Combines (Property x) (Property y))
+	=> (Propellor Result -> Propellor Result -> Propellor Result)
+	-> Property x
+	-> Property y
+	-> CombinedType (Property x) (Property y)
+combineWith f x y = adjustPropertySatisfy (x `requires` y) $ \_ ->
+	f (propertySatisfy $ toSProperty x) (propertySatisfy $ toSProperty y)
 
-	mappend FailedChange _ = FailedChange
-	mappend _ FailedChange = FailedChange
-	mappend MadeChange _ = MadeChange
-	mappend _ MadeChange = MadeChange
-	mappend NoChange NoChange = NoChange
+instance Combines (Property HasInfo) (Property HasInfo) where
+	requires (IProperty d1 a1 i1 cs1) y@(IProperty _d2 a2 _i2 _cs2) =
+		IProperty d1 (a2 <> a1) i1 (y : cs1)
 
-class ToResult t where
-	toResult :: t -> Result
+instance Combines (Property HasInfo) (Property NoInfo) where
+	requires (IProperty d1 a1 i1 cs1) y@(SProperty _d2 a2 _cs2) =
+		IProperty d1 (a2 <> a1) i1 (toIProperty y : cs1)
 
-instance ToResult Bool where
-	toResult False = FailedChange
-	toResult True = MadeChange
+instance Combines (Property NoInfo) (Property HasInfo) where
+	requires (SProperty d1 a1 cs1) y@(IProperty _d2 a2 _i2 _cs2) =
+		IProperty d1 (a2 <> a1) mempty (y : map toIProperty cs1)
 
--- | Results of actions, with color.
-class ActionResult a where
-	getActionResult :: a -> (String, ColorIntensity, Color)
+instance Combines (Property NoInfo) (Property NoInfo) where
+	requires (SProperty d1 a1  cs1) y@(SProperty _d2 a2 _cs2) =
+		SProperty d1 (a2 <> a1) (y : cs1)
 
-instance ActionResult Bool where
-	getActionResult False = ("failed", Vivid, Red)
-	getActionResult True = ("done", Dull, Green)
+instance Combines RevertableProperty (Property HasInfo) where
+	requires (RevertableProperty p1 p2) y =
+		RevertableProperty (p1 `requires` y) p2
 
-instance ActionResult Result where
-	getActionResult NoChange = ("ok", Dull, Green)
-	getActionResult MadeChange = ("done", Vivid, Green)
-	getActionResult FailedChange = ("failed", Vivid, Red)
+instance Combines RevertableProperty (Property NoInfo) where
+	requires (RevertableProperty p1 p2) y =
+		RevertableProperty (p1 `requires` toIProperty y) p2
 
-data CmdLine
-	= Run HostName
-	| Spin [HostName] (Maybe HostName)
-	| SimpleRun HostName
-	| Set PrivDataField Context
-	| Dump PrivDataField Context
-	| Edit PrivDataField Context
-	| ListFields
-	| AddKey String
-	| Merge
-	| Serialized CmdLine
-	| Continue CmdLine
-	| Update (Maybe HostName)
-	| Relay HostName
-	| DockerInit HostName
-	| DockerChain HostName String
-	| ChrootChain HostName FilePath Bool Bool
-	| GitPush Fd Fd
-	deriving (Read, Show, Eq)
+instance Combines RevertableProperty RevertableProperty where
+	requires (RevertableProperty x1 x2) (RevertableProperty y1 y2) =
+		RevertableProperty
+			(x1 `requires` y1)
+			-- when reverting, run actions in reverse order
+			(y2 `requires` x2)
 
 -- | Information about a host.
 data Info = Info
 	{ _os :: Val System
-	, _privDataFields :: S.Set (PrivDataField, HostContext)
+	, _privData :: S.Set (PrivDataField, Maybe PrivDataSourceDesc, HostContext)
 	, _sshPubKey :: M.Map SshKeyType String
 	, _aliases :: S.Set HostName
 	, _dns :: S.Set Dns.Record
@@ -190,7 +285,7 @@ instance Monoid Info where
 	mempty = Info mempty mempty mempty mempty mempty mempty mempty mempty
 	mappend old new = Info
 		{ _os = _os old <> _os new
-		, _privDataFields = _privDataFields old <> _privDataFields new
+		, _privData = _privData old <> _privData new
 		, _sshPubKey = _sshPubKey new `M.union` _sshPubKey old
 		, _aliases = _aliases old <> _aliases new
 		, _dns = _dns old <> _dns new
@@ -202,7 +297,7 @@ instance Monoid Info where
 instance Empty Info where
 	isEmpty i = and
 		[ isEmpty (_os i)
-		, isEmpty (_privDataFields i)
+		, isEmpty (_privData i)
 		, isEmpty (_sshPubKey i)
 		, isEmpty (_aliases i)
 		, isEmpty (_dns i)
@@ -210,26 +305,3 @@ instance Empty Info where
 		, isEmpty (_dockerinfo i)
 		, isEmpty (_chrootinfo i)
 		]
-
-data Val a = Val a | NoVal
-	deriving (Eq, Show)
-
-instance Monoid (Val a) where
-	mempty = NoVal
-	mappend old new = case new of
-		NoVal -> old
-		_ -> new
-
-instance Empty (Val a) where
-	isEmpty NoVal = True
-	isEmpty _ = False
-
-fromVal :: Val a -> Maybe a
-fromVal (Val a) = Just a
-fromVal NoVal = Nothing
-
-type RunLog = [EndAction]
-
--- | An action that Propellor runs at the end, after trying to satisfy all
--- properties. It's passed the combined Result of the entire Propellor run.
-data EndAction = EndAction Desc (Result -> Propellor Result)

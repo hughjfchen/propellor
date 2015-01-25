@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Propellor.Property.SiteSpecific.GitAnnexBuilder where
 
 import Propellor
@@ -23,54 +25,56 @@ builddir = gitbuilderdir </> "build"
 
 type TimeOut = String -- eg, 5h
 
-autobuilder :: Architecture -> CronTimes -> TimeOut -> Property
-autobuilder arch crontimes timeout = combineProperties "gitannexbuilder"
-	[ Apt.serviceInstalledRunning "cron"
-	, Cron.niceJob "gitannexbuilder" crontimes builduser gitbuilderdir $
-		"git pull ; timeout " ++ timeout ++ " ./autobuild"
+autobuilder :: Architecture -> CronTimes -> TimeOut -> Property HasInfo
+autobuilder arch crontimes timeout = combineProperties "gitannexbuilder" $ props
+	& Apt.serviceInstalledRunning "cron"
+	& Cron.niceJob "gitannexbuilder" crontimes builduser gitbuilderdir
+		("git pull ; timeout " ++ timeout ++ " ./autobuild")
+	& rsyncpassword
+  where
+	context = Context ("gitannexbuilder " ++ arch)
+	pwfile = homedir </> "rsyncpassword"
 	-- The builduser account does not have a password set,
 	-- instead use the password privdata to hold the rsync server
 	-- password used to upload the built image.
-	, withPrivData (Password builduser) context $ \getpw ->
+	rsyncpassword = withPrivData (Password builduser) context $ \getpw ->
 		property "rsync password" $ getpw $ \pw -> do
 			oldpw <- liftIO $ catchDefaultIO "" $
 				readFileStrict pwfile
 			if pw /= oldpw
 				then makeChange $ writeFile pwfile pw
 				else noChange
-	]
-  where
-	context = Context ("gitannexbuilder " ++ arch)
-	pwfile = homedir </> "rsyncpassword"
 
-tree :: Architecture -> Property
-tree buildarch = combineProperties "gitannexbuilder tree"
-	[ Apt.installed ["git"]
+tree :: Architecture -> Property HasInfo
+tree buildarch = combineProperties "gitannexbuilder tree" $ props
+	& Apt.installed ["git"]
 	-- gitbuilderdir directory already exists when docker volume is used,
 	-- but with wrong owner.
-	, File.dirExists gitbuilderdir
-	, File.ownerGroup gitbuilderdir builduser builduser
-	, check (not <$> (doesDirectoryExist (gitbuilderdir </> ".git"))) $ 
+	& File.dirExists gitbuilderdir
+	& File.ownerGroup gitbuilderdir builduser builduser
+	& gitannexbuildercloned
+	& builddircloned
+  where
+	gitannexbuildercloned = check (not <$> (doesDirectoryExist (gitbuilderdir </> ".git"))) $ 
 		userScriptProperty builduser
 			[ "git clone git://git.kitenet.net/gitannexbuilder " ++ gitbuilderdir
 			, "cd " ++ gitbuilderdir
 			, "git checkout " ++ buildarch
 			]
 			`describe` "gitbuilder setup"
-	, check (not <$> doesDirectoryExist builddir) $ userScriptProperty builduser
+	builddircloned = check (not <$> doesDirectoryExist builddir) $ userScriptProperty builduser
 		[ "git clone git://git-annex.branchable.com/ " ++ builddir
 		]
-	]
 
-buildDepsApt :: Property
-buildDepsApt = combineProperties "gitannexbuilder build deps"
-	[ Apt.buildDep ["git-annex"]
-	, Apt.installed ["liblockfile-simple-perl"]
-	, buildDepsNoHaskellLibs
-	, "git-annex source build deps installed" ==> Apt.buildDepIn builddir
-	]
+buildDepsApt :: Property HasInfo
+buildDepsApt = combineProperties "gitannexbuilder build deps" $ props
+	& Apt.buildDep ["git-annex"]
+	& Apt.installed ["liblockfile-simple-perl"]
+	& buildDepsNoHaskellLibs
+	& Apt.buildDepIn builddir
+		`describe` "git-annex source build deps installed"
 
-buildDepsNoHaskellLibs :: Property
+buildDepsNoHaskellLibs :: Property NoInfo
 buildDepsNoHaskellLibs = Apt.installed
 	["git", "rsync", "moreutils", "ca-certificates",
 	"debhelper", "ghc", "curl", "openssh-client", "git-remote-gcrypt",
@@ -82,7 +86,7 @@ buildDepsNoHaskellLibs = Apt.installed
 
 -- Installs current versions of git-annex's deps from cabal, but only
 -- does so once.
-cabalDeps :: Property
+cabalDeps :: Property NoInfo
 cabalDeps = flagFile go cabalupdated
 	where
 		go = userScriptProperty builduser ["cabal update && cabal install git-annex --only-dependencies || true"]
@@ -108,7 +112,13 @@ androidAutoBuilderContainer dockerImage crontimes timeout =
 		& autobuilder "android" crontimes timeout
 
 -- Android is cross-built in a Debian i386 container, using the Android NDK.
-androidContainer :: (System -> Docker.Image) -> Docker.ContainerName -> Property -> FilePath -> Docker.Container
+androidContainer
+	:: (IsProp (Property (CInfo NoInfo i)), (Combines (Property NoInfo) (Property i)))
+	=> (System -> Docker.Image)
+	-> Docker.ContainerName
+	-> Property i
+	-> FilePath
+	-> Docker.Container
 androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.container name
 	(dockerImage osver)
 	& os osver

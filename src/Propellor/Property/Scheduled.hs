@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Propellor.Property.Scheduled
 	( period
 	, periodParse
@@ -18,8 +20,8 @@ import qualified Data.Map as M
 --
 -- This uses the description of the Property to keep track of when it was
 -- last run.
-period :: Property -> Recurrance -> Property
-period prop recurrance = flip describe desc $ adjustProperty prop $ \satisfy -> do
+period :: (IsProp (Property i)) => Property i -> Recurrance -> Property i
+period prop recurrance = flip describe desc $ adjustPropertySatisfy prop $ \satisfy -> do
 	lasttime <- liftIO $ getLastChecked (propertyDesc prop)
 	nexttime <- liftIO $ fmap startTime <$> nextTime schedule lasttime
 	t <- liftIO localNow
@@ -34,7 +36,7 @@ period prop recurrance = flip describe desc $ adjustProperty prop $ \satisfy -> 
 	desc = propertyDesc prop ++ " (period " ++ fromRecurrance recurrance ++ ")"
 
 -- | Like period, but parse a human-friendly string.
-periodParse :: Property -> String -> Property
+periodParse :: Property NoInfo -> String -> Property NoInfo
 periodParse prop s = case toRecurrance s of
 	Just recurrance -> period prop recurrance
 	Nothing -> property "periodParse" $ do

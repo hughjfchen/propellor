@@ -85,6 +85,7 @@ Library
     Propellor.Property.Gpg
     Propellor.Property.Group
     Propellor.Property.Grub
+    Propellor.Property.Journald
     Propellor.Property.Mount
     Propellor.Property.Network
     Propellor.Property.Nginx
@@ -94,6 +95,7 @@ Library
     Propellor.Property.Postfix
     Propellor.Property.Prosody
     Propellor.Property.Reboot
+    Propellor.Property.List
     Propellor.Property.Scheduled
     Propellor.Property.Service
     Propellor.Property.Ssh
@@ -108,7 +110,7 @@ Library
     Propellor.Property.SiteSpecific.GitHome
     Propellor.Property.SiteSpecific.JoeySites
     Propellor.Property.SiteSpecific.GitAnnexBuilder
-    Propellor.Host
+    Propellor.PropAccum
     Propellor.CmdLine
     Propellor.Info
     Propellor.Message
@@ -122,6 +124,9 @@ Library
     Propellor.Types.Empty
     Propellor.Types.OS
     Propellor.Types.PrivData
+    Propellor.Types.Val
+    Propellor.Types.Result
+    Propellor.Types.CmdLine
   Other-Modules:
     Propellor.Git
     Propellor.Gpg
@@ -133,11 +138,13 @@ Library
     Propellor.Property.Chroot.Util
     Utility.Applicative
     Utility.Data
+    Utility.DataUnits
     Utility.Directory
     Utility.Env
     Utility.Exception
     Utility.FileMode
     Utility.FileSystemEncoding
+    Utility.HumanNumber
     Utility.LinuxMkLibs
     Utility.Misc
     Utility.Monad

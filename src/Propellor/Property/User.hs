@@ -6,7 +6,7 @@ import Propellor
 
 data Eep = YesReallyDeleteHome
 
-accountFor :: UserName -> Property
+accountFor :: UserName -> Property NoInfo
 accountFor user = check (isNothing <$> catchMaybeIO (homedir user)) $ cmdProperty "adduser"
 	[ "--disabled-password"
 	, "--gecos", ""
@@ -15,7 +15,7 @@ accountFor user = check (isNothing <$> catchMaybeIO (homedir user)) $ cmdPropert
 	`describe` ("account for " ++ user)
 
 -- | Removes user home directory!! Use with caution.
-nuked :: UserName -> Eep -> Property
+nuked :: UserName -> Eep -> Property NoInfo
 nuked user _ = check (isJust <$> catchMaybeIO (homedir user)) $ cmdProperty "userdel"
 	[ "-r"
 	, user
@@ -24,13 +24,13 @@ nuked user _ = check (isJust <$> catchMaybeIO (homedir user)) $ cmdProperty "use
 
 -- | Only ensures that the user has some password set. It may or may
 -- not be a password from the PrivData.
-hasSomePassword :: UserName -> Property
+hasSomePassword :: UserName -> Property HasInfo
 hasSomePassword user = hasSomePassword' user hostContext
 
 -- | While hasSomePassword uses the name of the host as context,
 -- this allows specifying a different context. This is useful when
 -- you want to use the same password on multiple hosts, for example.
-hasSomePassword' :: IsContext c => UserName -> c -> Property
+hasSomePassword' :: IsContext c => UserName -> c -> Property HasInfo
 hasSomePassword' user context = check ((/= HasPassword) <$> getPasswordStatus user) $
 	hasPassword' user context
 
@@ -40,10 +40,10 @@ hasSomePassword' user context = check ((/= HasPassword) <$> getPasswordStatus us
 -- A user's password can be stored in the PrivData in either of two forms;
 -- the full cleartext <Password> or a <CryptPassword> hash. The latter
 -- is obviously more secure.
-hasPassword :: UserName -> Property
+hasPassword :: UserName -> Property HasInfo
 hasPassword user = hasPassword' user hostContext
 
-hasPassword' :: IsContext c => UserName -> c -> Property
+hasPassword' :: IsContext c => UserName -> c -> Property HasInfo
 hasPassword' user context = go `requires` shadowConfig True
   where
 	go = withSomePrivData srcs context $
@@ -66,7 +66,7 @@ setPassword getpassword = getpassword $ go
 			hPutStrLn h $ user ++ ":" ++ v
 			hClose h
 
-lockedPassword :: UserName -> Property
+lockedPassword :: UserName -> Property NoInfo
 lockedPassword user = check (not <$> isLockedPassword user) $ cmdProperty "passwd"
 	[ "--lock"
 	, user
@@ -90,7 +90,7 @@ isLockedPassword user = (== LockedPassword) <$> getPasswordStatus user
 homedir :: UserName -> IO FilePath
 homedir user = homeDirectory <$> getUserEntryForName user
 
-hasGroup :: UserName -> GroupName -> Property
+hasGroup :: UserName -> GroupName -> Property NoInfo
 hasGroup user group' = check test $ cmdProperty "adduser"
 	[ user
 	, group'
@@ -100,7 +100,7 @@ hasGroup user group' = check test $ cmdProperty "adduser"
 	test = not . elem group' . words <$> readProcess "groups" [user]
 
 -- | Controls whether shadow passwords are enabled or not.
-shadowConfig :: Bool -> Property
+shadowConfig :: Bool -> Property NoInfo
 shadowConfig True = check (not <$> shadowExists) $
 	cmdProperty "shadowconfig" ["on"]
 		`describe` "shadow passwords enabled"

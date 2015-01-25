@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Propellor.Property.Debootstrap (
 	Url,
 	DebootstrapConfig(..),
@@ -56,19 +58,18 @@ toParams (c1 :+ c2) = toParams c1 <> toParams c2
 -- Note that reverting this property does not stop any processes
 -- currently running in the chroot.
 built :: FilePath -> System -> DebootstrapConfig -> RevertableProperty
-built = built' (toProp installed)
-
-built' :: Property -> FilePath -> System -> DebootstrapConfig -> RevertableProperty
-built' installprop target system@(System _ arch) config =
-	RevertableProperty setup teardown
+built target system config = built' (toProp installed) target system config <!> teardown
   where
-	setup = check (unpopulated target <||> ispartial) setupprop
-		`requires` installprop
-	
 	teardown = check (not <$> unpopulated target) teardownprop
 	
-	unpopulated d = null <$> catchDefaultIO [] (dirContents d)
+	teardownprop = property ("removed debootstrapped " ++ target) $
+		makeChange (removetarget target)
 
+built' :: (Combines (Property NoInfo) (Property i)) => Property i -> FilePath -> System -> DebootstrapConfig -> Property (CInfo NoInfo i)
+built' installprop target system@(System _ arch) config = 
+	check (unpopulated target <||> ispartial) setupprop
+		`requires` installprop
+  where
 	setupprop = property ("debootstrapped " ++ target) $ liftIO $ do
 		createDirectoryIfMissing True target
 		-- Don't allow non-root users to see inside the chroot,
@@ -93,24 +94,25 @@ built' installprop target system@(System _ arch) config =
 			, return FailedChange
 			)
 
-	teardownprop = property ("removed debootstrapped " ++ target) $
-		makeChange removetarget
-
-	removetarget = do
-		submnts <- filter (\p -> simplifyPath p /= simplifyPath target)
-			. filter (dirContains target)
-			<$> mountPoints
-		forM_ submnts umountLazy
-		removeDirectoryRecursive target
-
 	-- A failed debootstrap run will leave a debootstrap directory;
 	-- recover by deleting it and trying again.
 	ispartial = ifM (doesDirectoryExist (target </> "debootstrap"))
 		( do
-			removetarget
+			removetarget target
 			return True
 		, return False
 		)
+	
+unpopulated :: FilePath -> IO Bool
+unpopulated d = null <$> catchDefaultIO [] (dirContents d)	
+
+removetarget :: FilePath -> IO ()
+removetarget target = do
+	submnts <- filter (\p -> simplifyPath p /= simplifyPath target)
+		. filter (dirContains target)
+		<$> mountPoints
+	forM_ submnts umountLazy
+	removeDirectoryRecursive target
 
 extractSuite :: System -> Maybe String
 extractSuite (System (Debian s) _) = Just $ Apt.showSuite s
@@ -122,7 +124,7 @@ extractSuite (System (Ubuntu r) _) = Just r
 -- Note that installation from source is done by downloading the tarball
 -- from a Debian mirror, with no cryptographic verification.
 installed :: RevertableProperty
-installed = RevertableProperty install remove
+installed = install <!> remove
   where
 	install = withOS "debootstrap installed" $ \o -> 
 		ifM (liftIO $ isJust <$> programPath)
@@ -142,18 +144,18 @@ installed = RevertableProperty install remove
 	aptinstall = Apt.installed ["debootstrap"]
 	aptremove = Apt.removed ["debootstrap"]
 
-sourceInstall :: Property
+sourceInstall :: Property NoInfo
 sourceInstall = property "debootstrap installed from source" (liftIO sourceInstall')
 	`requires` perlInstalled
 	`requires` arInstalled
 
-perlInstalled :: Property
+perlInstalled :: Property NoInfo
 perlInstalled = check (not <$> inPath "perl") $ property "perl installed" $
 	liftIO $ toResult . isJust <$> firstM id
 		[ yumInstall "perl"
 		]
 
-arInstalled :: Property
+arInstalled :: Property NoInfo
 arInstalled = check (not <$> inPath "ar") $ property "ar installed" $
 	liftIO $ toResult . isJust <$> firstM id
 		[ yumInstall "binutils"
@@ -197,7 +199,7 @@ sourceInstall' = withTmpDir "debootstrap" $ \tmpd -> do
 				return MadeChange
 			_ -> errorMessage "debootstrap tar file did not contain exactly one dirctory"
 
-sourceRemove :: Property
+sourceRemove :: Property NoInfo
 sourceRemove = property "debootstrap not installed from source" $ liftIO $
 	ifM (doesDirectoryExist sourceInstallDir)
 		( do

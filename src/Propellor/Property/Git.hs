@@ -13,7 +13,7 @@ import Data.List
 --
 -- Note that reverting this property does not remove or stop inetd.
 daemonRunning :: FilePath -> RevertableProperty
-daemonRunning exportdir = RevertableProperty setup unsetup
+daemonRunning exportdir = setup <!> unsetup
   where
 	setup = containsLine conf (mkl "tcp4")
 		`requires`
@@ -48,7 +48,7 @@ daemonRunning exportdir = RevertableProperty setup unsetup
 		, exportdir
 		]
 
-installed :: Property
+installed :: Property NoInfo
 installed = Apt.installed ["git"]
 
 type RepoUrl = String
@@ -62,7 +62,7 @@ type Branch = String
 -- it will be recursively deleted first.
 --
 -- A branch can be specified, to check out.
-cloned :: UserName -> RepoUrl -> FilePath -> Maybe Branch -> Property
+cloned :: UserName -> RepoUrl -> FilePath -> Maybe Branch -> Property NoInfo
 cloned owner url dir mbranch = check originurl (property desc checkout)
 	`requires` installed
   where
@@ -98,7 +98,7 @@ isGitDir dir = isNothing <$> catchMaybeIO (readProcess "git" ["rev-parse", "--re
 
 data GitShared = Shared GroupName | SharedAll | NotShared
 
-bareRepo :: FilePath -> UserName -> GitShared -> Property
+bareRepo :: FilePath -> UserName -> GitShared -> Property NoInfo
 bareRepo repo user gitshared = check (isRepo repo) $ propertyList ("git repo: " ++ repo) $
 	dirExists repo : case gitshared of
 		NotShared ->

@@ -7,8 +7,8 @@ import qualified Propellor.Property.Service as Service
 
 import Data.List
 
-providerFor :: [UserName] -> String -> Property
-providerFor users baseurl = propertyList desc $
+providerFor :: [UserName] -> String -> Property HasInfo
+providerFor users baseurl = propertyList desc $ map toProp
 	[ Apt.serviceInstalledRunning "apache2"
 	, Apt.installed ["simpleid"]
 		`onChange` Service.restarted "apache2"

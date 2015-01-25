@@ -4,10 +4,10 @@ import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 
--- | Eg, "hd0,0" or "xen/xvda1"
+-- | Eg, \"hd0,0\" or \"xen/xvda1\"
 type GrubDevice = String
 
--- | Eg, "/dev/sda"
+-- | Eg, \"\/dev/sda\"
 type OSDevice = String
 
 type TimeoutSecs = Int
@@ -21,7 +21,7 @@ data BIOS = PC | EFI64 | EFI32 | Coreboot | Xen
 -- This includes running update-grub, so that the grub boot menu is
 -- created. It will be automatically updated when kernel packages are
 -- installed.
-installed :: BIOS -> Property
+installed :: BIOS -> Property NoInfo
 installed bios = 
 	Apt.installed [pkg] `describe` "grub package installed"
 		`before`
@@ -43,7 +43,7 @@ installed bios =
 -- on the device; it always does the work to reinstall it. It's a good idea
 -- to arrange for this property to only run once, by eg making it be run
 -- onChange after OS.cleanInstallOnce.
-boots :: OSDevice -> Property
+boots :: OSDevice -> Property NoInfo
 boots dev = cmdProperty "grub-install" [dev]
 	`describe` ("grub boots " ++ dev)
 
@@ -55,7 +55,7 @@ boots dev = cmdProperty "grub-install" [dev]
 --
 -- The rootdev should be in the form "hd0", while the bootdev is in the form
 -- "xen/xvda".
-chainPVGrub :: GrubDevice -> GrubDevice -> TimeoutSecs -> Property
+chainPVGrub :: GrubDevice -> GrubDevice -> TimeoutSecs -> Property NoInfo
 chainPVGrub rootdev bootdev timeout = combineProperties desc
 	[ File.dirExists "/boot/grub"
 	, "/boot/grub/menu.lst" `File.hasContent`

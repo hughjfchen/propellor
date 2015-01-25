@@ -10,7 +10,7 @@ import System.Posix.Files
 
 type HiddenServiceName = String
 
-isBridge :: Property
+isBridge :: Property NoInfo
 isBridge = setup `requires` Apt.installed ["tor"]
 	`describe` "tor bridge"
   where
@@ -21,7 +21,7 @@ isBridge = setup `requires` Apt.installed ["tor"]
 		, "Exitpolicy reject *:*"
 		] `onChange` restarted
 
-hiddenServiceAvailable :: HiddenServiceName -> Int -> Property
+hiddenServiceAvailable :: HiddenServiceName -> Int -> Property NoInfo
 hiddenServiceAvailable hn port = hiddenServiceHostName prop
   where
 	prop = mainConfig `File.containsLines`
@@ -30,13 +30,13 @@ hiddenServiceAvailable hn port = hiddenServiceHostName prop
 		]
 		`describe` "hidden service available"
 		`onChange` Service.reloaded "tor"
-	hiddenServiceHostName p =  adjustProperty p $ \satisfy -> do
+	hiddenServiceHostName p =  adjustPropertySatisfy p $ \satisfy -> do
 		r <- satisfy
 		h <- liftIO $ readFile (varLib </> hn </> "hostname")
 		warningMessage $ unwords ["hidden service hostname:", h]
 		return r
 
-hiddenService :: HiddenServiceName -> Int -> Property
+hiddenService :: HiddenServiceName -> Int -> Property NoInfo
 hiddenService hn port = mainConfig `File.containsLines`
 	[ unwords ["HiddenServiceDir", varLib </> hn]
 	, unwords ["HiddenServicePort", show port, "127.0.0.1:" ++ show port]
@@ -44,7 +44,7 @@ hiddenService hn port = mainConfig `File.containsLines`
 	`describe` unwords ["hidden service available:", hn, show port]
 	`onChange` restarted
 
-hiddenServiceData :: IsContext c => HiddenServiceName -> c -> Property
+hiddenServiceData :: IsContext c => HiddenServiceName -> c -> Property HasInfo
 hiddenServiceData hn context = combineProperties desc
 	[ installonion "hostname"
 	, installonion "private_key"
@@ -66,7 +66,7 @@ hiddenServiceData hn context = combineProperties desc
 			]
 		)
 
-restarted :: Property
+restarted :: Property NoInfo
 restarted = Service.restarted "tor"
 
 mainConfig :: FilePath

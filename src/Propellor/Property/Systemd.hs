@@ -1,10 +1,16 @@
 module Propellor.Property.Systemd (
 	module Propellor.Property.Systemd.Core,
+	ServiceName,
+	MachineName,
 	started,
 	stopped,
 	enabled,
 	disabled,
+	restarted,
 	persistentJournal,
+	Option,
+	configured,
+	journaldConfigured,
 	daemonReloaded,
 	Container,
 	container,
@@ -33,33 +39,38 @@ type MachineName = String
 data Container = Container MachineName Chroot.Chroot Host
 	deriving (Show)
 
-instance Hostlike Container where
-        (Container n c h) & p = Container n c (h & p)
-        (Container n c h) &^ p = Container n c (h &^ p)
-        getHost (Container _ _ h) = h
+instance PropAccum Container where
+	(Container n c h) & p = Container n c (h & p)
+	(Container n c h) &^ p = Container n c (h &^ p)
+	getProperties (Container _ _ h) = hostProperties h
 
 -- | Starts a systemd service.
-started :: ServiceName -> Property
+started :: ServiceName -> Property NoInfo
 started n = trivial $ cmdProperty "systemctl" ["start", n]
 	`describe` ("service " ++ n ++ " started")
 
 -- | Stops a systemd service.
-stopped :: ServiceName -> Property
+stopped :: ServiceName -> Property NoInfo
 stopped n = trivial $ cmdProperty "systemctl" ["stop", n]
 	`describe` ("service " ++ n ++ " stopped")
 
 -- | Enables a systemd service.
-enabled :: ServiceName -> Property
+enabled :: ServiceName -> Property NoInfo
 enabled n = trivial $ cmdProperty "systemctl" ["enable", n]
 	`describe` ("service " ++ n ++ " enabled")
 
 -- | Disables a systemd service.
-disabled :: ServiceName -> Property
+disabled :: ServiceName -> Property NoInfo
 disabled n = trivial $ cmdProperty "systemctl" ["disable", n]
 	`describe` ("service " ++ n ++ " disabled")
 
+-- | Restarts a systemd service.
+restarted :: ServiceName -> Property NoInfo
+restarted n = trivial $ cmdProperty "systemctl" ["restart", n]
+	`describe` ("service " ++ n ++ " restarted")
+
 -- | Enables persistent storage of the journal.
-persistentJournal :: Property
+persistentJournal :: Property NoInfo
 persistentJournal = check (not <$> doesDirectoryExist dir) $ 
 	combineProperties "persistent systemd journal"
 		[ cmdProperty "install" ["-d", "-g", "systemd-journal", dir]
@@ -70,8 +81,35 @@ persistentJournal = check (not <$> doesDirectoryExist dir) $
   where
 	dir = "/var/log/journal"
 
+type Option = String
+
+-- | Ensures that an option is configured in one of systemd's config files.
+-- Does not ensure that the relevant daemon notices the change immediately.
+--
+-- This assumes that there is only one [Header] per file, which is
+-- currently the case. And it assumes the file already exists with
+-- the right [Header], so new lines can just be appended to the end.
+configured :: FilePath -> Option -> String -> Property NoInfo
+configured cfgfile option value = combineProperties desc
+	[ File.fileProperty desc (mapMaybe removeother) cfgfile
+	, File.containsLine cfgfile line
+	]
+  where
+	setting = option ++ "="
+	line = setting ++ value
+	desc = cfgfile ++ " " ++ line
+	removeother l
+		| setting `isPrefixOf` l = Nothing
+		| otherwise = Just l
+
+-- | Configures journald, restarting it so the changes take effect.
+journaldConfigured :: Option -> String -> Property NoInfo
+journaldConfigured option value =
+	configured "/etc/systemd/journald.conf" option value
+		`onChange` restarted "systemd-journald"
+
 -- | Causes systemd to reload its configuration files.
-daemonReloaded :: Property
+daemonReloaded :: Property NoInfo
 daemonReloaded = trivial $ cmdProperty "systemctl" ["daemon-reload"]
 
 -- | Defines a container with a given machine name.
@@ -105,17 +143,12 @@ container name mkchroot = Container name c h
 -- and deletes the chroot and all its contents.
 nspawned :: Container -> RevertableProperty
 nspawned c@(Container name (Chroot.Chroot loc system builderconf _) h) =
-	RevertableProperty setup teardown
+	p `describe` ("nspawned " ++ name)
   where
-	setup = combineProperties ("nspawned " ++ name) $
-		map toProp steps ++ [containerprovisioned]
-	teardown = combineProperties ("not nspawned " ++ name) $
-		map (toProp . revert) (reverse steps)
-	steps =
-		[ enterScript c
-		, chrootprovisioned
-		, nspawnService c (_chrootCfg $ _chrootinfo $ hostInfo h)
-		]
+	p = enterScript c
+		`before` chrootprovisioned
+		`before` nspawnService c (_chrootCfg $ _chrootinfo $ hostInfo h)
+		`before` containerprovisioned
 
 	-- Chroot provisioning is run in systemd-only mode,
 	-- which sets up the chroot and ensures systemd and dbus are
@@ -125,15 +158,17 @@ nspawned c@(Container name (Chroot.Chroot loc system builderconf _) h) =
 
 	-- Use nsenter to enter container and and run propellor to
 	-- finish provisioning.
-	containerprovisioned = Chroot.propellChroot chroot
-		(enterContainerProcess c) False
+	containerprovisioned = 
+		Chroot.propellChroot chroot (enterContainerProcess c) False
+			<!>
+		doNothing
 
 	chroot = Chroot.Chroot loc system builderconf h
 
 -- | Sets up the service file for the container, and then starts
 -- it running.
 nspawnService :: Container -> ChrootCfg -> RevertableProperty
-nspawnService (Container name _ _) cfg = RevertableProperty setup teardown
+nspawnService (Container name _ _) cfg = setup <!> teardown
   where
 	service = nspawnServiceName name
 	servicefile = "/etc/systemd/system/multi-user.target.wants" </> service
@@ -177,7 +212,7 @@ nspawnServiceParams (SystemdNspawnCfg ps) =
 -- This uses nsenter to enter the container, by looking up the pid of the
 -- container's init process and using its namespace.
 enterScript :: Container -> RevertableProperty
-enterScript c@(Container name _ _) = RevertableProperty setup teardown
+enterScript c@(Container name _ _) = setup <!> teardown
   where
 	setup = combineProperties ("generated " ++ enterScriptFile c)
 		[ scriptfile `File.hasContent`
