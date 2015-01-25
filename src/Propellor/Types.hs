@@ -250,7 +250,8 @@ instance Combines (Property HasInfo) (Property NoInfo) where
 		IProperty d1 (a2 <> a1) i1 (toIProperty y : cs1)
 
 instance Combines (Property NoInfo) (Property HasInfo) where
-	requires x y = requires y x
+	requires (SProperty d1 a1 cs1) y@(IProperty _d2 a2 _i2 _cs2) =
+		IProperty d1 (a2 <> a1) mempty (y : map toIProperty cs1)
 
 instance Combines (Property NoInfo) (Property NoInfo) where
 	requires (SProperty d1 a1  cs1) y@(SProperty _d2 a2 _cs2) =
