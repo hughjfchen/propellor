@@ -17,5 +17,13 @@ Since only 2 places in the propellor source code currently need to deal
 with this, it doesn't currently seem worth making the change, unless a less
 intrusive way can be found.
 
-Hmm, if RevertableProperty were made a constructor in the Property GADT,
-this would need to be done, and that would also allow for 
+Probably related would be to make RevertableProperty a constructor in the
+Property GADT, which would allow more property combinators to work on
+RevertableProperties. That would look like:
+
+	data Propety i where
+		...
+		RProp :: Property i1 -> Property i2 -> Property (CInfo i1 i2)
+
+In this case, there's only one Info/NoInfo encompassing both sides, and
+so ensureProperty could only be used on it if both sides were NoInfo.
