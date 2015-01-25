@@ -1,6 +1,13 @@
 {-# LANGUAGE PackageImports #-}
 
-module Propellor.PropAccum where
+module Propellor.PropAccum
+	( host
+	, props
+	, PropAccum(..)
+	, (!)
+	, PropList
+	, propigateContainer
+	) where
 
 import Data.Monoid
 
@@ -47,9 +54,9 @@ instance PropAccum Host where
 data PropList = PropList [Property HasInfo]
 
 instance PropAccum PropList where
-	PropList l &  p = PropList (l ++ [toProp p])
-	PropList l &^ p = PropList ([toProp p] ++ l)
-	getProperties (PropList l) = l
+	PropList l &  p = PropList (toProp p : l)
+	PropList l &^ p = PropList (l ++ [toProp p])
+	getProperties (PropList l) = reverse l
 
 -- | Adds a property in reverted form.
 (!) :: PropAccum h => h -> RevertableProperty -> h
