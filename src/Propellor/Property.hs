@@ -14,7 +14,8 @@ import Propellor.Types
 import Propellor.Info
 import Utility.Monad
 
--- Constructs a Property.
+-- | Constructs a Property, from a description and an action to run to
+-- ensure the Property is met.
 property :: Desc -> Propellor Result -> Property NoInfo
 property d s = simpleProperty d s mempty
 
@@ -38,7 +39,7 @@ flagFile' p getflagfile = adjustPropertySatisfy p $ \satisfy -> do
 				writeFile flagfile ""
 		return r
 
---- | Whenever a change has to be made for a Property, causes a hook
+-- | Whenever a change has to be made for a Property, causes a hook
 -- Property to also be run, but not otherwise.
 onChange
 	:: (Combines (Property x) (Property y))
@@ -53,6 +54,7 @@ onChange = combineWith $ \p hook -> do
 			return $ r <> r'
 		_ -> return r
 
+-- | Alias for @flip describe@
 (==>) :: IsProp (Property i) => Desc -> Property i -> Property i
 (==>) = flip describe
 infixl 1 ==>
@@ -86,9 +88,6 @@ trivial p = adjustPropertySatisfy p $ \satisfy -> do
 		then return NoChange
 		else return r
 
-doNothing :: Property NoInfo
-doNothing = property "noop property" noChange
-
 -- | Makes a property that is satisfied differently depending on the host's
 -- operating system. 
 --
@@ -105,6 +104,9 @@ makeChange a = liftIO a >> return MadeChange
 
 noChange :: Propellor Result
 noChange = return NoChange
+
+doNothing :: Property NoInfo
+doNothing = property "noop property" noChange
 
 -- | Registers an action that should be run at the very end,
 endAction :: Desc -> (Result -> Propellor Result) -> Propellor ()
