@@ -18,7 +18,7 @@ propellor (2.0.0) unstable; urgency=medium
   * Add descriptions of how to set missing fields to --list-fields output.
   * Properties now form a tree, instead of the flat list used before.
     This includes the properties used inside a container.
-  * Fix info propigation from fallback combinator's second Property.
+  * Fix info propagation from fallback combinator's second Property.
   * Added systemd configuration properties.
   * Added journald configuration properties.
   * Added more network interface configuration properties.
