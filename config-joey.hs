@@ -47,7 +47,6 @@ hosts =                --                  (o)  `
 	, kite
 	, diatom
 	, elephant
-	, testvm
 	] ++ monsters
 
 testvm :: Host
