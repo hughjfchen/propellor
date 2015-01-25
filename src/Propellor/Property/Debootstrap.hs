@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Propellor.Property.Debootstrap (
 	Url,
 	DebootstrapConfig(..),
@@ -56,18 +58,18 @@ toParams (c1 :+ c2) = toParams c1 <> toParams c2
 -- Note that reverting this property does not stop any processes
 -- currently running in the chroot.
 built :: FilePath -> System -> DebootstrapConfig -> RevertableProperty
-built = built' (toProp installed)
-
-built' :: Property HasInfo -> FilePath -> System -> DebootstrapConfig -> RevertableProperty
-built' installprop target system@(System _ arch) config = setup <!> teardown
+built target system config = built' (toProp installed) target system config <!> teardown
   where
-	setup = check (unpopulated target <||> ispartial) setupprop
-		`requires` installprop
-	
 	teardown = check (not <$> unpopulated target) teardownprop
 	
-	unpopulated d = null <$> catchDefaultIO [] (dirContents d)
+	teardownprop = property ("removed debootstrapped " ++ target) $
+		makeChange (removetarget target)
 
+built' :: (Combines (Property NoInfo) (Property i)) => Property i -> FilePath -> System -> DebootstrapConfig -> Property (CInfo NoInfo i)
+built' installprop target system@(System _ arch) config = 
+	check (unpopulated target <||> ispartial) setupprop
+		`requires` installprop
+  where
 	setupprop = property ("debootstrapped " ++ target) $ liftIO $ do
 		createDirectoryIfMissing True target
 		-- Don't allow non-root users to see inside the chroot,
@@ -92,24 +94,25 @@ built' installprop target system@(System _ arch) config = setup <!> teardown
 			, return FailedChange
 			)
 
-	teardownprop = property ("removed debootstrapped " ++ target) $
-		makeChange removetarget
-
-	removetarget = do
-		submnts <- filter (\p -> simplifyPath p /= simplifyPath target)
-			. filter (dirContains target)
-			<$> mountPoints
-		forM_ submnts umountLazy
-		removeDirectoryRecursive target
-
 	-- A failed debootstrap run will leave a debootstrap directory;
 	-- recover by deleting it and trying again.
 	ispartial = ifM (doesDirectoryExist (target </> "debootstrap"))
 		( do
-			removetarget
+			removetarget target
 			return True
 		, return False
 		)
+	
+unpopulated :: FilePath -> IO Bool
+unpopulated d = null <$> catchDefaultIO [] (dirContents d)	
+
+removetarget :: FilePath -> IO ()
+removetarget target = do
+	submnts <- filter (\p -> simplifyPath p /= simplifyPath target)
+		. filter (dirContains target)
+		<$> mountPoints
+	forM_ submnts umountLazy
+	removeDirectoryRecursive target
 
 extractSuite :: System -> Maybe String
 extractSuite (System (Debian s) _) = Just $ Apt.showSuite s

@@ -118,7 +118,7 @@ latestVersion :: Property NoInfo
 latestVersion = withOS "obnam latest version" $ \o -> case o of
 	(Just (System (Debian suite) _)) | isStable suite -> ensureProperty $
 		Apt.setSourcesListD (stablesources suite) "obnam"
-			`requires` (fromJust (toSimpleProp (Apt.trustsKey key)))
+			`requires` Apt.trustsKey' key
 	_ -> noChange
   where
 	stablesources suite = 

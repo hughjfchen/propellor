@@ -266,17 +266,24 @@ data AptKey = AptKey
 	}
 
 trustsKey :: AptKey -> RevertableProperty
-trustsKey k = trust <!> untrust
+trustsKey k = trustsKey' k <!> untrustKey k
+
+trustsKey' :: AptKey -> Property NoInfo
+trustsKey' k = check (not <$> doesFileExist f) $ property desc $ makeChange $ do
+	withHandle StdinHandle createProcessSuccess
+		(proc "gpg" ["--no-default-keyring", "--keyring", f, "--import", "-"]) $ \h -> do
+			hPutStr h (pubkey k)
+			hClose h
+	nukeFile $ f ++ "~" -- gpg dropping
   where
 	desc = "apt trusts key " ++ keyname k
-	f = "/etc/apt/trusted.gpg.d" </> keyname k ++ ".gpg"
-	untrust = File.notPresent f
-	trust = check (not <$> doesFileExist f) $ property desc $ makeChange $ do
-		withHandle StdinHandle createProcessSuccess
-			(proc "gpg" ["--no-default-keyring", "--keyring", f, "--import", "-"]) $ \h -> do
-				hPutStr h (pubkey k)
-				hClose h
-		nukeFile $ f ++ "~" -- gpg dropping
+	f = aptKeyFile k
+
+untrustKey :: AptKey -> Property NoInfo
+untrustKey = File.notPresent . aptKeyFile
+
+aptKeyFile :: AptKey -> FilePath
+aptKeyFile k = "/etc/apt/trusted.gpg.d" </> keyname k ++ ".gpg"
 
 -- | Cleans apt's cache of downloaded packages to avoid using up disk
 -- space.

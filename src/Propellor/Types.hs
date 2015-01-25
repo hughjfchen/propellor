@@ -179,7 +179,6 @@ class IsProp p where
 	-- | Sets description.
 	describe :: p -> Desc -> p
 	toProp :: p -> Property HasInfo
-	toSimpleProp :: p -> Maybe (Property NoInfo)
 	getDesc :: p -> Desc
 	-- | Gets the info of the property, combined with all info
 	-- of all children properties.
@@ -188,7 +187,6 @@ class IsProp p where
 instance IsProp (Property HasInfo) where
 	describe (IProperty _ a i cs) d = IProperty d a i cs
 	toProp = id
-	toSimpleProp _ = Nothing
 	getDesc = propertyDesc
 	getInfoRecursive (IProperty _ _ i cs) = 
 		i <> mconcat (map getInfoRecursive cs)
@@ -196,7 +194,6 @@ instance IsProp (Property NoInfo) where
 	describe (SProperty _ a cs) d = SProperty d a cs
 	toProp = toIProperty
 	getDesc = propertyDesc
-	toSimpleProp = Just
 	getInfoRecursive _ = mempty
 
 instance IsProp RevertableProperty where
@@ -205,7 +202,6 @@ instance IsProp RevertableProperty where
 		RevertableProperty (describe p1 d) (describe p2 ("not " ++ d))
 	getDesc (RevertableProperty p1 _) = getDesc p1
 	toProp (RevertableProperty p1 _) = p1
-	toSimpleProp = toSimpleProp . toProp
 	-- | Return the Info of the currently active side.
 	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
 

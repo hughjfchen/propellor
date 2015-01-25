@@ -89,10 +89,10 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		(Just u@(System (Ubuntu _) _)) -> debootstrap u
 		_ -> error "os is not declared to be Debian or Ubuntu"
 	
-	debootstrap targetos = ensureProperty $ fromJust $ toSimpleProp $
+	debootstrap targetos = ensureProperty $
 		-- Ignore the os setting, and install debootstrap from
 		-- source, since we don't know what OS we're running in yet.
-		Debootstrap.built' (toProp Debootstrap.sourceInstall)
+		Debootstrap.built' Debootstrap.sourceInstall
 			newOSDir targetos Debootstrap.DefaultConfig
 		-- debootstrap, I wish it was faster.. 
 		-- TODO eatmydata to speed it up

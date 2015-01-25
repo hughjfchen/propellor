@@ -1,0 +1,18 @@
+Currently, a RevertableProperty's Properties always both HasInfo. This
+means that if a Property NoInfo is updated to be a RevertableProperty, and
+someplace called ensureProperty on it, that will refuse to compile.
+
+The workaround is generally to export the original NoInfo property under
+a different name, so it can still be used with ensureProperty.
+
+This could be fixed:
+
+	data RevertableProperty i1 i2 where
+		RProp :: Property i1 -> Property i2 -> RevertableProperty i1 i2
+
+However, needing to write "RevertableProperty HasInfo NoInfo" is quite
+a mouthful!
+
+Since only 2 places in the propellor source code currently need to deal
+with this, it doesn't currently seem worth making the change, unless a less
+intrusive way can be found.
