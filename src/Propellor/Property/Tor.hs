@@ -11,36 +11,66 @@ import Data.Char
 
 type HiddenServiceName = String
 
-type BridgeName = String
+type NodeName = String
 
--- | Sets up a tor bridge relay. (Not an exit node.)
+-- | Sets up a tor bridge. (Not a relay or exit node.)
+--
+-- Uses port 443
 isBridge :: Property NoInfo
 isBridge = isBridge' []
 
 isBridge' :: [String] -> Property NoInfo
-isBridge' extraconfig = setup
-	`requires` Apt.installed ["tor", "ntp"]
+isBridge' extraconfig = server config
 	`describe` "tor bridge"
+  where
+	config = 
+		[ "BridgeRelay 1"
+		, "Exitpolicy reject *:*"
+		, "ORPort 443"
+		] ++ extraconfig
+
+-- | Sets up a tor relay.
+--
+-- Uses port 443
+isRelay :: Property NoInfo
+isRelay = isRelay' []
+
+isRelay' :: [String] -> Property NoInfo
+isRelay' extraconfig = server config
+	`describe` "tor relay"
+  where
+	config = 
+		[ "BridgeRelay 0"
+		, "Exitpolicy reject *:*"
+		, "ORPort 443"
+		] ++ extraconfig
+
+-- | Converts a property like isBridge' or isRelay' to be a named
+-- node, with a known private key.
+--
+-- This can be moved to a different IP without needing to wait to
+-- accumulate trust.
+--
+-- The base property can be used to start out and then upgraded to 
+-- a named property later.
+named :: NodeName -> ([String] -> Property NoInfo) -> Property HasInfo
+named n basep = p `describe` (getDesc p ++ " " ++ n)
+  where
+	p = basep ["Nickname " ++ saneNickname n]
+		`requires` torPrivKey (Context ("tor " ++ n))
+
+-- | A tor server (bridge, relay, or exit)
+-- Don't use if you just want to run tor for personal use.
+server :: [String] -> Property NoInfo
+server extraconfig = setup
+	`requires` Apt.installed ["tor", "ntp"]
+	`describe` "tor server"
   where
 	setup = mainConfig `File.hasContent` config
 		`onChange` restarted
 	config = 
 		[ "SocksPort 0"
-		, "ORPort 443"
-		, "BridgeRelay 1"
-		, "Exitpolicy reject *:*"
 		] ++ extraconfig
-
--- | Sets up a tor bridge relay with a known name and private key.
---
--- This can be moved to a different IP without needing to wait to
--- accumulate trust.
---
--- The isBridge property can be used to start 
--- and then upgraded to this one later.
-isNamedBridge :: BridgeName -> Property HasInfo
-isNamedBridge bn = isBridge' ["Nickname " ++ saneNickname bn]
-	`requires` torPrivKey (Context ("tor bridge " ++ bn))
 
 torPrivKey :: Context -> Property HasInfo
 torPrivKey context = f `File.hasPrivContent` context
