@@ -86,7 +86,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& Ssh.randomHostKeys
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
-	& Tor.isBridge
+	& Tor.isNamedBridge "kite1"
 	& Postfix.satellite
 
 	& Docker.configured

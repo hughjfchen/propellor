@@ -21,7 +21,7 @@ hasPrivContent :: IsContext c => FilePath -> c -> Property HasInfo
 hasPrivContent f = hasPrivContentFrom (PrivDataSourceFile (PrivFile f) f) f
 
 -- | Like hasPrivContent, but allows specifying a source
--- for PrivData, rather than using PrivDataSourceFile.
+-- for PrivData, rather than using PrivDataSourceFile .
 hasPrivContentFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property HasInfo
 hasPrivContentFrom = hasPrivContent' writeFileProtected
 
