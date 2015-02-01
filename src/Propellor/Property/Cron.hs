@@ -41,6 +41,9 @@ job desc times user cddir command = combineProperties ("cronned " ++ desc)
 				"root" -> "chronic " ++ shellEscape scriptfile
 				_ -> "chronic su " ++ user ++ " -c " ++ shellEscape scriptfile
 		]
+	, case times of
+		Times _ -> doNothing
+		_ -> cronjobfile `File.mode` combineModes (readModes ++ executeModes)
 	-- Use a separate script because it makes the cron job name 
 	-- prettier in emails, and also allows running the job manually.
 	, scriptfile `File.hasContent`
