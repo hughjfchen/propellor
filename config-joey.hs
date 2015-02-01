@@ -119,8 +119,8 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h")
 	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h")
 	& Docker.docked (GitAnnexBuilder.armelCompanionContainer dockerImage)
-	& Docker.docked (GitAnnexBuilder.armelAutoBuilderContainer dockerImage "1 3 * * *" "5h")
-	& Docker.docked (GitAnnexBuilder.androidAutoBuilderContainer dockerImage "1 1 * * *" "3h")
+	& Docker.docked (GitAnnexBuilder.armelAutoBuilderContainer dockerImage (Cron.Times "1 3 * * *") "5h")
+	& Docker.docked (GitAnnexBuilder.androidAutoBuilderContainer dockerImage (Cron.Times "1 1 * * *") "3h")
 	& Docker.garbageCollected `period` Daily
 	& Apt.buildDep ["git-annex"] `period` Daily
 
@@ -151,7 +151,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
 	& Apt.serviceInstalledRunning "fail2ban"
-	& Obnam.backupEncrypted "/" "33 1 * * *"
+	& Obnam.backupEncrypted "/" (Cron.Times "33 1 * * *")
 		[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
 		, "--client-name=kitenet.net"
 		, "--exclude=/var/cache"
@@ -331,11 +331,15 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 beaver :: Host
 beaver = host "beaver.kitenet.net"
 	& ipv6 "2001:4830:1600:195::2"
+	& Apt.serviceInstalledRunning "aiccu"
 	& Apt.installed ["ssh"]
 	& Ssh.pubKey SshDsa "ssh-dss AAAAB3NzaC1kc3MAAACBAIrLX260fY0Jjj/p0syNhX8OyR8hcr6feDPGOj87bMad0k/w/taDSOzpXe0Wet7rvUTbxUjH+Q5wPd4R9zkaSDiR/tCb45OdG6JsaIkmqncwe8yrU+pqSRCxttwbcFe+UU+4AAcinjVedZjVRDj2rRaFPc9BXkPt7ffk8GwEJ31/AAAAFQCG/gOjObsr86vvldUZHCteaJttNQAAAIB5nomvcqOk/TD07DLaWKyG7gAcW5WnfY3WtnvLRAFk09aq1EuiJ6Yba99Zkb+bsxXv89FWjWDg/Z3Psa22JMyi0HEDVsOevy/1sEQ96AGH5ijLzFInfXAM7gaJKXASD7hPbVdjySbgRCdwu0dzmQWHtH+8i1CMVmA2/a5Y/wtlJAAAAIAUZj2US2D378jBwyX1Py7e4sJfea3WSGYZjn4DLlsLGsB88POuh32aOChd1yzF6r6C2sdoPBHQcWBgNGXcx4gF0B5UmyVHg3lIX2NVSG1ZmfuLNJs9iKNu4cHXUmqBbwFYQJBvB69EEtrOw4jSbiTKwHFmqdA/mw1VsMB+khUaVw=="
-	& alias "backup.kitenet.net"
 	& alias "usbackup.kitenet.net"
 	& JoeySites.backupsBackedupFrom hosts "eubackup.kitenet.net" "/home/joey/lib/backup"
+	& Apt.serviceInstalledRunning "anacron"
+	& Cron.niceJob "system disk backed up" Cron.Weekly "root" "/"
+		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"
+
 
        --'                        __|II|      ,.
      ----                      __|II|II|__   (  \_,/\
@@ -419,7 +423,7 @@ standardSystemUnhardened hn suite arch motd = host hn
 	& Sudo.enabledFor "joey"
 	& GitHome.installedFor "joey"
 	& Apt.installed ["vim", "screen", "less"]
-	& Cron.runPropellor "30 * * * *"
+	& Cron.runPropellor (Cron.Times "30 * * * *")
 	-- I use postfix, or no MTA.
 	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
 		`onChange` Apt.autoRemove

@@ -36,7 +36,7 @@ data NumClients = OnlyClient | MultipleClients
 -- >		`requires` Ssh.keyImported SshRsa "root" (Context hostname)
 --
 -- How awesome is that?
-backup :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property NoInfo
+backup :: FilePath -> Cron.Times -> [ObnamParam] -> NumClients -> Property NoInfo
 backup dir crontimes params numclients =
 	backup' dir crontimes params numclients
 		`requires` restored dir params
@@ -46,7 +46,7 @@ backup dir crontimes params numclients =
 --
 -- The gpg secret key will be automatically imported
 -- into root's keyring using Propellor.Property.Gpg.keyImported
-backupEncrypted :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Gpg.GpgKeyId -> Property HasInfo
+backupEncrypted :: FilePath -> Cron.Times -> [ObnamParam] -> NumClients -> Gpg.GpgKeyId -> Property HasInfo
 backupEncrypted dir crontimes params numclients keyid =
 	backup dir crontimes params' numclients
 		`requires` Gpg.keyImported keyid "root"
@@ -54,7 +54,7 @@ backupEncrypted dir crontimes params numclients keyid =
 	params' = ("--encrypt-with=" ++ Gpg.getGpgKeyId keyid) : params
 
 -- | Does a backup, but does not automatically restore.
-backup' :: FilePath -> Cron.CronTimes -> [ObnamParam] -> NumClients -> Property NoInfo
+backup' :: FilePath -> Cron.Times -> [ObnamParam] -> NumClients -> Property NoInfo
 backup' dir crontimes params numclients = cronjob `describe` desc
   where
 	desc = dir ++ " backed up by obnam"

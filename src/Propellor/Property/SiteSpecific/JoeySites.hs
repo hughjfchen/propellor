@@ -45,8 +45,8 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 	& Apt.serviceInstalledRunning "openbsd-inetd"
 	& File.notPresent "/etc/cron.daily/leafnode"
 	& File.notPresent "/etc/cron.d/leafnode"
-	& Cron.niceJob "oldusenet-expire" "11 1 * * *" "news" newsspool expirecommand
-	& Cron.niceJob "oldusenet-uucp" "*/5 * * * *" "news" "/" uucpcommand
+	& Cron.niceJob "oldusenet-expire" (Cron.Times "11 1 * * *") "news" newsspool expirecommand
+	& Cron.niceJob "oldusenet-uucp" (Cron.Times "*/5 * * * *") "news" "/" uucpcommand
 	& Apache.siteEnabled "nntp.olduse.net" nntpcfg
   where
 	newsspool = "/var/spool/news"
@@ -65,7 +65,7 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 		, "  </Directory>"
 		]
 
-	oldUseNetBackup = Obnam.backup datadir "33 4 * * *"
+	oldUseNetBackup = Obnam.backup datadir (Cron.Times "33 4 * * *")
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/olduse.net"
 		, "--client-name=spool"
 		] Obnam.OnlyClient
@@ -113,7 +113,7 @@ mumbleServer :: [Host] -> Property HasInfo
 mumbleServer hosts = combineProperties hn $ props
 	& Apt.serviceInstalledRunning "mumble-server"
 	& Obnam.latestVersion
-	& Obnam.backup "/var/lib/mumble-server" "55 5 * * *"
+	& Obnam.backup "/var/lib/mumble-server" (Cron.Times "55 5 * * *")
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/" ++ hn ++ ".obnam"
 		, "--client-name=mumble"
 		] Obnam.OnlyClient
@@ -138,7 +138,7 @@ obnamLowMem = combineProperties "obnam tuned for low memory use"
 gitServer :: [Host] -> Property HasInfo
 gitServer hosts = propertyList "git.kitenet.net setup" $ props
 	& Obnam.latestVersion
-	& Obnam.backupEncrypted "/srv/git" "33 3 * * *"
+	& Obnam.backupEncrypted "/srv/git" (Cron.Times "33 3 * * *")
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
 		, "--client-name=wren" -- historical
 		] Obnam.OnlyClient (Gpg.GpgKeyId "1B169BE1")
@@ -297,7 +297,7 @@ twitRss = combineProperties "twitter rss" $ props
 	& feed "http://twitter.com/search/realtime?q=olduse+OR+git-annex+OR+debhelper+OR+etckeeper+OR+ikiwiki+-ashley_ikiwiki" "twittergrep"
   where
 	dir = "/srv/web/tmp.kitenet.net/twitrss"
-	crontime = "15 * * * *"
+	crontime = Cron.Times "15 * * * *"
 	feed url desc = Cron.job desc crontime "joey" dir $
 		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
 	compiled = userScriptProperty "joey"
@@ -313,7 +313,7 @@ twitRss = combineProperties "twitter rss" $ props
 -- Work around for expired ssl cert.
 -- (no longer expired, TODO remove this and change urls)
 pumpRss :: Property NoInfo
-pumpRss = Cron.job "pump rss" "15 * * * *" "joey" "/srv/web/tmp.kitenet.net/"
+pumpRss = Cron.job "pump rss" (Cron.Times "15 * * * *") "joey" "/srv/web/tmp.kitenet.net/"
 	"wget https://pump2rss.com/feed/joeyh@identi.ca.atom -O pump.atom --no-check-certificate 2>/dev/null"
 
 ircBouncer :: Property HasInfo
@@ -323,7 +323,7 @@ ircBouncer = propertyList "IRC bouncer" $ props
 	& File.dirExists (takeDirectory conf)
 	& File.hasPrivContent conf anyContext
 	& File.ownerGroup conf "znc" "znc"
-	& Cron.job "znconboot" "@reboot" "znc" "~" "znc"
+	& Cron.job "znconboot" (Cron.Times "@reboot") "znc" "~" "znc"
 	-- ensure running if it was not already
 	& trivial (userScriptProperty "znc" ["znc || true"])
 		`describe` "znc running"
@@ -347,9 +347,9 @@ githubBackup :: Property HasInfo
 githubBackup = propertyList "github-backup box" $ props
 	& Apt.installed ["github-backup", "moreutils"]
 	& githubKeys
-	& Cron.niceJob "github-backup run" "30 4 * * *" "joey"
+	& Cron.niceJob "github-backup run" (Cron.Times "30 4 * * *") "joey"
 		"/home/joey/lib/backup" backupcmd
-	& Cron.niceJob "gitriddance" "30 4 * * *" "joey"
+	& Cron.niceJob "gitriddance" (Cron.Times "30 4 * * *") "joey"
 		"/home/joey/lib/backup" gitriddancecmd
   where
 	backupcmd = intercalate "&&" $
@@ -385,13 +385,13 @@ githubMirrors =
 	plzuseurl u = "please submit changes to " ++ u ++ " instead of using github pull requests"
 
 rsyncNetBackup :: [Host] -> Property NoInfo
-rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" "30 5 * * *"
+rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" (Cron.Times "30 5 * * *")
 	"joey" "/home/joey/lib/backup" "mkdir -p rsync.net && rsync --delete -az 2318@usw-s002.rsync.net: rsync.net"
 	`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
 
 backupsBackedupFrom :: [Host] -> HostName -> FilePath -> Property NoInfo
 backupsBackedupFrom hosts srchost destdir = Cron.niceJob desc
-	"@reboot" "joey" "/" cmd
+	(Cron.Times "@reboot") "joey" "/" cmd
 	`requires` Ssh.knownHost hosts srchost "joey"
   where
 	desc = "backups copied from " ++ srchost ++ " on boot"
@@ -408,7 +408,7 @@ obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
 		`before` File.ownerGroup d "joey" "joey"
 
 podcatcher :: Property NoInfo
-podcatcher = Cron.niceJob "podcatcher run hourly" "55 * * * *"
+podcatcher = Cron.niceJob "podcatcher run hourly" (Cron.Times "55 * * * *")
 	"joey" "/home/joey/lib/sound/podcasts"
 	"xargs git-annex importfeed -c annex.genmetadata=true < feeds; mr --quiet update"
 	`requires` Apt.installed ["git-annex", "myrepos"]
