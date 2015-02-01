@@ -178,7 +178,7 @@ fromKeyType SshDsa = "dsa"
 fromKeyType SshEcdsa = "ecdsa"
 fromKeyType SshEd25519 = "ed25519"
 
--- | Puts some host's ssh public key(s), as set using 'pubKey',
+-- | Puts some host's ssh public key(s), as set using 'pubKey' or 'hostKey'
 -- into the known_hosts file for a user.
 knownHost :: [Host] -> HostName -> UserName -> Property NoInfo
 knownHost hosts hn user = property desc $
