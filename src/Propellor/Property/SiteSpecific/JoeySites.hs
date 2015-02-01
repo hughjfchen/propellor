@@ -516,6 +516,8 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 
 		, "# Password auth for relaying"
 		, "smtpd_sasl_auth_enable = yes"
+		, "smtpd_sasl_type = dovecot"
+		, "smtpd_sasl_path = private/auth"
 		, "smtpd_sasl_security_options = noanonymous"
 		, "smtpd_sasl_local_domain = kitenet.net"
 
