@@ -395,7 +395,7 @@ backupsBackedupFrom hosts srchost destdir = Cron.niceJob desc
 	`requires` Ssh.knownHost hosts srchost "joey"
   where
 	desc = "backups copied from " ++ srchost ++ " on boot"
-	cmd = "rsync -az --partial --delete " ++ srchost ++ ":lib/backup " ++ destdir </> srchost
+	cmd = "rsync -az --partial --delete " ++ srchost ++ ":lib/backup/ " ++ destdir </> srchost
 
 obnamRepos :: [String] -> Property NoInfo
 obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
