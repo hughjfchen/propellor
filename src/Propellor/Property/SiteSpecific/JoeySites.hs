@@ -114,11 +114,11 @@ mumbleServer hosts = combineProperties hn $ props
 	& Apt.serviceInstalledRunning "mumble-server"
 	& Obnam.latestVersion
 	& Obnam.backup "/var/lib/mumble-server" "55 5 * * *"
-		[ "--repository=sftp://joey@usbackup.kitenet.net/~/lib/backup/" ++ hn ++ ".obnam"
+		[ "--repository=sftp://2318@usw-s002.rsync.net/~/" ++ hn ++ ".obnam"
 		, "--client-name=mumble"
 		] Obnam.OnlyClient
 		`requires` Ssh.keyImported SshRsa "root" (Context hn)
-		`requires` Ssh.knownHost hosts "usbackup.kitenet.net" "root"
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 	& trivial (cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"])
   where
 	hn = "mumble.debian.net"
@@ -389,13 +389,13 @@ rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" "30 5 * * *"
 	"joey" "/home/joey/lib/backup" "mkdir -p rsync.net && rsync --delete -az 2318@usw-s002.rsync.net: rsync.net"
 	`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
 
-backupsBackedupTo :: [Host] -> HostName -> FilePath -> Property NoInfo
-backupsBackedupTo hosts desthost destdir = Cron.niceJob desc
-	"1 1 * * 3" "joey" "/" cmd
-	`requires` Ssh.knownHost hosts desthost "joey"
+backupsBackedupFrom :: [Host] -> HostName -> FilePath -> Property NoInfo
+backupsBackedupFrom hosts srchost destdir = Cron.niceJob desc
+	"@reboot" "joey" "/" cmd
+	`requires` Ssh.knownHost hosts srchost "joey"
   where
-	desc = "backups copied to " ++ desthost ++ " weekly"
-	cmd = "rsync -az --delete /home/joey/lib/backup " ++ desthost ++ ":" ++ destdir
+	desc = "backups copied from " ++ srchost ++ " on boot"
+	cmd = "rsync -az --delete " ++ srchost ++ ":lib/backup " ++ destdir </> srchost
 
 obnamRepos :: [String] -> Property NoInfo
 obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
