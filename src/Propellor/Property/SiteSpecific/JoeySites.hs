@@ -450,6 +450,8 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 
 	& dkimInstalled
 
+	& Postfix.saslAuthdInstalled
+
 	& Apt.installed ["maildrop"]
 	& "/etc/maildroprc" `File.hasContent`
 		[ "# Global maildrop filter file (deployed with propellor)"
@@ -514,7 +516,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "# Filter out client relay lines from headers."
 		, "header_checks = pcre:$config_directory/obscure_client_relay.pcre"
 
-		, "# Password auth for relaying"
+		, "# Password auth for relaying (used by errol)"
 		, "smtpd_sasl_auth_enable = yes"
 		, "smtpd_sasl_type = dovecot"
 		, "smtpd_sasl_path = private/auth"
