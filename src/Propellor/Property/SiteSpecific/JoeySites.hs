@@ -514,8 +514,13 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "# Filter out client relay lines from headers."
 		, "header_checks = pcre:$config_directory/obscure_client_relay.pcre"
 
+		, "# Password auth for relaying"
+		, "smtpd_sasl_auth_enable = yes"
+		, "smtpd_sasl_security_options = noanonymous"
+		, "smtpd_sasl_local_domain = kitenet.net"
+
 		, "# Enable postgrey."
-		, "smtpd_recipient_restrictions = permit_tls_clientcerts,permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
+		, "smtpd_recipient_restrictions = permit_tls_clientcerts,permit_sasl_authenticated,,permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
 
 		, "# Enable spamass-milter, amavis-milter, opendkim"
 		, "smtpd_milters = unix:/spamass/spamass.sock unix:amavis/amavis.sock inet:localhost:8891"
