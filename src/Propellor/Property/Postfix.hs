@@ -127,7 +127,8 @@ dedupCf ls =
 		Just n | n > 1 -> dedup c (M.insert k (n - 1) kc) rest
 		_ -> dedup (fmt k v:c) kc rest
 
--- | Installs saslauthd and configures it for postfix.
+-- | Installs saslauthd and configures it for postfix, authenticating
+-- against PAM.
 --
 -- Does not configure postfix to use it; eg smtpd_sasl_auth_enable = yes
 -- needs to be set to enable use. See
