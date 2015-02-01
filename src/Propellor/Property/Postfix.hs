@@ -142,14 +142,16 @@ saslAuthdInstalled = setupdaemon
   where
 	setupdaemon = "/etc/default/saslauthd" `File.containsLines`
 		[ "START=yes" 
-		, "OPTIONS=\"-c -m /var/spool/postfix/var/run/saslauthd\""
+		, "OPTIONS=\"-c -m " ++ dir ++ "\""
 		]
 		`onChange` Service.restarted "saslauthd"
 	smtpdconf = "/etc/postfix/sasl/smtpd.conf" `File.containsLines`
 		[ "pwcheck_method: saslauthd"
 		, "mech_list: PLAIN LOGIN"
 		]
-	dirperm = cmdProperty "dpkg-statoverride"
-		[ "--add", "root", "sasl", "710", "/var/spool/postfix/var/run/saslauthd"]
+	dirperm = check (not <$> doesDirectoryExist dir) $ 
+		cmdProperty "dpkg-statoverride"
+			[ "--add", "root", "sasl", "710", dir ]
 	postfixgroup = "postfix" `User.hasGroup` "sasl"
 		`onChange` restarted
+	dir = "/var/spool/postfix/var/run/saslauthd"
