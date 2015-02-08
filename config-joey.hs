@@ -221,6 +221,7 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	-- Diatom has 500 mb of memory, so tune for that.
 	& JoeySites.obnamLowMem
 	& Apt.serviceInstalledRunning "swapspace"
+	& Cron.job "memory use logged" (Cron.Times "*/5 * * * *") "root" "/" "(date; free; ps --sort -rss axl | head -n10) >> /var/log/memory.log"
 	
 	& Apt.serviceInstalledRunning "apache2"
 	& JoeySites.kitenetHttps
