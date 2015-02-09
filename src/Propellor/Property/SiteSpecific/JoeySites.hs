@@ -129,8 +129,8 @@ obnamLowMem = combineProperties "obnam tuned for low memory use"
 	, "/etc/obnam.conf" `File.containsLines`
 		[ "[config]"
 		, "# Suggested by liw to keep Obnam memory consumption down (at some speed cost)."
-		, "upload-queue-size = 128"
-		, "lru-size = 128"
+		, "upload-queue-size = 64"
+		, "lru-size = 64"
 		]
 	]
 
