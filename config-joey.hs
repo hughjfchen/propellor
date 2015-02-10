@@ -144,6 +144,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Network.static "eth0" `requires` Network.cleanInterfacesFile
 	& Apt.installed ["linux-image-amd64"]
 	& Linode.chainPVGrub 5
+	& Linode.mlocateEnabled
 	& Apt.unattendedUpgrades
 	& Systemd.installed
 	& Systemd.persistentJournal
