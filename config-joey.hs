@@ -203,7 +203,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
-	& Docker.docked oldusenetShellBox
+	! Docker.docked oldusenetShellBox
 	
 	& JoeySites.gitServer hosts
 
