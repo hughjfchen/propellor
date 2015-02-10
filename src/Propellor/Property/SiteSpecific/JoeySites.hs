@@ -147,10 +147,8 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		`requires` Ssh.authorizedKeys "family" (Context "git.kitenet.net")
 		`requires` User.accountFor "family"
 	& Apt.installed ["git", "rsync", "gitweb"]
-	-- backport avoids channel flooding on branch merge
-	& Apt.installedBackport ["kgb-client"]
-	-- backport supports ssh event notification
-	& Apt.installedBackport ["git-annex"]
+	& Apt.installed ["kgb-client"]
+	& Apt.installed ["git-annex"]
 	& File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf" anyContext
 	& Git.daemonRunning "/srv/git"
 	& "/etc/gitweb.conf" `File.containsLines`
