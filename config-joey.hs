@@ -174,8 +174,9 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& JoeySites.kiteMailServer
 	
 	& JoeySites.kitenetHttps
-	& Apache.multiSSL
 	& JoeySites.legacyWebSites
+	& File.ownerGroup "/srv/web" "joey" "joey"
+	& Apt.installed ["analog"]
 	
 	& alias "git.kitenet.net"
 	& alias "git.joeyh.name"
@@ -214,6 +215,8 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
 	! Docker.docked oldusenetShellBox
+	
+	& JoeySites.oldUseNetServer hosts
 
 diatom :: Host
 diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
@@ -224,21 +227,21 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEA2QAJEuvbTmaN9ex9i9bjPhMGj+PHUYq2keIiaIImJ+8mo+yKSaGUxebG4tpuDPx6KZjdycyJt74IXfn1voGUrfzwaEY9NkqOP3v6OWTC3QeUGqDCeJ2ipslbEd9Ep9XBp+/ldDQm60D0XsIZdmDeN6MrHSbKF4fXv1bqpUoUILk=")
 		]
 
-	& DigitalOcean.distroKernel
-	& Apt.unattendedUpgrades
-	& Apt.serviceInstalledRunning "ntp"
-	& Postfix.satellite
+	-- & DigitalOcean.distroKernel
+	-- & Apt.unattendedUpgrades
+	-- & Apt.serviceInstalledRunning "ntp"
+	-- & Postfix.satellite
 
 	-- Diatom has 500 mb of memory, so tune for that.
-	& JoeySites.obnamLowMem
+	-- & JoeySites.obnamLowMem
 	-- & Apt.serviceInstalledRunning "swapspace"
-	& Cron.job "memory use logged" (Cron.Times "*/5 * * * *") "root" "/" "(date; free; ps --sort -rss axl | head -n10) >> /var/log/memory.log"
+	-- & Cron.job "memory use logged" (Cron.Times "*/5 * * * *") "root" "/" "(date; free; ps --sort -rss axl | head -n10) >> /var/log/memory.log"
 	
 	& Apt.serviceInstalledRunning "apache2"
-	& JoeySites.kitenetHttps
-	& Apache.multiSSL
-	& File.ownerGroup "/srv/web" "joey" "joey"
-	& Apt.installed ["analog"]
+	-- & JoeySites.kitenetHttps
+	-- & Apache.multiSSL
+	-- & File.ownerGroup "/srv/web" "joey" "joey"
+	-- & Apt.installed ["analog"]
 
 	-- & alias "git.kitenet.net"
 	-- & alias "git.joeyh.name"
