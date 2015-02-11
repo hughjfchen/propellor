@@ -212,6 +212,8 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& JoeySites.downloads hosts
 	& JoeySites.gitAnnexDistributor
 
+	& JoeySites.tmp
+
 diatom :: Host
 diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	[ "Important stuff that needs not too much memory or CPU." ]
@@ -244,7 +246,7 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	-- & JoeySites.downloads hosts
 	-- & JoeySites.gitAnnexDistributor
 
-	& JoeySites.tmp
+	-- & JoeySites.tmp
 	
 	& JoeySites.annexWebSite "/srv/git/user-liberation.git"
 		"user-liberation.joeyh.name"
