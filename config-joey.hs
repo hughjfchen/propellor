@@ -209,6 +209,9 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& alias "git.joeyh.name"
 	& JoeySites.gitServer hosts
 
+	& JoeySites.downloads hosts
+	& JoeySites.gitAnnexDistributor
+
 diatom :: Host
 diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	[ "Important stuff that needs not too much memory or CPU." ]
