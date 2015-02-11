@@ -178,6 +178,8 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		, "    AllowOverride None"
 		, "    AddHandler cgi-script .cgi"
 		, "    DirectoryIndex index.cgi"
+		, "    Order allow,deny"
+		, "    Allow from all"
 		, "  </Directory>"
 		, ""
 		, "  ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/"
