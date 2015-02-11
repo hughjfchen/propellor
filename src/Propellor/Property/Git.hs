@@ -23,7 +23,7 @@ daemonRunning exportdir = setup <!> unsetup
 		`requires`
 		Apt.serviceInstalledRunning "openbsd-inetd"
 		`onChange`
-		Service.running "openbsd-inetd"
+		Service.reloaded "openbsd-inetd"
 		`describe` ("git-daemon exporting " ++ exportdir)
 	unsetup = lacksLine conf (mkl "tcp4")
 		`requires`
