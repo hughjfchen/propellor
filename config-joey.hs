@@ -183,11 +183,6 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& JoeySites.downloads hosts
 	& JoeySites.gitAnnexDistributor
 	& JoeySites.tmp
-	
-	& alias "ns4.kitenet.net"
-	& myDnsSecondary
-	& alias "ns4.branchable.com"
-	& branchableSecondary
 
 	& alias "bitlbee.kitenet.net"
 	& Apt.serviceInstalledRunning "bitlbee"
@@ -215,9 +210,17 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	! Docker.docked oldusenetShellBox
 	
 	& alias "nntp.olduse.net"
-	& alias "resources.olduse.net"
 	& JoeySites.oldUseNetServer hosts
 	
+	& alias "ns4.kitenet.net"
+	& myDnsPrimary True "kitenet.net" []
+	& myDnsPrimary True "joeyh.name" []
+	& myDnsPrimary True "ikiwiki.info" []
+	& myDnsPrimary True "olduse.net"
+		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
+		]
+	& alias "ns4.branchable.com"
+	& branchableSecondary
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
 diatom :: Host
@@ -259,7 +262,7 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 		"da89f112-808b-420a-b468-d990ae2e5b52"
 		[]
 		
-	& JoeySites.oldUseNetServer hosts
+	-- & JoeySites.oldUseNetServer hosts
 	
 	& alias "ns2.kitenet.net"
 	& myDnsPrimary True "kitenet.net" []
