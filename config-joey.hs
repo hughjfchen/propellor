@@ -19,7 +19,6 @@ import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
-import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
@@ -27,7 +26,6 @@ import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.OS as OS
-import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
@@ -216,6 +214,8 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Docker.garbageCollected `period` Daily
 	! Docker.docked oldusenetShellBox
 	
+	& alias "nntp.olduse.net"
+	& alias "resources.olduse.net"
 	& JoeySites.oldUseNetServer hosts
 	
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
@@ -259,8 +259,6 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 		"da89f112-808b-420a-b468-d990ae2e5b52"
 		[]
 		
-	& alias "nntp.olduse.net"
-	& alias "resources.olduse.net"
 	& JoeySites.oldUseNetServer hosts
 	
 	& alias "ns2.kitenet.net"
