@@ -217,6 +217,8 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	! Docker.docked oldusenetShellBox
 	
 	& JoeySites.oldUseNetServer hosts
+	
+	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
 diatom :: Host
 diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
@@ -269,10 +271,8 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
 		]
 
-	& alias "ns3.branchable.com"
-	& branchableSecondary
-	
-	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
+	-- & alias "ns3.branchable.com"
+	-- & branchableSecondary
 
 elephant :: Host
 elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"

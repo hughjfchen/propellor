@@ -24,6 +24,7 @@ import Data.String.Utils
 
 oldUseNetServer :: [Host] -> Property HasInfo
 oldUseNetServer hosts = propertyList "olduse.net server" $ props
+	& Apt.installed ["leafnode"]
 	& oldUseNetInstalled "oldusenet-server"
 	& Obnam.latestVersion
 	& oldUseNetBackup
@@ -32,7 +33,6 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 			removeDirectoryRecursive newsspool
 			createSymbolicLink (datadir </> "news") newsspool
 		)
-	& Apt.installed ["leafnode"]
 	& "/etc/news/leafnode/config" `File.hasContent` 
 		[ "# olduse.net configuration (deployed by propellor)"
 		, "expire = 1000000" -- no expiry via texpire
