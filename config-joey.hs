@@ -265,12 +265,7 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	-- & JoeySites.oldUseNetServer hosts
 	
 	& alias "ns2.kitenet.net"
-	& myDnsPrimary True "kitenet.net" []
-	& myDnsPrimary True "joeyh.name" []
-	& myDnsPrimary True "ikiwiki.info" []
-	& myDnsPrimary True "olduse.net"
-		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
-		]
+	& myDnsSecondary
 
 	-- & alias "ns3.branchable.com"
 	-- & branchableSecondary
