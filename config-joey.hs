@@ -241,15 +241,10 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	-- & alias "git.joeyh.name"
 	-- & JoeySites.gitServer hosts
 	
-	& JoeySites.downloads hosts
-	& JoeySites.gitAnnexDistributor
+	-- & JoeySites.downloads hosts
+	-- & JoeySites.gitAnnexDistributor
 
-	& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
-		"tmp.kitenet.net"
-		"26fd6e38-1226-11e2-a75f-ff007033bdba"
-		[]
-	& JoeySites.twitRss
-	& JoeySites.pumpRss
+	& JoeySites.tmp
 	
 	& JoeySites.annexWebSite "/srv/git/user-liberation.git"
 		"user-liberation.joeyh.name"

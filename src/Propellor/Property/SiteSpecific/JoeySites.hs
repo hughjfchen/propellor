@@ -208,7 +208,7 @@ annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-ann
 	setup = userScriptProperty "joey" setupscript
 	setupscript = 
 		[ "cd " ++ shellEscape dir
-		, "git config annex.uuid " ++ shellEscape uuid
+		, "git annex reinit " ++ shellEscape uuid
 		] ++ map addremote remotes ++
 		[ "git annex get"
 		, "git update-server-info"
@@ -272,13 +272,6 @@ mainhttpscert True =
 	, "  SSLCertificateKeyFile /etc/ssl/private/web.pem"
 	, "  SSLCertificateChainFile /etc/ssl/certs/startssl.pem"
 	]
-
-downloads :: [Host] -> Property HasInfo
-downloads hosts = annexWebSite "/srv/git/downloads.git"
-	"downloads.kitenet.net"
-	"840760dc-08f0-11e2-8c61-576b7e66acfd"
-	[("eubackup", "ssh://eubackup.kitenet.net/~/lib/downloads/")]
-	`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "joey"
 		
 gitAnnexDistributor :: Property HasInfo
 gitAnnexDistributor = combineProperties "git-annex distributor, including rsync server and signer" $ props
@@ -298,6 +291,22 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 		[ File.dirExists d
 		, File.ownerGroup d "joey" "joey"
 		]
+
+downloads :: [Host] -> Property HasInfo
+downloads hosts = annexWebSite "/srv/git/downloads.git"
+	"downloads.kitenet.net"
+	"840760dc-08f0-11e2-8c61-576b7e66acfd"
+	[("eubackup", "ssh://eubackup.kitenet.net/~/lib/downloads/")]
+	`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "joey"
+	
+tmp :: Property HasInfo
+tmp = propertyList "tmp.kitenet.net" $ props
+	& annexWebSite "/srv/git/joey/tmp.git"
+		"tmp.kitenet.net"
+		"26fd6e38-1226-11e2-a75f-ff007033bdba"
+		[]
+	& twitRss
+	& pumpRss
 
 -- Twitter, you kill us.
 twitRss :: Property HasInfo
