@@ -173,12 +173,22 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& alias "mail.kitenet.net"
 	& JoeySites.kiteMailServer
 	
+	& JoeySites.kitenetHttps
+	& Apache.multiSSL
+	& JoeySites.legacyWebSites
+	
+	& alias "git.kitenet.net"
+	& alias "git.joeyh.name"
+	& JoeySites.gitServer hosts
+
+	& JoeySites.downloads hosts
+	& JoeySites.gitAnnexDistributor
+	& JoeySites.tmp
+	
 	& alias "ns4.kitenet.net"
 	& myDnsSecondary
 	& alias "ns4.branchable.com"
 	& branchableSecondary
-
-	& JoeySites.legacyWebSites
 
 	& alias "bitlbee.kitenet.net"
 	& Apt.serviceInstalledRunning "bitlbee"
@@ -204,15 +214,6 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
 	! Docker.docked oldusenetShellBox
-	
-	& alias "git.kitenet.net"
-	& alias "git.joeyh.name"
-	& JoeySites.gitServer hosts
-
-	& JoeySites.downloads hosts
-	& JoeySites.gitAnnexDistributor
-
-	& JoeySites.tmp
 
 diatom :: Host
 diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"

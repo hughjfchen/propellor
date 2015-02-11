@@ -221,14 +221,14 @@ annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-ann
 		, "  <Directory /srv/web/"++hn++">"
 		, "    Options FollowSymLinks"
 		, "    AllowOverride None"
+		, Apache.allowAll
 		, "  </Directory>"
 		, "  <Directory /srv/web/"++hn++">"
 		, "    Options Indexes FollowSymLinks ExecCGI"
 		, "    AllowOverride None"
 		, "    AddHandler cgi-script .cgi"
 		, "    DirectoryIndex index.html index.cgi"
-		, "    Order allow,deny"
-		, "    allow from all"
+		, Apache.allowAll
 		, "  </Directory>"
 		]
 
@@ -256,8 +256,7 @@ apachecfg hn withssl middle
 		, "  <Directory \"/usr/share/apache2/icons\">"
 		, "      Options Indexes MultiViews"
 		, "      AllowOverride None"
-		, "      Order allow,deny"
-		, "      Allow from all"
+		, Apache.allowAll
 		, "  </Directory>"
 		, "</VirtualHost>"
 		]
