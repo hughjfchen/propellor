@@ -225,50 +225,13 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 
 diatom :: Host
 diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
-	[ "Important stuff that needs not too much memory or CPU." ]
+	[ "dying" ]
 	& ipv4 "107.170.31.195"
 	& Ssh.hostKeys hostContext
 		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBAO9tnPUT4p+9z7K6/OYuiBNHaij4Nzv5YVBih1vMl+ALz0gYAj8RWJzXmqp5buFAyfgOoLw+H9s1bBS01Sy3i07Dm6cx1fWG4RXL/E/3w1tavX99GD2bBxDBu890ebA5Tp+eFRJkS9+JwSvFiF6CP7NbVjifCagoUO56Ig048RwDAAAAFQDPY2xM3q6KwsVQliel23nrd0rV2QAAAIEAga3hj1hL00rYPNnAUzT8GAaSP62S4W68lusErH+KPbsMwFBFY/Ib1FVf8k6Zn6dZLh/HH/RtJi0JwdzPI1IFW+lwVbKfwBvhQ1lw9cH2rs1UIVgi7Wxdgfy8gEWxf+QIqn62wG+Ulf/HkWGvTrRpoJqlYRNS/gnOWj9Z/4s99koAAACBAM/uJIo2I0nK15wXiTYs/NYUZA7wcErugFn70TRbSgduIFH6U/CQa3rgHJw9DCPCQJLq7pwCnFH7too/qaK+czDk04PsgqV0+Jc7957gU5miPg50d60eJMctHV4eQ1FpwmGGfXxRBR9k2ZvikWYatYir3L6/x1ir7M0bA9IzNU45")
 		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEA2QAJEuvbTmaN9ex9i9bjPhMGj+PHUYq2keIiaIImJ+8mo+yKSaGUxebG4tpuDPx6KZjdycyJt74IXfn1voGUrfzwaEY9NkqOP3v6OWTC3QeUGqDCeJ2ipslbEd9Ep9XBp+/ldDQm60D0XsIZdmDeN6MrHSbKF4fXv1bqpUoUILk=")
 		]
-
-	-- & DigitalOcean.distroKernel
-	-- & Apt.unattendedUpgrades
-	-- & Apt.serviceInstalledRunning "ntp"
-	-- & Postfix.satellite
-
-	-- Diatom has 500 mb of memory, so tune for that.
-	-- & JoeySites.obnamLowMem
-	-- & Apt.serviceInstalledRunning "swapspace"
-	-- & Cron.job "memory use logged" (Cron.Times "*/5 * * * *") "root" "/" "(date; free; ps --sort -rss axl | head -n10) >> /var/log/memory.log"
-	
-	& Apt.serviceInstalledRunning "apache2"
-	-- & JoeySites.kitenetHttps
-	-- & Apache.multiSSL
-	-- & File.ownerGroup "/srv/web" "joey" "joey"
-	-- & Apt.installed ["analog"]
-
-	-- & alias "git.kitenet.net"
-	-- & alias "git.joeyh.name"
-	-- & JoeySites.gitServer hosts
-	
-	-- & JoeySites.downloads hosts
-	-- & JoeySites.gitAnnexDistributor
-
-	-- & JoeySites.tmp
-	
-	& JoeySites.annexWebSite "/srv/git/user-liberation.git"
-		"user-liberation.joeyh.name"
-		"da89f112-808b-420a-b468-d990ae2e5b52"
-		[]
-		
-	-- & JoeySites.oldUseNetServer hosts
-	
 	& alias "ns2.kitenet.net"
-	& myDnsSecondary
-
-	-- & alias "ns3.branchable.com"
-	-- & branchableSecondary
 
 elephant :: Host
 elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
