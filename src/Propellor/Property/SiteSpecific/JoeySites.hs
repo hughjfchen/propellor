@@ -150,9 +150,10 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		`requires` Ssh.authorizedKeys "family" (Context "git.kitenet.net")
 		`requires` User.accountFor "family"
 	& Apt.installed ["git", "rsync", "gitweb"]
-	& Apt.installed ["kgb-client"]
 	& Apt.installed ["git-annex"]
+	& Apt.installed ["kgb-client"]
 	& File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf" anyContext
+		`requires` File.dirExists "/etc/kgb-bot/"
 	& Git.daemonRunning "/srv/git"
 	& "/etc/gitweb.conf" `File.containsLines`
 		[ "$projectroot = '/srv/git';"
