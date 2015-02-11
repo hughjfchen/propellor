@@ -161,7 +161,12 @@ keyImported' dest keytype user context = combineProperties desc
 	, installkey (SshPrivKey keytype user) (install writeFileProtected "")
 	]
   where
-	desc = user ++ " has ssh key (" ++ fromKeyType keytype ++ ")"
+	desc = unwords $ catMaybes
+		[ Just user
+		, Just "has ssh key"
+		, dest
+		, Just $ "(" ++ fromKeyType keytype ++ ")"
+		]
 	installkey p a = withPrivData p context $ \getkey ->
 		property desc $ getkey a
 	install writer ext key = do
