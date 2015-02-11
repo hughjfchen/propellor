@@ -68,9 +68,11 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 	oldUseNetBackup = Obnam.backup datadir (Cron.Times "33 4 * * *")
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/olduse.net"
 		, "--client-name=spool"
+		, "--ssh-key=" ++ keyfile
 		] Obnam.OnlyClient
-		`requires` Ssh.keyImported SshRsa "root" (Context "olduse.net")
+		`requires` Ssh.keyImported' (Just keyfile) SshRsa "root" (Context "olduse.net")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
+	keyfile = "/root/.ssh/olduse.net.key"
 
 oldUseNetShellBox :: Property HasInfo
 oldUseNetShellBox = propertyList "olduse.net shellbox" $ props
@@ -140,9 +142,10 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 	& Obnam.latestVersion
 	& Obnam.backupEncrypted "/srv/git" (Cron.Times "33 3 * * *")
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
+		, "--ssh-key=" ++ sshkey
 		, "--client-name=wren" -- historical
 		] Obnam.OnlyClient (Gpg.GpgKeyId "1B169BE1")
-		`requires` Ssh.keyImported SshRsa "root" (Context "git.kitenet.net")
+		`requires` Ssh.keyImported' (Just sshkey) SshRsa "root" (Context "git.kitenet.net")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
 		`requires` Ssh.authorizedKeys "family" (Context "git.kitenet.net")
 		`requires` User.accountFor "family"
@@ -166,6 +169,7 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 	& website "git.joeyh.name"
 	& Apache.modEnabled "cgi"
   where
+	sshkey = "/root/.ssh/git.kitenet.net.key"
 	website hn = apacheSite hn True
 		[ "  DocumentRoot /srv/web/git.kitenet.net/"
 		, "  <Directory /srv/web/git.kitenet.net/>"
@@ -266,6 +270,13 @@ mainhttpscert True =
 	, "  SSLCertificateKeyFile /etc/ssl/private/web.pem"
 	, "  SSLCertificateChainFile /etc/ssl/certs/startssl.pem"
 	]
+
+downloads :: [Host] -> Property HasInfo
+downloads hosts = annexWebSite "/srv/git/downloads.git"
+	"downloads.kitenet.net"
+	"840760dc-08f0-11e2-8c61-576b7e66acfd"
+	[("eubackup", "ssh://eubackup.kitenet.net/~/lib/downloads/")]
+	`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "joey"
 		
 gitAnnexDistributor :: Property HasInfo
 gitAnnexDistributor = combineProperties "git-annex distributor, including rsync server and signer" $ props

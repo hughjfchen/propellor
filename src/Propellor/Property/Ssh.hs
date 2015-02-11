@@ -12,6 +12,7 @@ module Propellor.Property.Ssh (
 	pubKey,
 	getPubKey,
 	keyImported,
+	keyImported',
 	knownHost,
 	authorizedKeys,
 	listenPort
@@ -147,8 +148,15 @@ getPubKey = asks (_sshPubKey . hostInfo)
 
 -- | Sets up a user with a ssh private key and public key pair from the
 -- PrivData.
+--
+-- If the user already has a private/public key, it is left unchanged.
 keyImported :: IsContext c => SshKeyType -> UserName -> c -> Property HasInfo
-keyImported keytype user context = combineProperties desc
+keyImported = keyImported' Nothing
+
+-- | A file can be speficied to write the key to somewhere other than
+-- usual. Allows a user to have multiple keys for different roles.
+keyImported' :: IsContext c => Maybe FilePath -> SshKeyType -> UserName -> c -> Property HasInfo
+keyImported' dest keytype user context = combineProperties desc
 	[ installkey (SshPubKey keytype user) (install writeFile ".pub")
 	, installkey (SshPrivKey keytype user) (install writeFileProtected "")
 	]
@@ -168,9 +176,11 @@ keyImported keytype user context = combineProperties desc
 				, File.ownerGroup (takeDirectory f) user user
 				]
 			)
-	keyfile ext = do
-		home <- homeDirectory <$> getUserEntryForName user
-		return $ home </> ".ssh" </> "id_" ++ fromKeyType keytype ++ ext
+	keyfile ext = case dest of
+		Nothing -> do
+			home <- homeDirectory <$> getUserEntryForName user
+			return $ home </> ".ssh" </> "id_" ++ fromKeyType keytype ++ ext
+		Just f -> return $ f ++ ext
 
 fromKeyType :: SshKeyType -> String
 fromKeyType SshRsa = "rsa"
