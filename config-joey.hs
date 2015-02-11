@@ -205,6 +205,8 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Docker.garbageCollected `period` Daily
 	! Docker.docked oldusenetShellBox
 	
+	& alias "git.kitenet.net"
+	& alias "git.joeyh.name"
 	& JoeySites.gitServer hosts
 
 diatom :: Host
@@ -232,9 +234,9 @@ diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
 	& File.ownerGroup "/srv/web" "joey" "joey"
 	& Apt.installed ["analog"]
 
-	& alias "git.kitenet.net"
-	& alias "git.joeyh.name"
-	& JoeySites.gitServer hosts
+	-- & alias "git.kitenet.net"
+	-- & alias "git.joeyh.name"
+	-- & JoeySites.gitServer hosts
 	
 	& JoeySites.downloads hosts
 	& JoeySites.gitAnnexDistributor
