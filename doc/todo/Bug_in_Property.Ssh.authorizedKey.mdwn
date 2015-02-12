@@ -4,3 +4,5 @@ work for the user. Adding a key to an existing authorized_keys
 file doesn't change its ownership and therefore works fine.
 
 -- weinzwang
+
+> Thanks, [[fixed|done]] this and will make a release.
