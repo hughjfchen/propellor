@@ -66,7 +66,7 @@ Some other properties you may find in your config.hs, or want to add:
         & Apt.unattendedUpgrades
         & User.hasSomePassword "root"
         & "/etc/default/foodaemon" `File.containsLine` "ENABLED=yes"
-        & Cron.runPropellor "30 * * * *"
+        & Cron.runPropellor (Cron.Times "30 * * * *")
 """]]
 
 Some of these properties can be reverted -- this makes Propellor undo whatever
