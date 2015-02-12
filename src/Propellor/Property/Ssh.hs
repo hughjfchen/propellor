@@ -12,6 +12,7 @@ module Propellor.Property.Ssh (
 	pubKey,
 	getPubKey,
 	keyImported,
+	keyImported',
 	knownHost,
 	authorizedKeys,
 	listenPort
@@ -147,13 +148,25 @@ getPubKey = asks (_sshPubKey . hostInfo)
 
 -- | Sets up a user with a ssh private key and public key pair from the
 -- PrivData.
+--
+-- If the user already has a private/public key, it is left unchanged.
 keyImported :: IsContext c => SshKeyType -> UserName -> c -> Property HasInfo
-keyImported keytype user context = combineProperties desc
+keyImported = keyImported' Nothing
+
+-- | A file can be speficied to write the key to somewhere other than
+-- usual. Allows a user to have multiple keys for different roles.
+keyImported' :: IsContext c => Maybe FilePath -> SshKeyType -> UserName -> c -> Property HasInfo
+keyImported' dest keytype user context = combineProperties desc
 	[ installkey (SshPubKey keytype user) (install writeFile ".pub")
 	, installkey (SshPrivKey keytype user) (install writeFileProtected "")
 	]
   where
-	desc = user ++ " has ssh key (" ++ fromKeyType keytype ++ ")"
+	desc = unwords $ catMaybes
+		[ Just user
+		, Just "has ssh key"
+		, dest
+		, Just $ "(" ++ fromKeyType keytype ++ ")"
+		]
 	installkey p a = withPrivData p context $ \getkey ->
 		property desc $ getkey a
 	install writer ext key = do
@@ -168,9 +181,11 @@ keyImported keytype user context = combineProperties desc
 				, File.ownerGroup (takeDirectory f) user user
 				]
 			)
-	keyfile ext = do
-		home <- homeDirectory <$> getUserEntryForName user
-		return $ home </> ".ssh" </> "id_" ++ fromKeyType keytype ++ ext
+	keyfile ext = case dest of
+		Nothing -> do
+			home <- homeDirectory <$> getUserEntryForName user
+			return $ home </> ".ssh" </> "id_" ++ fromKeyType keytype ++ ext
+		Just f -> return $ f ++ ext
 
 fromKeyType :: SshKeyType -> String
 fromKeyType SshRsa = "rsa"
@@ -178,7 +193,7 @@ fromKeyType SshDsa = "dsa"
 fromKeyType SshEcdsa = "ecdsa"
 fromKeyType SshEd25519 = "ed25519"
 
--- | Puts some host's ssh public key(s), as set using 'pubKey',
+-- | Puts some host's ssh public key(s), as set using 'pubKey' or 'hostKey'
 -- into the known_hosts file for a user.
 knownHost :: [Host] -> HostName -> UserName -> Property NoInfo
 knownHost hosts hn user = property desc $
@@ -192,6 +207,7 @@ knownHost hosts hn user = property desc $
 			, f `File.containsLines`
 				(map (\k -> hn ++ " " ++ k) (M.elems m))
 			, File.ownerGroup f user user
+			, File.ownerGroup (takeDirectory f) user user
 			]
 	go _ = do
 		warningMessage $ "no configred pubKey for " ++ hn
@@ -215,12 +231,17 @@ authorizedKeys user context = withPrivData (SshAuthorizedKeys user) context $ \g
 -- | Ensures that a user's authorized_keys contains a line.
 -- Any other lines in the file are preserved as-is.
 authorizedKey :: UserName -> String -> Property NoInfo
-authorizedKey user l = property (user ++ " has autorized_keys line " ++ l) $ do
+authorizedKey user l = property desc $ do
 	f <- liftIO $ dotFile "authorized_keys" user
-	ensureProperty $
-		f `File.containsLine` l
+	ensureProperty $ combineProperties desc
+		[ f `File.containsLine` l
 			`requires` File.dirExists (takeDirectory f)
 			`onChange` File.mode f (combineModes [ownerWriteMode, ownerReadMode])
+		, File.ownerGroup f user user
+		, File.ownerGroup (takeDirectory f) user user
+		]
+  where
+	desc = user ++ " has autorized_keys line " ++ l
 
 -- | Makes the ssh server listen on a given port, in addition to any other
 -- ports it is configured to listen on.

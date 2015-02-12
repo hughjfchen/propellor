@@ -7,19 +7,78 @@ import qualified Propellor.Property.Service as Service
 import Utility.FileMode
 
 import System.Posix.Files
+import Data.Char
 
 type HiddenServiceName = String
 
+type NodeName = String
+
+-- | Sets up a tor bridge. (Not a relay or exit node.)
+--
+-- Uses port 443
 isBridge :: Property NoInfo
-isBridge = setup `requires` Apt.installed ["tor"]
+isBridge = isBridge' []
+
+isBridge' :: [String] -> Property NoInfo
+isBridge' extraconfig = server config
 	`describe` "tor bridge"
   where
-	setup = mainConfig `File.hasContent`
-		[ "SocksPort 0"
-		, "ORPort 443"
-		, "BridgeRelay 1"
+	config = 
+		[ "BridgeRelay 1"
 		, "Exitpolicy reject *:*"
-		] `onChange` restarted
+		, "ORPort 443"
+		] ++ extraconfig
+
+-- | Sets up a tor relay.
+--
+-- Uses port 443
+isRelay :: Property NoInfo
+isRelay = isRelay' []
+
+isRelay' :: [String] -> Property NoInfo
+isRelay' extraconfig = server config
+	`describe` "tor relay"
+  where
+	config = 
+		[ "BridgeRelay 0"
+		, "Exitpolicy reject *:*"
+		, "ORPort 443"
+		] ++ extraconfig
+
+-- | Converts a property like isBridge' or isRelay' to be a named
+-- node, with a known private key.
+--
+-- This can be moved to a different IP without needing to wait to
+-- accumulate trust.
+--
+-- The base property can be used to start out and then upgraded to 
+-- a named property later.
+named :: NodeName -> ([String] -> Property NoInfo) -> Property HasInfo
+named n basep = p `describe` (getDesc p ++ " " ++ n)
+  where
+	p = basep ["Nickname " ++ saneNickname n]
+		`requires` torPrivKey (Context ("tor " ++ n))
+
+-- | A tor server (bridge, relay, or exit)
+-- Don't use if you just want to run tor for personal use.
+server :: [String] -> Property NoInfo
+server extraconfig = setup
+	`requires` Apt.installed ["tor", "ntp"]
+	`describe` "tor server"
+  where
+	setup = mainConfig `File.hasContent` config
+		`onChange` restarted
+	config = 
+		[ "SocksPort 0"
+		] ++ extraconfig
+
+torPrivKey :: Context -> Property HasInfo
+torPrivKey context = f `File.hasPrivContent` context
+	`onChange` File.ownerGroup f user user
+	-- install tor first, so the directory exists with right perms
+	`requires` Apt.installed ["tor"]
+  where
+	f = "/var/lib/tor/keys/secret_id_key"
 
 hiddenServiceAvailable :: HiddenServiceName -> Int -> Property NoInfo
 hiddenServiceAvailable hn port = hiddenServiceHostName prop
@@ -80,3 +139,14 @@ varRun = "/var/run/tor"
 
 user :: UserName
 user = "debian-tor"
+
+type NickName = String
+
+-- | Convert String to a valid tor NickName.
+saneNickname :: String -> NickName
+saneNickname s 
+	| null n = "unnamed"
+	| otherwise = n
+  where
+	legal c = isNumber c || isAsciiUpper c || isAsciiLower c
+	n = take 19 $ filter legal s

@@ -70,13 +70,17 @@ reloaded = Service.reloaded "apache2"
 
 -- | Configure apache to use SNI to differentiate between
 -- https hosts.
+--
+-- This was off by default in apache 2.2.22. Newver versions enable
+-- it by default. This property uses the filename used by the old version.
 multiSSL :: Property NoInfo
-multiSSL = "/etc/apache2/conf.d/ssl" `File.hasContent`
-	[ "NameVirtualHost *:443"
-	, "SSLStrictSNIVHostCheck off"
-	]
-	`describe` "apache SNI enabled"
-	`onChange` reloaded
+multiSSL = check (doesDirectoryExist "/etc/apache2/conf.d") $
+	"/etc/apache2/conf.d/ssl" `File.hasContent`
+		[ "NameVirtualHost *:443"
+		, "SSLStrictSNIVHostCheck off"
+		]
+		`describe` "apache SNI enabled"
+		`onChange` reloaded
 
 -- | Config file fragment that can be inserted into a <Directory>
 -- stanza to allow global read access to the directory.

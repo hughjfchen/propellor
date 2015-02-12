@@ -9,7 +9,7 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Docker as Docker
-import Propellor.Property.Cron (CronTimes)
+import Propellor.Property.Cron (Times)
 
 builduser :: UserName
 builduser = "builder"
@@ -25,7 +25,7 @@ builddir = gitbuilderdir </> "build"
 
 type TimeOut = String -- eg, 5h
 
-autobuilder :: Architecture -> CronTimes -> TimeOut -> Property HasInfo
+autobuilder :: Architecture -> Times -> TimeOut -> Property HasInfo
 autobuilder arch crontimes timeout = combineProperties "gitannexbuilder" $ props
 	& Apt.serviceInstalledRunning "cron"
 	& Cron.niceJob "gitannexbuilder" crontimes builduser gitbuilderdir
@@ -102,10 +102,10 @@ standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.conta
 	& User.accountFor builduser
 	& tree arch
 	& buildDepsApt
-	& autobuilder arch (show buildminute ++ " * * * *") timeout
+	& autobuilder arch (Cron.Times $ show buildminute ++ " * * * *") timeout
 	& Docker.tweaked
 
-androidAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Docker.Container
+androidAutoBuilderContainer :: (System -> Docker.Image) -> Times -> TimeOut -> Docker.Container
 androidAutoBuilderContainer dockerImage crontimes timeout =
 	androidContainer dockerImage "android-git-annex-builder" (tree "android") builddir
 		& Apt.unattendedUpgrades
@@ -166,7 +166,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	& Ssh.authorizedKeys builduser (Context "armel-git-annex-builder")
 	& Docker.tweaked
 
-armelAutoBuilderContainer :: (System -> Docker.Image) -> Cron.CronTimes -> TimeOut -> Docker.Container
+armelAutoBuilderContainer :: (System -> Docker.Image) -> Times -> TimeOut -> Docker.Container
 armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "armel-git-annex-builder"
 	(dockerImage $ System (Debian Unstable) "armel")
 	& os (System (Debian Testing) "armel")

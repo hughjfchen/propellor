@@ -4,8 +4,9 @@ module Propellor.Property.Postfix where
 
 import Propellor
 import qualified Propellor.Property.Apt as Apt
-import Propellor.Property.File
+import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Service as Service
+import qualified Propellor.Property.User as User
 
 import qualified Data.Map as M
 import Data.List
@@ -103,7 +104,7 @@ mainCfIsSet name = do
 -- Note that multiline configurations that continue onto the next line
 -- are not currently supported.
 dedupMainCf :: Property NoInfo
-dedupMainCf = fileProperty "postfix main.cf dedupped" dedupCf mainCfFile
+dedupMainCf = File.fileProperty "postfix main.cf dedupped" dedupCf mainCfFile
 
 dedupCf :: [String] -> [String]
 dedupCf ls =
@@ -125,3 +126,33 @@ dedupCf ls =
 	dedup c kc ((Right (k, v)):rest) = case M.lookup k kc of
 		Just n | n > 1 -> dedup c (M.insert k (n - 1) kc) rest
 		_ -> dedup (fmt k v:c) kc rest
+
+-- | Installs saslauthd and configures it for postfix, authenticating
+-- against PAM.
+--
+-- Does not configure postfix to use it; eg smtpd_sasl_auth_enable = yes
+-- needs to be set to enable use. See
+-- https://wiki.debian.org/PostfixAndSASL
+saslAuthdInstalled :: Property NoInfo
+saslAuthdInstalled = setupdaemon
+	`requires` Service.running "saslauthd"
+	`requires` postfixgroup
+	`requires` dirperm
+	`requires` Apt.installed ["sasl2-bin"]
+	`requires` smtpdconf
+  where
+	setupdaemon = "/etc/default/saslauthd" `File.containsLines`
+		[ "START=yes" 
+		, "OPTIONS=\"-c -m " ++ dir ++ "\""
+		]
+		`onChange` Service.restarted "saslauthd"
+	smtpdconf = "/etc/postfix/sasl/smtpd.conf" `File.containsLines`
+		[ "pwcheck_method: saslauthd"
+		, "mech_list: PLAIN LOGIN"
+		]
+	dirperm = check (not <$> doesDirectoryExist dir) $ 
+		cmdProperty "dpkg-statoverride"
+			[ "--add", "root", "sasl", "710", dir ]
+	postfixgroup = "postfix" `User.hasGroup` "sasl"
+		`onChange` restarted
+	dir = "/var/spool/postfix/var/run/saslauthd"

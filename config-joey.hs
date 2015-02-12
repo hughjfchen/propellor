@@ -19,7 +19,6 @@ import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
-import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
@@ -27,7 +26,6 @@ import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.OS as OS
-import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
@@ -47,6 +45,7 @@ hosts =                --                  (o)  `
 	, kite
 	, diatom
 	, elephant
+	, beaver
 	] ++ monsters
 
 testvm :: Host
@@ -86,7 +85,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& Ssh.randomHostKeys
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
-	& Tor.isBridge
+	& Tor.named "kite1" Tor.isRelay'
 	& Postfix.satellite
 
 	& Docker.configured
@@ -118,8 +117,8 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h")
 	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h")
 	& Docker.docked (GitAnnexBuilder.armelCompanionContainer dockerImage)
-	& Docker.docked (GitAnnexBuilder.armelAutoBuilderContainer dockerImage "1 3 * * *" "5h")
-	& Docker.docked (GitAnnexBuilder.androidAutoBuilderContainer dockerImage "1 1 * * *" "3h")
+	& Docker.docked (GitAnnexBuilder.armelAutoBuilderContainer dockerImage (Cron.Times "1 3 * * *") "5h")
+	& Docker.docked (GitAnnexBuilder.androidAutoBuilderContainer dockerImage (Cron.Times "1 1 * * *") "3h")
 	& Docker.garbageCollected `period` Daily
 	& Apt.buildDep ["git-annex"] `period` Daily
 
@@ -128,7 +127,7 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 -- with propellor.
 kite :: Host
 kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
-	[ "Welcome to the new kitenet.net server!" ]
+	[ "Welcome to kite!" ]
 	& ipv4 "66.228.36.95"
 	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 	& alias "kitenet.net"
@@ -143,6 +142,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Network.static "eth0" `requires` Network.cleanInterfacesFile
 	& Apt.installed ["linux-image-amd64"]
 	& Linode.chainPVGrub 5
+	& Linode.mlocateEnabled
 	& Apt.unattendedUpgrades
 	& Systemd.installed
 	& Systemd.persistentJournal
@@ -150,7 +150,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
 	& Apt.serviceInstalledRunning "fail2ban"
-	& Obnam.backupEncrypted "/" "33 1 * * *"
+	& Obnam.backupEncrypted "/" (Cron.Times "33 1 * * *")
 		[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
 		, "--client-name=kitenet.net"
 		, "--exclude=/var/cache"
@@ -171,12 +171,18 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& alias "mail.kitenet.net"
 	& JoeySites.kiteMailServer
 	
-	& alias "ns4.kitenet.net"
-	& myDnsSecondary
-	& alias "ns4.branchable.com"
-	& branchableSecondary
-
+	& JoeySites.kitenetHttps
 	& JoeySites.legacyWebSites
+	& File.ownerGroup "/srv/web" "joey" "joey"
+	& Apt.installed ["analog"]
+	
+	& alias "git.kitenet.net"
+	& alias "git.joeyh.name"
+	& JoeySites.gitServer hosts
+
+	& JoeySites.downloads hosts
+	& JoeySites.gitAnnexDistributor
+	& JoeySites.tmp
 
 	& alias "bitlbee.kitenet.net"
 	& Apt.serviceInstalledRunning "bitlbee"
@@ -201,72 +207,31 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
-	& Docker.docked oldusenetShellBox
-
-diatom :: Host
-diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
-	[ "Important stuff that needs not too much memory or CPU." ]
-	& ipv4 "107.170.31.195"
-	& Ssh.hostKeys hostContext
-		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBAO9tnPUT4p+9z7K6/OYuiBNHaij4Nzv5YVBih1vMl+ALz0gYAj8RWJzXmqp5buFAyfgOoLw+H9s1bBS01Sy3i07Dm6cx1fWG4RXL/E/3w1tavX99GD2bBxDBu890ebA5Tp+eFRJkS9+JwSvFiF6CP7NbVjifCagoUO56Ig048RwDAAAAFQDPY2xM3q6KwsVQliel23nrd0rV2QAAAIEAga3hj1hL00rYPNnAUzT8GAaSP62S4W68lusErH+KPbsMwFBFY/Ib1FVf8k6Zn6dZLh/HH/RtJi0JwdzPI1IFW+lwVbKfwBvhQ1lw9cH2rs1UIVgi7Wxdgfy8gEWxf+QIqn62wG+Ulf/HkWGvTrRpoJqlYRNS/gnOWj9Z/4s99koAAACBAM/uJIo2I0nK15wXiTYs/NYUZA7wcErugFn70TRbSgduIFH6U/CQa3rgHJw9DCPCQJLq7pwCnFH7too/qaK+czDk04PsgqV0+Jc7957gU5miPg50d60eJMctHV4eQ1FpwmGGfXxRBR9k2ZvikWYatYir3L6/x1ir7M0bA9IzNU45")
-		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEA2QAJEuvbTmaN9ex9i9bjPhMGj+PHUYq2keIiaIImJ+8mo+yKSaGUxebG4tpuDPx6KZjdycyJt74IXfn1voGUrfzwaEY9NkqOP3v6OWTC3QeUGqDCeJ2ipslbEd9Ep9XBp+/ldDQm60D0XsIZdmDeN6MrHSbKF4fXv1bqpUoUILk=")
-		]
-
-	& DigitalOcean.distroKernel
-	& Apt.unattendedUpgrades
-	& Apt.serviceInstalledRunning "ntp"
-	& Postfix.satellite
-
-	-- Diatom has 500 mb of memory, so tune for that.
-	& JoeySites.obnamLowMem
-	& Apt.serviceInstalledRunning "swapspace"
+	! Docker.docked oldusenetShellBox
 	
-	& Apt.serviceInstalledRunning "apache2"
-	& JoeySites.kitenetHttps
-	& Apache.multiSSL
-	& File.ownerGroup "/srv/web" "joey" "joey"
-	& Apt.installed ["analog"]
-
-	& alias "git.kitenet.net"
-	& alias "git.joeyh.name"
-	& JoeySites.gitServer hosts
-	
-	& JoeySites.annexWebSite "/srv/git/downloads.git"
-		"downloads.kitenet.net"
-		"840760dc-08f0-11e2-8c61-576b7e66acfd"
-		[("eubackup", "ssh://eubackup.kitenet.net/~/lib/downloads/")]
-		`requires` Ssh.keyImported SshRsa "joey" (Context "downloads.kitenet.net")
-		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "joey"
-	& JoeySites.gitAnnexDistributor
-
-	& JoeySites.annexWebSite "/srv/git/joey/tmp.git"
-		"tmp.kitenet.net"
-		"26fd6e38-1226-11e2-a75f-ff007033bdba"
-		[]
-	& JoeySites.twitRss
-	& JoeySites.pumpRss
-	
-	& JoeySites.annexWebSite "/srv/git/user-liberation.git"
-		"user-liberation.joeyh.name"
-		"da89f112-808b-420a-b468-d990ae2e5b52"
-		[]
-		
 	& alias "nntp.olduse.net"
-	& alias "resources.olduse.net"
 	& JoeySites.oldUseNetServer hosts
 	
-	& alias "ns2.kitenet.net"
+	& alias "ns4.kitenet.net"
 	& myDnsPrimary True "kitenet.net" []
 	& myDnsPrimary True "joeyh.name" []
 	& myDnsPrimary True "ikiwiki.info" []
 	& myDnsPrimary True "olduse.net"
 		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
 		]
-
-	& alias "ns3.branchable.com"
+	& alias "ns4.branchable.com"
 	& branchableSecondary
-	
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
+
+diatom :: Host
+diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
+	[ "dying" ]
+	& ipv4 "107.170.31.195"
+	& Ssh.hostKeys hostContext
+		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBAO9tnPUT4p+9z7K6/OYuiBNHaij4Nzv5YVBih1vMl+ALz0gYAj8RWJzXmqp5buFAyfgOoLw+H9s1bBS01Sy3i07Dm6cx1fWG4RXL/E/3w1tavX99GD2bBxDBu890ebA5Tp+eFRJkS9+JwSvFiF6CP7NbVjifCagoUO56Ig048RwDAAAAFQDPY2xM3q6KwsVQliel23nrd0rV2QAAAIEAga3hj1hL00rYPNnAUzT8GAaSP62S4W68lusErH+KPbsMwFBFY/Ib1FVf8k6Zn6dZLh/HH/RtJi0JwdzPI1IFW+lwVbKfwBvhQ1lw9cH2rs1UIVgi7Wxdgfy8gEWxf+QIqn62wG+Ulf/HkWGvTrRpoJqlYRNS/gnOWj9Z/4s99koAAACBAM/uJIo2I0nK15wXiTYs/NYUZA7wcErugFn70TRbSgduIFH6U/CQa3rgHJw9DCPCQJLq7pwCnFH7too/qaK+czDk04PsgqV0+Jc7957gU5miPg50d60eJMctHV4eQ1FpwmGGfXxRBR9k2ZvikWYatYir3L6/x1ir7M0bA9IzNU45")
+		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEA2QAJEuvbTmaN9ex9i9bjPhMGj+PHUYq2keIiaIImJ+8mo+yKSaGUxebG4tpuDPx6KZjdycyJt74IXfn1voGUrfzwaEY9NkqOP3v6OWTC3QeUGqDCeJ2ipslbEd9Ep9XBp+/ldDQm60D0XsIZdmDeN6MrHSbKF4fXv1bqpUoUILk=")
+		]
+	& alias "ns2.kitenet.net"
 
 elephant :: Host
 elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
@@ -294,7 +259,6 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& JoeySites.obnamRepos ["wren", "pell", "kite"]
 	& JoeySites.githubBackup
 	& JoeySites.rsyncNetBackup hosts
-	& JoeySites.backupsBackedupTo hosts "usbackup.kitenet.net" "lib/backup/eubackup"
 
 	& alias "podcatcher.kitenet.net"
 	& JoeySites.podcatcher
@@ -327,6 +291,18 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	-- that port for ssh, for traveling on bad networks that
 	-- block 22.
 	& Ssh.listenPort 80
+
+beaver :: Host
+beaver = host "beaver.kitenet.net"
+	& ipv6 "2001:4830:1600:195::2"
+	& Apt.serviceInstalledRunning "aiccu"
+	& Apt.installed ["ssh"]
+	& Ssh.pubKey SshDsa "ssh-dss AAAAB3NzaC1kc3MAAACBAIrLX260fY0Jjj/p0syNhX8OyR8hcr6feDPGOj87bMad0k/w/taDSOzpXe0Wet7rvUTbxUjH+Q5wPd4R9zkaSDiR/tCb45OdG6JsaIkmqncwe8yrU+pqSRCxttwbcFe+UU+4AAcinjVedZjVRDj2rRaFPc9BXkPt7ffk8GwEJ31/AAAAFQCG/gOjObsr86vvldUZHCteaJttNQAAAIB5nomvcqOk/TD07DLaWKyG7gAcW5WnfY3WtnvLRAFk09aq1EuiJ6Yba99Zkb+bsxXv89FWjWDg/Z3Psa22JMyi0HEDVsOevy/1sEQ96AGH5ijLzFInfXAM7gaJKXASD7hPbVdjySbgRCdwu0dzmQWHtH+8i1CMVmA2/a5Y/wtlJAAAAIAUZj2US2D378jBwyX1Py7e4sJfea3WSGYZjn4DLlsLGsB88POuh32aOChd1yzF6r6C2sdoPBHQcWBgNGXcx4gF0B5UmyVHg3lIX2NVSG1ZmfuLNJs9iKNu4cHXUmqBbwFYQJBvB69EEtrOw4jSbiTKwHFmqdA/mw1VsMB+khUaVw=="
+	& alias "usbackup.kitenet.net"
+	& JoeySites.backupsBackedupFrom hosts "eubackup.kitenet.net" "/home/joey/lib/backup"
+	& Apt.serviceInstalledRunning "anacron"
+	& Cron.niceJob "system disk backed up" Cron.Weekly "root" "/"
+		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"
 
 
        --'                        __|II|      ,.
@@ -411,7 +387,7 @@ standardSystemUnhardened hn suite arch motd = host hn
 	& Sudo.enabledFor "joey"
 	& GitHome.installedFor "joey"
 	& Apt.installed ["vim", "screen", "less"]
-	& Cron.runPropellor "30 * * * *"
+	& Cron.runPropellor (Cron.Times "30 * * * *")
 	-- I use postfix, or no MTA.
 	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
 		`onChange` Apt.autoRemove
@@ -447,15 +423,14 @@ myDnsSecondary = propertyList "dns secondary for all my domains" $ props
 branchableSecondary :: RevertableProperty
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 
--- Currently using diatom (ns2) as primary with secondaries
--- elephant (ns3), kite (ns4) and gandi.
+-- Currently using kite (ns4) as primary with secondaries
+-- elephant (ns3) and gandi.
 -- kite handles all mail.
 myDnsPrimary :: Bool -> Domain -> [(BindDomain, Record)] -> RevertableProperty
 myDnsPrimary dnssec domain extras = (if dnssec then Dns.signedPrimary (Weekly Nothing) else Dns.primary) hosts domain
-	(Dns.mkSOA "ns2.kitenet.net" 100) $
-	[ (RootDomain, NS $ AbsDomain "ns2.kitenet.net")
+	(Dns.mkSOA "ns4.kitenet.net" 100) $
+	[ (RootDomain, NS $ AbsDomain "ns4.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
-	, (RootDomain, NS $ AbsDomain "ns4.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
 	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
 	, (RootDomain, TXT "v=spf1 a a:kitenet.net ~all")
@@ -474,13 +449,8 @@ monsters =            -- but do want to track their public keys etc.
 	, host "turtle.kitenet.net"
 		& ipv4 "67.223.19.96"
 		& ipv6 "2001:4978:f:2d9::2"
-		& alias "backup.kitenet.net"
-		& alias "usbackup.kitenet.net"
-		& Ssh.pubKey SshRsa "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokMXQiX/NZjA1UbhMdgAscnS5dsmy+Q7bWrQ6tsTZ/o+6N/T5cbjoBHOdpypXJI3y/PiJTDJaQtXIhLa8gFg/EvxMnMz/KG9skADW1361JmfCc4BxicQIO2IOOe6eilPr+YsnOwiHwL0vpUnuty39cppuMWVD25GzxXlS6KQsLCvXLzxLLuNnGC43UAM0q4UwQxDtAZEK1dH2o3HMWhgMP2qEQupc24dbhpO3ecxh2C9678a3oGDuDuNf7mLp3s7ptj5qF3onitpJ82U5o7VajaHoygMaSRFeWxP2c13eM57j3bLdLwxVXFhePcKXARu1iuFTLS5uUf3hN6MkQcOGw=="
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
-	, host "beaver.kitenet.net"
-		& ipv6 "2001:4830:1600:195::2"
 	, host "branchable.com"
 		& ipv4 "66.228.46.55"
 		& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
