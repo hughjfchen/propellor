@@ -33,7 +33,7 @@ hosts =
 		& File.dirExists "/var/www"
 		& Docker.docked webserverContainer
 		& Docker.garbageCollected `period` Daily
-		& Cron.runPropellor "30 * * * *"
+		& Cron.runPropellor (Cron.Times "30 * * * *")
 
 	-- add more hosts here...
 	--, host "foo.example.com" = ...
