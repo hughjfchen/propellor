@@ -1,4 +1,4 @@
-propellor (2.1.0) UNRELEASED; urgency=medium
+propellor (2.1.0) unstable; urgency=medium
 
   * Additional tor properties, including support for making relays, 
     and naming bridges, relays, etc.
@@ -9,7 +9,7 @@ propellor (2.1.0) UNRELEASED; urgency=medium
     be owned by the user, not root.
   * Ssh.knownHost: Make the .ssh directory be owned by the user, not root.
 
- -- Joey Hess <id@joeyh.name>  Thu, 29 Jan 2015 01:41:07 -0400
+ -- Joey Hess <id@joeyh.name>  Thu, 12 Feb 2015 12:36:26 -0400
 
 propellor (2.0.0) unstable; urgency=medium
 
