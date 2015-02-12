@@ -207,6 +207,7 @@ knownHost hosts hn user = property desc $
 			, f `File.containsLines`
 				(map (\k -> hn ++ " " ++ k) (M.elems m))
 			, File.ownerGroup f user user
+			, File.ownerGroup (takeDirectory f) user user
 			]
 	go _ = do
 		warningMessage $ "no configred pubKey for " ++ hn
@@ -230,12 +231,17 @@ authorizedKeys user context = withPrivData (SshAuthorizedKeys user) context $ \g
 -- | Ensures that a user's authorized_keys contains a line.
 -- Any other lines in the file are preserved as-is.
 authorizedKey :: UserName -> String -> Property NoInfo
-authorizedKey user l = property (user ++ " has autorized_keys line " ++ l) $ do
+authorizedKey user l = property desc $ do
 	f <- liftIO $ dotFile "authorized_keys" user
-	ensureProperty $
-		f `File.containsLine` l
+	ensureProperty $ combineProperties desc
+		[ f `File.containsLine` l
 			`requires` File.dirExists (takeDirectory f)
 			`onChange` File.mode f (combineModes [ownerWriteMode, ownerReadMode])
+		, File.ownerGroup f user user
+		, File.ownerGroup (takeDirectory f) user user
+		]
+  where
+	desc = user ++ " has autorized_keys line " ++ l
 
 -- | Makes the ssh server listen on a given port, in addition to any other
 -- ports it is configured to listen on.

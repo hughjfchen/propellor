@@ -330,7 +330,6 @@ twitRss = combineProperties "twitter rss" $ props
 			]
 
 -- Work around for expired ssl cert.
--- (no longer expired, TODO remove this and change urls)
 pumpRss :: Property NoInfo
 pumpRss = Cron.job "pump rss" (Cron.Times "15 * * * *") "joey" "/srv/web/tmp.kitenet.net/"
 	"wget https://pump2rss.com/feed/joeyh@identi.ca.atom -O pump.atom --no-check-certificate 2>/dev/null"

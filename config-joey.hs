@@ -127,7 +127,7 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 -- with propellor.
 kite :: Host
 kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
-	[ "Welcome to the new kitenet.net server!" ]
+	[ "Welcome to kite!" ]
 	& ipv4 "66.228.36.95"
 	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 	& alias "kitenet.net"
