@@ -33,6 +33,9 @@ setup propellorbin propellorbinpath dest = checkAlreadyShimmed propellorbin $ do
 	let linker = (dest ++) $ 
 		fromMaybe (error "cannot find ld-linux linker") $
 			headMaybe $ filter ("ld-linux" `isInfixOf`) libs'
+	let linkersym = takeDirectory linker </> takeFileName propellorbin
+	createSymbolicLink linkersym (takeFileName linker)
+
 	let gconvdir = (dest ++) $ takeDirectory $
 		fromMaybe (error "cannot find gconv directory") $
 			headMaybe $ filter ("/gconv/" `isInfixOf`) glibclibs
@@ -42,7 +45,7 @@ setup propellorbin propellorbinpath dest = checkAlreadyShimmed propellorbin $ do
 		[ shebang
 		, "GCONV_PATH=" ++ shellEscape gconvdir
 		, "export GCONV_PATH"
-		, "exec " ++ unwords (map shellEscape $ linker : linkerparams) ++ 
+		, "exec " ++ unwords (map shellEscape $ linkersym : linkerparams) ++ 
 			" " ++ shellEscape (fromMaybe propellorbin propellorbinpath) ++ " \"$@\""
 		]
 	modifyFileMode shim (addModes executeModes)
