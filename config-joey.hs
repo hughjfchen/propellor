@@ -84,8 +84,9 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& Ssh.randomHostKeys
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
-	& Tor.named "kite1" Tor.isRelay'
-	& Postfix.satellite
+	& Tor.isRelay
+	& Tor.named "kite1"
+	& Tor.bandwidthRate "128 kibibytes"
 
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily

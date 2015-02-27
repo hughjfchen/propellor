@@ -5,6 +5,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
 import Utility.FileMode
+import Utility.DataUnits
 
 import System.Posix.Files
 import Data.Char
@@ -17,60 +18,36 @@ type NodeName = String
 --
 -- Uses port 443
 isBridge :: Property NoInfo
-isBridge = isBridge' []
-
-isBridge' :: [String] -> Property NoInfo
-isBridge' extraconfig = server config
+isBridge = configured
+	[ ("BridgeRelay", "1")
+	, ("Exitpolicy", "reject *:*")
+	, ("ORPort", "443")
+	]
 	`describe` "tor bridge"
-  where
-	config = 
-		[ "BridgeRelay 1"
-		, "Exitpolicy reject *:*"
-		, "ORPort 443"
-		] ++ extraconfig
+	`requires` server
 
 -- | Sets up a tor relay.
 --
 -- Uses port 443
 isRelay :: Property NoInfo
-isRelay = isRelay' []
-
-isRelay' :: [String] -> Property NoInfo
-isRelay' extraconfig = server config
+isRelay = configured
+	[ ("BridgeRelay", "0")
+	, ("Exitpolicy", "reject *:*")
+	, ("ORPort", "443")
+	]
 	`describe` "tor relay"
-  where
-	config = 
-		[ "BridgeRelay 0"
-		, "Exitpolicy reject *:*"
-		, "ORPort 443"
-		] ++ extraconfig
+	`requires` server
 
--- | Converts a property like isBridge' or isRelay' to be a named
--- node, with a known private key.
+-- | Makes the tor node be named, with a known private key.
 --
 -- This can be moved to a different IP without needing to wait to
 -- accumulate trust.
---
--- The base property can be used to start out and then upgraded to 
--- a named property later.
-named :: NodeName -> ([String] -> Property NoInfo) -> Property HasInfo
-named n basep = p `describe` (getDesc p ++ " " ++ n)
+named :: NodeName -> Property HasInfo
+named n = configured [("Nickname", n')]
+	`describe` ("tor node named " ++ n')
+	`requires` torPrivKey (Context ("tor " ++ n))
   where
-	p = basep ["Nickname " ++ saneNickname n]
-		`requires` torPrivKey (Context ("tor " ++ n))
-
--- | A tor server (bridge, relay, or exit)
--- Don't use if you just want to run tor for personal use.
-server :: [String] -> Property NoInfo
-server extraconfig = setup
-	`requires` Apt.installed ["tor", "ntp"]
-	`describe` "tor server"
-  where
-	setup = mainConfig `File.hasContent` config
-		`onChange` restarted
-	config = 
-		[ "SocksPort 0"
-		] ++ extraconfig
+	n' = saneNickname n
 
 torPrivKey :: Context -> Property HasInfo
 torPrivKey context = f `File.hasPrivContent` context
@@ -80,15 +57,47 @@ torPrivKey context = f `File.hasPrivContent` context
   where
 	f = "/var/lib/tor/keys/secret_id_key"
 
+-- | A tor server (bridge, relay, or exit)
+-- Don't use if you just want to run tor for personal use.
+server :: Property NoInfo
+server = configured [("SocksPort", "0")]
+	`requires` Apt.installed ["tor", "ntp"]
+	`describe` "tor server"
+
+-- | Specifies configuration settings. Any lines in the config file
+-- that set other values for the specified settings will be removed,
+-- while other settings are left as-is. Tor is restarted when
+-- configuration is changed.
+configured :: [(String, String)] -> Property NoInfo
+configured settings = File.fileProperty "tor configured" go mainConfig
+	`onChange` restarted
+  where
+	ks = map fst settings
+	go ls = map toconfig $
+		filter (\(k, _) -> k `notElem` ks) (map fromconfig ls)
+		++ settings
+	toconfig (k, v) = k ++ " " ++ v
+	fromconfig = separate (== ' ')
+
+type BwLimit = String
+
+-- | Limit incoming and outgoing traffic to the specified
+-- amount, per second. 
+--
+-- For example, "30 kibibytes" is the minimum limit for a useful relay.
+bandwidthRate :: BwLimit -> Property NoInfo
+bandwidthRate s = case readSize dataUnits s of
+	Just sz -> configured [("BandwidthRate", show sz ++ " bytes")]
+	Nothing -> property ("unable to parse " ++ s) noChange
+
 hiddenServiceAvailable :: HiddenServiceName -> Int -> Property NoInfo
 hiddenServiceAvailable hn port = hiddenServiceHostName prop
   where
-	prop = mainConfig `File.containsLines`
-		[ unwords ["HiddenServiceDir", varLib </> hn]
-		, unwords ["HiddenServicePort", show port, "127.0.0.1:" ++ show port]
+	prop = configured
+		[ ("HiddenServiceDir", varLib </> hn)
+		, ("HiddenServicePort", unwords [show port, "127.0.0.1:" ++ show port])
 		]
 		`describe` "hidden service available"
-		`onChange` Service.reloaded "tor"
 	hiddenServiceHostName p =  adjustPropertySatisfy p $ \satisfy -> do
 		r <- satisfy
 		h <- liftIO $ readFile (varLib </> hn </> "hostname")
@@ -96,12 +105,11 @@ hiddenServiceAvailable hn port = hiddenServiceHostName prop
 		return r
 
 hiddenService :: HiddenServiceName -> Int -> Property NoInfo
-hiddenService hn port = mainConfig `File.containsLines`
-	[ unwords ["HiddenServiceDir", varLib </> hn]
-	, unwords ["HiddenServicePort", show port, "127.0.0.1:" ++ show port]
+hiddenService hn port = configured
+	[ ("HiddenServiceDir", varLib </> hn)
+	, ("HiddenServicePort", unwords [show port, "127.0.0.1:" ++ show port])
 	]
 	`describe` unwords ["hidden service available:", hn, show port]
-	`onChange` restarted
 
 hiddenServiceData :: IsContext c => HiddenServiceName -> c -> Property HasInfo
 hiddenServiceData hn context = combineProperties desc
