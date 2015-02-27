@@ -80,15 +80,24 @@ configured settings = File.fileProperty "tor configured" go mainConfig
 	toconfig (k, v) = k ++ " " ++ v
 	fromconfig = separate (== ' ')
 
-type BwLimit = String
+data BwLimit
+	= PerSecond String
+	| PerDay String
+	| PerMonth String
 
 -- | Limit incoming and outgoing traffic to the specified
--- amount, per second. 
+-- amount each.
 --
--- For example, "30 kibibytes" is the minimum limit for a useful relay.
+-- For example, PerSecond "30 kibibytes" is the minimum limit
+-- for a useful relay.
 bandwidthRate :: BwLimit -> Property NoInfo
-bandwidthRate s = case readSize dataUnits s of
-	Just sz -> configured [("BandwidthRate", show sz ++ " bytes")]
+bandwidthRate (PerSecond s) = bandwidthRate' s 1
+bandwidthRate (PerDay s) = bandwidthRate' s (24*60*60)
+bandwidthRate (PerMonth s) = bandwidthRate' s (31*24*60*60)
+
+bandwidthRate' :: String -> Integer -> Property NoInfo
+bandwidthRate' s divby = case readSize dataUnits s of
+	Just sz -> configured [("BandwidthRate", show (sz `div` divby) ++ " bytes")]
 	Nothing -> property ("unable to parse " ++ s) noChange
 
 hiddenServiceAvailable :: HiddenServiceName -> Int -> Property NoInfo

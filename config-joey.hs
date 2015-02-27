@@ -86,7 +86,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& Network.ipv6to4
 	& Tor.isRelay
 	& Tor.named "kite1"
-	& Tor.bandwidthRate "128 kibibytes"
+	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
 
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
