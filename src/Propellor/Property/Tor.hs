@@ -97,7 +97,9 @@ bandwidthRate (PerMonth s) = bandwidthRate' s (31*24*60*60)
 
 bandwidthRate' :: String -> Integer -> Property NoInfo
 bandwidthRate' s divby = case readSize dataUnits s of
-	Just sz -> configured [("BandwidthRate", show (sz `div` divby) ++ " bytes")]
+	Just sz -> let v = show (sz `div` divby) ++ " bytes"
+		in configured [("BandwidthRate", v)]
+			`describe` ("tor BandwidthRate " ++ v)
 	Nothing -> property ("unable to parse " ++ s) noChange
 
 hiddenServiceAvailable :: HiddenServiceName -> Int -> Property NoInfo
