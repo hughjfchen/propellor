@@ -9,6 +9,7 @@ import Utility.DataUnits
 
 import System.Posix.Files
 import Data.Char
+import Data.List
 
 type HiddenServiceName = String
 
@@ -73,7 +74,7 @@ configured settings = File.fileProperty "tor configured" go mainConfig
 	`onChange` restarted
   where
 	ks = map fst settings
-	go ls = map toconfig $
+	go ls = sort $ map toconfig $
 		filter (\(k, _) -> k `notElem` ks) (map fromconfig ls)
 		++ settings
 	toconfig (k, v) = k ++ " " ++ v
