@@ -128,6 +128,7 @@ Library
     Propellor.Types.Result
     Propellor.Types.CmdLine
   Other-Modules:
+    Propellor.Bootstrap
     Propellor.Git
     Propellor.Gpg
     Propellor.Spin

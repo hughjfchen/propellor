@@ -15,6 +15,7 @@
 module Main where
 
 import Propellor.Message
+import Propellor.Bootstrap
 import Utility.UserInfo
 import Utility.Monad
 import Utility.Process
@@ -91,13 +92,10 @@ wrapper args propellordir propellorbin = do
 					warnoutofdate propellordir True
 	buildruncfg = do
 		changeWorkingDirectory propellordir
-		ifM (boolSystem "make" [Param "build"])
-			( do
-				putStrLn ""
-				putStrLn ""
-				chain
-			, error "Propellor build failed."
-			)
+		buildPropellor
+		putStrLn ""
+		putStrLn ""
+		chain
 	chain = do
 		(_, _, _, pid) <- createProcess (proc propellorbin args) 
 		exitWith =<< waitForProcess pid
