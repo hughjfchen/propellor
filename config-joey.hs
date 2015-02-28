@@ -43,7 +43,6 @@ hosts =                --                  (o)  `
 	, clam
 	, orca
 	, kite
-	, diatom
 	, elephant
 	, beaver
 	] ++ monsters
@@ -85,8 +84,9 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& Ssh.randomHostKeys
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
-	& Tor.named "kite1" Tor.isRelay'
-	& Postfix.satellite
+	& Tor.isRelay
+	& Tor.named "kite1"
+	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
 
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
@@ -223,16 +223,6 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& branchableSecondary
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
-diatom :: Host
-diatom = standardSystem "diatom.kitenet.net" (Stable "wheezy") "amd64"
-	[ "dying" ]
-	& ipv4 "107.170.31.195"
-	& Ssh.hostKeys hostContext
-		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBAO9tnPUT4p+9z7K6/OYuiBNHaij4Nzv5YVBih1vMl+ALz0gYAj8RWJzXmqp5buFAyfgOoLw+H9s1bBS01Sy3i07Dm6cx1fWG4RXL/E/3w1tavX99GD2bBxDBu890ebA5Tp+eFRJkS9+JwSvFiF6CP7NbVjifCagoUO56Ig048RwDAAAAFQDPY2xM3q6KwsVQliel23nrd0rV2QAAAIEAga3hj1hL00rYPNnAUzT8GAaSP62S4W68lusErH+KPbsMwFBFY/Ib1FVf8k6Zn6dZLh/HH/RtJi0JwdzPI1IFW+lwVbKfwBvhQ1lw9cH2rs1UIVgi7Wxdgfy8gEWxf+QIqn62wG+Ulf/HkWGvTrRpoJqlYRNS/gnOWj9Z/4s99koAAACBAM/uJIo2I0nK15wXiTYs/NYUZA7wcErugFn70TRbSgduIFH6U/CQa3rgHJw9DCPCQJLq7pwCnFH7too/qaK+czDk04PsgqV0+Jc7957gU5miPg50d60eJMctHV4eQ1FpwmGGfXxRBR9k2ZvikWYatYir3L6/x1ir7M0bA9IzNU45")
-		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEA2QAJEuvbTmaN9ex9i9bjPhMGj+PHUYq2keIiaIImJ+8mo+yKSaGUxebG4tpuDPx6KZjdycyJt74IXfn1voGUrfzwaEY9NkqOP3v6OWTC3QeUGqDCeJ2ipslbEd9Ep9XBp+/ldDQm60D0XsIZdmDeN6MrHSbKF4fXv1bqpUoUILk=")
-		]
-	& alias "ns2.kitenet.net"
-
 elephant :: Host
 elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	[ "Storage, big data, and backups, omnomnom!"
@@ -265,7 +255,6 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	
 	& alias "znc.kitenet.net"
 	& JoeySites.ircBouncer
-	-- I'd rather this were on diatom, but it needs unstable.
 	& alias "kgb.kitenet.net"
 	& JoeySites.kgbServer
 	

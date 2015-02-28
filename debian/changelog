@@ -1,3 +1,14 @@
+propellor (2.2.0) UNRELEASED; urgency=medium
+
+  * When running shimmed (eg in a docker container),
+    improve process name visible in ps.
+  * Add shebang to cron.daily etc files. 
+  * Some changes to tor configuration, minor API change.
+  * Propellor now builds itself, and gets its build dependencies installed
+    when deploying to a new host, without needing the Makefile.
+
+ -- Joey Hess <id@joeyh.name>  Mon, 16 Feb 2015 19:00:48 -0400
+
 propellor (2.1.0) unstable; urgency=medium
 
   * Additional tor properties, including support for making relays, 

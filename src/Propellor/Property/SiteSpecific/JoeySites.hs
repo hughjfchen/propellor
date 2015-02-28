@@ -125,17 +125,6 @@ mumbleServer hosts = combineProperties hn $ props
   where
 	hn = "mumble.debian.net"
 
-obnamLowMem :: Property NoInfo
-obnamLowMem = combineProperties "obnam tuned for low memory use"
-	[ Obnam.latestVersion
-	, "/etc/obnam.conf" `File.containsLines`
-		[ "[config]"
-		, "# Suggested by liw to keep Obnam memory consumption down (at some speed cost)."
-		, "upload-queue-size = 96"
-		, "lru-size = 96"
-		]
-	]
-
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property HasInfo
 gitServer hosts = propertyList "git.kitenet.net setup" $ props
@@ -282,7 +271,8 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 	& "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
 		`onChange` Service.running "rsync"
 	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
-	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-mavericks"
+	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-yosemite"
+	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/windows"
 	-- git-annex distribution signing key
 	& Gpg.keyImported (Gpg.GpgKeyId "89C809CB") "joey"
   where
