@@ -1,17 +1,11 @@
 CABAL?=cabal
 
-DEBDEPS=gnupg ghc cabal-install libghc-missingh-dev libghc-ansi-terminal-dev libghc-ifelse-dev libghc-unix-compat-dev libghc-hslogger-dev libghc-network-dev libghc-quickcheck2-dev libghc-mtl-dev libghc-monadcatchio-transformers-dev
-
-# this target is provided to keep old versions of the propellor cron job
-# working, and will eventually be removed
-run: deps build
+# this target is provided (and is first) to keep old versions of the
+# propellor cron job working, and will eventually be removed
+run: build
 	./propellor
 
 dev: build tags
-
-deps:
-	@if [ $$(whoami) = root ]; then apt-get --no-upgrade --no-install-recommends -y install $(DEBDEPS) || (apt-get update && apt-get --no-upgrade --no-install-recommends -y install $(DEBDEPS)); fi || true
-	@if [ $$(whoami) = root ]; then apt-get --no-upgrade --no-install-recommends -y install libghc-async-dev || (cabal update; cabal install async); fi || true
 
 install: propellor.1
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
@@ -50,7 +44,8 @@ hackage:
 .PHONY: tags
 
 # The rules below are only used when bootstrapping new propellor
-# installations; propellor contains equivilant haksell code.
+# installations and building packages; propellor contains equivilant
+# haskell code that it uses to re-build itself.
 
 build: dist/setup-config
 	@if ! $(CABAL) build; then $(CABAL) configure; $(CABAL) build; fi

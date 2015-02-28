@@ -24,6 +24,7 @@ import Propellor.PrivData.Paths
 import Propellor.Git
 import Propellor.Ssh
 import Propellor.Gpg
+import Propellor.Bootstrap
 import Propellor.Types.CmdLine
 import qualified Propellor.Shim as Shim
 import Utility.FileMode
@@ -69,7 +70,7 @@ spin target relay hst = do
 	probecmd = intercalate " ; "
 		[ "if [ ! -d " ++ localdir ++ "/.git ]"
 		, "then (" ++ intercalate " && "
-			[ "if ! git --version || ! make --version; then apt-get update && apt-get --no-install-recommends --no-upgrade -y install git make; fi"
+			[ installGitCommand
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			] ++ ") || echo " ++ toMarked statusMarker (show NeedPrecompiled)
 		, "else " ++ updatecmd
@@ -78,7 +79,7 @@ spin target relay hst = do
 	
 	updatecmd = intercalate " && "
 		[ "cd " ++ localdir
-		, "if ! test -x ./propellor; then make deps build; fi"
+		, bootstrapPropellorCommand
 		, if viarelay
 			then "./propellor --continue " ++
 				shellEscape (show (Relay target))
