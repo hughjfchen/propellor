@@ -31,10 +31,14 @@ buildCommand = intercalate " && "
 	]
 
 depsCommand :: ShellCommand
-depsCommand = "(" ++ aptinstall debdeps ++ " || (apt-get update && " ++ aptinstall debdeps ++ ")) || true;"
-	++ "(" ++ aptinstall ["libghc-async-dev"] ++ " || (cabal update; cabal install async)) || true"
+depsCommand = 
+	"(" ++ aptinstall debdeps ++ " || (apt-get update && " ++ aptinstall debdeps ++ ")) && "
+	++ "(" ++ aptinstall ["libghc-async-dev"] ++ " || (" ++ cabalinstall ["async"] ++  ")) || "
+	++ "(" ++ cabalinstall ["--only-dependencies"] ++ ")"
   where
 	aptinstall ps = "apt-get --no-upgrade --no-install-recommends -y install " ++ unwords ps
+
+	cabalinstall ps = "cabal update; cabal install " ++ unwords ps
 
 	-- This is the same build deps listed in debian/control.
 	debdeps =
