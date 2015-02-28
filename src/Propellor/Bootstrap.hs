@@ -13,7 +13,7 @@ import Data.List
 type ShellCommand = String
 
 -- Shell command line to build propellor, used when bootstrapping on a new
--- host. Should be run inside the propellor source tree, and will install
+-- host. Should be run inside the propellor config dir, and will install
 -- all necessary build dependencies.
 bootstrapPropellorCommand :: ShellCommand
 bootstrapPropellorCommand = "if ! test -x ./propellor; then " ++ go ++ "; fi"
@@ -30,23 +30,34 @@ buildCommand = intercalate " && "
 	, "ln -sf dist/build/propellor-config/propellor-config propellor"
 	]
 
+-- Install build dependencies of propellor.
+--
+-- First, try to install ghc, cabal, gnupg, and all haskell libraries that
+-- propellor uses from OS packages.
+--
+-- Some packages may not be available in some versions of Debian
+-- (eg, Debian wheezy lacks async), or propellor may need a newer version.
+-- So, as a second step, cabal is used to install all dependencies.
+--
+-- Note: May succeed and leave some deps not installed.
 depsCommand :: ShellCommand
-depsCommand = 
-	"(" ++ aptinstall debdeps ++ " || (apt-get update && " ++ aptinstall debdeps ++ ")) && "
-	++ "(" ++ aptinstall ["libghc-async-dev"] ++ " || (" ++ cabalinstall ["async"] ++  ")) || "
-	++ "(" ++ cabalinstall ["--only-dependencies"] ++ ")"
+depsCommand = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) ++ " ) || true"
   where
-	aptinstall ps = "apt-get --no-upgrade --no-install-recommends -y install " ++ unwords ps
+	osinstall = "apt-get update" : map aptinstall debdeps
 
-	cabalinstall ps = "cabal update; cabal install " ++ unwords ps
+	cabalinstall = 
+		[ "cabal update"
+		, "cabal install --only-dependencies"
+		]
+
+	aptinstall p = "apt-get --no-upgrade --no-install-recommends -y install " ++ p
 
 	-- This is the same build deps listed in debian/control.
 	debdeps =
 		[ "gnupg"
 		, "ghc"
 		, "cabal-install"
-		-- async is not available in debian stable
-		-- , "libghc-async-dev"
+		, "libghc-async-dev"
 		, "libghc-missingh-dev"
 		, "libghc-hslogger-dev"
 		, "libghc-unix-compat-dev"
@@ -57,7 +68,6 @@ depsCommand =
 		, "libghc-mtl-dev"
 		, "libghc-monadcatchio-transformers-dev"
 		]
-
 
 installGitCommand :: ShellCommand
 installGitCommand = "if ! git --version >/dev/null; then apt-get update && apt-get --no-install-recommends --no-upgrade -y install git; fi"
