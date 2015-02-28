@@ -6,6 +6,7 @@ Other documentation:
 * [[man page|usage]]
 * [[Haskell Newbie]]
 * [[Centralized Git Repository]]
+* [[Components]]
 * [[Contributing]]
 * [[Interface Stability]]
 * [[Coding Stye]]
