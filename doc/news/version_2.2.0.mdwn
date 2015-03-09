@@ -1,0 +1,8 @@
+propellor 2.2.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * When running shimmed (eg in a docker container),
+     improve process name visible in ps.
+   * Add shebang to cron.daily etc files.
+   * Some changes to tor configuration, minor API change.
+   * Propellor now builds itself, and gets its build dependencies installed
+     when deploying to a new host, without needing the Makefile."""]]
