@@ -8,7 +8,7 @@ configure Propellor!
 Let's take a quick tour of the `config.hs` file..
 
 [[!format haskell """
--- | This is the main configuration file for Propellor, and is used to build
+-- This is the main configuration file for Propellor, and is used to build
 -- the propellor program.
 """]]
 

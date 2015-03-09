@@ -5,9 +5,11 @@ CABAL?=cabal
 run: build
 	./propellor
 
-dev: build tags
+build: tags propellor.1 dist/setup-config
+	$(CABAL) build
+	ln -sf dist/build/propellor-config/propellor-config propellor
 
-install: propellor.1
+install:
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
 	install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin/propellor
 	mkdir -p dist/gittmp
@@ -22,9 +24,6 @@ install: propellor.1
 		&& git show-ref master --hash > $(DESTDIR)/usr/src/propellor/head
 	rm -rf dist/gittmp
 
-propellor.1: doc/usage.mdwn doc/mdwn2man
-	doc/mdwn2man propellor 1 < doc/usage.mdwn > propellor.1
-
 clean:
 	rm -rf dist Setup tags propellor propellor.1 privdata/local
 	find -name \*.o -exec rm {} \;
@@ -34,7 +33,14 @@ clean:
 # duplicate tags with Propellor.Property. removed from the start, as we
 # often import qualified by just the module base name.
 tags:
-	find . | grep -v /.git/ | grep -v /tmp/ | grep -v /dist/ | grep -v /doc/ | egrep '\.hs$$' | xargs hothasktags | perl -ne 'print; s/Propellor\.Property\.//; print' | sort > tags  2>/dev/null
+	find . | grep -v /.git/ | grep -v /tmp/ | grep -v /dist/ | grep -v /doc/ | egrep '\.hs$$' | xargs hothasktags | perl -ne 'print; s/Propellor\.Property\.//; print' | sort > tags  2>/dev/null || true
+
+dist/setup-config: propellor.cabal
+	@if [ "$(CABAL)" = ./Setup ]; then ghc --make Setup; fi
+	@$(CABAL) configure
+
+propellor.1: doc/usage.mdwn doc/mdwn2man
+	doc/mdwn2man propellor 1 < doc/usage.mdwn > propellor.1
 
 # Upload to hackage.
 hackage:
@@ -42,15 +48,3 @@ hackage:
 	@cabal upload dist/*.tar.gz
 
 .PHONY: tags
-
-# The rules below are only used when bootstrapping new propellor
-# installations and building packages; propellor contains equivilant
-# haskell code that it uses to re-build itself.
-
-build: dist/setup-config
-	@if ! $(CABAL) build; then $(CABAL) configure; $(CABAL) build; fi
-	@ln -sf dist/build/propellor-config/propellor-config propellor
-
-dist/setup-config: propellor.cabal
-	@if [ "$(CABAL)" = ./Setup ]; then ghc --make Setup; fi
-	@$(CABAL) configure
