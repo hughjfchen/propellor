@@ -47,11 +47,16 @@ scrollBox = propertyList "scroll server" $ props
 		, "rm -f \"$t\""
 		, "mkdir \"$t\""
 		, "cd \"$t\""
+		, "SHELL=/bin/sh script --timing=timing -c " ++ g
+		] `onChange` (s `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
+	& g `File.hasContent`
+		[ "#!/bin/sh"
 		, "SHELL=/bin/sh script --timing=timing -c ../../scroll/scroll"
-		, "echo Thanks for playing scroll!"
-		, "echo Your game was recorded, as ID:$(basename \"$t\"), if you would like to talk about how it went."
-		, "echo scroll@joeyh.name / http://joeyh.name/code/scroll/"
-		, "read me"
+		, "echo Thanks for playing scroll! https://joeyh.name/code/scroll/"
+		, "echo Your game was recorded, as ID:$(basename \"$t\")"
+		, "echo if you would like to talk about how it went, email scroll@joeyh.name"
+		, "echo or, type comments below (finish with a dot on its own line)"
+		, "mail joey@kitenet.net"
 		] `onChange` (s `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
 	-- prevent port forwarding etc by not letting scroll log in via ssh
 	& Ssh.sshdConfig `File.containsLine` ("DenyUsers scroll")
@@ -71,6 +76,7 @@ scrollBox = propertyList "scroll server" $ props
   where
 	d = "/home/scroll"
 	s = d </> "login.sh"
+	g = d </> "game.sh"
 
 oldUseNetServer :: [Host] -> Property HasInfo
 oldUseNetServer hosts = propertyList "olduse.net server" $ props
