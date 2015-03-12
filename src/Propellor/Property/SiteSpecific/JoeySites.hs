@@ -23,7 +23,7 @@ import System.Posix.Files
 import Data.String.Utils
 
 scrollBox :: Property HasInfo
-scrollBox = propertyList "scroll shell box" $ props
+scrollBox = propertyList "scroll server" $ props
 	& alias "scroll.joeyh.name"
 	& User.accountFor "scroll"
 	& Git.cloned "scroll" "git://git.kitenet.net/scroll" (d </> "scroll") Nothing
@@ -48,7 +48,7 @@ scrollBox = propertyList "scroll shell box" $ props
 		, "rm -f \"$t\""
 		, "mkdir \"$t\""
 		, "cd \"$t\""
-		, "timeout 1d script --timing=timing -c ../../scroll/scroll"
+		, "SHELL=/bin/sh timeout 1d script --timing=timing -c ../../scroll/scroll"
 		, "echo Thanks for playing scroll!"
 		, "echo Your game was recorded, as ID:$(basename \"$t\"), if you would like to talk about how it went."
 		, "echo scroll@joeyh.name / http://joeyh.name/code/scroll/"
@@ -59,6 +59,15 @@ scrollBox = propertyList "scroll shell box" $ props
 	& cmdProperty "chsh" ["scroll", "-s", s]
 	& User.hasPassword "scroll"
 	& Apt.serviceInstalledRunning "telnetd"
+	& Apt.installed ["shellinabox"]
+	& File.hasContent "/etc/default/shellinabox"
+		[ "# Deployed by propellor"
+		, "SHELLINABOX_DAEMON_START=1"
+		, "SHELLINABOX_PORT=4242"
+		, "SHELLINABOX_ARGS=\"--no-beep --service=/:TELNET:localhost\""
+		]
+		`onChange` Service.restarted "shellinabox"
+	& Service.running "shellinabox"
   where
 	d = "/home/scroll"
 	s = d </> "login.sh"
