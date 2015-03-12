@@ -26,12 +26,12 @@ scrollBox :: Property HasInfo
 scrollBox = propertyList "scroll shell box" $ props
 	& alias "scroll.joeyh.name"
 	& User.accountFor "scroll"
-	& Git.cloned "scroll" "git://git.kitenet.net/scroll" (d </> "scroll") Nothing
+	& Git.cloned "root" "git://git.kitenet.net/scroll" (d </> "scroll") Nothing
 	& Apt.installed ["ghc", "make", "cabal-install", "libghc-vector-dev",
 		"libghc-bytestring-dev", "libghc-mtl-dev", "libghc-ncurses-dev",
 		"libghc-random-dev", "libghc-monad-loops-dev",
 		"libghc-ifelse-dev", "libghc-case-insensitive-dev"]
-	& userScriptProperty "scroll"
+	& scriptProperty
 		[ "cd " ++ d </> "scroll"
 		, "cabal configure"
 		, "make"
