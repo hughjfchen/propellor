@@ -65,7 +65,7 @@ scrollBox = propertyList "scroll server" $ props
 		[ "# Deployed by propellor"
 		, "SHELLINABOX_DAEMON_START=1"
 		, "SHELLINABOX_PORT=4242"
-		, "SHELLINABOX_ARGS=\"--no-beep --service=scroll:" ++ d ++ ":" ++ s ++ "\""
+		, "SHELLINABOX_ARGS=\"--disable-ssl --no-beep --service=:scroll:scroll:" ++ d ++ ":" ++ s ++ "\""
 		]
 		`onChange` Service.restarted "shellinabox"
 	& Service.running "shellinabox"
