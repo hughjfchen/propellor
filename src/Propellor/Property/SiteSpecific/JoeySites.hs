@@ -51,8 +51,11 @@ scrollBox = propertyList "scroll server" $ props
 		] `onChange` (s `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
 	& g `File.hasContent`
 		[ "#!/bin/sh"
-		, "SHELL=/bin/sh script --timing=timing -c ../../scroll/scroll"
+		, "if ../../scroll/scroll; then"
+		, "echo Scroll seems to have ended unexpectedly. Possibly a bug.."
+		, "else"
 		, "echo Thanks for playing scroll! https://joeyh.name/code/scroll/"
+		, "fi"
 		, "echo Your game was recorded, as ID:$(basename \"$t\")"
 		, "echo if you would like to talk about how it went, email scroll@joeyh.name"
 		, "echo or, type comments below (finish with a dot on its own line)"
