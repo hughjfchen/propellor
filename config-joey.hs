@@ -360,6 +360,7 @@ jerryPlay = standardContainer "jerryplay" Unstable "amd64"
 kiteShellBox :: Docker.Container
 kiteShellBox = standardStableContainer "kiteshellbox"
 	& JoeySites.kiteShellBox
+	& Docker.publish "4242:4242"
 
 type Motd = [String]
 

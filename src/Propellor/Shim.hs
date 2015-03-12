@@ -34,7 +34,7 @@ setup propellorbin propellorbinpath dest = checkAlreadyShimmed propellorbin $ do
 		fromMaybe (error "cannot find ld-linux linker") $
 			headMaybe $ filter ("ld-linux" `isInfixOf`) libs'
 	let linkersym = takeDirectory linker </> takeFileName propellorbin
-	createSymbolicLink linkersym (takeFileName linker)
+	createSymbolicLink (takeFileName linker) linkersym
 
 	let gconvdir = (dest ++) $ takeDirectory $
 		fromMaybe (error "cannot find gconv directory") $
