@@ -1,3 +1,10 @@
+propellor (2.2.1) UNRELEASED; urgency=medium
+
+  * userScriptProperty now passes --shell /bin/sh, so it can be used
+    even for users with nonstandard shells.
+
+ -- Joey Hess <id@joeyh.name>  Wed, 11 Mar 2015 22:29:23 -0400
+
 propellor (2.2.0) unstable; urgency=medium
 
   * When running shimmed (eg in a docker container),
