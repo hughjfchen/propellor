@@ -38,7 +38,7 @@ satellite = check (not <$> mainCfIsSet "relayhost") setup
 			[ Apt.reConfigure "postfix"
 				[ ("postfix/main_mailer_type", "select", "Satellite system")
 				, ("postfix/root_address", "string", "root")
-				, ("postfix/destinations", "string", " ")
+				, ("postfix/destinations", "string", "localhost")
 				, ("postfix/mailname", "string", hn)
 				]
 			, mainCf ("relayhost", domain)
