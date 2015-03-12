@@ -30,7 +30,8 @@ scrollBox = propertyList "scroll shell box" $ props
 	& Apt.installed ["ghc", "make", "cabal-install", "libghc-vector-dev",
 		"libghc-bytestring-dev", "libghc-mtl-dev", "libghc-ncurses-dev",
 		"libghc-random-dev", "libghc-monad-loops-dev",
-		"libghc-ifelse-dev", "libghc-case-insensitive-dev"]
+		"libghc-ifelse-dev", "libghc-case-insensitive-dev",
+		"libghc-data-default-dev"]
 	& userScriptProperty "scroll"
 		[ "cd " ++ d </> "scroll"
 		, "git pull"
