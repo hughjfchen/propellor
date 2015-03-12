@@ -60,6 +60,8 @@ scrollBox = propertyList "scroll server" $ props
 		, "echo Your game was recorded, as ID:$(basename \"$t\")"
 		, "echo if you would like to talk about how it went, email scroll@joeyh.name"
 		, "echo 'or, type comments below (finish with a dot on its own line)'"
+		, "echo"
+		, "echo Your comments:"
 		, "mail -s \"scroll test $t\" joey@kitenet.net"
 		] `onChange` (g `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
 	& Apt.installed ["bsd-mailx"]
