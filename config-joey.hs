@@ -274,7 +274,6 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 		`requires` Apt.serviceInstalledRunning "ntp"
 	& Docker.docked ancientKitenet
 	& Docker.docked jerryPlay
-	& Docker.docked kiteShellBox
 	& Docker.garbageCollected `period` (Weekly (Just 1))
 	
 	& JoeySites.scrollBox
@@ -284,6 +283,7 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	-- For https port 443, shellinabox with ssh login to
 	-- kitenet.net
 	& alias "shell.kitenet.net"
+	& Docker.docked kiteShellBox
 	-- Nothing is using http port 80, so listen on
 	-- that port for ssh, for traveling on bad networks that
 	-- block 22.
@@ -360,7 +360,7 @@ jerryPlay = standardContainer "jerryplay" Unstable "amd64"
 kiteShellBox :: Docker.Container
 kiteShellBox = standardStableContainer "kiteshellbox"
 	& JoeySites.kiteShellBox
-	& Docker.publish "4242:4242"
+	& Docker.publish "443:443"
 
 type Motd = [String]
 
