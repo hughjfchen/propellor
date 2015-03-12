@@ -358,7 +358,7 @@ jerryPlay = standardContainer "jerryplay" Unstable "amd64"
 	& Ssh.permitRootLogin True
 	
 kiteShellBox :: Docker.Container
-kiteShellBox = standardContainer "kiteshell" (Stable "wheezy") "amd64"
+kiteShellBox = standardContainer "kiteshellbox" (Stable "wheezy") "amd64"
 	& JoeySites.kiteShellBox
 
 type Motd = [String]
