@@ -24,7 +24,6 @@ import Data.String.Utils
 
 scrollBox :: Property HasInfo
 scrollBox = propertyList "scroll server" $ props
-	& alias "scroll.joeyh.name"
 	& User.accountFor "scroll"
 	& Git.cloned "scroll" "git://git.kitenet.net/scroll" (d </> "scroll") Nothing
 	& Apt.installed ["ghc", "make", "cabal-install", "libghc-vector-dev",

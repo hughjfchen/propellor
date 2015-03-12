@@ -96,7 +96,10 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& "/var/www/index.html" `File.hasContent` ["hello, world"]
 	& alias "helloworld.kitenet.net"
 	& Docker.docked oldusenetShellBox
+
 	& JoeySites.scrollBox
+	& alias "scroll.joeyh.name"
+	& alias "us.scroll.joeyh.name"
 	
 	-- ssh on some extra ports to deal with horrible networks
 	-- while travelling
@@ -272,6 +275,10 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& Docker.docked ancientKitenet
 	& Docker.docked jerryPlay
 	& Docker.garbageCollected `period` (Weekly (Just 1))
+	
+	& JoeySites.scrollBox
+	& alias "scroll.joeyh.name"
+	& alias "eu.scroll.joeyh.name"
 	
 	-- For https port 443, shellinabox with ssh login to
 	-- kitenet.net
