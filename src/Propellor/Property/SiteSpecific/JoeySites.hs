@@ -44,6 +44,7 @@ scrollBox = propertyList "scroll server" $ props
 		, "cd " ++ d
 		, "mkdir -p tmp"
 		, "TMPDIR= t=$(tempfile -d tmp)"
+		, "export t"
 		, "rm -f \"$t\""
 		, "mkdir \"$t\""
 		, "cd \"$t\""
@@ -59,7 +60,7 @@ scrollBox = propertyList "scroll server" $ props
 		, "echo Your game was recorded, as ID:$(basename \"$t\")"
 		, "echo if you would like to talk about how it went, email scroll@joeyh.name"
 		, "echo 'or, type comments below (finish with a dot on its own line)'"
-		, "mail joey@kitenet.net"
+		, "mail -s \"scroll test $t\" joey@kitenet.net"
 		] `onChange` (g `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
 	& Apt.installed ["bsd-mailx"]
 	-- prevent port forwarding etc by not letting scroll log in via ssh
