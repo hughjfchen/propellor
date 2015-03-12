@@ -61,6 +61,7 @@ scrollBox = propertyList "scroll server" $ props
 		, "echo 'or, type comments below (finish with a dot on its own line)'"
 		, "mail joey@kitenet.net"
 		] `onChange` (g `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
+	& Apt.installed ["bsd-mailx"]
 	-- prevent port forwarding etc by not letting scroll log in via ssh
 	& Ssh.sshdConfig `File.containsLine` ("DenyUsers scroll")
 		`onChange` Ssh.restarted
