@@ -60,7 +60,7 @@ scrollBox = propertyList "scroll server" $ props
 		, "echo if you would like to talk about how it went, email scroll@joeyh.name"
 		, "echo 'or, type comments below (finish with a dot on its own line)'"
 		, "mail joey@kitenet.net"
-		] `onChange` (s `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
+		] `onChange` (g `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
 	-- prevent port forwarding etc by not letting scroll log in via ssh
 	& Ssh.sshdConfig `File.containsLine` ("DenyUsers scroll")
 		`onChange` Ssh.restarted
