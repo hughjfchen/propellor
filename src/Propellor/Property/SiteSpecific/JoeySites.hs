@@ -22,6 +22,43 @@ import Data.List
 import System.Posix.Files
 import Data.String.Utils
 
+scrollBox :: Property HasInfo
+scrollBox = propertyList "scroll shell box" $ props
+	& alias "scroll.joeyh.name"
+	& User.accountFor "scroll"
+	& Git.cloned "scroll" (d </> "scroll") "git://git.kitenet.net/scroll" Nothing
+	& Apt.installed ["ghc", "make", "cabal-install", "libghc-vector-dev",
+		"libghc-bytestring-dev", "libghc-mtl-dev", "libghc-ncurses-dev",
+		"libghc-random-dev", "libghc-monad-loops-dev",
+		"libghc-ifelse-dev", "libghc-case-insensitive-dev"]
+	& userScriptProperty "scroll"
+		[ "cd " ++ d </> "scroll"
+		, "cabal configure"
+		, "make"
+		]
+	& s `File.hasContent`
+		[ "#!/bin/sh"
+		, "set -e"
+		, "echo Preparing to run scroll!"
+		, "cd " ++ d </> "scroll"
+		, "mkdir -p tmp"
+		, "TMPDIR= t=$(tempfile -d tmp)"
+		, "rm -f \"$t\""
+		, "mkdir \"$t\""
+		, "cd \"$t\""
+		, "script -c ../scroll/scroll -t timing"
+		, "echo Thanks for playing scroll!"
+		, "echo Your game was recorded, as ID:\"$t\", if you would like to talk about how it went."
+		, "echo scroll@joeyh.name / http://joeyh.name/code/scroll/"
+		] `onChange` (s `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
+	-- prevent port forwarding etc by not letting scroll log in via ssh
+	& Ssh.setSshdConfig "DenyUsers scroll" True
+	& cmdProperty "passwd" ["-d", "scroll"]
+	& Apt.serviceInstalledRunning "telnetd"
+  where
+	d = "/home/scroll"
+	s = d </> "login.sh"
+
 oldUseNetServer :: [Host] -> Property HasInfo
 oldUseNetServer hosts = propertyList "olduse.net server" $ props
 	& Apt.installed ["leafnode"]

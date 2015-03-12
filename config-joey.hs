@@ -96,6 +96,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& "/var/www/index.html" `File.hasContent` ["hello, world"]
 	& alias "helloworld.kitenet.net"
 	& Docker.docked oldusenetShellBox
+	& JoeySites.scrollBox
 	
 	-- ssh on some extra ports to deal with horrible networks
 	-- while travelling
