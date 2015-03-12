@@ -48,10 +48,11 @@ scrollBox = propertyList "scroll server" $ props
 		, "rm -f \"$t\""
 		, "mkdir \"$t\""
 		, "cd \"$t\""
-		, "SHELL=/bin/sh timeout 1d script --timing=timing -c ../../scroll/scroll"
+		, "SHELL=/bin/sh script --timing=timing -c ../../scroll/scroll"
 		, "echo Thanks for playing scroll!"
 		, "echo Your game was recorded, as ID:$(basename \"$t\"), if you would like to talk about how it went."
 		, "echo scroll@joeyh.name / http://joeyh.name/code/scroll/"
+		, "read me"
 		] `onChange` (s `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
 	-- prevent port forwarding etc by not letting scroll log in via ssh
 	& Ssh.sshdConfig `File.containsLine` ("DenyUsers scroll")
