@@ -52,7 +52,7 @@ scrollBox = propertyList "scroll server" $ props
 		] `onChange` (s `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
 	& g `File.hasContent`
 		[ "#!/bin/sh"
-		, "if ../../scroll/scroll; then"
+		, "if ! ../../scroll/scroll; then"
 		, "echo Scroll seems to have ended unexpectedly. Possibly a bug.."
 		, "else"
 		, "echo Thanks for playing scroll! https://joeyh.name/code/scroll/"
