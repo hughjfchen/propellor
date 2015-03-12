@@ -48,7 +48,7 @@ scrollBox = propertyList "scroll shell box" $ props
 		, "rm -f \"$t\""
 		, "mkdir \"$t\""
 		, "cd \"$t\""
-		, "timeout 1d script -c ../scroll/scroll -t timing"
+		, "timeout 1d script --timing=timing -c ../../scroll/scroll"
 		, "echo Thanks for playing scroll!"
 		, "echo Your game was recorded, as ID:$(basename \"$t\"), if you would like to talk about how it went."
 		, "echo scroll@joeyh.name / http://joeyh.name/code/scroll/"
