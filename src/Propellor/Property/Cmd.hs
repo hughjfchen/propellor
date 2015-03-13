@@ -40,6 +40,6 @@ scriptProperty script = cmdProperty "sh" ["-c", shellcmd]
 -- | A property that can satisfied by running a series of shell commands,
 -- as user (cd'd to their home directory).
 userScriptProperty :: UserName -> [String] -> Property NoInfo
-userScriptProperty user script = cmdProperty "su" ["-c", shellcmd, user]
+userScriptProperty user script = cmdProperty "su" ["--shell", "/bin/sh", "-c", shellcmd, user]
   where
 	shellcmd = intercalate " ; " ("set -e" : "cd" : script)

@@ -22,6 +22,72 @@ import Data.List
 import System.Posix.Files
 import Data.String.Utils
 
+scrollBox :: Property HasInfo
+scrollBox = propertyList "scroll server" $ props
+	& User.accountFor "scroll"
+	& Git.cloned "scroll" "git://git.kitenet.net/scroll" (d </> "scroll") Nothing
+	& Apt.installed ["ghc", "make", "cabal-install", "libghc-vector-dev",
+		"libghc-bytestring-dev", "libghc-mtl-dev", "libghc-ncurses-dev",
+		"libghc-random-dev", "libghc-monad-loops-dev",
+		"libghc-ifelse-dev", "libghc-case-insensitive-dev",
+		"libghc-data-default-dev"]
+	& userScriptProperty "scroll"
+		[ "cd " ++ d </> "scroll"
+		, "git pull"
+		, "cabal configure"
+		, "make"
+		]
+	& s `File.hasContent`
+		[ "#!/bin/sh"
+		, "set -e"
+		, "echo Preparing to run scroll!"
+		, "cd " ++ d
+		, "mkdir -p tmp"
+		, "TMPDIR= t=$(tempfile -d tmp)"
+		, "export t"
+		, "rm -f \"$t\""
+		, "mkdir \"$t\""
+		, "cd \"$t\""
+		, "echo"
+		, "echo Press Enter to start the game."
+		, "read me"
+		, "SHELL=/bin/sh script --timing=timing -c " ++ g
+		] `onChange` (s `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
+	& g `File.hasContent`
+		[ "#!/bin/sh"
+		, "if ! ../../scroll/scroll; then"
+		, "echo Scroll seems to have ended unexpectedly. Possibly a bug.."
+		, "else"
+		, "echo Thanks for playing scroll! https://joeyh.name/code/scroll/"
+		, "fi"
+		, "echo Your game was recorded, as ID:$(basename \"$t\")"
+		, "echo if you would like to talk about how it went, email scroll@joeyh.name"
+		, "echo 'or, type comments below (finish with a dot on its own line)'"
+		, "echo"
+		, "echo Your comments:"
+		, "mail -s \"scroll test $t\" joey@kitenet.net"
+		] `onChange` (g `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
+	& Apt.installed ["bsd-mailx"]
+	-- prevent port forwarding etc by not letting scroll log in via ssh
+	& Ssh.sshdConfig `File.containsLine` ("DenyUsers scroll")
+		`onChange` Ssh.restarted
+	& cmdProperty "chsh" ["scroll", "-s", s]
+	& User.hasPassword "scroll"
+	& Apt.serviceInstalledRunning "telnetd"
+	& Apt.installed ["shellinabox"]
+	& File.hasContent "/etc/default/shellinabox"
+		[ "# Deployed by propellor"
+		, "SHELLINABOX_DAEMON_START=1"
+		, "SHELLINABOX_PORT=4242"
+		, "SHELLINABOX_ARGS=\"--disable-ssl --no-beep --service=:scroll:scroll:" ++ d ++ ":" ++ s ++ "\""
+		]
+		`onChange` Service.restarted "shellinabox"
+	& Service.running "shellinabox"
+  where
+	d = "/home/scroll"
+	s = d </> "login.sh"
+	g = d </> "game.sh"
+
 oldUseNetServer :: [Host] -> Property HasInfo
 oldUseNetServer hosts = propertyList "olduse.net server" $ props
 	& Apt.installed ["leafnode"]
