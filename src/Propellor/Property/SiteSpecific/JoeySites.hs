@@ -49,13 +49,16 @@ scrollBox = propertyList "scroll server" $ props
 		, "mkdir \"$t\""
 		, "cd \"$t\""
 		, "echo"
+		, "echo Note that games on this server are time-limited to 2 hours"
+		, "echo 'Need more time? Run scroll locally instead!'"
+		, "echo"
 		, "echo Press Enter to start the game."
 		, "read me"
 		, "SHELL=/bin/sh script --timing=timing -c " ++ g
 		] `onChange` (s `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
 	& g `File.hasContent`
 		[ "#!/bin/sh"
-		, "if ! ../../scroll/scroll; then"
+		, "if ! timeout --kill-after 1m --foreground 2h ../../scroll/scroll; then"
 		, "echo Scroll seems to have ended unexpectedly. Possibly a bug.."
 		, "else"
 		, "echo Thanks for playing scroll! https://joeyh.name/code/scroll/"
