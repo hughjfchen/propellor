@@ -28,7 +28,7 @@ scrollBox = propertyList "scroll server" $ props
 	& Git.cloned "scroll" "git://git.kitenet.net/scroll" (d </> "scroll") Nothing
 	& Apt.installed ["ghc", "make", "cabal-install", "libghc-vector-dev",
 		"libghc-bytestring-dev", "libghc-mtl-dev", "libghc-ncurses-dev",
-		"libghc-random-dev", "libghc-monad-loops-dev",
+		"libghc-random-dev", "libghc-monad-loops-dev", "libghc-text-dev",
 		"libghc-ifelse-dev", "libghc-case-insensitive-dev",
 		"libghc-data-default-dev", "libghc-optparse-applicative-dev"]
 	& userScriptProperty "scroll"
