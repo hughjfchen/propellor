@@ -1,0 +1,6 @@
+propellor 2.2.1 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * userScriptProperty now passes --shell /bin/sh, so it can be used
+     even for users with nonstandard shells.
+   * Fix bug in docker propellor shim setup introduced in last release,
+     which broke provisioning of new docker containers."""]]
