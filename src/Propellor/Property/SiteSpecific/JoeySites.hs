@@ -30,7 +30,7 @@ scrollBox = propertyList "scroll server" $ props
 		"libghc-bytestring-dev", "libghc-mtl-dev", "libghc-ncurses-dev",
 		"libghc-random-dev", "libghc-monad-loops-dev",
 		"libghc-ifelse-dev", "libghc-case-insensitive-dev",
-		"libghc-data-default-dev"]
+		"libghc-data-default-dev", "libghc-optparse-applicative-dev"]
 	& userScriptProperty "scroll"
 		[ "cd " ++ d </> "scroll"
 		, "git pull"
