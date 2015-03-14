@@ -28,9 +28,10 @@ scrollBox = propertyList "scroll server" $ props
 	& Git.cloned "scroll" "git://git.kitenet.net/scroll" (d </> "scroll") Nothing
 	& Apt.installed ["ghc", "make", "cabal-install", "libghc-vector-dev",
 		"libghc-bytestring-dev", "libghc-mtl-dev", "libghc-ncurses-dev",
-		"libghc-random-dev", "libghc-monad-loops-dev",
+		"libghc-random-dev", "libghc-monad-loops-dev", "libghc-text-dev",
 		"libghc-ifelse-dev", "libghc-case-insensitive-dev",
-		"libghc-data-default-dev"]
+		"libghc-transformers-dev",
+		"libghc-data-default-dev", "libghc-optparse-applicative-dev"]
 	& userScriptProperty "scroll"
 		[ "cd " ++ d </> "scroll"
 		, "git pull"
@@ -49,13 +50,16 @@ scrollBox = propertyList "scroll server" $ props
 		, "mkdir \"$t\""
 		, "cd \"$t\""
 		, "echo"
+		, "echo Note that games on this server are time-limited to 2 hours"
+		, "echo 'Need more time? Run scroll locally instead!'"
+		, "echo"
 		, "echo Press Enter to start the game."
 		, "read me"
 		, "SHELL=/bin/sh script --timing=timing -c " ++ g
 		] `onChange` (s `File.mode` (combineModes (ownerWriteMode:readModes ++ executeModes)))
 	& g `File.hasContent`
 		[ "#!/bin/sh"
-		, "if ! ../../scroll/scroll; then"
+		, "if ! timeout --kill-after 1m --foreground 2h ../../scroll/scroll; then"
 		, "echo Scroll seems to have ended unexpectedly. Possibly a bug.."
 		, "else"
 		, "echo Thanks for playing scroll! https://joeyh.name/code/scroll/"
@@ -406,7 +410,7 @@ ircBouncer = propertyList "IRC bouncer" $ props
 
 kiteShellBox :: Property NoInfo
 kiteShellBox = propertyList "kitenet.net shellinabox"
-	[ Apt.installed ["shellinabox"]
+	[ Apt.installed ["openssl", "shellinabox"]
 	, File.hasContent "/etc/default/shellinabox"
 		[ "# Deployed by propellor"
 		, "SHELLINABOX_DAEMON_START=1"
