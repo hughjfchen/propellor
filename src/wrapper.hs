@@ -77,7 +77,7 @@ wrapper args propellordir propellorbin = do
 			, void $ boolSystem "git" [Param "clone", Param netrepo, File propellordir]
 			)
 
-	checkRepo = whenM (doesFileExist disthead) $ do
+	checkRepo = whenM (doesFileExist disthead <&&> doesFileExist (propellordir </> "propellor.cabal")) $ do
 		headrev <- takeWhile (/= '\n') <$> readFile disthead
 		changeWorkingDirectory propellordir
 		headknown <- catchMaybeIO $ 
