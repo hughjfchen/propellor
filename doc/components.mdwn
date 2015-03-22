@@ -34,3 +34,7 @@ install propellor, and then copy the two files from the
 or clone it:
 
 	git clone ssh://b-propellor@propellor.branchable.com/propellor.branchable.com .propellor --branch minimalconfig --single-branch
+
+In this configureation, when propellor is deploying itself to a new host,
+it will automatically install the version of the propellor library
+specified in the cabal file.
