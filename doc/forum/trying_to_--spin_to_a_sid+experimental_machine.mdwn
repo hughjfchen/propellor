@@ -255,3 +255,48 @@ propellor: user error (ssh ["-o","ControlPath=/home/rx/.ssh/propellor/softland.s
 rx@varenne ~/work/propellor $
 ```
 
+I should add, that I have tried to --spin to another
+machine, my laptop, that runs plain testing, thus I figured,
+that should somehow be simpler
+
+```
+ , host "laptop"
+  & os (System (Debian Testing) "amd64")
+```
+
+Not sure, if I need more than that, want to keep it to the
+minimum first, anyway
+
+
+```
+  propellor --spin laptop
+```
+
+finally fails as well (and the output is maybe not that readable,
+as there are several things being written at once,
+another try had a clearer result:
+`cabal: can't find source for config in src`
+)
+
+
+```
+...
+All the requested packages are already installed:
+Use --reinstall if you want to reinstall anyway.
+Resolving dependencies...
+Configuring propellor-2.2.1...
+Building propellor-2.2.1...
+Preprocessing library propellor-2.2.1...
+In-place registering propellor-2.2.1...
+Preprocessing executable 'propellor' for propellor-2.2.1...
+Preprocessicabal: can'ng executable 'propellor-config' ft find soor propellor-2.2.1...
+urce for config in src
+propellor: user error (ssh ["-o","ControlPath=/home/rx/.ssh/propellor/laptop.sock","-o","ControlMaster=auto","-o","ControlPersist=yes","root@laptop","sh -c 'if [ ! -d /usr/local/propellor/.git ] ; then (if ! git --version >/dev/null; then apt-get update && apt-get --no-install-recommends --no-upgrade -y install git; fi && echo STATUSNeedGitClone) || echo STATUSNeedPrecompiled ; else cd /usr/local/propellor && if ! test -x ./propellor; then ( apt-get update ; apt-get --no-upgrade --no-install-recommends -y install gnupg ; apt-get --no-upgrade --no-install-recommends -y install ghc ; apt-get --no-upgrade --no-install-recommends -y install cabal-install ; apt-get --no-upgrade --no-install-recommends -y install libghc-async-dev ; apt-get --no-upgrade --no-install-recommends -y install libghc-missingh-dev ; apt-get --no-upgrade --no-install-recommends -y install libghc-hslogger-dev ; apt-get --no-upgrade --no-install-recommends -y install libghc-unix-compat-dev ; apt-get --no-upgrade --no-install-recommends -y install libghc-ansi-terminal-dev ; apt-get --no-upgrade --no-install-recommends -y install libghc-ifelse-dev ; apt-get --no-upgrade --no-install-recommends -y install libghc-network-dev ; apt-get --no-upgrade --no-install-recommends -y install libghc-quickcheck2-dev ; apt-get --no-upgrade --no-install-recommends -y install libghc-mtl-dev ; apt-get --no-upgrade --no-install-recommends -y install libghc-monadcatchio-transformers-dev ; cabal update ; cabal install --only-dependencies ) || true && cabal configure && cabal build && ln -sf dist/build/propellor-config/propellor-config propellor; fi && ./propellor --boot laptop ; fi'"] exited 1)
+rx@varenne ~/work/propellor $ 
+```
+
+Any idea?
+
+Thanks,
+  Andreas
+
