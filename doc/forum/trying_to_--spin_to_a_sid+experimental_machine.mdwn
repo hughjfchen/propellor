@@ -87,11 +87,6 @@ OK, never mind, let's see what's next: some long
 output, propellor finally fails, I assume it's because
 of my sid+experimental configuration?
 
-Any idea?
-
-Thanks,
-  Andreas
-
 
 ```
 Stop listening request sent.
