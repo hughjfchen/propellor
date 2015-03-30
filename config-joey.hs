@@ -45,6 +45,7 @@ hosts =                --                  (o)  `
 	, kite
 	, elephant
 	, beaver
+	, iabak
 	] ++ monsters
 
 testvm :: Host
@@ -301,6 +302,18 @@ beaver = host "beaver.kitenet.net"
 	& Cron.niceJob "system disk backed up" Cron.Weekly "root" "/"
 		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"
 
+iabak :: Host
+iabak = host "ia-bak.joeyh.name"
+	& ipv4 "124.6.40.227"
+	& Apt.installed ["git"]
+	& Apt.installed ["etckeeper"]
+	& Apt.installed ["ssh"]
+	& Apt.installed ["vim", "screen", "less"]
+	& User.hasSomePassword "root"
+	& User.accountFor "joey"
+	& User.hasSomePassword "joey"
+	& Sudo.enabledFor "joey"
+	& GitHome.installedFor "joey"
 
        --'                        __|II|      ,.
      ----                      __|II|II|__   (  \_,/\
