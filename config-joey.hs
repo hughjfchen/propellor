@@ -305,6 +305,7 @@ beaver = host "beaver.kitenet.net"
 iabak :: Host
 iabak = host "ia-bak.joeyh.name"
 	& ipv4 "124.6.40.227"
+	& os (System (Debian Testing) "amd64")
 	& Apt.installed ["git"]
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
@@ -317,9 +318,11 @@ iabak = host "ia-bak.joeyh.name"
 	& Git.cloned "root" repo "/usr/local/IA.BAK" (Just "server")
 	& Git.cloned "www-data" repo "/usr/local/IA.BAK/pubkeys" (Just "pubkey")
 	& Apt.serviceInstalledRunning "apache2"
-	& cmdProperty "ln" ["-s", "/usr/local/IA.BAK/pushme.cgi", "/usr/lib/cgi-bin/pushme.cgi"]
+	& cmdProperty "ln" ["-sf", "/usr/local/IA.BAK/pushme.cgi", "/usr/lib/cgi-bin/pushme.cgi"]
 	& Apt.installed ["sudo"]
 	& File.containsLine "/etc/sudoers" "www-data ALL=NOPASSWD:/usr/local/IA.BAK/pushed.sh"
+	& Cron.niceJob "shardstats" (Cron.Times "*/30 * * * *") "root" "/"
+		"/usr/local/IA.BAK/shardstats SHARD1"
   where
 	repo = "https://github.com/ArchiveTeam/IA.BAK/"
 
