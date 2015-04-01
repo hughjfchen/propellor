@@ -306,6 +306,7 @@ iabak :: Host
 iabak = host "ia-bak.joeyh.name"
 	& ipv4 "124.6.40.227"
 	& os (System (Debian Testing) "amd64")
+	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.installed ["git"]
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
