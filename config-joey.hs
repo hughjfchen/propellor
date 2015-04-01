@@ -314,6 +314,10 @@ iabak = host "ia-bak.joeyh.name"
 	& User.hasSomePassword "joey"
 	& Sudo.enabledFor "joey"
 	& GitHome.installedFor "joey"
+	& Git.cloned "root" repo "/usr/local/IA.BAK" (Just "server")
+	& Git.cloned "root" repo "/usr/local/IA.BAK/pubkeys" (Just "pubkeys")
+  where
+	repo = "https://github.com/ArchiveTeam/IA.BAK/"
 
        --'                        __|II|      ,.
      ----                      __|II|II|__   (  \_,/\
