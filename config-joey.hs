@@ -315,9 +315,11 @@ iabak = host "ia-bak.joeyh.name"
 	& Sudo.enabledFor "joey"
 	& GitHome.installedFor "joey"
 	& Git.cloned "root" repo "/usr/local/IA.BAK" (Just "server")
-	& Git.cloned "root" repo "/usr/local/IA.BAK/pubkeys" (Just "pubkey")
+	& Git.cloned "www-data" repo "/usr/local/IA.BAK/pubkeys" (Just "pubkey")
 	& Apt.serviceInstalledRunning "apache2"
 	& cmdProperty "ln" ["-s", "/usr/local/IA.BAK/pushme.cgi", "/usr/lib/cgi-bin/pushme.cgi"]
+	& Apt.installed ["sudo"]
+	& File.containsLine "/etc/sudoers" "www-data ALL=NOPASSWD:/usr/local/IA.BAK/pushed.sh"
   where
 	repo = "https://github.com/ArchiveTeam/IA.BAK/"
 
