@@ -304,7 +304,6 @@ beaver = host "beaver.kitenet.net"
 
 iabak :: Host
 iabak = host "iabak.archiveteam.org"
-	& alias "ia-bak.joeyh.name"
 	& ipv4 "124.6.40.227"
 	& os (System (Debian Testing) "amd64")
 	& Apt.stdSourcesList `onChange` Apt.upgrade
