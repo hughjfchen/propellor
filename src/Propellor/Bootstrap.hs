@@ -27,7 +27,7 @@ bootstrapPropellorCommand = "if ! test -x ./propellor; then " ++ go ++ "; fi;" +
 -- Use propellor --check to detect if the local propellor binary has
 -- stopped working (eg due to library changes), and must be rebuilt.
 checkBinaryCommand :: ShellCommand
-checkBinaryCommand = "if test -x ./propellor && ! ./propellor --check; then " ++ go ++ "; fi"
+checkBinaryCommand = "if test -x ./propellor && ! ./propellor --check 2>/dev/null; then " ++ go ++ "; fi"
   where
 	go = intercalate " && "
 		[ "cabal clean"
