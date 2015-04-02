@@ -3,6 +3,7 @@ module Propellor.Property.Cron where
 import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
+import Propellor.Bootstrap
 import Utility.SafeCommand
 import Utility.FileMode
 
@@ -81,4 +82,5 @@ niceJob desc times user cddir command = job desc times user cddir
 
 -- | Installs a cron job to run propellor.
 runPropellor :: Times -> Property NoInfo
-runPropellor times = niceJob "propellor" times "root" localdir "./propellor"
+runPropellor times = niceJob "propellor" times "root" localdir
+	(bootstrapPropellorCommand ++ "; ./propellor")

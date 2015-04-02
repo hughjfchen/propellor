@@ -1,5 +1,6 @@
 module Propellor.Bootstrap (
 	bootstrapPropellorCommand,
+	checkBinaryCommand,
 	installGitCommand,
 	buildPropellor,
 ) where
@@ -12,14 +13,24 @@ import Data.List
 
 type ShellCommand = String
 
--- Shell command line to build propellor, used when bootstrapping on a new
--- host. Should be run inside the propellor config dir, and will install
--- all necessary build dependencies.
+-- Shell command line to ensure propellor is bootstrapped and ready to run.
+-- Should be run inside the propellor config dir, and will install
+-- all necessary build dependencies and build propellor.
 bootstrapPropellorCommand :: ShellCommand
-bootstrapPropellorCommand = "if ! test -x ./propellor; then " ++ go ++ "; fi"
+bootstrapPropellorCommand = "if ! test -x ./propellor; then " ++ go ++ "; fi;" ++ checkBinaryCommand
+  where
+	  go = intercalate " && "
+		[ depsCommand
+		, buildCommand
+		]
+
+-- Use propellor --check to detect if the local propellor binary has
+-- stopped working (eg due to library changes), and must be rebuilt.
+checkBinaryCommand :: ShellCommand
+checkBinaryCommand = "if test -x ./propellor && ! ./propellor --check; then " ++ go ++ "; fi"
   where
 	go = intercalate " && "
-		[ depsCommand
+		[ "cabal clean"
 		, buildCommand
 		]
 
