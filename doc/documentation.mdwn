@@ -9,6 +9,6 @@ Other documentation:
 * [[Components]]
 * [[Contributing]]
 * [[Interface Stability]]
-* [[Coding Stye]]
+* [[Coding Style]]
 * [[Security]]
 * [[Debugging]]
