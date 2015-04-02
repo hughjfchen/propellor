@@ -303,7 +303,8 @@ beaver = host "beaver.kitenet.net"
 		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"
 
 iabak :: Host
-iabak = host "ia-bak.joeyh.name"
+iabak = host "iabak.archiveteam.org"
+	& aias "ia-bak.joeyh.name"
 	& ipv4 "124.6.40.227"
 	& os (System (Debian Testing) "amd64")
 	& Apt.stdSourcesList `onChange` Apt.upgrade
