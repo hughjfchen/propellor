@@ -95,6 +95,10 @@ and configured in haskell.
 
   (This will result in a trapezoid pattern in gitk.)
 
+* propellor --check
+
+  If propellor is able to run, this simply exists successfully.
+
 * propellor hostname
 
   When run with a hostname and no other options, propellor will

@@ -23,5 +23,6 @@ data CmdLine
 	| DockerChain HostName String
 	| ChrootChain HostName FilePath Bool Bool
 	| GitPush Fd Fd
+	| Check
 	deriving (Read, Show, Eq)
 

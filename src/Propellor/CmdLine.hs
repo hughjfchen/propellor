@@ -33,6 +33,7 @@ usage h = hPutStrLn h $ unlines
 	, "  propellor --list-fields"
 	, "  propellor --merge"
 	, "  propellor --build"
+	, "  propellor --check"
 	]
 
 usageError :: [String] -> IO a
@@ -43,6 +44,7 @@ usageError ps = do
 processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
   where
+  	go ("--check":_) = return Check
 	go ("--spin":ps) = case reverse ps of
 		(r:"--via":hs) -> Spin 
 			<$> mapM hostname (reverse hs) 
@@ -91,6 +93,7 @@ defaultMain hostlist = do
   where
 	go _ (Serialized cmdline) = go True cmdline
 	go _ (Continue cmdline) = go False cmdline
+	go _ Check = return ()
 	go _ (Set field context) = setPrivData field context
 	go _ (Dump field context) = dumpPrivData field context
 	go _ (Edit field context) = editPrivData field context
