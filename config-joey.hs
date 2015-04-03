@@ -323,7 +323,7 @@ iabak = host "iabak.archiveteam.org"
 	& Apt.installed ["sudo"]
 	& File.containsLine "/etc/sudoers" "www-data ALL=NOPASSWD:/usr/local/IA.BAK/pushed.sh"
 	& Cron.niceJob "shardstats" (Cron.Times "*/30 * * * *") "root" "/"
-		"/usr/local/IA.BAK/shardstats SHARD1"
+		"/usr/local/IA.BAK/shardstats-all"
   where
 	repo = "https://github.com/ArchiveTeam/IA.BAK/"
 
