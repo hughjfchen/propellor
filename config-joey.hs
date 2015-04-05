@@ -325,6 +325,7 @@ iabak = host "iabak.archiveteam.org"
 	& Cron.niceJob "shardstats" (Cron.Times "*/30 * * * *") "root" "/"
 		"/usr/local/IA.BAK/shardstats-all"
 	& Cron.runPropellor (Cron.Times "30 * * * *")
+	& Apt.installed ["graphite-carbon", "graphite-web"]
   where
 	repo = "https://github.com/ArchiveTeam/IA.BAK/"
 
