@@ -371,8 +371,8 @@ iabak = host "iabak.archiveteam.org"
 	repo = "https://github.com/ArchiveTeam/IA.BAK/"
 	graphiteCSRF = withPrivData (Password "csrf-token") (Context "iabak.archiveteam.org") $
 		\gettoken -> property "graphite-web CSRF token" $
-			gettoken $ \token -> do
-				makeChange $ File.hasLine "/etc/graphite/local_settings.py" "SECRET_KEY = '"++ token ++"'"
+			gettoken $ \token ->
+				makeChange $ File.containsLine "/etc/graphite/local_settings.py" "SECRET_KEY = '"++ token ++"'"
 
        --'                        __|II|      ,.
      ----                      __|II|II|__   (  \_,/\
