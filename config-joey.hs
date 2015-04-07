@@ -369,7 +369,7 @@ iabak = host "iabak.archiveteam.org"
 	& Apt.installed ["emacs-nox"]
   where
 	repo = "https://github.com/ArchiveTeam/IA.BAK/"
-	graphiteCSRF = withPrivData (Password "csrf-token") (Context "graphite-web")
+	graphiteCSRF = withPrivData (Password "csrf-token") (Context "iabak.archiveteam.org")
 		\gettoken -> property "graphite-web CSRF token" $
 			gettoken $ \token -> do
 				makeChange $ File.hasLine "/etc/graphite/local_settings.py" "SECRET_KEY = '"++ token ++"'"
