@@ -331,7 +331,7 @@ iabak = host "iabak.archiveteam.org"
 	& Cron.runPropellor (Cron.Times "30 * * * *")
 	& Apt.installed ["libapache2-mod-wsgi", "graphite-carbon", "graphite-web"]
 	& File.hasContent "/etc/carbon/storage-schemas.conf"
-	        [ "[carbon]"
+		[ "[carbon]"
 		, "pattern = ^carbon\."
 		, "retentions = 60:90d"
 		, "[iabak]"
