@@ -37,7 +37,9 @@ graphiteServer = propertyList "iabak graphite server" $ props
 	& graphiteCSRF
 	& cmdProperty "graphite-manage" ["syncdb", "--noinput"] `flagFile` "/etc/flagFiles/graphite-syncdb"
 	& cmdProperty "graphite-manage" ["createsuperuser", "--noinput", "--username=joey", "--email=joey@localhost"] `flagFile` "/etc/flagFiles/graphite-user-joey"
+		`flagFile` "/etc/graphite-superuser-joey"
 	& cmdProperty "graphite-manage" ["createsuperuser", "--noinput", "--username=db48x", "--email=db48x@localhost"] `flagFile` "/etc/flagFiles/graphite-user-db48x"
+		`flagFile` "/etc/graphite-superuser-db48x"
 	-- TODO: deal with passwords somehow
 	& File.ownerGroup "/var/lib/graphite/graphite.db" "_graphite" "_graphite"
 	& File.hasContent "/etc/apache2/iabak-graphite-web.conf"
