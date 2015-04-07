@@ -5,6 +5,7 @@ import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Apache as Apache
 
 gitServer :: Property HasInfo
 gitServer = propertyList "iabak git server" $ props
@@ -42,7 +43,7 @@ graphiteServer = propertyList "iabak graphite server" $ props
 		`flagFile` "/etc/graphite-superuser-db48x"
 	-- TODO: deal with passwords somehow
 	& File.ownerGroup "/var/lib/graphite/graphite.db" "_graphite" "_graphite"
-	& File.hasContent "/etc/apache2/iabak-graphite-web.conf"
+	& Apache.siteEnabled "iabak-graphite-web"
 		[ "<VirtualHost *:8080>"
 		, "        WSGIDaemonProcess _graphite processes=5 threads=5 display-name='%{GROUP}' inactivity-timeout=120 user=_graphite group=_graphite"
 		, "        WSGIProcessGroup _graphite"
@@ -57,11 +58,6 @@ graphiteServer = propertyList "iabak graphite server" $ props
 		, "        CustomLog ${APACHE_LOG_DIR}/graphite-web_access.log combined"
 		, "</VirtualHost>"
 		]
-	& cmdProperty "ln" ["-sf", "/etc/apache2/sites-available/iabak-graphite-web.conf",
-	                    "/etc/apache2/sites-enabled/iabak-graphite-web.conf"]
-	& Apt.installed ["netcat"]
-	& Apt.installed ["tmux"]
-	& Apt.installed ["emacs-nox"]
   where
 	graphiteCSRF = withPrivData (Password "csrf-token") (Context "iabak.archiveteam.org") $
 		\gettoken -> property "graphite-web CSRF token" $

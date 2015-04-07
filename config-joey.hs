@@ -314,6 +314,9 @@ iabak = host "iabak.archiveteam.org"
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
 	& Apt.installed ["vim", "screen", "less"]
+	& Apt.installed ["netcat"]
+	& Apt.installed ["tmux"]
+	& Apt.installed ["emacs-nox"]
 	& User.hasSomePassword "root"
 	& User.accountFor "joey"
 	& User.hasSomePassword "joey"
