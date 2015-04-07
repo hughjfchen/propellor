@@ -43,6 +43,8 @@ graphiteServer = propertyList "iabak graphite server" $ props
 		`flagFile` "/etc/graphite-superuser-db48x"
 	-- TODO: deal with passwords somehow
 	& File.ownerGroup "/var/lib/graphite/graphite.db" "_graphite" "_graphite"
+	& "/etc/apache2/ports.conf" `File.containsLine` "Listen 8080"
+		`onChange` Apache.restarted
 	& Apache.siteEnabled "iabak-graphite-web"
 		[ "<VirtualHost *:8080>"
 		, "        WSGIDaemonProcess _graphite processes=5 threads=5 display-name='%{GROUP}' inactivity-timeout=120 user=_graphite group=_graphite"
