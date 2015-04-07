@@ -329,9 +329,48 @@ iabak = host "iabak.archiveteam.org"
 	& Cron.niceJob "shardstats" (Cron.Times "*/30 * * * *") "root" "/"
 		"/usr/local/IA.BAK/shardstats-all"
 	& Cron.runPropellor (Cron.Times "30 * * * *")
-	& Apt.installed ["graphite-carbon", "graphite-web"]
+	& Apt.installed ["libapache2-mod-wsgi", "graphite-carbon", "graphite-web"]
+	& File.hasContent "/etc/carbon/storage-schemas.conf"
+	                  ["[carbon]"
+	                  ,"pattern = ^carbon\."
+	                  ,"retentions = 60:90d"
+	                  ,"[iabak]"
+	                  ,"pattern = ^iabak\."
+	                  ,"retentions = 10m:30d,1h:1y,3h,10y"
+	                  ,"[default_1min_for_1day]"
+	                  ,"pattern = .*"
+	                  ,"retentions = 60s:1d"]
+	& graphiteCSRF
+	& cmdProperty "graphite-manage" ["syncdb", "--noinput"] `flagFile` "/etc/flagFiles/graphite-syncdb"
+	& cmdProperty "graphite-manage" ["createsuperuser", "--noinput", "--username=joey"] `flagFile` "/etc/flagFiles/graphite-user-joey"
+	& cmdProperty "graphite-manage" ["createsuperuser", "--noinput", "--username=db48x"] `flagFile` "/etc/flagFiles/graphite-user-db48x"
+	-- TODO: deal with passwords somehow
+	& File.ownerGroup "/var/lib/graphite/graphite.db" "_graphite" "_graphite"
+	& File.hasContent "/etc/apache2/iabak-graphite-web.conf"
+	                  ["<VirtualHost *:8080>"
+	                  ,"        WSGIDaemonProcess _graphite processes=5 threads=5 display-name='%{GROUP}' inactivity-timeout=120 user=_graphite group=_graphite"
+	                  ,"        WSGIProcessGroup _graphite"
+	                  ,"        WSGIImportScript /usr/share/graphite-web/graphite.wsgi process-group=_graphite application-group=%{GLOBAL}"
+	                  ,"        WSGIScriptAlias / /usr/share/graphite-web/graphite.wsgi"
+	                  ,"        Alias /content/ /usr/share/graphite-web/static/"
+	                  ,"        <Location \"/content/\">"
+	                  ,"                SetHandler None"
+	                  ,"        </Location>"
+	                  ,"        ErrorLog ${APACHE_LOG_DIR}/graphite-web_error.log"
+	                  ,"        LogLevel warn"
+	                  ,"        CustomLog ${APACHE_LOG_DIR}/graphite-web_access.log combined"
+	                  ,"</VirtualHost>"]
+	& cmdProperty "ln" ["-sf", "/etc/apache2/sites-available/iabak-graphite-web.conf",
+	                    "/etc/apache2/sites-enabled/iabak-graphite-web.conf"]
+	& Apt.installed ["netcat"]
+	& Apt.installed ["tmux"]
+	& Apt.installed ["emacs-nox"]
   where
 	repo = "https://github.com/ArchiveTeam/IA.BAK/"
+	graphiteCSRF = withPrivData (Password "csrf-token") (Context "graphite-web")
+		\gettoken -> property "graphite-web CSRF token" $
+			gettoken $ \token -> do
+				makeChange $ File.hasLine "/etc/graphite/local_settings.py" "SECRET_KEY = '"++ token ++"'"
 
        --'                        __|II|      ,.
      ----                      __|II|II|__   (  \_,/\
