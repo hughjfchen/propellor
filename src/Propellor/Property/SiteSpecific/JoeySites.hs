@@ -460,7 +460,7 @@ githubMirrors =
 	, ("etckeeper", plzuseurl "http://etckeeper.branchable.com/todo/")
 	]
   where
-	plzuseurl u = "please submit changes to " ++ u ++ " instead of using github pull requests"
+	plzuseurl u = "Please submit changes to " ++ u ++ " instead of using github pull requests, which are not part of my workflow. -- A robot acting on behalf of Joey Hess"
 
 rsyncNetBackup :: [Host] -> Property NoInfo
 rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" (Cron.Times "30 5 * * *")

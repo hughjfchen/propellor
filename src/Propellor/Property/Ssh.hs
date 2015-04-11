@@ -242,7 +242,7 @@ authorizedKey user l = property desc $ do
 		, File.ownerGroup (takeDirectory f) user user
 		]
   where
-	desc = user ++ " has autorized_keys line " ++ l
+	desc = user ++ " has autorized_keys"
 
 -- | Makes the ssh server listen on a given port, in addition to any other
 -- ports it is configured to listen on.
