@@ -16,23 +16,36 @@ I can run
 from the command line, and all the tasks/properties that I have
 defined myhost to have beforehand will be executed/realized/configured.
 
-Say eg. I haved defined
+Say eg. I haved defined (sorry for the bad formatting,
+seems I have to do it line by line to get the markdown look nice)
   
 ```
-  myhost :: Host
-  myhost = host "myhost"
-	    & os (System (Debian Testing) "amd64")
-	    & emacs
-	    & apt
+myhost :: Host
+```
 
+```
+myhost = host "myhost"
+         & os (System (Debian Testing) "amd64")
+         & emacs
+         & apt
+```
 
-  emacs :: Property HasInfo
-  emacs = propertyList "install & configure emacs" $ props
+```
+emacs :: Property HasInfo
+```
+
+```
+emacs = propertyList "install & configure emacs" $ props
         & Apt.installed ["emacs"
                         , "auto-complete-el"]
+```
 
+```
   apt :: Property HasInfo
-  apt = propertyList "apt update + upgrade" $ props
+```
+
+```
+apt = propertyList "apt update + upgrade" $ props
       & Apt.update
       & Apt.upgrade
 ```
@@ -55,9 +68,12 @@ So what I would like is this: have just a minimal config for
 myhost, like this:
 
 ```
-  myhost :: Host
-  myhost = host "myhost"
-	    & os (System (Debian Testing) "amd64")
+myhost :: Host
+```
+
+```
+myhost = host "myhost"
+         & os (System (Debian Testing) "amd64")
 ```
 
 and then run a task (require a property ?) on myhost, somehow
@@ -106,6 +122,7 @@ and
 ```
   --task (emacs/apt/...)
 ```
+
 and then just call into propellor. Unfortunately propellor's
 defaultMain does more than I want: gets the command line
 from processCmdLine.
