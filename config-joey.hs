@@ -41,6 +41,7 @@ main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
 hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                --                  (o)  `
 	[ darkstar
+	, gnu
 	, clam
 	, orca
 	, kite
@@ -75,6 +76,14 @@ darkstar = host "darkstar.kitenet.net"
 	! Docker.docked gitAnnexAndroidDev
 
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
+	& JoeySites.dkimMilter
+
+gnu :: Host
+gnu = host "gnu.kitenet.net"
+	& Apt.buildDep ["git-annex"] `period` Daily
+	& Docker.configured
+
+	& JoeySites.postfixClientRelay (Context "gnu.kitenet.net")
 	& JoeySites.dkimMilter
 
 clam :: Host
