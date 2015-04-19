@@ -25,7 +25,7 @@ data Distribution
 	deriving (Show, Eq)
 
 -- | Debian has several rolling suites, and a number of stable releases,
--- such as Stable "wheezy".
+-- such as Stable "jessie".
 data DebianSuite = Experimental | Unstable | Testing | Stable Release
 	deriving (Show, Eq)
 
