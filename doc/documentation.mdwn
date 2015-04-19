@@ -5,6 +5,7 @@ Other documentation:
 
 * [[man page|usage]]
 * [[Haskell Newbie]]
+* [[Writing Properties]]
 * [[Centralized Git Repository]]
 * [[Components]]
 * [[Contributing]]
