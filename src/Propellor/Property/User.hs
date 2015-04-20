@@ -3,6 +3,7 @@ module Propellor.Property.User where
 import System.Posix
 
 import Propellor
+import qualified Propellor.Property.File as File
 
 data Eep = YesReallyDeleteHome
 
@@ -110,3 +111,21 @@ shadowConfig False = check shadowExists $
 
 shadowExists :: IO Bool
 shadowExists = doesFileExist "/etc/shadow"
+
+-- | Ensures that a user has a specified login shell, and that the shell
+-- is enabled in /etc/shells.
+hasLoginShell :: UserName -> FilePath -> Property NoInfo
+hasLoginShell user loginshell = shellSetTo user loginshell `requires` shellEnabled loginshell
+
+shellSetTo :: UserName -> FilePath -> Property NoInfo
+shellSetTo user loginshell = check needchangeshell $
+	cmdProperty "chsh" ["--shell", loginshell, user]
+		`describe` (user ++ " has login shell " ++ loginshell)
+  where
+	needchangeshell = do
+		currshell <- userShell <$> getUserEntryForName user
+		return (currshell /= loginshell)
+
+-- | Ensures that /etc/shells contains a shell.
+shellEnabled :: FilePath -> Property NoInfo
+shellEnabled loginshell = "/etc/shells" `File.containsLine` loginshell
