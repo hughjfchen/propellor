@@ -5,3 +5,5 @@ is in /etc/shells would be really helpful. Sadly, I lack the
 skills to put this together myself :(
 
 -- weinzwang
+
+> patched in and so [[done]] --[[Joey]]
