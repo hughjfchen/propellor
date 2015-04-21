@@ -61,7 +61,7 @@ binandsrc url suite = catMaybes
 		return $ debLine bs url stdSections
 
 debCdn :: SourcesGenerator
-debCdn = binandsrc "http://http.debian.net/debian"
+debCdn = binandsrc "http://httpredir.debian.org/debian"
 
 kernelOrg :: SourcesGenerator
 kernelOrg = binandsrc "http://mirrors.kernel.org/debian"

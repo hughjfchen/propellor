@@ -7,6 +7,8 @@ propellor (2.2.2) UNRELEASED; urgency=medium
   * Note that since a new switch had to be added to allow testing the binary,
     upgrading to this version will cause a rebuild from scratch of propellor.
   * Added hasLoginShell and shellEnabled.
+  * debCdn changed to new httpredir.debian.org official replacement for
+    http.debian.net.
 
  -- Joey Hess <id@joeyh.name>  Thu, 02 Apr 2015 10:09:46 -0400
 
