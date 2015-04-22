@@ -24,15 +24,15 @@ import Data.String.Utils
 
 scrollBox :: Property HasInfo
 scrollBox = propertyList "scroll server" $ props
-	& User.accountFor "scroll"
-	& Git.cloned "scroll" "git://git.kitenet.net/scroll" (d </> "scroll") Nothing
+	& User.accountFor (User "scroll")
+	& Git.cloned (User "scroll") "git://git.kitenet.net/scroll" (d </> "scroll") Nothing
 	& Apt.installed ["ghc", "make", "cabal-install", "libghc-vector-dev",
 		"libghc-bytestring-dev", "libghc-mtl-dev", "libghc-ncurses-dev",
 		"libghc-random-dev", "libghc-monad-loops-dev", "libghc-text-dev",
 		"libghc-ifelse-dev", "libghc-case-insensitive-dev",
 		"libghc-transformers-dev",
 		"libghc-data-default-dev", "libghc-optparse-applicative-dev"]
-	& userScriptProperty "scroll"
+	& userScriptProperty (User "scroll")
 		[ "cd " ++ d </> "scroll"
 		, "git pull"
 		, "cabal configure"
@@ -75,8 +75,8 @@ scrollBox = propertyList "scroll server" $ props
 	-- prevent port forwarding etc by not letting scroll log in via ssh
 	& Ssh.sshdConfig `File.containsLine` ("DenyUsers scroll")
 		`onChange` Ssh.restarted
-	& cmdProperty "chsh" ["scroll", "-s", s]
-	& User.hasPassword "scroll"
+	& User.shellSetTo (User "scroll") s
+	& User.hasPassword (User "scroll")
 	& Apt.serviceInstalledRunning "telnetd"
 	& Apt.installed ["shellinabox"]
 	& File.hasContent "/etc/default/shellinabox"
@@ -115,8 +115,8 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 	& Apt.serviceInstalledRunning "openbsd-inetd"
 	& File.notPresent "/etc/cron.daily/leafnode"
 	& File.notPresent "/etc/cron.d/leafnode"
-	& Cron.niceJob "oldusenet-expire" (Cron.Times "11 1 * * *") "news" newsspool expirecommand
-	& Cron.niceJob "oldusenet-uucp" (Cron.Times "*/5 * * * *") "news" "/" uucpcommand
+	& Cron.niceJob "oldusenet-expire" (Cron.Times "11 1 * * *") (User "news") newsspool expirecommand
+	& Cron.niceJob "oldusenet-uucp" (Cron.Times "*/5 * * * *") (User "news") "/" uucpcommand
 	& Apache.siteEnabled "nntp.olduse.net" nntpcfg
   where
 	newsspool = "/var/spool/news"
@@ -140,8 +140,8 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 		, "--client-name=spool"
 		, "--ssh-key=" ++ keyfile
 		] Obnam.OnlyClient
-		`requires` Ssh.keyImported' (Just keyfile) SshRsa "root" (Context "olduse.net")
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
+		`requires` Ssh.keyImported' (Just keyfile) SshRsa (User "root") (Context "olduse.net")
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 	keyfile = "/root/.ssh/olduse.net.key"
 
 oldUseNetShellBox :: Property HasInfo
@@ -189,8 +189,8 @@ mumbleServer hosts = combineProperties hn $ props
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/" ++ hn ++ ".obnam"
 		, "--client-name=mumble"
 		] Obnam.OnlyClient
-		`requires` Ssh.keyImported SshRsa "root" (Context hn)
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
+		`requires` Ssh.keyImported SshRsa (User "root") (Context hn)
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 	& trivial (cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"])
   where
 	hn = "mumble.debian.net"
@@ -204,10 +204,10 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		, "--ssh-key=" ++ sshkey
 		, "--client-name=wren" -- historical
 		] Obnam.OnlyClient (Gpg.GpgKeyId "1B169BE1")
-		`requires` Ssh.keyImported' (Just sshkey) SshRsa "root" (Context "git.kitenet.net")
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "root"
-		`requires` Ssh.authorizedKeys "family" (Context "git.kitenet.net")
-		`requires` User.accountFor "family"
+		`requires` Ssh.keyImported' (Just sshkey) SshRsa (User "root") (Context "git.kitenet.net")
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
+		`requires` Ssh.authorizedKeys (User "family") (Context "git.kitenet.net")
+		`requires` User.accountFor (User "family")
 	& Apt.installed ["git", "rsync", "gitweb"]
 	& Apt.installed ["git-annex"]
 	& Apt.installed ["kgb-client"]
@@ -222,9 +222,9 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		]
 		`describe` "gitweb configured"
 	-- Repos push on to github.
-	& Ssh.knownHost hosts "github.com" "joey"
+	& Ssh.knownHost hosts "github.com" (User "joey")
 	-- I keep the website used for gitweb checked into git..
-	& Git.cloned "root" "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
+	& Git.cloned (User "root") "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
 	& website "git.kitenet.net"
 	& website "git.joeyh.name"
 	& Apache.modEnabled "cgi"
@@ -252,7 +252,7 @@ type AnnexUUID = String
 -- | A website, with files coming from a git-annex repository.
 annexWebSite :: Git.RepoUrl -> HostName -> AnnexUUID -> [(String, Git.RepoUrl)] -> Property HasInfo
 annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-annex") $ props
-	& Git.cloned "joey" origin dir Nothing
+	& Git.cloned (User "joey") origin dir Nothing
 		`onChange` setup
 	& alias hn
 	& postupdatehook `File.hasContent`
@@ -264,7 +264,7 @@ annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-ann
   where
 	dir = "/srv/web/" ++ hn
 	postupdatehook = dir </> ".git/hooks/post-update"
-	setup = userScriptProperty "joey" setupscript
+	setup = userScriptProperty (User "joey") setupscript
 	setupscript = 
 		[ "cd " ++ shellEscape dir
 		, "git annex reinit " ++ shellEscape uuid
@@ -344,11 +344,11 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-yosemite"
 	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/windows"
 	-- git-annex distribution signing key
-	& Gpg.keyImported (Gpg.GpgKeyId "89C809CB") "joey"
+	& Gpg.keyImported (Gpg.GpgKeyId "89C809CB") (User "joey")
   where
 	endpoint d = combineProperties ("endpoint " ++ d)
 		[ File.dirExists d
-		, File.ownerGroup d "joey" "joey"
+		, File.ownerGroup d (User "joey") (Group "joey")
 		]
 
 downloads :: [Host] -> Property HasInfo
@@ -356,7 +356,7 @@ downloads hosts = annexWebSite "/srv/git/downloads.git"
 	"downloads.kitenet.net"
 	"840760dc-08f0-11e2-8c61-576b7e66acfd"
 	[("eubackup", "ssh://eubackup.kitenet.net/~/lib/downloads/")]
-	`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "joey"
+	`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "joey")
 	
 tmp :: Property HasInfo
 tmp = propertyList "tmp.kitenet.net" $ props
@@ -370,16 +370,16 @@ tmp = propertyList "tmp.kitenet.net" $ props
 -- Twitter, you kill us.
 twitRss :: Property HasInfo
 twitRss = combineProperties "twitter rss" $ props
-	& Git.cloned "joey" "git://git.kitenet.net/twitrss.git" dir Nothing
+	& Git.cloned (User "joey") "git://git.kitenet.net/twitrss.git" dir Nothing
 	& check (not <$> doesFileExist (dir </> "twitRss")) compiled
 	& feed "http://twitter.com/search/realtime?q=git-annex" "git-annex-twitter"
 	& feed "http://twitter.com/search/realtime?q=olduse+OR+git-annex+OR+debhelper+OR+etckeeper+OR+ikiwiki+-ashley_ikiwiki" "twittergrep"
   where
 	dir = "/srv/web/tmp.kitenet.net/twitrss"
 	crontime = Cron.Times "15 * * * *"
-	feed url desc = Cron.job desc crontime "joey" dir $
+	feed url desc = Cron.job desc crontime (User "joey") dir $
 		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
-	compiled = userScriptProperty "joey"
+	compiled = userScriptProperty (User "joey")
 		[ "cd " ++ dir
 		, "ghc --make twitRss" 
 		]
@@ -391,19 +391,19 @@ twitRss = combineProperties "twitter rss" $ props
 
 -- Work around for expired ssl cert.
 pumpRss :: Property NoInfo
-pumpRss = Cron.job "pump rss" (Cron.Times "15 * * * *") "joey" "/srv/web/tmp.kitenet.net/"
+pumpRss = Cron.job "pump rss" (Cron.Times "15 * * * *") (User "joey") "/srv/web/tmp.kitenet.net/"
 	"wget https://pump2rss.com/feed/joeyh@identi.ca.atom -O pump.atom.new --no-check-certificate 2>/dev/null; sed 's/ & / /g' pump.atom.new > pump.atom"
 
 ircBouncer :: Property HasInfo
 ircBouncer = propertyList "IRC bouncer" $ props
 	& Apt.installed ["znc"]
-	& User.accountFor "znc"
+	& User.accountFor (User "znc")
 	& File.dirExists (takeDirectory conf)
 	& File.hasPrivContent conf anyContext
-	& File.ownerGroup conf "znc" "znc"
-	& Cron.job "znconboot" (Cron.Times "@reboot") "znc" "~" "znc"
+	& File.ownerGroup conf (User "znc") (Group "znc")
+	& Cron.job "znconboot" (Cron.Times "@reboot") (User "znc") "~" "znc"
 	-- ensure running if it was not already
-	& trivial (userScriptProperty "znc" ["znc || true"])
+	& trivial (userScriptProperty (User "znc") ["znc || true"])
 		`describe` "znc running"
   where
 	conf = "/home/znc/.znc/configs/znc.conf"
@@ -425,9 +425,9 @@ githubBackup :: Property HasInfo
 githubBackup = propertyList "github-backup box" $ props
 	& Apt.installed ["github-backup", "moreutils"]
 	& githubKeys
-	& Cron.niceJob "github-backup run" (Cron.Times "30 4 * * *") "joey"
+	& Cron.niceJob "github-backup run" (Cron.Times "30 4 * * *") (User "joey")
 		"/home/joey/lib/backup" backupcmd
-	& Cron.niceJob "gitriddance" (Cron.Times "30 4 * * *") "joey"
+	& Cron.niceJob "gitriddance" (Cron.Times "30 4 * * *") (User "joey")
 		"/home/joey/lib/backup" gitriddancecmd
   where
 	backupcmd = intercalate "&&" $
@@ -446,7 +446,7 @@ githubKeys :: Property HasInfo
 githubKeys = 
 	let f = "/home/joey/.github-keys"
 	in File.hasPrivContent f anyContext
-		`onChange` File.ownerGroup f "joey" "joey"
+		`onChange` File.ownerGroup f (User "joey") (Group "joey")
 
 
 -- these repos are only mirrored on github, I don't want
@@ -464,13 +464,13 @@ githubMirrors =
 
 rsyncNetBackup :: [Host] -> Property NoInfo
 rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" (Cron.Times "30 5 * * *")
-	"joey" "/home/joey/lib/backup" "mkdir -p rsync.net && rsync --delete -az 2318@usw-s002.rsync.net: rsync.net"
-	`requires` Ssh.knownHost hosts "usw-s002.rsync.net" "joey"
+	(User "joey") "/home/joey/lib/backup" "mkdir -p rsync.net && rsync --delete -az 2318@usw-s002.rsync.net: rsync.net"
+	`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "joey")
 
 backupsBackedupFrom :: [Host] -> HostName -> FilePath -> Property NoInfo
 backupsBackedupFrom hosts srchost destdir = Cron.niceJob desc
-	(Cron.Times "@reboot") "joey" "/" cmd
-	`requires` Ssh.knownHost hosts srchost "joey"
+	(Cron.Times "@reboot") (User "joey") "/" cmd
+	`requires` Ssh.knownHost hosts srchost (User "joey")
   where
 	desc = "backups copied from " ++ srchost ++ " on boot"
 	cmd = "rsync -az --bwlimit=300K --partial --delete " ++ srchost ++ ":lib/backup/ " ++ destdir </> srchost
@@ -483,11 +483,11 @@ obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs)
 		`requires` mkdir "/home/joey/lib"
 	mkrepo r = mkdir ("/home/joey/lib/backup/" ++ r ++ ".obnam")
 	mkdir d = File.dirExists d
-		`before` File.ownerGroup d "joey" "joey"
+		`before` File.ownerGroup d (User "joey") (Group "joey")
 
 podcatcher :: Property NoInfo
 podcatcher = Cron.niceJob "podcatcher run hourly" (Cron.Times "55 * * * *")
-	"joey" "/home/joey/lib/sound/podcasts"
+	(User "joey") "/home/joey/lib/sound/podcasts"
 	"xargs git-annex importfeed -c annex.genmetadata=true < feeds; mr --quiet update"
 	`requires` Apt.installed ["git-annex", "myrepos"]
 
@@ -645,7 +645,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 	& File.hasPrivContent dovecotusers ctx
 		`onChange` (dovecotusers `File.mode`
 			combineModes [ownerReadMode, groupReadMode])
-	& File.ownerGroup dovecotusers "root" "dovecot"
+	& File.ownerGroup dovecotusers (User "root") (Group "dovecot")
 
 	& Apt.installed ["mutt", "bsd-mailx", "alpine"]
 
@@ -713,7 +713,7 @@ dkimInstalled = go `onChange` Service.restarted "opendkim"
 		& Apt.serviceInstalledRunning "opendkim"
 		& File.dirExists "/etc/mail"
 		& File.hasPrivContent "/etc/mail/dkim.key" (Context "kitenet.net")
-		& File.ownerGroup "/etc/mail/dkim.key" "opendkim" "opendkim"
+		& File.ownerGroup "/etc/mail/dkim.key" (User "opendkim") (Group "opendkim")
 		& "/etc/default/opendkim" `File.containsLine`
 			"SOCKET=\"inet:8891@localhost\""
 		& "/etc/opendkim.conf" `File.containsLines`

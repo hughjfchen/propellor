@@ -1,19 +1,18 @@
 module Propellor.Types.OS (
-	HostName,
-	UserName,
-	GroupName,
 	System(..),
 	Distribution(..),
 	DebianSuite(..),
 	isStable,
 	Release,
 	Architecture,
+	HostName,
+	UserName,
+	User(..),
+	Group(..),
+	userGroup,
 ) where
 
 import Network.BSD (HostName)
-
-type UserName = String
-type GroupName = String
 
 -- | High level description of a operating system.
 data System = System Distribution Architecture
@@ -35,3 +34,11 @@ isStable _ = False
 
 type Release = String
 type Architecture = String
+
+type UserName = String
+newtype User = User UserName
+newtype Group = Group String
+
+-- | Makes a Group with the same name as the User.
+userGroup :: User -> Group
+userGroup (User u) = Group u

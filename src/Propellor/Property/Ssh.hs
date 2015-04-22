@@ -54,17 +54,17 @@ permitRootLogin = setSshdConfig "PermitRootLogin"
 passwordAuthentication :: Bool -> Property NoInfo
 passwordAuthentication = setSshdConfig "PasswordAuthentication"
 
-dotDir :: UserName -> IO FilePath
+dotDir :: User -> IO FilePath
 dotDir user = do
 	h <- homedir user
 	return $ h </> ".ssh"
 
-dotFile :: FilePath -> UserName -> IO FilePath
+dotFile :: FilePath -> User -> IO FilePath
 dotFile f user = do
 	d <- dotDir user
 	return $ d </> f
 
-hasAuthorizedKeys :: UserName -> IO Bool
+hasAuthorizedKeys :: User -> IO Bool
 hasAuthorizedKeys = go <=< dotFile "authorized_keys"
   where
 	go f = not . null <$> catchDefaultIO "" (readFile f)
@@ -151,19 +151,19 @@ getPubKey = asks (_sshPubKey . hostInfo)
 -- PrivData.
 --
 -- If the user already has a private/public key, it is left unchanged.
-keyImported :: IsContext c => SshKeyType -> UserName -> c -> Property HasInfo
+keyImported :: IsContext c => SshKeyType -> User -> c -> Property HasInfo
 keyImported = keyImported' Nothing
 
 -- | A file can be speficied to write the key to somewhere other than
 -- usual. Allows a user to have multiple keys for different roles.
-keyImported' :: IsContext c => Maybe FilePath -> SshKeyType -> UserName -> c -> Property HasInfo
-keyImported' dest keytype user context = combineProperties desc
-	[ installkey (SshPubKey keytype user) (install writeFile ".pub")
-	, installkey (SshPrivKey keytype user) (install writeFileProtected "")
+keyImported' :: IsContext c => Maybe FilePath -> SshKeyType -> User -> c -> Property HasInfo
+keyImported' dest keytype user@(User u) context = combineProperties desc
+	[ installkey (SshPubKey keytype u) (install writeFile ".pub")
+	, installkey (SshPrivKey keytype u) (install writeFileProtected "")
 	]
   where
 	desc = unwords $ catMaybes
-		[ Just user
+		[ Just u
 		, Just "has ssh key"
 		, dest
 		, Just $ "(" ++ fromKeyType keytype ++ ")"
@@ -178,13 +178,13 @@ keyImported' dest keytype user context = combineProperties desc
 				[ property desc $ makeChange $ do
 					createDirectoryIfMissing True (takeDirectory f)
 					writer f key
-				, File.ownerGroup f user user
-				, File.ownerGroup (takeDirectory f) user user
+				, File.ownerGroup f user (userGroup user)
+				, File.ownerGroup (takeDirectory f) user (userGroup user)
 				]
 			)
 	keyfile ext = case dest of
 		Nothing -> do
-			home <- homeDirectory <$> getUserEntryForName user
+			home <- homeDirectory <$> getUserEntryForName u
 			return $ home </> ".ssh" </> "id_" ++ fromKeyType keytype ++ ext
 		Just f -> return $ f ++ ext
 
@@ -196,19 +196,19 @@ fromKeyType SshEd25519 = "ed25519"
 
 -- | Puts some host's ssh public key(s), as set using 'pubKey' or 'hostKey'
 -- into the known_hosts file for a user.
-knownHost :: [Host] -> HostName -> UserName -> Property NoInfo
-knownHost hosts hn user = property desc $
+knownHost :: [Host] -> HostName -> User -> Property NoInfo
+knownHost hosts hn user@(User u) = property desc $
 	go =<< fromHost hosts hn getPubKey
   where
-	desc = user ++ " knows ssh key for " ++ hn
+	desc = u ++ " knows ssh key for " ++ hn
 	go (Just m) | not (M.null m) = do
 		f <- liftIO $ dotFile "known_hosts" user
 		ensureProperty $ combineProperties desc
 			[ File.dirExists (takeDirectory f)
 			, f `File.containsLines`
 				(map (\k -> hn ++ " " ++ k) (M.elems m))
-			, File.ownerGroup f user user
-			, File.ownerGroup (takeDirectory f) user user
+			, File.ownerGroup f user (userGroup user)
+			, File.ownerGroup (takeDirectory f) user (userGroup user)
 			]
 	go _ = do
 		warningMessage $ "no configred pubKey for " ++ hn
@@ -217,32 +217,32 @@ knownHost hosts hn user = property desc $
 -- | Makes a user have authorized_keys from the PrivData
 --
 -- This removes any other lines from the file.
-authorizedKeys :: IsContext c => UserName -> c -> Property HasInfo
-authorizedKeys user context = withPrivData (SshAuthorizedKeys user) context $ \get ->
-	property (user ++ " has authorized_keys") $ get $ \v -> do
+authorizedKeys :: IsContext c => User -> c -> Property HasInfo
+authorizedKeys user@(User u) context = withPrivData (SshAuthorizedKeys u) context $ \get ->
+	property (u ++ " has authorized_keys") $ get $ \v -> do
 		f <- liftIO $ dotFile "authorized_keys" user
 		liftIO $ do
 			createDirectoryIfMissing True (takeDirectory f)
 			writeFileProtected f v
 		ensureProperties 
-			[ File.ownerGroup f user user
-			, File.ownerGroup (takeDirectory f) user user
+			[ File.ownerGroup f user (userGroup user)
+			, File.ownerGroup (takeDirectory f) user (userGroup user)
 			] 
 
 -- | Ensures that a user's authorized_keys contains a line.
 -- Any other lines in the file are preserved as-is.
-authorizedKey :: UserName -> String -> Property NoInfo
-authorizedKey user l = property desc $ do
+authorizedKey :: User -> String -> Property NoInfo
+authorizedKey user@(User u) l = property desc $ do
 	f <- liftIO $ dotFile "authorized_keys" user
 	ensureProperty $ combineProperties desc
 		[ f `File.containsLine` l
 			`requires` File.dirExists (takeDirectory f)
 			`onChange` File.mode f (combineModes [ownerWriteMode, ownerReadMode])
-		, File.ownerGroup f user user
-		, File.ownerGroup (takeDirectory f) user user
+		, File.ownerGroup f user (userGroup user)
+		, File.ownerGroup (takeDirectory f) user (userGroup user)
 		]
   where
-	desc = user ++ " has autorized_keys"
+	desc = u ++ " has autorized_keys"
 
 -- | Makes the ssh server listen on a given port, in addition to any other
 -- ports it is configured to listen on.

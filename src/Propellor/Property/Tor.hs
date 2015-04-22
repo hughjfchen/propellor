@@ -52,7 +52,7 @@ named n = configured [("Nickname", n')]
 
 torPrivKey :: Context -> Property HasInfo
 torPrivKey context = f `File.hasPrivContent` context
-	`onChange` File.ownerGroup f user user
+	`onChange` File.ownerGroup f user (userGroup user)
 	-- install tor first, so the directory exists with right perms
 	`requires` Apt.installed ["tor"]
   where
@@ -140,8 +140,8 @@ hiddenServiceData hn context = combineProperties desc
 				writeFileProtected f content
 			, File.mode (takeDirectory f) $ combineModes
 				[ownerReadMode, ownerWriteMode, ownerExecuteMode]
-			, File.ownerGroup (takeDirectory f) user user
-			, File.ownerGroup f user user
+			, File.ownerGroup (takeDirectory f) user (userGroup user)
+			, File.ownerGroup f user (userGroup user)
 			]
 		)
 
@@ -157,8 +157,8 @@ varLib = "/var/lib/tor"
 varRun :: FilePath
 varRun = "/var/run/tor"
 
-user :: UserName
-user = "debian-tor"
+user :: User
+user = User "debian-tor"
 
 type NickName = String
 

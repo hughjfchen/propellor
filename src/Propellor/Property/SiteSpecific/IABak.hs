@@ -6,21 +6,44 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apache as Apache
+import qualified Propellor.Property.User as User
+import qualified Propellor.Property.Ssh as Ssh
 
-gitServer :: Property HasInfo
-gitServer = propertyList "iabak git server" $ props
-	& Git.cloned "root" repo "/usr/local/IA.BAK" (Just "server")
-	& Git.cloned "root" repo "/usr/local/IA.BAK/client" (Just "master")
-	& Git.cloned "www-data" repo "/usr/local/IA.BAK/pubkeys" (Just "pubkey")
+repo :: String
+repo = "https://github.com/ArchiveTeam/IA.BAK/"
+
+userrepo :: String
+userrepo = "git@gitlab.com:archiveteam/IA.bak.users.git"
+
+gitServer :: [Host] -> Property HasInfo
+gitServer knownhosts = propertyList "iabak git server" $ props
+	& Git.cloned (User "root") repo "/usr/local/IA.BAK" (Just "server")
+	& Git.cloned (User "root") repo "/usr/local/IA.BAK/client" (Just "master")
+	& Ssh.keyImported SshRsa (User "root") (Context "IA.bak.users.git")
+	& Ssh.knownHost knownhosts "gitlab.com" (User "root")
+	& Git.cloned (User "root") userrepo "/usr/local/IA.BAK/pubkeys" (Just "master")
 	& Apt.serviceInstalledRunning "apache2"
 	& cmdProperty "ln" ["-sf", "/usr/local/IA.BAK/pushme.cgi", "/usr/lib/cgi-bin/pushme.cgi"]
 	& File.containsLine "/etc/sudoers" "www-data ALL=NOPASSWD:/usr/local/IA.BAK/pushed.sh"
-	& Cron.niceJob "shardstats" (Cron.Times "*/30 * * * *") "root" "/"
+	& Cron.niceJob "shardstats" (Cron.Times "*/30 * * * *") (User "root") "/"
 		"/usr/local/IA.BAK/shardstats-all"
-	& Cron.niceJob "shardmaint" Cron.Daily "root" "/"
+	& Cron.niceJob "shardmaint" Cron.Daily (User "root") "/"
 		"/usr/local/IA.BAK/shardmaint"
+
+registrationServer :: [Host] -> Property HasInfo
+registrationServer knownhosts = propertyList "iabak registration server" $ props
+	& User.accountFor (User "registrar")
+	& Ssh.keyImported SshRsa (User "registrar") (Context "IA.bak.users.git")
+	& Ssh.knownHost knownhosts "gitlab.com" (User "registrar")
+	& Git.cloned (User "registrar") repo "/home/registrar/IA.BAK" (Just "server")
+	& Git.cloned (User "registrar") userrepo "/home/registrar/users" (Just "master")
+	& Apt.serviceInstalledRunning "apache2"
+	& Apt.installed ["perl", "perl-modules"]
+	& cmdProperty "ln" ["-sf", "/home/registrar/IA.BAK/registrar/register.cgi", link]
+	& cmdProperty "chown" ["-h", "registrar:registrar", link]
+	& File.containsLine "/etc/sudoers" "www-data ALL=(registrar) NOPASSWD:/home/registrar/IA.BAK/registrar/register.pl"
   where
-	repo = "https://github.com/ArchiveTeam/IA.BAK/"
+	link = "/usr/lib/cgi-bin/register.cgi"
 
 graphiteServer :: Property HasInfo
 graphiteServer = propertyList "iabak graphite server" $ props
@@ -44,7 +67,7 @@ graphiteServer = propertyList "iabak graphite server" $ props
 	& cmdProperty "graphite-manage" ["createsuperuser", "--noinput", "--username=db48x", "--email=db48x@localhost"] `flagFile` "/etc/flagFiles/graphite-user-db48x"
 		`flagFile` "/etc/graphite-superuser-db48x"
 	-- TODO: deal with passwords somehow
-	& File.ownerGroup "/var/lib/graphite/graphite.db" "_graphite" "_graphite"
+	& File.ownerGroup "/var/lib/graphite/graphite.db" (User "_graphite") (Group "_graphite")
 	& "/etc/apache2/ports.conf" `File.containsLine` "Listen 8080"
 		`onChange` Apache.restarted
 	& Apache.siteEnabled "iabak-graphite-web"

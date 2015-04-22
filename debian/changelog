@@ -1,4 +1,4 @@
-propellor (2.2.2) UNRELEASED; urgency=medium
+propellor (2.3.0) unstable; urgency=medium
 
   * Make propellor resistent to changes to shared libraries, such as libffi,
     which might render the propellor binary unable to run. This is dealt with
@@ -9,8 +9,10 @@ propellor (2.2.2) UNRELEASED; urgency=medium
   * Added hasLoginShell and shellEnabled.
   * debCdn changed to new httpredir.debian.org official replacement for
     http.debian.net.
+  * API change: Added User and Group newtypes, and Properties that
+    used to use the type UserName = String were changed to use them.
 
- -- Joey Hess <id@joeyh.name>  Thu, 02 Apr 2015 10:09:46 -0400
+ -- Joey Hess <id@joeyh.name>  Wed, 22 Apr 2015 13:46:24 -0400
 
 propellor (2.2.1) unstable; urgency=medium
 

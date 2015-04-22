@@ -153,6 +153,6 @@ saslAuthdInstalled = setupdaemon
 	dirperm = check (not <$> doesDirectoryExist dir) $ 
 		cmdProperty "dpkg-statoverride"
 			[ "--add", "root", "sasl", "710", dir ]
-	postfixgroup = "postfix" `User.hasGroup` "sasl"
+	postfixgroup = (User "postfix") `User.hasGroup` (Group "sasl")
 		`onChange` restarted
 	dir = "/var/spool/postfix/var/run/saslauthd"

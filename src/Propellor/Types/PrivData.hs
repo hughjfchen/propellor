@@ -2,8 +2,8 @@ module Propellor.Types.PrivData where
 
 import Propellor.Types.OS
 
--- | Note that removing or changing constructors will break the
--- serialized privdata files, so don't do that!
+-- | Note that removing or changing constructors or changing types will
+-- break the serialized privdata files, so don't do that!
 -- It's fine to add new constructors.
 data PrivDataField
 	= DockerAuthentication
