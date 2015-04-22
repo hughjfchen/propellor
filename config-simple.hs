@@ -28,7 +28,7 @@ hosts =
 		& Apt.unattendedUpgrades
 		& Apt.installed ["etckeeper"]
 		& Apt.installed ["ssh"]
-		& User.hasSomePassword "root"
+		& User.hasSomePassword (User "root")
 		& Network.ipv6to4
 		& File.dirExists "/var/www"
 		& Docker.docked webserverContainer

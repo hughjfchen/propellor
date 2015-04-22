@@ -28,7 +28,7 @@ type TimeOut = String -- eg, 5h
 autobuilder :: Architecture -> Times -> TimeOut -> Property HasInfo
 autobuilder arch crontimes timeout = combineProperties "gitannexbuilder" $ props
 	& Apt.serviceInstalledRunning "cron"
-	& Cron.niceJob "gitannexbuilder" crontimes builduser gitbuilderdir
+	& Cron.niceJob "gitannexbuilder" crontimes (User builduser) gitbuilderdir
 		("git pull ; timeout " ++ timeout ++ " ./autobuild")
 	& rsyncpassword
   where
@@ -51,18 +51,18 @@ tree buildarch = combineProperties "gitannexbuilder tree" $ props
 	-- gitbuilderdir directory already exists when docker volume is used,
 	-- but with wrong owner.
 	& File.dirExists gitbuilderdir
-	& File.ownerGroup gitbuilderdir builduser builduser
+	& File.ownerGroup gitbuilderdir (User builduser) (Group builduser)
 	& gitannexbuildercloned
 	& builddircloned
   where
 	gitannexbuildercloned = check (not <$> (doesDirectoryExist (gitbuilderdir </> ".git"))) $ 
-		userScriptProperty builduser
+		userScriptProperty (User builduser)
 			[ "git clone git://git.kitenet.net/gitannexbuilder " ++ gitbuilderdir
 			, "cd " ++ gitbuilderdir
 			, "git checkout " ++ buildarch
 			]
 			`describe` "gitbuilder setup"
-	builddircloned = check (not <$> doesDirectoryExist builddir) $ userScriptProperty builduser
+	builddircloned = check (not <$> doesDirectoryExist builddir) $ userScriptProperty (User builduser)
 		[ "git clone git://git-annex.branchable.com/ " ++ builddir
 		]
 
@@ -89,7 +89,7 @@ buildDepsNoHaskellLibs = Apt.installed
 cabalDeps :: Property NoInfo
 cabalDeps = flagFile go cabalupdated
 	where
-		go = userScriptProperty builduser ["cabal update && cabal install git-annex --only-dependencies || true"]
+		go = userScriptProperty (User builduser) ["cabal update && cabal install git-annex --only-dependencies || true"]
 		cabalupdated = homedir </> ".cabal" </> "packages" </> "hackage.haskell.org" </> "00-index.cache"
 
 standardAutoBuilderContainer :: (System -> Docker.Image) -> Architecture -> Int -> TimeOut -> Docker.Container
@@ -99,7 +99,7 @@ standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.conta
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& Apt.unattendedUpgrades
-	& User.accountFor builduser
+	& User.accountFor (User builduser)
 	& tree arch
 	& buildDepsApt
 	& autobuilder arch (Cron.Times $ show buildminute ++ " * * * *") timeout
@@ -125,9 +125,9 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 	& Apt.stdSourcesList
 	& Apt.installed ["systemd"]
 	& Docker.tweaked
-	& User.accountFor builduser
+	& User.accountFor (User builduser)
 	& File.dirExists gitbuilderdir
-	& File.ownerGroup homedir builduser builduser
+	& File.ownerGroup homedir (User builduser) (Group builduser)
 	& buildDepsApt
 	& flagFile chrootsetup ("/chrootsetup")
 		`requires` setupgitannexdir
@@ -139,7 +139,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 	chrootsetup = scriptProperty
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
-	haskellpkgsinstalled = userScriptProperty "builder"
+	haskellpkgsinstalled = userScriptProperty (User builduser)
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/install-haskell-packages"
 		]
 	osver = System (Debian Testing) "i386" -- once jessie is released, use: (Stable "jessie")
@@ -155,7 +155,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	& Apt.installed ["systemd"]
 	-- This volume is shared with the armel builder.
 	& Docker.volume gitbuilderdir
-	& User.accountFor builduser
+	& User.accountFor (User builduser)
 	-- Install current versions of build deps from cabal.
 	& tree "armel"
 	& buildDepsNoHaskellLibs
@@ -163,7 +163,7 @@ armelCompanionContainer dockerImage = Docker.container "armel-git-annex-builder-
 	-- The armel builder can ssh to this companion.
 	& Docker.expose "22"
 	& Apt.serviceInstalledRunning "ssh"
-	& Ssh.authorizedKeys builduser (Context "armel-git-annex-builder")
+	& Ssh.authorizedKeys (User builduser) (Context "armel-git-annex-builder")
 	& Docker.tweaked
 
 armelAutoBuilderContainer :: (System -> Docker.Image) -> Times -> TimeOut -> Docker.Container
@@ -175,7 +175,7 @@ armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "arme
 	& Apt.installed ["openssh-client"]
 	& Docker.link "armel-git-annex-builder-companion" "companion"
 	& Docker.volumes_from "armel-git-annex-builder-companion"
-	& User.accountFor builduser
+	& User.accountFor (User builduser)
 	-- TODO: automate installing haskell libs
 	-- (Currently have to run
 	-- git-annex/standalone/linux/install-haskell-packages
@@ -183,7 +183,7 @@ armelAutoBuilderContainer dockerImage crontimes timeout = Docker.container "arme
 	& buildDepsNoHaskellLibs
 	& autobuilder "armel" crontimes timeout
 		`requires` tree "armel"
-	& Ssh.keyImported SshRsa builduser (Context "armel-git-annex-builder")
+	& Ssh.keyImported SshRsa (User builduser) (Context "armel-git-annex-builder")
 	& trivial writecompanionaddress
 	& Docker.tweaked
   where

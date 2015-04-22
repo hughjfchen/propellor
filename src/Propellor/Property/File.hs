@@ -91,8 +91,8 @@ dirExists d = check (not <$> doesDirectoryExist d) $ property (d ++ " exists") $
 	makeChange $ createDirectoryIfMissing True d
 
 -- | Ensures that a file/dir has the specified owner and group.
-ownerGroup :: FilePath -> UserName -> GroupName -> Property NoInfo
-ownerGroup f owner group = property (f ++ " owner " ++ og) $ do
+ownerGroup :: FilePath -> User -> Group -> Property NoInfo
+ownerGroup f (User owner) (Group group) = property (f ++ " owner " ++ og) $ do
 	r <- ensureProperty $ cmdProperty "chown" [og, f]
 	if r == FailedChange
 		then return r

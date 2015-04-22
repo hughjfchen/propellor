@@ -7,7 +7,7 @@ import qualified Propellor.Property.Service as Service
 
 import Data.List
 
-providerFor :: [UserName] -> String -> Property HasInfo
+providerFor :: [User] -> String -> Property HasInfo
 providerFor users baseurl = propertyList desc $ map toProp
 	[ Apt.serviceInstalledRunning "apache2"
 	, Apt.installed ["simpleid"]
@@ -25,6 +25,6 @@ providerFor users baseurl = propertyList desc $ map toProp
 	
 	-- the identities directory controls access, so open up
 	-- file mode
-	identfile u = File.hasPrivContentExposed
+	identfile (User u) = File.hasPrivContentExposed
 		(concat [ "/var/lib/simpleid/identities/", u, ".identity" ])
 		(Context baseurl)

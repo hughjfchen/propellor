@@ -65,7 +65,7 @@ testvm = host "testvm.kitenet.net"
 	& Hostname.searchDomain
 	& Apt.installed ["linux-image-amd64"]
 	& Apt.installed ["ssh"]
-	& User.hasPassword "root"
+	& User.hasPassword (User "root")
 
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net"
@@ -174,9 +174,9 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 		, "--exclude=.*/tmp/"
 		, "--one-file-system"
 		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
-		`requires` Ssh.keyImported SshRsa "root"
+		`requires` Ssh.keyImported SshRsa (User "root")
 			(Context "kite.kitenet.net")
-		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" "root"
+		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
 	& Apt.serviceInstalledRunning "ntp"
 	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
 
@@ -188,7 +188,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	
 	& JoeySites.kitenetHttps
 	& JoeySites.legacyWebSites
-	& File.ownerGroup "/srv/web" "joey" "joey"
+	& File.ownerGroup "/srv/web" (User "joey") (Group "joey")
 	& Apt.installed ["analog"]
 	
 	& alias "git.kitenet.net"
@@ -255,7 +255,7 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& Apt.unattendedUpgrades
 	& Systemd.installed
 	& Systemd.persistentJournal
-	& Ssh.keyImported SshRsa "joey" hostContext
+	& Ssh.keyImported SshRsa (User "joey") hostContext
 	& Apt.serviceInstalledRunning "swapspace"
 
 	& alias "eubackup.kitenet.net"
@@ -308,7 +308,7 @@ beaver = host "beaver.kitenet.net"
 	& alias "usbackup.kitenet.net"
 	& JoeySites.backupsBackedupFrom hosts "eubackup.kitenet.net" "/home/joey/lib/backup"
 	& Apt.serviceInstalledRunning "anacron"
-	& Cron.niceJob "system disk backed up" Cron.Weekly "root" "/"
+	& Cron.niceJob "system disk backed up" Cron.Weekly (User "root") "/"
 		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"
 
 iabak :: Host
@@ -327,18 +327,18 @@ iabak = host "iabak.archiveteam.org"
 		]
 	& Apt.installed ["etckeeper", "sudo"]
 	& Apt.installed ["vim", "screen", "tmux", "less", "emax-nox", "netcat"]
-	& User.hasSomePassword "root"
+	& User.hasSomePassword (User "root")
 	& propertyList "admin accounts"
 		(map User.accountFor admins ++ map Sudo.enabledFor admins)
-	& User.hasSomePassword "joey"
-	& GitHome.installedFor "joey"
-	& Ssh.authorizedKey "db48x" "ssh-rsa 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 db48x@anglachel"
+	& User.hasSomePassword (User "joey")
+	& GitHome.installedFor (User "joey")
+	& Ssh.authorizedKey (User "db48x") "ssh-rsa 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 db48x@anglachel"
 	& Apt.installed ["sudo"]
 	& IABak.gitServer monsters
 	& IABak.registrationServer monsters
 	& IABak.graphiteServer
   where
-	admins = ["joey", "db48x"]
+	admins = map User ["joey", "db48x"]
 
        --'                        __|II|      ,.
      ----                      __|II|II|__   (  \_,/\
@@ -361,7 +361,7 @@ openidProvider :: Docker.Container
 openidProvider = standardStableContainer "openid-provider"
 	& alias "openid.kitenet.net"
 	& Docker.publish "8081:80"
-	& OpenId.providerFor ["joey", "liw"]
+	& OpenId.providerFor [User "joey", User "liw"]
 		"openid.kitenet.net:8081"
 
 -- Exhibit: kite's 90's website.
@@ -370,7 +370,7 @@ ancientKitenet = standardStableContainer "ancient-kitenet"
 	& alias "ancient.kitenet.net"
 	& Docker.publish "1994:80"
 	& Apt.serviceInstalledRunning "apache2"
-	& Git.cloned "root" "git://kitenet-net.branchable.com/" "/var/www"
+	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www"
 		(Just "remotes/origin/old-kitenet.net")
 
 oldusenetShellBox :: Docker.Container
@@ -392,7 +392,7 @@ jerryPlay = standardContainer "jerryplay" Unstable "amd64"
 	& Docker.publish "2202:22"
 	& Docker.publish "8001:80"
 	& Apt.installed ["ssh"]
-	& User.hasSomePassword "root"
+	& User.hasSomePassword (User "root")
 	& Ssh.permitRootLogin True
 	
 kiteShellBox :: Docker.Container
@@ -407,7 +407,7 @@ standardSystem :: HostName -> DebianSuite -> Architecture -> Motd -> Host
 standardSystem hn suite arch motd = standardSystemUnhardened hn suite arch motd
 	-- Harden the system, but only once root's authorized_keys
 	-- is safely in place.
-	& check (Ssh.hasAuthorizedKeys "root")
+	& check (Ssh.hasAuthorizedKeys (User "root"))
 		(Ssh.passwordAuthentication False)
 
 standardSystemUnhardened :: HostName -> DebianSuite -> Architecture -> Motd -> Host
@@ -420,12 +420,12 @@ standardSystemUnhardened hn suite arch motd = host hn
 	& Apt.cacheCleaned
 	& Apt.installed ["etckeeper"]
 	& Apt.installed ["ssh"]
-	& GitHome.installedFor "root"
-	& User.hasSomePassword "root"
-	& User.accountFor "joey"
-	& User.hasSomePassword "joey"
-	& Sudo.enabledFor "joey"
-	& GitHome.installedFor "joey"
+	& GitHome.installedFor (User "root")
+	& User.hasSomePassword (User "root")
+	& User.accountFor (User "joey")
+	& User.hasSomePassword (User "joey")
+	& Sudo.enabledFor (User "joey")
+	& GitHome.installedFor (User "joey")
 	& Apt.installed ["vim", "screen", "less"]
 	& Cron.runPropellor (Cron.Times "30 * * * *")
 	-- I use postfix, or no MTA.

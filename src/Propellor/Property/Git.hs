@@ -62,7 +62,7 @@ type Branch = String
 -- it will be recursively deleted first.
 --
 -- A branch can be specified, to check out.
-cloned :: UserName -> RepoUrl -> FilePath -> Maybe Branch -> Property NoInfo
+cloned :: User -> RepoUrl -> FilePath -> Maybe Branch -> Property NoInfo
 cloned owner url dir mbranch = check originurl (property desc checkout)
 	`requires` installed
   where
@@ -96,17 +96,17 @@ cloned owner url dir mbranch = check originurl (property desc checkout)
 isGitDir :: FilePath -> IO Bool
 isGitDir dir = isNothing <$> catchMaybeIO (readProcess "git" ["rev-parse", "--resolve-git-dir", dir])
 
-data GitShared = Shared GroupName | SharedAll | NotShared
+data GitShared = Shared Group | SharedAll | NotShared
 
-bareRepo :: FilePath -> UserName -> GitShared -> Property NoInfo
+bareRepo :: FilePath -> User -> GitShared -> Property NoInfo
 bareRepo repo user gitshared = check (isRepo repo) $ propertyList ("git repo: " ++ repo) $
 	dirExists repo : case gitshared of
 		NotShared ->
-			[ ownerGroup repo user user
+			[ ownerGroup repo user (userGroup user)
 			, userScriptProperty user ["git", "init", "--bare", "--shared=false", repo]
 			]
 		SharedAll ->
-			[ ownerGroup repo user user
+			[ ownerGroup repo user (userGroup user)
 			, userScriptProperty user ["git", "init", "--bare", "--shared=all", repo]
 			]
 		Shared group' ->

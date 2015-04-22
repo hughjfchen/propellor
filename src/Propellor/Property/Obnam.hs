@@ -49,7 +49,7 @@ backup dir crontimes params numclients =
 backupEncrypted :: FilePath -> Cron.Times -> [ObnamParam] -> NumClients -> Gpg.GpgKeyId -> Property HasInfo
 backupEncrypted dir crontimes params numclients keyid =
 	backup dir crontimes params' numclients
-		`requires` Gpg.keyImported keyid "root"
+		`requires` Gpg.keyImported keyid (User "root")
   where
 	params' = ("--encrypt-with=" ++ Gpg.getGpgKeyId keyid) : params
 
@@ -58,7 +58,7 @@ backup' :: FilePath -> Cron.Times -> [ObnamParam] -> NumClients -> Property NoIn
 backup' dir crontimes params numclients = cronjob `describe` desc
   where
 	desc = dir ++ " backed up by obnam"
-	cronjob = Cron.niceJob ("obnam_backup" ++ dir) crontimes "root" "/" $
+	cronjob = Cron.niceJob ("obnam_backup" ++ dir) crontimes (User "root") "/" $
 		intercalate ";" $ catMaybes
 			[ if numclients == OnlyClient
 				then Just $ unwords $

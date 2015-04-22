@@ -28,8 +28,8 @@ data Times
 -- job file.
 --
 -- The cron job's output will only be emailed if it exits nonzero.
-job :: Desc -> Times -> UserName -> FilePath -> String -> Property NoInfo
-job desc times user cddir command = combineProperties ("cronned " ++ desc)
+job :: Desc -> Times -> User -> FilePath -> String -> Property NoInfo
+job desc times (User u) cddir command = combineProperties ("cronned " ++ desc)
 	[ cronjobfile `File.hasContent`
 		[ case times of
 			Times _ -> ""
@@ -40,10 +40,10 @@ job desc times user cddir command = combineProperties ("cronned " ++ desc)
 		, "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 		, ""
 		, case times of
-			Times t -> t ++ "\t" ++ user ++ "\tchronic " ++ shellEscape scriptfile
-			_ -> case user of
+			Times t -> t ++ "\t" ++ u ++ "\tchronic " ++ shellEscape scriptfile
+			_ -> case u of
 				"root" -> "chronic " ++ shellEscape scriptfile
-				_ -> "chronic su " ++ user ++ " -c " ++ shellEscape scriptfile
+				_ -> "chronic su " ++ u ++ " -c " ++ shellEscape scriptfile
 		]
 	, case times of
 		Times _ -> doNothing
@@ -76,11 +76,11 @@ job desc times user cddir command = combineProperties ("cronned " ++ desc)
 		| otherwise = '_'
 
 -- | Installs a cron job, and runs it niced and ioniced.
-niceJob :: Desc -> Times -> UserName -> FilePath -> String -> Property NoInfo
+niceJob :: Desc -> Times -> User -> FilePath -> String -> Property NoInfo
 niceJob desc times user cddir command = job desc times user cddir
 	("nice ionice -c 3 sh -c " ++ shellEscape command)
 
 -- | Installs a cron job to run propellor.
 runPropellor :: Times -> Property NoInfo
-runPropellor times = niceJob "propellor" times "root" localdir
+runPropellor times = niceJob "propellor" times (User "root") localdir
 	(bootstrapPropellorCommand ++ "; ./propellor")

@@ -6,9 +6,9 @@ import Propellor.Property.User
 import Utility.SafeCommand
 
 -- | Clones Joey Hess's git home directory, and runs its fixups script.
-installedFor :: UserName -> Property NoInfo
-installedFor user = check (not <$> hasGitDir user) $ 
-	property ("githome " ++ user) (go =<< liftIO (homedir user))
+installedFor :: User -> Property NoInfo
+installedFor user@(User u) = check (not <$> hasGitDir user) $ 
+	property ("githome " ++ u) (go =<< liftIO (homedir user))
 		`requires` Apt.installed ["git"]
   where
 	go home = do
@@ -28,7 +28,7 @@ installedFor user = check (not <$> hasGitDir user) $
 url :: String
 url = "git://git.kitenet.net/joey/home"
 
-hasGitDir :: UserName -> IO Bool
+hasGitDir :: User -> IO Bool
 hasGitDir user = go =<< homedir user
   where
 	go home = doesDirectoryExist (home </> ".git")
