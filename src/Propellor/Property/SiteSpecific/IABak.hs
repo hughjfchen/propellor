@@ -21,7 +21,7 @@ gitServer knownhosts = propertyList "iabak git server" $ props
 	& Git.cloned "root" repo "/usr/local/IA.BAK/client" (Just "master")
 	& Ssh.keyImported SshRsa "root" (Context "IA.bak.users.git")
 	& Ssh.knownHost knownhosts "gitlab.com" "root"
-	& Git.cloned "www-data" userrepo "/usr/local/IA.BAK/pubkeys" (Just "master")
+	& Git.cloned "root" userrepo "/usr/local/IA.BAK/pubkeys" (Just "master")
 	& Apt.serviceInstalledRunning "apache2"
 	& cmdProperty "ln" ["-sf", "/usr/local/IA.BAK/pushme.cgi", "/usr/lib/cgi-bin/pushme.cgi"]
 	& File.containsLine "/etc/sudoers" "www-data ALL=NOPASSWD:/usr/local/IA.BAK/pushed.sh"
