@@ -15,11 +15,12 @@ repo = "https://github.com/ArchiveTeam/IA.BAK/"
 userrepo :: String
 userrepo = "git@gitlab.com:archiveteam/IA.bak.users.git"
 
-gitServer :: Property HasInfo
-gitServer = propertyList "iabak git server" $ props
+gitServer :: [Host] -> Property HasInfo
+gitServer knownhosts = propertyList "iabak git server" $ props
 	& Git.cloned "root" repo "/usr/local/IA.BAK" (Just "server")
 	& Git.cloned "root" repo "/usr/local/IA.BAK/client" (Just "master")
 	& Ssh.keyImported SshRsa "root" (Context "IA.bak.users.git")
+	& Ssh.knownHost knownhosts "gitlab.com" "root"
 	& Git.cloned "www-data" userrepo "/usr/local/IA.BAK/pubkeys" (Just "master")
 	& Apt.serviceInstalledRunning "apache2"
 	& cmdProperty "ln" ["-sf", "/usr/local/IA.BAK/pushme.cgi", "/usr/lib/cgi-bin/pushme.cgi"]
@@ -29,10 +30,11 @@ gitServer = propertyList "iabak git server" $ props
 	& Cron.niceJob "shardmaint" Cron.Daily "root" "/"
 		"/usr/local/IA.BAK/shardmaint"
 
-registrationServer :: Property HasInfo
-registrationServer = propertyList "iabak registration server" $ props
+registrationServer :: [Host] -> Property HasInfo
+registrationServer knownhosts = propertyList "iabak registration server" $ props
 	& User.accountFor "registrar"
 	& Ssh.keyImported SshRsa "registrar" (Context "IA.bak.users.git")
+	& Ssh.knownHost knownhosts "gitlab.com" "registrar"
 	& Git.cloned "registrar" repo "/home/registrar/IA.BAK" (Just "server")
 	& Git.cloned "registrar" userrepo "/home/registrar/users" (Just "master")
 	& Apt.serviceInstalledRunning "apache2"
