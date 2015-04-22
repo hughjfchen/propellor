@@ -75,7 +75,7 @@ scrollBox = propertyList "scroll server" $ props
 	-- prevent port forwarding etc by not letting scroll log in via ssh
 	& Ssh.sshdConfig `File.containsLine` ("DenyUsers scroll")
 		`onChange` Ssh.restarted
-	& cmdProperty "chsh" ["scroll", "-s", s]
+	& User.shellSetTo (User "scroll") s
 	& User.hasPassword (User "scroll")
 	& Apt.serviceInstalledRunning "telnetd"
 	& Apt.installed ["shellinabox"]
