@@ -6,12 +6,21 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apache as Apache
+import qualified Propellor.Property.User as User
+import qualified Propellor.Property.Ssh as Ssh
+
+repo :: String
+repo = "https://github.com/ArchiveTeam/IA.BAK/"
+
+userrepo :: String
+userrepo = "git@gitlab.com:archiveteam/IA.bak.users.git"
 
 gitServer :: Property HasInfo
 gitServer = propertyList "iabak git server" $ props
 	& Git.cloned "root" repo "/usr/local/IA.BAK" (Just "server")
 	& Git.cloned "root" repo "/usr/local/IA.BAK/client" (Just "master")
-	& Git.cloned "www-data" repo "/usr/local/IA.BAK/pubkeys" (Just "pubkey")
+	& Ssh.keyImported SshRsa "root" (Context "IA.bak.users.git")
+	& Git.cloned "www-data" userrepo "/usr/local/IA.BAK/pubkeys" (Just "master")
 	& Apt.serviceInstalledRunning "apache2"
 	& cmdProperty "ln" ["-sf", "/usr/local/IA.BAK/pushme.cgi", "/usr/lib/cgi-bin/pushme.cgi"]
 	& File.containsLine "/etc/sudoers" "www-data ALL=NOPASSWD:/usr/local/IA.BAK/pushed.sh"
@@ -19,8 +28,17 @@ gitServer = propertyList "iabak git server" $ props
 		"/usr/local/IA.BAK/shardstats-all"
 	& Cron.niceJob "shardmaint" Cron.Daily "root" "/"
 		"/usr/local/IA.BAK/shardmaint"
-  where
-	repo = "https://github.com/ArchiveTeam/IA.BAK/"
+
+registrationServer :: Property HasInfo
+registrationServer = propertyList "iabak registration server" $ props
+	& User.accountFor "registrar"
+	& Ssh.keyImported SshRsa "registrar" (Context "IA.bak.users.git")
+	& Git.cloned "registrar" repo "/home/registrar/IA.BAK" (Just "server")
+	& Git.cloned "registrar" userrepo "/home/registrar/users" (Just "master")
+	& Apt.serviceInstalledRunning "apache2"
+	& Apt.installed ["perl", "perl-modules"]
+	& cmdProperty "ln" ["-sf", "/home/registrar/IA.BAK/registrar/register.cgi", "/usr/lib/cgi-bin/register.cgi"]
+	& File.containsLine "/etc/sudoers" "www-data ALL=registrar:/home/registrar/IA.BAK/registrar/register.pl"
 
 graphiteServer :: Property HasInfo
 graphiteServer = propertyList "iabak graphite server" $ props

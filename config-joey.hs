@@ -336,6 +336,7 @@ iabak = host "iabak.archiveteam.org"
 	& Apt.installed ["sudo"]
 	& IABak.gitServer
 	& IABak.graphiteServer
+	& IABak.registrationServer
   where
 	admins = ["joey", "db48x"]
 
