@@ -40,7 +40,7 @@ registrationServer knownhosts = propertyList "iabak registration server" $ props
 	& Apt.serviceInstalledRunning "apache2"
 	& Apt.installed ["perl", "perl-modules"]
 	& cmdProperty "ln" ["-sf", "/home/registrar/IA.BAK/registrar/register.cgi", "/usr/lib/cgi-bin/register.cgi"]
-	& File.containsLine "/etc/sudoers" "www-data ALL=registrar:/home/registrar/IA.BAK/registrar/register.pl"
+	& File.containsLine "/etc/sudoers" "www-data ALL=(registrar) NOPASSWD:/home/registrar/IA.BAK/registrar/register.pl"
 
 graphiteServer :: Property HasInfo
 graphiteServer = propertyList "iabak graphite server" $ props
