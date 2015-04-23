@@ -103,15 +103,15 @@ bareRepo repo user gitshared = check (isRepo repo) $ propertyList ("git repo: " 
 	dirExists repo : case gitshared of
 		NotShared ->
 			[ ownerGroup repo user (userGroup user)
-			, userScriptProperty user ["git", "init", "--bare", "--shared=false", repo]
+			, userScriptProperty user ["git init --bare --shared=false " ++ shellEscape repo]
 			]
 		SharedAll ->
 			[ ownerGroup repo user (userGroup user)
-			, userScriptProperty user ["git", "init", "--bare", "--shared=all", repo]
+			, userScriptProperty user ["git init --bare --shared=all " ++ shellEscape repo]
 			]
 		Shared group' ->
 			[ ownerGroup repo user group'
-			, userScriptProperty user ["git", "init", "--bare", "--shared=group", repo]
+			, userScriptProperty user ["git init --bare --shared=group " ++ shellEscape repo]
 			]
   where
 	isRepo repo' = isNothing <$> catchMaybeIO (readProcess "git" ["rev-parse", "--resolve-git-dir", repo'])
