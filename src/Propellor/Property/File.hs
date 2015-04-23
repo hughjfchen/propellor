@@ -35,7 +35,7 @@ hasPrivContentExposed f = hasPrivContentExposedFrom (PrivDataSourceFile (PrivFil
 hasPrivContentExposedFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property HasInfo
 hasPrivContentExposedFrom = hasPrivContent' writeFile
 
-hasPrivContent' :: (IsContext c, IsPrivDataSource s) => (String -> FilePath -> IO ()) -> s -> FilePath -> c -> Property HasInfo
+hasPrivContent' :: (IsContext c, IsPrivDataSource s) => (FilePath -> String -> IO ()) -> s -> FilePath -> c -> Property HasInfo
 hasPrivContent' writer source f context = 
 	withPrivData source context $ \getcontent -> 
 		property desc $ getcontent $ \privcontent -> 
