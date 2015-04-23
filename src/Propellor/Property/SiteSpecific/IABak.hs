@@ -42,6 +42,9 @@ registrationServer knownhosts = propertyList "iabak registration server" $ props
 	& cmdProperty "ln" ["-sf", "/home/registrar/IA.BAK/registrar/register.cgi", link]
 	& cmdProperty "chown" ["-h", "registrar:registrar", link]
 	& File.containsLine "/etc/sudoers" "www-data ALL=(registrar) NOPASSWD:/home/registrar/IA.BAK/registrar/register.pl"
+	& Apt.installed ["kgb-client"]
+	& File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf" anyContext
+		`requires` File.dirExists "/etc/kgb-bot/"
   where
 	link = "/usr/lib/cgi-bin/register.cgi"
 
