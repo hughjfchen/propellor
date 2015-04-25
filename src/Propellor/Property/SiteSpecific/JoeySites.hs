@@ -96,7 +96,6 @@ oldUseNetServer :: [Host] -> Property HasInfo
 oldUseNetServer hosts = propertyList "olduse.net server" $ props
 	& Apt.installed ["leafnode"]
 	& oldUseNetInstalled "oldusenet-server"
-	& Obnam.latestVersion
 	& oldUseNetBackup
 	& check (not . isSymbolicLink <$> getSymbolicLinkStatus newsspool)
 		(property "olduse.net spool in place" $ makeChange $ do
@@ -184,7 +183,6 @@ kgbServer = propertyList desc $ props
 mumbleServer :: [Host] -> Property HasInfo
 mumbleServer hosts = combineProperties hn $ props
 	& Apt.serviceInstalledRunning "mumble-server"
-	& Obnam.latestVersion
 	& Obnam.backup "/var/lib/mumble-server" (Cron.Times "55 5 * * *")
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/" ++ hn ++ ".obnam"
 		, "--client-name=mumble"
@@ -198,7 +196,6 @@ mumbleServer hosts = combineProperties hn $ props
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property HasInfo
 gitServer hosts = propertyList "git.kitenet.net setup" $ props
-	& Obnam.latestVersion
 	& Obnam.backupEncrypted "/srv/git" (Cron.Times "33 3 * * *")
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
 		, "--ssh-key=" ++ sshkey

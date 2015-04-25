@@ -2,6 +2,8 @@ propellor (2.3.1) UNRELEASED; urgency=medium
 
   * Git.bareRepo: Fix bug in calls to userScriptProperty.
     Thanks, Jelmer Vernooij.
+  * Removed Obnam.latestVersion which was only needed for Debian wheezy
+    backport.
 
  -- Joey Hess <id@joeyh.name>  Wed, 22 Apr 2015 20:59:59 -0400
 
