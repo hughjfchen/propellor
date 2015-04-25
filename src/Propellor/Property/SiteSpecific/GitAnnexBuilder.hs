@@ -142,7 +142,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 	haskellpkgsinstalled = userScriptProperty (User builduser)
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/install-haskell-packages"
 		]
-	osver = System (Debian Testing) "i386" -- once jessie is released, use: (Stable "jessie")
+	osver = System (Debian Testing) "i386"
 
 -- armel builder has a companion container using amd64 that
 -- runs the build first to get TH splices. They need
