@@ -44,7 +44,7 @@ hosts =
     	& os (System (Debian Unstable) "amd64")
         & Apt.stdSourcesList
     , host "server.example.com"
-    	& os (System (Debian Stable) "amd64")
+    	& os (System (Debian (Stable "jessie")) "amd64")
         & Apt.stdSourcesList
         & Apt.installed ["ssh"]
     ]

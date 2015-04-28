@@ -4,6 +4,7 @@ module Propellor.Property.Ssh (
 	setSshdConfig,
 	permitRootLogin,
 	passwordAuthentication,
+	noPasswords,
 	hasAuthorizedKeys,
 	authorizedKey,
 	restarted,
@@ -53,6 +54,14 @@ permitRootLogin = setSshdConfig "PermitRootLogin"
 
 passwordAuthentication :: Bool -> Property NoInfo
 passwordAuthentication = setSshdConfig "PasswordAuthentication"
+
+-- | Configure ssh to not allow password logins.
+--
+-- To prevent lock-out, this is done only once root's 
+-- authorized_keys is in place.
+noPasswords :: Property NoInfo
+noPasswords = check (hasAuthorizedKeys (User "root")) $
+	passwordAuthentication False
 
 dotDir :: User -> IO FilePath
 dotDir user = do
