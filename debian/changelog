@@ -1,5 +1,6 @@
 propellor (2.4.0) UNRELEASED; urgency=medium
 
+  * Propellor no longer supports Debian wheezy (oldstable).
   * Git.bareRepo: Fix bug in calls to userScriptProperty.
     Thanks, Jelmer Vernooij.
   * Removed Obnam.latestVersion which was only needed for Debian wheezy
