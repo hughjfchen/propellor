@@ -17,7 +17,7 @@ type ShellCommand = String
 -- Should be run inside the propellor config dir, and will install
 -- all necessary build dependencies and build propellor.
 bootstrapPropellorCommand :: ShellCommand
-bootstrapPropellorCommand = depsCommand ++ 
+bootstrapPropellorCommand = checkDepsCommand ++ 
 	"&& if ! test -x ./propellor; then " 
 		++ buildCommand ++ 
 	"; fi;" ++ checkBinaryCommand
@@ -38,6 +38,11 @@ buildCommand = intercalate " && "
 	, "cabal build"
 	, "ln -sf dist/build/propellor-config/propellor-config propellor"
 	]
+
+-- Run cabal configure to check if all dependencies are installed;
+-- if not, run the depsCommand.
+checkDepsCommand :: ShellCommand
+checkDepsCommand = "if ! cabal configure >/dev/null 2>&1; then " ++ depsCommand ++ "; fi"
 
 -- Install build dependencies of propellor.
 --
