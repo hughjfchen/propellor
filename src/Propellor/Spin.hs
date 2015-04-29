@@ -12,7 +12,6 @@ import System.PosixCompat
 import System.Posix.IO
 import System.Posix.Directory
 import Control.Concurrent.Async
-import Control.Exception (bracket)
 import qualified Data.ByteString as B
 import qualified Data.Set as S
 import qualified Network.BSD as BSD
@@ -168,7 +167,7 @@ updateServer
 	-> CreateProcess
 	-> IO ()
 updateServer target relay hst connect haveprecompiled =
-	withBothHandles createProcessSuccess connect go
+	withIOHandles createProcessSuccess connect go
   where
 	hn = fromMaybe target relay
 	relaying = relay == Just target

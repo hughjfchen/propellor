@@ -11,7 +11,6 @@ module Utility.FileMode where
 
 import System.IO
 import Control.Monad
-import Control.Exception (bracket)
 import System.PosixCompat.Types
 import Utility.PosixFiles
 #ifndef mingw32_HOST_OS
@@ -125,7 +124,7 @@ withUmask _ a = a
 #endif
 
 combineModes :: [FileMode] -> FileMode
-combineModes [] = undefined
+combineModes [] = 0
 combineModes [m] = m
 combineModes (m:ms) = foldl unionFileModes m ms
 
@@ -152,7 +151,11 @@ setSticky f = modifyFileMode f $ addModes [stickyMode]
  - as writeFile.
  -}
 writeFileProtected :: FilePath -> String -> IO ()
-writeFileProtected file content = withUmask 0o0077 $
+writeFileProtected file content = writeFileProtected' file 
+	(\h -> hPutStr h content)
+
+writeFileProtected' :: FilePath -> (Handle -> IO ()) -> IO ()
+writeFileProtected' file writer = withUmask 0o0077 $
 	withFile file WriteMode $ \h -> do
 		void $ tryIO $ modifyFileMode file $ removeModes otherGroupModes
-		hPutStr h content
+		writer h
