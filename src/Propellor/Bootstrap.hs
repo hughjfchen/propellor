@@ -77,7 +77,8 @@ depsCommand = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) ++ " 
 		, "libghc-network-dev"
 		, "libghc-quickcheck2-dev"
 		, "libghc-mtl-dev"
-		, "libghc-monadcatchio-transformers-dev"
+		, "libghc-transformers-dev"
+		, "libghc-exceptions-dev"
 		]
 
 installGitCommand :: ShellCommand
