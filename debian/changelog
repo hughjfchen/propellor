@@ -7,6 +7,9 @@ propellor (2.4.0) UNRELEASED; urgency=medium
   * Merged Utility changes from git-annex.
   * Switched from MonadCatchIO-transformers to the newer transformers and
     exceptions libraries.
+  * Ensure build deps are installed before building propellor in --spin
+    and cron job, even if propellor was already built before, to deal with
+    upgrades that add new dependencies.
 
  -- Joey Hess <id@joeyh.name>  Wed, 22 Apr 2015 20:59:59 -0400
 

@@ -17,12 +17,10 @@ type ShellCommand = String
 -- Should be run inside the propellor config dir, and will install
 -- all necessary build dependencies and build propellor.
 bootstrapPropellorCommand :: ShellCommand
-bootstrapPropellorCommand = "if ! test -x ./propellor; then " ++ go ++ "; fi;" ++ checkBinaryCommand
-  where
-	  go = intercalate " && "
-		[ depsCommand
-		, buildCommand
-		]
+bootstrapPropellorCommand = depsCommand ++ 
+	"&& if ! test -x ./propellor; then " 
+		++ buildCommand ++ 
+	"; fi;" ++ checkBinaryCommand
 
 -- Use propellor --check to detect if the local propellor binary has
 -- stopped working (eg due to library changes), and must be rebuilt.
