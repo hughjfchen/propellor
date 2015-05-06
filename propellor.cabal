@@ -1,5 +1,5 @@
 Name: propellor
-Version: 2.3.0
+Version: 2.4.0
 Cabal-Version: >= 1.6
 License: BSD3
 Maintainer: Joey Hess <id@joeyh.name>
@@ -37,8 +37,8 @@ Executable propellor
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async, time, QuickCheck, mtl,
-   MonadCatchIO-transformers
+   containers, network, async, time, QuickCheck, mtl, transformers,
+   exceptions
 
   if (! os(windows))
     Build-Depends: unix
@@ -49,8 +49,8 @@ Executable propellor-config
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async, time, QuickCheck, mtl,
-   MonadCatchIO-transformers
+   containers, network, async, time, QuickCheck, mtl, transformers,
+   exceptions
 
   if (! os(windows))
     Build-Depends: unix
@@ -60,8 +60,8 @@ Library
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async, time, QuickCheck, mtl,
-   MonadCatchIO-transformers
+   containers, network, async, time, QuickCheck, mtl, transformers,
+   exceptions
 
   if (! os(windows))
     Build-Depends: unix

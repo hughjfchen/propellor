@@ -1,6 +1,6 @@
 {- Linux library copier and binary shimmer
  -
- - Copyright 2013 Joey Hess <joey@kitenet.net>
+ - Copyright 2013 Joey Hess <id@joeyh.name>
  -
  - License: BSD-2-clause
  -}
@@ -29,14 +29,14 @@ installLib installfile top lib = ifM (doesFileExist lib)
 	( do
 		installfile top lib
 		checksymlink lib
-		return $ Just $ takeDirectory lib
+		return $ Just $ parentDir lib
 	, return Nothing
 	)
   where
 	checksymlink f = whenM (isSymbolicLink <$> getSymbolicLinkStatus (inTop top f)) $ do
 		l <- readSymbolicLink (inTop top f)
-		let absl = absPathFrom (takeDirectory f) l
-		let target = relPathDirToFile (takeDirectory f) absl
+		let absl = absPathFrom (parentDir f) l
+		target <- relPathDirToFile (takeDirectory f) absl
 		installfile top absl
 		nukeFile (top ++ f)
 		createSymbolicLink target (inTop top f)

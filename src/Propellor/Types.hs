@@ -40,7 +40,7 @@ module Propellor.Types
 import Data.Monoid
 import Control.Applicative
 import "mtl" Control.Monad.RWS.Strict
-import "MonadCatchIO-transformers" Control.Monad.CatchIO
+import Control.Monad.Catch
 import qualified Data.Set as S
 import qualified Data.Map as M
 
@@ -73,7 +73,9 @@ newtype Propellor p = Propellor { runWithHost :: RWST Host [EndAction] () IO p }
 		, MonadReader Host
 		, MonadWriter [EndAction]
 		, MonadIO
-		, MonadCatchIO
+		, MonadCatch
+		, MonadThrow
+		, MonadMask
 		)
 
 instance Monoid (Propellor Result) where

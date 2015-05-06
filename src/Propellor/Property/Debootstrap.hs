@@ -20,7 +20,6 @@ import Utility.FileMode
 
 import Data.List
 import Data.Char
-import Control.Exception
 import System.Posix.Directory
 import System.Posix.Files
 

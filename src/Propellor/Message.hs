@@ -6,7 +6,7 @@ import System.Console.ANSI
 import System.IO
 import System.Log.Logger
 import System.Log.Formatter
-import System.Log.Handler (setFormatter, LogHandler)
+import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple
 import "mtl" Control.Monad.Reader
 import Data.Maybe

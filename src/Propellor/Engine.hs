@@ -17,7 +17,6 @@ import Data.Monoid
 import Control.Applicative
 import System.Console.ANSI
 import "mtl" Control.Monad.RWS.Strict
-import Control.Exception (bracket)
 import System.PosixCompat
 import System.Posix.IO
 import System.FilePath
