@@ -1,4 +1,4 @@
-propellor (2.4.0) UNRELEASED; urgency=medium
+propellor (2.4.0) unstable; urgency=medium
 
   * Propellor no longer supports Debian wheezy (oldstable).
   * Git.bareRepo: Fix bug in calls to userScriptProperty.
@@ -12,7 +12,7 @@ propellor (2.4.0) UNRELEASED; urgency=medium
     and cron job, even if propellor was already built before, to deal with
     upgrades that add new dependencies.
 
- -- Joey Hess <id@joeyh.name>  Wed, 22 Apr 2015 20:59:59 -0400
+ -- Joey Hess <id@joeyh.name>  Wed, 06 May 2015 14:28:59 -0400
 
 propellor (2.3.0) unstable; urgency=medium
 
