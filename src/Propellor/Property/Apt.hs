@@ -109,7 +109,7 @@ setSourcesListD ls basename = f `File.hasContent` ls `onChange` update
 	f = "/etc/apt/sources.list.d/" ++ basename ++ ".list"
 
 runApt :: [String] -> Property NoInfo
-runApt ps = cmdProperty' "apt-get" ps noninteractiveEnv
+runApt ps = cmdPropertyEnv "apt-get" ps noninteractiveEnv
 
 noninteractiveEnv :: [(String, String)]
 noninteractiveEnv =
@@ -170,7 +170,7 @@ buildDep ps = robustly go
 buildDepIn :: FilePath -> Property NoInfo
 buildDepIn dir = go `requires` installedMin ["devscripts", "equivs"]
   where
-	go = cmdProperty' "sh" ["-c", "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"]
+	go = cmdPropertyEnv "sh" ["-c", "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"]
 			noninteractiveEnv
 
 -- | Package installation may fail becuse the archive has changed.
@@ -251,7 +251,7 @@ reConfigure package vals = reconfigure `requires` setselections
 				forM_ vals $ \(tmpl, tmpltype, value) ->
 					hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
 				hClose h
-	reconfigure = cmdProperty' "dpkg-reconfigure" ["-fnone", package] noninteractiveEnv
+	reconfigure = cmdPropertyEnv "dpkg-reconfigure" ["-fnone", package] noninteractiveEnv
 
 -- | Ensures that a service is installed and running.
 --
