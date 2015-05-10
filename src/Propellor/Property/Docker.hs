@@ -11,6 +11,8 @@ module Propellor.Property.Docker (
 	configured,
 	container,
 	docked,
+	imageBuilt,
+	imagePulled,
 	memoryLimited,
 	garbageCollected,
 	tweaked,
@@ -43,6 +45,7 @@ import Propellor.Types.Docker
 import Propellor.Types.CmdLine
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Cmd as Cmd
 import qualified Propellor.Shim as Shim
 import Utility.SafeCommand
 import Utility.Path
@@ -137,6 +140,21 @@ docked ctr@(Container _ h) =
 					, removeImage image
 					]
 			]
+
+-- | Build the image from a directory containing a Dockerfile.
+imageBuilt :: FilePath -> Image -> Property NoInfo
+imageBuilt directory image = describe built msg
+  where
+	msg = "docker image " ++ image ++ " built from " ++ directory
+	built = Cmd.cmdProperty' dockercmd ["build", "--tag", image, "./"] workDir
+	workDir p = p { cwd = Just directory }
+
+-- | Pull the image from the standard Docker Hub registry.
+imagePulled :: Image -> Property NoInfo
+imagePulled image = describe pulled msg
+  where
+	msg = "docker image " ++ image ++ " pulled"
+	pulled = Cmd.cmdProperty dockercmd ["pull", image]
 
 propigateContainerInfo :: (IsProp (Property i)) => Container -> Property i -> Property HasInfo
 propigateContainerInfo ctr@(Container _ h) p = propigateContainer ctr p'
