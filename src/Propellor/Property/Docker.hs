@@ -16,7 +16,7 @@ module Propellor.Property.Docker (
 	tweaked,
 	Image,
 	ContainerName,
-	Container,
+	Container(..),
 	-- * Container configuration
 	dns,
 	hostname,
@@ -76,7 +76,10 @@ configured = prop `requires` installed
 type ContainerName = String
 
 -- | A docker container.
-data Container = Container Image Host
+data Container = Container
+	{ containerImage :: Image
+	, containerHost :: Host
+	}
 
 instance PropAccum Container where
 	(Container i h) & p = Container i (h & p)
