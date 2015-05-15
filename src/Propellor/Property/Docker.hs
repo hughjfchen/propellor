@@ -18,7 +18,8 @@ module Propellor.Property.Docker (
 	tweaked,
 	Image,
 	ContainerName,
-	Container(..),
+	Container,
+	HasImage(..),
 	-- * Container configuration
 	dns,
 	hostname,
@@ -79,10 +80,13 @@ configured = prop `requires` installed
 type ContainerName = String
 
 -- | A docker container.
-data Container = Container
-	{ containerImage :: Image
-	, containerHost :: Host
-	}
+data Container = Container Image Host
+
+class HasImage a where
+	getImageName :: a -> Image
+
+instance HasImage Container where
+	getImageName (Container i _) = i
 
 instance PropAccum Container where
 	(Container i h) & p = Container i (h & p)
@@ -142,19 +146,21 @@ docked ctr@(Container _ h) =
 			]
 
 -- | Build the image from a directory containing a Dockerfile.
-imageBuilt :: FilePath -> Image -> Property NoInfo
-imageBuilt directory image = describe built msg
+imageBuilt :: HasImage c => FilePath -> c -> Property NoInfo
+imageBuilt directory ctr = describe built msg
   where
 	msg = "docker image " ++ image ++ " built from " ++ directory
 	built = Cmd.cmdProperty' dockercmd ["build", "--tag", image, "./"] workDir
 	workDir p = p { cwd = Just directory }
+	image = getImageName ctr
 
 -- | Pull the image from the standard Docker Hub registry.
-imagePulled :: Image -> Property NoInfo
-imagePulled image = describe pulled msg
+imagePulled :: HasImage c => c -> Property NoInfo
+imagePulled ctr = describe pulled msg
   where
 	msg = "docker image " ++ image ++ " pulled"
 	pulled = Cmd.cmdProperty dockercmd ["pull", image]
+	image = getImageName ctr
 
 propigateContainerInfo :: (IsProp (Property i)) => Container -> Property i -> Property HasInfo
 propigateContainerInfo ctr@(Container _ h) p = propigateContainer ctr p'
