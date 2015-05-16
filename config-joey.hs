@@ -312,7 +312,7 @@ beaver = host "beaver.kitenet.net"
 	& Cron.niceJob "system disk backed up" Cron.Weekly (User "root") "/"
 		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"
 
--- Branchable is mostly not managed by propellor yet.
+-- Branchable is not completely deployed with propellor yet.
 pell :: Host
 pell = host "pell.branchable.com"
 	& ipv4 "66.228.46.55"
@@ -343,6 +343,12 @@ pell = host "pell.branchable.com"
 		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBAK9HnfpyIm8aEhKuF5oz6KyaLwFs2oWeToVkqVuykyy5Y8jWDZPtkpv+1TeOnjcOvJSZ1cCqB8iXlsP9Dr5z98w5MfzsRQM2wIw0n+wvmpPmUhjVdGh+wTpfP9bcyFHhj/f1Ymdq9hEWB26bnf4pbTbJW2ip8ULshMvn5CQ/ugV3AAAAFQCAjpRd1fquRiIuLJMwej0VcyoZKQAAAIBe91Grvz/icL3nlqXYrifXyr9dsw8bPN+BMu+hQtFsQXNJBylxwf8FtbRlmvZXmRjdVYqFVyxSsrL2pMsWlds51iXOr9pdsPG5a4OgJyRHsveBz3tz6HgYYPcr3Oxp7C6G6wrzwsaGK862SgRp/bbD226k9dODRBy3ogMhk/MvAgAAAIEApfknql3vZbDVa88ZnwbNKDOv8L1hb6blbKAMt2vJbqJMvu3EP9CsP9hGyEQh5YCAl2F9KEU3bJXN1BG76b7CiYtWK95lpL1XmCCWnJBCcdEhw998GfJS424frPw7qGmXLxJKYxEyioB90/IDp2dC+WaLcLOYHM9SroCQTIK5A1g= root@pell")
 		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA1M0aNLgcgcgf0tkmt/8vCDZLok8Xixz7Nun9wB6NqVXxfzAR4te+zyO7FucVwyTY5QHmiwwpmyNfaC21AAILhXGm12SUKSAirF9BkQk7bhQuz4T/dPlEt3d3SxQ3OZlXtPp4LzXWOyS0OXSzIb+HeaDA+hFXlQnp/gE7RyAzR1+xhWPO7Mz1q5O/+4dXANnW32t6P7Puob6NsglVDpLrMRYjkO+0RgCVbYMzB5+UnkthkZsIINaYwsNhW2GKMKbRZeyp5en5t1NJprGXdw0BqdBqd/rcBpOxmhHE1U7rw+GS1uZwCFWWv0aZbaXEJ6wY7mETFkqs0QXi5jtoKn95Gw== root@pell")
 		]
+	& Apt.installed ["procmail", "bsd-mailx"]
+	& "/etc/aliases" `File.hasPrivContentExposed` (Context "branchable.com")
+		`onChange` Postfix.newaliases
+	& "/etc/mailname" `File.hasContent` ["branchable.com"]
+	& Postfix.installed
+	& Postfix.mainCf ("mailbox_command", "procmail -a \"$EXTENSION\"")
 
 	& adminuser "joey"
 	& adminuser "liw"
