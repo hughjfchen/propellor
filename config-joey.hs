@@ -335,6 +335,14 @@ pell = host "pell.branchable.com"
 	& Linode.chainPVGrub 5
 	& Apt.unattendedUpgrades
 
+	& "/etc/timezone" `File.hasContent` ["Etc/UTC"]
+	& "/etc/locale.gen" `File.containsLines`
+		[ "en_GB.UTF-8 UTF-8"
+		, "en_US.UTF-8 UTF-8"
+		, "fi_FI.UTF-8 UTF-8"
+		]
+		`onChange` cmdProperty "locale-gen" []
+
 	& Apt.installed ["etckeeper", "ssh", "popularity-contest"]
 	& Apt.serviceInstalledRunning "apache2"
 	& Apt.serviceInstalledRunning "ntp"
