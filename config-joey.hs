@@ -47,6 +47,7 @@ hosts =                --                  (o)  `
 	, kite
 	, elephant
 	, beaver
+	, pell
 	, iabak
 	] ++ monsters
 
@@ -311,6 +312,30 @@ beaver = host "beaver.kitenet.net"
 	& Cron.niceJob "system disk backed up" Cron.Weekly (User "root") "/"
 		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"
 
+-- Branchable is mostly not managed by propellor yet.
+pell :: Host
+pell = host "pell.branchable.com"
+	& ipv4 "66.228.46.55"
+	& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
+	
+	-- All the websites I host at branchable that don't use
+	-- branchable.com dns.
+	& alias "olduse.net"
+	& alias "www.olduse.net"
+	& alias "www.kitenet.net"
+	& alias "joeyh.name"
+	& alias "campaign.joeyh.name"
+	& alias "ikiwiki.info"
+	& alias "git.ikiwiki.info"
+	& alias "l10n.ikiwiki.info"
+	& alias "dist-bugs.kitenet.net"
+	& alias "family.kitenet.net"
+
+	& Apt.installed ["linux-image-amd64"]
+	& Linode.chainPVGrub 5
+	& Systemd.persistentJournal
+	& Journald.systemMaxUse "500MiB"
+
 iabak :: Host
 iabak = host "iabak.archiveteam.org"
 	& ipv4 "124.6.40.227"
@@ -491,19 +516,6 @@ monsters =            -- but do want to track their public keys etc.
 		& ipv6 "2001:4978:f:2d9::2"
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
-	, host "branchable.com"
-		& ipv4 "66.228.46.55"
-		& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
-		& alias "olduse.net"
-		& alias "www.olduse.net"
-		& alias "www.kitenet.net"
-		& alias "joeyh.name"
-		& alias "campaign.joeyh.name"
-		& alias "ikiwiki.info"
-		& alias "git.ikiwiki.info"
-		& alias "l10n.ikiwiki.info"
-		& alias "dist-bugs.kitenet.net"
-		& alias "family.kitenet.net"
 	, host "animx"
 		& ipv4 "76.7.162.101"
 		& ipv4 "76.7.162.186"
