@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeSynonymInstances, FlexibleInstances #-}
 
 -- | Docker support for propellor
 --
@@ -84,6 +84,9 @@ data Container = Container Image Host
 
 class HasImage a where
 	getImageName :: a -> Image
+
+instance HasImage Image where
+	getImageName = id
 
 instance HasImage Container where
 	getImageName (Container i _) = i
