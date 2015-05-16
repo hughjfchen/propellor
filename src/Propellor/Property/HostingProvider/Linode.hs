@@ -6,7 +6,7 @@ import qualified Propellor.Property.File as File
 import Utility.FileMode
 
 -- | Linode's pv-grub-x86_64 does not currently support booting recent
--- Debian kernels compressed with xz. This sets up pv-grub chaing to enable
+-- Debian kernels compressed with xz. This sets up pv-grub chaining to enable
 -- it.
 chainPVGrub :: Grub.TimeoutSecs -> Property NoInfo
 chainPVGrub = Grub.chainPVGrub "hd0" "xen/xvda"
