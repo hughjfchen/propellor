@@ -9,7 +9,7 @@ import qualified Propellor.Property.Reboot as Reboot
 
 import Data.List
 
--- Digital Ocean does not provide any way to boot
+-- | Digital Ocean does not provide any way to boot
 -- the kernel provided by the distribution, except using kexec.
 -- Without this, some old, and perhaps insecure kernel will be used.
 --
@@ -40,7 +40,7 @@ runningInstalledKernel = do
 	findVersion kernelver <$>
 		readProcess "file" ("-L" : kernelimages)
 
--- File output looks something like this, we want to unambiguously
+-- | File output looks something like this, we want to unambiguously
 -- match the running kernel version:
 --   Linux kernel x86 boot executable bzImage, version 3.16-3-amd64 (debian-kernel@lists.debian.org) #1 SMP Debian 3.1, RO-rootFS, swap_dev 0x2, Normal VGA
 findVersion :: String -> String -> Bool
