@@ -63,12 +63,14 @@ graphiteServer = propertyList "iabak graphite server" $ props
 		[ "[carbon]"
 		, "pattern = ^carbon\\."
 		, "retentions = 60:90d"
-		, "[iabak]"
+		, "[iabak-connections]"
+		, "pattern = ^iabak\\.shardstats\\.connections"
+		, "retentions = 1h:1y,3h:10y"
+		, "[iabak-default]"
 		, "pattern = ^iabak\\."
-		, "retentions = 10m:30d,1h:1y,3h,10y"
+		, "retentions = 10m:30d,1h:1y,3h:10y"
 		, "[default_1min_for_1day]"
 		, "pattern = .*"
-		, "retentions = 60s:1d"
 		]
 	& graphiteCSRF
 	& cmdProperty "graphite-manage" ["syncdb", "--noinput"] `flagFile` "/etc/flagFiles/graphite-syncdb"
