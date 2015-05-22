@@ -65,7 +65,7 @@ graphiteServer = propertyList "iabak graphite server" $ props
 		, "retentions = 60:90d"
 		, "[iabak]"
 		, "pattern = ^iabak\\."
-		, "retentions = 10m:30d,1h:1y,3h,10y"
+		, "retentions = 10m:30d,1h:1y,3h:10y"
 		, "[default_1min_for_1day]"
 		, "pattern = .*"
 		, "retentions = 60s:1d"
