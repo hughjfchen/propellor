@@ -15,6 +15,13 @@ repo = "https://github.com/ArchiveTeam/IA.BAK/"
 userrepo :: String
 userrepo = "git@gitlab.com:archiveteam/IA.bak.users.git"
 
+publicFace :: Property HasInfo
+publicFace = propertyList "iabak public face" $ props
+	& Git.cloned (User "root") repo "/usr/local/IA.BAK" (Just "server")
+	& Apt.serviceInstalledRunning "apache2"
+	& Cron.niceJob "graph-gen" (Cron.Times "*/10 * * * *") (User "root") "/"
+		"/usr/local/IA.BAK/web/graph-gen.sh"
+
 gitServer :: [Host] -> Property HasInfo
 gitServer knownhosts = propertyList "iabak git server" $ props
 	& Git.cloned (User "root") repo "/usr/local/IA.BAK" (Just "server")

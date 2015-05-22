@@ -364,6 +364,7 @@ iabak = host "iabak.archiveteam.org"
 	& IABak.gitServer monsters
 	& IABak.registrationServer monsters
 	& IABak.graphiteServer
+	& IABak.publicFace
   where
 	admins = map User ["joey", "db48x"]
 
