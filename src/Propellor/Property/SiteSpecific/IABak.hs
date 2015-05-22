@@ -33,7 +33,7 @@ gitServer knownhosts = propertyList "iabak git server" $ props
 	& cmdProperty "ln" ["-sf", "/usr/local/IA.BAK/pushme.cgi", "/usr/lib/cgi-bin/pushme.cgi"]
 	& File.containsLine "/etc/sudoers" "www-data ALL=NOPASSWD:/usr/local/IA.BAK/pushed.sh"
 	& Cron.niceJob "shardstats" (Cron.Times "*/30 * * * *") (User "root") "/"
-		"/usr/local/IA.BAK/shardstats-all"
+		"/usr/local/IA.BAK/shardmaint-fast; /usr/local/IA.BAK/shardstats-all"
 	& Cron.niceJob "shardmaint" Cron.Daily (User "root") "/"
 		"/usr/local/IA.BAK/shardmaint"
 
