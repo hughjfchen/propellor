@@ -458,7 +458,7 @@ standardSystemUnhardened hn suite arch motd = host hn
 		`onChange` Apt.autoRemove
 
 standardStableContainer :: Docker.ContainerName -> Docker.Container
-standardStableContainer name = standardContainer name (Stable "wheezy") "amd64"
+standardStableContainer name = standardContainer name (Stable "jessie") "amd64"
 
 -- This is my standard container setup, Featuring automatic upgrades.
 standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Docker.Container
