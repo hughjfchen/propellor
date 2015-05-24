@@ -426,16 +426,14 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 				retry (n-1) a
 			_ -> return v
 
-	go img = do
-		liftIO $ do
-			clearProvisionedFlag cid
-			createDirectoryIfMissing True (takeDirectory $ identFile cid)
-		shim <- liftIO $ Shim.setup (localdir </> "propellor") Nothing (localdir </> shimdir cid)
-		liftIO $ writeFile (identFile cid) (show ident)
-		ensureProperty $ property "run" $ liftIO $
-			toResult <$> runContainer img
-				(runps ++ ["-i", "-d", "-t"])
-				[shim, "--continue", show (DockerInit (fromContainerId cid))]
+	go img = liftIO $ do
+		clearProvisionedFlag cid
+		createDirectoryIfMissing True (takeDirectory $ identFile cid)
+		shim <- Shim.setup (localdir </> "propellor") Nothing (localdir </> shimdir cid)
+		writeFile (identFile cid) (show ident)
+		toResult <$> runContainer img
+			(runps ++ ["-i", "-d", "-t"])
+			[shim, "--continue", show (DockerInit (fromContainerId cid))]
 
 -- | Called when propellor is running inside a docker container.
 -- The string should be the container's ContainerId.
