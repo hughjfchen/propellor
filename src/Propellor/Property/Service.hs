@@ -1,7 +1,6 @@
 module Propellor.Property.Service where
 
 import Propellor
-import Utility.SafeCommand
 
 type ServiceName = String
 

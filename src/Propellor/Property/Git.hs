@@ -4,7 +4,6 @@ import Propellor
 import Propellor.Property.File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
-import Utility.SafeCommand
 
 import Data.List
 

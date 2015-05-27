@@ -18,7 +18,6 @@ import Propellor.Types.CmdLine
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Shim as Shim
-import Utility.SafeCommand
 
 usage :: Handle -> IO ()
 usage h = hPutStrLn h $ unlines 

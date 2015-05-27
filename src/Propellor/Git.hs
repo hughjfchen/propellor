@@ -3,7 +3,6 @@ module Propellor.Git where
 import Propellor
 import Propellor.PrivData.Paths
 import Propellor.Gpg
-import Utility.SafeCommand
 import Utility.FileMode
 
 getCurrentBranch :: IO String

@@ -19,7 +19,6 @@ import Propellor.Property.Chroot.Util
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Shim as Shim
-import Utility.SafeCommand
 
 import qualified Data.Map as M
 import Data.List.Utils

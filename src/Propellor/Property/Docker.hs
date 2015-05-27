@@ -48,7 +48,6 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cmd as Cmd
 import qualified Propellor.Shim as Shim
-import Utility.SafeCommand
 import Utility.Path
 import Utility.ThreadScheduler
 

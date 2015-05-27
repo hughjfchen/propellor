@@ -16,7 +16,6 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Reboot as Reboot
 import Propellor.Property.Mount
 import Propellor.Property.Chroot.Util (stdPATH)
-import Utility.SafeCommand
 
 import System.Posix.Files (rename, fileExist)
 import Control.Exception (throw)

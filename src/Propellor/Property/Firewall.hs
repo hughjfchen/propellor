@@ -18,7 +18,6 @@ import Data.Char
 import Data.List
 
 import Propellor
-import Utility.SafeCommand
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
 

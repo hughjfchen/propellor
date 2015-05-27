@@ -1,7 +1,6 @@
 module Propellor.Property.Reboot where
 
 import Propellor
-import Utility.SafeCommand
 
 now :: Property NoInfo
 now = cmdProperty "reboot" []

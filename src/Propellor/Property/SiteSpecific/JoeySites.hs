@@ -15,7 +15,6 @@ import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
-import Utility.SafeCommand
 import Utility.FileMode
 
 import Data.List

@@ -15,7 +15,6 @@ import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Chroot.Util
 import Propellor.Property.Mount
 import Utility.Path
-import Utility.SafeCommand
 import Utility.FileMode
 
 import Data.List
