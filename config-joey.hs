@@ -131,8 +131,8 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Postfix.satellite
 	& Systemd.persistentJournal
 	& Docker.configured
+	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainerNspawn "amd64" 15 "2h")
 	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h")
-	! Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainerNspawn "amd64" 15 "2h")
 	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h")
 	& Docker.docked (GitAnnexBuilder.armelCompanionContainer dockerImage)
 	& Docker.docked (GitAnnexBuilder.armelAutoBuilderContainer dockerImage (Cron.Times "1 3 * * *") "5h")
