@@ -132,6 +132,7 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Systemd.persistentJournal
 	& Docker.configured
 	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h")
+	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainerNspawn "amd64" 15 "2h")
 	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h")
 	& Docker.docked (GitAnnexBuilder.armelCompanionContainer dockerImage)
 	& Docker.docked (GitAnnexBuilder.armelAutoBuilderContainer dockerImage (Cron.Times "1 3 * * *") "5h")
@@ -458,7 +459,7 @@ standardSystemUnhardened hn suite arch motd = host hn
 		`onChange` Apt.autoRemove
 
 standardStableContainer :: Docker.ContainerName -> Docker.Container
-standardStableContainer name = standardContainer name (Stable "wheezy") "amd64"
+standardStableContainer name = standardContainer name (Stable "jessie") "amd64"
 
 -- This is my standard container setup, Featuring automatic upgrades.
 standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Docker.Container

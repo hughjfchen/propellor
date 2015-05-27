@@ -35,7 +35,7 @@ gitServer knownhosts = propertyList "iabak git server" $ props
 	& Cron.niceJob "shardstats" (Cron.Times "*/30 * * * *") (User "root") "/"
 		"/usr/local/IA.BAK/shardstats-all"
 	& Cron.niceJob "shardmaint" Cron.Daily (User "root") "/"
-		"/usr/local/IA.BAK/shardmaint"
+		"/usr/local/IA.BAK/shardmaint-fast; /usr/local/IA.BAK/shardmaint"
 
 registrationServer :: [Host] -> Property HasInfo
 registrationServer knownhosts = propertyList "iabak registration server" $ props

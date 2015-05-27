@@ -9,6 +9,8 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Docker as Docker
+import qualified Propellor.Property.Systemd as Systemd
+import qualified Propellor.Property.Chroot as Chroot
 import Propellor.Property.Cron (Times)
 
 builduser :: UserName
@@ -104,6 +106,20 @@ standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.conta
 	& buildDepsApt
 	& autobuilder arch (Cron.Times $ show buildminute ++ " * * * *") timeout
 	& Docker.tweaked
+
+standardAutoBuilderContainerNspawn :: Architecture -> Int -> TimeOut -> Systemd.Container
+standardAutoBuilderContainerNspawn arch buildminute timeout = Systemd.container name bootstrap
+	& os myos
+	& Apt.stdSourcesList
+	& Apt.unattendedUpgrades
+	& User.accountFor (User builduser)
+	& tree arch
+	& buildDepsApt
+	& autobuilder arch (Cron.Times $ show buildminute ++ " * * * *") timeout
+  where
+	name = arch ++ "-git-annex-builder"
+	bootstrap = Chroot.debootstrapped myos mempty
+	myos = System (Debian Unstable) arch
 
 androidAutoBuilderContainer :: (System -> Docker.Image) -> Times -> TimeOut -> Docker.Container
 androidAutoBuilderContainer dockerImage crontimes timeout =
