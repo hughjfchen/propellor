@@ -119,7 +119,7 @@ standardAutoBuilderContainerNspawn arch buildminute timeout = Systemd.container 
   where
 	name = arch ++ "-git-annex-builder"
 	bootstrap = Chroot.debootstrapped myos mempty
-	myos = System (Debian Unstable) arch
+	myos = System (Debian Testing) arch
 
 androidAutoBuilderContainer :: (System -> Docker.Image) -> Times -> TimeOut -> Docker.Container
 androidAutoBuilderContainer dockerImage crontimes timeout =
