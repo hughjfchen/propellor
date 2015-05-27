@@ -5,14 +5,17 @@
  - License: BSD-2-clause
  -}
 
+{-# OPTIONS_GHC -fno-warn-tabs #-}
+
 module Utility.SafeCommand where
 
 import System.Exit
 import Utility.Process
 import Data.String.Utils
-import Control.Applicative
 import System.FilePath
 import Data.Char
+import Control.Applicative
+import Prelude
 
 {- A type for parameters passed to a shell command. A command can
  - be passed either some Params (multiple parameters can be included,
