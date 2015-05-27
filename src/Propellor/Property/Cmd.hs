@@ -1,11 +1,20 @@
 {-# LANGUAGE PackageImports #-}
 
 module Propellor.Property.Cmd (
+	-- * Properties for running commands and scripts
 	cmdProperty,
 	cmdProperty',
 	cmdPropertyEnv,
+	Script,
 	scriptProperty,
 	userScriptProperty,
+	-- * Lower-level interface for running commands
+	CommandParam(..),
+	boolSystem,
+	boolSystemEnv,
+	safeSystem,
+	safeSystemEnv,
+	shellEscape
 ) where
 
 import Control.Applicative
@@ -40,15 +49,18 @@ cmdPropertyEnv cmd params env = property desc $ liftIO $ do
   where
 	desc = unwords $ cmd : params
 
--- | A property that can be satisfied by running a series of shell commands.
-scriptProperty :: [String] -> Property NoInfo
+-- | A series of shell commands. (Without a leading hashbang.)
+type Script = [String]
+
+-- | A property that can be satisfied by running a script.
+scriptProperty :: Script -> Property NoInfo
 scriptProperty script = cmdProperty "sh" ["-c", shellcmd]
   where
 	shellcmd = intercalate " ; " ("set -e" : script)
 
--- | A property that can satisfied by running a series of shell commands,
+-- | A property that can satisfied by running a script
 -- as user (cd'd to their home directory).
-userScriptProperty :: User -> [String] -> Property NoInfo
+userScriptProperty :: User -> Script -> Property NoInfo
 userScriptProperty (User user) script = cmdProperty "su" ["--shell", "/bin/sh", "-c", shellcmd, user]
   where
 	shellcmd = intercalate " ; " ("set -e" : "cd" : script)

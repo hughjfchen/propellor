@@ -1,7 +1,6 @@
 module Propellor.Property.Mount where
 
 import Propellor
-import Utility.SafeCommand
 
 type FsType = String
 type Source = String

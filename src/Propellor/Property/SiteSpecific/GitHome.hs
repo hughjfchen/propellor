@@ -3,7 +3,6 @@ module Propellor.Property.SiteSpecific.GitHome where
 import Propellor
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.User
-import Utility.SafeCommand
 
 -- | Clones Joey Hess's git home directory, and runs its fixups script.
 installedFor :: User -> Property NoInfo

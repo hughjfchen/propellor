@@ -4,7 +4,6 @@ import Propellor
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Gpg as Gpg
-import Utility.SafeCommand
 
 import Data.List
 

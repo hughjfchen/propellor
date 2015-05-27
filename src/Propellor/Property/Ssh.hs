@@ -24,7 +24,6 @@ import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Service as Service
 import Propellor.Property.User
-import Utility.SafeCommand
 import Utility.FileMode
 
 import System.PosixCompat

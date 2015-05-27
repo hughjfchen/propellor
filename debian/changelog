@@ -4,6 +4,9 @@ propellor (2.5.0) UNRELEASED; urgency=medium
     more generic cmdProperty' (API change)
   * Add docker image related properties.
     Thanks, Antoine Eiche.
+  * Export CommandParam, boolSystem, safeSystem and shellEscape from
+    Propellor.Property.Cmd, so they are available for use in constricting
+    your own Properties when using propellor as a library.
 
  -- Joey Hess <id@joeyh.name>  Thu, 07 May 2015 12:08:34 -0400
 

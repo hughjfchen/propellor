@@ -25,7 +25,6 @@ import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
 import Propellor.Property.Systemd.Core
-import Utility.SafeCommand
 import Utility.FileMode
 
 import Data.List
