@@ -94,22 +94,9 @@ cabalDeps = flagFile go cabalupdated
 		go = userScriptProperty (User builduser) ["cabal update && cabal install git-annex --only-dependencies || true"]
 		cabalupdated = homedir </> ".cabal" </> "packages" </> "hackage.haskell.org" </> "00-index.cache"
 
-standardAutoBuilderContainer :: (System -> Docker.Image) -> Architecture -> Int -> TimeOut -> Docker.Container
-standardAutoBuilderContainer dockerImage arch buildminute timeout = Docker.container (arch ++ "-git-annex-builder")
-	(dockerImage $ System (Debian Testing) arch)
-	& os (System (Debian Testing) arch)
-	& Apt.stdSourcesList
-	& Apt.installed ["systemd"]
-	& Apt.unattendedUpgrades
-	& User.accountFor (User builduser)
-	& tree arch
-	& buildDepsApt
-	& autobuilder arch (Cron.Times $ show buildminute ++ " * * * *") timeout
-	& Docker.tweaked
-
-standardAutoBuilderContainerNspawn :: Architecture -> Int -> TimeOut -> Systemd.Container
-standardAutoBuilderContainerNspawn arch buildminute timeout = Systemd.container name bootstrap
-	& os myos
+standardAutoBuilderContainer :: Architecture -> Int -> TimeOut -> Systemd.Container
+standardAutoBuilderContainer arch buildminute timeout = Systemd.container name bootstrap
+	& os osver
 	& Apt.stdSourcesList
 	& Apt.unattendedUpgrades
 	& User.accountFor (User builduser)
@@ -118,29 +105,25 @@ standardAutoBuilderContainerNspawn arch buildminute timeout = Systemd.container 
 	& autobuilder arch (Cron.Times $ show buildminute ++ " * * * *") timeout
   where
 	name = arch ++ "-git-annex-builder"
-	bootstrap = Chroot.debootstrapped myos mempty
-	myos = System (Debian Testing) arch
+	bootstrap = Chroot.debootstrapped osver mempty
+	osver = System (Debian Testing) arch
 
-androidAutoBuilderContainer :: (System -> Docker.Image) -> Times -> TimeOut -> Docker.Container
-androidAutoBuilderContainer dockerImage crontimes timeout =
-	androidContainer dockerImage "android-git-annex-builder" (tree "android") builddir
+androidAutoBuilderContainer :: Times -> TimeOut -> Systemd.Container
+androidAutoBuilderContainer crontimes timeout =
+	androidContainer "android-git-annex-builder" (tree "android") builddir
 		& Apt.unattendedUpgrades
 		& autobuilder "android" crontimes timeout
 
 -- Android is cross-built in a Debian i386 container, using the Android NDK.
 androidContainer
 	:: (IsProp (Property (CInfo NoInfo i)), (Combines (Property NoInfo) (Property i)))
-	=> (System -> Docker.Image)
-	-> Docker.ContainerName
+	=> Systemd.MachineName
 	-> Property i
 	-> FilePath
-	-> Docker.Container
-androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.container name
-	(dockerImage osver)
+	-> Systemd.Container
+androidContainer name setupgitannexdir gitannexdir = Systemd.container name bootstrap
 	& os osver
 	& Apt.stdSourcesList
-	& Apt.installed ["systemd"]
-	& Docker.tweaked
 	& User.accountFor (User builduser)
 	& File.dirExists gitbuilderdir
 	& File.ownerGroup homedir (User builduser) (Group builduser)
@@ -159,6 +142,7 @@ androidContainer dockerImage name setupgitannexdir gitannexdir = Docker.containe
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/install-haskell-packages"
 		]
 	osver = System (Debian Testing) "i386"
+	bootstrap = Chroot.debootstrapped osver mempty
 
 -- armel builder has a companion container using amd64 that
 -- runs the build first to get TH splices. They need
