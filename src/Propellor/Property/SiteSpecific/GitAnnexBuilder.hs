@@ -127,9 +127,9 @@ androidContainer name setupgitannexdir gitannexdir = Systemd.container name boot
 	& User.accountFor (User builduser)
 	& File.dirExists gitbuilderdir
 	& File.ownerGroup homedir (User builduser) (Group builduser)
-	& buildDepsApt
 	& flagFile chrootsetup ("/chrootsetup")
 		`requires` setupgitannexdir
+	& buildDepsApt
 	& flagFile haskellpkgsinstalled ("/haskellpkgsinstalled")
   where
 	-- Use git-annex's android chroot setup script, which will install
