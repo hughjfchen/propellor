@@ -134,10 +134,10 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	! Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h")
 	! Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h")
 	! Docker.docked (GitAnnexBuilder.androidAutoBuilderContainer dockerImage (Cron.Times "1 1 * * *") "3h")
+	! Docker.docked (GitAnnexBuilder.armelCompanionContainer dockerImage)
+	! Docker.docked (GitAnnexBuilder.armelAutoBuilderContainer dockerImage (Cron.Times "1 3 * * *") "5h")
 	& Docker.garbageCollected -- `period` Daily
 	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainerNspawn "amd64" 15 "2h")
-	& Docker.docked (GitAnnexBuilder.armelCompanionContainer dockerImage)
-	& Docker.docked (GitAnnexBuilder.armelAutoBuilderContainer dockerImage (Cron.Times "1 3 * * *") "5h")
 	& Apt.buildDep ["git-annex"] `period` Daily
 
 -- This is not a complete description of kite, since it's a
