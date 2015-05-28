@@ -221,7 +221,7 @@ enterScript c@(Container name _ _) = setup <!> teardown
 			, "chomp $pid;"
 			, "if (length $pid) {"
 			, "\tforeach my $var (keys %ENV) {"
-			, "\t\tdelete $var unless $var eq 'PATH' || $var eq 'TERM';"
+			, "\t\tdelete $ENV{$var} unless $var eq 'PATH' || $var eq 'TERM';"
 			, "\t}"
 			, "\texec('nsenter', '-p', '-u', '-n', '-i', '-m', '-t', $pid, @ARGV);"
 			, "} else {"
