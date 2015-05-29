@@ -310,6 +310,7 @@ beaver = host "beaver.kitenet.net"
 -- Branchable is not completely deployed with propellor yet.
 pell :: Host
 pell = host "pell.branchable.com"
+	& alias "branchable.com"
 	& ipv4 "66.228.46.55"
 	& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
 	
