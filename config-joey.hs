@@ -75,7 +75,6 @@ darkstar = host "darkstar.kitenet.net"
 
 	& Apt.buildDep ["git-annex"] `period` Daily
 	& Docker.configured
-	! Docker.docked gitAnnexAndroidDev
 
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
 	& JoeySites.dkimMilter
@@ -130,15 +129,9 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Apt.unattendedUpgrades
 	& Postfix.satellite
 	& Systemd.persistentJournal
-	& Docker.configured
-	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "amd64" 15 "2h")
-	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainerNspawn "amd64" 15 "2h")
-	& Docker.docked (GitAnnexBuilder.standardAutoBuilderContainer dockerImage "i386" 45 "2h")
-	& Docker.docked (GitAnnexBuilder.armelCompanionContainer dockerImage)
-	& Docker.docked (GitAnnexBuilder.armelAutoBuilderContainer dockerImage (Cron.Times "1 3 * * *") "5h")
-	& Docker.docked (GitAnnexBuilder.androidAutoBuilderContainer dockerImage (Cron.Times "1 1 * * *") "3h")
-	& Docker.garbageCollected `period` Daily
-	& Apt.buildDep ["git-annex"] `period` Daily
+	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer "amd64" 15 "2h")
+	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer "i386" 15 "2h")
+	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer (Cron.Times "1 1 * * *") "3h")
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
@@ -408,13 +401,6 @@ oldusenetShellBox = standardStableContainer "oldusenet-shellbox"
 	& Docker.publish "4200:4200"
 	& JoeySites.oldUseNetShellBox
 
--- for development of git-annex for android, using my git-annex work tree
-gitAnnexAndroidDev :: Docker.Container
-gitAnnexAndroidDev = GitAnnexBuilder.androidContainer dockerImage "android-git-annex" doNothing gitannexdir
-	& Docker.volume ("/home/joey/src/git-annex:" ++ gitannexdir)
-  where
-	gitannexdir = GitAnnexBuilder.homedir </> "git-annex"
-	
 jerryPlay :: Docker.Container
 jerryPlay = standardContainer "jerryplay" Unstable "amd64"
 	& alias "jerryplay.kitenet.net"
