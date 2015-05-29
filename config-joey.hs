@@ -45,6 +45,7 @@ hosts =                --                  (o)  `
 	, gnu
 	, clam
 	, orca
+	, honeybee
 	, kite
 	, elephant
 	, beaver
@@ -132,6 +133,13 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer "amd64" 15 "2h")
 	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer "i386" 15 "2h")
 	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer (Cron.Times "1 1 * * *") "3h")
+
+honeybee :: Host
+honeybee = standardSystem "honeybee.kitenet.net" Unstable "armhf"
+	[ "Arm git-annex build box." ]
+	& ipv6 "2001:4830:1600:187::2"
+
+	& Postfix.satellite
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
@@ -504,8 +512,6 @@ monsters =            -- but do want to track their public keys etc.
 	, host "turtle.kitenet.net"
 		& ipv4 "67.223.19.96"
 		& ipv6 "2001:4978:f:2d9::2"
-	, host "honeybee.kitenet.net"
-		& ipv6 "2001:4830:1600:187::2"
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
 	, host "animx"
