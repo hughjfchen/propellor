@@ -94,19 +94,19 @@ cabalDeps = flagFile go cabalupdated
 		go = userScriptProperty (User builduser) ["cabal update && cabal install git-annex --only-dependencies || true"]
 		cabalupdated = homedir </> ".cabal" </> "packages" </> "hackage.haskell.org" </> "00-index.cache"
 
-standardAutoBuilderContainer :: Architecture -> Int -> TimeOut -> Systemd.Container
-standardAutoBuilderContainer arch buildminute timeout = Systemd.container name bootstrap
-	& os osver
-	& Apt.stdSourcesList
-	& Apt.unattendedUpgrades
-	& User.accountFor (User builduser)
-	& tree arch
-	& buildDepsApt
-	& autobuilder arch (Cron.Times $ show buildminute ++ " * * * *") timeout
+standardAutoBuilderContainer :: System -> Times -> TimeOut -> Systemd.Container
+standardAutoBuilderContainer osver@(System _ arch) crontime timeout =
+	Systemd.container name bootstrap
+		& os osver
+		& Apt.stdSourcesList
+		& Apt.unattendedUpgrades
+		& User.accountFor (User builduser)
+		& tree arch
+		& buildDepsApt
+		& autobuilder arch crontime timeout
   where
 	name = arch ++ "-git-annex-builder"
 	bootstrap = Chroot.debootstrapped osver mempty
-	osver = System (Debian Testing) arch
 
 androidAutoBuilderContainer :: Times -> TimeOut -> Systemd.Container
 androidAutoBuilderContainer crontimes timeout =

@@ -129,17 +129,33 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 
 	& Apt.unattendedUpgrades
 	& Postfix.satellite
+	& Apt.serviceInstalledRunning "ntp"
 	& Systemd.persistentJournal
-	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer "amd64" 15 "2h")
-	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer "i386" 15 "2h")
-	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer (Cron.Times "1 1 * * *") "3h")
+
+	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer
+		(System (Debian Testing) "amd64") fifteenpast "2h")
+	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer
+		(System (Debian Testing) "i386") fifteenpast "2h")
+	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer
+		(Cron.Times "1 1 * * *") "3h")
+  where
+	fifteenpast = Cron.Times "15 * * * *"
 
 honeybee :: Host
-honeybee = standardSystem "honeybee.kitenet.net" Unstable "armhf"
+honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	[ "Arm git-annex build box." ]
 	& ipv6 "2001:4830:1600:187::2"
 
+	-- No unattended upgrades as there is currently no console access.
+	-- (Also, system is not currently running a stock kernel,
+	-- although it should be able to.)
 	& Postfix.satellite
+	& Apt.serviceInstalledRunning "ntp"
+	& Apt.serviceInstalledRunning "aiccu"
+
+	-- Using unstable to get new enough ghc for TH on arm.
+	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer
+		(System (Debian Unstable) "armel") (Cron.Daily) "22h")
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
