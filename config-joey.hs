@@ -503,6 +503,8 @@ monsters =            -- but do want to track their public keys etc.
 	, host "turtle.kitenet.net"
 		& ipv4 "67.223.19.96"
 		& ipv6 "2001:4978:f:2d9::2"
+	, host "butterfly.kitenet.net"
+		& ipv6 "2001:4830:1600:187::2"
 	, host "mouse.kitenet.net"
 		& ipv6 "2001:4830:1600:492::2"
 	, host "animx"
