@@ -14,18 +14,19 @@ module Propellor.Property.Cmd (
 	boolSystemEnv,
 	safeSystem,
 	safeSystemEnv,
-	shellEscape
+	shellEscape,
+	createProcess,
 ) where
 
 import Control.Applicative
 import Data.List
 import "mtl" Control.Monad.Reader
-import System.Process (CreateProcess)
 
 import Propellor.Types
 import Propellor.Property
 import Utility.SafeCommand
 import Utility.Env
+import Utility.Process (createProcess, CreateProcess)
 
 -- | A property that can be satisfied by running a command.
 --
