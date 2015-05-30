@@ -97,6 +97,14 @@ cabalDeps = flagFile go cabalupdated
 standardAutoBuilderContainer :: System -> Times -> TimeOut -> Systemd.Container
 standardAutoBuilderContainer osver@(System _ arch) crontime timeout =
 	Systemd.container name bootstrap
+		& standardAutoBuilder osver crontime timeout
+  where
+	name = arch ++ "-git-annex-builder"
+	bootstrap = Chroot.debootstrapped osver mempty
+
+standardAutoBuilder :: System -> Times -> TimeOut -> Property HasInfo
+standardAutoBuilder osver@(System _ arch) crontime timeout =
+	propertyList "git-annex-builder" $ props
 		& os osver
 		& Apt.stdSourcesList
 		& Apt.unattendedUpgrades
@@ -104,9 +112,6 @@ standardAutoBuilderContainer osver@(System _ arch) crontime timeout =
 		& tree arch
 		& buildDepsApt
 		& autobuilder arch crontime timeout
-  where
-	name = arch ++ "-git-annex-builder"
-	bootstrap = Chroot.debootstrapped osver mempty
 
 androidAutoBuilderContainer :: Times -> TimeOut -> Systemd.Container
 androidAutoBuilderContainer crontimes timeout =

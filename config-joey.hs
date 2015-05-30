@@ -25,6 +25,7 @@ import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
+import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -153,9 +154,15 @@ honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	& Apt.serviceInstalledRunning "ntp"
 	& Apt.serviceInstalledRunning "aiccu"
 
+	-- Not using systemd-nspawn because it's broken (kernel issue?)
+	-- & Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer
+	-- 	osver Cron.Daily "22h")
+	& Chroot.provisioned 
+		(Chroot.debootstrapped builderos mempty "/var/lib/containers/armel-git-annex-builder"
+			& GitAnnexBuilder.standardAutoBuilder builderos Cron.Daily "22h")
+  where
 	-- Using unstable to get new enough ghc for TH on arm.
-	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer
-		(System (Debian Unstable) "armel") (Cron.Daily) "22h")
+	builderos = System (Debian Unstable) "armel"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
