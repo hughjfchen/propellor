@@ -158,7 +158,7 @@ honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	-- & Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer
 	-- 	osver Cron.Daily "22h")
 	& Chroot.provisioned 
-		(Chroot.debootstrapped builderos mempty "/var/lib/containers/armel-git-annex-builder"
+		(Chroot.debootstrapped builderos mempty "/var/lib/container/armel-git-annex-builder"
 			& GitAnnexBuilder.standardAutoBuilder builderos Cron.Daily "22h")
   where
 	-- Using unstable to get new enough ghc for TH on arm.
