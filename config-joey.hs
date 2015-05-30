@@ -145,7 +145,7 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 honeybee :: Host
 honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	[ "Arm git-annex build box." ]
-	& ipv6 "2001:4830:1600:187::2"
+	& ipv6 "2001:4830:1600:187::3"
 
 	-- No unattended upgrades as there is currently no console access.
 	-- (Also, system is not currently running a stock kernel,
