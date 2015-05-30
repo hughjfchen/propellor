@@ -106,9 +106,7 @@ unpopulated d = null <$> catchDefaultIO [] (dirContents d)
 
 removetarget :: FilePath -> IO ()
 removetarget target = do
-	submnts <- filter (\p -> simplifyPath p /= simplifyPath target)
-		. filter (dirContains target)
-		<$> mountPoints
+	submnts <- mountPointsBelow target
 	forM_ submnts umountLazy
 	removeDirectoryRecursive target
 
