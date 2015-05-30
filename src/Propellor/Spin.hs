@@ -14,8 +14,7 @@ import System.Posix.Directory
 import Control.Concurrent.Async
 import qualified Data.ByteString as B
 import qualified Data.Set as S
-import qualified Network.BSD as BSD
-import Network.Socket (inet_ntoa)
+import Network.Socket (getAddrInfo, defaultHints, AddrInfo(..), AddrInfoFlag(..), SockAddr)
 
 import Propellor
 import Propellor.Protocol
@@ -98,17 +97,21 @@ spin target relay hst = do
 getSshTarget :: HostName -> Host -> IO String
 getSshTarget target hst
 	| null configips = return target
-	| otherwise = go =<< tryIO (BSD.getHostByName target)
+	| otherwise = go =<< tryIO (dnslookup target)
   where
 	go (Left e) = useip (show e)
-	go (Right hostentry) = ifM (anyM matchingconfig (BSD.hostAddresses hostentry))
-		( return target
-		, do
-			ips <- mapM inet_ntoa (BSD.hostAddresses hostentry)
-			useip ("DNS " ++ show ips ++ " vs configured " ++ show configips)
-		)
+	go (Right addrinfos) = do
+		configaddrinfos <- catMaybes <$> mapM iptoaddr configips
+		if any (`elem` configaddrinfos) (map addrAddress addrinfos)
+			then return target
+			else useip ("DNS lookup did not return any of the expected addresses " ++ show configips)
 
-	matchingconfig a = flip elem configips <$> inet_ntoa a
+	dnslookup h = getAddrInfo (Just $ defaultHints { addrFlags = [AI_CANONNAME] }) (Just h) Nothing
+
+	-- Convert a string containing an IP address into a SockAddr.
+	iptoaddr :: String -> IO (Maybe SockAddr)
+	iptoaddr ip = catchDefaultIO Nothing $ headMaybe . map addrAddress
+		<$> getAddrInfo (Just $ defaultHints { addrFlags = [AI_NUMERICHOST] })  (Just ip) Nothing
 
 	useip why = case headMaybe configips of
 		Nothing -> return target
