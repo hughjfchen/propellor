@@ -102,7 +102,6 @@ getSshTarget target hst
 	go (Left e) = useip (show e)
 	go (Right addrinfos) = do
 		configaddrinfos <- catMaybes <$> mapM iptoaddr configips
-		print (configips, configaddrinfos, map addrAddress addrinfos)
 		if any (`elem` configaddrinfos) (map addrAddress addrinfos)
 			then return target
 			else useip ("DNS lookup did not return any of the expected addresses " ++ show configips)
