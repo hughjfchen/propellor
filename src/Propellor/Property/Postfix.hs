@@ -22,7 +22,8 @@ reloaded :: Property NoInfo
 reloaded = Service.reloaded "postfix"
 
 -- | Configures postfix as a satellite system, which 
--- relays all mail through a relay host, which defaults to smtp.domain. 
+-- relays all mail through a relay host, which defaults to smtp.domain,
+-- but can be changed by mainCf "relayhost"
 --
 -- The smarthost may refuse to relay mail on to other domains, without
 -- futher coniguration/keys. But this should be enough to get cron job
@@ -34,14 +35,14 @@ satellite = check (not <$> mainCfIsSet "relayhost") setup
 	setup = trivial $ property "postfix satellite system" $ do
 		hn <- asks hostName
 		let (_, domain) = separate (== '.') hn
-		ensureProperties 
+		ensureProperties
 			[ Apt.reConfigure "postfix"
 				[ ("postfix/main_mailer_type", "select", "Satellite system")
 				, ("postfix/root_address", "string", "root")
 				, ("postfix/destinations", "string", "localhost")
 				, ("postfix/mailname", "string", hn)
 				]
-			, mainCf ("relayhost", domain)
+			, mainCf ("relayhost", "smtp." ++ domain)
 				`onChange` reloaded
 			]
 

@@ -16,6 +16,7 @@ import Propellor
 import Propellor.Types.CmdLine
 import Propellor.Types.Chroot
 import Propellor.Property.Chroot.Util
+import Propellor.Property.Mount
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Shim as Shim
@@ -55,8 +56,9 @@ debootstrapped system conf location = case system of
 -- | Ensures that the chroot exists and is provisioned according to its
 -- properties.
 --
--- Reverting this property removes the chroot. Note that it does not ensure
--- that any processes that might be running inside the chroot are stopped.
+-- Reverting this property removes the chroot. Anything mounted inside it
+-- is first unmounted. Note that it does not ensure that any processes
+-- that might be running inside the chroot are stopped.
 provisioned :: Chroot -> RevertableProperty
 provisioned c = provisioned' (propigateChrootInfo c) c False
 
@@ -101,6 +103,7 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 		( pure (Shim.file me d)
 		, Shim.setup me Nothing d
 		)
+	liftIO mountproc
 	ifM (liftIO $ bindmount shim)
 		( chainprovision shim
 		, return FailedChange
@@ -117,6 +120,12 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 				]
 		)
 	
+	-- /proc needs to be mounted in the chroot for the linker to use
+	-- /proc/self/exe which is necessary for some commands to work
+	mountproc = unlessM (elem procloc <$> mountPointsBelow loc) $
+		void $ mount "proc" "proc" procloc
+	procloc = loc </> "proc"
+
 	chainprovision shim = do
 		parenthost <- asks hostName
 		cmd <- liftIO $ toChain parenthost c systemdonly
