@@ -13,6 +13,8 @@ propellor (2.5.0) UNRELEASED; urgency=medium
   * Fix Postfix.satellite bug; the default relayhost was set to the
     domain, not to smtp.domain as documented.
   * Mount /proc inside a chroot before provisioning it, to work around #787227
+  * --spin now works when given a short hostname that only resolves to an
+    ipv6 address.
 
  -- Joey Hess <id@joeyh.name>  Thu, 07 May 2015 12:08:34 -0400
 
