@@ -6,3 +6,4 @@ using short names for such hosts with --spin. And, propellor only looks at
 configured ipv4 properties of a host when deciding if the DNS hostname is
 out of date, and falling back to contacting the host by IPv6 address.
 
+> [[fixed|done]] --[[Joey]]
