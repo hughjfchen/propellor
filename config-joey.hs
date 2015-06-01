@@ -96,6 +96,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& Ssh.randomHostKeys
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
+
 	& Tor.isRelay
 	& Tor.named "kite1"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
@@ -313,6 +314,8 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& Docker.docked ancientKitenet
 	& Docker.docked jerryPlay
 	& Docker.garbageCollected `period` (Weekly (Just 1))
+	
+	& Systemd.nspawned oldusenetShellBox
 	
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
