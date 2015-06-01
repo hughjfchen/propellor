@@ -104,12 +104,14 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
-	& Docker.docked webserver
+	! Docker.docked webserver'
 	& File.dirExists "/var/www/html"
 	& File.notPresent "/var/www/html/index.html"
 	& "/var/www/index.html" `File.hasContent` ["hello, world"]
 	& alias "helloworld.kitenet.net"
 	& Docker.docked oldusenetShellBox
+
+	& Systemd.nspawned webserver
 
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
@@ -404,14 +406,20 @@ iabak = host "iabak.archiveteam.org"
        --'                        __|II|      ,.
      ----                      __|II|II|__   (  \_,/\
 --'-------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-.-'-
--------------------------- |      [Docker]       / --------------------------
+-------------------------- |   [Containers]      / --------------------------
 -------------------------- :                    / ---------------------------
 --------------------------- \____, o          ,' ----------------------------
 ---------------------------- '--,___________,'  -----------------------------
 
 -- Simple web server, publishing the outside host's /var/www
-webserver :: Docker.Container
+webserver :: Systemd.Container
 webserver = standardStableContainer "webserver"
+	& Docker.publish "80:80"
+	& Docker.volume "/var/www:/var/www"
+	& Apt.serviceInstalledRunning "apache2"
+
+webserver' :: Docker.Container
+webserver' = standardStableDockerContainer "webserver"
 	& Docker.publish "80:80"
 	& Docker.volume "/var/www:/var/www"
 	& Apt.serviceInstalledRunning "apache2"
@@ -419,7 +427,7 @@ webserver = standardStableContainer "webserver"
 -- My own openid provider. Uses php, so containerized for security
 -- and administrative sanity.
 openidProvider :: Docker.Container
-openidProvider = standardStableContainer "openid-provider"
+openidProvider = standardStableDockerContainer "openid-provider"
 	& alias "openid.kitenet.net"
 	& Docker.publish "8081:80"
 	& OpenId.providerFor [User "joey", User "liw"]
@@ -427,7 +435,7 @@ openidProvider = standardStableContainer "openid-provider"
 
 -- Exhibit: kite's 90's website.
 ancientKitenet :: Docker.Container
-ancientKitenet = standardStableContainer "ancient-kitenet"
+ancientKitenet = standardStableDockerContainer "ancient-kitenet"
 	& alias "ancient.kitenet.net"
 	& Docker.publish "1994:80"
 	& Apt.serviceInstalledRunning "apache2"
@@ -435,7 +443,7 @@ ancientKitenet = standardStableContainer "ancient-kitenet"
 		(Just "remotes/origin/old-kitenet.net")
 
 oldusenetShellBox :: Docker.Container
-oldusenetShellBox = standardStableContainer "oldusenet-shellbox"
+oldusenetShellBox = standardStableDockerContainer "oldusenet-shellbox"
 	& alias "shell.olduse.net"
 	& Docker.publish "4200:4200"
 	& JoeySites.oldUseNetShellBox
@@ -450,7 +458,7 @@ jerryPlay = standardContainer "jerryplay" Unstable "amd64"
 	& Ssh.permitRootLogin True
 	
 kiteShellBox :: Docker.Container
-kiteShellBox = standardStableContainer "kiteshellbox"
+kiteShellBox = standardStableDockerContainer "kiteshellbox"
 	& JoeySites.kiteShellBox
 	& Docker.publish "443:443"
 
@@ -483,8 +491,12 @@ standardSystemUnhardened hn suite arch motd = host hn
 	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
 		`onChange` Apt.autoRemove
 
-standardStableContainer :: Docker.ContainerName -> Docker.Container
-standardStableContainer name = standardContainer name (Stable "jessie") "amd64"
+standardStableContainer :: Systemd.MachineName -> Systemd.Container
+standardStableContainer name = Systemd.container name $
+	Chroot.debootstrapped (System (Debian (Stable "jessie")) "amd64") mempty
+
+standardStableDockerContainer :: Docker.ContainerName -> Docker.Container
+standardStableDockerContainer name = standardContainer name (Stable "jessie") "amd64"
 
 -- This is my standard container setup, Featuring automatic upgrades.
 standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Docker.Container
