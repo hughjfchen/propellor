@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances #-}
-
 module Propellor.Property.Systemd (
 	-- * Services
 	module Propellor.Property.Systemd.Core,
@@ -24,11 +22,11 @@ module Propellor.Property.Systemd (
 	-- * Container configuration
 	containerCfg,
 	resolvConfed,
-	Publishable(..),
 	privateNetwork,
 	ForwardedPort(..),
 	Proto(..),
 	PortSpec(..),
+	Publishable,
 	publish,
 	bind,
 	bindRo,
@@ -39,7 +37,6 @@ import Propellor.Types.Chroot
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
-import Propellor.Property.Firewall (Port)
 import Propellor.Property.Systemd.Core
 import Utility.FileMode
 
@@ -297,7 +294,7 @@ class Publishable a where
 	toPublish :: a -> String
 
 instance Publishable Port where
-	toPublish p = show p
+	toPublish (Port n) = show n
 
 data ForwardedPort = ForwardedPort
 	{ hostPort :: Port
@@ -305,7 +302,7 @@ data ForwardedPort = ForwardedPort
 	}
 
 instance Publishable ForwardedPort where
-	toPublish fp = show (hostPort fp) ++ ":" ++ show (containerPort fp)
+	toPublish fp = toPublish (hostPort fp) ++ ":" ++ toPublish (containerPort fp)
 
 data Proto = TCP | UDP
 

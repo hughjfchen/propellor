@@ -18,6 +18,9 @@ propellor (2.5.0) UNRELEASED; urgency=medium
   * Added publish and publish' properties for systemd-spawn containers.
     (Needs systemd version 220.)
   * Added bind and bindRo properties for systemd-spawn containers.
+  * Firewall: Port was changed to a newtype, and the Port and PortRange
+    constructors of Rules were changed to DPort and DportRange, respectively.
+    (API change)
 
  -- Joey Hess <id@joeyh.name>  Thu, 07 May 2015 12:08:34 -0400
 

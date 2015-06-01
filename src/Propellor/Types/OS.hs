@@ -10,6 +10,7 @@ module Propellor.Types.OS (
 	User(..),
 	Group(..),
 	userGroup,
+	Port(..),
 ) where
 
 import Network.BSD (HostName)
@@ -42,3 +43,6 @@ newtype Group = Group String
 -- | Makes a Group with the same name as the User.
 userGroup :: User -> Group
 userGroup (User u) = Group u
+
+newtype Port = Port Int
+	deriving (Eq, Show)
