@@ -308,7 +308,6 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& myDnsSecondary
 	
 	& Docker.configured
-	! Docker.docked oldusenetShellBox'
 	& Docker.docked openidProvider
 		`requires` Apt.serviceInstalledRunning "ntp"
 	& Docker.docked ancientKitenet
@@ -324,7 +323,8 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	-- For https port 443, shellinabox with ssh login to
 	-- kitenet.net
 	& alias "shell.kitenet.net"
-	& Docker.docked kiteShellBox
+	! Docker.docked kiteShellBox'
+	& Systemd.nspawned kiteShellBox
 	-- Nothing is using http port 80, so listen on
 	-- that port for ssh, for traveling on bad networks that
 	-- block 22.
@@ -435,12 +435,6 @@ oldusenetShellBox = standardStableContainer "oldusenet-shellbox"
 	& alias "shell.olduse.net"
 	& JoeySites.oldUseNetShellBox
 
-oldusenetShellBox' :: Docker.Container
-oldusenetShellBox' = standardStableDockerContainer "oldusenet-shellbox"
-	& alias "shell.olduse.net"
-	& Docker.publish "4200:4200"
-	& JoeySites.oldUseNetShellBox
-
 jerryPlay :: Docker.Container
 jerryPlay = standardDockerContainer "jerryplay" Unstable "amd64"
 	& alias "jerryplay.kitenet.net"
@@ -449,9 +443,13 @@ jerryPlay = standardDockerContainer "jerryplay" Unstable "amd64"
 	& Apt.installed ["ssh"]
 	& User.hasSomePassword (User "root")
 	& Ssh.permitRootLogin True
+
+kiteShellBox :: Systemd.Container
+kiteShellBox = standardStableContainer "kiteshellbox"
+	& JoeySites.kiteShellBox
 	
-kiteShellBox :: Docker.Container
-kiteShellBox = standardStableDockerContainer "kiteshellbox"
+kiteShellBox' :: Docker.Container
+kiteShellBox' = standardStableDockerContainer "kiteshellbox"
 	& JoeySites.kiteShellBox
 	& Docker.publish "443:443"
 
