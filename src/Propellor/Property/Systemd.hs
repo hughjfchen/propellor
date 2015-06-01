@@ -38,6 +38,7 @@ import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
 import Propellor.Property.Systemd.Core
+import Propellor.Property.Mount
 import Utility.FileMode
 
 import Data.List
@@ -165,8 +166,19 @@ nspawned c@(Container name (Chroot.Chroot loc system builderconf _) h) =
 	-- Chroot provisioning is run in systemd-only mode,
 	-- which sets up the chroot and ensures systemd and dbus are
 	-- installed, but does not handle the other provisions.
-	chrootprovisioned = Chroot.provisioned'
-		(Chroot.propigateChrootInfo chroot) chroot True
+	chrootprovisioned = 
+		(toProp provisioner `onChange` umountProc)
+		<!>
+		(toProp (revert provisioner))
+	provisioner = Chroot.provisioned' (Chroot.propigateChrootInfo chroot) chroot True
+
+	-- The chroot's /proc is left mounted by the chroot provisioning,
+	-- but that will prevent systemd-nspawn from starting systemd in
+	-- it, so unmount.
+	umountProc = check (elem procloc <$> mountPointsBelow loc) $
+		property (procloc ++ " unmounted") $  do
+			makeChange $ umountLazy procloc
+	procloc = loc </> "proc"
 
 	-- Use nsenter to enter container and and run propellor to
 	-- finish provisioning.

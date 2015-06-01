@@ -15,7 +15,7 @@ propellor (2.5.0) UNRELEASED; urgency=medium
   * Mount /proc inside a chroot before provisioning it, to work around #787227
   * --spin now works when given a short hostname that only resolves to an
     ipv6 address.
-  * Added publish and publish' properties for systemd-spawn containers.
+  * Added publish property for systemd-spawn containers, for port publishing.
     (Needs systemd version 220.)
   * Added bind and bindRo properties for systemd-spawn containers.
   * Firewall: Port was changed to a newtype, and the Port and PortRange
