@@ -196,7 +196,7 @@ nspawnService (Container name _ _) cfg = setup <!> teardown
 			, "--quiet"
 			, "--keep-unit"
 			, "--boot"
-			, "--directory=/var/lib/container/%i"
+			, "--machine=%i"
 			] ++ nspawnServiceParams cfg
 		| otherwise = l
 	
