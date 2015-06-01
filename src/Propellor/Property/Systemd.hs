@@ -202,8 +202,14 @@ nspawnService (Container name _ _) cfg = setup <!> teardown
 		return $ unlines $
 			"# deployed by propellor" : map addparams ls
 	addparams l
-		| "ExecStart=" `isPrefixOf` l =
-			l ++ " " ++ unwords (nspawnServiceParams cfg)
+		| "ExecStart=" `isPrefixOf` l = unwords $
+			[ "ExecStart = /usr/bin/systemd-nspawn"
+			, "--quiet"
+			, "--keep-unit"
+			, "--boot"
+			, "--link-journal=try-guest"
+			, "--directory=/var/lib/container/%i"
+			] ++ nspawnServiceParams cfg
 		| otherwise = l
 	
 	goodservicefile = (==)
@@ -289,8 +295,6 @@ containerCfg p = RevertableProperty (mk True) (mk False)
 	p' = case p of
 		('-':_) -> p
 		_ -> "--" ++ p
-
-
 
 -- | Bind mounts </etc/resolv.conf> from the host into the container.
 --
