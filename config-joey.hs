@@ -102,14 +102,13 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 
 	& Docker.configured
 	& Docker.garbageCollected `period` Daily
-	! Docker.docked webserver'
+	! Docker.docked oldusenetShellBox'
+
+	& Systemd.nspawned webserver
 	& File.dirExists "/var/www/html"
 	& File.notPresent "/var/www/index.html"
 	& "/var/www/html/index.html" `File.hasContent` ["hello, world"]
 	& alias "helloworld.kitenet.net"
-	& Docker.docked oldusenetShellBox
-
-	& Systemd.nspawned webserver
 
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
@@ -310,7 +309,7 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& myDnsSecondary
 	
 	& Docker.configured
-	& Docker.docked oldusenetShellBox
+	! Docker.docked oldusenetShellBox'
 	& Docker.docked openidProvider
 		`requires` Apt.serviceInstalledRunning "ntp"
 	& Docker.docked ancientKitenet
@@ -412,12 +411,6 @@ webserver = standardStableContainer "webserver"
 	& Systemd.bind "/var/www"
 	& Apt.serviceInstalledRunning "apache2"
 
-webserver' :: Docker.Container
-webserver' = standardStableDockerContainer "webserver"
-	& Docker.publish "80:80"
-	& Docker.volume "/var/www:/var/www"
-	& Apt.serviceInstalledRunning "apache2"
-
 -- My own openid provider. Uses php, so containerized for security
 -- and administrative sanity.
 openidProvider :: Docker.Container
@@ -436,8 +429,13 @@ ancientKitenet = standardStableDockerContainer "ancient-kitenet"
 	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www"
 		(Just "remotes/origin/old-kitenet.net")
 
-oldusenetShellBox :: Docker.Container
-oldusenetShellBox = standardStableDockerContainer "oldusenet-shellbox"
+oldusenetShellBox :: Systemd.Container
+oldusenetShellBox = standardStableContainer "oldusenet-shellbox"
+	& alias "shell.olduse.net"
+	& JoeySites.oldUseNetShellBox
+
+oldusenetShellBox' :: Docker.Container
+oldusenetShellBox' = standardStableDockerContainer "oldusenet-shellbox"
 	& alias "shell.olduse.net"
 	& Docker.publish "4200:4200"
 	& JoeySites.oldUseNetShellBox
