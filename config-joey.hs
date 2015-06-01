@@ -409,7 +409,6 @@ iabak = host "iabak.archiveteam.org"
 -- Simple web server, publishing the outside host's /var/www
 webserver :: Systemd.Container
 webserver = standardStableContainer "webserver"
-	& Systemd.publish (Port 80)
 	& Systemd.bind "/var/www"
 	& Apt.serviceInstalledRunning "apache2"
 
