@@ -39,7 +39,6 @@ import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
 import Propellor.Property.Systemd.Core
-import Propellor.Property.Mount
 import Utility.FileMode
 
 import Data.List
@@ -168,19 +167,7 @@ nspawned c@(Container name (Chroot.Chroot loc system builderconf _) h) =
 	-- Chroot provisioning is run in systemd-only mode,
 	-- which sets up the chroot and ensures systemd and dbus are
 	-- installed, but does not handle the other provisions.
-	chrootprovisioned = 
-		(toProp provisioner `onChange` umountProc)
-		<!>
-		(toProp (revert provisioner))
-	provisioner = Chroot.provisioned' (Chroot.propigateChrootInfo chroot) chroot True
-
-	-- The chroot's /proc is left mounted by the chroot provisioning,
-	-- but that will prevent systemd-nspawn from starting systemd in
-	-- it, so unmount.
-	umountProc = check (elem procloc <$> mountPointsBelow loc) $
-		property (procloc ++ " unmounted") $  do
-			makeChange $ umountLazy procloc
-	procloc = loc </> "proc"
+	chrootprovisioned = Chroot.provisioned' (Chroot.propigateChrootInfo chroot) chroot True
 
 	-- Use nsenter to enter container and and run propellor to
 	-- finish provisioning.
@@ -269,8 +256,8 @@ enterScript c@(Container name _ _) = setup <!> teardown
 enterScriptFile :: Container -> FilePath
 enterScriptFile (Container name _ _ ) = "/usr/local/bin/enter-" ++ mungename name
 
-enterContainerProcess :: Container -> [String] -> IO CreateProcess
-enterContainerProcess c ps = pure $ proc (enterScriptFile c) ps
+enterContainerProcess :: Container -> [String] -> IO (CreateProcess, IO ())
+enterContainerProcess c ps = pure (proc (enterScriptFile c) ps, noop)
 
 nspawnServiceName :: MachineName -> ServiceName
 nspawnServiceName name = "systemd-nspawn@" ++ name ++ ".service"
@@ -338,8 +325,9 @@ instance Publishable PortSpec where
 
 -- | Publish a port from the container on the host.
 --
--- Note that this will only work if the container's network is set up
--- by other properties.
+-- Note that this will only work if the container is set up to use
+-- private networking. If the container does not use private networking,
+-- this property is not needed.
 --
 -- This feature was first added in systemd version 220.
 publish :: Publishable p => p -> RevertableProperty

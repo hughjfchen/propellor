@@ -16,10 +16,10 @@ import Propellor
 import Propellor.Types.CmdLine
 import Propellor.Types.Chroot
 import Propellor.Property.Chroot.Util
-import Propellor.Property.Mount
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Shim as Shim
+import Propellor.Property.Mount
 
 import qualified Data.Map as M
 import Data.List.Utils
@@ -70,7 +70,7 @@ provisioned' propigator c@(Chroot loc system builderconf _) systemdonly =
   where
 	go desc a = propertyList (chrootDesc c desc) [a]
 
-	setup = propellChroot c (inChrootProcess c) systemdonly
+	setup = propellChroot c (inChrootProcess (not systemdonly) c) systemdonly
 		`requires` toProp built
 	
 	built = case (system, builderconf) of
@@ -95,7 +95,7 @@ chrootInfo (Chroot loc _ _ h) =
 	mempty { _chrootinfo = mempty { _chroots = M.singleton loc h } }
 
 -- | Propellor is run inside the chroot to provision it.
-propellChroot :: Chroot -> ([String] -> IO CreateProcess) -> Bool -> Property NoInfo
+propellChroot :: Chroot -> ([String] -> IO (CreateProcess, IO ())) -> Bool -> Property NoInfo
 propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "provisioned") $ do
 	let d = localdir </> shimdir c
 	let me = localdir </> "propellor"
@@ -123,14 +123,16 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 		parenthost <- asks hostName
 		cmd <- liftIO $ toChain parenthost c systemdonly
 		pe <- liftIO standardPathEnv
-		p <- liftIO $ mkproc
+		(p, cleanup) <- liftIO $ mkproc
 			[ shim
 			, "--continue"
 			, show cmd
 			]
 		let p' = p { env = Just pe }
-		liftIO $ withHandle StdoutHandle createProcessSuccess p'
+		r <- liftIO $ withHandle StdoutHandle createProcessSuccess p'
 			processChainOutput
+		liftIO cleanup
+		return r
 
 toChain :: HostName -> Chroot -> Bool -> IO CmdLine
 toChain parenthost (Chroot loc _ _ _) systemdonly = do
@@ -157,16 +159,22 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 			putStrLn $ "\n" ++ show r
 chain _ _ = errorMessage "bad chain command"
 
-inChrootProcess :: Chroot -> [String] -> IO CreateProcess
-inChrootProcess (Chroot loc _ _ _) cmd = do
+inChrootProcess :: Bool -> Chroot -> [String] -> IO (CreateProcess, IO ())
+inChrootProcess keepprocmounted (Chroot loc _ _ _) cmd = do
 	mountproc
-	return $ proc "chroot" (loc:cmd)
+	return (proc "chroot" (loc:cmd), cleanup)
   where
 	-- /proc needs to be mounted in the chroot for the linker to use
 	-- /proc/self/exe which is necessary for some commands to work
 	mountproc = unlessM (elem procloc <$> mountPointsBelow loc) $
 		void $ mount "proc" "proc" procloc
+	
 	procloc = loc </> "proc"
+
+	cleanup
+		| keepprocmounted = noop
+		| otherwise = whenM (elem procloc <$> mountPointsBelow loc) $
+			umountLazy procloc
 
 provisioningLock :: FilePath -> FilePath
 provisioningLock containerloc = "chroot" </> mungeloc containerloc ++ ".lock"
