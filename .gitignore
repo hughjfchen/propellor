@@ -7,4 +7,5 @@ Setup
 Setup.hi
 Setup.o
 docker
+chroot
 propellor.1
