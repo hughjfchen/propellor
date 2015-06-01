@@ -323,7 +323,6 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	-- For https port 443, shellinabox with ssh login to
 	-- kitenet.net
 	& alias "shell.kitenet.net"
-	! Docker.docked kiteShellBox'
 	& Systemd.nspawned kiteShellBox
 	-- Nothing is using http port 80, so listen on
 	-- that port for ssh, for traveling on bad networks that
@@ -427,7 +426,7 @@ ancientKitenet = standardStableDockerContainer "ancient-kitenet"
 	& alias "ancient.kitenet.net"
 	& Docker.publish "1994:80"
 	& Apt.serviceInstalledRunning "apache2"
-	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www"
+	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www/html"
 		(Just "remotes/origin/old-kitenet.net")
 
 oldusenetShellBox :: Systemd.Container
@@ -447,11 +446,6 @@ jerryPlay = standardDockerContainer "jerryplay" Unstable "amd64"
 kiteShellBox :: Systemd.Container
 kiteShellBox = standardStableContainer "kiteshellbox"
 	& JoeySites.kiteShellBox
-	
-kiteShellBox' :: Docker.Container
-kiteShellBox' = standardStableDockerContainer "kiteshellbox"
-	& JoeySites.kiteShellBox
-	& Docker.publish "443:443"
 
 type Motd = [String]
 
