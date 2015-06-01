@@ -109,7 +109,7 @@ autoBuilderContainer mkprop osver@(System _ arch) crontime timeout =
 
 standardAutoBuilder :: System -> Property HasInfo
 standardAutoBuilder osver@(System _ arch) =
-	propertyList "git-annex-builder" $ props
+	propertyList "standard git-annex autobuilder" $ props
 		& os osver
 		& Apt.stdSourcesList
 		& Apt.unattendedUpgrades
@@ -118,7 +118,7 @@ standardAutoBuilder osver@(System _ arch) =
 
 armAutoBuilder :: System -> Times -> TimeOut -> Property HasInfo
 armAutoBuilder osver@(System _ arch) crontime timeout = 
-	propertyList "git-annex-builder (arm)" $ props
+	propertyList "arm git-annex autobuilder" $ props
 		& standardAutoBuilder osver
 		& buildDepsNoHaskellLibs
 		-- Works around ghc crash with parallel builds on arm.
