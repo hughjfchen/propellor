@@ -133,9 +133,11 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Apt.serviceInstalledRunning "ntp"
 	& Systemd.persistentJournal
 
-	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		GitAnnexBuilder.standardAutoBuilder
 		(System (Debian Testing) "amd64") fifteenpast "2h")
-	& Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		GitAnnexBuilder.standardAutoBuilder
 		(System (Debian Testing) "i386") fifteenpast "2h")
 	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer
 		(Cron.Times "1 1 * * *") "3h")
@@ -151,15 +153,20 @@ honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	-- (Also, system is not currently running a stock kernel,
 	-- although it should be able to.)
 	& Postfix.satellite
-	& Apt.serviceInstalledRunning "ntp"
 	& Apt.serviceInstalledRunning "aiccu"
+	& Apt.serviceInstalledRunning "swapspace"
+	& Apt.serviceInstalledRunning "ntp"
 
 	-- Not using systemd-nspawn because it's broken (kernel issue?)
-	-- & Systemd.nspawned (GitAnnexBuilder.standardAutoBuilderContainer
-	-- 	osver Cron.Daily "22h")
+	-- & Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+	-- 	GitAnnexBuilder.armAutoBuilder
+	-- 		builderos Cron.Daily "22h")
 	& Chroot.provisioned 
 		(Chroot.debootstrapped builderos mempty "/var/lib/container/armel-git-annex-builder"
-			& GitAnnexBuilder.standardAutoBuilder builderos Cron.Daily "22h")
+			& "/etc/timezone" `File.hasContent` ["America/New_York"]
+			& GitAnnexBuilder.armAutoBuilder
+				builderos (Cron.Times "1 1 * * *") "12h"
+		)
   where
 	-- Using unstable to get new enough ghc for TH on arm.
 	builderos = System (Debian Unstable) "armel"
