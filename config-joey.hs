@@ -76,7 +76,6 @@ darkstar = host "darkstar.kitenet.net"
 	& ipv6 "2001:4830:1600:187::2" -- sixxs tunnel
 
 	& Apt.buildDep ["git-annex"] `period` Daily
-	& Docker.configured
 
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
 	& JoeySites.dkimMilter
@@ -84,7 +83,6 @@ darkstar = host "darkstar.kitenet.net"
 gnu :: Host
 gnu = host "gnu.kitenet.net"
 	& Apt.buildDep ["git-annex"] `period` Daily
-	& Docker.configured
 
 	& JoeySites.postfixClientRelay (Context "gnu.kitenet.net")
 	& JoeySites.dkimMilter
@@ -256,9 +254,6 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 		, "zsh"
 		]
 	
-	& Docker.configured
-	& Docker.garbageCollected `period` Daily
-	
 	& alias "nntp.olduse.net"
 	& JoeySites.oldUseNetServer hosts
 	
@@ -414,8 +409,8 @@ iabak = host "iabak.archiveteam.org"
 -- Simple web server, publishing the outside host's /var/www
 webserver :: Systemd.Container
 webserver = standardStableContainer "webserver"
-	& Docker.publish "80:80"
-	& Docker.volume "/var/www:/var/www"
+	& Systemd.publish 80
+	& Systemd.bind "/var/www"
 	& Apt.serviceInstalledRunning "apache2"
 
 webserver' :: Docker.Container
@@ -449,7 +444,7 @@ oldusenetShellBox = standardStableDockerContainer "oldusenet-shellbox"
 	& JoeySites.oldUseNetShellBox
 
 jerryPlay :: Docker.Container
-jerryPlay = standardContainer "jerryplay" Unstable "amd64"
+jerryPlay = standardDockerContainer "jerryplay" Unstable "amd64"
 	& alias "jerryplay.kitenet.net"
 	& Docker.publish "2202:22"
 	& Docker.publish "8001:80"
@@ -491,16 +486,25 @@ standardSystemUnhardened hn suite arch motd = host hn
 	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
 		`onChange` Apt.autoRemove
 
+-- This is my standard container setup, Featuring automatic upgrades.
+standardContainer :: Systemd.MachineName -> DebianSuite -> Architecture -> Systemd.Container
+standardContainer name suite arch = Systemd.container name chroot
+	& os system
+	& Apt.stdSourcesList `onChange` Apt.upgrade
+	& Apt.unattendedUpgrades
+	& Apt.cacheCleaned
+  where
+	system = System (Debian suite) arch
+	chroot = Chroot.debootstrapped system mempty
+
 standardStableContainer :: Systemd.MachineName -> Systemd.Container
-standardStableContainer name = Systemd.container name $
-	Chroot.debootstrapped (System (Debian (Stable "jessie")) "amd64") mempty
+standardStableContainer name = standardContainer name (Stable "jessie") "amd64"
 
 standardStableDockerContainer :: Docker.ContainerName -> Docker.Container
-standardStableDockerContainer name = standardContainer name (Stable "jessie") "amd64"
+standardStableDockerContainer name = standardDockerContainer name (Stable "jessie") "amd64"
 
--- This is my standard container setup, Featuring automatic upgrades.
-standardContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Docker.Container
-standardContainer name suite arch = Docker.container name (dockerImage system)
+standardDockerContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Docker.Container
+standardDockerContainer name suite arch = Docker.container name (dockerImage system)
 	& os system
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.unattendedUpgrades

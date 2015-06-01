@@ -24,7 +24,9 @@ module Propellor.Property.Systemd (
 	resolvConfed,
 	publish,
 	Proto(..),
-	publish'
+	publish',
+	bind,
+	bindRo,
 ) where
 
 import Propellor
@@ -274,6 +276,8 @@ containerCfg p = RevertableProperty (mk True) (mk False)
 		('-':_) -> p
 		_ -> "--" ++ p
 
+
+
 -- | Bind mounts </etc/resolv.conf> from the host into the container.
 --
 -- This property is enabled by default. Revert it to disable it.
@@ -310,3 +314,14 @@ publish' proto hostport containerport = containerCfg $ "--port=" ++
   where
 	sproto TCP = "tcp"
 	sproto UDP = "udp"
+
+-- | Bind mount a file or directory from the host into the container.
+--
+-- The parameter can be a FilePath, or a colon-separated pair of
+-- hostpath:containerpath.
+bind :: FilePath -> RevertableProperty
+bind f = containerCfg $ "--bind=" ++ f
+
+-- | Read-only mind mount.
+bindRo :: FilePath -> RevertableProperty
+bindRo f = containerCfg $ "--bind-ro=" ++ f
