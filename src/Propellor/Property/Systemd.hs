@@ -250,8 +250,8 @@ enterScript c@(Container name _ _) = setup <!> teardown
 enterScriptFile :: Container -> FilePath
 enterScriptFile (Container name _ _ ) = "/usr/local/bin/enter-" ++ mungename name
 
-enterContainerProcess :: Container -> [String] -> CreateProcess
-enterContainerProcess = proc . enterScriptFile
+enterContainerProcess :: Container -> [String] -> IO CreateProcess
+enterContainerProcess c ps = pure $ proc (enterScriptFile c) ps
 
 nspawnServiceName :: MachineName -> ServiceName
 nspawnServiceName name = "systemd-nspawn@" ++ name ++ ".service"

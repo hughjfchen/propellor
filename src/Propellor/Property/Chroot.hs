@@ -95,7 +95,7 @@ chrootInfo (Chroot loc _ _ h) =
 	mempty { _chrootinfo = mempty { _chroots = M.singleton loc h } }
 
 -- | Propellor is run inside the chroot to provision it.
-propellChroot :: Chroot -> ([String] -> CreateProcess) -> Bool -> Property NoInfo
+propellChroot :: Chroot -> ([String] -> IO CreateProcess) -> Bool -> Property NoInfo
 propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "provisioned") $ do
 	let d = localdir </> shimdir c
 	let me = localdir </> "propellor"
@@ -103,7 +103,6 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 		( pure (Shim.file me d)
 		, Shim.setup me Nothing d
 		)
-	liftIO mountproc
 	ifM (liftIO $ bindmount shim)
 		( chainprovision shim
 		, return FailedChange
@@ -119,18 +118,12 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 				, File localdir, File mntpnt
 				]
 		)
-	
-	-- /proc needs to be mounted in the chroot for the linker to use
-	-- /proc/self/exe which is necessary for some commands to work
-	mountproc = unlessM (elem procloc <$> mountPointsBelow loc) $
-		void $ mount "proc" "proc" procloc
-	procloc = loc </> "proc"
 
 	chainprovision shim = do
 		parenthost <- asks hostName
 		cmd <- liftIO $ toChain parenthost c systemdonly
 		pe <- liftIO standardPathEnv
-		let p = mkproc
+		p <- liftIO $ mkproc
 			[ shim
 			, "--continue"
 			, show cmd
@@ -164,8 +157,16 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 			putStrLn $ "\n" ++ show r
 chain _ _ = errorMessage "bad chain command"
 
-inChrootProcess :: Chroot -> [String] -> CreateProcess
-inChrootProcess (Chroot loc _ _ _) cmd = proc "chroot" (loc:cmd)
+inChrootProcess :: Chroot -> [String] -> IO CreateProcess
+inChrootProcess (Chroot loc _ _ _) cmd = do
+	mountproc
+	return $ proc "chroot" (loc:cmd)
+  where
+	-- /proc needs to be mounted in the chroot for the linker to use
+	-- /proc/self/exe which is necessary for some commands to work
+	mountproc = unlessM (elem procloc <$> mountPointsBelow loc) $
+		void $ mount "proc" "proc" procloc
+	procloc = loc </> "proc"
 
 provisioningLock :: FilePath -> FilePath
 provisioningLock containerloc = "chroot" </> mungeloc containerloc ++ ".lock"
