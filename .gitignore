@@ -9,3 +9,5 @@ Setup.o
 docker
 chroot
 propellor.1
+.lock
+.lastchecked
