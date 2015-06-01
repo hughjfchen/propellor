@@ -104,8 +104,8 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& Docker.garbageCollected `period` Daily
 	! Docker.docked webserver'
 	& File.dirExists "/var/www/html"
-	& File.notPresent "/var/www/html/index.html"
-	& "/var/www/index.html" `File.hasContent` ["hello, world"]
+	& File.notPresent "/var/www/index.html"
+	& "/var/www/html/index.html" `File.hasContent` ["hello, world"]
 	& alias "helloworld.kitenet.net"
 	& Docker.docked oldusenetShellBox
 

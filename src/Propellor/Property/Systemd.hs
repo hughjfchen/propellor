@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+
 module Propellor.Property.Systemd (
 	-- * Services
 	module Propellor.Property.Systemd.Core,
@@ -22,9 +24,12 @@ module Propellor.Property.Systemd (
 	-- * Container configuration
 	containerCfg,
 	resolvConfed,
-	publish,
+	Publishable(..),
+	privateNetwork,
+	ForwardedPort(..),
 	Proto(..),
-	publish',
+	PortSpec(..),
+	publish,
 	bind,
 	bindRo,
 ) where
@@ -288,32 +293,36 @@ resolvConfed = containerCfg "bind=/etc/resolv.conf"
 privateNetwork :: RevertableProperty
 privateNetwork = containerCfg "private-network"
 
--- | Publish a container's (tcp) port to same port on the host.
--- 
--- This automatically enables privateNetwork, so all non-published ports
--- will not be accessible outside the container.
---
--- Note that this feature was first added in systemd version 220.
-publish :: Port -> RevertableProperty
-publish p = publish' TCP p p
-	`requires` privateNetwork
+class Publishable a where
+	toPublish :: a -> String
+
+instance Publishable Port where
+	toPublish p = show p
+
+data ForwardedPort = ForwardedPort
+	{ hostPort :: Port
+	, containerPort :: Port
+	}
+
+instance Publishable ForwardedPort where
+	toPublish fp = show (hostPort fp) ++ ":" ++ show (containerPort fp)
 
 data Proto = TCP | UDP
 
-publish'
-	:: Proto
-	-> Port -- ^ Host port
-	-> Port -- ^ Container port
-	-> RevertableProperty
-publish' proto hostport containerport = containerCfg $ "--port=" ++
-	intercalate ":"
-		[ sproto proto
-		, show hostport
-		, show containerport
-		]
-  where
-	sproto TCP = "tcp"
-	sproto UDP = "udp"
+data PortSpec = PortSpec Proto ForwardedPort
+
+instance Publishable PortSpec where
+	toPublish (PortSpec TCP fp) = "tcp:" ++ toPublish fp
+	toPublish (PortSpec UDP fp) = "udp:" ++ toPublish fp
+
+-- | Publish a port from the container on the host.
+--
+-- Note that this will only work if the container's network is set up
+-- by other properties.
+--
+-- This feature was first added in systemd version 220.
+publish :: Publishable p => p -> RevertableProperty
+publish p = containerCfg $ "--port=" ++ toPublish p
 
 -- | Bind mount a file or directory from the host into the container.
 --
