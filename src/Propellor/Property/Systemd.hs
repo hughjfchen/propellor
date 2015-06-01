@@ -1,22 +1,30 @@
 module Propellor.Property.Systemd (
+	-- * Services
 	module Propellor.Property.Systemd.Core,
 	ServiceName,
-	MachineName,
 	started,
 	stopped,
 	enabled,
 	disabled,
 	restarted,
-	persistentJournal,
+	-- * Configuration
 	Option,
 	configured,
-	journaldConfigured,
 	daemonReloaded,
+	-- * Journal
+	persistentJournal,
+	journaldConfigured,
+	-- * Containers
+	MachineName,
 	Container,
 	container,
 	nspawned,
+	-- * Container configuration
 	containerCfg,
 	resolvConfed,
+	publish,
+	Proto(..),
+	publish'
 ) where
 
 import Propellor
@@ -24,6 +32,7 @@ import Propellor.Types.Chroot
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
+import Propellor.Property.Firewall (Port)
 import Propellor.Property.Systemd.Core
 import Utility.FileMode
 
@@ -270,3 +279,34 @@ containerCfg p = RevertableProperty (mk True) (mk False)
 -- This property is enabled by default. Revert it to disable it.
 resolvConfed :: RevertableProperty
 resolvConfed = containerCfg "bind=/etc/resolv.conf"
+
+-- | Disconnect networking of the container from the host.
+privateNetwork :: RevertableProperty
+privateNetwork = containerCfg "private-network"
+
+-- | Publish a container's (tcp) port to same port on the host.
+-- 
+-- This automatically enables privateNetwork, so all non-published ports
+-- will not be accessible outside the container.
+--
+-- Note that this feature was first added in systemd version 220.
+publish :: Port -> RevertableProperty
+publish p = publish' TCP p p
+	`requires` privateNetwork
+
+data Proto = TCP | UDP
+
+publish'
+	:: Proto
+	-> Port -- ^ Host port
+	-> Port -- ^ Container port
+	-> RevertableProperty
+publish' proto hostport containerport = containerCfg $ "--port=" ++
+	intercalate ":"
+		[ sproto proto
+		, show hostport
+		, show containerport
+		]
+  where
+	sproto TCP = "tcp"
+	sproto UDP = "udp"
