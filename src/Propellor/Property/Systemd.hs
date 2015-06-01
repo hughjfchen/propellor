@@ -22,6 +22,7 @@ module Propellor.Property.Systemd (
 	-- * Container configuration
 	containerCfg,
 	resolvConfed,
+	linkJournal,
 	privateNetwork,
 	ForwardedPort(..),
 	Proto(..),
@@ -136,6 +137,7 @@ container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
 container name mkchroot = Container name c h
 	& os system
 	& resolvConfed
+	& linkJournal
   where
 	c@(Chroot.Chroot _ system _ _) = mkchroot (containerDir name)
 	h = Host name [] mempty
@@ -207,7 +209,6 @@ nspawnService (Container name _ _) cfg = setup <!> teardown
 			, "--quiet"
 			, "--keep-unit"
 			, "--boot"
-			, "--link-journal=try-guest"
 			, "--directory=/var/lib/container/%i"
 			] ++ nspawnServiceParams cfg
 		| otherwise = l
@@ -301,6 +302,13 @@ containerCfg p = RevertableProperty (mk True) (mk False)
 -- This property is enabled by default. Revert it to disable it.
 resolvConfed :: RevertableProperty
 resolvConfed = containerCfg "bind=/etc/resolv.conf"
+
+-- | Link the container's journal to the host's if possible.
+-- (Only works if the host has persistent journal enabled.)
+--
+-- This property is enabled by default. Revert it to disable it.
+linkJournal :: RevertableProperty
+linkJournal = containerCfg "link-journal=try-guest"
 
 -- | Disconnect networking of the container from the host.
 privateNetwork :: RevertableProperty
