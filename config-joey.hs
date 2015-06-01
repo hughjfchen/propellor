@@ -100,15 +100,13 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& Tor.named "kite1"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
 
-	& Docker.configured
-	& Docker.garbageCollected `period` Daily
-	! Docker.docked oldusenetShellBox'
-
 	& Systemd.nspawned webserver
 	& File.dirExists "/var/www/html"
 	& File.notPresent "/var/www/index.html"
 	& "/var/www/html/index.html" `File.hasContent` ["hello, world"]
 	& alias "helloworld.kitenet.net"
+	
+	& Systemd.nspawned oldusenetShellBox
 
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
