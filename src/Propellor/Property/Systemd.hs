@@ -346,7 +346,7 @@ instance Publishable (Proto, Bound Port) where
 -- This feature was first added in systemd version 220.
 --
 -- This property is only needed (and will only work) if the container
--- is configured private networking. Also, networkd should be enabled
+-- is configured to use private networking. Also, networkd should be enabled
 -- both inside the container, and on the host. For example:
 --
 -- > foo :: Host
