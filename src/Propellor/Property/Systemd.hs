@@ -356,6 +356,7 @@ instance Publishable (Proto, Bound Port) where
 -- >
 -- > webserver :: Systemd.container
 -- > webserver = Systemd.container "webserver" (Chroot.debootstrapped (System (Debian Testing) "amd64") mempty)
+-- >	& Systemd.privateNetwork
 -- >	& Systemd.running Systemd.networkd
 -- >	& Systemd.publish (Port 80 ->- Port 8080)
 -- >	& Apt.installedRunning "apache2"
