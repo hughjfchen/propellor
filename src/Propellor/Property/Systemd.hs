@@ -2,14 +2,17 @@
 
 module Propellor.Property.Systemd (
 	-- * Services
-	module Propellor.Property.Systemd.Core,
 	ServiceName,
 	started,
 	stopped,
 	enabled,
 	disabled,
+	running,
 	restarted,
+	networkd,
+	journald,
 	-- * Configuration
+	installed,
 	Option,
 	configured,
 	daemonReloaded,
@@ -61,6 +64,9 @@ instance PropAccum Container where
 	getProperties (Container _ _ h) = hostProperties h
 
 -- | Starts a systemd service.
+--
+-- Note that this does not configure systemd to start the service on boot,
+-- it only ensures that the service is currently running.
 started :: ServiceName -> Property NoInfo
 started n = trivial $ cmdProperty "systemctl" ["start", n]
 	`describe` ("service " ++ n ++ " started")
@@ -71,6 +77,9 @@ stopped n = trivial $ cmdProperty "systemctl" ["stop", n]
 	`describe` ("service " ++ n ++ " stopped")
 
 -- | Enables a systemd service.
+--
+-- This does not ensure the service is started, it only configures systemd
+-- to start it on boot.
 enabled :: ServiceName -> Property NoInfo
 enabled n = trivial $ cmdProperty "systemctl" ["enable", n]
 	`describe` ("service " ++ n ++ " enabled")
@@ -80,10 +89,22 @@ disabled :: ServiceName -> Property NoInfo
 disabled n = trivial $ cmdProperty "systemctl" ["disable", n]
 	`describe` ("service " ++ n ++ " disabled")
 
+-- | Ensures that a service is both enabled and started
+running :: ServiceName -> Property NoInfo
+running n = trivial $ started n `requires` enabled n
+
 -- | Restarts a systemd service.
 restarted :: ServiceName -> Property NoInfo
 restarted n = trivial $ cmdProperty "systemctl" ["restart", n]
 	`describe` ("service " ++ n ++ " restarted")
+
+-- | The systemd-networkd service.
+networkd :: ServiceName
+networkd = "systemd-networkd"
+
+-- | The systemd-journald service.
+journald :: ServiceName
+journald = "systemd-journald"
 
 -- | Enables persistent storage of the journal.
 persistentJournal :: Property NoInfo
@@ -118,15 +139,15 @@ configured cfgfile option value = combineProperties desc
 		| setting `isPrefixOf` l = Nothing
 		| otherwise = Just l
 
+-- | Causes systemd to reload its configuration files.
+daemonReloaded :: Property NoInfo
+daemonReloaded = trivial $ cmdProperty "systemctl" ["daemon-reload"]
+
 -- | Configures journald, restarting it so the changes take effect.
 journaldConfigured :: Option -> String -> Property NoInfo
 journaldConfigured option value =
 	configured "/etc/systemd/journald.conf" option value
-		`onChange` restarted "systemd-journald"
-
--- | Causes systemd to reload its configuration files.
-daemonReloaded :: Property NoInfo
-daemonReloaded = trivial $ cmdProperty "systemctl" ["daemon-reload"]
+		`onChange` restarted journald
 
 -- | Defines a container with a given machine name.
 --
@@ -320,13 +341,24 @@ instance Publishable (Proto, Bound Port) where
 	toPublish (TCP, fp) = "tcp:" ++ toPublish fp
 	toPublish (UDP, fp) = "udp:" ++ toPublish fp
 
--- | Publish a port from the container on the host.
---
--- Note that this will only work if the container is set up to use
--- private networking. If the container does not use private networking,
--- this property is not needed.
---
+-- | Publish a port from the container to the host.
+-- 
 -- This feature was first added in systemd version 220.
+--
+-- This property is only needed (and will only work) if the container
+-- is configured private networking. Also, networkd should be enabled
+-- both inside the container, and on the host. For example:
+--
+-- > foo :: Host
+-- > foo = host "foo.example.com"
+-- >	& Systemd.running Systemd.networkd
+-- >	& Systemd.nspawned webserver
+-- >
+-- > webserver :: Systemd.container
+-- > webserver = Systemd.container "webserver" (Chroot.debootstrapped (System (Debian Testing) "amd64") mempty)
+-- >	& Systemd.running Systemd.networkd
+-- >	& Systemd.publish (Port 80 ->- Port 8080)
+-- >	& Apt.installedRunning "apache2"
 publish :: Publishable p => p -> RevertableProperty
 publish p = containerCfg $ "--port=" ++ toPublish p
 
