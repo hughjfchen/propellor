@@ -21,6 +21,9 @@ propellor (2.5.0) UNRELEASED; urgency=medium
   * Firewall: Port was changed to a newtype, and the Port and PortRange
     constructors of Rules were changed to DPort and DportRange, respectively.
     (API change)
+  * Docker: volume and publish accept Bound FilePath and Bound Port,
+    respectively. They also continue to accept Strings, for backwards
+    compatability.
 
  -- Joey Hess <id@joeyh.name>  Thu, 07 May 2015 12:08:34 -0400
 

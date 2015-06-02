@@ -23,9 +23,11 @@ module Propellor.Property.Docker (
 	-- * Container configuration
 	dns,
 	hostname,
+	Publishable,
 	publish,
 	expose,
 	user,
+	Mountable,
 	volume,
 	volumes_from,
 	workdir,
@@ -43,6 +45,7 @@ module Propellor.Property.Docker (
 
 import Propellor hiding (init)
 import Propellor.Types.Docker
+import Propellor.Types.Container
 import Propellor.Types.CmdLine
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
@@ -254,10 +257,19 @@ hostname = runProp "hostname"
 name :: String -> Property HasInfo
 name = runProp "name"
 
+class Publishable p where
+	toPublish :: p -> String
+
+instance Publishable (Bound Port) where
+	toPublish p = show (hostSide p) ++ ":" ++ show (containerSide p)
+
+-- | string format: ip:hostPort:containerPort | ip::containerPort | hostPort:containerPort
+instance Publishable String where
+	toPublish = id
+
 -- | Publish a container's port to the host
--- (format: ip:hostPort:containerPort | ip::containerPort | hostPort:containerPort)
-publish :: String -> Property HasInfo
-publish = runProp "publish"
+publish :: Publishable p => p -> Property HasInfo
+publish = runProp "publish" . toPublish
 
 -- | Expose a container's port without publishing it.
 expose :: String -> Property HasInfo
@@ -267,11 +279,21 @@ expose = runProp "expose"
 user :: String -> Property HasInfo
 user = runProp "user"
 
--- | Mount a volume
--- Create a bind mount with: [host-dir]:[container-dir]:[rw|ro]
+class Mountable p where
+	toMount :: p -> String
+
+instance Mountable (Bound FilePath) where
+	toMount p = hostSide p ++ ":" ++ containerSide p
+
+-- | string format: [host-dir]:[container-dir]:[rw|ro]
+--
 -- With just a directory, creates a volume in the container.
-volume :: String -> Property HasInfo
-volume = runProp "volume"
+instance Mountable String where
+	toMount = id
+
+-- | Mount a volume
+volume :: Mountable v => v -> Property HasInfo
+volume = runProp "volume" . toMount
 
 -- | Mount a volume from the specified container into the current
 -- container.
