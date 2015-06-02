@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Propellor.Property.Systemd (
 	-- * Services
 	module Propellor.Property.Systemd.Core,
@@ -24,17 +26,18 @@ module Propellor.Property.Systemd (
 	resolvConfed,
 	linkJournal,
 	privateNetwork,
-	ForwardedPort(..),
+	module Propellor.Types.Container,
 	Proto(..),
-	PortSpec(..),
 	Publishable,
 	publish,
+	Bindable,
 	bind,
 	bindRo,
 ) where
 
 import Propellor
 import Propellor.Types.Chroot
+import Propellor.Types.Container
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
@@ -308,21 +311,14 @@ class Publishable a where
 instance Publishable Port where
 	toPublish (Port n) = show n
 
-data ForwardedPort = ForwardedPort
-	{ hostPort :: Port
-	, containerPort :: Port
-	}
-
-instance Publishable ForwardedPort where
-	toPublish fp = toPublish (hostPort fp) ++ ":" ++ toPublish (containerPort fp)
+instance Publishable (Bound Port) where
+	toPublish v = toPublish (hostSide v) ++ ":" ++ toPublish (containerSide v)
 
 data Proto = TCP | UDP
 
-data PortSpec = PortSpec Proto ForwardedPort
-
-instance Publishable PortSpec where
-	toPublish (PortSpec TCP fp) = "tcp:" ++ toPublish fp
-	toPublish (PortSpec UDP fp) = "udp:" ++ toPublish fp
+instance Publishable (Proto, Bound Port) where
+	toPublish (TCP, fp) = "tcp:" ++ toPublish fp
+	toPublish (UDP, fp) = "udp:" ++ toPublish fp
 
 -- | Publish a port from the container on the host.
 --
@@ -334,13 +330,19 @@ instance Publishable PortSpec where
 publish :: Publishable p => p -> RevertableProperty
 publish p = containerCfg $ "--port=" ++ toPublish p
 
+class Bindable a where
+	toBind :: a -> String
+
+instance Bindable FilePath where
+	toBind f = f
+
+instance Bindable (Bound FilePath) where
+	toBind v = hostSide v ++ ":" ++ containerSide v
+
 -- | Bind mount a file or directory from the host into the container.
---
--- The parameter can be a FilePath, or a colon-separated pair of
--- hostpath:containerpath.
-bind :: FilePath -> RevertableProperty
-bind f = containerCfg $ "--bind=" ++ f
+bind :: Bindable p => p -> RevertableProperty
+bind p = containerCfg $ "--bind=" ++ toBind p
 
 -- | Read-only mind mount.
-bindRo :: FilePath -> RevertableProperty
-bindRo f = containerCfg $ "--bind-ro=" ++ f
+bindRo :: Bindable p => p -> RevertableProperty
+bindRo p = containerCfg $ "--bind-ro=" ++ toBind p

@@ -121,6 +121,7 @@ Library
     Propellor.Exception
     Propellor.Types
     Propellor.Types.Chroot
+    Propellor.Types.Container
     Propellor.Types.Docker
     Propellor.Types.Dns
     Propellor.Types.Empty
