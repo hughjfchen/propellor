@@ -34,6 +34,7 @@ module Propellor.Property.Docker (
 	memory,
 	cpuShares,
 	link,
+	environment,
 	ContainerAlias,
 	restartAlways,
 	restartOnFailure,
@@ -347,6 +348,11 @@ restartOnFailure (Just n) = runProp "restart" ("on-failure:" ++ show n)
 -- Note that this includes not restarting it on boot!
 restartNever :: Property HasInfo
 restartNever = runProp "restart" "no"
+
+-- | Set environment variable with a tuple composed by the environment
+-- variable name and its value.
+environment :: (String, String) -> Property HasInfo
+environment (k, v) = runProp "env" $ k ++ "=" ++ v
 
 -- | A container is identified by its name, and the host
 -- on which it's deployed.
