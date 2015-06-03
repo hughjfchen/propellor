@@ -1,26 +1,46 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Propellor.Property.Systemd (
-	module Propellor.Property.Systemd.Core,
+	-- * Services
 	ServiceName,
-	MachineName,
 	started,
 	stopped,
 	enabled,
 	disabled,
+	running,
 	restarted,
-	persistentJournal,
+	networkd,
+	journald,
+	-- * Configuration
+	installed,
 	Option,
 	configured,
-	journaldConfigured,
 	daemonReloaded,
+	-- * Journal
+	persistentJournal,
+	journaldConfigured,
+	-- * Containers
+	MachineName,
 	Container,
 	container,
 	nspawned,
+	-- * Container configuration
 	containerCfg,
 	resolvConfed,
+	linkJournal,
+	privateNetwork,
+	module Propellor.Types.Container,
+	Proto(..),
+	Publishable,
+	publish,
+	Bindable,
+	bind,
+	bindRo,
 ) where
 
 import Propellor
 import Propellor.Types.Chroot
+import Propellor.Types.Container
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
@@ -44,6 +64,9 @@ instance PropAccum Container where
 	getProperties (Container _ _ h) = hostProperties h
 
 -- | Starts a systemd service.
+--
+-- Note that this does not configure systemd to start the service on boot,
+-- it only ensures that the service is currently running.
 started :: ServiceName -> Property NoInfo
 started n = trivial $ cmdProperty "systemctl" ["start", n]
 	`describe` ("service " ++ n ++ " started")
@@ -54,6 +77,9 @@ stopped n = trivial $ cmdProperty "systemctl" ["stop", n]
 	`describe` ("service " ++ n ++ " stopped")
 
 -- | Enables a systemd service.
+--
+-- This does not ensure the service is started, it only configures systemd
+-- to start it on boot.
 enabled :: ServiceName -> Property NoInfo
 enabled n = trivial $ cmdProperty "systemctl" ["enable", n]
 	`describe` ("service " ++ n ++ " enabled")
@@ -63,10 +89,22 @@ disabled :: ServiceName -> Property NoInfo
 disabled n = trivial $ cmdProperty "systemctl" ["disable", n]
 	`describe` ("service " ++ n ++ " disabled")
 
+-- | Ensures that a service is both enabled and started
+running :: ServiceName -> Property NoInfo
+running n = trivial $ started n `requires` enabled n
+
 -- | Restarts a systemd service.
 restarted :: ServiceName -> Property NoInfo
 restarted n = trivial $ cmdProperty "systemctl" ["restart", n]
 	`describe` ("service " ++ n ++ " restarted")
+
+-- | The systemd-networkd service.
+networkd :: ServiceName
+networkd = "systemd-networkd"
+
+-- | The systemd-journald service.
+journald :: ServiceName
+journald = "systemd-journald"
 
 -- | Enables persistent storage of the journal.
 persistentJournal :: Property NoInfo
@@ -101,15 +139,15 @@ configured cfgfile option value = combineProperties desc
 		| setting `isPrefixOf` l = Nothing
 		| otherwise = Just l
 
+-- | Causes systemd to reload its configuration files.
+daemonReloaded :: Property NoInfo
+daemonReloaded = trivial $ cmdProperty "systemctl" ["daemon-reload"]
+
 -- | Configures journald, restarting it so the changes take effect.
 journaldConfigured :: Option -> String -> Property NoInfo
 journaldConfigured option value =
 	configured "/etc/systemd/journald.conf" option value
-		`onChange` restarted "systemd-journald"
-
--- | Causes systemd to reload its configuration files.
-daemonReloaded :: Property NoInfo
-daemonReloaded = trivial $ cmdProperty "systemctl" ["daemon-reload"]
+		`onChange` restarted journald
 
 -- | Defines a container with a given machine name.
 --
@@ -122,6 +160,7 @@ container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
 container name mkchroot = Container name c h
 	& os system
 	& resolvConfed
+	& linkJournal
   where
 	c@(Chroot.Chroot _ system _ _) = mkchroot (containerDir name)
 	h = Host name [] mempty
@@ -152,8 +191,7 @@ nspawned c@(Container name (Chroot.Chroot loc system builderconf _) h) =
 	-- Chroot provisioning is run in systemd-only mode,
 	-- which sets up the chroot and ensures systemd and dbus are
 	-- installed, but does not handle the other provisions.
-	chrootprovisioned = Chroot.provisioned'
-		(Chroot.propigateChrootInfo chroot) chroot True
+	chrootprovisioned = Chroot.provisioned' (Chroot.propigateChrootInfo chroot) chroot True
 
 	-- Use nsenter to enter container and and run propellor to
 	-- finish provisioning.
@@ -177,8 +215,14 @@ nspawnService (Container name _ _) cfg = setup <!> teardown
 		return $ unlines $
 			"# deployed by propellor" : map addparams ls
 	addparams l
-		| "ExecStart=" `isPrefixOf` l =
-			l ++ " " ++ unwords (nspawnServiceParams cfg)
+		| "ExecStart=" `isPrefixOf` l = unwords $
+			[ "ExecStart = /usr/bin/systemd-nspawn"
+			, "--quiet"
+			, "--keep-unit"
+			, "--boot"
+			, "--directory=" ++ containerDir name
+			, "--machine=%i"
+			] ++ nspawnServiceParams cfg
 		| otherwise = l
 	
 	goodservicefile = (==)
@@ -237,8 +281,8 @@ enterScript c@(Container name _ _) = setup <!> teardown
 enterScriptFile :: Container -> FilePath
 enterScriptFile (Container name _ _ ) = "/usr/local/bin/enter-" ++ mungename name
 
-enterContainerProcess :: Container -> [String] -> CreateProcess
-enterContainerProcess = proc . enterScriptFile
+enterContainerProcess :: Container -> [String] -> IO (CreateProcess, IO ())
+enterContainerProcess c ps = pure (proc (enterScriptFile c) ps, noop)
 
 nspawnServiceName :: MachineName -> ServiceName
 nspawnServiceName name = "systemd-nspawn@" ++ name ++ ".service"
@@ -270,3 +314,68 @@ containerCfg p = RevertableProperty (mk True) (mk False)
 -- This property is enabled by default. Revert it to disable it.
 resolvConfed :: RevertableProperty
 resolvConfed = containerCfg "bind=/etc/resolv.conf"
+
+-- | Link the container's journal to the host's if possible.
+-- (Only works if the host has persistent journal enabled.)
+--
+-- This property is enabled by default. Revert it to disable it.
+linkJournal :: RevertableProperty
+linkJournal = containerCfg "link-journal=try-guest"
+
+-- | Disconnect networking of the container from the host.
+privateNetwork :: RevertableProperty
+privateNetwork = containerCfg "private-network"
+
+class Publishable a where
+	toPublish :: a -> String
+
+instance Publishable Port where
+	toPublish (Port n) = show n
+
+instance Publishable (Bound Port) where
+	toPublish v = toPublish (hostSide v) ++ ":" ++ toPublish (containerSide v)
+
+data Proto = TCP | UDP
+
+instance Publishable (Proto, Bound Port) where
+	toPublish (TCP, fp) = "tcp:" ++ toPublish fp
+	toPublish (UDP, fp) = "udp:" ++ toPublish fp
+
+-- | Publish a port from the container to the host.
+-- 
+-- This feature was first added in systemd version 220.
+--
+-- This property is only needed (and will only work) if the container
+-- is configured to use private networking. Also, networkd should be enabled
+-- both inside the container, and on the host. For example:
+--
+-- > foo :: Host
+-- > foo = host "foo.example.com"
+-- >	& Systemd.running Systemd.networkd
+-- >	& Systemd.nspawned webserver
+-- >
+-- > webserver :: Systemd.container
+-- > webserver = Systemd.container "webserver" (Chroot.debootstrapped (System (Debian Testing) "amd64") mempty)
+-- >	& Systemd.privateNetwork
+-- >	& Systemd.running Systemd.networkd
+-- >	& Systemd.publish (Port 80 ->- Port 8080)
+-- >	& Apt.installedRunning "apache2"
+publish :: Publishable p => p -> RevertableProperty
+publish p = containerCfg $ "--port=" ++ toPublish p
+
+class Bindable a where
+	toBind :: a -> String
+
+instance Bindable FilePath where
+	toBind f = f
+
+instance Bindable (Bound FilePath) where
+	toBind v = hostSide v ++ ":" ++ containerSide v
+
+-- | Bind mount a file or directory from the host into the container.
+bind :: Bindable p => p -> RevertableProperty
+bind p = containerCfg $ "--bind=" ++ toBind p
+
+-- | Read-only mind mount.
+bindRo :: Bindable p => p -> RevertableProperty
+bindRo p = containerCfg $ "--bind-ro=" ++ toBind p
