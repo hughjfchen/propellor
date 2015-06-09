@@ -23,7 +23,7 @@ propellor (2.5.0) unstable; urgency=medium
     (API change)
   * Docker: volume and publish accept Bound FilePath and Bound Port,
     respectively. They also continue to accept Strings, for backwards
-    compatability.
+    compatibility.
   * Docker: Added environment property.
     Thanks Antoine Eiche.
 
