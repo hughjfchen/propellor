@@ -1,0 +1,28 @@
+propellor 2.5.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * cmdProperty' renamed to cmdPropertyEnv to make way for a new,
+     more generic cmdProperty' (API change)
+   * Add docker image related properties.
+     Thanks, Antoine Eiche.
+   * Export CommandParam, boolSystem, safeSystem, shellEscape, and
+   * createProcess from Propellor.Property.Cmd, so they are available
+     for use in constricting your own Properties when using propellor
+     as a library.
+   * Improve enter-machine scripts for systemd-nspawn containers to unset most
+     environment variables.
+   * Fix Postfix.satellite bug; the default relayhost was set to the
+     domain, not to smtp.domain as documented.
+   * Mount /proc inside a chroot before provisioning it, to work around #787227
+   * --spin now works when given a short hostname that only resolves to an
+     ipv6 address.
+   * Added publish property for systemd-spawn containers, for port publishing.
+     (Needs systemd version 220.)
+   * Added bind and bindRo properties for systemd-spawn containers.
+   * Firewall: Port was changed to a newtype, and the Port and PortRange
+     constructors of Rules were changed to DPort and DportRange, respectively.
+     (API change)
+   * Docker: volume and publish accept Bound FilePath and Bound Port,
+     respectively. They also continue to accept Strings, for backwards
+     compatibility.
+   * Docker: Added environment property.
+     Thanks Antoine Eiche."""]]
