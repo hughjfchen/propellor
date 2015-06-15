@@ -505,10 +505,10 @@ standardDockerContainer name suite arch = Docker.container name (dockerImage sys
 
 -- Docker images I prefer to use.
 dockerImage :: System -> Docker.Image
-dockerImage (System (Debian Unstable) arch) = "joeyh/debian-unstable-" ++ arch
-dockerImage (System (Debian Testing) arch) = "joeyh/debian-unstable-" ++ arch
-dockerImage (System (Debian (Stable _)) arch) = "joeyh/debian-stable-" ++ arch
-dockerImage _ = "debian-stable-official" -- does not currently exist!
+dockerImage (System (Debian Unstable) arch) = Docker.Image ("joeyh/debian-unstable-" ++ arch) Nothing
+dockerImage (System (Debian Testing) arch) = Docker.Image ("joeyh/debian-unstable-" ++ arch) Nothing
+dockerImage (System (Debian (Stable _)) arch) = Docker.Image ("joeyh/debian-stable-" ++ arch) Nothing
+dockerImage _ = Docker.Image "debian-stable-official" Nothing -- does not currently exist!
 
 myDnsSecondary :: Property HasInfo
 myDnsSecondary = propertyList "dns secondary for all my domains" $ props
