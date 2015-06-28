@@ -26,7 +26,7 @@ reloaded = Service.reloaded "postfix"
 -- but can be changed by mainCf "relayhost"
 --
 -- The smarthost may refuse to relay mail on to other domains, without
--- futher coniguration/keys. But this should be enough to get cron job
+-- further configuration/keys. But this should be enough to get cron job
 -- mail flowing to a place where it will be seen.
 satellite :: Property NoInfo
 satellite = check (not <$> mainCfIsSet "relayhost") setup
