@@ -6,6 +6,7 @@ module Propellor.PrivData (
 	withSomePrivData,
 	addPrivData,
 	setPrivData,
+	unsetPrivData,
 	dumpPrivData,
 	editPrivData,
 	filterPrivData,
@@ -143,6 +144,11 @@ setPrivData field context = do
 	putStrLn "Enter private data on stdin; ctrl-D when done:"
 	setPrivDataTo field context =<< hGetContentsStrict stdin
 
+unsetPrivData :: PrivDataField -> Context -> IO ()
+unsetPrivData field context = do
+	modifyPrivData $ M.delete (field, context)
+	putStrLn "Private data unset."
+
 dumpPrivData :: PrivDataField -> Context -> IO ()
 dumpPrivData field context =
 	maybe (error "Requested privdata is not set.") putStrLn
@@ -192,16 +198,21 @@ listPrivDataFields hosts = do
 
 setPrivDataTo :: PrivDataField -> Context -> PrivData -> IO ()
 setPrivDataTo field context value = do
-	makePrivDataDir
-	m <- decryptPrivData
-	let m' = M.insert (field, context) (chomp value) m
-	gpgEncrypt privDataFile (show m')
+	modifyPrivData set
 	putStrLn "Private data set."
-	void $ boolSystem "git" [Param "add", File privDataFile]
   where
+	set = M.insert (field, context) (chomp value)
 	chomp s
 		| end s == "\n" = chomp (beginning s)
 		| otherwise = s
+
+modifyPrivData :: (PrivMap -> PrivMap) -> IO ()
+modifyPrivData f = do
+	makePrivDataDir
+	m <- decryptPrivData
+	let m' = f m
+	gpgEncrypt privDataFile (show m')
+	void $ boolSystem "git" [Param "add", File privDataFile]
 
 decryptPrivData :: IO PrivMap
 decryptPrivData = fromMaybe M.empty . readish <$> gpgDecrypt privDataFile
