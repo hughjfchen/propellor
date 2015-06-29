@@ -51,6 +51,7 @@ processCmdLine = go =<< getArgs
 		_ -> Spin <$> mapM hostname ps <*> pure Nothing
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
+	go ("--unset":f:c:[]) = withprivfield f c Unset
 	go ("--dump":f:c:[]) = withprivfield f c Dump
 	go ("--edit":f:c:[]) = withprivfield f c Edit
 	go ("--list-fields":[]) = return ListFields
@@ -94,6 +95,7 @@ defaultMain hostlist = do
 	go _ (Continue cmdline) = go False cmdline
 	go _ Check = return ()
 	go _ (Set field context) = setPrivData field context
+	go _ (Unset field context) = unsetPrivData field context
 	go _ (Dump field context) = dumpPrivData field context
 	go _ (Edit field context) = editPrivData field context
 	go _ ListFields = listPrivDataFields hostlist

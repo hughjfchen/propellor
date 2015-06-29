@@ -3,6 +3,7 @@ propellor (2.6.0) UNRELEASED; urgency=medium
   * Replace String type synonym Docker.Image by a data type
     which allows to specify an image name and an optional tag. (API change)
     Thanks, Antoine Eiche.
+  * Added --unset to delete a privdata field.
 
  -- Joey Hess <id@joeyh.name>  Tue, 16 Jun 2015 14:49:12 -0400
 
