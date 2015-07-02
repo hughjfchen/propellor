@@ -859,6 +859,8 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "  AllowOverride None"
 		, Apache.allowAll
 		, "</Directory>"
+		, "RewriteEngine On"
+		, "RewriteRule .* http://www.sowsearpoetry.org/ [L]"
 		]
 	& alias "wortroot.kitenet.net"
 	& alias "www.wortroot.kitenet.net"
