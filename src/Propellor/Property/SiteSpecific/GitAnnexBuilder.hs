@@ -85,7 +85,7 @@ haskellPkgsInstalled :: String -> Property NoInfo
 haskellPkgsInstalled dir = flagFile go ("/haskellpkgsinstalled")
   where
 	go = userScriptProperty (User builduser)
-		[ "cd " ++ builddir ++ " && ./standalone/ " ++ dir ++ "/install-haskell-packages"
+		[ "cd " ++ builddir ++ " && ./standalone/" ++ dir ++ "/install-haskell-packages"
 		]
 
 -- Installs current versions of git-annex's deps from cabal, but only
