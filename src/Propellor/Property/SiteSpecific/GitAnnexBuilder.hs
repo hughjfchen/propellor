@@ -67,7 +67,6 @@ tree buildarch = combineProperties "gitannexbuilder tree" $ props
 buildDepsApt :: Property HasInfo
 buildDepsApt = combineProperties "gitannexbuilder build deps" $ props
 	& Apt.buildDep ["git-annex"]
-	& Apt.installed ["liblockfile-simple-perl"]
 	& buildDepsNoHaskellLibs
 	& Apt.buildDepIn builddir
 		`describe` "git-annex source build deps installed"
@@ -158,5 +157,5 @@ androidContainer name setupgitannexdir gitannexdir = Systemd.container name boot
 	chrootsetup = scriptProperty
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
-	osver = System (Debian Testing) "i386"
+	osver = System (Debian (Stable "jessie")) "i386"
 	bootstrap = Chroot.debootstrapped osver mempty
