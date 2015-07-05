@@ -7,6 +7,7 @@ module Propellor.Property.Systemd (
 	stopped,
 	enabled,
 	disabled,
+	masked,
 	running,
 	restarted,
 	networkd,
@@ -88,6 +89,15 @@ enabled n = trivial $ cmdProperty "systemctl" ["enable", n]
 disabled :: ServiceName -> Property NoInfo
 disabled n = trivial $ cmdProperty "systemctl" ["disable", n]
 	`describe` ("service " ++ n ++ " disabled")
+
+-- | Masks a systemd service.
+masked :: ServiceName -> RevertableProperty
+masked n = systemdMask <!> systemdUnmask
+  where
+	systemdMask   = trivial $ cmdProperty "systemctl" ["mask", n]
+	                `describe` ("service " ++ n ++ " masked")
+	systemdUnmask = trivial $ cmdProperty "systemctl" ["unmask", n]
+	                `describe` ("service " ++ n ++ " unmasked")
 
 -- | Ensures that a service is both enabled and started
 running :: ServiceName -> Property NoInfo

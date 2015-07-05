@@ -67,7 +67,6 @@ tree buildarch = combineProperties "gitannexbuilder tree" $ props
 buildDepsApt :: Property HasInfo
 buildDepsApt = combineProperties "gitannexbuilder build deps" $ props
 	& Apt.buildDep ["git-annex"]
-	& Apt.installed ["liblockfile-simple-perl"]
 	& buildDepsNoHaskellLibs
 	& Apt.buildDepIn builddir
 		`describe` "git-annex source build deps installed"
@@ -86,7 +85,7 @@ haskellPkgsInstalled :: String -> Property NoInfo
 haskellPkgsInstalled dir = flagFile go ("/haskellpkgsinstalled")
   where
 	go = userScriptProperty (User builduser)
-		[ "cd " ++ builddir ++ " && ./standalone/ " ++ dir ++ "/install-haskell-packages"
+		[ "cd " ++ builddir ++ " && ./standalone/" ++ dir ++ "/install-haskell-packages"
 		]
 
 -- Installs current versions of git-annex's deps from cabal, but only
@@ -150,7 +149,6 @@ androidContainer name setupgitannexdir gitannexdir = Systemd.container name boot
 	& File.ownerGroup homedir (User builduser) (Group builduser)
 	& flagFile chrootsetup ("/chrootsetup")
 		`requires` setupgitannexdir
-	& buildDepsApt
 	& haskellPkgsInstalled "android"
   where
 	-- Use git-annex's android chroot setup script, which will install
@@ -159,5 +157,5 @@ androidContainer name setupgitannexdir gitannexdir = Systemd.container name boot
 	chrootsetup = scriptProperty
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
-	osver = System (Debian Testing) "i386"
+	osver = System (Debian (Stable "jessie")) "i386"
 	bootstrap = Chroot.debootstrapped osver mempty
