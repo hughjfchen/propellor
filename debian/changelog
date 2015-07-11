@@ -7,6 +7,7 @@ propellor (2.6.0) UNRELEASED; urgency=medium
   * Version dependency on exceptions.
   * Systemd: Add masked property.
     Thanks, Sean Whitton
+  * Fix make install target to work even when git is not configured.
 
  -- Joey Hess <id@joeyh.name>  Tue, 16 Jun 2015 14:49:12 -0400
 
