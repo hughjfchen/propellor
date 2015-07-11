@@ -1,4 +1,4 @@
-propellor (2.6.0) UNRELEASED; urgency=medium
+propellor (2.6.0) unstable; urgency=medium
 
   * Replace String type synonym Docker.Image by a data type
     which allows to specify an image name and an optional tag. (API change)
@@ -9,7 +9,7 @@ propellor (2.6.0) UNRELEASED; urgency=medium
     Thanks, Sean Whitton
   * Fix make install target to work even when git is not configured.
 
- -- Joey Hess <id@joeyh.name>  Tue, 16 Jun 2015 14:49:12 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 10 Jul 2015 22:36:29 -0400
 
 propellor (2.5.0) unstable; urgency=medium
 
