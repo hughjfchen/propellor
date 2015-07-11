@@ -1,6 +1,6 @@
 Name: propellor
 Version: 2.6.0
-Cabal-Version: >= 1.6
+Cabal-Version: >= 1.8
 License: BSD3
 Maintainer: Joey Hess <id@joeyh.name>
 Author: Joey Hess
