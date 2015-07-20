@@ -441,7 +441,7 @@ jerryPlay = standardDockerContainer "jerryplay" Unstable "amd64"
 	& Docker.publish "8001:80"
 	& Apt.installed ["ssh"]
 	& User.hasSomePassword (User "root")
-	& Ssh.permitRootLogin True
+	& Ssh.permitRootLogin (Ssh.RootLogin True)
 
 kiteShellBox :: Systemd.Container
 kiteShellBox = standardStableContainer "kiteshellbox"

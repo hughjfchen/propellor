@@ -1,7 +1,10 @@
 module Propellor.Property.Ssh (
 	PubKeyText,
 	sshdConfig,
+	ConfigKeyword,
+	setSshdConfigBool,
 	setSshdConfig,
+	RootLogin(..),
 	permitRootLogin,
 	passwordAuthentication,
 	noPasswords,
@@ -28,6 +31,7 @@ import Utility.FileMode
 
 import System.PosixCompat
 import qualified Data.Map as M
+import Data.List
 
 type PubKeyText = String
 
@@ -38,21 +42,37 @@ sshBool False = "no"
 sshdConfig :: FilePath
 sshdConfig = "/etc/ssh/sshd_config"
 
-setSshdConfig :: String -> Bool -> Property NoInfo
-setSshdConfig setting allowed = combineProperties "sshd config"
-	[ sshdConfig `File.lacksLine` (sshline $ not allowed)
-	, sshdConfig `File.containsLine` (sshline allowed)
-	]
-	`onChange` restarted
-	`describe` unwords [ "ssh config:", setting, sshBool allowed ]
-  where
-	sshline v = setting ++ " " ++ sshBool v
+type ConfigKeyword = String
 
-permitRootLogin :: Bool -> Property NoInfo
-permitRootLogin = setSshdConfig "PermitRootLogin"
+setSshdConfigBool :: ConfigKeyword -> Bool -> Property NoInfo
+setSshdConfigBool setting allowed = setSshdConfig setting (sshBool allowed)
+
+setSshdConfig :: ConfigKeyword -> String -> Property NoInfo
+setSshdConfig setting val = File.fileProperty desc f sshdConfig
+	`onChange` restarted
+  where
+	desc = unwords [ "ssh config:", setting, val ]
+	cfgline = setting ++ " " ++ val
+	wantedline s
+		| s == cfgline = True
+		| (setting ++ " ") `isPrefixOf` s = False
+		| otherwise = True
+	f ls 
+		| cfgline `elem` ls = filter wantedline ls
+		| otherwise = filter wantedline ls ++ [cfgline]
+
+data RootLogin
+	= RootLogin Bool  -- ^ allow or prevent root login
+	| WithoutPassword -- ^ disable password authentication for root, while allowing other authentication methods
+	| ForcedCommandsOnly -- ^ allow root login with public-key authentication, but only if a forced command has been specified for the public key
+
+permitRootLogin :: RootLogin -> Property NoInfo
+permitRootLogin (RootLogin b) = setSshdConfigBool "PermitRootLogin" b
+permitRootLogin WithoutPassword = setSshdConfig "PermitRootLogin" "without-password"
+permitRootLogin ForcedCommandsOnly = setSshdConfig "PermitRootLogin" "forced-commands-only"
 
 passwordAuthentication :: Bool -> Property NoInfo
-passwordAuthentication = setSshdConfig "PasswordAuthentication"
+passwordAuthentication = setSshdConfigBool "PasswordAuthentication"
 
 -- | Configure ssh to not allow password logins.
 --

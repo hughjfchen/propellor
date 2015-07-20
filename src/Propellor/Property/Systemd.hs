@@ -134,7 +134,8 @@ type Option = String
 -- Does not ensure that the relevant daemon notices the change immediately.
 --
 -- This assumes that there is only one [Header] per file, which is
--- currently the case. And it assumes the file already exists with
+-- currently the case for files like journald.conf and system.conf. 
+-- And it assumes the file already exists with
 -- the right [Header], so new lines can just be appended to the end.
 configured :: FilePath -> Option -> String -> Property NoInfo
 configured cfgfile option value = combineProperties desc
