@@ -54,7 +54,7 @@ onChange = combineWith $ \p hook -> do
 			return $ r <> r'
 		_ -> return r
 
--- | Same than `onChange` except that if property y fails, a flag file
+-- | Same as `onChange` except that if property y fails, a flag file
 -- is generated. On next run, if the flag file is present, property y
 -- is executed even if property x doesn't change.
 --
