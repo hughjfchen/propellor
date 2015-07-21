@@ -76,7 +76,8 @@ onChangeFlagOnFail flagfile p1 p2 =
 			MadeChange -> flagFailed s2
 			_ -> ifM (liftIO $ doesFileExist flagfile)
 				(flagFailed s2
-				, return r1)
+				, return r1
+				)
 	flagFailed s = do
 		r <- s
 		liftIO $ case r of
@@ -87,7 +88,6 @@ onChangeFlagOnFail flagfile p1 p2 =
 		createDirectoryIfMissing True (takeDirectory flagfile)
 		writeFile flagfile ""
 	removeFlagFile = whenM (doesFileExist flagfile) $ removeFile flagfile
-
 
 -- | Alias for @flip describe@
 (==>) :: IsProp (Property i) => Desc -> Property i -> Property i
