@@ -3,6 +3,8 @@ propellor (2.7.0) UNRELEASED; urgency=medium
   * Ssh.permitRootLogin type changed to allow configuring WithoutPassword
     and ForcedCommandsOnly (API change)
   * setSshdConfig type changed, and setSshdConfigBool added with old type.
+  * Fix a bug in shim generation code for docker and chroots, that
+    sometimes prevented deployment of docker containers.
 
  -- Joey Hess <id@joeyh.name>  Mon, 20 Jul 2015 12:01:38 -0400
 
