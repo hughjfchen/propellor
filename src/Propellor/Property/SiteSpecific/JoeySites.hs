@@ -405,7 +405,7 @@ ircBouncer = propertyList "IRC bouncer" $ props
 
 kiteShellBox :: Property NoInfo
 kiteShellBox = propertyList "kitenet.net shellinabox"
-	[ Apt.installed ["openssl", "shellinabox"]
+	[ Apt.installed ["openssl", "shellinabox", "openssh-client"]
 	, File.hasContent "/etc/default/shellinabox"
 		[ "# Deployed by propellor"
 		, "SHELLINABOX_DAEMON_START=1"
