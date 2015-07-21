@@ -54,6 +54,41 @@ onChange = combineWith $ \p hook -> do
 			return $ r <> r'
 		_ -> return r
 
+-- | Same as `onChange` except that if property y fails, a flag file
+-- is generated. On next run, if the flag file is present, property y
+-- is executed even if property x doesn't change.
+--
+-- With `onChange`, if y fails, the property x `onChange` y returns
+-- `FailedChange`. But if this property is applied again, it returns
+-- `NoChange`. This behavior can cause trouble...
+onChangeFlagOnFail
+	:: (Combines (Property x) (Property y))
+	=> FilePath
+        -> Property x
+        -> Property y
+        -> CombinedType (Property x) (Property y)
+onChangeFlagOnFail flagfile p1 p2 =
+	combineWith go p1 p2
+  where
+	go s1 s2 = do
+		r1 <- s1
+		case r1 of
+			MadeChange -> flagFailed s2
+			_ -> ifM (liftIO $ doesFileExist flagfile)
+				(flagFailed s2
+				, return r1
+				)
+	flagFailed s = do
+		r <- s
+		liftIO $ case r of
+			FailedChange -> createFlagFile
+			_ -> removeFlagFile
+		return r
+	createFlagFile = unlessM (doesFileExist flagfile) $ do
+		createDirectoryIfMissing True (takeDirectory flagfile)
+		writeFile flagfile ""
+	removeFlagFile = whenM (doesFileExist flagfile) $ removeFile flagfile
+
 -- | Alias for @flip describe@
 (==>) :: IsProp (Property i) => Desc -> Property i -> Property i
 (==>) = flip describe
