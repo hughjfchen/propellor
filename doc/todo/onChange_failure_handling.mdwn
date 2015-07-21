@@ -33,3 +33,9 @@ onChange, like the one that runs apt-get update after a change to
 sources.list.
 
 --[[Joey]]
+
+----
+
+The `onChangeFlagOnFail` combinator is a safer alternative to `onChange`
+that avoids this problem. But, it can be difficult to come up with unique
+names for the flag files it uses.
