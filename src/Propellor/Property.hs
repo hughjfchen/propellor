@@ -61,8 +61,6 @@ onChange = combineWith $ \p hook -> do
 -- With `onChange`, if y fails, the property x `onChange` y returns
 -- `FailedChange`. But if this property is applied again, it returns
 -- `NoChange`. This behavior can cause trouble...
---
--- Use with caution.
 onChangeFlagOnFail
 	:: (Combines (Property x) (Property y))
 	=> FilePath
