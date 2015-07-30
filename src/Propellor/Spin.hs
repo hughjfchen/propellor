@@ -147,11 +147,15 @@ update forhost = do
 			hout <- dup stdOutput
 			hClose stdin
 			hClose stdout
+			-- Not using git pull because git 2.5.0 badly
+			-- broke its option parser.
 			unlessM (boolSystem "git" (pullparams hin hout)) $
-				errorMessage "git pull from client failed"
+				errorMessage "git fetch from client failed"
+			unlessM (boolSystem "git" [Param "merge", Param "FETCH_HEAD"]) $
+				errorMessage "git merge from client failed"
   where
 	pullparams hin hout =
-		[ Param "pull"
+		[ Param "fetch"
 		, Param "--progress"
 		, Param "--upload-pack"
 		, Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout

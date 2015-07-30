@@ -8,6 +8,9 @@ propellor (2.7.0) UNRELEASED; urgency=medium
   * Added onChangeFlagOnFail which is often a safer alternative to
     onChange.
     Thanks, Antoine Eiche.
+  * Work around broken git pull option parser in git 2.5.0,
+    which broke use of --upload-pack to send a git push when running
+    propellor --spin.
 
  -- Joey Hess <id@joeyh.name>  Mon, 20 Jul 2015 12:01:38 -0400
 
