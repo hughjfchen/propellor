@@ -1,0 +1,13 @@
+propellor 2.7.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Ssh.permitRootLogin type changed to allow configuring WithoutPassword
+     and ForcedCommandsOnly (API change)
+   * setSshdConfig type changed, and setSshdConfigBool added with old type.
+   * Fix a bug in shim generation code for docker and chroots, that
+     sometimes prevented deployment of docker containers.
+   * Added onChangeFlagOnFail which is often a safer alternative to
+     onChange.
+     Thanks, Antoine Eiche.
+   * Work around broken git pull option parser in git 2.5.0,
+     which broke use of --upload-pack to send a git push when running
+     propellor --spin."""]]
