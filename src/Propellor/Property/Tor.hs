@@ -103,13 +103,8 @@ bandwidthRate' s divby = case readSize dataUnits s of
 	Nothing -> property ("unable to parse " ++ s) noChange
 
 hiddenServiceAvailable :: HiddenServiceName -> Int -> Property NoInfo
-hiddenServiceAvailable hn port = hiddenServiceHostName prop
+hiddenServiceAvailable hn port = hiddenServiceHostName $ hiddenService hn port
   where
-	prop = configured
-		[ ("HiddenServiceDir", varLib </> hn)
-		, ("HiddenServicePort", unwords [show port, "127.0.0.1:" ++ show port])
-		]
-		`describe` "hidden service available"
 	hiddenServiceHostName p =  adjustPropertySatisfy p $ \satisfy -> do
 		r <- satisfy
 		h <- liftIO $ readFile (varLib </> hn </> "hostname")
@@ -164,7 +159,7 @@ type NickName = String
 
 -- | Convert String to a valid tor NickName.
 saneNickname :: String -> NickName
-saneNickname s 
+saneNickname s
 	| null n = "unnamed"
 	| otherwise = n
   where
