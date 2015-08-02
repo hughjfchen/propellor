@@ -15,7 +15,6 @@ import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Chroot.Util
 import Propellor.Property.Mount
 import Utility.Path
-import Utility.SafeCommand
 import Utility.FileMode
 
 import Data.List
@@ -107,9 +106,7 @@ unpopulated d = null <$> catchDefaultIO [] (dirContents d)
 
 removetarget :: FilePath -> IO ()
 removetarget target = do
-	submnts <- filter (\p -> simplifyPath p /= simplifyPath target)
-		. filter (dirContains target)
-		<$> mountPoints
+	submnts <- mountPointsBelow target
 	forM_ submnts umountLazy
 	removeDirectoryRecursive target
 

@@ -1,11 +1,62 @@
-propellor (2.5.0) UNRELEASED; urgency=medium
+propellor (2.7.0) unstable; urgency=medium
+
+  * Ssh.permitRootLogin type changed to allow configuring WithoutPassword
+    and ForcedCommandsOnly (API change)
+  * setSshdConfig type changed, and setSshdConfigBool added with old type.
+  * Fix a bug in shim generation code for docker and chroots, that
+    sometimes prevented deployment of docker containers.
+  * Added onChangeFlagOnFail which is often a safer alternative to
+    onChange.
+    Thanks, Antoine Eiche.
+  * Work around broken git pull option parser in git 2.5.0,
+    which broke use of --upload-pack to send a git push when running
+    propellor --spin.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 30 Jul 2015 12:05:46 -0400
+
+propellor (2.6.0) unstable; urgency=medium
+
+  * Replace String type synonym Docker.Image by a data type
+    which allows to specify an image name and an optional tag. (API change)
+    Thanks, Antoine Eiche.
+  * Added --unset to delete a privdata field.
+  * Version dependency on exceptions.
+  * Systemd: Add masked property.
+    Thanks, Sean Whitton
+  * Fix make install target to work even when git is not configured.
+
+ -- Joey Hess <id@joeyh.name>  Fri, 10 Jul 2015 22:36:29 -0400
+
+propellor (2.5.0) unstable; urgency=medium
 
   * cmdProperty' renamed to cmdPropertyEnv to make way for a new,
     more generic cmdProperty' (API change)
   * Add docker image related properties.
     Thanks, Antoine Eiche.
+  * Export CommandParam, boolSystem, safeSystem, shellEscape, and
+  * createProcess from Propellor.Property.Cmd, so they are available
+    for use in constricting your own Properties when using propellor
+    as a library.
+  * Improve enter-machine scripts for systemd-nspawn containers to unset most
+    environment variables.
+  * Fix Postfix.satellite bug; the default relayhost was set to the
+    domain, not to smtp.domain as documented.
+  * Mount /proc inside a chroot before provisioning it, to work around #787227
+  * --spin now works when given a short hostname that only resolves to an
+    ipv6 address.
+  * Added publish property for systemd-spawn containers, for port publishing.
+    (Needs systemd version 220.)
+  * Added bind and bindRo properties for systemd-spawn containers.
+  * Firewall: Port was changed to a newtype, and the Port and PortRange
+    constructors of Rules were changed to DPort and DportRange, respectively.
+    (API change)
+  * Docker: volume and publish accept Bound FilePath and Bound Port,
+    respectively. They also continue to accept Strings, for backwards
+    compatibility.
+  * Docker: Added environment property.
+    Thanks Antoine Eiche.
 
- -- Joey Hess <id@joeyh.name>  Thu, 07 May 2015 12:08:34 -0400
+ -- Joey Hess <id@joeyh.name>  Tue, 09 Jun 2015 17:08:43 -0400
 
 propellor (2.4.0) unstable; urgency=medium
 

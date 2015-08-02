@@ -4,7 +4,6 @@ import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
-import Utility.SafeCommand
 
 type ConfigFile = [String]
 

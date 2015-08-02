@@ -35,7 +35,7 @@ gitServer knownhosts = propertyList "iabak git server" $ props
 	& Cron.niceJob "shardstats" (Cron.Times "*/30 * * * *") (User "root") "/"
 		"/usr/local/IA.BAK/shardstats-all"
 	& Cron.niceJob "shardmaint" Cron.Daily (User "root") "/"
-		"/usr/local/IA.BAK/shardmaint"
+		"/usr/local/IA.BAK/shardmaint-fast; /usr/local/IA.BAK/shardmaint"
 
 registrationServer :: [Host] -> Property HasInfo
 registrationServer knownhosts = propertyList "iabak registration server" $ props
@@ -64,14 +64,13 @@ graphiteServer = propertyList "iabak graphite server" $ props
 		, "pattern = ^carbon\\."
 		, "retentions = 60:90d"
 		, "[iabak-connections]"
-		, "pattern = ^iabak\.shardstats\.connections"
+		, "pattern = ^iabak\\.shardstats\\.connections"
 		, "retentions = 1h:1y,3h:10y"
-		, "[iabak]"
+		, "[iabak-default]"
 		, "pattern = ^iabak\\."
 		, "retentions = 10m:30d,1h:1y,3h:10y"
 		, "[default_1min_for_1day]"
 		, "pattern = .*"
-		, "retentions = 60s:1d"
 		]
 	& graphiteCSRF
 	& cmdProperty "graphite-manage" ["syncdb", "--noinput"] `flagFile` "/etc/flagFiles/graphite-syncdb"

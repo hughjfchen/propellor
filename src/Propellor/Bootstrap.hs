@@ -6,7 +6,6 @@ module Propellor.Bootstrap (
 ) where
 
 import Propellor
-import Utility.SafeCommand
 
 import System.Posix.Files
 import Data.List

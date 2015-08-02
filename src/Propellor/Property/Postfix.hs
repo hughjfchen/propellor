@@ -22,10 +22,11 @@ reloaded :: Property NoInfo
 reloaded = Service.reloaded "postfix"
 
 -- | Configures postfix as a satellite system, which 
--- relays all mail through a relay host, which defaults to smtp.domain. 
+-- relays all mail through a relay host, which defaults to smtp.domain,
+-- but can be changed by @mainCf "relayhost"@.
 --
 -- The smarthost may refuse to relay mail on to other domains, without
--- futher coniguration/keys. But this should be enough to get cron job
+-- further configuration/keys. But this should be enough to get cron job
 -- mail flowing to a place where it will be seen.
 satellite :: Property NoInfo
 satellite = check (not <$> mainCfIsSet "relayhost") setup
@@ -34,14 +35,14 @@ satellite = check (not <$> mainCfIsSet "relayhost") setup
 	setup = trivial $ property "postfix satellite system" $ do
 		hn <- asks hostName
 		let (_, domain) = separate (== '.') hn
-		ensureProperties 
+		ensureProperties
 			[ Apt.reConfigure "postfix"
 				[ ("postfix/main_mailer_type", "select", "Satellite system")
 				, ("postfix/root_address", "string", "root")
 				, ("postfix/destinations", "string", "localhost")
 				, ("postfix/mailname", "string", hn)
 				]
-			, mainCf ("relayhost", domain)
+			, mainCf ("relayhost", "smtp." ++ domain)
 				`onChange` reloaded
 			]
 
@@ -57,7 +58,7 @@ mappedFile f setup = setup f
 	`onChange` cmdProperty "postmap" [f]
 
 -- | Run newaliases command, which should be done after changing
--- </etc/aliases>.
+-- @/etc/aliases@.
 newaliases :: Property NoInfo
 newaliases = trivial $ cmdProperty "newaliases" []
 
@@ -65,7 +66,7 @@ newaliases = trivial $ cmdProperty "newaliases" []
 mainCfFile :: FilePath
 mainCfFile = "/etc/postfix/main.cf"
 
--- | Sets a main.cf name=value pair. Does not reload postfix immediately.
+-- | Sets a main.cf @name=value@ pair. Does not reload postfix immediately.
 mainCf :: (String, String) -> Property NoInfo
 mainCf (name, value) = check notset set
 		`describe` ("postfix main.cf " ++ setting)
@@ -74,7 +75,7 @@ mainCf (name, value) = check notset set
 	notset = (/= Just value) <$> getMainCf name
 	set = cmdProperty "postconf" ["-e", setting]
 
--- | Gets a man.cf setting.
+-- | Gets a main.cf setting.
 getMainCf :: String -> IO (Maybe String)
 getMainCf name = parse . lines <$> readProcess "postconf" [name]
   where
@@ -130,9 +131,9 @@ dedupCf ls =
 -- | Installs saslauthd and configures it for postfix, authenticating
 -- against PAM.
 --
--- Does not configure postfix to use it; eg smtpd_sasl_auth_enable = yes
+-- Does not configure postfix to use it; eg @smtpd_sasl_auth_enable = yes@
 -- needs to be set to enable use. See
--- https://wiki.debian.org/PostfixAndSASL
+-- <https://wiki.debian.org/PostfixAndSASL>.
 saslAuthdInstalled :: Property NoInfo
 saslAuthdInstalled = setupdaemon
 	`requires` Service.running "saslauthd"

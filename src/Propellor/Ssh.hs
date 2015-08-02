@@ -1,7 +1,6 @@
 module Propellor.Ssh where
 
 import Propellor
-import Utility.SafeCommand
 import Utility.UserInfo
 
 import System.PosixCompat
@@ -23,7 +22,8 @@ sshCachingParams hn = do
 	let ps =
 		[ Param "-o"
 		, Param ("ControlPath=" ++ socketfile)
-		, Params "-o ControlMaster=auto -o ControlPersist=yes"
+		, Param "-o", Param "ControlMaster=auto"
+		, Param "-o", Param "ControlPersist=yes"
 		]
 
 	maybe noop (expireold ps socketfile)
@@ -38,7 +38,7 @@ sshCachingParams hn = do
 			then touchFile f
 			else do
 				void $ boolSystem "ssh" $
-					[ Params "-O stop" ] ++ ps ++
+					[ Param "-O", Param "stop" ] ++ ps ++
 					[ Param "localhost" ]
 				nukeFile f
 	tenminutes = 600

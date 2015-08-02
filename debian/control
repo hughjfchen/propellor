@@ -16,7 +16,7 @@ Build-Depends:
 	libghc-quickcheck2-dev,
 	libghc-mtl-dev,
 	libghc-transformers-dev,
-	libghc-exceptions-dev,
+	libghc-exceptions-dev (>= 0.6),
 Maintainer: Gergely Nagy <algernon@madhouse-project.org>
 Standards-Version: 3.9.6
 Vcs-Git: git://git.joeyh.name/propellor
@@ -38,7 +38,7 @@ Depends: ${misc:Depends}, ${shlibs:Depends},
 	libghc-quickcheck2-dev,
 	libghc-mtl-dev,
 	libghc-transformers-dev,
-	libghc-exceptions-dev,
+	libghc-exceptions-dev (>= 0.6),
 	git,
 Description: property-based host configuration management in haskell
  Propellor enures that the system it's run in satisfies a list of

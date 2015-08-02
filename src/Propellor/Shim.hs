@@ -8,7 +8,6 @@ module Propellor.Shim (setup, cleanEnv, file) where
 
 import Propellor
 import Utility.LinuxMkLibs
-import Utility.SafeCommand
 import Utility.FileMode
 import Utility.FileSystemEncoding
 
@@ -21,7 +20,7 @@ import System.Posix.Files
 -- Propellor may be running from an existing shim, in which case it's
 -- simply reused.
 setup :: FilePath -> Maybe FilePath -> FilePath -> IO FilePath
-setup propellorbin propellorbinpath dest = checkAlreadyShimmed propellorbin $ do
+setup propellorbin propellorbinpath dest = checkAlreadyShimmed shim $ do
 	createDirectoryIfMissing True dest
 
 	libs <- parseLdd <$> readProcess "ldd" [propellorbin]
@@ -40,7 +39,6 @@ setup propellorbin propellorbinpath dest = checkAlreadyShimmed propellorbin $ do
 		fromMaybe (error "cannot find gconv directory") $
 			headMaybe $ filter ("/gconv/" `isInfixOf`) glibclibs
 	let linkerparams = ["--library-path", intercalate ":" libdirs ]
-	let shim = file propellorbin dest
 	writeFile shim $ unlines
 		[ shebang
 		, "GCONV_PATH=" ++ shellEscape gconvdir
@@ -50,6 +48,8 @@ setup propellorbin propellorbinpath dest = checkAlreadyShimmed propellorbin $ do
 		]
 	modifyFileMode shim (addModes executeModes)
 	return shim
+  where
+	shim = file propellorbin dest
 
 shebang :: String
 shebang = "#!/bin/sh"

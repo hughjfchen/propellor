@@ -41,7 +41,7 @@ hosts =
 
 -- A generic webserver in a Docker container.
 webserverContainer :: Docker.Container
-webserverContainer = Docker.container "webserver" "debian"
+webserverContainer = Docker.container "webserver" (Docker.latestImage "debian")
 	& os (System (Debian (Stable "jessie")) "amd64")
 	& Apt.stdSourcesList
 	& Docker.publish "80:80"

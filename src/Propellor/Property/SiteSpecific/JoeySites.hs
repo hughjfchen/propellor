@@ -15,7 +15,6 @@ import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
-import Utility.SafeCommand
 import Utility.FileMode
 
 import Data.List
@@ -30,7 +29,6 @@ scrollBox = propertyList "scroll server" $ props
 		"libghc-bytestring-dev", "libghc-mtl-dev", "libghc-ncurses-dev",
 		"libghc-random-dev", "libghc-monad-loops-dev", "libghc-text-dev",
 		"libghc-ifelse-dev", "libghc-case-insensitive-dev",
-		"libghc-transformers-dev",
 		"libghc-data-default-dev", "libghc-optparse-applicative-dev"]
 	& userScriptProperty (User "scroll")
 		[ "cd " ++ d </> "scroll"
@@ -389,7 +387,7 @@ twitRss = combineProperties "twitter rss" $ props
 -- Work around for expired ssl cert.
 pumpRss :: Property NoInfo
 pumpRss = Cron.job "pump rss" (Cron.Times "15 * * * *") (User "joey") "/srv/web/tmp.kitenet.net/"
-	"wget https://pump2rss.com/feed/joeyh@identi.ca.atom -O pump.atom.new --no-check-certificate 2>/dev/null; sed 's/ & / /g' pump.atom.new > pump.atom"
+	"wget https://rss.io.jpope.org/feed/joeyh@identi.ca.atom -O pump.atom.new --no-check-certificate 2>/dev/null; sed 's/ & / /g' pump.atom.new > pump.atom"
 
 ircBouncer :: Property HasInfo
 ircBouncer = propertyList "IRC bouncer" $ props
@@ -407,7 +405,7 @@ ircBouncer = propertyList "IRC bouncer" $ props
 
 kiteShellBox :: Property NoInfo
 kiteShellBox = propertyList "kitenet.net shellinabox"
-	[ Apt.installed ["openssl", "shellinabox"]
+	[ Apt.installed ["openssl", "shellinabox", "openssh-client"]
 	, File.hasContent "/etc/default/shellinabox"
 		[ "# Deployed by propellor"
 		, "SHELLINABOX_DAEMON_START=1"
@@ -861,6 +859,8 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "  AllowOverride None"
 		, Apache.allowAll
 		, "</Directory>"
+		, "RewriteEngine On"
+		, "RewriteRule .* http://www.sowsearpoetry.org/ [L]"
 		]
 	& alias "wortroot.kitenet.net"
 	& alias "www.wortroot.kitenet.net"

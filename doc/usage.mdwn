@@ -71,6 +71,10 @@ and configured in haskell.
 
   Sets a field of privdata. The content is read in from stdin.
 
+* propellor --unset field context
+
+  Removes a value from the privdata store.
+
 * propellor --dump field context
 
   Outputs the privdata value to stdout.

@@ -17,11 +17,15 @@ install:
 	cat dist/propellor-*.tar.gz | (cd dist/gittmp && tar zx --strip-components=1)
 	# cabal sdist does not preserve symlinks, so copy over file
 	cd dist/gittmp && for f in $$(find -type f); do rm -f $$f; cp -a ../../$$f $$f; done
-	cd dist/gittmp && git init && \
-		git add . \
-		&& git commit -q -m "distributed version of propellor" \
-		&& git bundle create $(DESTDIR)/usr/src/propellor/propellor.git master HEAD \
-		&& git show-ref master --hash > $(DESTDIR)/usr/src/propellor/head
+	export GIT_AUTHOR_NAME=build \
+	&& export GIT_AUTHOR_EMAIL=build@buildhost \
+	&& export GIT_COMMITTER_NAME=build \
+	&& export GIT_COMMITTER_EMAIL=build@buildhost \
+	&& cd dist/gittmp && git init \
+	&& git add . \
+	&& git commit -q -m "distributed version of propellor" \
+	&& git bundle create $(DESTDIR)/usr/src/propellor/propellor.git master HEAD \
+	&& git show-ref master --hash > $(DESTDIR)/usr/src/propellor/head
 	rm -rf dist/gittmp
 
 clean:

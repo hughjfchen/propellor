@@ -10,6 +10,7 @@ data CmdLine
 	| Spin [HostName] (Maybe HostName)
 	| SimpleRun HostName
 	| Set PrivDataField Context
+	| Unset PrivDataField Context
 	| Dump PrivDataField Context
 	| Edit PrivDataField Context
 	| ListFields
