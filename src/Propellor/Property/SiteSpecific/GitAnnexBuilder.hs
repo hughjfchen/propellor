@@ -132,6 +132,7 @@ androidAutoBuilderContainer :: Times -> TimeOut -> Systemd.Container
 androidAutoBuilderContainer crontimes timeout =
 	androidContainer "android-git-annex-builder" (tree "android") builddir
 		& Apt.unattendedUpgrades
+		& buildDepsNoHaskellLibs
 		& autobuilder "android" crontimes timeout
 
 -- Android is cross-built in a Debian i386 container, using the Android NDK.
