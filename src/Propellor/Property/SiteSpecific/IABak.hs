@@ -36,6 +36,7 @@ gitServer knownhosts = propertyList "iabak git server" $ props
 		"/usr/local/IA.BAK/shardstats-all"
 	& Cron.niceJob "shardmaint" Cron.Daily (User "root") "/"
 		"/usr/local/IA.BAK/shardmaint-fast; /usr/local/IA.BAK/shardmaint"
+	& Apt.installed ["git-annex"]
 
 registrationServer :: [Host] -> Property HasInfo
 registrationServer knownhosts = propertyList "iabak registration server" $ props
