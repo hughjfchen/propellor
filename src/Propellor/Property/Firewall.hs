@@ -44,8 +44,8 @@ toIpTable r =  map Param $
 toIpTableArg :: Rules -> [String]
 toIpTableArg Everything        = []
 toIpTableArg (Proto proto)     = ["-p", map toLower $ show proto]
-toIpTableArg (DPort port)       = ["--dport", show port]
-toIpTableArg (DPortRange (f,t)) = ["--dport", show f ++ ":" ++ show t]
+toIpTableArg (DPort (Port port)) = ["--dport", show port]
+toIpTableArg (DPortRange (Port f, Port t)) = ["--dport", show f ++ ":" ++ show t]
 toIpTableArg (IFace iface)     = ["-i", iface]
 toIpTableArg (Ctstate states)  = ["-m", "conntrack","--ctstate", concat $ intersperse "," (map show states)]
 toIpTableArg (r :- r')         = toIpTableArg r <> toIpTableArg r'
