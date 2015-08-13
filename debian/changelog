@@ -1,6 +1,8 @@
 propellor (2.7.1) UNRELEASED; urgency=medium
 
   * Make sure that make is installed when bootstrapping propellor.
+  * Fix bug in Firewall.toIpTableArg.
+    Thanks, Antoine Eiche.
 
  -- Joey Hess <id@joeyh.name>  Wed, 12 Aug 2015 19:19:28 -0400
 
