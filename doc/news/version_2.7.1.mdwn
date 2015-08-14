@@ -1,0 +1,5 @@
+propellor 2.7.1 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Make sure that make is installed when bootstrapping propellor.
+   * Fix bug in Firewall's Port datatype to iptable parameter translation code.
+     Thanks, Antoine Eiche."""]]

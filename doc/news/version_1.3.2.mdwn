@@ -1,5 +1,0 @@
-propellor 1.3.2 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * SSHFP records are also generated for CNAMES of hosts.
-   * Merge Utiity modules from git-annex.
-   * Ignore bogus DNS when spinning the local host."""]]
