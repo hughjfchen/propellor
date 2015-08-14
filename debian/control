@@ -40,6 +40,7 @@ Depends: ${misc:Depends}, ${shlibs:Depends},
 	libghc-transformers-dev,
 	libghc-exceptions-dev (>= 0.6),
 	git,
+	make,
 Description: property-based host configuration management in haskell
  Propellor enures that the system it's run in satisfies a list of
  properties, taking action as necessary when a property is not yet met.

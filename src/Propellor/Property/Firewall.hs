@@ -42,13 +42,18 @@ toIpTable r =  map Param $
 	(toIpTableArg (ruleRules r)) ++ [ "-j" , show $ ruleTarget r ]
 
 toIpTableArg :: Rules -> [String]
-toIpTableArg Everything        = []
-toIpTableArg (Proto proto)     = ["-p", map toLower $ show proto]
-toIpTableArg (DPort port)       = ["--dport", show port]
-toIpTableArg (DPortRange (f,t)) = ["--dport", show f ++ ":" ++ show t]
-toIpTableArg (IFace iface)     = ["-i", iface]
-toIpTableArg (Ctstate states)  = ["-m", "conntrack","--ctstate", concat $ intersperse "," (map show states)]
-toIpTableArg (r :- r')         = toIpTableArg r <> toIpTableArg r'
+toIpTableArg Everything = []
+toIpTableArg (Proto proto) = ["-p", map toLower $ show proto]
+toIpTableArg (DPort (Port port)) = ["--dport", show port]
+toIpTableArg (DPortRange (Port f, Port t)) =
+	["--dport", show f ++ ":" ++ show t]
+toIpTableArg (IFace iface) = ["-i", iface]
+toIpTableArg (Ctstate states) =
+	[ "-m"
+	, "conntrack"
+	, "--ctstate", concat $ intersperse "," (map show states)
+	]
+toIpTableArg (r :- r') = toIpTableArg r <> toIpTableArg r'
 
 data Rule = Rule
 	{ ruleChain :: Chain

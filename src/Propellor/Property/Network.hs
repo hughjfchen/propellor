@@ -27,6 +27,15 @@ cleanInterfacesFile = hasContent interfacesFile
 	]
 	`describe` ("clean " ++ interfacesFile)
 
+-- | Configures an interface to get its address via dhcp.
+dhcp :: Interface -> Property NoInfo
+dhcp iface = hasContent (interfaceDFile iface)
+	[ "auto " ++ iface
+	, "iface " ++ iface ++ " inet dhcp"
+	]
+	`describe` ("dhcp " ++ iface)
+	`requires` interfacesDEnabled
+
 -- | Writes a static interface file for the specified interface.
 --
 -- The interface has to be up already. It could have been brought up by

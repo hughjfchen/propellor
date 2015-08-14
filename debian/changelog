@@ -1,3 +1,11 @@
+propellor (2.7.1) unstable; urgency=medium
+
+  * Make sure that make is installed when bootstrapping propellor.
+  * Fix bug in Firewall's Port datatype to iptable parameter translation code.
+    Thanks, Antoine Eiche.
+
+ -- Joey Hess <id@joeyh.name>  Fri, 14 Aug 2015 15:01:37 -0400
+
 propellor (2.7.0) unstable; urgency=medium
 
   * Ssh.permitRootLogin type changed to allow configuring WithoutPassword

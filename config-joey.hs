@@ -145,29 +145,30 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 honeybee :: Host
 honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	[ "Arm git-annex build box." ]
+	
+	-- I have to travel to get console access, so no automatic
+	-- upgrades, and try to be robust.
+	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
+
+	& Apt.installed ["flash-kernel"]
+	& "/etc/flash-kernel/machine" `File.hasContent` ["Cubietech Cubietruck"]
+	& Apt.installed ["linux-image-armmp"]
+	& Network.dhcp "eth0" `requires` Network.cleanInterfacesFile
+	& Postfix.satellite
+	
+	-- ipv6 used for remote access thru firewalls
+	& Apt.serviceInstalledRunning "aiccu"
 	& ipv6 "2001:4830:1600:187::2"
 
-	-- No unattended upgrades as there is currently no console access.
-	-- (Also, system is not currently running a stock kernel,
-	-- although it should be able to.)
-	& Postfix.satellite
-	& Apt.serviceInstalledRunning "aiccu"
+	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
+
+	-- No hardware clock.
 	& Apt.serviceInstalledRunning "ntp"
 
-	-- Not using systemd-nspawn because it's broken (kernel issue?)
-	-- & Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
-	-- 	GitAnnexBuilder.armAutoBuilder
-	-- 		builderos Cron.Daily "22h")
-	& Chroot.provisioned 
-		(Chroot.debootstrapped builderos mempty "/var/lib/container/armel-git-annex-builder"
-			& "/etc/timezone" `File.hasContent` ["America/New_York"]
-			& GitAnnexBuilder.armAutoBuilder
-				builderos (Cron.Times "1 1 * * *") "12h"
-		)
-  where
-	-- Using unstable to get new enough ghc for TH on arm.
-	builderos = System (Debian Unstable) "armel"
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		GitAnnexBuilder.armAutoBuilder
+			(System (Debian Unstable) "armel") Cron.Daily "22h")
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed

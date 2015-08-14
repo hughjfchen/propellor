@@ -115,8 +115,8 @@ standardAutoBuilder osver@(System _ arch) =
 		& User.accountFor (User builduser)
 		& tree arch
 
-armAutoBuilder :: System -> Times -> TimeOut -> Property HasInfo
-armAutoBuilder osver@(System _ arch) crontime timeout = 
+armAutoBuilder :: System -> Property HasInfo
+armAutoBuilder osver = 
 	propertyList "arm git-annex autobuilder" $ props
 		& standardAutoBuilder osver
 		& buildDepsNoHaskellLibs
@@ -126,7 +126,6 @@ armAutoBuilder osver@(System _ arch) crontime timeout =
 		-- Install patched haskell packages for portability to
 		-- arm NAS's using old kernel versions.
 		& haskellPkgsInstalled "linux"
-		& autobuilder arch crontime timeout
 
 androidAutoBuilderContainer :: Times -> TimeOut -> Systemd.Container
 androidAutoBuilderContainer crontimes timeout =
