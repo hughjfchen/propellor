@@ -97,6 +97,7 @@ Library
     Propellor.Property.Prosody
     Propellor.Property.Reboot
     Propellor.Property.List
+    Propellor.Property.LightDM
     Propellor.Property.Scheduled
     Propellor.Property.Service
     Propellor.Property.Ssh
