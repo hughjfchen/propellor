@@ -9,6 +9,7 @@ module Propellor.Property.ConfFile (
 	IniSection,
 	IniKey,
 	containsIniSetting,
+	lacksIniSection,
 ) where
 
 import Propellor
@@ -52,11 +53,11 @@ adjustSection desc start past adjust insert f =
 			  (pre, wanted ++ [l], post)
 		| otherwise = (pre, wanted, post ++ [l])
 
--- | Name of a section of a Windows-style .ini file. This value is put
+-- | Name of a section of an .ini file. This value is put
 -- in square braces to generate the section header.
 type IniSection = String
 
--- | Name of a configuration setting within a Windows-style .init file.
+-- | Name of a configuration setting within a .ini file.
 type IniKey = String
 
 iniHeader :: IniSection -> String
@@ -75,7 +76,7 @@ adjustIniSection desc header =
 	(== iniHeader header)
 	("[" `isPrefixOf`)
 
--- | Ensures that a Windows-style .ini file exists and contains a section
+-- | Ensures that a .ini file exists and contains a section
 -- with a key=value setting.
 containsIniSetting :: FilePath -> (IniSection, IniKey, String) -> Property NoInfo
 containsIniSetting f (header, key, value) =
@@ -83,7 +84,7 @@ containsIniSetting f (header, key, value) =
 	(f ++ " section [" ++ header ++ "] contains " ++ key ++ "=" ++ value)
 	header
 	go
-	(++ [confheader, confline])
+	(++ [confheader, confline]) -- add missing section at end
 	f
   where
 	confheader = iniHeader header
@@ -91,3 +92,13 @@ containsIniSetting f (header, key, value) =
 	go []      = [confline]
 	go (l:ls)  = if isKeyVal l then confline : ls else l : (go ls)
 	isKeyVal x = (filter (/= ' ') . takeWhile (/= '=')) x `elem` [key, '#':key]
+
+-- | Ensures that a .ini file does not contain the specified section.
+lacksIniSection :: FilePath -> IniSection -> Property NoInfo
+lacksIniSection f header =
+	adjustIniSection
+	(f ++ " lacks section [" ++ header ++ "]")
+	header
+	(const []) -- remove all lines of section
+	id -- add no lines if section is missing
+	f
