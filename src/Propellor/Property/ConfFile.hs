@@ -1,9 +1,11 @@
 module Propellor.Property.ConfFile (
+	-- * Generic conffiles with sections
 	SectionStart,
 	SectionPast,
 	AdjustSection,
 	InsertSection,
 	adjustSection,
+	-- * Windows .ini files
 	IniSection,
 	IniKey,
 	containsIniSetting,
