@@ -73,7 +73,7 @@ Library
     Propellor.Property.Apt
     Propellor.Property.Cmd
     Propellor.Property.Hostname
-	Propellor.Property.Chroot
+    Propellor.Property.Chroot
     Propellor.Property.ConfFile
     Propellor.Property.Cron
     Propellor.Property.Debootstrap

@@ -5,17 +5,17 @@ import Propellor.Property.File
 
 import Data.List (isPrefixOf, foldl')
 
-type SectionStart  = Line -> Bool -- ^ find the line that is the start of the
-								  -- wanted section (eg, == "<Foo>")
-type SectionPast   = Line -> Bool -- ^ find a line that indicates we are past
-								  -- the section (eg, a new section header)
-type AdjustSection = [Line] -> [Line] -- ^ run on all lines in the section,
-									  -- including the SectionStart line and any
-									  -- SectionEnd line; can add/delete/modify
-									  -- lines, or even delete entire section
-type InsertSection = [Line] -> [Line] -- ^ if SectionStart does not find the
-									  -- section in the file, this is used to
-									  -- insert the section somewhere within it
+-- | find the line that is the start of the wanted section (eg, == "<Foo>")
+type SectionStart  = Line -> Bool
+-- | find a line that indicates we are past the section
+-- (eg, a new section header)
+type SectionPast   = Line -> Bool
+-- | run on all lines in the section, including the SectionStart line;
+-- can add/delete/modify lines, or even delete entire section
+type AdjustSection = [Line] -> [Line] 
+-- | if SectionStart does not find the section in the file, this is used to
+-- insert the section somewhere within it
+type InsertSection = [Line] -> [Line]
 
 adjustSection
 	:: String
@@ -29,9 +29,9 @@ adjustSection desc start past adjust insert f =
 	fileProperty desc go f
   where
 	go ls = let (pre, wanted, post) = foldl' find ([], [], []) ls
-			in  if null wanted
-				then insert ls
-				else pre ++ (adjust wanted) ++ post
+		in if null wanted
+			then insert ls
+			else pre ++ (adjust wanted) ++ post
 	find (pre, wanted, post) l
 		| null wanted && null post && (not . start) l =
 			(pre ++ [l], wanted, post)
