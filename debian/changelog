@@ -1,3 +1,13 @@
+propellor (2.7.2) UNRELEASED; urgency=medium
+
+  * Added Propellor.Property.ConfFile, with support for Windows-style .ini
+    files, and generic support for files containing some sort of sections.
+    Thanks, Sean Whitton for completing the implementation.
+  * Added Propellor.Property.LightDM
+    Thanks, Sean Whitton.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 20 Aug 2015 10:39:32 -0400
+
 propellor (2.7.1) unstable; urgency=medium
 
   * Make sure that make is installed when bootstrapping propellor.
