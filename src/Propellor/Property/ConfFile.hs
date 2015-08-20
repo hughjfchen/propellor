@@ -1,4 +1,13 @@
-module Propellor.Property.ConfFile (containsIniPair) where
+module Propellor.Property.ConfFile (
+	SectionStart,
+	SectionPast,
+	AdjustSection,
+	InsertSection,
+	adjustSection,
+	IniSection,
+	IniKey,
+	containsIniSetting,
+) where
 
 import Propellor
 import Propellor.Property.File
@@ -17,8 +26,9 @@ type AdjustSection = [Line] -> [Line]
 -- insert the section somewhere within it
 type InsertSection = [Line] -> [Line]
 
+-- | Adjusts a section of conffile.
 adjustSection
-	:: String
+	:: Desc
 	-> SectionStart
 	-> SectionPast
 	-> AdjustSection
@@ -40,12 +50,19 @@ adjustSection desc start past adjust insert f =
 			  (pre, wanted ++ [l], post)
 		| otherwise = (pre, wanted, post ++ [l])
 
-iniHeader :: String -> String
+-- | Name of a section of a Windows-style .ini file. This value is put
+-- in square braces to generate the section header.
+type IniSection = String
+
+-- | Name of a configuration setting within a Windows-style .init file.
+type IniKey = String
+
+iniHeader :: IniSection -> String
 iniHeader header = '[' : header ++ "]"
 
 adjustIniSection
-	:: String
-	-> String
+	:: Desc
+	-> IniSection
 	-> AdjustSection
 	-> InsertSection
 	-> FilePath
@@ -56,8 +73,10 @@ adjustIniSection desc header =
 	(== iniHeader header)
 	("[" `isPrefixOf`)
 
-containsIniPair :: FilePath -> (String, String, String) -> Property NoInfo
-containsIniPair f (header, key, value) =
+-- | Ensures that a Windows-style .ini file exists and contains a section
+-- with a key=value setting.
+containsIniSetting :: FilePath -> (IniSection, IniKey, String) -> Property NoInfo
+containsIniSetting f (header, key, value) =
 	adjustIniSection
 	(f ++ " section [" ++ header ++ "] contains " ++ key ++ "=" ++ value)
 	header
