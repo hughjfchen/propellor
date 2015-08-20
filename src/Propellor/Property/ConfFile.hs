@@ -23,7 +23,7 @@ type SectionStart  = Line -> Bool
 -- (eg, a new section header)
 type SectionPast   = Line -> Bool
 -- | run on all lines in the section, including the SectionStart line;
--- can add/delete/modify lines, or even delete entire section
+-- can add, delete, and modify lines, or even delete entire section
 type AdjustSection = [Line] -> [Line] 
 -- | if SectionStart does not find the section in the file, this is used to
 -- insert the section somewhere within it
