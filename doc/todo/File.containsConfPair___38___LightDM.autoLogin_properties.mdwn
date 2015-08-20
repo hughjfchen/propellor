@@ -21,3 +21,5 @@ An application of `File.containsConfPair` to edit `/etc/lightdm/lightdm.conf` to
 # Patches
 
 Please see the two commits in branch `confpairs` in the repo at `git@github.com:spwhitton/propellor.git`.
+
+> [[merged|done]] --[[Joey]]
