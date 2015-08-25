@@ -4,6 +4,7 @@ import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
+import qualified Propellor.Property.ConfFile as ConfFile
 import Utility.FileMode
 import Utility.DataUnits
 
@@ -112,11 +113,17 @@ hiddenServiceAvailable hn port = hiddenServiceHostName $ hiddenService hn port
 		return r
 
 hiddenService :: HiddenServiceName -> Int -> Property NoInfo
-hiddenService hn port = configured
-	[ ("HiddenServiceDir", varLib </> hn)
-	, ("HiddenServicePort", unwords [show port, "127.0.0.1:" ++ show port])
-	]
-	`describe` unwords ["hidden service available:", hn, show port]
+hiddenService hn port = ConfFile.adjustSection
+	(unwords ["hidden service", hn, "available on port", show port])
+	(== oniondir)
+	(not . isPrefixOf "HiddenServicePort")
+	(const [oniondir, onionport])
+	(++ [oniondir, onionport])
+	mainConfig
+	`onChange` restarted
+  where
+	oniondir = unwords ["HiddenServiceDir", varLib </> hn]
+	onionport = unwords ["HiddenServicePort", show port, "127.0.0.1:" ++ show port]
 
 hiddenServiceData :: IsContext c => HiddenServiceName -> c -> Property HasInfo
 hiddenServiceData hn context = combineProperties desc

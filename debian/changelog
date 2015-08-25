@@ -5,6 +5,9 @@ propellor (2.7.2) UNRELEASED; urgency=medium
     Thanks, Sean Whitton for completing the implementation.
   * Added Propellor.Property.LightDM
     Thanks, Sean Whitton.
+  * Multiple Tor.hiddenService properties can now be defined for a host;
+    previously only one such property worked per host.
+    Thanks, Félix Sipma.
 
  -- Joey Hess <id@joeyh.name>  Thu, 20 Aug 2015 10:39:32 -0400
 
