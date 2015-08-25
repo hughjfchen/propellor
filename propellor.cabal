@@ -78,6 +78,7 @@ Library
     Propellor.Property.ConfFile
     Propellor.Property.Cron
     Propellor.Property.Debootstrap
+    Propellor.Property.DiskImage
     Propellor.Property.Dns
     Propellor.Property.DnsSec
     Propellor.Property.Docker
@@ -94,6 +95,7 @@ Library
     Propellor.Property.Obnam
     Propellor.Property.OpenId
     Propellor.Property.OS
+    Propellor.Property.Parted
     Propellor.Property.Postfix
     Propellor.Property.Prosody
     Propellor.Property.Reboot
