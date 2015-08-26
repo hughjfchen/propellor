@@ -81,7 +81,7 @@ darkstar = host "darkstar.kitenet.net"
 	& JoeySites.dkimMilter
 
 	& partitioned YesReallyDeleteDiskContents "/home/joey/disk"
-		(PartTable MSDOS [ mkPartition EXT3 268435456, mkPartition LinuxSwap 168435456 ])
+		(PartTable MSDOS [ mkPartition EXT3 268435456, mkPartition LinuxSwap 10240 ])
 
 gnu :: Host
 gnu = host "gnu.kitenet.net"
