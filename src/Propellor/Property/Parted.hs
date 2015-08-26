@@ -77,7 +77,7 @@ instance PartedVal PartType where
 	val Extended = "extended"
 
 -- | All partition sizing is done in megabytes, so that parted can
--- automatically lay out the partitions. 
+-- automatically lay out the partitions.
 --
 -- Note that these are SI megabytes, not mebibytes.
 newtype MegaBytes = MegaBytes Integer

@@ -45,10 +45,12 @@ kpartx :: FilePath -> ([FilePath] -> Property NoInfo) -> Property NoInfo
 kpartx diskimage mkprop = go `requires` Apt.installed ["kpartx"]
   where
 	go = property (propertyDesc (mkprop [])) $ do
+		cleanup -- idempotency
 		s <- liftIO $ readProcess "kpartx" ["-avs", diskimage]
 		r <- ensureProperty (mkprop (devlist s))
-		void $ liftIO $ boolSystem "kpartx" [Param "-d", File diskimage]
+		cleanup
 		return r
 	devlist = mapMaybe (finddev . words) . lines
 	finddev ("add":"map":s:_) = Just ("/dev/mapper/" ++ s)
 	finddev _ = Nothing
+	cleanup = void $ liftIO $ boolSystem "kpartx" [Param "-d", File diskimage]
