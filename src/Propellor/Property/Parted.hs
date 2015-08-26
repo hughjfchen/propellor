@@ -142,7 +142,7 @@ partitioned eep disk (PartTable tabletype parts) = property desc $ do
 		-- it makes parted automatically adjust the first partition
 		-- start to be beyond the start of the partition table.
 		, if offset == 0 then "0" else show offset ++ "B"
-		, show (offset + partSize p)
+		, show (offset + partSize p) ++ "B"
 		] ++ case partName p of
 			Just n -> ["name", show partnum, n]
 			Nothing -> []
