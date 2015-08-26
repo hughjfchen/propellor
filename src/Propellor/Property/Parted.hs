@@ -138,7 +138,6 @@ partitioned eep disk (PartTable tabletype parts) = property desc $ do
 	setunits = ["unit", "B"] -- tell parted we use bytes
 	mkpart partnum offset p =
 		[ "mkpart"
-		, show partnum
 		, val (partType p)
 		, val (partFs p)
 		, show offset
