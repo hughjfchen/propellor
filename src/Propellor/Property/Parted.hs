@@ -6,6 +6,7 @@ module Propellor.Property.Parted (
 	Partition(..),
 	mkPartition,
 	Partition.Fs(..),
+	ByteSize,
 	Partition.MkfsOpts,
 	PartType(..),
 	PartFlag(..),
@@ -110,7 +111,7 @@ data Eep = YesReallyDeleteDiskContents
 
 -- | Partitions a disk using parted, and formats the partitions.
 --
--- The FilePath can be a block device (eg, /dev/sda), or a disk image file.
+-- The FilePath can be a block device (eg, \/dev\/sda), or a disk image file.
 --
 -- This deletes any existing partitions in the disk! Use with EXTREME caution!
 partitioned :: Eep -> FilePath -> PartTable -> Property NoInfo
