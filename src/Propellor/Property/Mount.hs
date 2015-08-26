@@ -3,7 +3,8 @@ module Propellor.Property.Mount where
 import Propellor
 import Utility.Path
 
-type FsType = String
+type FsType = String -- ^ type of filesystem to mount ("auto" to autodetect)
+
 type Source = String
 
 -- | Lists all mount points of the system.
