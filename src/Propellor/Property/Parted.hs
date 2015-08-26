@@ -6,7 +6,9 @@ module Propellor.Property.Parted (
 	Partition(..),
 	mkPartition,
 	Partition.Fs(..),
+	MegaBytes(..),
 	ByteSize,
+	toMegaBytes,
 	Partition.MkfsOpts,
 	PartType(..),
 	PartFlag(..),
@@ -46,7 +48,7 @@ instance Monoid PartTable where
 -- | A partition on the disk.
 data Partition = Partition
 	{ partType :: PartType
-	, partSize :: ByteSize -- ^ size of the partition in bytes
+	, partSize :: MegaBytes
 	, partFs :: Partition.Fs
 	, partMkFsOpts :: Partition.MkfsOpts
 	, partFlags :: [(PartFlag, Bool)] -- ^ flags can be set or unset (parted may set some flags by default)
@@ -55,7 +57,7 @@ data Partition = Partition
 	deriving (Show)
 
 -- | Makes a Partition with defaults for non-important values.
-mkPartition :: Partition.Fs -> ByteSize -> Partition
+mkPartition :: Partition.Fs -> MegaBytes -> Partition
 mkPartition fs sz = Partition
 	{ partType = Primary
 	, partSize = sz
@@ -73,6 +75,23 @@ instance PartedVal PartType where
 	val Primary = "primary"
 	val Logical = "logical"
 	val Extended = "extended"
+
+-- | All partition sizing is done in megabytes, so that parted can
+-- automatically lay out the partitions. 
+--
+-- Note that these are SI megabytes, not mebibytes.
+newtype MegaBytes = MegaBytes Integer
+	deriving (Show)
+
+instance PartedVal MegaBytes where
+	val (MegaBytes n) = show n ++ "MB"
+
+toMegaBytes :: ByteSize -> MegaBytes
+toMegaBytes b = MegaBytes (b `div` 1000000)
+
+instance Monoid MegaBytes where
+	mempty = MegaBytes 0
+	mappend (MegaBytes a) (MegaBytes b) = MegaBytes (a + b)
 
 -- | Flags that can be set on a partition.
 data PartFlag = BootFlag | RootFlag | SwapFlag | HiddenFlag | RaidFlag | LvmFlag | LbaFlag | LegacyBootFlag | IrstFlag | EspFlag | PaloFlag
@@ -124,7 +143,7 @@ partitioned eep disk (PartTable tabletype parts) = property desc $ do
 	desc = disk ++ " partitioned"
 	go devs = combineProperties desc $
 		parted eep disk partedparams : map format (zip parts devs)
-	partedparams = concat $ mklabel : mkparts (1 :: Integer) 0 parts []
+	partedparams = concat $ mklabel : mkparts (1 :: Integer) mempty parts []
 	format (p, dev) = Partition.formatted' (partMkFsOpts p)
 		Partition.YesReallyFormatPartition (partFs p) dev
 	mklabel = ["mklabel", val tabletype]
@@ -138,16 +157,13 @@ partitioned eep disk (PartTable tabletype parts) = property desc $ do
 		[ "mkpart"
 		, val (partType p)
 		, val (partFs p)
-		-- Using 0 rather than 0B is undocumented magic;
-		-- it makes parted automatically adjust the first partition
-		-- start to be beyond the start of the partition table.
-		, if offset == 0 then "0" else show offset ++ "B"
-		, show (offset + partSize p) ++ "B"
+		, val offset
+		, val (offset <> partSize p)
 		] ++ case partName p of
 			Just n -> ["name", show partnum, n]
 			Nothing -> []
 	mkparts partnum offset (p:ps) c = 
-		mkparts (partnum+1) (offset + partSize p) ps
+		mkparts (partnum+1) (offset <> partSize p) ps
 			(c ++ mkpart partnum offset p : map (mkflag partnum) (partFlags p))
 	mkparts _ _ [] c = c
 
