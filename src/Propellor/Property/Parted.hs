@@ -124,8 +124,7 @@ partitioned eep disk (PartTable tabletype parts) = property desc $ do
 	desc = disk ++ " partitioned"
 	go devs = combineProperties desc $
 		parted eep disk partedparams : map format (zip parts devs)
-	partedparams = concat $ 
-		setunits : mklabel : mkparts (1 :: Integer) 0 parts []
+	partedparams = concat $ mklabel : mkparts (1 :: Integer) 0 parts []
 	format (p, dev) = Partition.formatted' (partMkFsOpts p)
 		Partition.YesReallyFormatPartition (partFs p) dev
 	mklabel = ["mklabel", val tabletype]
@@ -135,12 +134,14 @@ partitioned eep disk (PartTable tabletype parts) = property desc $ do
 		, val f
 		, val b
 		]
-	setunits = ["unit", "B"] -- tell parted we use bytes
 	mkpart partnum offset p =
 		[ "mkpart"
 		, val (partType p)
 		, val (partFs p)
-		, show offset
+		-- Using 0 rather than 0B is undocumented magic;
+		-- it makes parted automatically adjust the first partition
+		-- start to be beyond the start of the partition table.
+		, if offset == 0 then "0" else show offset ++ "B"
 		, show (offset + partSize p)
 		] ++ case partName p of
 			Just n -> ["name", show partnum, n]
@@ -153,10 +154,10 @@ partitioned eep disk (PartTable tabletype parts) = property desc $ do
 -- | Runs parted on a disk with the specified parameters.
 --
 -- Parted is run in script mode, so it will never prompt for input.
--- It is asked to use optimal alignment for the disk, for best performance.
+-- It is asked to use cylinder alignment for the disk.
 parted :: Eep -> FilePath -> [String] -> Property NoInfo
 parted YesReallyDeleteDiskContents disk ps = 
-	cmdProperty "parted" ("--script":"--align":"optimal":disk:ps)
+	cmdProperty "parted" ("--script":"--align":"cylinder":disk:ps)
 		`requires` installed
 
 -- | Gets parted installed.
