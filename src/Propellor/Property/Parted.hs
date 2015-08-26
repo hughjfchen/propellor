@@ -3,8 +3,11 @@
 module Propellor.Property.Parted (
 	TableType(..),
 	PartTable(..),
+	Partition(..),
+	mkPartition,
+	Partition.Fs(..),
+	Partition.MkfsOpts,
 	PartType(..),
-	FsType,
 	PartFlag(..),
 	Eep(..),
 	partitioned,
@@ -14,8 +17,10 @@ module Propellor.Property.Parted (
 
 import Propellor
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Partition as Partition
 import Utility.DataUnits
 import Data.Char
+import System.Posix.Files
 
 class PartedVal a where
 	val :: a -> String
@@ -40,12 +45,24 @@ instance Monoid PartTable where
 -- | A partition on the disk.
 data Partition = Partition
 	{ partType :: PartType
-	, partFs :: FsType
-	, partSize :: ByteSize
+	, partSize :: ByteSize -- ^ size of the partition in bytes
+	, partFs :: Partition.Fs
+	, partMkFsOpts :: Partition.MkfsOpts
 	, partFlags :: [(PartFlag, Bool)] -- ^ flags can be set or unset (parted may set some flags by default)
 	, partName :: Maybe String -- ^ optional name for partition (only works for GPT, PC98, MAC)
 	}
 	deriving (Show)
+
+-- | Makes a Partition with defaults for non-important values.
+mkPartition :: Partition.Fs -> ByteSize -> Partition
+mkPartition fs sz = Partition
+	{ partType = Primary
+	, partSize = sz
+	, partFs = fs
+	, partMkFsOpts = []
+	, partFlags = []
+	, partName = Nothing
+	}
 
 -- | Type of a partition.
 data PartType = Primary | Logical | Extended
@@ -55,9 +72,6 @@ instance PartedVal PartType where
 	val Primary = "primary"
 	val Logical = "logical"
 	val Extended = "extended"
-
--- | Eg, "ext4" or "fat16" or "ntfs" or "hfs+" or "linux-swap"
-type FsType = String
 
 -- | Flags that can be set on a partition.
 data PartFlag = BootFlag | RootFlag | SwapFlag | HiddenFlag | RaidFlag | LvmFlag | LbaFlag | LegacyBootFlag | IrstFlag | EspFlag | PaloFlag
@@ -80,18 +94,39 @@ instance PartedVal Bool where
 	val True = "on"
 	val False = "off"
 
+instance PartedVal Partition.Fs where
+	val Partition.EXT2 = "ext2"
+	val Partition.EXT3 = "ext3"
+	val Partition.EXT4 = "ext4"
+	val Partition.BTRFS = "btrfs"
+	val Partition.REISERFS = "reiserfs"
+	val Partition.XFS = "xfs"
+	val Partition.FAT = "fat"
+	val Partition.VFAT = "vfat"
+	val Partition.NTFS = "ntfs"
+	val Partition.LinuxSwap = "linux-swap"
+
 data Eep = YesReallyDeleteDiskContents
 
--- | Partitions a disk using parted. Does not mkfs filesystems.
+-- | Partitions a disk using parted, and formats the partitions.
 --
--- The FilePath can be a disk device (eg, /dev/sda), or a disk image file.
+-- The FilePath can be a block device (eg, /dev/sda), or a disk image file.
 --
 -- This deletes any existing partitions in the disk! Use with EXTREME caution!
 partitioned :: Eep -> FilePath -> PartTable -> Property NoInfo
-partitioned eep disk (PartTable tabletype parts) = 
-	parted eep disk (concat (setunits : mklabel : mkparts (1 :: Integer) 0 parts []))
-		`describe` (disk ++ " partitioned")
+partitioned eep disk (PartTable tabletype parts) = property desc $ do
+	isdev <- liftIO $ isBlockDevice <$> getFileStatus disk
+	ensureProperty $ if isdev
+		then go (map (\n -> disk ++ show n) [1 :: Int ..])
+		else Partition.kpartx disk go
   where
+	desc = disk ++ " partitioned"
+	go devs = combineProperties desc $
+		parted eep disk partedparams : map format (zip parts devs)
+	partedparams = concat $ 
+		setunits : mklabel : mkparts (1 :: Integer) 0 parts []
+	format (p, dev) = Partition.formatted' (partMkFsOpts p)
+		Partition.YesReallyFormatPartition (partFs p) dev
 	mklabel = ["mklabel", val tabletype]
 	mkflag partnum (f, b) =
 		[ "set"
@@ -99,12 +134,12 @@ partitioned eep disk (PartTable tabletype parts) =
 		, val f
 		, val b
 		]
-	setunits = ["unit", "B"]
+	setunits = ["unit", "B"] -- tell parted we use bytes
 	mkpart partnum offset p =
 		[ "mkpart"
 		, show partnum
 		, val (partType p)
-		, partFs p
+		, val (partFs p)
 		, show offset
 		, show (offset + partSize p)
 		] ++ case partName p of

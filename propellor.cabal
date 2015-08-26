@@ -96,6 +96,7 @@ Library
     Propellor.Property.OpenId
     Propellor.Property.OS
     Propellor.Property.Parted
+    Propellor.Property.Partition
     Propellor.Property.Postfix
     Propellor.Property.Prosody
     Propellor.Property.Reboot

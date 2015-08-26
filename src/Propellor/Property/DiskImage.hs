@@ -10,7 +10,6 @@ module Propellor.Property.DiskImage (
 import Propellor
 import Propellor.Property.Chroot
 import Utility.DataUnits
-import Data.Monoid
 
 -- | Creates a bootable disk image.
 --
