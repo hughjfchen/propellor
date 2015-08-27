@@ -57,8 +57,8 @@ type MountPoint = Maybe FilePath
 -- exploiting laziness and tying the knot.
 --
 -- (Partitions that are not mounted (ie, LinuxSwap) will have 128 MegaBytes
--- provides as a default size.)
-type MkPartTable = [MegaBytes] -> ([MountPoint], PartTable)
+-- provided as a default size.)
+type MkPartTable = [PartSize] -> ([MountPoint], PartTable)
 
 -- TODO tie the knot
 -- let f = fitChrootSize MSDOS [(Just "/", mkPartition  EXT2)] 
@@ -69,7 +69,7 @@ type MkPartTable = [MegaBytes] -> ([MountPoint], PartTable)
 -- 
 -- Partitions that are not mounted (ie, LinuxSwap) will have their size
 -- set to 128 MegaBytes, unless it's overridden.
-fitChrootSize :: TableType -> [(MountPoint, MegaBytes -> Partition)] -> MkPartTable
+fitChrootSize :: TableType -> [(MountPoint, PartSize -> Partition)] -> MkPartTable
 fitChrootSize tt l basesizes = (mounts, parttable)
   where
 	(mounts, sizers) = unzip l

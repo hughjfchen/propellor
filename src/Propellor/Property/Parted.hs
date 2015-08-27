@@ -6,9 +6,9 @@ module Propellor.Property.Parted (
 	Partition(..),
 	mkPartition,
 	Partition.Fs(..),
-	MegaBytes(..),
+	PartSize(..),
 	ByteSize,
-	toMegaBytes,
+	toPartSize,
 	Partition.MkfsOpts,
 	PartType(..),
 	PartFlag(..),
@@ -48,7 +48,7 @@ instance Monoid PartTable where
 -- | A partition on the disk.
 data Partition = Partition
 	{ partType :: PartType
-	, partSize :: MegaBytes
+	, partSize :: PartSize
 	, partFs :: Partition.Fs
 	, partMkFsOpts :: Partition.MkfsOpts
 	, partFlags :: [(PartFlag, Bool)] -- ^ flags can be set or unset (parted may set some flags by default)
@@ -57,7 +57,7 @@ data Partition = Partition
 	deriving (Show)
 
 -- | Makes a Partition with defaults for non-important values.
-mkPartition :: Partition.Fs -> MegaBytes -> Partition
+mkPartition :: Partition.Fs -> PartSize -> Partition
 mkPartition fs sz = Partition
 	{ partType = Primary
 	, partSize = sz
@@ -80,16 +80,16 @@ instance PartedVal PartType where
 -- automatically lay out the partitions.
 --
 -- Note that these are SI megabytes, not mebibytes.
-newtype MegaBytes = MegaBytes Integer
+newtype PartSize = MegaBytes Integer
 	deriving (Show)
 
-instance PartedVal MegaBytes where
+instance PartedVal PartSize where
 	val (MegaBytes n) = show n ++ "MB"
 
-toMegaBytes :: ByteSize -> MegaBytes
-toMegaBytes b = MegaBytes (b `div` 1000000)
+toPartSize :: ByteSize -> PartSize
+toPartSize b = MegaBytes (b `div` 1000000)
 
-instance Monoid MegaBytes where
+instance Monoid PartSize where
 	mempty = MegaBytes 0
 	mappend (MegaBytes a) (MegaBytes b) = MegaBytes (a + b)
 
