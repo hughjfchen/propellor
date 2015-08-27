@@ -5,6 +5,7 @@ propellor (2.7.3) UNRELEASED; urgency=medium
   * Added Propellor.Property.DiskImage, for bootable disk image creation.
     (Not yet complete.)
   * Update for Debian systemd-container package split.
+  * Dropped support for ghc 7.4.
 
  -- Joey Hess <id@joeyh.name>  Tue, 25 Aug 2015 13:45:39 -0700
 

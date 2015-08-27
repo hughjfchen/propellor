@@ -38,7 +38,7 @@ Executable propellor
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async, time, QuickCheck, mtl, transformers,
+   containers (>= 0.5), network, async, time, QuickCheck, mtl, transformers,
    exceptions (>= 0.6)
 
   if (! os(windows))
@@ -50,7 +50,7 @@ Executable propellor-config
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async, time, QuickCheck, mtl, transformers,
+   containers (>= 0.5), network, async, time, QuickCheck, mtl, transformers,
    exceptions
 
   if (! os(windows))
@@ -61,7 +61,7 @@ Library
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers, network, async, time, QuickCheck, mtl, transformers,
+   containers (>= 0.5), network, async, time, QuickCheck, mtl, transformers,
    exceptions
 
   if (! os(windows))

@@ -17,6 +17,9 @@ import Propellor.Property.Chroot
 import Propellor.Property.Parted
 import qualified Propellor.Property.Grub as Grub
 
+import qualified Data.Map.Strict as M
+import System.Posix.Files
+
 -- | Creates a bootable disk image.
 --
 -- First the specified Chroot is set up, and its properties are satisfied.
@@ -48,6 +51,30 @@ rebuilt = built' True
 built' :: Bool -> (FilePath -> Chroot) -> MkPartTable -> DiskImageFinalization -> RevertableProperty
 built' rebuild mkparttable mkchroot final = undefined
 
+-- TODO tie the knot
+-- let f = fitChrootSize MSDOS [(Just "/", mkPartition  EXT2)] 
+-- let (mnts, t) = f (map (MegaBytes . fromIntegral  . length . show) mnts)
+
+-- | Generates a map of the sizes of the contents of 
+-- every directory in a filesystem tree.
+--
+-- Should be same values as du -b
+dirSizes :: FilePath -> IO (M.Map FilePath Integer)
+dirSizes top = go M.empty top [top]
+  where
+	go m _ [] = return m
+	go m dir (i:is) = do
+		s <- getSymbolicLinkStatus i
+		let sz = fromIntegral (fileSize s)
+		if isDirectory s
+			then do
+				subm <- go M.empty i =<< dirContents i
+				let sz' = M.foldr' (+) sz 
+					(M.filterWithKey (const . subdirof i) subm)
+				go (M.insertWith (+) i sz' (M.union m subm)) dir is
+			else go (M.insertWith (+) dir sz m) dir is
+	subdirof parent i = not (i `equalFilePath` parent) && takeDirectory i `equalFilePath` parent
+
 -- | Where a partition is mounted. Use Nothing for eg, LinuxSwap.
 type MountPoint = Maybe FilePath
 
@@ -59,10 +86,6 @@ type MountPoint = Maybe FilePath
 -- (Partitions that are not mounted (ie, LinuxSwap) will have 128 MegaBytes
 -- provided as a default size.)
 type MkPartTable = [PartSize] -> ([MountPoint], PartTable)
-
--- TODO tie the knot
--- let f = fitChrootSize MSDOS [(Just "/", mkPartition  EXT2)] 
--- let (mnts, t) = f (map (MegaBytes . fromIntegral  . length . show) mnts)
 
 -- | The constructor for each Partition is passed the size of the files
 -- from the chroot that will be put in that partition.
