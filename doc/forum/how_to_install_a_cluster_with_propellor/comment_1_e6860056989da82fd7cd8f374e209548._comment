@@ -27,39 +27,33 @@ add more.
 So, you'll probably want a way to generate a Host from a HostName with the
 desired Properties you want nodes in the cluster to have:
 
-[[!format haskell """
-clusterNode :: HostName -> Host
-clusterNode hn = host hn
-	& foo
-	& bar
-"""]]
+	clusterNode :: HostName -> Host
+	clusterNode hn = host hn
+		& foo
+		& bar
 
 Then you could feed a list of hostnames to defaultMain to finish the
 config file:
 
-[[!format haskell """
-main :: IO ()
-main = defaultMain (map clusterNode hostnames)
-  where
-	hostnames = 
-		[ "node1"
-		, "node2"
-		-- etc
-		]
-	-- alternatively...
-	-- hostnames = map (\n -> "node" ++ show n) [1..100]
-"""]]
+	main :: IO ()
+	main = defaultMain (map clusterNode hostnames)
+	  where
+		hostnames = 
+			[ "node1"
+			, "node2"
+			-- etc
+			]
+		-- alternatively...
+		-- hostnames = map (\n -> "node" ++ show n) [1..100]
 
 Or, you could even look up the current hostname, and feed defaultMain 
 a Host containing that hostname; so this single propellor configuration
 could be used on any number of hosts:
 
-[[!format haskell """
-main = IO ()
-main = do
-	hn <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
-	defaultMain [ clusterNode hn ]
-"""]]
+	main = IO ()
+	main = do
+		hn <- takeWhile (/= '\n') <$> readProcess "hostname" ["-f"]
+		defaultMain [ clusterNode hn ]
 
 ## Triggering propellor on nodes
 
