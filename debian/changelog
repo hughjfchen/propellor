@@ -3,6 +3,7 @@ propellor (2.7.3) UNRELEASED; urgency=medium
   * Added Propellor.Property.Parted, for disk partitioning.
   * Added Propellor.Property.Partition, for partition formatting etc.
   * Added Propellor.Property.DiskImage, for bootable disk image creation.
+  * Update for Debian systemd-container package split.
 
  -- Joey Hess <id@joeyh.name>  Tue, 25 Aug 2015 13:45:39 -0700
 
