@@ -69,3 +69,4 @@ really preventing it but the output would be a mess.)
 
 There's certianly room for improvement here. Also you'll probably want some
 monitoring, which propellor doesn't provide in itself, etc.
+"""]]
