@@ -20,7 +20,8 @@ module Propellor.Property.Systemd (
 	-- * Journal
 	persistentJournal,
 	journaldConfigured,
-	-- * Containers
+	-- * Containers and machined
+	machined,
 	MachineName,
 	Container,
 	container,
@@ -160,6 +161,18 @@ journaldConfigured option value =
 	configured "/etc/systemd/journald.conf" option value
 		`onChange` restarted journald
 
+-- | Ensures machined and machinectl are installed
+machined :: Property NoInfo
+machined = go `describe` "machined installed"
+  where
+	go = withOS ("standard sources.list") $ \o ->
+		case o of
+			-- Split into separate debian package since systemd 225.
+			(Just (System (Debian suite) _))
+				| not (isStable suite) -> ensureProperty $
+					Apt.installed ["systemd-container"]
+			_ -> noChange
+
 -- | Defines a container with a given machine name.
 --
 -- Properties can be added to configure the Container.
@@ -250,7 +263,7 @@ nspawnService (Container name _ _) cfg = setup <!> teardown
 			`requires` daemonReloaded
 			`requires` writeservicefile
 
-	setup = started service `requires` setupservicefile
+	setup = started service `requires` setupservicefile `requires` machined
 
 	teardown = check (doesFileExist servicefile) $
 		disabled service `requires` stopped service
