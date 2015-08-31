@@ -60,7 +60,8 @@ could be used on any number of hosts:
 When you change your propellor config.hs, you need a way to trigger the
 nodes to update. Propellor has a couple of different ways to do this;
 you could just use Propellor.Property.Cron.runPropellor to run it periodically
-from cron on all the nodes.
+from cron on all the nodes. (With a central git repository holding the
+propellor configuration, naturally.)
 
 Or you could run propellor --spin against all the hosts in the
 cluster to push out a change. (It would be a nice enhancement to make
