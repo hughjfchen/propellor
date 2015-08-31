@@ -6,6 +6,7 @@ propellor (2.7.3) UNRELEASED; urgency=medium
     (Not yet complete.)
   * Dropped support for ghc 7.4.
   * Update for Debian systemd-container package split.
+  * Dropped support for ghc 7.4.
 
  -- Joey Hess <id@joeyh.name>  Tue, 25 Aug 2015 13:45:39 -0700
 
