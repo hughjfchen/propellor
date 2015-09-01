@@ -3,6 +3,7 @@
 module Propellor.Property.DiskImage (
 	built,
 	rebuilt,
+	exists,
 	MountPoint,
 	MkPartTable,
 	fitChrootSize,
@@ -13,14 +14,17 @@ module Propellor.Property.DiskImage (
 ) where
 
 import Propellor
-import Propellor.Property.Chroot
+import Propellor.Property.Chroot (Chroot)
+import qualified Propellor.Property.Chroot as Chroot
 import Propellor.Property.Parted
 import qualified Propellor.Property.Grub as Grub
+import qualified Propellor.Property.File as File
 
 import qualified Data.Map.Strict as M
+import qualified Data.ByteString.Lazy as L
 import System.Posix.Files
 
--- | Creates a bootable disk image.
+-- | Creates a bootable disk image in the specified file.
 --
 -- First the specified Chroot is set up, and its properties are satisfied.
 --
@@ -39,21 +43,51 @@ import System.Posix.Files
 -- >		, (Nothing, const (mkPartition LinuxSwap (MegaBytes 256)))
 -- >		]
 -- > in built chroot partitions (grubBooted PC)
-built :: (FilePath -> Chroot) -> MkPartTable -> DiskImageFinalization -> RevertableProperty
+built :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> DiskImageFinalization -> RevertableProperty
 built = built' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-rebuilt :: (FilePath -> Chroot) -> MkPartTable -> DiskImageFinalization -> RevertableProperty
+rebuilt :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> DiskImageFinalization -> RevertableProperty
 rebuilt = built' True
 
-built' :: Bool -> (FilePath -> Chroot) -> MkPartTable -> DiskImageFinalization -> RevertableProperty
-built' rebuild mkparttable mkchroot final = undefined
+built' :: Bool -> FilePath -> (FilePath -> Chroot) -> MkPartTable -> DiskImageFinalization -> RevertableProperty
+built' rebuild img mkchroot mkparttable final = 
+	(mkimg <!> unmkimg) 
+		`requires` Chroot.provisioned (mkchroot chrootdir)
+		`describe` desc
+  where
+	desc = "built disk image " ++ img
+	unmkimg = File.notPresent img
+	chrootdir = img ++ ".chroot"
+	mkimg = property desc $ do
+		szm <- liftIO $ M.map toPartSize <$> dirSizes chrootdir
+		-- tie the knot!
+		let (mnts, t) = mkparttable (map (getMountSz szm) mnts)
+		let disksz = partTableSize t
+		ensureProperty $
+			exists img disksz
+				`before`
+			partitioned YesReallyDeleteDiskContents img t
 
--- TODO tie the knot
--- let f = fitChrootSize MSDOS [(Just "/", mkPartition  EXT2)] 
--- let (mnts, t) = f (map (MegaBytes . fromIntegral  . length . show) mnts)
+-- | Ensures that a disk image file of the specified size exists.
+-- 
+-- If the file doesn't exist, or is too small, creates a new one, full of 0's.
+--
+-- If the file is too large, truncates it down to the specified size.
+exists :: FilePath -> ByteSize -> Property NoInfo
+exists img sz = property ("disk image exists" ++ img) $ liftIO $ do
+	ms <- catchMaybeIO $ getFileStatus img
+	case ms of
+		Just s 
+			| toInteger (fileSize s) == toInteger sz -> return NoChange
+			| toInteger (fileSize s) > toInteger sz -> do
+				setFileSize img (fromInteger sz)
+				return MadeChange
+		_ -> do
+			L.writeFile img (L.replicate (fromIntegral sz) 0)
+			return MadeChange
 
 -- | Generates a map of the sizes of the contents of 
 -- every directory in a filesystem tree.
@@ -78,20 +112,25 @@ dirSizes top = go M.empty top [top]
 -- | Where a partition is mounted. Use Nothing for eg, LinuxSwap.
 type MountPoint = Maybe FilePath
 
+getMountSz :: (M.Map FilePath PartSize) -> MountPoint -> PartSize
+getMountSz _ Nothing = defSz
+getMountSz szm (Just mntpt) = M.findWithDefault defSz mntpt szm
+	
+defSz :: PartSize
+defSz = MegaBytes 128
+
 -- | This is provided with a list of the sizes of directories in the chroot
 -- under each mount point. The input list corresponds to the list of mount
 -- points that the function returns! This trick is accomplished by 
 -- exploiting laziness and tying the knot.
 --
--- (Partitions that are not mounted (ie, LinuxSwap) will have 128 MegaBytes
+-- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
+-- no corresponding directory in the chroot will have 128 MegaBytes
 -- provided as a default size.)
 type MkPartTable = [PartSize] -> ([MountPoint], PartTable)
 
 -- | The constructor for each Partition is passed the size of the files
 -- from the chroot that will be put in that partition.
--- 
--- Partitions that are not mounted (ie, LinuxSwap) will have their size
--- set to 128 MegaBytes, unless it's overridden.
 fitChrootSize :: TableType -> [(MountPoint, PartSize -> Partition)] -> MkPartTable
 fitChrootSize tt l basesizes = (mounts, parttable)
   where

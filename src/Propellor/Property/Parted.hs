@@ -3,12 +3,14 @@
 module Propellor.Property.Parted (
 	TableType(..),
 	PartTable(..),
+	partTableSize,
 	Partition(..),
 	mkPartition,
 	Partition.Fs(..),
 	PartSize(..),
 	ByteSize,
 	toPartSize,
+	fromPartSize,
 	Partition.MkfsOpts,
 	PartType(..),
 	PartFlag(..),
@@ -44,6 +46,12 @@ instance Monoid PartTable where
 	mempty = PartTable MSDOS []
 	-- | uses the TableType of the second parameter
 	mappend (PartTable _l1 ps1) (PartTable l2 ps2) = PartTable l2 (ps1 ++ ps2)
+
+-- | Gets the total size of the disk specified by the partition table.
+partTableSize :: PartTable -> ByteSize
+partTableSize (PartTable _ ps) = fromPartSize $
+	-- add 1 megabyte to hold the partition table itself
+	mconcat (MegaBytes 1 : map partSize ps)
 
 -- | A partition on the disk.
 data Partition = Partition
@@ -88,6 +96,9 @@ instance PartedVal PartSize where
 
 toPartSize :: ByteSize -> PartSize
 toPartSize b = MegaBytes (b `div` 1000000)
+
+fromPartSize :: PartSize -> ByteSize
+fromPartSize (MegaBytes b) = b * 1000000
 
 instance Monoid PartSize where
 	mempty = MegaBytes 0
