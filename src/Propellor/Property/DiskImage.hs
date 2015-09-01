@@ -15,6 +15,7 @@ module Propellor.Property.DiskImage (
 
 import Propellor
 import Propellor.Property.Chroot (Chroot)
+import Propellor.Property.Chroot.Util (removeChroot)
 import qualified Propellor.Property.Chroot as Chroot
 import Propellor.Property.Parted
 import qualified Propellor.Property.Grub as Grub
@@ -56,6 +57,7 @@ built' :: Bool -> FilePath -> (FilePath -> Chroot) -> MkPartTable -> DiskImageFi
 built' rebuild img mkchroot mkparttable final = 
 	(mkimg <!> unmkimg) 
 		`requires` Chroot.provisioned (mkchroot chrootdir)
+		`requires` (handlerebuild <!> doNothing)
 		`describe` desc
   where
 	desc = "built disk image " ++ img
@@ -70,6 +72,11 @@ built' rebuild img mkchroot mkparttable final =
 			exists img disksz
 				`before`
 			partitioned YesReallyDeleteDiskContents img t
+	handlerebuild
+		| rebuild = property desc $ do
+			liftIO $ removeChroot chrootdir
+			return MadeChange
+		| otherwise = doNothing
 
 -- | Ensures that a disk image file of the specified size exists.
 -- 
