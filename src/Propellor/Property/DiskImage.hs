@@ -80,6 +80,7 @@ built' rebuild img mkchroot mkparttable final =
 		szm <- liftIO $ M.map toPartSize <$> dirSizes chrootdir
 		-- tie the knot!
 		let (mnts, t) = mkparttable (map (getMountSz szm) mnts)
+		liftIO $ print (mnts, t)
 		ensureProperty $
 			exists img (partTableSize t)
 				`before`
