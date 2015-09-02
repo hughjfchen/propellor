@@ -1,9 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 
+-- | Disk image generation. 
+--
+-- This module is designed to be imported unqualified.
+
 module Propellor.Property.DiskImage (
-	built,
-	rebuilt,
-	exists,
+	imageBuilt,
+	imageRebuilt,
+	imageExists,
 	MountPoint,
 	PartSpec,
 	mountedAt,
@@ -14,6 +18,7 @@ module Propellor.Property.DiskImage (
 	Finalization,
 	grubBooted,
 	Grub.BIOS(..),
+	module Propellor.Property.Parted
 ) where
 
 import Propellor
@@ -38,29 +43,28 @@ import System.Posix.Files
 --
 -- Example use:
 --
--- > import qualified Propellor.Property.DiskImage as DiskImage
--- > import Propellor.Property.Parted
+-- > import Propellor.Property.DiskImage
 --
 -- > let chroot d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 -- > 		& Apt.installed ["linux-image-amd64"]
 -- >		& ...
--- >    partitions = DiskImage.fitChrootSize MSDOS
--- >		[ mkPartition EXT2 `DiskImage.mountedAt` "/boot"
--- >		, mkPartition EXT4 `DiskImage.mountedAt` "/"
--- >		, DiskImage.swapPartition (MegaBytes 256)
+-- >    partitions = fitChrootSize MSDOS
+-- >		[ mkPartition EXT2 `mountedAt` "/boot"
+-- >		, mkPartition EXT4 `mountedAt` "/"
+-- >		, swapPartition (MegaBytes 256)
 -- >		]
--- > in DiskImage.built "/srv/images/foo.img" chroot partitions (DiskImage.grubBooted DiskImage.PC)
-built :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
-built = built' False
+-- > in imageBuilt "/srv/images/foo.img" chroot partitions (grubBooted PC)
+imageBuilt :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
+imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-rebuilt :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
-rebuilt = built' True
+imageRebuilt :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
+imageRebuilt = imageBuilt' True
 
-built' :: Bool -> FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
-built' rebuild img mkchroot mkparttable final = 
+imageBuilt' :: Bool -> FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
+imageBuilt' rebuild img mkchroot mkparttable final = 
 	(mkimg <!> unmkimg) 
 		-- TODO snd final
 		-- TODO copy in
@@ -85,7 +89,7 @@ built' rebuild img mkchroot mkparttable final =
 		-- TODO if any size is < 1 MB, use 1 MB for sanity
 		let (mnts, t) = mkparttable (map (getMountSz szm) mnts)
 		ensureProperty $
-			exists img (partTableSize t)
+			imageExists img (partTableSize t)
 				`before`
 			partitioned YesReallyDeleteDiskContents img t
 	handlerebuild
@@ -103,8 +107,8 @@ built' rebuild img mkchroot mkparttable final =
 -- If the file doesn't exist, or is too small, creates a new one, full of 0's.
 --
 -- If the file is too large, truncates it down to the specified size.
-exists :: FilePath -> ByteSize -> Property NoInfo
-exists img sz = property ("disk image exists" ++ img) $ liftIO $ do
+imageExists :: FilePath -> ByteSize -> Property NoInfo
+imageExists img sz = property ("disk image exists" ++ img) $ liftIO $ do
 	ms <- catchMaybeIO $ getFileStatus img
 	case ms of
 		Just s 

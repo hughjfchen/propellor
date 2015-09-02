@@ -26,7 +26,6 @@ import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Chroot as Chroot
-import qualified Propellor.Property.DiskImage as DiskImage
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -35,7 +34,7 @@ import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuil
 import qualified Propellor.Property.SiteSpecific.IABak as IABak
 import qualified Propellor.Property.SiteSpecific.Branchable as Branchable
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
-import Propellor.Property.Parted
+import Propellor.Property.DiskImage
 
 main :: IO ()           --     _         ______`|                       ,-.__ 
 main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
@@ -81,14 +80,14 @@ darkstar = host "darkstar.kitenet.net"
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
 	& JoeySites.dkimMilter
 
-	& DiskImage.built "/tmp/img" c ps (DiskImage.grubBooted DiskImage.PC)
+	& imageBuilt "/tmp/img" c ps (grubBooted PC)
   where
 	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 		& Apt.installed ["linux-image-amd64"]
-	ps = DiskImage.fitChrootSize MSDOS
-		[ mkPartition EXT2 `DiskImage.mountedAt` "/boot"
-		, mkPartition EXT4 `DiskImage.mountedAt` "/"
-		, DiskImage.swapPartition (MegaBytes 256)
+	ps = fitChrootSize MSDOS
+		[ mkPartition EXT2 `mountedAt` "/boot"
+		, mkPartition EXT4 `mountedAt` "/"
+		, swapPartition (MegaBytes 256)
 		]
 
 gnu :: Host
