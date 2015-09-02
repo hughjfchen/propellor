@@ -86,8 +86,8 @@ darkstar = host "darkstar.kitenet.net"
 	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 		& Apt.installed ["linux-image-amd64"]
 	ps = DiskImage.fitChrootSize MSDOS
-		[ EXT2 `DiskImage.mountedPartition` "/boot"
-		, EXT4 `DiskImage.mountedPartition` "/"
+		[ mkPartition EXT2 `DiskImage.mountedAt` "/boot"
+		, mkPartition EXT4 `DiskImage.mountedAt` "/"
 		, DiskImage.swapPartition (MegaBytes 256)
 		]
 

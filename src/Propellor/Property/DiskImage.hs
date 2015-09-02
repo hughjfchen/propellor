@@ -6,7 +6,7 @@ module Propellor.Property.DiskImage (
 	exists,
 	MountPoint,
 	PartSpec,
-	mountedPartition,
+	mountedAt,
 	swapPartition,
 	MkPartTable,
 	fitChrootSize,
@@ -45,8 +45,8 @@ import System.Posix.Files
 -- > 		& Apt.installed ["linux-image-amd64"]
 -- >		& ...
 -- >    partitions = DiskImage.fitChrootSize MSDOS
--- >		[ EXT2 `DiskImage.mountedPartition` "/boot"
--- >		, EXT4 `DiskImage.mountedPartition` "/"
+-- >		[ mkPartition EXT2 `DiskImage.mountedAt` "/boot"
+-- >		, mkPartition EXT4 `DiskImage.mountedAt` "/"
 -- >		, DiskImage.swapPartition (MegaBytes 256)
 -- >		]
 -- > in DiskImage.built "/srv/images/foo.img" chroot partitions (DiskImage.grubBooted DiskImage.PC)
@@ -144,8 +144,8 @@ type MountPoint = Maybe FilePath
 type PartSpec = (MountPoint, PartSize -> Partition)
 
 -- | Specifies a mounted partition using a given filesystem.
-mountedPartition :: Fs -> FilePath -> PartSpec
-mountedPartition fs mntpoint = (Just mntpoint, mkPartition fs)
+mountedAt :: (PartSize -> Partition) -> FilePath -> PartSpec
+mountedAt mkp mntpoint = (Just mntpoint, mkp)
 
 -- | Specifies a swap partition of a given size.
 swapPartition :: PartSize -> PartSpec
