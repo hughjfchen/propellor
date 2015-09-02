@@ -5,9 +5,11 @@
 -- This module is designed to be imported unqualified.
 
 module Propellor.Property.DiskImage (
+	DiskImage,
 	-- * Properties
 	imageBuilt,
 	imageRebuilt,
+	imageBuiltFrom,
 	imageExists,
 	-- * Partition specifiction
 	module Propellor.Property.Parted,
@@ -41,6 +43,8 @@ import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Lazy as L
 import System.Posix.Files
 
+type DiskImage = FilePath
+
 -- | Creates a bootable disk image in the specified file.
 --
 -- First the specified Chroot is set up, and its properties are satisfied.
@@ -61,33 +65,45 @@ import System.Posix.Files
 -- >		, swapPartition (MegaBytes 256)
 -- >		]
 -- > in imageBuilt "/srv/images/foo.img" chroot partitions (grubBooted PC)
-imageBuilt :: FilePath -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
+imageBuilt :: DiskImage -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
 imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-imageRebuilt :: FilePath -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
+imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
 imageRebuilt = imageBuilt' True
 
-imageBuilt' :: Bool -> FilePath -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
+imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
 imageBuilt' rebuild img mkchroot mkparttable final = 
-	(mkimg <!> unmkimg) 
-		-- TODO snd final
-		-- TODO copy in
+	imageBuiltFrom img chrootdir mkparttable (snd final)
 		`requires` Chroot.provisioned chroot
 		`requires` (cleanrebuild <!> doNothing)
 		`describe` desc
   where
 	desc = "built disk image " ++ img
-	unmkimg = File.notPresent img
+	cleanrebuild
+		| rebuild = property desc $ do
+			liftIO $ removeChroot chrootdir
+			return MadeChange
+		| otherwise = doNothing
 	chrootdir = img ++ ".chroot"
 	chroot = mkchroot chrootdir
-		-- Run first stage finalization.
+		-- First stage finalization.
 		& fst final
 		-- Avoid wasting disk image space on the apt cache
 		& Apt.cacheCleaned
-	mkimg = property desc $ do
+
+-- | Builds a disk image from the contents of a chroot.
+--
+-- The passed property is run inside the mounted disk image.
+--
+-- TODO copy in
+-- TODO run final
+imageBuiltFrom :: DiskImage -> FilePath -> SizePartTable -> Property NoInfo -> RevertableProperty
+imageBuiltFrom img chrootdir mkparttable final = mkimg <!> rmimg
+  where
+	mkimg = property (img ++ " built from " ++ chrootdir) $ do
 		-- unmount helper filesystems such as proc from the chroot
 		-- before getting sizes
 		liftIO $ unmountBelow chrootdir
@@ -101,11 +117,7 @@ imageBuilt' rebuild img mkchroot mkparttable final =
 			imageExists img (partTableSize t)
 				`before`
 			partitioned YesReallyDeleteDiskContents img t
-	cleanrebuild
-		| rebuild = property desc $ do
-			liftIO $ removeChroot chrootdir
-			return MadeChange
-		| otherwise = doNothing
+	rmimg = File.notPresent img
 
 -- | Ensures that a disk image file of the specified size exists.
 -- 
