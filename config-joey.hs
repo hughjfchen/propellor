@@ -80,7 +80,7 @@ darkstar = host "darkstar.kitenet.net"
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
 	& JoeySites.dkimMilter
 
-	& imageBuilt "/tmp/img" c ps (grubBooted PC)
+	& imageBuilt "/tmp/img" c ps noFinalization -- (grubBooted PC)
   where
 	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 		& Apt.installed ["linux-image-amd64"]

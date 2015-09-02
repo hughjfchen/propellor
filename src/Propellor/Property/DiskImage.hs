@@ -23,6 +23,7 @@ module Propellor.Property.DiskImage (
 	Finalization,
 	grubBooted,
 	Grub.BIOS(..),
+	noFinalization,
 ) where
 
 import Propellor
@@ -31,6 +32,7 @@ import Propellor.Property.Chroot.Util (removeChroot)
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Parted
 import Propellor.Property.Mount
 import Utility.Path
@@ -73,14 +75,18 @@ imageBuilt' rebuild img mkchroot mkparttable final =
 	(mkimg <!> unmkimg) 
 		-- TODO snd final
 		-- TODO copy in
-		-- TODO chroot topevel directory perm fixup
-		`requires` Chroot.provisioned (mkchroot chrootdir & fst final)
+		`requires` Chroot.provisioned chroot
 		`requires` (cleanrebuild <!> doNothing)
 		`describe` desc
   where
 	desc = "built disk image " ++ img
 	unmkimg = File.notPresent img
 	chrootdir = img ++ ".chroot"
+	chroot = mkchroot chrootdir
+		-- Run first stage finalization.
+		& fst final
+		-- Avoid wasting disk image space on the apt cache
+		& Apt.cacheCleaned
 	mkimg = property desc $ do
 		-- unmount helper filesystems such as proc from the chroot
 		-- before getting sizes
@@ -223,3 +229,6 @@ type Finalization = (Property NoInfo, Property NoInfo)
 -- | Makes grub be the boot loader of the disk image.
 grubBooted :: Grub.BIOS -> Finalization
 grubBooted bios = (Grub.installed bios, undefined)
+
+noFinalization :: Finalization
+noFinalization = (doNothing, doNothing)
