@@ -147,13 +147,15 @@ data Eep = YesReallyDeleteDiskContents
 partitioned :: Eep -> FilePath -> PartTable -> Property NoInfo
 partitioned eep disk (PartTable tabletype parts) = property desc $ do
 	isdev <- liftIO $ isBlockDevice <$> getFileStatus disk
-	ensureProperty $ if isdev
-		then go (map (\n -> disk ++ show n) [1 :: Int ..])
-		else Partition.kpartx disk go
+	ensureProperty $ combineProperties desc
+		[ parted eep disk partedparams
+		, if isdev
+			then formatl (map (\n -> disk ++ show n) [1 :: Int ..])
+			else Partition.kpartx disk formatl
+		]
   where
 	desc = disk ++ " partitioned"
-	go devs = combineProperties desc $
-		parted eep disk partedparams : map format (zip parts devs)
+	formatl devs = combineProperties desc (map format (zip parts devs))
 	partedparams = concat $ mklabel : mkparts (1 :: Integer) mempty parts []
 	format (p, dev) = Partition.formatted' (partMkFsOpts p)
 		Partition.YesReallyFormatPartition (partFs p) dev
