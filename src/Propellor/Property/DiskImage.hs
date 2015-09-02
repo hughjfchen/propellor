@@ -73,9 +73,8 @@ imageBuilt' rebuild img mkchroot mkparttable final =
 	(mkimg <!> unmkimg) 
 		-- TODO snd final
 		-- TODO copy in
-		-- TODO fst final
 		-- TODO chroot topevel directory perm fixup
-		`requires` Chroot.provisioned (mkchroot chrootdir)
+		`requires` Chroot.provisioned (mkchroot chrootdir & fst final)
 		`requires` (cleanrebuild <!> doNothing)
 		`describe` desc
   where
@@ -121,9 +120,10 @@ imageExists img sz = property ("disk image exists" ++ img) $ liftIO $ do
 			return MadeChange
 
 -- | Generates a map of the sizes of the contents of 
--- every directory in a filesystem tree.
+-- every directory in a filesystem tree. (Hard links are counted multiple
+-- times for simplicity)
 --
--- Should be same values as du -b
+-- Should be same values as du -bl
 dirSizes :: FilePath -> IO (M.Map FilePath Integer)
 dirSizes top = go M.empty top [top]
   where
