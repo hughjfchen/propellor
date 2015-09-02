@@ -5,10 +5,13 @@ module Propellor.Property.DiskImage (
 	rebuilt,
 	exists,
 	MountPoint,
+	PartSpec,
+	mountedPartition,
+	swapPartition,
 	MkPartTable,
 	fitChrootSize,
 	freeSpace,
-	DiskImageFinalization,
+	Finalization,
 	grubBooted,
 	Grub.BIOS(..),
 ) where
@@ -32,30 +35,30 @@ import System.Posix.Files
 -- Then, the disk image is set up, and the chroot is copied into the
 -- appropriate partition(s) of it.
 --
--- Finally, the DiskImageFinalization property is
--- satisfied to make the disk image bootable.
--- 
 -- > let chroot d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 -- > 		& Apt.installed ["openssh-server"]
 -- >		& ...
--- >    partitions = fitChrootSize MSDOS
--- >		[ (Just "/boot", mkPartiton EXT2)
--- >		, (Just "/", mkPartition EXT4)
--- >		, (Nothing, const (mkPartition LinuxSwap (MegaBytes 256)))
+-- >    partitions = DiskImage.fitChrootSize MSDOS
+-- >		[ EXT2 `DiskImage.mountedPartition` "/boot"
+-- >		, EXT4 `DiskImage.mountedPartition` "/"
+-- >		, DiskImage.swapPartition (MegaBytes 256)
 -- >		]
--- > in built chroot partitions (grubBooted PC)
-built :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> DiskImageFinalization -> RevertableProperty
+-- > in DiskImage.built "/srv/images/foo.img" chroot partitions (DiskImage.grubBooted DiskImage.PC)
+built :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
 built = built' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-rebuilt :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> DiskImageFinalization -> RevertableProperty
+rebuilt :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
 rebuilt = built' True
 
-built' :: Bool -> FilePath -> (FilePath -> Chroot) -> MkPartTable -> DiskImageFinalization -> RevertableProperty
+built' :: Bool -> FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
 built' rebuild img mkchroot mkparttable final = 
 	(mkimg <!> unmkimg) 
+		-- TODO snd final
+		-- TODO copy in
+		-- TODO fst final
 		`requires` Chroot.provisioned (mkchroot chrootdir)
 		`requires` (handlerebuild <!> doNothing)
 		`describe` desc
@@ -118,6 +121,17 @@ dirSizes top = go M.empty top [top]
 -- | Where a partition is mounted. Use Nothing for eg, LinuxSwap.
 type MountPoint = Maybe FilePath
 
+-- | Specifies a mount point and a constructor for a Partition.
+type PartSpec = (MountPoint, PartSize -> Partition)
+
+-- | Specifies a mounted partition using a given filesystem.
+mountedPartition :: Fs -> FilePath -> PartSpec
+mountedPartition fs mntpoint = (Just mntpoint, mkPartition fs)
+
+-- | Specifies a swap partition of a given size.
+swapPartition :: PartSize -> PartSpec
+swapPartition sz = (Nothing, const (mkPartition LinuxSwap sz))
+
 getMountSz :: (M.Map FilePath PartSize) -> MountPoint -> PartSize
 getMountSz _ Nothing = defSz
 getMountSz szm (Just mntpt) = M.findWithDefault defSz mntpt szm
@@ -137,7 +151,7 @@ type MkPartTable = [PartSize] -> ([MountPoint], PartTable)
 
 -- | The constructor for each Partition is passed the size of the files
 -- from the chroot that will be put in that partition.
-fitChrootSize :: TableType -> [(MountPoint, PartSize -> Partition)] -> MkPartTable
+fitChrootSize :: TableType -> [PartSpec] -> MkPartTable
 fitChrootSize tt l basesizes = (mounts, parttable)
   where
 	(mounts, sizers) = unzip l
@@ -156,8 +170,8 @@ freeSpace tt = fitChrootSize tt . map (\(mnt, p) -> (mnt, adjustsz p))
 -- The second property is satisfied chrooted into the resulting
 -- disk image, and will typically take care of installing the boot loader
 -- to the disk image.
-type DiskImageFinalization = (Property NoInfo, Property NoInfo)
+type Finalization = (Property NoInfo, Property NoInfo)
 
 -- | Makes grub be the boot loader of the disk image.
-grubBooted :: Grub.BIOS -> DiskImageFinalization
+grubBooted :: Grub.BIOS -> Finalization
 grubBooted bios = (Grub.installed bios, undefined)

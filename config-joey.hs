@@ -26,6 +26,7 @@ import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Chroot as Chroot
+import qualified Propellor.Property.DiskImage as DiskImage
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -80,8 +81,15 @@ darkstar = host "darkstar.kitenet.net"
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
 	& JoeySites.dkimMilter
 
-	& partitioned YesReallyDeleteDiskContents "/home/joey/disk"
-		(PartTable MSDOS [ mkPartition EXT3 (MegaBytes 256), mkPartition LinuxSwap (MegaBytes 16)])
+	& DiskImage.built "/tmp/img" c ps (DiskImage.grubBooted DiskImage.PC)
+  where
+	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
+		& Apt.installed ["openssh-server"]
+	ps = DiskImage.fitChrootSize MSDOS
+		[ EXT2 `DiskImage.mountedPartition` "/boot"
+		, EXT4 `DiskImage.mountedPartition` "/"
+		, DiskImage.swapPartition (MegaBytes 256)
+		]
 
 gnu :: Host
 gnu = host "gnu.kitenet.net"
