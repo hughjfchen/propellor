@@ -80,8 +80,10 @@ built' rebuild img mkchroot mkparttable final =
 		szm <- liftIO $ M.mapKeys tosysdir . M.map toPartSize 
 			<$> dirSizes chrootdir
 		-- tie the knot!
+		-- TODO when /boot is in part table, size of /
+		-- should be reduced by sie of /boot
+		-- TODO if any size is < 1 MB, use 1 MB for sanity
 		let (mnts, t) = mkparttable (map (getMountSz szm) mnts)
-		liftIO $ print (mnts, t, map (getMountSz szm) mnts)
 		ensureProperty $
 			exists img (partTableSize t)
 				`before`
