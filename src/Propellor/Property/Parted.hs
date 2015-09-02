@@ -11,6 +11,7 @@ module Propellor.Property.Parted (
 	ByteSize,
 	toPartSize,
 	fromPartSize,
+	reducePartSize,
 	Partition.MkfsOpts,
 	PartType(..),
 	PartFlag(..),
@@ -103,6 +104,9 @@ fromPartSize (MegaBytes b) = b * 1000000
 instance Monoid PartSize where
 	mempty = MegaBytes 0
 	mappend (MegaBytes a) (MegaBytes b) = MegaBytes (a + b)
+
+reducePartSize :: PartSize -> PartSize -> PartSize
+reducePartSize (MegaBytes a) (MegaBytes b) = MegaBytes (a - b)
 
 -- | Flags that can be set on a partition.
 data PartFlag = BootFlag | RootFlag | SwapFlag | HiddenFlag | RaidFlag | LvmFlag | LbaFlag | LegacyBootFlag | IrstFlag | EspFlag | PaloFlag

@@ -33,6 +33,7 @@ import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
 import Propellor.Property.Parted
 import Propellor.Property.Mount
+import Utility.Path
 
 import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Lazy as L
@@ -85,13 +86,12 @@ imageBuilt' rebuild img mkchroot mkparttable final =
 		-- unmount helper filesystems such as proc from the chroot
 		-- before getting sizes
 		liftIO $ unmountBelow chrootdir
-		szm <- liftIO $ M.mapKeys (toSysDir chrootdir) . M.map toPartSize 
-			<$> dirSizes chrootdir
+		szm <- M.mapKeys (toSysDir chrootdir) . M.map toPartSize 
+			<$> liftIO (dirSizes chrootdir)
 		-- tie the knot!
-		-- TODO when /boot is in part table, size of /
-		-- should be reduced by sie of /boot
 		-- TODO if any size is < 1 MB, use 1 MB for sanity
-		let (mnts, t) = mkparttable (map (getMountSz szm) mnts)
+		let (mnts, t) = mkparttable (map (saneSz . fromMaybe defSz . getMountSz szm mnts) mnts)
+		liftIO $ print (mnts, t)
 		ensureProperty $
 			imageExists img (partTableSize t)
 				`before`
@@ -140,6 +140,23 @@ dirSizes top = go M.empty top [top]
 			else go (M.insertWith (+) dir sz m) dir is
 	subdirof parent i = not (i `equalFilePath` parent) && takeDirectory i `equalFilePath` parent
 
+-- | Gets the size to allocate for a particular mount point, given the
+-- map of sizes.
+--
+-- A list of all mount points is provided, so that when eg calculating
+-- the size for /, if /boot is a mount point, its size can be subtracted.
+getMountSz :: (M.Map FilePath PartSize) -> [MountPoint] -> MountPoint -> Maybe PartSize
+getMountSz _ _ Nothing = Nothing
+getMountSz szm l (Just mntpt) = 
+	fmap (`reducePartSize` childsz) (M.lookup mntpt szm)
+  where
+	childsz = mconcat $ catMaybes $
+		map (getMountSz szm l) (filter childmntpt l)
+	childmntpt Nothing = False
+	childmntpt (Just d) 
+		| d `equalFilePath` mntpt = False
+		| otherwise = mntpt `dirContains` d
+
 -- | From a location in a chroot (eg, /tmp/chroot/usr) to
 -- the corresponding location inside (eg, /usr).
 toSysDir :: FilePath -> FilePath -> FilePath
@@ -162,10 +179,11 @@ mountedAt mkp mntpoint = (Just mntpoint, mkp)
 swapPartition :: PartSize -> PartSpec
 swapPartition sz = (Nothing, const (mkPartition LinuxSwap sz))
 
-getMountSz :: (M.Map FilePath PartSize) -> MountPoint -> PartSize
-getMountSz _ Nothing = defSz
-getMountSz szm (Just mntpt) = M.findWithDefault defSz mntpt szm
-	
+-- | Avoid partitions smaller than 1 mb; parted gets confused.
+saneSz :: PartSize -> PartSize
+saneSz (MegaBytes n) | n < 1 = MegaBytes 1
+saneSz sz = sz
+
 defSz :: PartSize
 defSz = MegaBytes 128
 
