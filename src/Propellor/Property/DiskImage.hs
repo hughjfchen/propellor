@@ -5,20 +5,24 @@
 -- This module is designed to be imported unqualified.
 
 module Propellor.Property.DiskImage (
+	-- * Properties
 	imageBuilt,
 	imageRebuilt,
 	imageExists,
+	-- * Partition specifiction
+	module Propellor.Property.Parted,
 	MountPoint,
 	PartSpec,
 	mountedAt,
 	swapPartition,
-	MkPartTable,
+	-- * Partition sizing
+	SizePartTable,
 	fitChrootSize,
 	freeSpace,
+	-- * Finalization
 	Finalization,
 	grubBooted,
 	Grub.BIOS(..),
-	module Propellor.Property.Parted
 ) where
 
 import Propellor
@@ -54,16 +58,16 @@ import System.Posix.Files
 -- >		, swapPartition (MegaBytes 256)
 -- >		]
 -- > in imageBuilt "/srv/images/foo.img" chroot partitions (grubBooted PC)
-imageBuilt :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
+imageBuilt :: FilePath -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
 imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-imageRebuilt :: FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
+imageRebuilt :: FilePath -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
 imageRebuilt = imageBuilt' True
 
-imageBuilt' :: Bool -> FilePath -> (FilePath -> Chroot) -> MkPartTable -> Finalization -> RevertableProperty
+imageBuilt' :: Bool -> FilePath -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
 imageBuilt' rebuild img mkchroot mkparttable final = 
 	(mkimg <!> unmkimg) 
 		-- TODO snd final
@@ -170,11 +174,11 @@ defSz = MegaBytes 128
 -- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
 -- no corresponding directory in the chroot will have 128 MegaBytes
 -- provided as a default size.)
-type MkPartTable = [PartSize] -> ([MountPoint], PartTable)
+type SizePartTable = [PartSize] -> ([MountPoint], PartTable)
 
 -- | The constructor for each Partition is passed the size of the files
 -- from the chroot that will be put in that partition.
-fitChrootSize :: TableType -> [PartSpec] -> MkPartTable
+fitChrootSize :: TableType -> [PartSpec] -> SizePartTable
 fitChrootSize tt l basesizes = (mounts, parttable)
   where
 	(mounts, sizers) = unzip l
@@ -183,7 +187,7 @@ fitChrootSize tt l basesizes = (mounts, parttable)
 -- | After populating the partitions with files from the chroot,
 -- they will have remaining free space equal to the sizes of the input
 -- partitions.
-freeSpace :: TableType -> [(MountPoint, Partition)] -> MkPartTable
+freeSpace :: TableType -> [(MountPoint, Partition)] -> SizePartTable
 freeSpace tt = fitChrootSize tt . map (\(mnt, p) -> (mnt, adjustsz p))
   where
 	adjustsz p basesize = p { partSize = partSize p <> basesize }
