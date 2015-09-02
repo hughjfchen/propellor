@@ -77,7 +77,8 @@ built' rebuild img mkchroot mkparttable final =
 		-- unmount helper filesystems such as proc from the chroot
 		-- before getting sizes
 		liftIO $ unmountBelow chrootdir
-		szm <- liftIO $ M.map toPartSize <$> dirSizes chrootdir
+		szm <- liftIO $ M.mapKeys tosysdir . M.map toPartSize 
+			<$> dirSizes chrootdir
 		-- tie the knot!
 		let (mnts, t) = mkparttable (map (getMountSz szm) mnts)
 		liftIO $ print (mnts, t, map (getMountSz szm) mnts, szm)
@@ -90,6 +91,10 @@ built' rebuild img mkchroot mkparttable final =
 			liftIO $ removeChroot chrootdir
 			return MadeChange
 		| otherwise = doNothing
+
+	tosysdir d = case makeRelative chrootdir d of
+		"." -> "/"
+		sysdir -> "/" ++ sysdir
 
 -- | Ensures that a disk image file of the specified size exists.
 -- 
