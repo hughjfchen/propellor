@@ -42,7 +42,7 @@ import System.Posix.Files
 -- > import Propellor.Property.Parted
 --
 -- > let chroot d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
--- > 		& Apt.installed ["openssh-server"]
+-- > 		& Apt.installed ["linux-image-amd64"]
 -- >		& ...
 -- >    partitions = DiskImage.fitChrootSize MSDOS
 -- >		[ EXT2 `DiskImage.mountedPartition` "/boot"
@@ -81,7 +81,7 @@ built' rebuild img mkchroot mkparttable final =
 			<$> dirSizes chrootdir
 		-- tie the knot!
 		let (mnts, t) = mkparttable (map (getMountSz szm) mnts)
-		liftIO $ print (mnts, t, map (getMountSz szm) mnts, szm)
+		liftIO $ print (mnts, t, map (getMountSz szm) mnts)
 		ensureProperty $
 			exists img (partTableSize t)
 				`before`

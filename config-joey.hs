@@ -84,7 +84,7 @@ darkstar = host "darkstar.kitenet.net"
 	& DiskImage.built "/tmp/img" c ps (DiskImage.grubBooted DiskImage.PC)
   where
 	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
-		& Apt.installed ["openssh-server"]
+		& Apt.installed ["linux-image-amd64"]
 	ps = DiskImage.fitChrootSize MSDOS
 		[ EXT2 `DiskImage.mountedPartition` "/boot"
 		, EXT4 `DiskImage.mountedPartition` "/"
