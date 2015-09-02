@@ -95,8 +95,9 @@ newtype PartSize = MegaBytes Integer
 instance PartedVal PartSize where
 	val (MegaBytes n) = show n ++ "MB"
 
+-- | Rounds up to the nearest MegaByte.
 toPartSize :: ByteSize -> PartSize
-toPartSize b = MegaBytes (b `div` 1000000)
+toPartSize b = MegaBytes $ ceiling (fromInteger b / 1000000 :: Double)
 
 fromPartSize :: PartSize -> ByteSize
 fromPartSize (MegaBytes b) = b * 1000000

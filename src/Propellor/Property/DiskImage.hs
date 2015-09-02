@@ -88,9 +88,9 @@ imageBuilt' rebuild img mkchroot mkparttable final =
 		liftIO $ unmountBelow chrootdir
 		szm <- M.mapKeys (toSysDir chrootdir) . M.map toPartSize 
 			<$> liftIO (dirSizes chrootdir)
+		let calcsz = \mnts -> saneSz . fromMaybe defSz . getMountSz szm mnts
 		-- tie the knot!
-		-- TODO if any size is < 1 MB, use 1 MB for sanity
-		let (mnts, t) = mkparttable (map (saneSz . fromMaybe defSz . getMountSz szm mnts) mnts)
+		let (mnts, t) = mkparttable (map (calcsz mnts) mnts)
 		liftIO $ print (mnts, t)
 		ensureProperty $
 			imageExists img (partTableSize t)
