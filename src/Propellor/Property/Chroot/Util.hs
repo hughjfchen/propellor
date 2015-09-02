@@ -4,7 +4,6 @@ import Propellor.Property.Mount
 
 import Utility.Env
 import Control.Applicative
-import Control.Monad
 import System.Directory
 
 -- When chrooting, it's useful to ensure that PATH has all the standard
@@ -23,6 +22,5 @@ stdPATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 -- mounted within it.
 removeChroot :: FilePath -> IO ()
 removeChroot c = do
-	submnts <- mountPointsBelow c
-	forM_ submnts umountLazy
+	unmountBelow c
 	removeDirectoryRecursive c

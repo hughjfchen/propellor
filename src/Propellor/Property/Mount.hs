@@ -29,6 +29,12 @@ umountLazy mnt =
 	unlessM (boolSystem "umount" [ Param "-l", Param mnt ]) $
 		errorMessage $ "failed unmounting " ++ mnt
 
+-- | Unmounts anything mounted inside the specified directory.
+unmountBelow :: FilePath -> IO ()
+unmountBelow d = do
+	submnts <- mountPointsBelow d
+	forM_ submnts umountLazy
+
 -- | Mounts a device.
 mount :: FsType -> Source -> FilePath -> IO Bool
 mount fs src mnt = boolSystem "mount" [Param "-t", Param fs, Param src, Param mnt]

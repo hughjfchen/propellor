@@ -20,9 +20,10 @@ import Propellor
 import Propellor.Property.Chroot (Chroot)
 import Propellor.Property.Chroot.Util (removeChroot)
 import qualified Propellor.Property.Chroot as Chroot
-import Propellor.Property.Parted
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
+import Propellor.Property.Parted
+import Propellor.Property.Mount
 
 import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Lazy as L
@@ -73,6 +74,9 @@ built' rebuild img mkchroot mkparttable final =
 	unmkimg = File.notPresent img
 	chrootdir = img ++ ".chroot"
 	mkimg = property desc $ do
+		-- unmount helper filesystems such as proc from the chroot
+		-- before getting sizes
+		liftIO $ unmountBelow chrootdir
 		szm <- liftIO $ M.map toPartSize <$> dirSizes chrootdir
 		-- tie the knot!
 		let (mnts, t) = mkparttable (map (getMountSz szm) mnts)
@@ -112,7 +116,7 @@ dirSizes :: FilePath -> IO (M.Map FilePath Integer)
 dirSizes top = go M.empty top [top]
   where
 	go m _ [] = return m
-	go m dir (i:is) = do
+	go m dir (i:is) = flip catchIO (\_ioerr -> go m dir is) $ do
 		s <- getSymbolicLinkStatus i
 		let sz = fromIntegral (fileSize s)
 		if isDirectory s
