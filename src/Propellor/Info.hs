@@ -18,10 +18,15 @@ pureInfoProperty desc i = infoProperty ("has " ++ desc) (return NoChange) i memp
 askInfo :: (Info -> Val a) -> Propellor (Maybe a)
 askInfo f = asks (fromVal . f . hostInfo)
 
+-- | Specifies the operating system of a host.
+--
+-- This only provides info for other Properties, so they can act
+-- conditional on the os.
 os :: System -> Property HasInfo
 os system = pureInfoProperty ("Operating " ++ show system) $
 	mempty { _os = Val system }
 
+--  Gets the operating system of a host, if it has been specified.
 getOS :: Propellor (Maybe System)
 getOS = askInfo _os
 
