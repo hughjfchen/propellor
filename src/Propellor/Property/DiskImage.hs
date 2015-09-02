@@ -75,7 +75,7 @@ imageBuilt' rebuild img mkchroot mkparttable final =
 		-- TODO fst final
 		-- TODO chroot topevel directory perm fixup
 		`requires` Chroot.provisioned (mkchroot chrootdir)
-		`requires` (handlerebuild <!> doNothing)
+		`requires` (cleanrebuild <!> doNothing)
 		`describe` desc
   where
 	desc = "built disk image " ++ img
@@ -85,7 +85,7 @@ imageBuilt' rebuild img mkchroot mkparttable final =
 		-- unmount helper filesystems such as proc from the chroot
 		-- before getting sizes
 		liftIO $ unmountBelow chrootdir
-		szm <- liftIO $ M.mapKeys tosysdir . M.map toPartSize 
+		szm <- liftIO $ M.mapKeys (toSysDir chrootdir) . M.map toPartSize 
 			<$> dirSizes chrootdir
 		-- tie the knot!
 		-- TODO when /boot is in part table, size of /
@@ -96,15 +96,11 @@ imageBuilt' rebuild img mkchroot mkparttable final =
 			imageExists img (partTableSize t)
 				`before`
 			partitioned YesReallyDeleteDiskContents img t
-	handlerebuild
+	cleanrebuild
 		| rebuild = property desc $ do
 			liftIO $ removeChroot chrootdir
 			return MadeChange
 		| otherwise = doNothing
-
-	tosysdir d = case makeRelative chrootdir d of
-		"." -> "/"
-		sysdir -> "/" ++ sysdir
 
 -- | Ensures that a disk image file of the specified size exists.
 -- 
@@ -143,6 +139,13 @@ dirSizes top = go M.empty top [top]
 				go (M.insertWith (+) i sz' (M.union m subm)) dir is
 			else go (M.insertWith (+) dir sz m) dir is
 	subdirof parent i = not (i `equalFilePath` parent) && takeDirectory i `equalFilePath` parent
+
+-- | From a location in a chroot (eg, /tmp/chroot/usr) to
+-- the corresponding location inside (eg, /usr).
+toSysDir :: FilePath -> FilePath -> FilePath
+toSysDir chrootdir d = case makeRelative chrootdir d of
+		"." -> "/"
+		sysdir -> "/" ++ sysdir
 
 -- | Where a partition is mounted. Use Nothing for eg, LinuxSwap.
 type MountPoint = Maybe FilePath
