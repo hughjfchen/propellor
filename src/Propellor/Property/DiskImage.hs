@@ -35,6 +35,11 @@ import System.Posix.Files
 -- Then, the disk image is set up, and the chroot is copied into the
 -- appropriate partition(s) of it.
 --
+-- Example use:
+--
+-- > import qualified Propellor.Property.DiskImage as DiskImage
+-- > import Propellor.Property.Parted
+--
 -- > let chroot d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 -- > 		& Apt.installed ["openssh-server"]
 -- >		& ...
@@ -59,6 +64,7 @@ built' rebuild img mkchroot mkparttable final =
 		-- TODO snd final
 		-- TODO copy in
 		-- TODO fst final
+		-- TODO chroot topevel directory perm fixup
 		`requires` Chroot.provisioned (mkchroot chrootdir)
 		`requires` (handlerebuild <!> doNothing)
 		`describe` desc
@@ -121,7 +127,8 @@ dirSizes top = go M.empty top [top]
 -- | Where a partition is mounted. Use Nothing for eg, LinuxSwap.
 type MountPoint = Maybe FilePath
 
--- | Specifies a mount point and a constructor for a Partition.
+-- | Specifies a mount point and a constructor for a Partition
+-- that will later be privided with a size.
 type PartSpec = (MountPoint, PartSize -> Partition)
 
 -- | Specifies a mounted partition using a given filesystem.
