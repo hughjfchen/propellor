@@ -41,6 +41,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Parted
 import Propellor.Property.Mount
+import Propellor.Property.Partition
 import Utility.Path
 
 import qualified Data.Map.Strict as M
@@ -108,7 +109,8 @@ imageBuilt' rebuild img mkchroot tabletype partspec final =
 imageBuiltFrom :: DiskImage -> FilePath -> TableType -> [PartSpec] -> Property NoInfo -> RevertableProperty
 imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
   where
-	mkimg = property (img ++ " built from " ++ chrootdir) $ do
+	desc = img ++ " built from " ++ chrootdir
+	mkimg = property desc $ do
 		-- unmount helper filesystems such as proc from the chroot
 		-- before getting sizes
 		liftIO $ unmountBelow chrootdir
@@ -121,7 +123,32 @@ imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
 			imageExists img (partTableSize t)
 				`before`
 			partitioned YesReallyDeleteDiskContents img t
+				`before`
+			kpartx img (copyin mnts)
 	rmimg = File.notPresent img
+
+	copyin mnts devs = property desc $
+		mconcat $ map (uncurry copyinto) (zip mnts devs)
+	copyinto Nothing _ = noChange
+	copyinto (Just mnt) dev = liftIO $ withTmpDir "mnt" $ \tmpdir -> do
+		let d = chrootdir ++ mnt
+		bracket
+			(mount "auto" dev tmpdir)
+			(const $ umountLazy tmpdir)
+			$ \mounted -> if mounted
+				then do
+					ok <- allM (\i -> copy i tmpdir)
+						. filter (wantcopy d)
+						=<< dirContents d
+					return (toResult ok)
+				else return FailedChange
+	copy src dest = do
+		print ("copy", src, dest)
+		-- boolSystem "cp" [Param "-a", File src, File dest]
+		return True
+	-- skip copying files inside child mountpoints
+	wantcopy d f = not (any (`dirContains` f) (filter (isChild d . Just) mntpoints))
+	mntpoints = map (chrootdir ++) $ catMaybes $ map fst partspec
 
 -- | Ensures that a disk image file of the specified size exists.
 -- 
@@ -174,11 +201,13 @@ getMountSz szm l (Just mntpt) =
 	fmap (`reducePartSize` childsz) (M.lookup mntpt szm)
   where
 	childsz = mconcat $ catMaybes $
-		map (getMountSz szm l) (filter childmntpt l)
-	childmntpt Nothing = False
-	childmntpt (Just d) 
-		| d `equalFilePath` mntpt = False
-		| otherwise = mntpt `dirContains` d
+		map (getMountSz szm l) (filter (isChild mntpt) l)
+
+isChild :: FilePath -> MountPoint -> Bool
+isChild mntpt (Just d)
+	| d `equalFilePath` mntpt = False
+	| otherwise = mntpt `dirContains` d
+isChild _ Nothing = False
 
 -- | From a location in a chroot (eg, /tmp/chroot/usr) to
 -- the corresponding location inside (eg, /usr).
