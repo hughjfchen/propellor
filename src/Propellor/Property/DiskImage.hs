@@ -12,11 +12,22 @@ module Propellor.Property.DiskImage (
 	imageBuiltFrom,
 	imageExists,
 	-- * Partition specifiction
-	module Propellor.Property.Parted,
 	MountPoint,
 	PartSpec,
 	mountedAt,
 	swapPartition,
+	TableType(..),
+	PartTable(..),
+	Partition(..),
+	mkPartition,
+	Fs(..),
+	PartSize(..),
+	ByteSize,
+	toPartSize,
+	fromPartSize,
+	reducePartSize,
+	PartType(..),
+	PartFlag(..),
 	-- * Partition sizing
 	SizePartTable,
 	fitChrootSize,
@@ -45,7 +56,7 @@ import System.Posix.Files
 
 type DiskImage = FilePath
 
--- | Creates a bootable disk image in the specified file.
+-- | Creates a bootable disk image.
 --
 -- First the specified Chroot is set up, and its properties are satisfied.
 --
