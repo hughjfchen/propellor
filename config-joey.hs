@@ -34,7 +34,7 @@ import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuil
 import qualified Propellor.Property.SiteSpecific.IABak as IABak
 import qualified Propellor.Property.SiteSpecific.Branchable as Branchable
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
-import Propellor.Property.Parted
+import Propellor.Property.DiskImage
 
 main :: IO ()           --     _         ______`|                       ,-.__ 
 main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
@@ -80,8 +80,14 @@ darkstar = host "darkstar.kitenet.net"
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
 	& JoeySites.dkimMilter
 
-	& partitioned YesReallyDeleteDiskContents "/home/joey/disk"
-		(PartTable MSDOS [ mkPartition EXT3 (MegaBytes 256), mkPartition LinuxSwap (MegaBytes 16)])
+	& imageBuilt "/tmp/img" c MSDOS
+		[ partition EXT2 `mountedAt` "/boot" `setFlag` BootFlag
+		, partition EXT4 `mountedAt` "/" `addFreeSpace` MegaBytes 100
+		, swapPartition (MegaBytes 256)
+		] noFinalization -- (grubBooted PC)
+  where
+	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
+		& Apt.installed ["linux-image-amd64"]
 
 gnu :: Host
 gnu = host "gnu.kitenet.net"

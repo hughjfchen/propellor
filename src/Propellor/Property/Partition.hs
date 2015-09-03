@@ -25,17 +25,21 @@ formatted' opts YesReallyFormatPartition fs dev =
 	cmdProperty cmd opts' `requires` Apt.installed [pkg]
   where
 	(cmd, opts', pkg) = case fs of
-		EXT2 -> ("mkfs.ext2", optsdev, "e2fsprogs")
-		EXT3 -> ("mkfs.ext3", optsdev, "e2fsprogs")
-		EXT4 -> ("mkfs.ext4", optsdev, "e2fsprogs")
+		EXT2 -> ("mkfs.ext2", q $ eff optsdev, "e2fsprogs")
+		EXT3 -> ("mkfs.ext3", q $ eff optsdev, "e2fsprogs")
+		EXT4 -> ("mkfs.ext4", q $ eff optsdev, "e2fsprogs")
 		BTRFS -> ("mkfs.btrfs", optsdev, "btrfs-tools")
-		REISERFS -> ("mkfs.reiserfs", optsdev, "reiserfsprogs")
-		XFS -> ("mkfs.xfs", optsdev, "xfsprogs")
+		REISERFS -> ("mkfs.reiserfs", q $ "-ff":optsdev, "reiserfsprogs")
+		XFS -> ("mkfs.xfs", "-f":q optsdev, "xfsprogs")
 		FAT -> ("mkfs.fat", optsdev, "dosfstools")
 		VFAT -> ("mkfs.vfat", optsdev, "dosfstools")
-		NTFS -> ("mkfs.ntfs", optsdev, "ntfs-3g")
+		NTFS -> ("mkfs.ntfs", q $ eff optsdev, "ntfs-3g")
 		LinuxSwap -> ("mkswap", optsdev, "util-linux")
 	optsdev = opts++[dev]
+	-- -F forces creating a filesystem even if the device already has one
+	eff l = "-F":l
+	-- Be quiet.
+	q l = "-q":l
 
 -- | Uses the kpartx utility to create device maps for partitions contained
 -- within a disk image file. The resulting devices are passed to the

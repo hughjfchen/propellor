@@ -1,14 +1,14 @@
-propellor (2.7.3) UNRELEASED; urgency=medium
+propellor (2.7.3) unstable; urgency=medium
 
+  * Fix bug that caused provisioning new chroots to fail.
+  * Update for Debian systemd-container package split.
   * Added Propellor.Property.Parted, for disk partitioning.
   * Added Propellor.Property.Partition, for partition formatting etc.
   * Added Propellor.Property.DiskImage, for bootable disk image creation.
-    (Not yet complete.)
-  * Dropped support for ghc 7.4.
-  * Update for Debian systemd-container package split.
+    (Experimental and not yet complete.)
   * Dropped support for ghc 7.4.
 
- -- Joey Hess <id@joeyh.name>  Tue, 25 Aug 2015 13:45:39 -0700
+ -- Joey Hess <id@joeyh.name>  Thu, 03 Sep 2015 08:52:51 -0700
 
 propellor (2.7.2) unstable; urgency=medium
 

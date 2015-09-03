@@ -3,12 +3,15 @@
 module Propellor.Property.Parted (
 	TableType(..),
 	PartTable(..),
+	partTableSize,
 	Partition(..),
 	mkPartition,
 	Partition.Fs(..),
 	PartSize(..),
 	ByteSize,
 	toPartSize,
+	fromPartSize,
+	reducePartSize,
 	Partition.MkfsOpts,
 	PartType(..),
 	PartFlag(..),
@@ -44,6 +47,12 @@ instance Monoid PartTable where
 	mempty = PartTable MSDOS []
 	-- | uses the TableType of the second parameter
 	mappend (PartTable _l1 ps1) (PartTable l2 ps2) = PartTable l2 (ps1 ++ ps2)
+
+-- | Gets the total size of the disk specified by the partition table.
+partTableSize :: PartTable -> ByteSize
+partTableSize (PartTable _ ps) = fromPartSize $
+	-- add 1 megabyte to hold the partition table itself
+	mconcat (MegaBytes 1 : map partSize ps)
 
 -- | A partition on the disk.
 data Partition = Partition
@@ -84,14 +93,25 @@ newtype PartSize = MegaBytes Integer
 	deriving (Show)
 
 instance PartedVal PartSize where
-	val (MegaBytes n) = show n ++ "MB"
+	val (MegaBytes n)
+		| n > 0 = show n ++ "MB"
+		-- parted can't make partitions smaller than 1MB;
+		-- avoid failure in edge cases
+		| otherwise = show "1MB"
 
+-- | Rounds up to the nearest MegaByte.
 toPartSize :: ByteSize -> PartSize
-toPartSize b = MegaBytes (b `div` 1000000)
+toPartSize b = MegaBytes $ ceiling (fromInteger b / 1000000 :: Double)
+
+fromPartSize :: PartSize -> ByteSize
+fromPartSize (MegaBytes b) = b * 1000000
 
 instance Monoid PartSize where
 	mempty = MegaBytes 0
 	mappend (MegaBytes a) (MegaBytes b) = MegaBytes (a + b)
+
+reducePartSize :: PartSize -> PartSize -> PartSize
+reducePartSize (MegaBytes a) (MegaBytes b) = MegaBytes (a - b)
 
 -- | Flags that can be set on a partition.
 data PartFlag = BootFlag | RootFlag | SwapFlag | HiddenFlag | RaidFlag | LvmFlag | LbaFlag | LegacyBootFlag | IrstFlag | EspFlag | PaloFlag
@@ -136,13 +156,15 @@ data Eep = YesReallyDeleteDiskContents
 partitioned :: Eep -> FilePath -> PartTable -> Property NoInfo
 partitioned eep disk (PartTable tabletype parts) = property desc $ do
 	isdev <- liftIO $ isBlockDevice <$> getFileStatus disk
-	ensureProperty $ if isdev
-		then go (map (\n -> disk ++ show n) [1 :: Int ..])
-		else Partition.kpartx disk go
+	ensureProperty $ combineProperties desc
+		[ parted eep disk partedparams
+		, if isdev
+			then formatl (map (\n -> disk ++ show n) [1 :: Int ..])
+			else Partition.kpartx disk formatl
+		]
   where
 	desc = disk ++ " partitioned"
-	go devs = combineProperties desc $
-		parted eep disk partedparams : map format (zip parts devs)
+	formatl devs = combineProperties desc (map format (zip parts devs))
 	partedparams = concat $ mklabel : mkparts (1 :: Integer) mempty parts []
 	format (p, dev) = Partition.formatted' (partMkFsOpts p)
 		Partition.YesReallyFormatPartition (partFs p) dev

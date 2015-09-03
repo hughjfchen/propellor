@@ -55,12 +55,15 @@ shebang :: String
 shebang = "#!/bin/sh"
 
 checkAlreadyShimmed :: FilePath -> IO FilePath -> IO FilePath
-checkAlreadyShimmed f nope = withFile f ReadMode $ \h -> do
-	fileEncoding h
-	s <- hGetLine h
-	if s == shebang
-		then return f
-		else nope
+checkAlreadyShimmed f nope = ifM (doesFileExist f)
+	( withFile f ReadMode $ \h -> do
+		fileEncoding h
+		s <- hGetLine h
+		if s == shebang
+			then return f
+			else nope
+	, nope
+	)
 
 -- Called when the shimmed propellor is running, so that commands it runs
 -- don't see it.
