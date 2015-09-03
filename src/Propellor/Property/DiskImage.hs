@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 -- | Disk image generation. 
 --
 -- This module is designed to be imported unqualified.
@@ -11,27 +9,23 @@ module Propellor.Property.DiskImage (
 	imageRebuilt,
 	imageBuiltFrom,
 	imageExists,
-	-- * Partition specifiction
-	MountPoint,
+	-- * Partitioning
+	Partition,
+	MkPartition,
+	mkPartition,
+	PartSize(..),
+	Fs(..),
 	PartSpec,
+	MountPoint,
 	mountedAt,
 	swapPartition,
-	TableType(..),
-	PartTable(..),
-	Partition(..),
-	mkPartition,
-	Fs(..),
-	PartSize(..),
-	ByteSize,
-	toPartSize,
-	fromPartSize,
-	reducePartSize,
-	PartType(..),
+	addFreeSpace,
+	setSize,
 	PartFlag(..),
-	-- * Partition sizing
-	SizePartTable,
-	fitChrootSize,
-	freeSpace,
+	setFlag,
+	TableType(..),
+	extended,
+	adjustp,
 	-- * Finalization
 	Finalization,
 	grubBooted,
@@ -70,24 +64,23 @@ type DiskImage = FilePath
 -- > let chroot d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 -- > 		& Apt.installed ["linux-image-amd64"]
 -- >		& ...
--- >    partitions = fitChrootSize MSDOS
--- >		[ mkPartition EXT2 `mountedAt` "/boot"
--- >		, mkPartition EXT4 `mountedAt` "/"
+-- > in imageBuilt "/srv/images/foo.img" chroot MSDOS 
+-- >		[ mkPartition EXT2 `setFlag` BootFlag `mountedAt` "/boot"
+-- >		, mkPartition EXT4 `addFreeSpace` MegaBytes 100 `mountedAt` "/"
 -- >		, swapPartition (MegaBytes 256)
--- >		]
--- > in imageBuilt "/srv/images/foo.img" chroot partitions (grubBooted PC)
-imageBuilt :: DiskImage -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
+-- >		] (grubBooted PC)
+imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
 imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
+imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
 imageRebuilt = imageBuilt' True
 
-imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> SizePartTable -> Finalization -> RevertableProperty
-imageBuilt' rebuild img mkchroot mkparttable final = 
-	imageBuiltFrom img chrootdir mkparttable (snd final)
+imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
+imageBuilt' rebuild img mkchroot tabletype partspec final = 
+	imageBuiltFrom img chrootdir tabletype partspec (snd final)
 		`requires` Chroot.provisioned chroot
 		`requires` (cleanrebuild <!> doNothing)
 		`describe` desc
@@ -111,8 +104,8 @@ imageBuilt' rebuild img mkchroot mkparttable final =
 --
 -- TODO copy in
 -- TODO run final
-imageBuiltFrom :: DiskImage -> FilePath -> SizePartTable -> Property NoInfo -> RevertableProperty
-imageBuiltFrom img chrootdir mkparttable final = mkimg <!> rmimg
+imageBuiltFrom :: DiskImage -> FilePath -> TableType -> [PartSpec] -> Property NoInfo -> RevertableProperty
+imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
   where
 	mkimg = property (img ++ " built from " ++ chrootdir) $ do
 		-- unmount helper filesystems such as proc from the chroot
@@ -120,10 +113,9 @@ imageBuiltFrom img chrootdir mkparttable final = mkimg <!> rmimg
 		liftIO $ unmountBelow chrootdir
 		szm <- M.mapKeys (toSysDir chrootdir) . M.map toPartSize 
 			<$> liftIO (dirSizes chrootdir)
-		let calcsz = \mnts -> saneSz . fromMaybe defSz . getMountSz szm mnts
+		let calcsz = \mnts -> fromMaybe defSz . getMountSz szm mnts
 		-- tie the knot!
-		let (mnts, t) = mkparttable (map (calcsz mnts) mnts)
-		liftIO $ print (mnts, t)
+		let (mnts, t) = fitChrootSize tabletype partspec (map (calcsz mnts) mnts)
 		ensureProperty $
 			imageExists img (partTableSize t)
 				`before`
@@ -149,8 +141,9 @@ imageExists img sz = property ("disk image exists" ++ img) $ liftIO $ do
 			return MadeChange
 
 -- | Generates a map of the sizes of the contents of 
--- every directory in a filesystem tree. (Hard links are counted multiple
--- times for simplicity)
+-- every directory in a filesystem tree. 
+--
+-- (Hard links are counted multiple times for simplicity)
 --
 -- Should be same values as du -bl
 dirSizes :: FilePath -> IO (M.Map FilePath Integer)
@@ -196,51 +189,60 @@ toSysDir chrootdir d = case makeRelative chrootdir d of
 -- | Where a partition is mounted. Use Nothing for eg, LinuxSwap.
 type MountPoint = Maybe FilePath
 
+-- | A constructor for a Partition that has not yet been provided with a size.
+--
+-- The size that is eventually provided is the amount of space needed to 
+-- hold the files that appear in the directory where the partition is to be
+-- mounted.
+--
+-- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
+-- no corresponding directory in the chroot will have 128 MegaBytes
+-- provided as a default size.)
+type MkPartition = PartSize -> Partition
+
+defSz :: PartSize
+defSz = MegaBytes 128
+
 -- | Specifies a mount point and a constructor for a Partition
--- that will later be privided with a size.
-type PartSpec = (MountPoint, PartSize -> Partition)
+-- that will later be provided with a size.
+type PartSpec = (MountPoint, MkPartition)
 
 -- | Specifies a mounted partition using a given filesystem.
-mountedAt :: (PartSize -> Partition) -> FilePath -> PartSpec
+mountedAt :: MkPartition -> FilePath -> PartSpec
 mountedAt mkp mntpoint = (Just mntpoint, mkp)
 
 -- | Specifies a swap partition of a given size.
 swapPartition :: PartSize -> PartSpec
 swapPartition sz = (Nothing, const (mkPartition LinuxSwap sz))
 
--- | Avoid partitions smaller than 1 mb; parted gets confused.
-saneSz :: PartSize -> PartSize
-saneSz (MegaBytes n) | n < 1 = MegaBytes 1
-saneSz sz = sz
+-- | Adds additional free space to the partition.
+addFreeSpace :: MkPartition -> PartSize -> MkPartition
+addFreeSpace mkp freesz = \sz -> mkp (sz <> freesz)
 
-defSz :: PartSize
-defSz = MegaBytes 128
+-- | Forced a partition to be a specific size, instead of scaling to the
+-- size needed for the files in the chroot.
+setSize :: MkPartition -> PartSize -> MkPartition
+setSize mkp sz = const (mkp sz)
 
--- | This is provided with a list of the sizes of directories in the chroot
--- under each mount point. The input list corresponds to the list of mount
--- points that the function returns! This trick is accomplished by 
--- exploiting laziness and tying the knot.
---
--- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
--- no corresponding directory in the chroot will have 128 MegaBytes
--- provided as a default size.)
-type SizePartTable = [PartSize] -> ([MountPoint], PartTable)
+-- | Sets a flag on the partition.
+setFlag :: MkPartition -> PartFlag -> MkPartition
+setFlag mkp f = adjustp mkp $ \p -> p { partFlags = (f, True):partFlags p }
+
+-- | Makes a MSDOS partition be Extended, rather than Primary.
+extended :: MkPartition -> MkPartition
+extended mkp = adjustp mkp $ \p -> p { partType = Extended }
+
+-- | Apply a Partition adjustment to a MkPartition.
+adjustp :: MkPartition -> (Partition -> Partition) -> MkPartition
+adjustp mkp f = f . mkp
 
 -- | The constructor for each Partition is passed the size of the files
 -- from the chroot that will be put in that partition.
-fitChrootSize :: TableType -> [PartSpec] -> SizePartTable
+fitChrootSize :: TableType -> [PartSpec] -> [PartSize] -> ([MountPoint], PartTable)
 fitChrootSize tt l basesizes = (mounts, parttable)
   where
 	(mounts, sizers) = unzip l
 	parttable = PartTable tt (map (uncurry id) (zip sizers basesizes))
-
--- | After populating the partitions with files from the chroot,
--- they will have remaining free space equal to the sizes of the input
--- partitions.
-freeSpace :: TableType -> [(MountPoint, Partition)] -> SizePartTable
-freeSpace tt = fitChrootSize tt . map (\(mnt, p) -> (mnt, adjustsz p))
-  where
-	adjustsz p basesize = p { partSize = partSize p <> basesize }
 
 -- | A pair of properties. The first property is satisfied within the
 -- chroot, and is typically used to download the boot loader.
