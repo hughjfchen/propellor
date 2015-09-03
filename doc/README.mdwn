@@ -6,7 +6,8 @@ are satisfied.
 Propellor is configured via a git repository, which typically lives
 in `~/.propellor/` on your development machine. Propellor clones the
 repository to each host it manages, in a 
-[secure](http://propellor.branchable.com/security/) way. See [[components]]
+[secure](http://propellor.branchable.com/security/) way. See 
+[components](http://propellor.branchable.com/components/)
 for details.
 
 Properties are defined using Haskell. Edit `~/.propellor/config.hs`
