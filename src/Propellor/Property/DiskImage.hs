@@ -3,8 +3,8 @@
 -- This module is designed to be imported unqualified.
 
 module Propellor.Property.DiskImage (
-	DiskImage,
 	-- * Properties
+	DiskImage,
 	imageBuilt,
 	imageRebuilt,
 	imageBuiltFrom,
