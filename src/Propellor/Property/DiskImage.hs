@@ -64,8 +64,10 @@ type DiskImage = FilePath
 -- > 		& Apt.installed ["linux-image-amd64"]
 -- >		& ...
 -- > in imageBuilt "/srv/images/foo.img" chroot MSDOS 
--- >		[ partition EXT2 `mountedAt` "/boot" `setFlag` BootFlag
--- >		, partition EXT4 `mountedAt` "/" `addFreeSpace` MegaBytes 100
+-- >		[ partition EXT2 `mountedAt` "/boot"
+-- >			`setFlag` BootFlag
+-- >		, partition EXT4 `mountedAt` "/"
+-- >			`addFreeSpace` MegaBytes 100
 -- >		, swapPartition (MegaBytes 256)
 -- >		] (grubBooted PC)
 imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
