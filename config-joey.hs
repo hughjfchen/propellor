@@ -81,8 +81,8 @@ darkstar = host "darkstar.kitenet.net"
 	& JoeySites.dkimMilter
 
 	& imageBuilt "/tmp/img" c MSDOS
-		[ mkPartition EXT2 `setFlag` BootFlag `mountedAt` "/boot"
-		, mkPartition EXT4 `addFreeSpace` MegaBytes 100 `mountedAt` "/"
+		[ partition EXT2 `mountedAt` "/boot" `setFlag` BootFlag
+		, partition EXT4 `mountedAt` "/" `addFreeSpace` MegaBytes 100
 		, swapPartition (MegaBytes 256)
 		] noFinalization -- (grubBooted PC)
   where

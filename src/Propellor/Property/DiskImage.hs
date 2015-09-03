@@ -11,14 +11,13 @@ module Propellor.Property.DiskImage (
 	imageExists,
 	-- * Partitioning
 	Partition,
-	MkPartition,
-	mkPartition,
 	PartSize(..),
 	Fs(..),
 	PartSpec,
 	MountPoint,
-	mountedAt,
 	swapPartition,
+	partition,
+	mountedAt,
 	addFreeSpace,
 	setSize,
 	PartFlag(..),
@@ -65,8 +64,8 @@ type DiskImage = FilePath
 -- > 		& Apt.installed ["linux-image-amd64"]
 -- >		& ...
 -- > in imageBuilt "/srv/images/foo.img" chroot MSDOS 
--- >		[ mkPartition EXT2 `setFlag` BootFlag `mountedAt` "/boot"
--- >		, mkPartition EXT4 `addFreeSpace` MegaBytes 100 `mountedAt` "/"
+-- >		[ partition EXT2 `mountedAt` "/boot" `setFlag` BootFlag
+-- >		, partition EXT4 `mountedAt` "/" `addFreeSpace` MegaBytes 100
 -- >		, swapPartition (MegaBytes 256)
 -- >		] (grubBooted PC)
 imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
@@ -189,8 +188,11 @@ toSysDir chrootdir d = case makeRelative chrootdir d of
 -- | Where a partition is mounted. Use Nothing for eg, LinuxSwap.
 type MountPoint = Maybe FilePath
 
--- | A constructor for a Partition that has not yet been provided with a size.
---
+defSz :: PartSize
+defSz = MegaBytes 128
+
+-- | Specifies a mount point and a constructor for a Partition.
+-- 
 -- The size that is eventually provided is the amount of space needed to 
 -- hold the files that appear in the directory where the partition is to be
 -- mounted.
@@ -198,43 +200,42 @@ type MountPoint = Maybe FilePath
 -- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
 -- no corresponding directory in the chroot will have 128 MegaBytes
 -- provided as a default size.)
-type MkPartition = PartSize -> Partition
-
-defSz :: PartSize
-defSz = MegaBytes 128
-
--- | Specifies a mount point and a constructor for a Partition
--- that will later be provided with a size.
-type PartSpec = (MountPoint, MkPartition)
-
--- | Specifies a mounted partition using a given filesystem.
-mountedAt :: MkPartition -> FilePath -> PartSpec
-mountedAt mkp mntpoint = (Just mntpoint, mkp)
+type PartSpec = (MountPoint, PartSize -> Partition)
 
 -- | Specifies a swap partition of a given size.
 swapPartition :: PartSize -> PartSpec
 swapPartition sz = (Nothing, const (mkPartition LinuxSwap sz))
 
+-- | Specifies a partition with a given filesystem.
+--
+-- The partition is not mounted anywhere by default; use the combinators
+-- below to configure it.
+partition :: Fs -> PartSpec
+partition fs = (Nothing, mkPartition fs)
+
+-- | Specifies where to mount a partition.
+mountedAt :: PartSpec -> FilePath -> PartSpec
+mountedAt (_, p) mp = (Just mp, p)
+
 -- | Adds additional free space to the partition.
-addFreeSpace :: MkPartition -> PartSize -> MkPartition
-addFreeSpace mkp freesz = \sz -> mkp (sz <> freesz)
+addFreeSpace :: PartSpec -> PartSize -> PartSpec
+addFreeSpace (mp, p) freesz = (mp, \sz -> p (sz <> freesz))
 
 -- | Forced a partition to be a specific size, instead of scaling to the
 -- size needed for the files in the chroot.
-setSize :: MkPartition -> PartSize -> MkPartition
-setSize mkp sz = const (mkp sz)
+setSize :: PartSpec -> PartSize -> PartSpec
+setSize (mp, p) sz = (mp, const (p sz))
 
 -- | Sets a flag on the partition.
-setFlag :: MkPartition -> PartFlag -> MkPartition
-setFlag mkp f = adjustp mkp $ \p -> p { partFlags = (f, True):partFlags p }
+setFlag :: PartSpec -> PartFlag -> PartSpec
+setFlag s f = adjustp s $ \p -> p { partFlags = (f, True):partFlags p }
 
 -- | Makes a MSDOS partition be Extended, rather than Primary.
-extended :: MkPartition -> MkPartition
-extended mkp = adjustp mkp $ \p -> p { partType = Extended }
+extended :: PartSpec -> PartSpec
+extended s = adjustp s $ \p -> p { partType = Extended }
 
--- | Apply a Partition adjustment to a MkPartition.
-adjustp :: MkPartition -> (Partition -> Partition) -> MkPartition
-adjustp mkp f = f . mkp
+adjustp :: PartSpec -> (Partition -> Partition) -> PartSpec
+adjustp (mp, p) f = (mp, \sz -> f (p sz))
 
 -- | The constructor for each Partition is passed the size of the files
 -- from the chroot that will be put in that partition.
