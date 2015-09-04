@@ -100,6 +100,7 @@ Library
     Propellor.Property.Postfix
     Propellor.Property.Prosody
     Propellor.Property.Reboot
+    Propellor.Property.Rsync
     Propellor.Property.List
     Propellor.Property.LightDM
     Propellor.Property.Scheduled
