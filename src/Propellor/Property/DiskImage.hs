@@ -1,6 +1,10 @@
 -- | Disk image generation. 
 --
 -- This module is designed to be imported unqualified.
+--
+-- TODO run final
+-- 
+-- TODO avoid starting services while populating chroot and running final
 
 module Propellor.Property.DiskImage (
 	-- * Properties
@@ -105,9 +109,6 @@ imageBuilt' rebuild img mkchroot tabletype partspec final =
 -- | Builds a disk image from the contents of a chroot.
 --
 -- The passed property is run inside the mounted disk image.
---
--- TODO copy in
--- TODO run final
 imageBuiltFrom :: DiskImage -> FilePath -> TableType -> [PartSpec] -> Property NoInfo -> RevertableProperty
 imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
   where
@@ -221,14 +222,18 @@ type MountPoint = Maybe FilePath
 defSz :: PartSize
 defSz = MegaBytes 128
 
+-- Add 2% for filesystem overhead. Rationalle for picking 2%:
+-- A filesystem with 1% overhead might just sneak by as acceptable.
+-- Double that just in case. Add an additional 3 mb to deal with
+-- non-scaling overhead, of filesystems (eg, superblocks).
 fudge :: PartSize -> PartSize
-fudge (MegaBytes n) = MegaBytes (n + n `div` 10)
+fudge (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3)
 
 -- | Specifies a mount point and a constructor for a Partition.
 -- 
 -- The size that is eventually provided is the amount of space needed to 
 -- hold the files that appear in the directory where the partition is to be
--- mounted. Plus a 10% fudge factor, since filesystems have some space
+-- mounted. Plus a fudge factor, since filesystems have some space
 -- overhead.
 --
 -- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
