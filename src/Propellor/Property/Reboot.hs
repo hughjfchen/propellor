@@ -8,7 +8,7 @@ now = cmdProperty "reboot" []
 
 -- | Schedules a reboot at the end of the current propellor run.
 --
--- The Result code of the endire propellor run can be checked;
+-- The `Result` code of the entire propellor run can be checked;
 -- the reboot proceeds only if the function returns True.
 --
 -- The reboot can be forced to run, which bypasses the init system. Useful
