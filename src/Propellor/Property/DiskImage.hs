@@ -118,7 +118,7 @@ imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
 		liftIO $ unmountBelow chrootdir
 		szm <- M.mapKeys (toSysDir chrootdir) . M.map toPartSize 
 			<$> liftIO (dirSizes chrootdir)
-		let calcsz = \mnts -> fromMaybe defSz . getMountSz szm mnts
+		let calcsz = \mnts -> maybe defSz fudge . getMountSz szm mnts
 		-- tie the knot!
 		let (mnts, t) = fitChrootSize tabletype partspec (map (calcsz mnts) mnts)
 		ensureProperty $
@@ -194,11 +194,6 @@ dirSizes top = go M.empty top [top]
 			else go (M.insertWith (+) dir sz m) dir is
 	subdirof parent i = not (i `equalFilePath` parent) && takeDirectory i `equalFilePath` parent
 
--- | Gets the size to allocate for a particular mount point, given the
--- map of sizes.
---
--- A list of all mount points is provided, so that when eg calculating
--- the size for /, if /boot is a mount point, its size can be subtracted.
 getMountSz :: (M.Map FilePath PartSize) -> [MountPoint] -> MountPoint -> Maybe PartSize
 getMountSz _ _ Nothing = Nothing
 getMountSz szm l (Just mntpt) = 
@@ -226,11 +221,14 @@ type MountPoint = Maybe FilePath
 defSz :: PartSize
 defSz = MegaBytes 128
 
+fudge :: PartSize -> PartSize
+fudge (MegaBytes n) = MegaBytes (n + n `div` 10)
+
 -- | Specifies a mount point and a constructor for a Partition.
 -- 
 -- The size that is eventually provided is the amount of space needed to 
 -- hold the files that appear in the directory where the partition is to be
--- mounted.
+-- mounted. Plus a fudge factor, since filesystems have some space overhead.
 --
 -- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
 -- no corresponding directory in the chroot will have 128 MegaBytes
