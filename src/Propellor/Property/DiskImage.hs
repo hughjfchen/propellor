@@ -228,7 +228,8 @@ fudge (MegaBytes n) = MegaBytes (n + n `div` 10)
 -- 
 -- The size that is eventually provided is the amount of space needed to 
 -- hold the files that appear in the directory where the partition is to be
--- mounted. Plus a fudge factor, since filesystems have some space overhead.
+-- mounted. Plus a 10% fudge factor, since filesystems have some space
+-- overhead.
 --
 -- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
 -- no corresponding directory in the chroot will have 128 MegaBytes
