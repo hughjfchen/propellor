@@ -105,3 +105,17 @@ mode :: FilePath -> FileMode -> Property NoInfo
 mode f v = property (f ++ " mode " ++ show v) $ do
 	liftIO $ modifyFileMode f (\_old -> v)
 	noChange
+
+-- | Ensures that the second directory exists and has identical contents
+-- as the first directory.
+--
+-- Implemented with rsync.
+--
+-- rsync -av 1/ 2/ --exclude='2/*' --delete --delete-excluded
+copyDir :: FilePath -> FilePath -> Property NoInfo
+copyDir src dest = copyDir' src dest []
+
+-- | Like copyDir, but avoids copying anything into directories
+-- in the list. Those directories are created, but will be kept empty.
+copyDir' :: FilePath -> FilePath -> [FilePath] -> Property NoInfo
+copyDir' src dest exclude = undefined

@@ -131,24 +131,49 @@ imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
 		mconcat $ map (uncurry copyinto) (zip mnts devs)
 	copyinto Nothing _ = noChange
 	copyinto (Just mnt) dev = liftIO $ withTmpDir "mnt" $ \tmpdir -> do
-		let d = chrootdir ++ mnt
+		let fromdir = chrootdir ++ mnt
 		bracket
 			(mount "auto" dev tmpdir)
 			(const $ umountLazy tmpdir)
 			$ \mounted -> if mounted
-				then do
-					ok <- allM (\i -> copy i tmpdir)
-						. filter (wantcopy d)
-						=<< dirContents d
-					return (toResult ok)
+				then toResult <$> 
+					catchBoolIO (copyRecursive tmpdir fromdir "" >> return True)
 				else return FailedChange
-	copy src dest = do
-		print ("copy", src, dest)
-		-- boolSystem "cp" [Param "-a", File src, File dest]
-		return True
-	-- skip copying files inside child mountpoints
-	wantcopy d f = not (any (`dirContains` f) (filter (isChild d . Just) mntpoints))
+
+-- Recursively copy from frombase into destbase, skipping 
+-- TODO When a subdirectory is a mount point, copy the directory,
+-- but skip its contents.
+copyRecursive :: FilePath -> FilePath -> FilePath -> IO ()
+copyRecursive destbase frombase = go
+  where
+	go i = do
+		let src = frombase </> i
+		let dest = destbase </> i
+		s <- getFileStatus src
+		if isDirectory s
+			then do
+				createDirectoryIfMissing True dest
+				mapM_ go . filter (not . dirCruft)
+					=<< getDirectoryContents src
+			else L.writeFile dest =<< L.readFile src
+		setFileMode dest (fileMode s)
+		setOwnerAndGroup dest (fileOwner s) (fileGroup s)
+{-
+	copy src dest fromdir
+		| wantcopy fromdir src = do
+			print ("copy to" ++ fromdir, ":", src, dest)
+			-- boolSystem "cp" [Param "-a", File src, File dest]
+			return True
+		| wantmountpoint fromdir src = do
+			-- TODO mkdir dest, preserving permissions of src
+			return True
+		| otherwise = return True
+	-- skip copying files located inside child mountpoints
+	wantcopy fromdir f = not (any (`dirContains` f) (filter (isChild fromdir . Just) mntpoints))
+	-- want mount points that are immediate children only
+	wantmountpoint fromdir f = 
 	mntpoints = map (chrootdir ++) $ catMaybes $ map fst partspec
+-}
 
 -- | Ensures that a disk image file of the specified size exists.
 -- 
