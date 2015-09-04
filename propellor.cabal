@@ -27,7 +27,7 @@ Extra-Source-Files:
   debian/lintian-overrides
 Synopsis: property-based host configuration management in haskell
 Description:
- Propellor enures that the system it's run in satisfies a list of
+ Propellor ensures that the system it's run in satisfies a list of
  properties, taking action as necessary when a property is not yet met.
  .
  It is configured using haskell.
