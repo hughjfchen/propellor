@@ -50,7 +50,7 @@ syncDirFiltered filters src dest = rsync $
 	, addTrailingPathSeparator src
 	, addTrailingPathSeparator dest
 	, "--delete"
-	, "--delete-exluded"
+	, "--delete-excluded"
 	, "--quiet"
 	] ++ map toRsync filters
 
