@@ -42,8 +42,10 @@ import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Parted
 import Propellor.Property.Mount
 import Propellor.Property.Partition
+import Propellor.Property.Rsync
 import Utility.Path
 
+import Data.List (isPrefixOf)
 import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Lazy as L
 import System.Posix.Files
@@ -124,56 +126,33 @@ imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
 				`before`
 			partitioned YesReallyDeleteDiskContents img t
 				`before`
-			kpartx img (copyin mnts)
+			kpartx img (partitionsPopulated chrootdir mnts)
 	rmimg = File.notPresent img
 
-	copyin mnts devs = property desc $
-		mconcat $ map (uncurry copyinto) (zip mnts devs)
-	copyinto Nothing _ = noChange
-	copyinto (Just mnt) dev = liftIO $ withTmpDir "mnt" $ \tmpdir -> do
-		let fromdir = chrootdir ++ mnt
-		bracket
-			(mount "auto" dev tmpdir)
-			(const $ umountLazy tmpdir)
-			$ \mounted -> if mounted
-				then toResult <$> 
-					catchBoolIO (copyRecursive tmpdir fromdir "" >> return True)
-				else return FailedChange
-
--- Recursively copy from frombase into destbase, skipping 
--- TODO When a subdirectory is a mount point, copy the directory,
--- but skip its contents.
-copyRecursive :: FilePath -> FilePath -> FilePath -> IO ()
-copyRecursive destbase frombase = go
+partitionsPopulated :: FilePath -> [MountPoint] -> [FilePath] -> Property NoInfo
+partitionsPopulated chrootdir mnts devs = property desc $
+	mconcat $ map (uncurry go) (zip mnts devs)
   where
-	go i = do
-		let src = frombase </> i
-		let dest = destbase </> i
-		s <- getFileStatus src
-		if isDirectory s
-			then do
-				createDirectoryIfMissing True dest
-				mapM_ go . filter (not . dirCruft)
-					=<< getDirectoryContents src
-			else L.writeFile dest =<< L.readFile src
-		setFileMode dest (fileMode s)
-		setOwnerAndGroup dest (fileOwner s) (fileGroup s)
-{-
-	copy src dest fromdir
-		| wantcopy fromdir src = do
-			print ("copy to" ++ fromdir, ":", src, dest)
-			-- boolSystem "cp" [Param "-a", File src, File dest]
-			return True
-		| wantmountpoint fromdir src = do
-			-- TODO mkdir dest, preserving permissions of src
-			return True
-		| otherwise = return True
-	-- skip copying files located inside child mountpoints
-	wantcopy fromdir f = not (any (`dirContains` f) (filter (isChild fromdir . Just) mntpoints))
-	-- want mount points that are immediate children only
-	wantmountpoint fromdir f = 
-	mntpoints = map (chrootdir ++) $ catMaybes $ map fst partspec
--}
+	desc = "partitions populated from " ++ chrootdir
+
+	go Nothing _ = noChange
+	go (Just mnt) dev = withTmpDir "mnt" $ \tmpdir -> bracket
+		(liftIO $ mount "auto" dev tmpdir)
+		(const $ liftIO $ umountLazy tmpdir)
+		$ \mounted -> if mounted
+			then ensureProperty $
+				syncDirFiltered (filtersfor mnt) (chrootdir ++ mnt) tmpdir
+			else return FailedChange
+
+	filtersfor mnt = 
+		let childmnts = map (drop (length (dropTrailingPathSeparator mnt))) $
+			filter (\m -> m /= mnt && addTrailingPathSeparator mnt `isPrefixOf` m)
+				(catMaybes mnts)
+		in concatMap (\m -> 
+			-- Include the child mount point, but exclude its contents.
+			[ Include (Pattern m)
+			, Exclude (filesUnder m)
+			]) childmnts
 
 -- | Ensures that a disk image file of the specified size exists.
 -- 

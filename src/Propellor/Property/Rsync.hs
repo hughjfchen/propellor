@@ -9,9 +9,16 @@ type Dest = FilePath
 class RsyncParam p where
 	toRsync :: p -> String
 
--- | Rsync checks each name to be transferred against its list of Filter
--- rules, and the first matching one is acted on. If no matching rule
--- is found, the file is processed.
+-- | A pattern that matches all files under a directory, but does not
+-- match the directory itself.
+filesUnder :: FilePath -> Pattern
+filesUnder d = Pattern (d ++ "/*")
+
+-- | Ensures that the Dest directory exists and has identical contents as
+-- the Src directory.
+syncDir :: Src -> Dest -> Property NoInfo
+syncDir = syncDirFiltered []
+
 data Filter 
 	= Include Pattern
 	| Exclude Pattern
@@ -28,18 +35,12 @@ instance RsyncParam Filter where
 -- directory, relative to the 'Src' that rsync is acting on.
 newtype Pattern = Pattern String
 
--- | A pattern that matches all files under a directory, but does not
--- match the directory itself.
-filesUnder :: FilePath -> Pattern
-filesUnder d = Pattern (d ++ "/*")
-
--- | Ensures that the Dest directory exists and has identical contents as
--- the Src directory.
-syncDir :: Src -> Dest -> Property NoInfo
-syncDir = syncDirFiltered []
-
 -- | Like syncDir, but avoids copying anything that the filter list
 -- excludes. Anything that's filtered out will be deleted from Dest.
+--
+-- Rsync checks each name to be transferred against its list of Filter
+-- rules, and the first matching one is acted on. If no matching rule
+-- is found, the file is processed.
 syncDirFiltered :: [Filter] -> Src -> Dest -> Property NoInfo
 syncDirFiltered filters src dest = rsync $
 	[ "-av"
