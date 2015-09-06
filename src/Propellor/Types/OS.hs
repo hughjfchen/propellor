@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Propellor.Types.OS (
 	System(..),
 	Distribution(..),
@@ -14,10 +16,11 @@ module Propellor.Types.OS (
 ) where
 
 import Network.BSD (HostName)
+import Data.Typeable
 
 -- | High level description of a operating system.
 data System = System Distribution Architecture
-	deriving (Show, Eq)
+	deriving (Show, Eq, Typeable)
 
 data Distribution
 	= Debian DebianSuite

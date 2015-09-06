@@ -3,7 +3,7 @@
 module Propellor.Info where
 
 import Propellor.Types
-import Propellor.Types.Val
+import Propellor.Types.Info
 
 import "mtl" Control.Monad.Reader
 import qualified Data.Set as S
@@ -12,23 +12,26 @@ import Data.Maybe
 import Data.Monoid
 import Control.Applicative
 
-pureInfoProperty :: Desc -> Info -> Property HasInfo
-pureInfoProperty desc i = infoProperty ("has " ++ desc) (return NoChange) i mempty
+pureInfoProperty :: (IsInfo v) => Desc -> v -> Property HasInfo
+pureInfoProperty desc v = pureInfoProperty' desc (addInfo mempty v)
 
-askInfo :: (Info -> Val a) -> Propellor (Maybe a)
-askInfo f = asks (fromVal . f . hostInfo)
+pureInfoProperty' :: Desc -> Info -> Property HasInfo
+pureInfoProperty' desc i = infoProperty ("has " ++ desc) (return NoChange) i mempty
+
+-- | Gets a value from the host's Info.
+askInfo :: (IsInfo v) => Propellor v
+askInfo = asks (getInfo . hostInfo)
 
 -- | Specifies the operating system of a host.
 --
 -- This only provides info for other Properties, so they can act
--- conditional on the os.
+-- conditionally on the os.
 os :: System -> Property HasInfo
-os system = pureInfoProperty ("Operating " ++ show system) $
-	mempty { _os = Val system }
+os system = pureInfoProperty ("Operating " ++ show system) (InfoVal system)
 
 --  Gets the operating system of a host, if it has been specified.
 getOS :: Propellor (Maybe System)
-getOS = askInfo _os
+getOS = fromInfoVal <$> askInfo
 
 -- | Indidate that a host has an A record in the DNS.
 --
@@ -53,15 +56,14 @@ ipv6 = addDNS . Address . IPv6
 -- problems with CNAMEs, and also means that when multiple hosts have the
 -- same alias, a DNS round-robin is automatically set up.
 alias :: Domain -> Property HasInfo
-alias d = pureInfoProperty ("alias " ++ d) $ mempty
-	{ _aliases = S.singleton d
+alias d = pureInfoProperty' ("alias " ++ d) $ mempty
+	`addInfo` toAliasesInfo [d]
 	-- A CNAME is added here, but the DNS setup code converts it to an
 	-- IP address when that makes sense.
-	, _dns = S.singleton $ CNAME $ AbsDomain d
-	} 
+	`addInfo` (toDnsInfo $ S.singleton $ CNAME $ AbsDomain d)
 
 addDNS :: Record -> Property HasInfo
-addDNS r = pureInfoProperty (rdesc r) $ mempty { _dns = S.singleton r }
+addDNS r = pureInfoProperty (rdesc r) (toDnsInfo (S.singleton r))
   where
 	rdesc (CNAME d) = unwords ["alias", ddesc d]
 	rdesc (Address (IPv4 addr)) = unwords ["ipv4", addr]
@@ -82,7 +84,7 @@ hostMap l = M.fromList $ zip (map hostName l) l
 
 aliasMap :: [Host] -> M.Map HostName Host
 aliasMap = M.fromList . concat .
-	map (\h -> map (\aka -> (aka, h)) $ S.toList $ _aliases $ hostInfo h)
+	map (\h -> map (\aka -> (aka, h)) $ fromAliasesInfo $ getInfo $ hostInfo h)
 
 findHost :: [Host] -> HostName -> Maybe Host
 findHost l hn = maybe (findAlias l hn) Just (findHostNoAlias l hn)
@@ -94,9 +96,7 @@ findAlias :: [Host] -> HostName -> Maybe Host
 findAlias l hn = M.lookup hn (aliasMap l)
 
 getAddresses :: Info -> [IPAddr]
-getAddresses = mapMaybe getIPAddr . S.toList . _dns
+getAddresses = mapMaybe getIPAddr . S.toList . fromDnsInfo . getInfo
 
 hostAddresses :: HostName -> [Host] -> [IPAddr]
-hostAddresses hn hosts = case hostInfo <$> findHost hosts hn of
-	Nothing -> []
-	Just info -> mapMaybe getIPAddr $ S.toList $ _dns info
+hostAddresses hn hosts = maybe [] (getAddresses . hostInfo) (findHost hosts hn)

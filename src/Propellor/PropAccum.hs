@@ -13,6 +13,7 @@ import Data.Monoid
 
 import Propellor.Types
 import Propellor.Property
+import Propellor.Types.Info
 
 -- | Starts accumulating the properties of a Host.
 --
@@ -71,12 +72,6 @@ infixl 1 !
 -- 
 -- The Info of the propertyChildren is adjusted to only include 
 -- info that should be propigated out to the Property.
---
--- DNS Info is propigated, so that eg, aliases of a PropAccum
--- are reflected in the dns for the host where it runs.
---
--- PrivData Info is propigated, so that properties used inside a
--- PropAccum will have the necessary PrivData available.
 propigateContainer
 	:: (PropAccum container)
 	=> container
@@ -90,10 +85,6 @@ propigateContainer c prop = infoProperty
   where
 	hostprops = map go $ getProperties c
 	go p = 
-		let i = propertyInfo p
-		    i' = mempty
-			{ _dns = _dns i
-			, _privData = _privData i
-			}
+		let i = propigatableInfo (propertyInfo p)
 		    cs = map go (propertyChildren p)
-		in infoProperty (propertyDesc p) (propertySatisfy p) i' cs
+		in infoProperty (propertyDesc p) (propertySatisfy p) i cs

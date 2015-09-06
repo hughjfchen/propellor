@@ -15,6 +15,7 @@ module Propellor.Property.Dns (
 
 import Propellor
 import Propellor.Types.Dns
+import Propellor.Types.Info
 import Propellor.Property.File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Ssh as Ssh
@@ -78,7 +79,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 	
 	(partialzone, zonewarnings) = genZone indomain hostmap domain soa
 	baseprop = infoProperty ("dns primary for " ++ domain) satisfy
-		(addNamedConf conf) []
+		(mempty `addInfo` addNamedConf conf) []
 	satisfy = do
 		sshfps <- concat <$> mapM (genSSHFP domain) (M.elems hostmap)
 		let zone = partialzone
@@ -207,7 +208,7 @@ otherServers :: DnsServerType -> [Host] -> Domain -> [HostName]
 otherServers wantedtype hosts domain =
 	M.keys $ M.filter wanted $ hostMap hosts
   where
-	wanted h = case M.lookup domain (fromNamedConfMap $ _namedconf $ hostInfo h) of
+	wanted h = case M.lookup domain (fromNamedConfMap $ getInfo $ hostInfo h) of
 		Nothing -> False
 		Just conf -> confDnsServerType conf == wantedtype
 			&& confDomain conf == domain
@@ -459,7 +460,7 @@ genZone inzdomain hostmap zdomain soa =
 	-- So we can just use the IPAddrs.
 	addcnames :: Host -> [Either WarningMessage (BindDomain, Record)]
 	addcnames h = concatMap gen $ filter (inDomain zdomain) $
-		mapMaybe getCNAME $ S.toList (_dns info)
+		mapMaybe getCNAME $ S.toList $ fromDnsInfo $ getInfo info
 	  where
 		info = hostInfo h
 		gen c = case getAddresses info of
@@ -474,7 +475,7 @@ genZone inzdomain hostmap zdomain soa =
 	  where
 		info = hostInfo h
 		l = zip (repeat $ AbsDomain $ hostName h)
-			(S.toList $ S.filter (\r -> isNothing (getIPAddr r) && isNothing (getCNAME r)) (_dns info))
+			(S.toList $ S.filter (\r -> isNothing (getIPAddr r) && isNothing (getCNAME r)) (fromDnsInfo $ getInfo info))
 
 	-- Simplifies the list of hosts. Remove duplicate entries.
 	-- Also, filter out any CHAMES where the same domain has an
@@ -503,13 +504,13 @@ domainHost base (AbsDomain d)
   where
 	dotbase = '.':base
 
-addNamedConf :: NamedConf -> Info
-addNamedConf conf = mempty { _namedconf = NamedConfMap (M.singleton domain conf) }
+addNamedConf :: NamedConf -> NamedConfMap
+addNamedConf conf = NamedConfMap (M.singleton domain conf)
   where
 	domain = confDomain conf
 
 getNamedConf :: Propellor (M.Map Domain NamedConf)
-getNamedConf = asks $ fromNamedConfMap . _namedconf . hostInfo
+getNamedConf = asks $ fromNamedConfMap . getInfo . hostInfo
 
 -- | Generates SSHFP records for hosts in the domain (or with CNAMES
 -- in the domain) that have configured ssh public keys.
@@ -522,7 +523,7 @@ genSSHFP domain h = concatMap mk . concat <$> (gen =<< get)
 	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
 	mk r = mapMaybe (\d -> if inDomain domain d then Just (d, r) else Nothing)
 		(AbsDomain hostname : cnames)
-	cnames = mapMaybe getCNAME $ S.toList $ _dns info
+	cnames = mapMaybe getCNAME $ S.toList $ fromDnsInfo $ getInfo info
 	hostname = hostName h
 	info = hostInfo h
 

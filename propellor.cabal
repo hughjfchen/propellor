@@ -132,9 +132,9 @@ Library
     Propellor.Types.Docker
     Propellor.Types.Dns
     Propellor.Types.Empty
+    Propellor.Types.Info
     Propellor.Types.OS
     Propellor.Types.PrivData
-    Propellor.Types.Val
     Propellor.Types.Result
     Propellor.Types.CmdLine
   Other-Modules:

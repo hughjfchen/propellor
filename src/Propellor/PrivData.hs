@@ -1,5 +1,7 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Propellor.PrivData (
 	withPrivData,
@@ -14,6 +16,7 @@ module Propellor.PrivData (
 	makePrivDataDir,
 	decryptPrivData,
 	PrivMap,
+	PrivInfo,
 ) where
 
 import Control.Applicative
@@ -22,6 +25,7 @@ import System.Directory
 import Data.Maybe
 import Data.Monoid
 import Data.List
+import Data.Typeable
 import Control.Monad
 import Control.Monad.IfElse
 import "mtl" Control.Monad.Reader
@@ -30,6 +34,7 @@ import qualified Data.Set as S
 
 import Propellor.Types
 import Propellor.Types.PrivData
+import Propellor.Types.Info
 import Propellor.Message
 import Propellor.Info
 import Propellor.Gpg
@@ -102,9 +107,10 @@ withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 	addinfo p = infoProperty
 		(propertyDesc p)
 		(propertySatisfy p)
-		(propertyInfo p <> mempty { _privData = privset })
+		(propertyInfo p `addInfo` privset)
 		(propertyChildren p)
-	privset = S.fromList $ map (\s -> (privDataField s, describePrivDataSource s, hc)) srclist
+	privset = PrivInfo $ S.fromList $
+		map (\s -> (privDataField s, describePrivDataSource s, hc)) srclist
 	fieldnames = map show fieldlist
 	fieldlist = map privDataField srclist
 	hc = asHostContext c
@@ -116,8 +122,7 @@ showSet l = forM_ l $ \(f, Context c, md) -> do
 	putStrLn ""
 
 addPrivData :: (PrivDataField, Maybe PrivDataSourceDesc, HostContext) -> Property HasInfo
-addPrivData v = pureInfoProperty (show v) $
-	mempty { _privData = S.singleton v }
+addPrivData v = pureInfoProperty (show v) (PrivInfo (S.singleton v))
 
 {- Gets the requested field's value, in the specified context if it's
  - available, from the host's local privdata cache. -}
@@ -134,7 +139,7 @@ filterPrivData :: Host -> PrivMap -> PrivMap
 filterPrivData host = M.filterWithKey (\k _v -> S.member k used)
   where
 	used = S.map (\(f, _, c) -> (f, mkHostContext c (hostName host))) $
-		_privData $ hostInfo host
+		fromPrivInfo $ getInfo $ hostInfo host
 
 getPrivData :: PrivDataField -> Context -> PrivMap -> Maybe PrivData
 getPrivData field context = M.lookup (field, context)
@@ -188,7 +193,7 @@ listPrivDataFields hosts = do
 		, intercalate ", " $ sort $ fromMaybe [] $ M.lookup k usedby
 		]
 	mkhostmap host mkv = M.fromList $ map (\(f, d, c) -> ((f, mkHostContext c (hostName host)), mkv d)) $
-		S.toList $ _privData $ hostInfo host
+		S.toList $ fromPrivInfo $ getInfo $ hostInfo host
 	usedby = M.unionsWith (++) $ map (\h -> mkhostmap h $ const $ [hostName h]) hosts
 	wantedmap = M.fromList $ zip (M.keys usedby) (repeat "")
 	descmap = M.unions $ map (\h -> mkhostmap h id) hosts
@@ -219,3 +224,12 @@ decryptPrivData = fromMaybe M.empty . readish <$> gpgDecrypt privDataFile
 
 makePrivDataDir :: IO ()
 makePrivDataDir = createDirectoryIfMissing False privDataDir
+
+newtype PrivInfo = PrivInfo
+	{ fromPrivInfo :: S.Set (PrivDataField, Maybe PrivDataSourceDesc, HostContext) }
+	deriving (Eq, Ord, Show, Typeable, Monoid)
+
+-- PrivInfo is propigated out of containers, so that propellor can see which
+-- hosts need it.
+instance IsInfo PrivInfo where
+	propigateInfo _ = True
