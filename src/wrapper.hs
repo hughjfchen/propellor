@@ -74,7 +74,13 @@ wrapper args propellordir propellorbin = do
 				fetchUpstreamBranch propellordir distrepo
 				changeWorkingDirectory propellordir
 				void $ boolSystem "git" [Param "remote", Param "rm", Param "origin"]
-			, void $ boolSystem "git" [Param "clone", Param netrepo, File propellordir]
+			, do
+				void $ boolSystem "git" [Param "clone", Param netrepo, File propellordir]
+				changeWorkingDirectory propellordir
+				-- Rename origin to upstream and avoid
+				-- git push to that read-only repo.
+				void $ boolSystem "git" [Param "remote", Param "rename", Param "origin", Param "upstream"]
+				void $ boolSystem "git" [Param "config", Param "--unset", Param "branch.master.remote", Param "upstream"]
 			)
 
 	checkRepo = whenM (doesFileExist disthead <&&> doesFileExist (propellordir </> "propellor.cabal")) $ do
