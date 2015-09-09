@@ -1,11 +1,15 @@
+{-# LANGUAGE DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
+
 module Propellor.Types.Dns where
 
 import Propellor.Types.OS (HostName)
 import Propellor.Types.Empty
+import Propellor.Types.Info
 
 import Data.Word
 import Data.Monoid
 import qualified Data.Map as M
+import qualified Data.Set as S
 
 type Domain = String
 
@@ -15,6 +19,29 @@ data IPAddr = IPv4 String | IPv6 String
 fromIPAddr :: IPAddr -> String
 fromIPAddr (IPv4 addr) = addr
 fromIPAddr (IPv6 addr) = addr
+
+newtype AliasesInfo = AliasesInfo (S.Set HostName)
+	deriving (Show, Eq, Ord, Monoid, Typeable)
+
+instance IsInfo AliasesInfo where
+	propigateInfo _ = False
+
+toAliasesInfo :: [HostName] -> AliasesInfo
+toAliasesInfo l = AliasesInfo (S.fromList l)
+
+fromAliasesInfo :: AliasesInfo -> [HostName]
+fromAliasesInfo (AliasesInfo s) = S.toList s
+
+newtype DnsInfo = DnsInfo { fromDnsInfo :: S.Set Record }
+	deriving (Show, Eq, Ord, Monoid, Typeable)
+
+toDnsInfo :: S.Set Record -> DnsInfo
+toDnsInfo = DnsInfo
+
+-- | DNS Info is propigated, so that eg, aliases of a container
+-- are reflected in the dns for the host where it runs.
+instance IsInfo DnsInfo where
+	propigateInfo _ = True
 
 -- | Represents a bind 9 named.conf file.
 data NamedConf = NamedConf
@@ -64,7 +91,7 @@ data Record
 	| SRV Word16 Word16 Word16 BindDomain
 	| SSHFP Int Int String
 	| INCLUDE FilePath
-	deriving (Read, Show, Eq, Ord)
+	deriving (Read, Show, Eq, Ord, Typeable)
 
 getIPAddr :: Record -> Maybe IPAddr
 getIPAddr (Address addr) = Just addr
@@ -97,7 +124,10 @@ domainHostName (AbsDomain d) = Just d
 domainHostName RootDomain = Nothing
 
 newtype NamedConfMap = NamedConfMap (M.Map Domain NamedConf)
-	deriving (Eq, Ord, Show)
+	deriving (Eq, Ord, Show, Typeable)
+
+instance IsInfo NamedConfMap where
+	propigateInfo _ = False
 
 -- | Adding a Master NamedConf stanza for a particulr domain always
 -- overrides an existing Secondary stanza for that domain, while a

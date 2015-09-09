@@ -15,6 +15,7 @@ module Propellor.Property.Chroot (
 import Propellor
 import Propellor.Types.CmdLine
 import Propellor.Types.Chroot
+import Propellor.Types.Info
 import Propellor.Property.Chroot.Util
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Systemd.Core as Systemd
@@ -91,8 +92,8 @@ propigateChrootInfo c p = propigateContainer c p'
 		(propertyChildren p)
 
 chrootInfo :: Chroot -> Info
-chrootInfo (Chroot loc _ _ h) =
-	mempty { _chrootinfo = mempty { _chroots = M.singleton loc h } }
+chrootInfo (Chroot loc _ _ h) = mempty `addInfo` 
+	mempty { _chroots = M.singleton loc h }
 
 -- | Propellor is run inside the chroot to provision it.
 propellChroot :: Chroot -> ([String] -> IO (CreateProcess, IO ())) -> Bool -> Property NoInfo
@@ -143,7 +144,7 @@ chain :: [Host] -> CmdLine -> IO ()
 chain hostlist (ChrootChain hn loc systemdonly onconsole) = 
 	case findHostNoAlias hostlist hn of
 		Nothing -> errorMessage ("cannot find host " ++ hn)
-		Just parenthost -> case M.lookup loc (_chroots $ _chrootinfo $ hostInfo parenthost) of
+		Just parenthost -> case M.lookup loc (_chroots $ getInfo $ hostInfo parenthost) of
 			Nothing -> errorMessage ("cannot find chroot " ++ loc ++ " on host " ++ hn)
 			Just h -> go h
   where

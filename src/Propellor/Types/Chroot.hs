@@ -1,23 +1,31 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Propellor.Types.Chroot where
+
+import Propellor.Types
+import Propellor.Types.Empty
+import Propellor.Types.Info
 
 import Data.Monoid
 import qualified Data.Map as M
-import Propellor.Types.Empty
 
-data ChrootInfo host = ChrootInfo
-	{ _chroots :: M.Map FilePath host
+data ChrootInfo = ChrootInfo
+	{ _chroots :: M.Map FilePath Host
 	, _chrootCfg :: ChrootCfg
 	}
-	deriving (Show)
+	deriving (Show, Typeable)
 
-instance Monoid (ChrootInfo host) where
+instance IsInfo ChrootInfo where
+	propigateInfo _ = False
+
+instance Monoid ChrootInfo where
 	mempty = ChrootInfo mempty mempty
 	mappend old new = ChrootInfo
 		{ _chroots = M.union (_chroots old) (_chroots new)
 		, _chrootCfg = _chrootCfg old <> _chrootCfg new
 		}
 
-instance Empty (ChrootInfo host) where
+instance Empty ChrootInfo where
 	isEmpty i = and
 		[ isEmpty (_chroots i)
 		, isEmpty (_chrootCfg i)

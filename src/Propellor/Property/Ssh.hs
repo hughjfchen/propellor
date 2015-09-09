@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Propellor.Property.Ssh (
 	PubKeyText,
 	sshdConfig,
@@ -27,6 +29,7 @@ import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Service as Service
 import Propellor.Property.User
+import Propellor.Types.Info
 import Utility.FileMode
 
 import System.PosixCompat
@@ -169,11 +172,25 @@ keyFile keytype ispub = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++
 -- configure the host to use it. Normally this does not need to be used;
 -- use 'hostKey' instead.
 pubKey :: SshKeyType -> PubKeyText -> Property HasInfo
-pubKey t k = pureInfoProperty ("ssh pubkey known") $
-	mempty { _sshPubKey = M.singleton t k }
+pubKey t k = pureInfoProperty ("ssh pubkey known")
+	(SshPubKeyInfo (M.singleton t k))
 
-getPubKey :: Propellor (M.Map SshKeyType String)
-getPubKey = asks (_sshPubKey . hostInfo)
+getPubKey :: Propellor (M.Map SshKeyType PubKeyText)
+getPubKey = fromSshPubKeyInfo <$> askInfo
+
+newtype SshPubKeyInfo = SshPubKeyInfo 
+	{ fromSshPubKeyInfo :: M.Map SshKeyType PubKeyText }
+	deriving (Eq, Ord, Typeable)
+
+instance IsInfo SshPubKeyInfo where
+	propigateInfo _ = False
+
+instance Monoid SshPubKeyInfo where
+	mempty = SshPubKeyInfo M.empty
+	mappend (SshPubKeyInfo old) (SshPubKeyInfo new) = 
+		-- new first because union prefers values from the first
+		-- parameter when there is a duplicate key
+		SshPubKeyInfo (new `M.union` old)
 
 -- | Sets up a user with a ssh private key and public key pair from the
 -- PrivData.

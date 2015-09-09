@@ -49,6 +49,7 @@ import Propellor hiding (init)
 import Propellor.Types.Docker
 import Propellor.Types.Container
 import Propellor.Types.CmdLine
+import Propellor.Types.Info
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cmd as Cmd
@@ -186,7 +187,7 @@ mkContainerInfo cid@(ContainerId hn _cn) (Container img h) =
   where
 	runparams = map (\(DockerRunParam mkparam) -> mkparam hn)
 		(_dockerRunParams info)
-	info = _dockerinfo $ hostInfo h'
+	info = getInfo $ hostInfo h'
 	h' = h
 		-- Restart by default so container comes up on
 		-- boot or when docker is upgraded.
@@ -572,7 +573,7 @@ chain hostlist hn s = case toContainerId s of
 	Nothing -> errorMessage "bad container id"
 	Just cid -> case findHostNoAlias hostlist hn of
 		Nothing -> errorMessage ("cannot find host " ++ hn)
-		Just parenthost -> case M.lookup (containerName cid) (_dockerContainers $ _dockerinfo $ hostInfo parenthost) of
+		Just parenthost -> case M.lookup (containerName cid) (_dockerContainers $ getInfo $ hostInfo parenthost) of
 			Nothing -> errorMessage ("cannot find container " ++ containerName cid ++ " docked on host " ++ hn)
 			Just h -> go cid h
   where
@@ -643,17 +644,17 @@ listImages :: IO [ImageUID]
 listImages = map ImageUID . lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
 runProp :: String -> RunParam -> Property HasInfo
-runProp field val = pureInfoProperty (param) $ dockerInfo $
+runProp field val = pureInfoProperty (param) $
 	mempty { _dockerRunParams = [DockerRunParam (\_ -> "--"++param)] }
   where
 	param = field++"="++val
 
 genProp :: String -> (HostName -> RunParam) -> Property HasInfo
-genProp field mkval = pureInfoProperty field $ dockerInfo $
+genProp field mkval = pureInfoProperty field $
 	mempty { _dockerRunParams = [DockerRunParam (\hn -> "--"++field++"=" ++ mkval hn)] }
 
-dockerInfo :: DockerInfo Host -> Info
-dockerInfo i = mempty { _dockerinfo = i }
+dockerInfo :: DockerInfo -> Info
+dockerInfo i = mempty `addInfo` i
 
 -- | The ContainerIdent of a container is written to
 -- </.propellor-ident> inside it. This can be checked to see if

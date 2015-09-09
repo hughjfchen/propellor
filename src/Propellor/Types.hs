@@ -6,11 +6,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module Propellor.Types
 	( Host(..)
 	, Desc
 	, Property
+	, Info
 	, HasInfo
 	, NoInfo
 	, CInfo
@@ -27,7 +29,6 @@ module Propellor.Types
 	, CombinedType
 	, before
 	, combineWith
-	, Info(..)
 	, Propellor(..)
 	, EndAction(..)
 	, module Propellor.Types.OS
@@ -41,18 +42,12 @@ import Data.Monoid
 import Control.Applicative
 import "mtl" Control.Monad.RWS.Strict
 import Control.Monad.Catch
-import qualified Data.Set as S
-import qualified Data.Map as M
+import Data.Typeable
 
+import Propellor.Types.Info
 import Propellor.Types.OS
-import Propellor.Types.Chroot
 import Propellor.Types.Dns
-import Propellor.Types.Docker
-import Propellor.Types.PrivData
-import Propellor.Types.Empty
-import Propellor.Types.Val
 import Propellor.Types.Result
-import qualified Propellor.Types.Dns as Dns
 
 -- | Everything Propellor knows about a system: Its hostname,
 -- properties and their collected info.
@@ -61,7 +56,7 @@ data Host = Host
 	, hostProperties :: [Property HasInfo]
 	, hostInfo :: Info
 	}
-	deriving (Show)
+	deriving (Show, Typeable)
 
 -- | Propellor's monad provides read-only access to info about the host
 -- it's running on, and a writer to accumulate EndActions.
@@ -269,41 +264,3 @@ instance Combines RevertableProperty RevertableProperty where
 			(x1 `requires` y1)
 			-- when reverting, run actions in reverse order
 			(y2 `requires` x2)
-
--- | Information about a host.
-data Info = Info
-	{ _os :: Val System
-	, _privData :: S.Set (PrivDataField, Maybe PrivDataSourceDesc, HostContext)
-	, _sshPubKey :: M.Map SshKeyType String
-	, _aliases :: S.Set HostName
-	, _dns :: S.Set Dns.Record
-	, _namedconf :: Dns.NamedConfMap
-	, _dockerinfo :: DockerInfo Host
-	, _chrootinfo :: ChrootInfo Host
-	}
-	deriving (Show)
-
-instance Monoid Info where
-	mempty = Info mempty mempty mempty mempty mempty mempty mempty mempty
-	mappend old new = Info
-		{ _os = _os old <> _os new
-		, _privData = _privData old <> _privData new
-		, _sshPubKey = _sshPubKey new `M.union` _sshPubKey old
-		, _aliases = _aliases old <> _aliases new
-		, _dns = _dns old <> _dns new
-		, _namedconf = _namedconf old <> _namedconf new
-		, _dockerinfo = _dockerinfo old <> _dockerinfo new
-		, _chrootinfo = _chrootinfo old <> _chrootinfo new
-		}
-
-instance Empty Info where
-	isEmpty i = and
-		[ isEmpty (_os i)
-		, isEmpty (_privData i)
-		, isEmpty (_sshPubKey i)
-		, isEmpty (_aliases i)
-		, isEmpty (_dns i)
-		, isEmpty (_namedconf i)
-		, isEmpty (_dockerinfo i)
-		, isEmpty (_chrootinfo i)
-		]

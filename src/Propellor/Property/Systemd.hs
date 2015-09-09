@@ -43,6 +43,7 @@ module Propellor.Property.Systemd (
 import Propellor
 import Propellor.Types.Chroot
 import Propellor.Types.Container
+import Propellor.Types.Info
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
@@ -209,7 +210,7 @@ nspawned c@(Container name (Chroot.Chroot loc system builderconf _) h) =
   where
 	p = enterScript c
 		`before` chrootprovisioned
-		`before` nspawnService c (_chrootCfg $ _chrootinfo $ hostInfo h)
+		`before` nspawnService c (_chrootCfg $ getInfo $ hostInfo h)
 		`before` containerprovisioned
 
 	-- Chroot provisioning is run in systemd-only mode,
@@ -328,7 +329,7 @@ containerCfg :: String -> RevertableProperty
 containerCfg p = RevertableProperty (mk True) (mk False)
   where
 	mk b = pureInfoProperty ("container configuration " ++ (if b then "" else "without ") ++ p') $
-		mempty { _chrootinfo = mempty { _chrootCfg = SystemdNspawnCfg [(p', b)] } }
+		mempty { _chrootCfg = SystemdNspawnCfg [(p', b)] }
 	p' = case p of
 		('-':_) -> p
 		_ -> "--" ++ p

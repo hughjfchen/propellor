@@ -17,7 +17,7 @@ You can add a central git repository to your existing propellor setup easily:
 1. Push propellor's git repository to a central server (github or your own):
    `cd ~/.propellor/; git remote add origin ssh://git.example.com/propellor.git; git push -u origin master`
 
-2. Configure the url your hosts should use for the git repisitory, if
+2. Configure the url your hosts should use for the git repository, if
    it differs from the url above, by setting up a remote named "deploy":
    `cd ~/.propellor/; git remote add deploy git://git.example.com/propellor.git`
 

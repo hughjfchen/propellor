@@ -24,6 +24,7 @@ import Propellor.Ssh
 import Propellor.Gpg
 import Propellor.Bootstrap
 import Propellor.Types.CmdLine
+import Propellor.Types.Info
 import qualified Propellor.Shim as Shim
 import Utility.FileMode
 import Utility.SafeCommand
@@ -126,7 +127,7 @@ getSshTarget target hst
 					return ip
 
 	configips = map fromIPAddr $ mapMaybe getIPAddr $
-		S.toList $ _dns $ hostInfo hst
+		S.toList $ fromDnsInfo $ getInfo $ hostInfo hst
 
 -- Update the privdata, repo url, and git repo over the ssh
 -- connection, talking to the user's local propellor instance which is

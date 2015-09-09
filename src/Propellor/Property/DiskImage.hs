@@ -1,6 +1,10 @@
 -- | Disk image generation. 
 --
 -- This module is designed to be imported unqualified.
+--
+-- TODO run final
+-- 
+-- TODO avoid starting services while populating chroot and running final
 
 module Propellor.Property.DiskImage (
 	-- * Properties
@@ -41,8 +45,11 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Parted
 import Propellor.Property.Mount
+import Propellor.Property.Partition
+import Propellor.Property.Rsync
 import Utility.Path
 
+import Data.List (isPrefixOf)
 import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Lazy as L
 import System.Posix.Files
@@ -64,8 +71,10 @@ type DiskImage = FilePath
 -- > 		& Apt.installed ["linux-image-amd64"]
 -- >		& ...
 -- > in imageBuilt "/srv/images/foo.img" chroot MSDOS 
--- >		[ partition EXT2 `mountedAt` "/boot" `setFlag` BootFlag
--- >		, partition EXT4 `mountedAt` "/" `addFreeSpace` MegaBytes 100
+-- >		[ partition EXT2 `mountedAt` "/boot"
+-- >			`setFlag` BootFlag
+-- >		, partition EXT4 `mountedAt` "/"
+-- >			`addFreeSpace` MegaBytes 100
 -- >		, swapPartition (MegaBytes 256)
 -- >		] (grubBooted PC)
 imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
@@ -100,26 +109,51 @@ imageBuilt' rebuild img mkchroot tabletype partspec final =
 -- | Builds a disk image from the contents of a chroot.
 --
 -- The passed property is run inside the mounted disk image.
---
--- TODO copy in
--- TODO run final
 imageBuiltFrom :: DiskImage -> FilePath -> TableType -> [PartSpec] -> Property NoInfo -> RevertableProperty
 imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
   where
-	mkimg = property (img ++ " built from " ++ chrootdir) $ do
+	desc = img ++ " built from " ++ chrootdir
+	mkimg = property desc $ do
 		-- unmount helper filesystems such as proc from the chroot
 		-- before getting sizes
 		liftIO $ unmountBelow chrootdir
 		szm <- M.mapKeys (toSysDir chrootdir) . M.map toPartSize 
 			<$> liftIO (dirSizes chrootdir)
-		let calcsz = \mnts -> fromMaybe defSz . getMountSz szm mnts
+		let calcsz = \mnts -> maybe defSz fudge . getMountSz szm mnts
 		-- tie the knot!
 		let (mnts, t) = fitChrootSize tabletype partspec (map (calcsz mnts) mnts)
 		ensureProperty $
 			imageExists img (partTableSize t)
 				`before`
 			partitioned YesReallyDeleteDiskContents img t
+				`before`
+			kpartx img (partitionsPopulated chrootdir mnts)
 	rmimg = File.notPresent img
+
+partitionsPopulated :: FilePath -> [MountPoint] -> [FilePath] -> Property NoInfo
+partitionsPopulated chrootdir mnts devs = property desc $
+	mconcat $ map (uncurry go) (zip mnts devs)
+  where
+	desc = "partitions populated from " ++ chrootdir
+
+	go Nothing _ = noChange
+	go (Just mnt) dev = withTmpDir "mnt" $ \tmpdir -> bracket
+		(liftIO $ mount "auto" dev tmpdir)
+		(const $ liftIO $ umountLazy tmpdir)
+		$ \mounted -> if mounted
+			then ensureProperty $
+				syncDirFiltered (filtersfor mnt) (chrootdir ++ mnt) tmpdir
+			else return FailedChange
+
+	filtersfor mnt = 
+		let childmnts = map (drop (length (dropTrailingPathSeparator mnt))) $
+			filter (\m -> m /= mnt && addTrailingPathSeparator mnt `isPrefixOf` m)
+				(catMaybes mnts)
+		in concatMap (\m -> 
+			-- Include the child mount point, but exclude its contents.
+			[ Include (Pattern m)
+			, Exclude (filesUnder m)
+			]) childmnts
 
 -- | Ensures that a disk image file of the specified size exists.
 -- 
@@ -161,22 +195,19 @@ dirSizes top = go M.empty top [top]
 			else go (M.insertWith (+) dir sz m) dir is
 	subdirof parent i = not (i `equalFilePath` parent) && takeDirectory i `equalFilePath` parent
 
--- | Gets the size to allocate for a particular mount point, given the
--- map of sizes.
---
--- A list of all mount points is provided, so that when eg calculating
--- the size for /, if /boot is a mount point, its size can be subtracted.
 getMountSz :: (M.Map FilePath PartSize) -> [MountPoint] -> MountPoint -> Maybe PartSize
 getMountSz _ _ Nothing = Nothing
 getMountSz szm l (Just mntpt) = 
 	fmap (`reducePartSize` childsz) (M.lookup mntpt szm)
   where
 	childsz = mconcat $ catMaybes $
-		map (getMountSz szm l) (filter childmntpt l)
-	childmntpt Nothing = False
-	childmntpt (Just d) 
-		| d `equalFilePath` mntpt = False
-		| otherwise = mntpt `dirContains` d
+		map (getMountSz szm l) (filter (isChild mntpt) l)
+
+isChild :: FilePath -> MountPoint -> Bool
+isChild mntpt (Just d)
+	| d `equalFilePath` mntpt = False
+	| otherwise = mntpt `dirContains` d
+isChild _ Nothing = False
 
 -- | From a location in a chroot (eg, /tmp/chroot/usr) to
 -- the corresponding location inside (eg, /usr).
@@ -191,11 +222,19 @@ type MountPoint = Maybe FilePath
 defSz :: PartSize
 defSz = MegaBytes 128
 
+-- Add 2% for filesystem overhead. Rationalle for picking 2%:
+-- A filesystem with 1% overhead might just sneak by as acceptable.
+-- Double that just in case. Add an additional 3 mb to deal with
+-- non-scaling overhead, of filesystems (eg, superblocks).
+fudge :: PartSize -> PartSize
+fudge (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3)
+
 -- | Specifies a mount point and a constructor for a Partition.
 -- 
 -- The size that is eventually provided is the amount of space needed to 
 -- hold the files that appear in the directory where the partition is to be
--- mounted.
+-- mounted. Plus a fudge factor, since filesystems have some space
+-- overhead.
 --
 -- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
 -- no corresponding directory in the chroot will have 128 MegaBytes
