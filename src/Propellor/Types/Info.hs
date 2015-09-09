@@ -21,7 +21,7 @@ import Data.Maybe
 data Info = Info [(Dynamic, Bool)]
 
 instance Show Info where
-	show (Info l) = "Info " ++ show (length l)
+	show (Info l) = "Info " ++ show (map (dynTypeRep . fst) l)
 
 instance Monoid Info where
  	mempty = Info []
