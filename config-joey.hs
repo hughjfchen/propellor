@@ -143,7 +143,7 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.standardAutoBuilder
 		(System (Debian Unstable) "amd64") fifteenpast "2h")
-	! Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.standardAutoBuilder
 		(System (Debian Unstable) "i386") fifteenpast "2h")
 	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer
