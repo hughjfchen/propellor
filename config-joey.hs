@@ -140,7 +140,7 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 	& Apt.serviceInstalledRunning "ntp"
 	& Systemd.persistentJournal
 
-	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+	! Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.standardAutoBuilder
 		(System (Debian Testing) "amd64") fifteenpast "2h")
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
