@@ -172,8 +172,7 @@ keyFile keytype ispub = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++
 -- configure the host to use it. Normally this does not need to be used;
 -- use 'hostKey' instead.
 pubKey :: SshKeyType -> PubKeyText -> Property HasInfo
-pubKey t k = pureInfoProperty ("ssh pubkey known")
-	(SshPubKeyInfo (M.singleton t k))
+pubKey t = pureInfoProperty "ssh pubkey known" . SshPubKeyInfo . M.singleton t
 
 getPubKey :: Propellor (M.Map SshKeyType PubKeyText)
 getPubKey = fromSshPubKeyInfo <$> askInfo
