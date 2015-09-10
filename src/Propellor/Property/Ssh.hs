@@ -122,7 +122,7 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 --
 -- The corresponding private keys come from the privdata.
 --
--- Any host keysthat are not in the list are removed from the host.
+-- Any host keys that are not in the list are removed from the host.
 hostKeys :: IsContext c => c -> [(SshKeyType, PubKeyText)] -> Property HasInfo
 hostKeys ctx l = propertyList desc $ catMaybes $
 	map (\(t, pub) -> Just $ hostKey ctx t pub) l ++ [cleanup]
