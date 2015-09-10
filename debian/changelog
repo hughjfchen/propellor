@@ -80,7 +80,7 @@ propellor (2.5.0) unstable; urgency=medium
   * Add docker image related properties.
     Thanks, Antoine Eiche.
   * Export CommandParam, boolSystem, safeSystem, shellEscape, and
-  * createProcess from Propellor.Property.Cmd, so they are available
+    createProcess from Propellor.Property.Cmd, so they are available
     for use in constricting your own Properties when using propellor
     as a library.
   * Improve enter-machine scripts for systemd-nspawn containers to unset most

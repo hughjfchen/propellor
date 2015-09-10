@@ -122,7 +122,7 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 --
 -- The corresponding private keys come from the privdata.
 --
--- Any host keysthat are not in the list are removed from the host.
+-- Any host keys that are not in the list are removed from the host.
 hostKeys :: IsContext c => c -> [(SshKeyType, PubKeyText)] -> Property HasInfo
 hostKeys ctx l = propertyList desc $ catMaybes $
 	map (\(t, pub) -> Just $ hostKey ctx t pub) l ++ [cleanup]
@@ -172,8 +172,7 @@ keyFile keytype ispub = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++
 -- configure the host to use it. Normally this does not need to be used;
 -- use 'hostKey' instead.
 pubKey :: SshKeyType -> PubKeyText -> Property HasInfo
-pubKey t k = pureInfoProperty ("ssh pubkey known")
-	(SshPubKeyInfo (M.singleton t k))
+pubKey t = pureInfoProperty "ssh pubkey known" . SshPubKeyInfo . M.singleton t
 
 getPubKey :: Propellor (M.Map SshKeyType PubKeyText)
 getPubKey = fromSshPubKeyInfo <$> askInfo
