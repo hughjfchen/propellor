@@ -8,6 +8,7 @@ propellor (2.8.0) UNRELEASED; urgency=medium
   * Improve propellor wrapper to better handle installation cloning
     the public propellor repo, by setting that repo to be upstream,
     so propellor doesnt try to push to a read-only repo.
+  * Added DebianMirror module, contributed by Félix Sipma.
 
  -- Joey Hess <id@joeyh.name>  Fri, 04 Sep 2015 10:36:40 -0700
 
