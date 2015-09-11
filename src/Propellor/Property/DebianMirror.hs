@@ -8,6 +8,7 @@ import Propellor
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
+import qualified Propellor.Property.User as User
 
 import Data.List
 
@@ -27,10 +28,11 @@ mirror :: Url -> FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] ->
 mirror url dir suites archs sections source priorities crontimes = propertyList
 	("Debian mirror " ++ dir)
 	[ Apt.installed ["debmirror"]
+	, User.accountFor "debmirror"
 	, File.dirExists dir
 	, check (not . and <$> mapM suitemirrored suites) $ cmdProperty "debmirror" args
 		`describe` "debmirror setup"
-	, Cron.niceJob ("debmirror_" ++ dir) crontimes (User "root") "/" $
+	, Cron.niceJob ("debmirror_" ++ dir) crontimes (User "debmirror") "/" $
 		unwords ("/usr/bin/debmirror" : args)
 	]
   where
