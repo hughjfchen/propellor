@@ -23,8 +23,8 @@ showPriority Standard  = "standard"
 showPriority Optional  = "optional"
 showPriority Extra     = "extra"
 
-mirror :: FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> Cron.Times -> Property NoInfo
-mirror dir suites archs sections source priorities crontimes = propertyList
+mirror :: Url -> FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> Cron.Times -> Property NoInfo
+mirror url dir suites archs sections source priorities crontimes = propertyList
 	("Debian mirror " ++ dir)
 	[ Apt.installed ["debmirror"]
 	, File.dirExists dir
@@ -47,8 +47,11 @@ mirror dir suites archs sections source priorities crontimes = propertyList
 		++
 		(if source then [] else ["--nosource"])
 		++
-		[ "--host", "ftp.fr.debian.org"
+		[ "--host", url
 		, "--method", "http"
 		, "--keyring", "/usr/share/keyrings/debian-archive-keyring.gpg"
 		, dir
 		]
+
+mirrorCdn :: FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> Cron.Times -> Property NoInfo
+mirrorCdn = mirror "http://httpredir.debian.org/debian"
