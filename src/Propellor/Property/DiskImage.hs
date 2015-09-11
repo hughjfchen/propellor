@@ -292,6 +292,7 @@ fitChrootSize tt l basesizes = (mounts, parttable)
 type Finalization = (Property NoInfo, Property NoInfo)
 
 -- | Makes grub be the boot loader of the disk image.
+-- TODO not implemented
 grubBooted :: Grub.BIOS -> Finalization
 grubBooted bios = (Grub.installed bios, undefined)
 
