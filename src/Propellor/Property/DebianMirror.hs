@@ -30,6 +30,7 @@ mirror url dir suites archs sections source priorities crontimes = propertyList
 	[ Apt.installed ["debmirror"]
 	, User.accountFor "debmirror"
 	, File.dirExists dir
+	, File.ownerGroup dir (User "debmirror") (Group "debmirror")
 	, check (not . and <$> mapM suitemirrored suites) $ cmdProperty "debmirror" args
 		`describe` "debmirror setup"
 	, Cron.niceJob ("debmirror_" ++ dir) crontimes (User "debmirror") "/" $
