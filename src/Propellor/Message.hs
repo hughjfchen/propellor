@@ -112,8 +112,7 @@ checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
 	go (Just "1") = enableDebugMode
 	go (Just _) = noop
 	go Nothing = whenM (doesDirectoryExist ".git") $
-		whenM (any (== "1") . lines <$> getgitconfig) $
-			enableDebugMode
+		whenM (elem "1" . lines <$> getgitconfig) enableDebugMode
 	getgitconfig = catchDefaultIO "" $
 		readProcess "git" ["config", "propellor.debug"]
 

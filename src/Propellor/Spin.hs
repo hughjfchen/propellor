@@ -59,7 +59,7 @@ spin target relay hst = do
 
 	-- And now we can run it.
 	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", sshtarget, shellWrap runcmd])) $
-		error $ "remote propellor failed"
+		error "remote propellor failed"
   where
 	hn = fromMaybe target relay
 
@@ -184,7 +184,7 @@ updateServer target relay hst connect haveprecompiled =
 		let loop = go (toh, fromh)
 		let restart = updateServer hn relay hst connect haveprecompiled
 		let done = return ()
-		v <- (maybe Nothing readish <$> getMarked fromh statusMarker)
+		v <- maybe Nothing readish <$> getMarked fromh statusMarker
 		case v of
 			(Just NeedRepoUrl) -> do
 				sendRepoUrl toh
@@ -263,7 +263,7 @@ sendGitClone hn = void $ actionMessage ("Clone git repository to " ++ hn) $ do
 -- This should be reasonably portable, as long as the remote host has the
 -- same architecture as the build host.
 sendPrecompiled :: HostName -> IO ()
-sendPrecompiled hn = void $ actionMessage ("Uploading locally compiled propellor as a last resort") $ do
+sendPrecompiled hn = void $ actionMessage "Uploading locally compiled propellor as a last resort" $
 	bracket getWorkingDirectory changeWorkingDirectory $ \_ ->
 		withTmpDir "propellor" go
   where

@@ -87,7 +87,7 @@ aliasMap = M.fromList . concat .
 	map (\h -> map (\aka -> (aka, h)) $ fromAliasesInfo $ getInfo $ hostInfo h)
 
 findHost :: [Host] -> HostName -> Maybe Host
-findHost l hn = maybe (findAlias l hn) Just (findHostNoAlias l hn)
+findHost l hn = (findHostNoAlias l hn) <|> (findAlias l hn)
 
 findHostNoAlias :: [Host] -> HostName -> Maybe Host
 findHostNoAlias l hn = M.lookup hn (hostMap l)

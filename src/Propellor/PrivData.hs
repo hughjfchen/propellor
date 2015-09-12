@@ -187,16 +187,16 @@ listPrivDataFields hosts = do
 		showSet $ map (\(f, c) -> (f, c, join $ M.lookup (f, c) descmap)) missing
   where
 	header = ["Field", "Context", "Used by"]
-	mkrow k@(field, (Context context)) =
+	mkrow k@(field, Context context) =
 		[ shellEscape $ show field
 		, shellEscape context
 		, intercalate ", " $ sort $ fromMaybe [] $ M.lookup k usedby
 		]
 	mkhostmap host mkv = M.fromList $ map (\(f, d, c) -> ((f, mkHostContext c (hostName host)), mkv d)) $
 		S.toList $ fromPrivInfo $ getInfo $ hostInfo host
-	usedby = M.unionsWith (++) $ map (\h -> mkhostmap h $ const $ [hostName h]) hosts
+	usedby = M.unionsWith (++) $ map (\h -> mkhostmap h $ const [hostName h]) hosts
 	wantedmap = M.fromList $ zip (M.keys usedby) (repeat "")
-	descmap = M.unions $ map (\h -> mkhostmap h id) hosts
+	descmap = M.unions $ map (`mkhostmap` id) hosts
 	section desc = putStrLn $ "\n" ++ desc
 	showtable rows = do
 		putStr $ unlines $ formatTable $ tableWithHeader header rows

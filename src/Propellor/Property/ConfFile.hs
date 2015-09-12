@@ -38,8 +38,7 @@ adjustSection
 	-> InsertSection
 	-> FilePath
 	-> Property NoInfo
-adjustSection desc start past adjust insert f =
-	fileProperty desc go f
+adjustSection desc start past adjust insert = fileProperty desc go
   where
 	go ls = let (pre, wanted, post) = foldl' find ([], [], []) ls
 		in if null wanted

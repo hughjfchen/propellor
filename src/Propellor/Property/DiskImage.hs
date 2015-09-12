@@ -119,7 +119,7 @@ imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
 		liftIO $ unmountBelow chrootdir
 		szm <- M.mapKeys (toSysDir chrootdir) . M.map toPartSize 
 			<$> liftIO (dirSizes chrootdir)
-		let calcsz = \mnts -> maybe defSz fudge . getMountSz szm mnts
+		let calcsz mnts = maybe defSz fudge . getMountSz szm mnts
 		-- tie the knot!
 		let (mnts, t) = fitChrootSize tabletype partspec (map (calcsz mnts) mnts)
 		ensureProperty $
@@ -131,8 +131,7 @@ imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
 	rmimg = File.notPresent img
 
 partitionsPopulated :: FilePath -> [MountPoint] -> [FilePath] -> Property NoInfo
-partitionsPopulated chrootdir mnts devs = property desc $
-	mconcat $ map (uncurry go) (zip mnts devs)
+partitionsPopulated chrootdir mnts devs = property desc $ mconcat $ zipWith go mnts devs
   where
 	desc = "partitions populated from " ++ chrootdir
 
@@ -200,8 +199,7 @@ getMountSz _ _ Nothing = Nothing
 getMountSz szm l (Just mntpt) = 
 	fmap (`reducePartSize` childsz) (M.lookup mntpt szm)
   where
-	childsz = mconcat $ catMaybes $
-		map (getMountSz szm l) (filter (isChild mntpt) l)
+	childsz = mconcat $ mapMaybe (getMountSz szm l) (filter (isChild mntpt) l)
 
 isChild :: FilePath -> MountPoint -> Bool
 isChild mntpt (Just d)
@@ -274,7 +272,7 @@ extended :: PartSpec -> PartSpec
 extended s = adjustp s $ \p -> p { partType = Extended }
 
 adjustp :: PartSpec -> (Partition -> Partition) -> PartSpec
-adjustp (mp, p) f = (mp, \sz -> f (p sz))
+adjustp (mp, p) f = (mp, f . p)
 
 -- | The constructor for each Partition is passed the size of the files
 -- from the chroot that will be put in that partition.
@@ -282,7 +280,7 @@ fitChrootSize :: TableType -> [PartSpec] -> [PartSize] -> ([MountPoint], PartTab
 fitChrootSize tt l basesizes = (mounts, parttable)
   where
 	(mounts, sizers) = unzip l
-	parttable = PartTable tt (map (uncurry id) (zip sizers basesizes))
+	parttable = PartTable tt (zipWith id sizers basesizes)
 
 -- | A pair of properties. The first property is satisfied within the
 -- chroot, and is typically used to download the boot loader.

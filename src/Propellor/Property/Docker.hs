@@ -213,7 +213,7 @@ garbageCollected = propertyList "docker garbage collected"
   where
 	gccontainers = property "docker containers garbage collected" $
 		liftIO $ report <$> (mapM removeContainer =<< listContainers AllContainers)
-	gcimages = property "docker images garbage collected" $ do
+	gcimages = property "docker images garbage collected" $
 		liftIO $ report <$> (mapM removeImage =<< listImages)
 
 -- | Tweaks a container to work well with docker.
@@ -471,8 +471,7 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 
 	restartcontainer = do
 		oldimage <- liftIO $
-			fromMaybe (toImageID image) . fmap toImageID <$>
-				commitContainer cid
+			maybe (toImageID image) toImageID <$> commitContainer cid
 		void $ liftIO $ removeContainer cid
 		go oldimage
 
@@ -631,8 +630,8 @@ data ContainerFilter = RunningContainers | AllContainers
 -- | Only lists propellor managed containers.
 listContainers :: ContainerFilter -> IO [ContainerId]
 listContainers status = 
-	catMaybes . map toContainerId . concat . map (split ",")
-		. catMaybes . map (lastMaybe . words) . lines
+	(mapMaybe toContainerId . concatMap (split ",")
+		. mapMaybe (lastMaybe . words) . lines)
 		<$> readProcess dockercmd ps
   where
 	ps

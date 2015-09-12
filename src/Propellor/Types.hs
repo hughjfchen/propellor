@@ -219,7 +219,7 @@ class Combines x y where
 -- that ensures the first, and if the first succeeds, ensures the second.
 -- The property uses the description of the first property.
 before :: (IsProp x, Combines y x, IsProp (CombinedType y x)) => x -> y -> CombinedType y x
-before x y = (y `requires` x) `describe` (getDesc x)
+before x y = (y `requires` x) `describe` getDesc x
 
 -- | Combines together two properties, yielding a property that
 -- has the description and info of the first, and that has the second

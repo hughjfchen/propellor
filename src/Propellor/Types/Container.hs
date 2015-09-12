@@ -17,12 +17,12 @@ data Bound v = Bound
 -- For example, @Port 8080 -<- Port 80@ means that port 8080 on the host
 -- is bound to port 80 from the container.
 (-<-) :: (hostv ~ v, containerv ~ v) => hostv -> containerv -> Bound v
-(-<-) hostv containerv = Bound hostv containerv
+(-<-) = Bound
 
 -- | Flipped version of -<- with the container value first and host value
 -- second.
 (->-) :: (containerv ~ v, hostv ~ v) => hostv -> containerv -> Bound v
-(->-) containerv hostv = Bound hostv containerv
+(->-) = flip (-<-)
 
 -- | Create a Bound value, that is the same on both the host and container.
 same :: v -> Bound v

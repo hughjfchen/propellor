@@ -103,5 +103,5 @@ ownerGroup f (User owner) (Group group) = property (f ++ " owner " ++ og) $ do
 -- | Ensures that a file/dir has the specfied mode.
 mode :: FilePath -> FileMode -> Property NoInfo
 mode f v = property (f ++ " mode " ++ show v) $ do
-	liftIO $ modifyFileMode f (\_old -> v)
+	liftIO $ modifyFileMode f (const v)
 	noChange

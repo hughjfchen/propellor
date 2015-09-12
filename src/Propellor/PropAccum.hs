@@ -48,7 +48,7 @@ class PropAccum h where
 instance PropAccum Host where
 	(Host hn ps is) &  p = Host hn (ps ++ [toProp p])
 		(is <> getInfoRecursive p)
-	(Host hn ps is) &^ p = Host hn ([toProp p] ++ ps)
+	(Host hn ps is) &^ p = Host hn (toProp p : ps)
 		(getInfoRecursive p <> is)
 	getProperties = hostProperties
 
