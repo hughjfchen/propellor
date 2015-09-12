@@ -2,6 +2,7 @@ module Propellor.Property.DebianMirror
 	( DebianPriority(..)
 	, showPriority
 	, mirror
+	, mirrorCdn
 	) where
 
 import Propellor
@@ -24,11 +25,11 @@ showPriority Standard  = "standard"
 showPriority Optional  = "optional"
 showPriority Extra     = "extra"
 
-mirror :: Url -> FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> Cron.Times -> Property NoInfo
+mirror :: Apt.Url -> FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> Cron.Times -> Property NoInfo
 mirror url dir suites archs sections source priorities crontimes = propertyList
 	("Debian mirror " ++ dir)
 	[ Apt.installed ["debmirror"]
-	, User.accountFor "debmirror"
+	, User.accountFor (User "debmirror")
 	, File.dirExists dir
 	, File.ownerGroup dir (User "debmirror") (Group "debmirror")
 	, check (not . and <$> mapM suitemirrored suites) $ cmdProperty "debmirror" args
