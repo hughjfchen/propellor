@@ -630,8 +630,8 @@ data ContainerFilter = RunningContainers | AllContainers
 -- | Only lists propellor managed containers.
 listContainers :: ContainerFilter -> IO [ContainerId]
 listContainers status = 
-	(mapMaybe toContainerId . concatMap (split ",")
-		. mapMaybe (lastMaybe . words) . lines)
+	mapMaybe toContainerId . concatMap (split ",")
+		. mapMaybe (lastMaybe . words) . lines
 		<$> readProcess dockercmd ps
   where
 	ps

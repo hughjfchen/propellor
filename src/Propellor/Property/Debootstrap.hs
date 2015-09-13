@@ -158,10 +158,10 @@ sourceInstall' = withTmpDir "debootstrap" $ \tmpd -> do
 	let indexfile = tmpd </> "index.html"
 	unlessM (download baseurl indexfile) $
 		errorMessage $ "Failed to download " ++ baseurl
-	urls <- (sortBy (flip compare) -- highest version first
+	urls <- sortBy (flip compare) -- highest version first
 		. filter ("debootstrap_" `isInfixOf`)
 		. filter (".tar." `isInfixOf`)
-		. extractUrls baseurl) <$>
+		. extractUrls baseurl <$>
 		readFileStrictAnyEncoding indexfile
 	nukeFile indexfile
 
