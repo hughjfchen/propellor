@@ -239,18 +239,25 @@ unattendedUpgrades = enable <!> disable
 					("Unattended-Upgrade::Origins-Pattern { \"o=Debian,a="++showSuite suite++"\"; };")
 			_ -> noChange
 
+type DebconfTemplate = String
+type DebconfTemplateType = String
+type DebconfTemplateValue = String
+
 -- | Preseeds debconf values and reconfigures the package so it takes
 -- effect.
-reConfigure :: Package -> [(String, String, String)] -> Property NoInfo
+reConfigure :: Package -> [(DebconfTemplate, DebconfTemplateType, DebconfTemplateValue)] -> Property NoInfo
 reConfigure package vals = reconfigure `requires` setselections
 	`describe` ("reconfigure " ++ package)
   where
-	setselections = property "preseed" $ makeChange $
-		withHandle StdinHandle createProcessSuccess
-			(proc "debconf-set-selections" []) $ \h -> do
-				forM_ vals $ \(tmpl, tmpltype, value) ->
-					hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
-				hClose h
+	setselections = property "preseed" $ 
+		if null vals 
+			then noChange
+			else makeChange $
+				withHandle StdinHandle createProcessSuccess
+					(proc "debconf-set-selections" []) $ \h -> do
+						forM_ vals $ \(tmpl, tmpltype, value) ->
+							hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
+						hClose h
 	reconfigure = cmdPropertyEnv "dpkg-reconfigure" ["-fnone", package] noninteractiveEnv
 
 -- | Ensures that a service is installed and running.
