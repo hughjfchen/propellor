@@ -520,6 +520,9 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		`onChange` Service.restarted "amavisd-milter"
 		`describe` "amavisd-milter configured for postfix"
 	& Apt.serviceInstalledRunning "clamav-freshclam"
+	-- Workaround https://bugs.debian.org/569150
+	& Cron.niceJob "amavis-expire" Cron.Daily (User "root") "/"
+		"find /var/lib/amavis/virusmails/ -type f -ctime +7 -delete"
 
 	& dkimInstalled
 
