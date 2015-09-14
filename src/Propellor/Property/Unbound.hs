@@ -1,3 +1,5 @@
+-- | Properties for the Unbound caching DNS server
+
 module Propellor.Property.Unbound
 	( installed
 	, restarted
