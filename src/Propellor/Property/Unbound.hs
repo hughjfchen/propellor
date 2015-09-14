@@ -12,10 +12,11 @@ module Propellor.Property.Unbound
 	, canonical
 	, genZoneStatic
 	, genZoneTransparent
-) where
+	) where
 
 import Propellor
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Service as Service
 
 import Data.List
 import Data.String.Utils (split, replace)
@@ -53,9 +54,8 @@ genPTR :: BindDomain -> IPAddr -> String
 genPTR dom ip = localData $ revIP ip ++ ". " ++ "PTR" ++ " " ++ dValue dom
 
 revIP :: IPAddr -> String
-revIP addr = case addr of
-	IPv4 addr' -> intercalate "." (reverse $ split "." addr') ++ ".in-addr.arpa"
-	IPv6 _ -> reverse (intersperse '.' $ replace ":" "" $ fromIPAddr $ canonical addr) ++ ".ip6.arpa"
+revIP (IPv4 addr) = intercalate "." (reverse $ split "." addr) ++ ".in-addr.arpa"
+revIP addr@(IPv6 _) = reverse (intersperse '.' $ replace ":" "" $ fromIPAddr $ canonical addr) ++ ".ip6.arpa"
 
 canonical :: IPAddr -> IPAddr
 canonical (IPv4 addr) = IPv4 addr
