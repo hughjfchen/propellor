@@ -39,10 +39,11 @@ autobuilder arch crontimes timeout = combineProperties "gitannexbuilder" $ props
 	-- password used to upload the built image.
 	rsyncpassword = withPrivData (Password builduser) context $ \getpw ->
 		property "rsync password" $ getpw $ \pw -> do
-			oldpw <- liftIO $ catchDefaultIO "" $
+			have <- liftIO $ catchDefaultIO "" $
 				readFileStrict pwfile
-			if pw /= oldpw
-				then makeChange $ writeFile pwfile pw
+			let want = privDataVal pw
+			if want /= have
+				then makeChange $ writeFile pwfile want
 				else noChange
 
 tree :: Architecture -> Property HasInfo

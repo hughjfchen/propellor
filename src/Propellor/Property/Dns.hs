@@ -97,7 +97,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 		, confFile = mknamedconffile zonefile
 		, confMasters = []
 		, confAllowTransfer = nub $
-			concatMap (\h -> hostAddresses h hosts) $
+			concatMap (`hostAddresses` hosts) $
 				secondaries ++ nssecondaries
 		, confLines = []
 		}
@@ -199,7 +199,7 @@ secondaryFor masters hosts domain = setup <!> cleanup
 		{ confDomain = domain
 		, confDnsServerType = Secondary
 		, confFile = "db." ++ domain
-		, confMasters = concatMap (\m -> hostAddresses m hosts) masters
+		, confMasters = concatMap (`hostAddresses` hosts) masters
 		, confAllowTransfer = []
 		, confLines = []
 		}
@@ -425,7 +425,7 @@ type WarningMessage = String
 -- Does not include SSHFP records.
 genZone :: [Host] -> M.Map HostName Host -> Domain -> SOA -> (Zone, [WarningMessage])
 genZone inzdomain hostmap zdomain soa =
-	let (warnings, zhosts) = partitionEithers $ concat $ map concat
+	let (warnings, zhosts) = partitionEithers $ concatMap concat
 		[ map hostips inzdomain
 		, map hostrecords inzdomain
 		, map addcnames (M.elems hostmap)

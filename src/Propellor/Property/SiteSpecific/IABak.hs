@@ -103,4 +103,4 @@ graphiteServer = propertyList "iabak graphite server" $ props
 	graphiteCSRF = withPrivData (Password "csrf-token") (Context "iabak.archiveteam.org") $
 		\gettoken -> property "graphite-web CSRF token" $
 			gettoken $ \token -> ensureProperty $ File.containsLine
-				"/etc/graphite/local_settings.py" ("SECRET_KEY = '"++ token ++"'")
+				"/etc/graphite/local_settings.py" ("SECRET_KEY = '"++ privDataVal token ++"'")

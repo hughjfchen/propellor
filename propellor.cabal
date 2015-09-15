@@ -111,6 +111,7 @@ Library
     Propellor.Property.Systemd
     Propellor.Property.Systemd.Core
     Propellor.Property.Tor
+    Propellor.Property.Unbound
     Propellor.Property.User
     Propellor.Property.HostingProvider.CloudAtCost
     Propellor.Property.HostingProvider.DigitalOcean

@@ -67,8 +67,7 @@ onChangeFlagOnFail
         -> Property x
         -> Property y
         -> CombinedType (Property x) (Property y)
-onChangeFlagOnFail flagfile p1 p2 =
-	combineWith go p1 p2
+onChangeFlagOnFail flagfile = combineWith go
   where
 	go s1 s2 = do
 		r1 <- s1

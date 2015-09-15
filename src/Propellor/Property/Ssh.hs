@@ -147,21 +147,28 @@ hostKeys ctx l = propertyList desc $ catMaybes $
 hostKey :: IsContext c => c -> SshKeyType -> PubKeyText -> Property HasInfo
 hostKey context keytype pub = combineProperties desc
 	[ pubKey keytype pub
-	, toProp $ property desc $ install writeFile True pub
+	, toProp $ property desc $ install writeFile True (lines pub)
 	, withPrivData (keysrc "" (SshPrivKey keytype "")) context $ \getkey ->
-		property desc $ getkey $ install writeFileProtected False
+		property desc $ getkey $
+			install writeFileProtected False . privDataLines
 	]
 	`onChange` restarted
   where
 	desc = "ssh host key configured (" ++ fromKeyType keytype ++ ")"
-	install writer ispub key = do
+	install writer ispub keylines = do
 		let f = keyFile keytype ispub
-		s <- liftIO $ catchDefaultIO "" $ readFileStrict f
-		if s == key
+		have <- liftIO $ catchDefaultIO "" $ readFileStrict f
+		let want = keyFileContent keylines
+		if have == want
 			then noChange
-			else makeChange $ writer f key
+			else makeChange $ writer f want
 	keysrc ext field = PrivDataSourceFileFromCommand field ("sshkey"++ext)
 		("ssh-keygen -t " ++ sshKeyTypeParam keytype ++ " -f sshkey")
+
+-- Make sure that there is a newline at the end;
+-- ssh requires this for some types of private keys.
+keyFileContent :: [String] -> String
+keyFileContent keylines = unlines (keylines ++ [""])
 
 keyFile :: SshKeyType -> Bool -> FilePath
 keyFile keytype ispub = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++ ext
@@ -221,7 +228,7 @@ keyImported' dest keytype user@(User u) context = combineProperties desc
 			, ensureProperties
 				[ property desc $ makeChange $ do
 					createDirectoryIfMissing True (takeDirectory f)
-					writer f key
+					writer f (keyFileContent (privDataLines key))
 				, File.ownerGroup f user (userGroup user)
 				, File.ownerGroup (takeDirectory f) user (userGroup user)
 				]
@@ -231,6 +238,8 @@ keyImported' dest keytype user@(User u) context = combineProperties desc
 			home <- homeDirectory <$> getUserEntryForName u
 			return $ home </> ".ssh" </> "id_" ++ fromKeyType keytype ++ ext
 		Just f -> return $ f ++ ext
+
+
 
 fromKeyType :: SshKeyType -> String
 fromKeyType SshRsa = "rsa"
@@ -267,7 +276,7 @@ authorizedKeys user@(User u) context = withPrivData (SshAuthorizedKeys u) contex
 		f <- liftIO $ dotFile "authorized_keys" user
 		liftIO $ do
 			createDirectoryIfMissing True (takeDirectory f)
-			writeFileProtected f v
+			writeFileProtected f (keyFileContent (privDataLines v))
 		ensureProperties 
 			[ File.ownerGroup f user (userGroup user)
 			, File.ownerGroup (takeDirectory f) user (userGroup user)

@@ -33,7 +33,7 @@ keyImported (GpgKeyId keyid) user@(User u) = flagFile' prop genflag
 			withHandle StdinHandle createProcessSuccess
 				(proc "su" ["-c", "gpg --import", u]) $ \h -> do
 					fileEncoding h
-					hPutStr h key
+					hPutStr h (unlines (privDataLines key))
 					hClose h
 	src = PrivDataSource GpgKey "Either a gpg public key, exported with gpg --export -a, or a gpg private key, exported with gpg --export-secret-key -a"
 

@@ -26,4 +26,4 @@ formatTable table = map (\r -> unwords (map pad (zip r colsizes))) table
 		sumcols (map (map length) table)
 	sumcols [] = repeat 0
 	sumcols [r] = r
-	sumcols (r1:r2:rs) = sumcols $ map (uncurry max) (zip r1 r2) : rs
+	sumcols (r1:r2:rs) = sumcols $ zipWith max r1 r2 : rs

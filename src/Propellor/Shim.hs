@@ -77,7 +77,7 @@ installFile :: FilePath -> FilePath -> IO ()
 installFile top f = do
 	createDirectoryIfMissing True destdir
 	nukeFile dest
-	createLink f dest `catchIO` (const copy)
+	createLink f dest `catchIO` const copy
   where
 	copy = void $ boolSystem "cp" [Param "-a", Param f, Param dest]
 	destdir = inTop top $ takeDirectory f

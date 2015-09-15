@@ -132,7 +132,7 @@ getLocalPrivData field context =
   where
 	localcache = catchDefaultIO Nothing $ readish <$> readFile privDataLocal
 
-type PrivMap = M.Map (PrivDataField, Context) PrivData
+type PrivMap = M.Map (PrivDataField, Context) String
 
 -- | Get only the set of PrivData that the Host's Info says it uses.
 filterPrivData :: Host -> PrivMap -> PrivMap
@@ -142,12 +142,14 @@ filterPrivData host = M.filterWithKey (\k _v -> S.member k used)
 		fromPrivInfo $ getInfo $ hostInfo host
 
 getPrivData :: PrivDataField -> Context -> PrivMap -> Maybe PrivData
-getPrivData field context = M.lookup (field, context)
+getPrivData field context m = do
+	s <- M.lookup (field, context) m
+	return (PrivData s)
 
 setPrivData :: PrivDataField -> Context -> IO ()
 setPrivData field context = do
 	putStrLn "Enter private data on stdin; ctrl-D when done:"
-	setPrivDataTo field context =<< hGetContentsStrict stdin
+	setPrivDataTo field context . PrivData =<< hGetContentsStrict stdin
 
 unsetPrivData :: PrivDataField -> Context -> IO ()
 unsetPrivData field context = do
@@ -156,7 +158,8 @@ unsetPrivData field context = do
 
 dumpPrivData :: PrivDataField -> Context -> IO ()
 dumpPrivData field context =
-	maybe (error "Requested privdata is not set.") putStrLn
+	maybe (error "Requested privdata is not set.")
+		(mapM_ putStrLn . privDataLines)
 		=<< (getPrivData field context <$> decryptPrivData)
 
 editPrivData :: PrivDataField -> Context -> IO ()
@@ -164,11 +167,11 @@ editPrivData field context = do
 	v <- getPrivData field context <$> decryptPrivData
 	v' <- withTmpFile "propellorXXXX" $ \f h -> do
 		hClose h
-		maybe noop (writeFileProtected f) v
+		maybe noop (writeFileProtected f . unlines . privDataLines) v
 		editor <- getEnvDefault "EDITOR" "vi"
 		unlessM (boolSystem editor [File f]) $
 			error "Editor failed; aborting."
-		readFile f
+		PrivData <$> readFile f
 	setPrivDataTo field context v'
 
 listPrivDataFields :: [Host] -> IO ()
@@ -187,29 +190,26 @@ listPrivDataFields hosts = do
 		showSet $ map (\(f, c) -> (f, c, join $ M.lookup (f, c) descmap)) missing
   where
 	header = ["Field", "Context", "Used by"]
-	mkrow k@(field, (Context context)) =
+	mkrow k@(field, Context context) =
 		[ shellEscape $ show field
 		, shellEscape context
 		, intercalate ", " $ sort $ fromMaybe [] $ M.lookup k usedby
 		]
 	mkhostmap host mkv = M.fromList $ map (\(f, d, c) -> ((f, mkHostContext c (hostName host)), mkv d)) $
 		S.toList $ fromPrivInfo $ getInfo $ hostInfo host
-	usedby = M.unionsWith (++) $ map (\h -> mkhostmap h $ const $ [hostName h]) hosts
+	usedby = M.unionsWith (++) $ map (\h -> mkhostmap h $ const [hostName h]) hosts
 	wantedmap = M.fromList $ zip (M.keys usedby) (repeat "")
-	descmap = M.unions $ map (\h -> mkhostmap h id) hosts
+	descmap = M.unions $ map (`mkhostmap` id) hosts
 	section desc = putStrLn $ "\n" ++ desc
 	showtable rows = do
 		putStr $ unlines $ formatTable $ tableWithHeader header rows
 
 setPrivDataTo :: PrivDataField -> Context -> PrivData -> IO ()
-setPrivDataTo field context value = do
+setPrivDataTo field context (PrivData value) = do
 	modifyPrivData set
 	putStrLn "Private data set."
   where
-	set = M.insert (field, context) (chomp value)
-	chomp s
-		| end s == "\n" = chomp (beginning s)
-		| otherwise = s
+	set = M.insert (field, context) value
 
 modifyPrivData :: (PrivMap -> PrivMap) -> IO ()
 modifyPrivData f = do

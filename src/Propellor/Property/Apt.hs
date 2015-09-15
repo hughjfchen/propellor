@@ -80,7 +80,7 @@ securityUpdates suite
 -- Since the CDN is sometimes unreliable, also adds backup lines using
 -- kernel.org.
 stdSourcesList :: Property NoInfo
-stdSourcesList = withOS ("standard sources.list") $ \o ->
+stdSourcesList = withOS "standard sources.list" $ \o ->
 	case o of
 		(Just (System (Debian suite) _)) ->
 			ensureProperty $ stdSourcesListFor suite
@@ -187,7 +187,7 @@ robustly p = adjustPropertySatisfy p $ \satisfy -> do
 isInstallable :: [Package] -> IO Bool
 isInstallable ps = do
 	l <- isInstalled' ps
-	return $ any (== False) l && not (null l)
+	return $ elem False l && not (null l)
 
 isInstalled :: Package -> IO Bool
 isInstalled p = (== [True]) <$> isInstalled' [p]
@@ -197,7 +197,7 @@ isInstalled p = (== [True]) <$> isInstalled' [p]
 -- even vary. If apt does not know about a package at all, it will not
 -- be included in the result list.
 isInstalled' :: [Package] -> IO [Bool]
-isInstalled' ps = catMaybes . map parse . lines <$> policy
+isInstalled' ps = (mapMaybe parse . lines) <$> policy
   where
 	parse l
 		| "Installed: (none)" `isInfixOf` l = Just False
@@ -239,18 +239,25 @@ unattendedUpgrades = enable <!> disable
 					("Unattended-Upgrade::Origins-Pattern { \"o=Debian,a="++showSuite suite++"\"; };")
 			_ -> noChange
 
+type DebconfTemplate = String
+type DebconfTemplateType = String
+type DebconfTemplateValue = String
+
 -- | Preseeds debconf values and reconfigures the package so it takes
 -- effect.
-reConfigure :: Package -> [(String, String, String)] -> Property NoInfo
+reConfigure :: Package -> [(DebconfTemplate, DebconfTemplateType, DebconfTemplateValue)] -> Property NoInfo
 reConfigure package vals = reconfigure `requires` setselections
 	`describe` ("reconfigure " ++ package)
   where
-	setselections = property "preseed" $ makeChange $
-		withHandle StdinHandle createProcessSuccess
-			(proc "debconf-set-selections" []) $ \h -> do
-				forM_ vals $ \(tmpl, tmpltype, value) ->
-					hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
-				hClose h
+	setselections = property "preseed" $ 
+		if null vals 
+			then noChange
+			else makeChange $
+				withHandle StdinHandle createProcessSuccess
+					(proc "debconf-set-selections" []) $ \h -> do
+						forM_ vals $ \(tmpl, tmpltype, value) ->
+							hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
+						hClose h
 	reconfigure = cmdPropertyEnv "dpkg-reconfigure" ["-fnone", package] noninteractiveEnv
 
 -- | Ensures that a service is installed and running.

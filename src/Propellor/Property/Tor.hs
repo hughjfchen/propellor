@@ -134,12 +134,12 @@ hiddenServiceData hn context = combineProperties desc
 	desc = unwords ["hidden service data available in", varLib </> hn]
 	installonion f = withPrivData (PrivFile $ varLib </> hn </> f) context $ \getcontent ->
 		property desc $ getcontent $ install $ varLib </> hn </> f
-	install f content = ifM (liftIO $ doesFileExist f)
+	install f privcontent = ifM (liftIO $ doesFileExist f)
 		( noChange
 		, ensureProperties
 			[ property desc $ makeChange $ do
 				createDirectoryIfMissing True (takeDirectory f)
-				writeFileProtected f content
+				writeFileProtected f (unlines (privDataLines privcontent))
 			, File.mode (takeDirectory f) $ combineModes
 				[ownerReadMode, ownerWriteMode, ownerExecuteMode]
 			, File.ownerGroup (takeDirectory f) user (userGroup user)
