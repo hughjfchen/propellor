@@ -8,8 +8,6 @@ module Propellor.Property.Unbound
 	, genAddress
 	, genMX
 	, genPTR
-	, revIP
-	, canonical
 	, genZoneStatic
 	, genZoneTransparent
 	) where
@@ -17,9 +15,6 @@ module Propellor.Property.Unbound
 import Propellor
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
-
-import Data.List
-import Data.String.Utils (split, replace)
 
 
 installed :: Property NoInfo
@@ -51,28 +46,7 @@ genMX :: BindDomain -> BindDomain -> Int -> String
 genMX dom dest priority = localData $ dValue dom ++ " " ++ "MX" ++ " " ++ show priority ++ " " ++ dValue dest
 
 genPTR :: BindDomain -> IPAddr -> String
-genPTR dom ip = localData $ revIP ip ++ ". " ++ "PTR" ++ " " ++ dValue dom
-
-revIP :: IPAddr -> String
-revIP (IPv4 addr) = intercalate "." (reverse $ split "." addr) ++ ".in-addr.arpa"
-revIP addr@(IPv6 _) = reverse (intersperse '.' $ replace ":" "" $ fromIPAddr $ canonical addr) ++ ".ip6.arpa"
-
-canonical :: IPAddr -> IPAddr
-canonical (IPv4 addr) = IPv4 addr
-canonical (IPv6 addr) = IPv6 $ intercalate ":" $ map canonicalGroup $ split ":" $ replaceImplicitGroups addr
-  where
-	canonicalGroup g = case length g of
-		0 -> "0000"
-		1 -> "000" ++ g
-		2 -> "00" ++ g
-		3 -> "0" ++ g
-		_ -> g
-	emptyGroups n = iterate (++ ":") "" !! n
-	numberOfImplicitGroups a = 8 - length (split ":" $ replace "::" "" a)
-	replaceImplicitGroups a = concat $ aux $ split "::" a
-	  where
-		aux [] = []
-		aux (x : xs) = x : emptyGroups (numberOfImplicitGroups a) : xs
+genPTR dom ip = localData $ reverseIP ip ++ ". " ++ "PTR" ++ " " ++ dValue dom
 
 localData :: String -> String
 localData conf = "    local-data: \"" ++ conf ++ "\""

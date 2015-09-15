@@ -10,6 +10,8 @@ import Data.Word
 import Data.Monoid
 import qualified Data.Map as M
 import qualified Data.Set as S
+import Data.List
+import Data.String.Utils (split, replace)
 
 type Domain = String
 
@@ -91,7 +93,31 @@ data Record
 	| SRV Word16 Word16 Word16 BindDomain
 	| SSHFP Int Int String
 	| INCLUDE FilePath
+	| PTR ReverseIP
 	deriving (Read, Show, Eq, Ord, Typeable)
+
+type ReverseIP = String
+
+reverseIP :: IPAddr -> ReverseIP
+reverseIP (IPv4 addr) = intercalate "." (reverse $ split "." addr) ++ ".in-addr.arpa"
+reverseIP addr@(IPv6 _) = reverse (intersperse '.' $ replace ":" "" $ fromIPAddr $ canonicalIP addr) ++ ".ip6.arpa"
+
+canonicalIP :: IPAddr -> IPAddr
+canonicalIP (IPv4 addr) = IPv4 addr
+canonicalIP (IPv6 addr) = IPv6 $ intercalate ":" $ map canonicalGroup $ split ":" $ replaceImplicitGroups addr
+  where
+	canonicalGroup g = case length g of
+		0 -> "0000"
+		1 -> "000" ++ g
+		2 -> "00" ++ g
+		3 -> "0" ++ g
+		_ -> g
+	emptyGroups n = iterate (++ ":") "" !! n
+	numberOfImplicitGroups a = 8 - length (split ":" $ replace "::" "" a)
+	replaceImplicitGroups a = concat $ aux $ split "::" a
+	  where
+		aux [] = []
+		aux (x : xs) = x : emptyGroups (numberOfImplicitGroups a) : xs
 
 getIPAddr :: Record -> Maybe IPAddr
 getIPAddr (Address addr) = Just addr
