@@ -13,6 +13,12 @@ propellor (2.8.0) UNRELEASED; urgency=medium
     Thanks, Mario Lang
   * Added Propellor.Property.Unbound for the caching DNS server.
     Thanks, Félix Sipma.
+  * PrivData converted to newtype (API change).
+  * Stopped stripping trailing newlines when setting PrivData;
+    this was previously done to avoid mistakes when pasting eg passwords
+    with an unwanted newline. Instead, PrivData consumers should use either
+    privDataLines or privDataVal, to extract respectively lines or a
+    value (without internal newlines) from PrivData.
 
  -- Joey Hess <id@joeyh.name>  Fri, 04 Sep 2015 10:36:40 -0700
 

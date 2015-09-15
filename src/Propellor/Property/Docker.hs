@@ -75,7 +75,7 @@ configured = prop `requires` installed
   where
 	prop = withPrivData src anyContext $ \getcfg ->
 		property "docker configured" $ getcfg $ \cfg -> ensureProperty $ 
-			"/root/.dockercfg" `File.hasContent` (lines cfg)
+			"/root/.dockercfg" `File.hasContent` privDataLines cfg
 	src = PrivDataSourceFileFromCommand DockerAuthentication
 		"/root/.dockercfg" "docker login"
 

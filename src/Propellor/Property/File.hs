@@ -40,7 +40,7 @@ hasPrivContent' writer source f context =
 	withPrivData source context $ \getcontent -> 
 		property desc $ getcontent $ \privcontent -> 
 			ensureProperty $ fileProperty' writer desc
-				(\_oldcontent -> lines privcontent) f
+				(\_oldcontent -> privDataLines privcontent) f
   where
 	desc = "privcontent " ++ f
 

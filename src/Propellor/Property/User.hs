@@ -58,8 +58,8 @@ hasPassword' (User u) context = go `requires` shadowConfig True
 setPassword :: (((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Propellor Result
 setPassword getpassword = getpassword $ go
   where
-	go (Password user, password) = set user password []
-	go (CryptPassword user, hash) = set user hash ["--encrypted"]
+	go (Password user, password) = set user (privDataVal password) []
+	go (CryptPassword user, hash) = set user (privDataVal hash) ["--encrypted"]
 	go (f, _) = error $ "Unexpected type of privdata: " ++ show f
 
 	set user v ps = makeChange $ withHandle StdinHandle createProcessSuccess
