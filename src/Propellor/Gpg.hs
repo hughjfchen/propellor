@@ -99,7 +99,7 @@ gitCommit ps = do
 
 gpgDecrypt :: FilePath -> IO String
 gpgDecrypt f = ifM (doesFileExist f)
-	( readProcess "gpg" ["--decrypt", f]
+	( writeReadProcessEnv "gpg" ["--decrypt", f] Nothing Nothing (Just fileEncoding)
 	, return ""
 	)
 
