@@ -60,6 +60,7 @@ import Prelude
 
 import Utility.Misc
 import Utility.Exception
+import Utility.FileSystemEncoding
 
 type CreateProcessRunner = forall a. CreateProcess -> ((Maybe Handle, Maybe Handle, Maybe Handle, ProcessHandle) -> IO a) -> IO a
 
@@ -81,6 +82,7 @@ readProcessEnv cmd args environ = readProcess' p
 
 readProcess' :: CreateProcess -> IO String
 readProcess' p = withHandle StdoutHandle createProcessSuccess p $ \h -> do
+	fileEncoding h
 	output  <- hGetContentsStrict h
 	hClose h
 	return output

@@ -2,8 +2,10 @@ module Propellor.Types.PrivData where
 
 import Propellor.Types.OS
 import Utility.PartialPrelude
+import Utility.FileSystemEncoding
 
 import Data.Maybe
+import qualified Data.ByteString.Lazy as L
 
 -- | Note that removing or changing constructors or changing types will
 -- break the serialized privdata files, so don't do that!
@@ -109,6 +111,10 @@ privDataLines (PrivData s) = lines s
 -- the first is returned; there is never a newline in the String.
 privDataVal :: PrivData -> String
 privDataVal (PrivData s) = fromMaybe "" (headMaybe (lines s))
+
+-- | Use to get ByteString out of PrivData.
+privDataByteString :: PrivData -> L.ByteString
+privDataByteString (PrivData s) = encodeBS s
 
 data SshKeyType = SshRsa | SshDsa | SshEcdsa | SshEd25519
 	deriving (Read, Show, Ord, Eq, Enum, Bounded)
