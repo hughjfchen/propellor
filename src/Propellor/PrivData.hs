@@ -31,6 +31,7 @@ import Control.Monad.IfElse
 import "mtl" Control.Monad.Reader
 import qualified Data.Map as M
 import qualified Data.Set as S
+import qualified Data.ByteString.Lazy as L
 
 import Propellor.Types
 import Propellor.Types.PrivData
@@ -48,6 +49,7 @@ import Utility.Misc
 import Utility.FileMode
 import Utility.Env
 import Utility.Table
+import Utility.FileSystemEncoding
 
 -- | Allows a Property to access the value of a specific PrivDataField,
 -- for use in a specific Context or HostContext.
@@ -149,6 +151,7 @@ getPrivData field context m = do
 setPrivData :: PrivDataField -> Context -> IO ()
 setPrivData field context = do
 	putStrLn "Enter private data on stdin; ctrl-D when done:"
+	fileEncoding stdin
 	setPrivDataTo field context . PrivData =<< hGetContentsStrict stdin
 
 unsetPrivData :: PrivDataField -> Context -> IO ()
@@ -157,17 +160,17 @@ unsetPrivData field context = do
 	putStrLn "Private data unset."
 
 dumpPrivData :: PrivDataField -> Context -> IO ()
-dumpPrivData field context =
+dumpPrivData field context = do
 	maybe (error "Requested privdata is not set.")
-		(mapM_ putStrLn . privDataLines)
+		(L.hPut stdout . privDataByteString)
 		=<< (getPrivData field context <$> decryptPrivData)
 
 editPrivData :: PrivDataField -> Context -> IO ()
 editPrivData field context = do
 	v <- getPrivData field context <$> decryptPrivData
-	v' <- withTmpFile "propellorXXXX" $ \f h -> do
-		hClose h
-		maybe noop (writeFileProtected f . unlines . privDataLines) v
+	v' <- withTmpFile "propellorXXXX" $ \f th -> do
+		hClose th
+		maybe noop (\p -> writeFileProtected' f (`L.hPut` privDataByteString p)) v
 		editor <- getEnvDefault "EDITOR" "vi"
 		unlessM (boolSystem editor [File f]) $
 			error "Editor failed; aborting."

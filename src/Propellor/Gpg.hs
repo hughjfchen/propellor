@@ -14,6 +14,7 @@ import Utility.Process
 import Utility.Monad
 import Utility.Misc
 import Utility.Tmp
+import Utility.FileSystemEncoding
 
 type KeyId = String
 
@@ -112,8 +113,9 @@ gpgEncrypt f s = do
 		, "--encrypt"
 		, "--trust-model", "always"
 		] ++ concatMap (\k -> ["--recipient", k]) keyids
-	encrypted <- writeReadProcessEnv "gpg" opts
-		Nothing
-		(Just $ flip hPutStr s)
-		Nothing
+	encrypted <- writeReadProcessEnv "gpg" opts Nothing (Just writer) Nothing
 	viaTmp writeFile f encrypted
+  where
+	writer h = do
+		fileEncoding h
+		hPutStr h s
