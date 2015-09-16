@@ -109,12 +109,11 @@ canonicalIP :: IPAddr -> IPAddr
 canonicalIP (IPv4 addr) = IPv4 addr
 canonicalIP (IPv6 addr) = IPv6 $ intercalate ":" $ map canonicalGroup $ split ":" $ replaceImplicitGroups addr
   where
-	canonicalGroup g = case length g of
-		0 -> "0000"
-		1 -> "000" ++ g
-		2 -> "00" ++ g
-		3 -> "0" ++ g
-		_ -> g
+	canonicalGroup g
+		| l <= 4    = replicate (4 - l) '0' ++ g
+		| otherwise = error $ "IPv6 group " ++ g ++ "as more than 4 hex digits"
+	  where
+		l = length g
 	emptyGroups n = iterate (++ ":") "" !! n
 	numberOfImplicitGroups a = 8 - length (split ":" $ replace "::" "" a)
 	replaceImplicitGroups a = concat $ aux $ split "::" a
