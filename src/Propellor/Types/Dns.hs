@@ -96,12 +96,15 @@ data Record
 	| PTR ReverseIP
 	deriving (Read, Show, Eq, Ord, Typeable)
 
+-- | An in-addr.arpa record corresponding to an IPAddr.
 type ReverseIP = String
 
 reverseIP :: IPAddr -> ReverseIP
 reverseIP (IPv4 addr) = intercalate "." (reverse $ split "." addr) ++ ".in-addr.arpa"
 reverseIP addr@(IPv6 _) = reverse (intersperse '.' $ replace ":" "" $ fromIPAddr $ canonicalIP addr) ++ ".ip6.arpa"
 
+-- | Converts an IP address (particularly IPv6) to canonical, fully
+-- expanded form.
 canonicalIP :: IPAddr -> IPAddr
 canonicalIP (IPv4 addr) = IPv4 addr
 canonicalIP (IPv6 addr) = IPv6 $ intercalate ":" $ map canonicalGroup $ split ":" $ replaceImplicitGroups addr

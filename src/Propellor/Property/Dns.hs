@@ -28,7 +28,9 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.List
 
--- | Primary dns server for a domain.
+-- | Primary dns server for a domain, using bind.
+--
+-- Currently, this only configures bind to serve forward DNS, not reverse DNS.
 --
 -- Most of the content of the zone file is configured by setting properties
 -- of hosts. For example,
