@@ -54,6 +54,7 @@ config = "/etc/unbound/unbound.conf.d/propellor.conf"
 cachingDnsServer :: [UnboundSection] -> [UnboundZone] -> [UnboundHost] -> Property NoInfo
 cachingDnsServer sections zones hosts =
 	config `hasContent` (comment : otherSections ++ serverSection)
+	`onChange` restarted
   where
 	comment = "# deployed with propellor, do not modify"
 	serverSection = genSection (fromMaybe ("server", []) $ find ((== "server") . fst) sections)
