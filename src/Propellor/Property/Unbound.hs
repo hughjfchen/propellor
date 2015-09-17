@@ -51,6 +51,35 @@ sectionHeader header = header ++ ":"
 config :: FilePath
 config = "/etc/unbound/unbound.conf.d/propellor.conf"
 
+-- | Provided a [UnboundSection], a [UnboundZone] and a [UnboundHost],
+-- cachingDnsServer ensure unbound is configured accordingly.
+--
+-- Example property:
+--
+-- cachingDnsServer
+--	[ ("remote-control", [("control-enable", "no")]
+--	, ("server",
+--		[ ("interface", "0.0.0.0")
+--		, ("access-control", "192.168.1.0/24 allow")
+--		, ("do-tcp", "no")
+--		])
+--	[ (AbsDomain "example.com", "transparent")
+--	, (AbsDomain $ reverseIP $ IPv4 "192.168.1", "static")
+--	]
+--	[ (AbsDomain "example.com", Address $ IPv4 "192.168.1.2")
+--	, (AbsDomain "myhost.example.com", Address $ IPv4 "192.168.1.2")
+--	, (AbsDomain "myrouter.example.com", Address $ IPv4 "192.168.1.1")
+--	, (AbsDomain "www.example.com", Address $ IPv4 "192.168.1.2")
+--	, (AbsDomain "example.com", MX 10 "mail.example.com")
+--	, (AbsDomain "mylaptop.example.com", Address $ IPv4 "192.168.1.2")
+--	-- ^ connected via ethernet
+--	, (AbsDomain "mywifi.example.com", Address $ IPv4 "192.168.2.1")
+--	, (AbsDomain "mylaptop.example.com", Address $ IPv4 "192.168.2.2")
+--	-- ^ connected via wifi, use round robin
+--	, (AbsDomain "myhost.example.com", PTR $ reverseIP $ IPv4 "192.168.1.2")
+--	, (AbsDomain "myrouter.example.com", PTR $ reverseIP $ IPv4 "192.168.1.1")
+--	, (AbsDomain "mylaptop.example.com", PTR $ reverseIP $ IPv4 "192.168.1.2")
+--	]
 cachingDnsServer :: [UnboundSection] -> [UnboundZone] -> [UnboundHost] -> Property NoInfo
 cachingDnsServer sections zones hosts =
 	config `hasContent` (comment : otherSections ++ serverSection)
