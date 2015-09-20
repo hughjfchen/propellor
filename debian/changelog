@@ -25,6 +25,7 @@ propellor (2.8.0) UNRELEASED; urgency=medium
     value (without internal newlines) from PrivData.
   * Allow storing arbitrary ByteStrings in PrivData, extracted using
     privDataByteString.
+  * Added Aiccu module, contributed by Jelmer Vernooĳ.
 
  -- Joey Hess <id@joeyh.name>  Fri, 04 Sep 2015 10:36:40 -0700
 

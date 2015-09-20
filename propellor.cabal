@@ -70,6 +70,7 @@ Library
   Exposed-Modules:
     Propellor
     Propellor.Property
+    Propellor.Property.Aiccu
     Propellor.Property.Apache
     Propellor.Property.Apt
     Propellor.Property.Cmd
