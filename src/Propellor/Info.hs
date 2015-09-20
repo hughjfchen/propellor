@@ -74,13 +74,14 @@ addDNS r = pureInfoProperty (rdesc r) (toDnsInfo (S.singleton r))
 	rdesc (SRV x y z d) = unwords ["SRV", show x, show y, show z, ddesc d]
 	rdesc (SSHFP x y s) = unwords ["SSHFP", show x, show y, s]
 	rdesc (INCLUDE f) = unwords ["$INCLUDE", f]
+	rdesc (PTR x) = unwords ["PTR", x]
 
 	ddesc (AbsDomain domain) = domain
 	ddesc (RelDomain domain) = domain
 	ddesc RootDomain = "@"
 
 hostMap :: [Host] -> M.Map HostName Host
-hostMap l = M.fromList $ zip (map hostName l) l 
+hostMap l = M.fromList $ zip (map hostName l) l
 
 aliasMap :: [Host] -> M.Map HostName Host
 aliasMap = M.fromList . concat .

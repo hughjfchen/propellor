@@ -58,7 +58,7 @@ import Utility.FileSystemEncoding
 --
 -- > withPrivData (PrivFile pemfile) (Context "joeyh.name") $ \getdata ->
 -- >     property "joeyh.name ssl cert" $ getdata $ \privdata ->
--- >       liftIO $ writeFile pemfile privdata
+-- >       liftIO $ writeFile pemfile (privDataVal privdata)
 -- >   where pemfile = "/etc/ssl/certs/web.pem"
 -- 
 -- Note that if the value is not available, the action is not run
