@@ -40,9 +40,10 @@ config u t p =
 -- | Configures an ipv6 tunnel using sixxs.net, with the given TunneId
 -- and sixx.net UserName.
 hasConfig :: TunnelId -> UserName -> Property HasInfo
-hasConfig t u = withSomePrivData [(Password (u++"/"++t)), (Password u)] (Context "aiccu") $
-	property "aiccu configured" . writeConfig
+hasConfig t u = prop  `onChange` reloaded
   where
+	prop = withSomePrivData [(Password (u++"/"++t)), (Password u)] (Context "aiccu") $
+		property "aiccu configured" . writeConfig
 	writeConfig :: (((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Propellor Result
 	writeConfig getpassword = getpassword $ ensureProperty . go
 	go (Password u', p) = confPath `File.hasContent` config u' t p
