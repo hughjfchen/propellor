@@ -46,5 +46,5 @@ hasConfig t u = prop  `onChange` reloaded
 		property "aiccu configured" . writeConfig
 	writeConfig :: (((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Propellor Result
 	writeConfig getpassword = getpassword $ ensureProperty . go
-	go (Password _, p) = confPath `File.hasContent` config u t p
+	go (Password _, p) = confPath `File.hasContentProtected` config u t p
 	go (f, _) = error $ "Unexpected type of privdata: " ++ show f

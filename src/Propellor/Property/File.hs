@@ -10,7 +10,15 @@ type Line = String
 
 -- | Replaces all the content of a file.
 hasContent :: FilePath -> [Line] -> Property NoInfo
-f `hasContent` newcontent = fileProperty ("replace " ++ f)
+f `hasContent` newcontent = fileProperty
+	("replace " ++ f)
+	(\_oldcontent -> newcontent) f
+
+-- | Replaces all the content of a file, ensuring that its modes do not
+-- allow it to be read or written by anyone other than the current user
+hasContentProtected :: FilePath -> [Line] -> Property NoInfo
+f `hasContentProtected` newcontent = fileProperty' writeFileProtected 
+	("replace " ++ f)
 	(\_oldcontent -> newcontent) f
 
 -- | Ensures a file has contents that comes from PrivData.
