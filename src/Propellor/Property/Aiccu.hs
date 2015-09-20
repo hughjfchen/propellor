@@ -1,6 +1,6 @@
 module Propellor.Property.Aiccu (
 	installed,
-	reloaded,
+	restarted,
 	confPath,
 	UserName,
 	TunnelId,
@@ -15,8 +15,8 @@ import qualified Propellor.Property.File as File
 installed :: Property NoInfo
 installed = Apt.installed ["aiccu"]
 
-reloaded :: Property NoInfo
-reloaded = Service.reloaded "aiccu"
+restarted :: Property NoInfo
+restarted = Service.restarted "aiccu"
 
 confPath :: FilePath
 confPath = "/etc/aiccu.conf"
@@ -28,7 +28,7 @@ config u t p =
 	[ "protocol tic"
 	, "server tic.sixxs.net"
 	, "username " ++ u
-	, "password " ++ (privDataVal p)
+	, "password " ++ privDataVal p
 	, "ipv6_interface sixxs"
 	, "tunnel_id " ++ t
 	, "daemonize true"
@@ -40,7 +40,7 @@ config u t p =
 -- | Configures an ipv6 tunnel using sixxs.net, with the given TunneId
 -- and sixx.net UserName.
 hasConfig :: TunnelId -> UserName -> Property HasInfo
-hasConfig t u = prop  `onChange` reloaded
+hasConfig t u = prop  `onChange` restarted
   where
 	prop = withSomePrivData [(Password (u++"/"++t)), (Password u)] (Context "aiccu") $
 		property "aiccu configured" . writeConfig
