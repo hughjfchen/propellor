@@ -89,7 +89,7 @@ cachingDnsServer sections zones hosts =
 	serverSection = genSection (fromMaybe ("server", []) $ find ((== "server") . fst) sections)
 		++ map genZone zones
 		++ map (uncurry genRecord') hosts
-	otherSections = foldr ((++) . genSection) [] sections
+	otherSections = foldr ((++) . genSection) [] $ filter ((/= "server") . fst) sections
 
 genSection :: UnboundSection -> [Line]
 genSection (section, settings) = sectionHeader section : map genSetting settings
