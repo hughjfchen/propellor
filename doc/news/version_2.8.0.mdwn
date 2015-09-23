@@ -1,0 +1,29 @@
+propellor 2.8.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Added Propellor.Property.Rsync.
+   * Convert Info to use Data.Dynamic, so properties can export and consume
+     info of any type that is Typeable and a Monoid, including data types
+     private to a module. (API change)
+     Thanks to Joachim Breitner for the idea.
+   * Improve propellor wrapper to better handle installation cloning
+     the public propellor repo, by setting that repo to be upstream,
+     so propellor doesnt try to push to a read-only repo.
+   * Added DebianMirror module, contributed by Félix Sipma.
+   * Some hlint cleanups.
+     Thanks, Mario Lang
+   * Added Propellor.Property.Unbound for the caching DNS server.
+     Thanks, Félix Sipma.
+   * Added PTR to Dns.Record. While this is ignored by
+     Propellor.Property.Dns for now, since reverse DNS setup is not
+     implemented there yet, it can be used in other places, eg Unbound.
+     Thanks, Félix Sipma.
+   * PrivData converted to newtype (API change).
+   * Stopped stripping trailing newlines when setting PrivData;
+     this was previously done to avoid mistakes when pasting eg passwords
+     with an unwanted newline. Instead, PrivData consumers should use either
+     privDataLines or privDataVal, to extract respectively lines or a
+     value (without internal newlines) from PrivData.
+   * Allow storing arbitrary ByteStrings in PrivData, extracted using
+     privDataByteString.
+   * Added Aiccu module, contributed by Jelmer Vernooĳ.
+   * Added --rm-key."""]]
