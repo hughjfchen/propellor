@@ -43,7 +43,7 @@ addKey keyid = exitBool =<< allM (uncurry actionMessage)
 	[ ("adding key to propellor's keyring", addkeyring)
 	, ("staging propellor's keyring", gitAdd keyring)
 	, ("updating encryption of any privdata", reencryptPrivData)
-	, ("configuring git signing to use key", gitconfig)
+	, ("configuring git commit signing to use key", gitconfig)
 	, ("committing changes", gitCommitKeyRing "add-key")
 	]
   where
@@ -71,12 +71,25 @@ rmKey keyid = exitBool =<< allM (uncurry actionMessage)
 	[ ("removing key from propellor's keyring", rmkeyring)
 	, ("staging propellor's keyring", gitAdd keyring)
 	, ("updating encryption of any privdata", reencryptPrivData)
+	, ("configuring git commit signing to not use key", gitconfig)
 	, ("committing changes", gitCommitKeyRing "rm-key")
 	]
   where
 	rmkeyring = boolSystem "gpg" $
 		(map Param useKeyringOpts) ++ 
-		[Param "--delete-key", Param keyid]
+		[ Param "--batch"
+		, Param "--yes"
+		, Param "--delete-key", Param keyid
+		]
+	
+	gitconfig = ifM ((==) (keyid++"\n", True) <$> processTranscript "git" ["config", "user.signingkey"] Nothing)
+		( boolSystem "git"
+			[ Param "config"
+			, Param "--unset"
+			, Param "user.signingkey"
+			]
+		, return True
+		)	
 
 reencryptPrivData :: IO Bool
 reencryptPrivData = ifM (doesFileExist privDataFile)
