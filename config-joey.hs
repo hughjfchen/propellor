@@ -150,7 +150,7 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 		(System (Debian Unstable) "i386") Nothing fifteenpast "2h")
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.standardAutoBuilder
-		(System (Debian (Stable "wheezy")) "i386") (Just "ancient") fifteenpast "2h")
+		(System (Debian (Stable "jessie")) "i386") (Just "ancient") fifteenpast "2h")
 	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer
 		(Cron.Times "1 1 * * *") "3h")
   where
