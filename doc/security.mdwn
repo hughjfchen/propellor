@@ -24,7 +24,7 @@ to bootstrap propellor on a new host, it transfers the local git repositry
 to the remote host over ssh. After that, the host knows the gpg key, and
 will use it to verify git fetches.
 
-Since the propoellor git repository is public, you can't store
+Since the propellor git repository is public, you can't store
 in cleartext private data such as passwords, ssh private keys, etc.
 
 Instead, `propellor --spin $host` looks for a
