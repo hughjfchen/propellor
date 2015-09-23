@@ -46,8 +46,8 @@ autobuilder arch crontimes timeout = combineProperties "gitannexbuilder" $ props
 				then makeChange $ writeFile pwfile want
 				else noChange
 
-tree :: Architecture -> Property HasInfo
-tree buildarch = combineProperties "gitannexbuilder tree" $ props
+tree :: Architecture -> Flavor -> Property HasInfo
+tree buildarch flavor = combineProperties "gitannexbuilder tree" $ props
 	& Apt.installed ["git"]
 	& File.dirExists gitbuilderdir
 	& File.ownerGroup gitbuilderdir (User builduser) (Group builduser)
@@ -58,7 +58,7 @@ tree buildarch = combineProperties "gitannexbuilder tree" $ props
 		userScriptProperty (User builduser)
 			[ "git clone git://git.kitenet.net/gitannexbuilder " ++ gitbuilderdir
 			, "cd " ++ gitbuilderdir
-			, "git checkout " ++ buildarch
+			, "git checkout " ++ buildarch ++ fromMaybe "" flavor
 			]
 			`describe` "gitbuilder setup"
 	builddircloned = check (not <$> doesDirectoryExist builddir) $ userScriptProperty (User builduser)
@@ -97,29 +97,31 @@ cabalDeps = flagFile go cabalupdated
 		go = userScriptProperty (User builduser) ["cabal update && cabal install git-annex --only-dependencies || true"]
 		cabalupdated = homedir </> ".cabal" </> "packages" </> "hackage.haskell.org" </> "00-index.cache"
 
-autoBuilderContainer :: (System -> Property HasInfo) -> System -> Times -> TimeOut -> Systemd.Container
-autoBuilderContainer mkprop osver@(System _ arch) crontime timeout =
+autoBuilderContainer :: (System -> Flavor -> Property HasInfo) -> System -> Flavor -> Times -> TimeOut -> Systemd.Container
+autoBuilderContainer mkprop osver@(System _ arch) flavor crontime timeout =
 	Systemd.container name bootstrap
-		& mkprop osver
+		& mkprop osver flavor
 		& buildDepsApt
 		& autobuilder arch crontime timeout
   where
 	name = arch ++ "-git-annex-builder"
 	bootstrap = Chroot.debootstrapped osver mempty
 
-standardAutoBuilder :: System -> Property HasInfo
-standardAutoBuilder osver@(System _ arch) =
+type Flavor = Maybe String
+
+standardAutoBuilder :: System -> Flavor -> Property HasInfo
+standardAutoBuilder osver@(System _ arch) flavor =
 	propertyList "standard git-annex autobuilder" $ props
 		& os osver
 		& Apt.stdSourcesList
 		& Apt.unattendedUpgrades
 		& User.accountFor (User builduser)
-		& tree arch
+		& tree arch flavor
 
-armAutoBuilder :: System -> Property HasInfo
-armAutoBuilder osver = 
+armAutoBuilder :: System -> Flavor -> Property HasInfo
+armAutoBuilder osver flavor = 
 	propertyList "arm git-annex autobuilder" $ props
-		& standardAutoBuilder osver
+		& standardAutoBuilder osver flavor
 		& buildDepsNoHaskellLibs
 		-- Works around ghc crash with parallel builds on arm.
 		& (homedir </> ".cabal" </> "config")
@@ -130,7 +132,7 @@ armAutoBuilder osver =
 
 androidAutoBuilderContainer :: Times -> TimeOut -> Systemd.Container
 androidAutoBuilderContainer crontimes timeout =
-	androidContainer "android-git-annex-builder" (tree "android") builddir
+	androidContainer "android-git-annex-builder" (tree "android" Nothing) builddir
 		& Apt.unattendedUpgrades
 		& buildDepsNoHaskellLibs
 		& autobuilder "android" crontimes timeout

@@ -144,10 +144,13 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.standardAutoBuilder
-		(System (Debian Unstable) "amd64") fifteenpast "2h")
+		(System (Debian Unstable) "amd64") Nothing fifteenpast "2h")
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.standardAutoBuilder
-		(System (Debian Unstable) "i386") fifteenpast "2h")
+		(System (Debian Unstable) "i386") Nothing fifteenpast "2h")
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		GitAnnexBuilder.standardAutoBuilder
+		(System (Debian (Stable "wheezy")) "i386") (Just "ancient") fifteenpast "2h")
 	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer
 		(Cron.Times "1 1 * * *") "3h")
   where
@@ -179,7 +182,7 @@ honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.armAutoBuilder
-			(System (Debian Unstable) "armel") Cron.Daily "22h")
+			(System (Debian Unstable) "armel") Nothing Cron.Daily "22h")
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
