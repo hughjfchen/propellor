@@ -104,7 +104,7 @@ autoBuilderContainer mkprop osver@(System _ arch) flavor crontime timeout =
 		& buildDepsApt
 		& autobuilder arch crontime timeout
   where
-	name = arch ++ "-git-annex-builder"
+	name = arch ++ fromMaybe "" flavor ++ "-git-annex-builder"
 	bootstrap = Chroot.debootstrapped osver mempty
 
 type Flavor = Maybe String
