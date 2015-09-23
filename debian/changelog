@@ -1,3 +1,9 @@
+propellor (2.8.1) UNRELEASED; urgency=medium
+
+  * Added --rm-key.
+
+ -- Joey Hess <id@joeyh.name>  Wed, 23 Sep 2015 13:50:01 -0400
+
 propellor (2.8.0) unstable; urgency=medium
 
   * Added Propellor.Property.Rsync.

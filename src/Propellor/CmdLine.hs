@@ -26,6 +26,7 @@ usage h = hPutStrLn h $ unlines
 	, "  propellor hostname"
 	, "  propellor --spin targethost [--via relayhost]"
 	, "  propellor --add-key keyid"
+	, "  propellor --rm-key keyid"
 	, "  propellor --set field context"
 	, "  propellor --dump field context"
 	, "  propellor --edit field context"
@@ -50,6 +51,7 @@ processCmdLine = go =<< getArgs
 			<*> pure (Just r)
 		_ -> Spin <$> mapM hostname ps <*> pure Nothing
 	go ("--add-key":k:[]) = return $ AddKey k
+	go ("--rm-key":k:[]) = return $ RmKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
 	go ("--unset":f:c:[]) = withprivfield f c Unset
 	go ("--dump":f:c:[]) = withprivfield f c Dump
@@ -100,6 +102,7 @@ defaultMain hostlist = do
 	go _ (Edit field context) = editPrivData field context
 	go _ ListFields = listPrivDataFields hostlist
 	go _ (AddKey keyid) = addKey keyid
+	go _ (RmKey keyid) = rmKey keyid
 	go _ c@(ChrootChain _ _ _ _) = Chroot.chain hostlist c
 	go _ (DockerChain hn cid) = Docker.chain hostlist hn cid
 	go _ (DockerInit hn) = Docker.init hn
