@@ -15,6 +15,7 @@ data CmdLine
 	| Edit PrivDataField Context
 	| ListFields
 	| AddKey String
+	| RmKey String
 	| Merge
 	| Serialized CmdLine
 	| Continue CmdLine
