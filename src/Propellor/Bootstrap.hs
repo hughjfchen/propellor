@@ -109,7 +109,9 @@ build = catchBoolIO $ do
 	-- This ensures that the propellor symlink only ever points at
 	-- a binary that is fully built. Also, avoid ever removing
 	-- or breaking the symlink.
-	unlessM (boolSystem "cp" [Param cabalbuiltbin, Param (tmpfor safetycopy)]) $
+	--
+	-- Need cp -a to make build timestamp checking work.
+	unlessM (boolSystem "cp" [Param "-a", Param cabalbuiltbin, Param (tmpfor safetycopy)]) $
 		error "cp of binary failed"
 	rename (tmpfor safetycopy) safetycopy
 	createSymbolicLink safetycopy (tmpfor dest)
