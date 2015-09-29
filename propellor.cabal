@@ -105,6 +105,7 @@ Library
     Propellor.Property.Rsync
     Propellor.Property.List
     Propellor.Property.LightDM
+    Propellor.Property.Logcheck
     Propellor.Property.Scheduled
     Propellor.Property.Service
     Propellor.Property.Ssh
