@@ -3,6 +3,7 @@ propellor (2.8.1) UNRELEASED; urgency=medium
   * Guard against power loss etc when building propellor, by updating
     the executable atomically.
   * Added Logcheck module, contributed by Jelmer Vernooij.
+  * Added Kerberos module, contributed by Jelmer Vernooij.
 
  -- Joey Hess <id@joeyh.name>  Fri, 25 Sep 2015 09:21:41 -0400
 
