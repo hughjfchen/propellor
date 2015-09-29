@@ -6,6 +6,14 @@ module Propellor.Property.Unbound
 	( installed
 	, restarted
 	, reloaded
+	, UnboundSection
+	, UnboundZone
+	, UnboundHost
+	, UnboundSetting
+	, UnboundValue
+	, UnboundKey
+	, ConfSection
+	, ZoneType
 	, cachingDnsServer
 	) where
 
