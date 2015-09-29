@@ -1,3 +1,5 @@
+-- | Maintainer: Jelmer Vernooĳ <jelmer@jelmer.uk>
+
 module Propellor.Property.Logcheck (
 	ReportLevel (Workstation, Server, Paranoid),
 	defaultPrefix,

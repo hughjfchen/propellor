@@ -1,3 +1,5 @@
+-- | Maintainer: Jelmer Vernooij <jelmer@samba.org>
+
 module Propellor.Property.Aiccu (
 	installed,
 	restarted,

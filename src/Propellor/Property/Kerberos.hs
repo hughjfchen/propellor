@@ -1,7 +1,7 @@
+-- | Maintainer: Jelmer Vernooij <jelmer@samba.org>
+
 module Propellor.Property.Kerberos where
 
-import Data.String.Utils
-import Utility.FileSystemEncoding
 import Utility.Process
 
 import Propellor
@@ -30,7 +30,7 @@ kdcConfPath = "/etc/krb5kdc/kdc.conf"
 keyTabPath :: Maybe FilePath -> FilePath
 keyTabPath = maybe defaultKeyTab id
 
--- Create a principal from a primary, instance and realm
+-- | Create a principal from a primary, instance and realm
 principal :: String -> Maybe String -> Maybe Realm -> Principal
 principal p i r = p ++ maybe "" ("/"++) i ++ maybe "" ("@" ++) r
 
