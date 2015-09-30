@@ -1,3 +1,5 @@
+-- | Maintainer: Félix Sipma <gueux@gueux.org>
+
 module Propellor.Property.Nginx where
 
 import Propellor

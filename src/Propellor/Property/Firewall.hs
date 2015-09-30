@@ -1,7 +1,7 @@
--- |Properties for configuring firewall (iptables) rules
---
--- Copyright 2014 Arnaud Bailly <arnaud.oqube@gmail.com>
--- License: BSD-2-Clause
+-- | Maintainer: Arnaud Bailly <arnaud.oqube@gmail.com>
+-- 
+-- Properties for configuring firewall (iptables) rules
+
 module Propellor.Property.Firewall (
 	rule,
 	installed,

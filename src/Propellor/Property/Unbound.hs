@@ -1,9 +1,19 @@
--- | Properties for the Unbound caching DNS server
+-- | Maintainer: Félix Sipma <felix.sipma@no-log.org>
+-- 
+-- Properties for the Unbound caching DNS server
 
 module Propellor.Property.Unbound
 	( installed
 	, restarted
 	, reloaded
+	, UnboundSection
+	, UnboundZone
+	, UnboundHost
+	, UnboundSetting
+	, UnboundValue
+	, UnboundKey
+	, ConfSection
+	, ZoneType
 	, cachingDnsServer
 	) where
 

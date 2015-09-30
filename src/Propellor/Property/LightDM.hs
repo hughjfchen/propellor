@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 
+-- | Maintainer: Sean Whitton <spwhitton@spwhitton.name>
+
 module Propellor.Property.LightDM where
 
 import Propellor
