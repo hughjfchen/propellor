@@ -5,6 +5,7 @@ module Propellor.Types.Info (
 	IsInfo(..),
 	addInfo,
 	getInfo,
+	mapInfo,
 	propigatableInfo,
 	InfoVal(..),
 	fromInfoVal,
@@ -16,8 +17,6 @@ import Data.Monoid
 import Data.Maybe
 
 -- | Information about a Host, which can be provided by its properties.
---
--- Any value in the `IsInfo` type class can be added to an Info.
 data Info = Info [(Dynamic, Bool)]
 
 instance Show Info where
@@ -37,11 +36,21 @@ class (Typeable v, Monoid v) => IsInfo v where
 	-- container to its Host?
 	propigateInfo :: v -> Bool
 
+-- | Any value in the `IsInfo` type class can be added to an Info.
 addInfo :: IsInfo v => Info -> v -> Info
 addInfo (Info l) v = Info ((toDyn v, propigateInfo v):l)
 
 getInfo :: IsInfo v => Info -> v
 getInfo (Info l) = mconcat (mapMaybe (fromDynamic . fst) (reverse l))
+
+-- | Maps a function over all values stored in the Info that are of the
+-- appropriate type.
+mapInfo :: IsInfo v => (v -> v) -> Info -> Info
+mapInfo f (Info l) = Info (map go l)
+  where
+	go (i, p) = case fromDynamic i of
+		Nothing -> (i, p)
+		Just v -> (toDyn (f v), p)
 
 -- | Filters out parts of the Info that should not propigate out of a
 -- container.

@@ -19,7 +19,7 @@ module Propellor.Property.Docker (
 	Image(..),
 	latestImage,
 	ContainerName,
-	Container,
+	Container(..),
 	HasImage(..),
 	-- * Container configuration
 	dns,
@@ -171,7 +171,7 @@ imagePulled ctr = describe pulled msg
 	image = getImageName ctr
 
 propigateContainerInfo :: (IsProp (Property i)) => Container -> Property i -> Property HasInfo
-propigateContainerInfo ctr@(Container _ h) p = propigateContainer ctr p'
+propigateContainerInfo ctr@(Container _ h) p = propigateContainer cn ctr p'
   where
 	p' = infoProperty
 		(propertyDesc p)
@@ -179,7 +179,8 @@ propigateContainerInfo ctr@(Container _ h) p = propigateContainer ctr p'
 		(propertyInfo p <> dockerinfo)
 		(propertyChildren p)
 	dockerinfo = dockerInfo $
-		mempty { _dockerContainers = M.singleton (hostName h) h }
+		mempty { _dockerContainers = M.singleton cn h }
+	cn = hostName h
 
 mkContainerInfo :: ContainerId -> Container -> ContainerInfo
 mkContainerInfo cid@(ContainerId hn _cn) (Container img h) = 

@@ -61,7 +61,7 @@ instance IsPrivDataSource PrivDataSource where
 newtype Context = Context String
 	deriving (Read, Show, Ord, Eq)
 
--- | A context that varies depending on the HostName where it's used.
+-- | A context that may vary depending on the HostName where it's used.
 newtype HostContext = HostContext { mkHostContext :: HostName -> Context }
 
 instance Show HostContext where

@@ -14,6 +14,7 @@ import Data.Monoid
 import Propellor.Types
 import Propellor.Property
 import Propellor.Types.Info
+import Propellor.PrivData
 
 -- | Starts accumulating the properties of a Host.
 --
@@ -72,12 +73,16 @@ infixl 1 !
 -- 
 -- The Info of the propertyChildren is adjusted to only include 
 -- info that should be propigated out to the Property.
+--
+-- Any PrivInfo that uses HostContext is adjusted to use the name
+-- of the container as its context.
 propigateContainer
 	:: (PropAccum container)
-	=> container
+	=> String
+	-> container
 	-> Property HasInfo
 	-> Property HasInfo
-propigateContainer c prop = infoProperty
+propigateContainer containername c prop = infoProperty
 	(propertyDesc prop)
 	(propertySatisfy prop)
 	(propertyInfo prop)
@@ -85,6 +90,7 @@ propigateContainer c prop = infoProperty
   where
 	hostprops = map go $ getProperties c
 	go p = 
-		let i = propigatableInfo (propertyInfo p)
+		let i = mapInfo (forceHostContext containername)
+			(propigatableInfo (propertyInfo p))
 		    cs = map go (propertyChildren p)
 		in infoProperty (propertyDesc p) (propertySatisfy p) i cs
