@@ -17,6 +17,7 @@ module Propellor.PrivData (
 	decryptPrivData,
 	PrivMap,
 	PrivInfo,
+	forceHostContext,
 ) where
 
 import Control.Applicative
@@ -236,3 +237,10 @@ newtype PrivInfo = PrivInfo
 -- hosts need it.
 instance IsInfo PrivInfo where
 	propigateInfo _ = True
+
+-- | Sets the context of any privdata that uses HostContext to the
+-- provided name.
+forceHostContext :: String -> PrivInfo -> PrivInfo
+forceHostContext name i = PrivInfo $ S.map go (fromPrivInfo i)
+  where
+	go (f, d, HostContext ctx) = (f, d, HostContext (const $ ctx name)) 

@@ -83,7 +83,7 @@ provisioned' propigator c@(Chroot loc system builderconf _) systemdonly =
 	teardown = toProp (revert built)
 
 propigateChrootInfo :: (IsProp (Property i)) => Chroot -> Property i -> Property HasInfo
-propigateChrootInfo c p = propigateContainer c p'
+propigateChrootInfo c@(Chroot location _ _ _) p = propigateContainer location c p'
   where
 	p' = infoProperty
 		(propertyDesc p)

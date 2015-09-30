@@ -4,6 +4,12 @@ propellor (2.8.1) UNRELEASED; urgency=medium
     the executable atomically.
   * Added Logcheck module, contributed by Jelmer Vernooij.
   * Added Kerberos module, contributed by Jelmer Vernooij.
+  * Privdata that uses HostContext inside a container will now have the
+    name of the container as its context, rather than the name of
+    the host(s) where the container is used. This allows eg, having different
+    passwords for a user in different containers. Note that previously,
+    propellor would prompt using the container name as the context, but
+    not actually use privdata using that context; so this is a bug fix.
 
  -- Joey Hess <id@joeyh.name>  Fri, 25 Sep 2015 09:21:41 -0400
 

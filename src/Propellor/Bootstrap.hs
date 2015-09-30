@@ -111,7 +111,7 @@ build = catchBoolIO $ do
 	-- or breaking the symlink.
 	--
 	-- Need cp -a to make build timestamp checking work.
-	unlessM (boolSystem "cp" [Param "-a", Param cabalbuiltbin, Param (tmpfor safetycopy)]) $
+	unlessM (boolSystem "cp" [Param "-af", Param cabalbuiltbin, Param (tmpfor safetycopy)]) $
 		error "cp of binary failed"
 	rename (tmpfor safetycopy) safetycopy
 	createSymbolicLink safetycopy (tmpfor dest)
