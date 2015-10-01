@@ -1,4 +1,4 @@
--- | Maintainer: Félix Sipma <gueux@gueux.org>
+-- | Maintainer: Félix Sipma <felix+propellor@gueux.org>
 
 module Propellor.Property.Nginx where
 
