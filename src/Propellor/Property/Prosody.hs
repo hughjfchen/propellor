@@ -1,4 +1,4 @@
--- | Maintainer: Félix Sipma <felix.sipma@no-log.org>
+-- | Maintainer: Félix Sipma <felix+propellor@gueux.org>
 
 module Propellor.Property.Prosody where
 

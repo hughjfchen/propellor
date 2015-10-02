@@ -1,5 +1,5 @@
--- | Maintainer: Félix Sipma <felix.sipma@no-log.org>
--- 
+-- | Maintainer: Félix Sipma <felix+propellor@gueux.org>
+--
 -- Properties for the Unbound caching DNS server
 
 module Propellor.Property.Unbound
