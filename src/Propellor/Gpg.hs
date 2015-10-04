@@ -6,6 +6,7 @@ import System.FilePath
 import System.Directory
 import Data.Maybe
 import Data.List.Utils
+import Control.Monad
 
 import Propellor.PrivData.Paths
 import Propellor.Message
@@ -106,12 +107,14 @@ gitAdd f = boolSystem "git"
 	]
 
 gitCommitKeyRing :: String -> IO Bool
-gitCommitKeyRing action = gitCommit
-	[ File keyring
-	, File privDataFile
-	, Param "-m"
-	, Param ("propellor " ++ action)
-	]
+gitCommitKeyRing action = do
+	-- Commit explicitly the keyring and privdata files, as other
+	-- changes may be staged by the user and shouldn't be committed.
+	tocommit <- filterM doesFileExist [ privDataFile, keyring]
+	gitCommit $ (map File tocommit) ++ 
+		[ Param "-m"
+		, Param ("propellor " ++ action)
+		]
 
 -- Adds --gpg-sign if there's a keyring.
 gpgSignParams :: [CommandParam] -> IO [CommandParam]
