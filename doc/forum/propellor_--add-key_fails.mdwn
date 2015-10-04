@@ -1,0 +1,26 @@
+Hi,
+
+When following the instructions on the web site, I get the following error in step 4:
+```
+olpe4718@admin:~$ propellor --add-key CD9BFD10
+Building propellor-2.8.0...
+Preprocessing library propellor-2.8.0...
+In-place registering propellor-2.8.0...
+Preprocessing executable 'propellor' for propellor-2.8.0...
+Preprocessing executable 'propellor-config' for propellor-2.8.0...
+Propellor build ... done
+
+
+gpg: privdata/keyring.gpg: nyckelring skapad
+gpg: nyckel CD9BFD10: publika nyckeln "Per Olofsson (DSV) <pelle@dsv.su.se>" importerades
+gpg: Totalt antal behandlade enheter: 1
+gpg:                     importerade: 1  (RSA: 1)
+adding key to propellor's keyring ... done
+staging propellor's keyring ... done
+updating encryption of any privdata ... done
+configuring git commit signing to use key ... done
+error: pathspec 'privdata/privdata.gpg' did not match any file(s) known to git.
+committing changes ... failed
+```
+
+Simply running `git commit -S` afterwards seems to work though.
