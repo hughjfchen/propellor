@@ -10,39 +10,41 @@ import System.Posix.Files
 
 type ConfigFile = [String]
 
-appEnabled :: HostName -> ConfigFile -> RevertableProperty
-appEnabled hn cf = enable <!> disable
+type AppName = String
+
+appEnabled :: AppName -> ConfigFile -> RevertableProperty
+appEnabled an cf = enable <!> disable
   where
 	enable = check test prop
-		`describe` ("uwsgi app enabled " ++ hn)
-		`requires` appAvailable hn cf
+		`describe` ("uwsgi app enabled " ++ an)
+		`requires` appAvailable an cf
 		`requires` installed
 		`onChange` reloaded
 	  where
-		test = not <$> doesFileExist (appVal hn)
+		test = not <$> doesFileExist (appVal an)
 		prop = property "uwsgi app in place" $ makeChange $
 			createSymbolicLink target dir
-		target = appValRelativeCfg hn
-		dir = appVal hn
-	disable = trivial $ File.notPresent (appVal hn)
-		`describe` ("uwsgi app disable" ++ hn)
+		target = appValRelativeCfg an
+		dir = appVal an
+	disable = trivial $ File.notPresent (appVal an)
+		`describe` ("uwsgi app disable" ++ an)
 		`requires` installed
 		`onChange` reloaded
 
-appAvailable :: HostName -> ConfigFile -> Property NoInfo
-appAvailable hn cf = ("uwsgi app available " ++ hn) ==>
-	appCfg hn `File.hasContent` (comment : cf)
+appAvailable :: AppName -> ConfigFile -> Property NoInfo
+appAvailable an cf = ("uwsgi app available " ++ an) ==>
+	appCfg an `File.hasContent` (comment : cf)
   where
 	comment = "# deployed with propellor, do not modify"
 
-appCfg :: HostName -> FilePath
-appCfg hn = "/etc/uwsgi/apps-available/" ++ hn
+appCfg :: AppName -> FilePath
+appCfg an = "/etc/uwsgi/apps-available/" ++ an
 
-appVal :: HostName -> FilePath
-appVal hn = "/etc/uwsgi/apps-enabled/" ++ hn
+appVal :: AppName -> FilePath
+appVal an = "/etc/uwsgi/apps-enabled/" ++ an
 
-appValRelativeCfg :: HostName -> FilePath
-appValRelativeCfg hn = "../apps-available/" ++ hn
+appValRelativeCfg :: AppName -> FilePath
+appValRelativeCfg an = "../apps-available/" ++ an
 
 installed :: Property NoInfo
 installed = Apt.installed ["uwsgi"]
