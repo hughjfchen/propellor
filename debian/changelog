@@ -1,3 +1,10 @@
+propellor (2.8.2) UNRELEASED; urgency=medium
+
+  * Added basic Uwsgi module, contributed by Félix Sipma.
+  * Add Apt.hasForeignArch. Thanks, Per Olofsson.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 08 Oct 2015 11:09:01 -0400
+
 propellor (2.8.1) unstable; urgency=medium
 
   * Guard against power loss etc when building propellor, by updating
