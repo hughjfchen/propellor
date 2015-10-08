@@ -116,6 +116,7 @@ Library
     Propellor.Property.Tor
     Propellor.Property.Unbound
     Propellor.Property.User
+    Propellor.Property.Uwsgi
     Propellor.Property.HostingProvider.CloudAtCost
     Propellor.Property.HostingProvider.DigitalOcean
     Propellor.Property.HostingProvider.Linode
