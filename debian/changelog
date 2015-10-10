@@ -1,6 +1,6 @@
 propellor (2.9.0) UNRELEASED; urgency=medium
 
-  * Added basic Uwsgi module, contributed by Félix Sipma.
+  * Added basic Uwsgi module, maintained by Félix Sipma.
   * Add Apt.hasForeignArch. Thanks, Per Olofsson.
   * Improved documentation, particularly of the Propellor module.
     This involved some code changes, including some renaming of instance
