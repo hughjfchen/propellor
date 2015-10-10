@@ -7,6 +7,20 @@ import qualified Propellor.Property.Service as Service
 
 type ConfigFile = [String]
 
+-- | A basic virtual host, publishing a directory, and logging to
+-- the combined apache log file.
+virtualHost :: HostName -> Port -> FilePath -> RevertableProperty
+virtualHost hn (Port p) docroot = siteEnabled hn
+	[ "<VirtualHost *:"++show p++">"
+	, "ServerName "++hn++":"++show p
+	, "DocumentRoot " ++ docroot
+	, "ErrorLog /var/log/apache2/error.log"
+	, "LogLevel warn"
+	, "CustomLog /var/log/apache2/access.log combined"
+	, "ServerSignature On"
+	, "</VirtualHost>"
+	]
+
 siteEnabled :: HostName -> ConfigFile -> RevertableProperty
 siteEnabled hn cf = enable <!> disable
   where
@@ -19,13 +33,16 @@ siteEnabled hn cf = enable <!> disable
 				`requires` installed
 				`onChange` reloaded
 		]
-	disable = combineProperties
-		("apache site disabled " ++ hn) 
-		(map File.notPresent (siteCfg hn))
+	disable = siteDisabled hn
+	isenabled = boolSystem "a2query" [Param "-q", Param "-s", Param hn]
+
+siteDisabled :: HostName -> Property NoInfo
+siteDisabled hn = combineProperties
+	("apache site disabled " ++ hn) 
+	(map File.notPresent (siteCfg hn))
 		`onChange` cmdProperty "a2dissite" ["--quiet", hn]
 		`requires` installed
 		`onChange` reloaded
-	isenabled = boolSystem "a2query" [Param "-q", Param "-s", Param hn]
 
 siteAvailable :: HostName -> ConfigFile -> Property NoInfo
 siteAvailable hn cf = combineProperties ("apache site available " ++ hn) $

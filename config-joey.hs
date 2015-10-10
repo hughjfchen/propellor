@@ -20,6 +20,7 @@ import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Postfix as Postfix
+import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
@@ -36,7 +37,6 @@ import qualified Propellor.Property.SiteSpecific.IABak as IABak
 import qualified Propellor.Property.SiteSpecific.Branchable as Branchable
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 import Propellor.Property.DiskImage
-import Propellor.Types.Container
 
 main :: IO ()           --     _         ______`|                       ,-.__ 
 main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
@@ -427,7 +427,7 @@ iabak = host "iabak.archiveteam.org"
 webserver :: Systemd.Container
 webserver = standardStableContainer "webserver"
 	& Systemd.bind "/var/www"
-	& Apt.serviceInstalledRunning "apache2"
+	& Apache.installed
 
 -- My own openid provider. Uses php, so containerized for security
 -- and administrative sanity.
@@ -442,10 +442,13 @@ openidProvider = standardStableDockerContainer "openid-provider"
 ancientKitenet :: Systemd.Container
 ancientKitenet = standardStableContainer "ancient-kitenet"
 	& alias "ancient.kitenet.net"
-	& Apt.serviceInstalledRunning "apache2"
+	& Apache.installed
+	& Apache.siteDisabled "000-default"
 	& "/etc/apache2/ports.conf" `File.hasContent` ["Listen 1994"]
+		`onChange` Apache.reloaded
 	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www/html"
 		(Just "remotes/origin/old-kitenet.net")
+	& Apache.virtualHost "ancient.kitenet.net" (Port 1994) "/var/www/html"
 
 oldusenetShellBox :: Systemd.Container
 oldusenetShellBox = standardStableContainer "oldusenet-shellbox"
