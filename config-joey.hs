@@ -326,13 +326,11 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	-- & Docker.configured
 	-- & Docker.docked openidProvider
 	-- 	`requires` Apt.serviceInstalledRunning "ntp"
-	-- & Docker.docked ancientKitenet
 	-- & Docker.docked jerryPlay
 	-- & Docker.garbageCollected `period` (Weekly (Just 1))
 	
 	& Systemd.nspawned oldusenetShellBox
-	& Systemd.nspawned ancientKitenet
-		`requires` Systemd.running Systemd.networkd
+	! Systemd.nspawned ancientKitenet
 	
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
@@ -442,13 +440,13 @@ openidProvider = standardStableDockerContainer "openid-provider"
 ancientKitenet :: Systemd.Container
 ancientKitenet = standardStableContainer "ancient-kitenet"
 	& alias "ancient.kitenet.net"
+	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www/html"
+		(Just "remotes/origin/old-kitenet.net")
 	& Apache.installed
+	& Apache.virtualHost "ancient.kitenet.net" (Port 1994) "/var/www/html"
 	& Apache.siteDisabled "000-default"
 	& "/etc/apache2/ports.conf" `File.hasContent` ["Listen 1994"]
 		`onChange` Apache.reloaded
-	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www/html"
-		(Just "remotes/origin/old-kitenet.net")
-	& Apache.virtualHost "ancient.kitenet.net" (Port 1994) "/var/www/html"
 
 oldusenetShellBox :: Systemd.Container
 oldusenetShellBox = standardStableContainer "oldusenet-shellbox"
