@@ -13,7 +13,7 @@ module Propellor.Property.Dns (
 	genZone,
 ) where
 
-import Propellor
+import Propellor.Base
 import Propellor.Types.Dns
 import Propellor.Types.Info
 import Propellor.Property.File

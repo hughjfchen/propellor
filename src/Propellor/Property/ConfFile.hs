@@ -12,7 +12,7 @@ module Propellor.Property.ConfFile (
 	lacksIniSection,
 ) where
 
-import Propellor
+import Propellor.Base
 import Propellor.Property.File
 
 import Data.List (isPrefixOf, foldl')

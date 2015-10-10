@@ -16,7 +16,7 @@ import qualified Data.ByteString as B
 import qualified Data.Set as S
 import Network.Socket (getAddrInfo, defaultHints, AddrInfo(..), AddrInfoFlag(..), SockAddr)
 
-import Propellor
+import Propellor.Base
 import Propellor.Protocol
 import Propellor.PrivData.Paths
 import Propellor.Git

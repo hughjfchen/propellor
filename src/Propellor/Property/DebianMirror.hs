@@ -7,7 +7,7 @@ module Propellor.Property.DebianMirror
 	, mirrorCdn
 	) where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron

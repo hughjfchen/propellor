@@ -1,7 +1,31 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Propellor.Property where
+module Propellor.Property (
+	-- * Property combinators
+	  requires
+	, before
+	, onChange
+	, onChangeFlagOnFail
+	, flagFile
+	, flagFile'
+	, check
+	, fallback
+	, trivial
+	, revert
+	-- * Property descriptions
+	, describe
+	, (==>)
+	-- * Constructing properties
+	, Propellor
+	, property
+	, ensureProperty
+	, withOS
+	, makeChange
+	, noChange
+	, doNothing
+	, endAction
+) where
 
 import System.Directory
 import System.FilePath
@@ -12,6 +36,7 @@ import "mtl" Control.Monad.RWS.Strict
 
 import Propellor.Types
 import Propellor.Info
+import Propellor.Exception
 import Utility.Monad
 
 -- | Constructs a Property, from a description and an action to run to
@@ -38,6 +63,18 @@ flagFile' p getflagfile = adjustPropertySatisfy p $ \satisfy -> do
 				createDirectoryIfMissing True (takeDirectory flagfile)
 				writeFile flagfile ""
 		return r
+
+-- | Indicates that the first property depends on the second,
+-- so before the first is ensured, the second must be ensured.
+requires :: Combines x y => x -> y -> CombinedType x y
+requires = (<<>>)
+
+-- | Combines together two properties, resulting in one property
+-- that ensures the first, and if the first succeeds, ensures the second.
+--
+-- The combined property uses the description of the first property.
+before :: (IsProp x, Combines y x, IsProp (CombinedType y x)) => x -> y -> CombinedType y x
+before x y = (y `requires` x) `describe` getDesc x
 
 -- | Whenever a change has to be made for a Property, causes a hook
 -- Property to also be run, but not otherwise.
@@ -88,10 +125,21 @@ onChangeFlagOnFail flagfile = combineWith go
 		writeFile flagfile ""
 	removeFlagFile = whenM (doesFileExist flagfile) $ removeFile flagfile
 
+-- | Changes the description of a property.
+describe :: IsProp p => p -> Desc -> p
+describe = setDesc
+
 -- | Alias for @flip describe@
 (==>) :: IsProp (Property i) => Desc -> Property i -> Property i
 (==>) = flip describe
 infixl 1 ==>
+
+-- | For when code running in the Propellor monad needs to ensure a
+-- Property.
+--
+-- This can only be used on a Property that has NoInfo.
+ensureProperty :: Property NoInfo -> Propellor Result
+ensureProperty = catchPropellor . propertySatisfy
 
 -- | Makes a Property only need to do anything when a test succeeds.
 check :: IO Bool -> Property i -> Property i
@@ -129,7 +177,7 @@ trivial p = adjustPropertySatisfy p $ \satisfy -> do
 withOS :: Desc -> (Maybe System -> Propellor Result) -> Property NoInfo
 withOS desc a = property desc $ a =<< getOS
 
--- | Undoes the effect of a property.
+-- | Undoes the effect of a RevertableProperty.
 revert :: RevertableProperty -> RevertableProperty
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
@@ -142,6 +190,7 @@ noChange = return NoChange
 doNothing :: Property NoInfo
 doNothing = property "noop property" noChange
 
--- | Registers an action that should be run at the very end,
+-- | Registers an action that should be run at the very end, after
+-- propellor has checks all the properties of a host.
 endAction :: Desc -> (Result -> Propellor Result) -> Propellor ()
 endAction desc a = tell [EndAction desc a]

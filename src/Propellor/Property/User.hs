@@ -2,7 +2,7 @@ module Propellor.Property.User where
 
 import System.Posix
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.File as File
 
 data Eep = YesReallyDeleteHome

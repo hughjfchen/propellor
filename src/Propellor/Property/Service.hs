@@ -1,6 +1,6 @@
 module Propellor.Property.Service where
 
-import Propellor
+import Propellor.Base
 
 type ServiceName = String
 

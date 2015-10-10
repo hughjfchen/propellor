@@ -16,7 +16,6 @@ So, `-- ` starts a comment in this file.
 
 [[!format haskell """
 import Propellor
-import Propellor.CmdLine
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.User as User

@@ -4,7 +4,7 @@ module Propellor.Property.Kerberos where
 
 import Utility.Process
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
 import Propellor.Property.User

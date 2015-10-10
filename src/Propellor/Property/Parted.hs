@@ -21,7 +21,7 @@ module Propellor.Property.Parted (
 	installed,
 ) where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Partition as Partition
 import Utility.DataUnits

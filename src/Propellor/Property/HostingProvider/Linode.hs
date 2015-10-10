@@ -1,6 +1,6 @@
 module Propellor.Property.HostingProvider.Linode where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
 import Utility.FileMode

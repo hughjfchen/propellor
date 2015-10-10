@@ -36,7 +36,7 @@ module Propellor.Property.DiskImage (
 	noFinalization,
 ) where
 
-import Propellor
+import Propellor.Base
 import Propellor.Property.Chroot (Chroot)
 import Propellor.Property.Chroot.Util (removeChroot)
 import qualified Propellor.Property.Chroot as Chroot

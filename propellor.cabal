@@ -1,5 +1,5 @@
 Name: propellor
-Version: 2.8.1
+Version: 2.9.0
 Cabal-Version: >= 1.8
 License: BSD3
 Maintainer: Joey Hess <id@joeyh.name>
@@ -69,6 +69,8 @@ Library
 
   Exposed-Modules:
     Propellor
+    Propellor.Base
+    Propellor.Location
     Propellor.Property
     Propellor.Property.Aiccu
     Propellor.Property.Apache
@@ -126,6 +128,7 @@ Library
     Propellor.Property.SiteSpecific.Branchable
     Propellor.Property.SiteSpecific.IABak
     Propellor.PropAccum
+    Propellor.Utilities
     Propellor.CmdLine
     Propellor.Info
     Propellor.Message

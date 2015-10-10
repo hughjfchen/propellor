@@ -1,6 +1,6 @@
 module Propellor.Property.Rsync where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 
 type Src = FilePath

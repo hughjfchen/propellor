@@ -10,12 +10,12 @@
 
 module Propellor.Types
 	( Host(..)
-	, Desc
 	, Property
 	, Info
 	, HasInfo
 	, NoInfo
 	, CInfo
+	, Desc
 	, infoProperty
 	, simpleProperty
 	, adjustPropertySatisfy
@@ -27,7 +27,6 @@ module Propellor.Types
 	, IsProp(..)
 	, Combines(..)
 	, CombinedType
-	, before
 	, combineWith
 	, Propellor(..)
 	, EndAction(..)
@@ -93,6 +92,12 @@ type Desc = String
 -- | The core data type of Propellor, this represents a property
 -- that the system should have, and an action to ensure it has the
 -- property.
+--
+-- A property can have associated `Info` or not. This is tracked at the
+-- type level with Property `NoInfo` and Property `HasInfo`.
+--
+-- There are many instances and type families, which are mostly used
+-- internally, so you needn't worry about them.
 data Property i where
 	IProperty :: Desc -> Propellor Result -> Info -> [Property HasInfo] -> Property HasInfo
 	SProperty :: Desc -> Propellor Result -> [Property NoInfo] -> Property NoInfo
@@ -164,17 +169,17 @@ propertyChildren :: Property i -> [Property i]
 propertyChildren (IProperty _ _ _ cs) = cs
 propertyChildren (SProperty _ _ cs) = cs
 
--- | A property that can be reverted.
+-- | A property that can be reverted. The first Property is run
+-- normally and the second is run when it's reverted.
 data RevertableProperty = RevertableProperty (Property HasInfo) (Property HasInfo)
 
--- | Makes a revertable property; the first Property is run
--- normally and the second is run when it's reverted.
+-- | Shorthand to construct a revertable property.
 (<!>) :: Property i1 -> Property i2 -> RevertableProperty
 p1 <!> p2 = RevertableProperty (toIProperty p1) (toIProperty p2)
 
+-- | Class of types that can be used as properties of a host.
 class IsProp p where
-	-- | Sets description.
-	describe :: p -> Desc -> p
+	setDesc :: p -> Desc -> p
 	toProp :: p -> Property HasInfo
 	getDesc :: p -> Desc
 	-- | Gets the info of the property, combined with all info
@@ -182,28 +187,28 @@ class IsProp p where
 	getInfoRecursive :: p -> Info
 
 instance IsProp (Property HasInfo) where
-	describe (IProperty _ a i cs) d = IProperty d a i cs
+	setDesc (IProperty _ a i cs) d = IProperty d a i cs
 	toProp = id
 	getDesc = propertyDesc
 	getInfoRecursive (IProperty _ _ i cs) = 
 		i <> mconcat (map getInfoRecursive cs)
 instance IsProp (Property NoInfo) where
-	describe (SProperty _ a cs) d = SProperty d a cs
+	setDesc (SProperty _ a cs) d = SProperty d a cs
 	toProp = toIProperty
 	getDesc = propertyDesc
 	getInfoRecursive _ = mempty
 
 instance IsProp RevertableProperty where
 	-- | Sets the description of both sides.
-	describe (RevertableProperty p1 p2) d = 
-		RevertableProperty (describe p1 d) (describe p2 ("not " ++ d))
+	setDesc (RevertableProperty p1 p2) d = 
+		RevertableProperty (setDesc p1 d) (setDesc p2 ("not " ++ d))
 	getDesc (RevertableProperty p1 _) = getDesc p1
 	toProp (RevertableProperty p1 _) = p1
 	-- | Return the Info of the currently active side.
 	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
 
--- | Type level calculation of the type that results from combining two types
--- with `requires`.
+-- | Type level calculation of the type that results from combining two
+-- types of properties.
 type family CombinedType x y
 type instance CombinedType (Property x) (Property y) = Property (CInfo x y)
 type instance CombinedType RevertableProperty (Property NoInfo) = RevertableProperty
@@ -211,15 +216,11 @@ type instance CombinedType RevertableProperty (Property HasInfo) = RevertablePro
 type instance CombinedType RevertableProperty RevertableProperty = RevertableProperty
 
 class Combines x y where
-	-- | Indicates that the first property depends on the second,
-	-- so before the first is ensured, the second will be ensured.
-	requires :: x -> y -> CombinedType x y
-	
--- | Combines together two properties, resulting in one property
--- that ensures the first, and if the first succeeds, ensures the second.
--- The property uses the description of the first property.
-before :: (IsProp x, Combines y x, IsProp (CombinedType y x)) => x -> y -> CombinedType y x
-before x y = (y `requires` x) `describe` getDesc x
+	-- | Combines two properties. The second property is ensured
+	-- first, and only once it is successfully ensures will the first
+	-- be ensured. The combined property will have the description of
+	-- the first property.
+	(<<>>) :: x -> y -> CombinedType x y
 
 -- | Combines together two properties, yielding a property that
 -- has the description and info of the first, and that has the second
@@ -231,36 +232,36 @@ combineWith
 	-> Property x
 	-> Property y
 	-> CombinedType (Property x) (Property y)
-combineWith f x y = adjustPropertySatisfy (x `requires` y) $ \_ ->
+combineWith f x y = adjustPropertySatisfy (x <<>> y) $ \_ ->
 	f (propertySatisfy $ toSProperty x) (propertySatisfy $ toSProperty y)
 
 instance Combines (Property HasInfo) (Property HasInfo) where
-	requires (IProperty d1 a1 i1 cs1) y@(IProperty _d2 a2 _i2 _cs2) =
+	(IProperty d1 a1 i1 cs1) <<>> y@(IProperty _d2 a2 _i2 _cs2) =
 		IProperty d1 (a2 <> a1) i1 (y : cs1)
 
 instance Combines (Property HasInfo) (Property NoInfo) where
-	requires (IProperty d1 a1 i1 cs1) y@(SProperty _d2 a2 _cs2) =
+	(IProperty d1 a1 i1 cs1) <<>> y@(SProperty _d2 a2 _cs2) =
 		IProperty d1 (a2 <> a1) i1 (toIProperty y : cs1)
 
 instance Combines (Property NoInfo) (Property HasInfo) where
-	requires (SProperty d1 a1 cs1) y@(IProperty _d2 a2 _i2 _cs2) =
+	(SProperty d1 a1 cs1) <<>> y@(IProperty _d2 a2 _i2 _cs2) =
 		IProperty d1 (a2 <> a1) mempty (y : map toIProperty cs1)
 
 instance Combines (Property NoInfo) (Property NoInfo) where
-	requires (SProperty d1 a1  cs1) y@(SProperty _d2 a2 _cs2) =
+	(SProperty d1 a1  cs1) <<>> y@(SProperty _d2 a2 _cs2) =
 		SProperty d1 (a2 <> a1) (y : cs1)
 
 instance Combines RevertableProperty (Property HasInfo) where
-	requires (RevertableProperty p1 p2) y =
-		RevertableProperty (p1 `requires` y) p2
+	(RevertableProperty p1 p2) <<>> y =
+		RevertableProperty (p1 <<>> y) p2
 
 instance Combines RevertableProperty (Property NoInfo) where
-	requires (RevertableProperty p1 p2) y =
-		RevertableProperty (p1 `requires` toIProperty y) p2
+	(RevertableProperty p1 p2) <<>> y =
+		RevertableProperty (p1 <<>> toIProperty y) p2
 
 instance Combines RevertableProperty RevertableProperty where
-	requires (RevertableProperty x1 x2) (RevertableProperty y1 y2) =
+	(RevertableProperty x1 x2) <<>> (RevertableProperty y1 y2) =
 		RevertableProperty
-			(x1 `requires` y1)
+			(x1 <<>> y1)
 			-- when reverting, run actions in reverse order
-			(y2 `requires` x2)
+			(y2 <<>> x2)

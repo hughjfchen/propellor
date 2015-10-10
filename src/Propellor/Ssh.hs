@@ -1,6 +1,6 @@
 module Propellor.Ssh where
 
-import Propellor
+import Propellor.Base
 import Utility.UserInfo
 
 import System.PosixCompat

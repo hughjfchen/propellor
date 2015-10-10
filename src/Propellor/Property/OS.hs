@@ -7,7 +7,7 @@ module Propellor.Property.OS (
 	oldOSRemoved,
 ) where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Network as Network

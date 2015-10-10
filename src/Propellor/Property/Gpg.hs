@@ -1,6 +1,6 @@
 module Propellor.Property.Gpg where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import Utility.FileSystemEncoding
 

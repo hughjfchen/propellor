@@ -1,6 +1,6 @@
 module Propellor.Property.HostingProvider.CloudAtCost where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Hostname as Hostname
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.User as User

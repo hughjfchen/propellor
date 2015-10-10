@@ -1,6 +1,6 @@
 module Propellor.Property.Group where
 
-import Propellor
+import Propellor.Base
 
 type GID = Int
 

@@ -4,7 +4,7 @@
 
 module Propellor.Property.LightDM where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.ConfFile as ConfFile
 
 -- | Configures LightDM to skip the login screen and autologin as a user.

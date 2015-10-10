@@ -5,7 +5,7 @@ module Propellor.Bootstrap (
 	buildPropellor,
 ) where
 
-import Propellor
+import Propellor.Base
 
 import System.Posix.Files
 import Data.List

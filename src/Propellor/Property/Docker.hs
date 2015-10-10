@@ -45,7 +45,7 @@ module Propellor.Property.Docker (
 	chain,
 ) where
 
-import Propellor hiding (init)
+import Propellor.Base hiding (init)
 import Propellor.Types.Docker
 import Propellor.Types.Container
 import Propellor.Types.CmdLine
@@ -97,8 +97,8 @@ instance HasImage Container where
 	getImageName (Container i _) = i
 
 instance PropAccum Container where
-	(Container i h) & p = Container i (h & p)
-	(Container i h) &^ p = Container i (h &^ p)
+	(Container i h) `addProp` p = Container i (h `addProp` p)
+	(Container i h) `addPropFront` p = Container i (h `addPropFront` p)
 	getProperties (Container _ h) = hostProperties h
 
 -- | Defines a Container with a given name, image, and properties.

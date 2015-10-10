@@ -1,6 +1,6 @@
 module Propellor.Property.Grub where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 

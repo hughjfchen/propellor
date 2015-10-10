@@ -1,6 +1,6 @@
 module Propellor.Property.SiteSpecific.IABak where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Cron as Cron
