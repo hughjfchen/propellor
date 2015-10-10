@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-duplicate-exports #-}
 
--- | When propellor runs on a Host, it ensures that its list of Properties
--- is satisfied, taking action as necessary when a Property is not
+-- | When propellor runs on a Host, it ensures that its Properties
+-- are satisfied, taking action as necessary when a Property is not
 -- currently satisfied.
 --
 -- A simple propellor program example:
