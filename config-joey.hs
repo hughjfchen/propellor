@@ -36,6 +36,7 @@ import qualified Propellor.Property.SiteSpecific.IABak as IABak
 import qualified Propellor.Property.SiteSpecific.Branchable as Branchable
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 import Propellor.Property.DiskImage
+import Propellor.Types.Container
 
 main :: IO ()           --     _         ______`|                       ,-.__ 
 main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
@@ -322,14 +323,16 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& alias "ns3.kitenet.net"
 	& myDnsSecondary
 	
-	& Docker.configured
-	& Docker.docked openidProvider
-		`requires` Apt.serviceInstalledRunning "ntp"
-	& Docker.docked ancientKitenet
-	& Docker.docked jerryPlay
-	& Docker.garbageCollected `period` (Weekly (Just 1))
+	-- & Docker.configured
+	-- & Docker.docked openidProvider
+	-- 	`requires` Apt.serviceInstalledRunning "ntp"
+	-- & Docker.docked ancientKitenet
+	-- & Docker.docked jerryPlay
+	-- & Docker.garbageCollected `period` (Weekly (Just 1))
 	
 	& Systemd.nspawned oldusenetShellBox
+	& Systemd.nspawned ancientKitenet
+		`requires` Systemd.running Systemd.networkd
 	
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
@@ -436,10 +439,12 @@ openidProvider = standardStableDockerContainer "openid-provider"
 		"openid.kitenet.net:8081"
 
 -- Exhibit: kite's 90's website.
-ancientKitenet :: Docker.Container
-ancientKitenet = standardStableDockerContainer "ancient-kitenet"
+ancientKitenet :: Systemd.Container
+ancientKitenet = standardStableContainer "ancient-kitenet"
 	& alias "ancient.kitenet.net"
-	& Docker.publish "1994:80"
+	& Systemd.privateNetwork
+	& Systemd.running Systemd.networkd
+	& Systemd.publish (Port 80 ->- Port 1994)
 	& Apt.serviceInstalledRunning "apache2"
 	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www/html"
 		(Just "remotes/origin/old-kitenet.net")

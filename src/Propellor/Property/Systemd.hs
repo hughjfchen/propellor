@@ -376,8 +376,8 @@ instance Publishable (Proto, Bound Port) where
 --
 -- > foo :: Host
 -- > foo = host "foo.example.com"
--- >	& Systemd.running Systemd.networkd
 -- >	& Systemd.nspawned webserver
+-- > 		`requires` Systemd.running Systemd.networkd
 -- >
 -- > webserver :: Systemd.container
 -- > webserver = Systemd.container "webserver" (Chroot.debootstrapped (System (Debian Testing) "amd64") mempty)
