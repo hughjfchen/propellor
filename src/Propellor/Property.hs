@@ -39,6 +39,18 @@ flagFile' p getflagfile = adjustPropertySatisfy p $ \satisfy -> do
 				writeFile flagfile ""
 		return r
 
+-- | Indicates that the first property depends on the second,
+-- so before the first is ensured, the second must be ensured.
+requires :: Combines x y => x -> y -> CombinedType x y
+requires = (<<>>)
+
+-- | Combines together two properties, resulting in one property
+-- that ensures the first, and if the first succeeds, ensures the second.
+--
+-- The combined property uses the description of the first property.
+before :: (IsProp x, Combines y x, IsProp (CombinedType y x)) => x -> y -> CombinedType y x
+before x y = (y `requires` x) `describe` getDesc x
+
 -- | Whenever a change has to be made for a Property, causes a hook
 -- Property to also be run, but not otherwise.
 onChange

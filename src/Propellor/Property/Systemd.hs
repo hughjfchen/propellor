@@ -62,8 +62,8 @@ data Container = Container MachineName Chroot.Chroot Host
 	deriving (Show)
 
 instance PropAccum Container where
-	(Container n c h) & p = Container n c (h & p)
-	(Container n c h) &^ p = Container n c (h &^ p)
+	(Container n c h) `addProp` p = Container n c (h `addProp` p)
+	(Container n c h) `addPropFront` p = Container n c (h `addPropFront` p)
 	getProperties (Container _ _ h) = hostProperties h
 
 -- | Starts a systemd service.

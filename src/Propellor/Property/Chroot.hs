@@ -34,8 +34,8 @@ data BuilderConf
 	deriving (Show)
 
 instance PropAccum Chroot where
-	(Chroot l s c h) & p = Chroot l s c (h & p)
-	(Chroot l s c h) &^ p = Chroot l s c (h &^ p)
+	(Chroot l s c h) `addProp` p = Chroot l s c (h & p)
+	(Chroot l s c h) `addPropFront` p = Chroot l s c (h `addPropFront` p)
 	getProperties (Chroot _ _ _ h) = hostProperties h
 
 -- | Defines a Chroot at the given location, built with debootstrap.
