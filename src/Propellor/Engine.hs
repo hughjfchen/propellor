@@ -26,6 +26,7 @@ import Propellor.Types
 import Propellor.Message
 import Propellor.Exception
 import Propellor.Info
+import Propellor.Property
 import Utility.Exception
 import Utility.PartialPrelude
 import Utility.Monad
@@ -61,13 +62,6 @@ runEndAction :: Host -> Result -> EndAction -> IO Result
 runEndAction host res (EndAction desc a) = actionMessageOn (hostName host) desc $ do
 	(ret, _s, _) <- runRWST (runWithHost (catchPropellor (a res))) host ()
 	return ret
-
--- | For when code running in the Propellor monad needs to ensure a
--- Property.
---
--- This can only be used on a Property that has NoInfo.
-ensureProperty :: Property NoInfo -> Propellor Result
-ensureProperty = catchPropellor . propertySatisfy
 
 -- | Ensures a list of Properties, with a display of each as it runs.
 ensureProperties :: [Property NoInfo] -> Propellor Result

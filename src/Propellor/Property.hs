@@ -12,6 +12,7 @@ import "mtl" Control.Monad.RWS.Strict
 
 import Propellor.Types
 import Propellor.Info
+import Propellor.Exception
 import Utility.Monad
 
 -- | Constructs a Property, from a description and an action to run to
@@ -108,6 +109,13 @@ describe = setDesc
 (==>) :: IsProp (Property i) => Desc -> Property i -> Property i
 (==>) = flip describe
 infixl 1 ==>
+
+-- | For when code running in the Propellor monad needs to ensure a
+-- Property.
+--
+-- This can only be used on a Property that has NoInfo.
+ensureProperty :: Property NoInfo -> Propellor Result
+ensureProperty = catchPropellor . propertySatisfy
 
 -- | Makes a Property only need to do anything when a test succeeds.
 check :: IO Bool -> Property i -> Property i
