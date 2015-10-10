@@ -17,7 +17,6 @@ import qualified Propellor.Property.Hostname as Hostname
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
-import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
@@ -323,14 +322,10 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& alias "ns3.kitenet.net"
 	& myDnsSecondary
 	
-	-- & Docker.configured
-	-- & Docker.docked openidProvider
-	-- 	`requires` Apt.serviceInstalledRunning "ntp"
-	-- & Docker.docked jerryPlay
-	-- & Docker.garbageCollected `period` (Weekly (Just 1))
-	
 	& Systemd.nspawned oldusenetShellBox
-	! Systemd.nspawned ancientKitenet
+	& Systemd.nspawned ancientKitenet
+	& Systemd.nspawned openidProvider
+	 	`requires` Apt.serviceInstalledRunning "ntp"
 	
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
@@ -429,38 +424,31 @@ webserver = standardStableContainer "webserver"
 
 -- My own openid provider. Uses php, so containerized for security
 -- and administrative sanity.
-openidProvider :: Docker.Container
-openidProvider = standardStableDockerContainer "openid-provider"
-	& alias "openid.kitenet.net"
-	& Docker.publish "8081:80"
-	& OpenId.providerFor [User "joey", User "liw"]
-		"openid.kitenet.net:8081"
+openidProvider :: Systemd.Container
+openidProvider = standardStableContainer "openid-provider"
+	& alias hn
+	& OpenId.providerFor [User "joey", User "liw"] hn (Just (Port 8081))
+  where
+	hn = "openid.kitenet.net"
 
 -- Exhibit: kite's 90's website on port 1994.
 ancientKitenet :: Systemd.Container
 ancientKitenet = standardStableContainer "ancient-kitenet"
-	& alias "ancient.kitenet.net"
+	& alias hn
 	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www/html"
 		(Just "remotes/origin/old-kitenet.net")
 	& Apache.installed
-	& Apache.virtualHost "ancient.kitenet.net" (Port 1994) "/var/www/html"
+	& Apache.listenPorts [p]
+	& Apache.virtualHost hn p "/var/www/html"
 	& Apache.siteDisabled "000-default"
-	& "/etc/apache2/ports.conf" `File.hasContent` ["Listen 1994"]
-		`onChange` Apache.reloaded
+  where
+	p = Port 1994
+	hn = "ancient.kitenet.net"
 
 oldusenetShellBox :: Systemd.Container
 oldusenetShellBox = standardStableContainer "oldusenet-shellbox"
 	& alias "shell.olduse.net"
 	& JoeySites.oldUseNetShellBox
-
-jerryPlay :: Docker.Container
-jerryPlay = standardDockerContainer "jerryplay" Unstable "amd64"
-	& alias "jerryplay.kitenet.net"
-	& Docker.publish "2202:22"
-	& Docker.publish "8001:80"
-	& Apt.installed ["ssh"]
-	& User.hasPassword (User "root")
-	& Ssh.permitRootLogin (Ssh.RootLogin True)
 
 kiteShellBox :: Systemd.Container
 kiteShellBox = standardStableContainer "kiteshellbox"
@@ -508,26 +496,6 @@ standardContainer name suite arch = Systemd.container name chroot
 
 standardStableContainer :: Systemd.MachineName -> Systemd.Container
 standardStableContainer name = standardContainer name (Stable "jessie") "amd64"
-
-standardStableDockerContainer :: Docker.ContainerName -> Docker.Container
-standardStableDockerContainer name = standardDockerContainer name (Stable "jessie") "amd64"
-
-standardDockerContainer :: Docker.ContainerName -> DebianSuite -> Architecture -> Docker.Container
-standardDockerContainer name suite arch = Docker.container name (dockerImage system)
-	& os system
-	& Apt.stdSourcesList `onChange` Apt.upgrade
-	& Apt.unattendedUpgrades
-	& Apt.cacheCleaned
-	& Docker.tweaked
-  where
-	system = System (Debian suite) arch
-
--- Docker images I prefer to use.
-dockerImage :: System -> Docker.Image
-dockerImage (System (Debian Unstable) arch) = Docker.latestImage ("joeyh/debian-unstable-" ++ arch)
-dockerImage (System (Debian Testing) arch) = Docker.latestImage ("joeyh/debian-unstable-" ++ arch)
-dockerImage (System (Debian (Stable _)) arch) = Docker.latestImage ("joeyh/debian-stable-" ++ arch)
-dockerImage _ = Docker.latestImage "debian-stable-official" -- does not currently exist!
 
 myDnsSecondary :: Property HasInfo
 myDnsSecondary = propertyList "dns secondary for all my domains" $ props

@@ -5,7 +5,14 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
 
-type ConfigFile = [String]
+installed :: Property NoInfo
+installed = Apt.installed ["apache2"]
+
+restarted :: Property NoInfo
+restarted = Service.restarted "apache2"
+
+reloaded :: Property NoInfo
+reloaded = Service.reloaded "apache2"
 
 -- | A basic virtual host, publishing a directory, and logging to
 -- the combined apache log file.
@@ -20,6 +27,8 @@ virtualHost hn (Port p) docroot = siteEnabled hn
 	, "ServerSignature On"
 	, "</VirtualHost>"
 	]
+
+type ConfigFile = [String]
 
 siteEnabled :: HostName -> ConfigFile -> RevertableProperty
 siteEnabled hn cf = enable <!> disable
@@ -65,6 +74,16 @@ modEnabled modname = enable <!> disable
 			`onChange` reloaded
 	isenabled = boolSystem "a2query" [Param "-q", Param "-m", Param modname]
 
+-- | Make apache listen on the specified ports.
+--
+-- Note that ports are also specified inside a site's config file,
+-- so that also needs to be changed.
+listenPorts :: [Port] -> Property NoInfo
+listenPorts ps = "/etc/apache2/ports.conf" `File.hasContent` map portline ps
+	`onChange` restarted
+  where
+	portline (Port n) = "Listen " ++ show n
+
 -- This is a list of config files because different versions of apache
 -- use different filenames. Propellor simply writes them all.
 siteCfg :: HostName -> [FilePath]
@@ -74,15 +93,6 @@ siteCfg hn =
 	-- Debian 2.4+
 	, "/etc/apache2/sites-available/" ++ hn ++ ".conf"
 	] 
-
-installed :: Property NoInfo
-installed = Apt.installed ["apache2"]
-
-restarted :: Property NoInfo
-restarted = Service.restarted "apache2"
-
-reloaded :: Property NoInfo
-reloaded = Service.reloaded "apache2"
 
 -- | Configure apache to use SNI to differentiate between
 -- https hosts.
