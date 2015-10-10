@@ -9,10 +9,13 @@ import Data.List
 
 -- | Openid provider, using the simpleid PHP CGI, with apache.
 --
--- Runs on usual port by defualt. When a nonstandard port is specified,
+-- Runs on usual port by default. When a nonstandard port is specified,
 -- apache is limited to listening only on that port. Warning: Specifying
 -- a port won't compose well with other apache properties on the same
 -- host.
+--
+-- It's probably a good idea to put this property inside a docker or
+-- systemd-nspawn container.
 providerFor :: [User] -> HostName -> Maybe Port -> Property HasInfo
 providerFor users hn mp = propertyList desc $ props
 	& Apt.serviceInstalledRunning "apache2"
