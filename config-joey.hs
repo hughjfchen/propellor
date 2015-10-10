@@ -438,14 +438,12 @@ openidProvider = standardStableDockerContainer "openid-provider"
 	& OpenId.providerFor [User "joey", User "liw"]
 		"openid.kitenet.net:8081"
 
--- Exhibit: kite's 90's website.
+-- Exhibit: kite's 90's website on port 1994.
 ancientKitenet :: Systemd.Container
 ancientKitenet = standardStableContainer "ancient-kitenet"
 	& alias "ancient.kitenet.net"
-	& Systemd.privateNetwork
-	& Systemd.running Systemd.networkd
-	& Systemd.publish (Port 80 ->- Port 1994)
 	& Apt.serviceInstalledRunning "apache2"
+	& "/etc/apache2/ports.conf" `File.hasContent` ["Listen 1994"]
 	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www/html"
 		(Just "remotes/origin/old-kitenet.net")
 
