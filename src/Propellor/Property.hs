@@ -100,6 +100,10 @@ onChangeFlagOnFail flagfile = combineWith go
 		writeFile flagfile ""
 	removeFlagFile = whenM (doesFileExist flagfile) $ removeFile flagfile
 
+-- | Changes the description of a property.
+describe :: IsProp p => p -> Desc -> p
+describe = setDesc
+
 -- | Alias for @flip describe@
 (==>) :: IsProp (Property i) => Desc -> Property i -> Property i
 (==>) = flip describe

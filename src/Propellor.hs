@@ -37,6 +37,7 @@ module Propellor (
 	, host
 	, (&)
 	, (!)
+	, describe
 	-- * Combining properties
 	-- | Properties are often combined together in your propellor
 	-- configuration. For example:
@@ -47,6 +48,8 @@ module Propellor (
 	, before
 	, onChange
 	-- * Included modules
+	-- | These are only the core modules you'll need. There are many
+	-- more in propellor that you can import.
 	, module Propellor.Types
 	-- | Additional data types used by propellor
 	, module Propellor.Property
@@ -60,7 +63,6 @@ module Propellor (
 	-- | Combining a list of properties into a single property
 	, module Propellor.Types.PrivData
 	-- | Private data access for properties
-	, module Propellor.PropAccum
 
 	, module X
 ) where

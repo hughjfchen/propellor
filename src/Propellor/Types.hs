@@ -177,9 +177,9 @@ data RevertableProperty = RevertableProperty (Property HasInfo) (Property HasInf
 (<!>) :: Property i1 -> Property i2 -> RevertableProperty
 p1 <!> p2 = RevertableProperty (toIProperty p1) (toIProperty p2)
 
+-- | Class of types that can be used as properties of a host.
 class IsProp p where
-	-- | Sets description.
-	describe :: p -> Desc -> p
+	setDesc :: p -> Desc -> p
 	toProp :: p -> Property HasInfo
 	getDesc :: p -> Desc
 	-- | Gets the info of the property, combined with all info
@@ -187,21 +187,21 @@ class IsProp p where
 	getInfoRecursive :: p -> Info
 
 instance IsProp (Property HasInfo) where
-	describe (IProperty _ a i cs) d = IProperty d a i cs
+	setDesc (IProperty _ a i cs) d = IProperty d a i cs
 	toProp = id
 	getDesc = propertyDesc
 	getInfoRecursive (IProperty _ _ i cs) = 
 		i <> mconcat (map getInfoRecursive cs)
 instance IsProp (Property NoInfo) where
-	describe (SProperty _ a cs) d = SProperty d a cs
+	setDesc (SProperty _ a cs) d = SProperty d a cs
 	toProp = toIProperty
 	getDesc = propertyDesc
 	getInfoRecursive _ = mempty
 
 instance IsProp RevertableProperty where
 	-- | Sets the description of both sides.
-	describe (RevertableProperty p1 p2) d = 
-		RevertableProperty (describe p1 d) (describe p2 ("not " ++ d))
+	setDesc (RevertableProperty p1 p2) d = 
+		RevertableProperty (setDesc p1 d) (setDesc p2 ("not " ++ d))
 	getDesc (RevertableProperty p1 _) = getDesc p1
 	toProp (RevertableProperty p1 _) = p1
 	-- | Return the Info of the currently active side.

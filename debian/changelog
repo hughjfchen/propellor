@@ -3,8 +3,12 @@ propellor (2.9.0) UNRELEASED; urgency=medium
   * Added basic Uwsgi module, maintained by Félix Sipma.
   * Add Apt.hasForeignArch. Thanks, Per Olofsson.
   * Improved documentation, particularly of the Propellor module.
-    This involved some code changes, including some renaming of instance
-    methods. (ABI change)
+  * The Propellor module no longer exports many of the things it used to,
+    being now focused on only what's needed to write config.hs.
+    Use Propellor.Base to get all the things exported by Propellor before.
+    (API change)
+  * Some renaming of instance methods, and moving of functions to more
+    appropriate modules. (API change)
 
  -- Joey Hess <id@joeyh.name>  Thu, 08 Oct 2015 11:09:01 -0400
 

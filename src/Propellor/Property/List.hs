@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 module Propellor.Property.List (
+	props,
 	PropertyList(..),
 	PropertyListType,
 ) where
@@ -12,6 +13,22 @@ import Propellor.PropAccum
 
 import Data.Monoid
 
+-- | Starts accumulating a list of properties.
+--
+-- > propertyList "foo" $ props
+-- > 	& someproperty
+-- > 	! oldproperty
+-- > 	& otherproperty
+props :: PropList
+props = PropList []
+
+data PropList = PropList [Property HasInfo]
+
+instance PropAccum PropList where
+	PropList l `addProp` p = PropList (toProp p : l)
+	PropList l `addPropFront` p = PropList (l ++ [toProp p])
+	getProperties (PropList l) = reverse l
+
 class PropertyList l where
 	-- | Combines a list of properties, resulting in a single property
 	-- that when run will run each property in the list in turn,
@@ -21,12 +38,7 @@ class PropertyList l where
 	-- Note that Property HasInfo and Property NoInfo are not the same
 	-- type, and so cannot be mixed in a list. To make a list of
 	-- mixed types, which can also include RevertableProperty,
-	-- use `props`:
-	--
-	-- > propertyList "foo" $ props
-	-- >	& someproperty
-	-- >	! oldproperty
-	-- > 	& otherproperty
+	-- use `props`
 	propertyList :: Desc -> l -> Property (PropertyListType l)
 
 	-- | Combines a list of properties, resulting in one property that

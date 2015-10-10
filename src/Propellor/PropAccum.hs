@@ -2,12 +2,10 @@
 
 module Propellor.PropAccum
 	( host
-	, props
 	, PropAccum(..)
 	, (&)
 	, (&^)
 	, (!)
-	, PropList
 	, propigateContainer
 	) where
 
@@ -26,15 +24,6 @@ import Propellor.PrivData
 -- > 	& otherproperty
 host :: HostName -> Host
 host hn = Host hn [] mempty
-
--- | Starts accumulating a list of properties.
---
--- > propertyList "foo" $ props
--- > 	& someproperty
--- > 	! oldproperty
--- > 	& otherproperty
-props :: PropList
-props = PropList []
 
 -- | Something that can accumulate properties.
 class PropAccum h where
@@ -70,13 +59,6 @@ instance PropAccum Host where
 	(Host hn ps is) `addPropFront` p = Host hn (toProp p : ps)
 		(getInfoRecursive p <> is)
 	getProperties = hostProperties
-
-data PropList = PropList [Property HasInfo]
-
-instance PropAccum PropList where
-	PropList l `addProp` p = PropList (toProp p : l)
-	PropList l `addPropFront` p = PropList (l ++ [toProp p])
-	getProperties (PropList l) = reverse l
 
 -- | Adjust the provided Property, adding to its
 -- propertyChidren the properties of the provided container.
