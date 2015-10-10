@@ -297,3 +297,11 @@ aptKeyFile k = "/etc/apt/trusted.gpg.d" </> keyname k ++ ".gpg"
 cacheCleaned :: Property NoInfo
 cacheCleaned = trivial $ cmdProperty "apt-get" ["clean"]
 	`describe` "apt cache cleaned"
+
+-- | Add a foreign architecture to dpkg and apt.
+hasForeignArch :: String -> Property NoInfo
+hasForeignArch arch = check notAdded add
+	`describe` ("dpkg has foreign architecture " ++ arch)
+  where
+	notAdded = (not . elem arch . lines) <$> readProcess "dpkg" ["--print-foreign-architectures"]
+	add = cmdProperty "dpkg" ["--add-architecture", arch] `before` update
