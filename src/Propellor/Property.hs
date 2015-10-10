@@ -1,7 +1,31 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Propellor.Property where
+module Propellor.Property (
+	-- * Property combinators
+	  requires
+	, before
+	, onChange
+	, onChangeFlagOnFail
+	, flagFile
+	, flagFile'
+	, check
+	, fallback
+	, trivial
+	, revert
+	-- * Property descriptions
+	, describe
+	, (==>)
+	-- * Constructing properties
+	, Propellor
+	, property
+	, ensureProperty
+	, withOS
+	, makeChange
+	, noChange
+	, doNothing
+	, endAction
+) where
 
 import System.Directory
 import System.FilePath
@@ -153,7 +177,7 @@ trivial p = adjustPropertySatisfy p $ \satisfy -> do
 withOS :: Desc -> (Maybe System -> Propellor Result) -> Property NoInfo
 withOS desc a = property desc $ a =<< getOS
 
--- | Undoes the effect of a property.
+-- | Undoes the effect of a RevertableProperty.
 revert :: RevertableProperty -> RevertableProperty
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
@@ -166,6 +190,7 @@ noChange = return NoChange
 doNothing :: Property NoInfo
 doNothing = property "noop property" noChange
 
--- | Registers an action that should be run at the very end,
+-- | Registers an action that should be run at the very end, after
+-- propellor has checks all the properties of a host.
 endAction :: Desc -> (Result -> Propellor Result) -> Propellor ()
 endAction desc a = tell [EndAction desc a]
