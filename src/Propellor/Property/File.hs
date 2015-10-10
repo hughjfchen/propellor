@@ -1,6 +1,6 @@
 module Propellor.Property.File where
 
-import Propellor
+import Propellor.Base
 import Utility.FileMode
 
 import System.Posix.Files

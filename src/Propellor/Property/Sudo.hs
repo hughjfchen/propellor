@@ -2,7 +2,7 @@ module Propellor.Property.Sudo where
 
 import Data.List
 
-import Propellor
+import Propellor.Base
 import Propellor.Property.File
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.User

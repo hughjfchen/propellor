@@ -1,6 +1,6 @@
 module Propellor.Property.Hostname where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.File as File
 
 import Data.List

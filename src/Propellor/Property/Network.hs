@@ -1,6 +1,6 @@
 module Propellor.Property.Network where
 
-import Propellor
+import Propellor.Base
 import Propellor.Property.File
 
 type Interface = String

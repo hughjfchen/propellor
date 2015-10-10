@@ -1,6 +1,6 @@
 module Propellor.Git where
 
-import Propellor
+import Propellor.Base
 import Propellor.PrivData.Paths
 import Propellor.Gpg
 import Utility.FileMode

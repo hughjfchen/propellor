@@ -9,7 +9,7 @@ module Propellor.Property.Scheduled
 	, YearDay
 	) where
 
-import Propellor
+import Propellor.Base
 import Utility.Scheduled
 
 import Data.Time.Clock

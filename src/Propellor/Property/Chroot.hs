@@ -12,7 +12,7 @@ module Propellor.Property.Chroot (
 	chain,
 ) where
 
-import Propellor
+import Propellor.Base
 import Propellor.Types.CmdLine
 import Propellor.Types.Chroot
 import Propellor.Types.Info

@@ -6,7 +6,7 @@
 
 module Propellor.Shim (setup, cleanEnv, file) where
 
-import Propellor
+import Propellor.Base
 import Utility.LinuxMkLibs
 import Utility.FileMode
 import Utility.FileSystemEncoding

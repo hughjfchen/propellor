@@ -1,6 +1,6 @@
 module Propellor.Property.Tor where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service

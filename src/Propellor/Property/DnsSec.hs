@@ -1,6 +1,6 @@
 module Propellor.Property.DnsSec where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.File as File
 
 -- | Puts the DNSSEC key files in place from PrivData.

@@ -1,6 +1,6 @@
 module Propellor.Property.SiteSpecific.GitHome where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.User
 

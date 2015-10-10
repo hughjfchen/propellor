@@ -8,7 +8,7 @@ import Data.List
 import System.IO
 import Control.Monad
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Service as Service
 import Propellor.Property.File (Line)

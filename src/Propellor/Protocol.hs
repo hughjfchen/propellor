@@ -11,7 +11,7 @@ module Propellor.Protocol where
 
 import Data.List
 
-import Propellor
+import Propellor.Base
 
 data Stage = NeedGitClone | NeedRepoUrl | NeedPrivData | NeedGitPush | NeedPrecompiled
 	deriving (Read, Show, Eq)

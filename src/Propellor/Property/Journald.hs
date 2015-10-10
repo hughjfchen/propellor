@@ -1,5 +1,6 @@
 module Propellor.Property.Journald where
-import Propellor
+
+import Propellor.Base
 import qualified Propellor.Property.Systemd as Systemd
 import Utility.DataUnits
 

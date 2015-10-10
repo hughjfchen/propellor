@@ -3,7 +3,6 @@
 module Main where
 
 import Propellor
-import Propellor.CmdLine
 import Propellor.Property.Scheduled
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt

@@ -1,6 +1,6 @@
 module Propellor.Property.Mount where
 
-import Propellor
+import Propellor.Base
 import Utility.Path
 
 type FsType = String -- ^ type of filesystem to mount ("auto" to autodetect)

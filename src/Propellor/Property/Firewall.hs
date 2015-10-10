@@ -16,7 +16,7 @@ import Data.Monoid
 import Data.Char
 import Data.List
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
 

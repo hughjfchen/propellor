@@ -2,7 +2,7 @@
 
 module Propellor.Property.Partition where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 
 -- | Filesystems etc that can be used for a partition.

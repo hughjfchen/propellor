@@ -1,16 +1,12 @@
-{-# LANGUAGE PackageImports #-}
 {-# OPTIONS_GHC -fno-warn-duplicate-exports #-}
 
--- | Pulls in lots of useful modules for building and using Properties.
--- 
--- When propellor runs on a Host, it ensures that its list of Properties
+-- | When propellor runs on a Host, it ensures that its list of Properties
 -- is satisfied, taking action as necessary when a Property is not
 -- currently satisfied.
 --
 -- A simple propellor program example:
 --
 -- > import Propellor
--- > import Propellor.CmdLine
 -- > import qualified Propellor.Property.File as File
 -- > import qualified Propellor.Property.Apt as Apt
 -- > 
@@ -36,7 +32,8 @@ module Propellor (
 	, Property
 	, RevertableProperty
 	, (<!>)
-	-- * Defining a Host and its properties
+	-- * Core config file
+	, defaultMain
 	, host
 	, (&)
 	, (!)
@@ -51,57 +48,30 @@ module Propellor (
 	, onChange
 	-- * Included modules
 	, module Propellor.Types
+	-- | Additional data types used by propellor
 	, module Propellor.Property
 	-- | Everything you need to build your own properties,
 	-- and useful property combinators
 	, module Propellor.Property.Cmd
 	-- | Properties to run shell commands
+	, module Propellor.Info
+	-- | Properties that set `Info`
 	, module Propellor.Property.List
 	-- | Combining a list of properties into a single property
 	, module Propellor.Types.PrivData
 	-- | Private data access for properties
 	, module Propellor.PropAccum
-	, module Propellor.Info
-	, module Propellor.PrivData
-	, module Propellor.Engine
-	, module Propellor.Exception
-	, module Propellor.Message
-	, module Propellor.Location
 
 	, module X
 ) where
 
 import Propellor.Types
+import Propellor.CmdLine (defaultMain)
 import Propellor.Property
-import Propellor.Engine
 import Propellor.Property.List
 import Propellor.Property.Cmd
-import Propellor.PrivData
 import Propellor.Types.PrivData
-import Propellor.Message
-import Propellor.Exception
 import Propellor.Info
 import Propellor.PropAccum
-import Propellor.Location
 
--- Things imported as X won't be included in the haddock for this page,
--- but will be re-exported silently.
-import Utility.PartialPrelude as X
-import Utility.Process as X
-import Utility.Exception as X
-import Utility.Env as X
-import Utility.Directory as X
-import Utility.Tmp as X
-import Utility.Monad as X
-import Utility.Misc as X
-
-import System.Directory as X
-import System.IO as X
-import System.FilePath as X
-import Data.Maybe as X
-import Data.Either as X
-import Control.Applicative as X
-import Control.Monad as X
 import Data.Monoid as X
-import Control.Monad.IfElse as X
-import "mtl" Control.Monad.Reader as X

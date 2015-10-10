@@ -2,7 +2,7 @@
 
 module Propellor.Property.SiteSpecific.GitAnnexBuilder where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Cron as Cron

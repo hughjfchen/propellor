@@ -45,7 +45,7 @@ module Propellor.Property.Docker (
 	chain,
 ) where
 
-import Propellor hiding (init)
+import Propellor.Base hiding (init)
 import Propellor.Types.Docker
 import Propellor.Types.Container
 import Propellor.Types.CmdLine

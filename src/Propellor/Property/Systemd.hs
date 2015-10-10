@@ -40,7 +40,7 @@ module Propellor.Property.Systemd (
 	bindRo,
 ) where
 
-import Propellor
+import Propellor.Base
 import Propellor.Types.Chroot
 import Propellor.Types.Container
 import Propellor.Types.Info

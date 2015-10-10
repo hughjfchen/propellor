@@ -1,6 +1,6 @@
 module Propellor.Property.Systemd.Core where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 
 -- dbus is only a Recommends of systemd, but is needed for communication

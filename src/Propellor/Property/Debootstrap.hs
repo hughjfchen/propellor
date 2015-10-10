@@ -10,7 +10,7 @@ module Propellor.Property.Debootstrap (
 	programPath,
 ) where
 
-import Propellor
+import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Chroot.Util
 import Utility.Path

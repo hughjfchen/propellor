@@ -69,6 +69,7 @@ Library
 
   Exposed-Modules:
     Propellor
+    Propellor.Base
     Propellor.Location
     Propellor.Property
     Propellor.Property.Aiccu
@@ -127,6 +128,7 @@ Library
     Propellor.Property.SiteSpecific.Branchable
     Propellor.Property.SiteSpecific.IABak
     Propellor.PropAccum
+    Propellor.Utilities
     Propellor.CmdLine
     Propellor.Info
     Propellor.Message

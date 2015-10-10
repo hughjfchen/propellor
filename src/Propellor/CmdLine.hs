@@ -9,7 +9,7 @@ import System.Exit
 import System.PosixCompat
 import Network.Socket
 
-import Propellor
+import Propellor.Base
 import Propellor.Gpg
 import Propellor.Git
 import Propellor.Bootstrap
