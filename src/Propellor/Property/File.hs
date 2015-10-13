@@ -98,6 +98,42 @@ dirExists :: FilePath -> Property NoInfo
 dirExists d = check (not <$> doesDirectoryExist d) $ property (d ++ " exists") $
 	makeChange $ createDirectoryIfMissing True d
 
+-- | Creates or atomically updates a symbolic link. Does not overwrite regular
+-- files or directories.
+isSymlinkedTo :: FilePath -> FilePath -> Property NoInfo
+link `isSymlinkedTo` target = property desc $
+	go =<< (liftIO $ tryIO $ getSymbolicLinkStatus link)
+  where
+	desc = link ++ " is symlinked to " ++ target
+	go (Right stat) =
+		if isSymbolicLink stat
+			then checkLink
+			else nonSymlinkExists
+	go (Left _) = makeChange $ createSymbolicLink target link
+
+	nonSymlinkExists = do
+		warningMessage $ link ++ " exists and is not a symlink"
+		return FailedChange
+	checkLink = do
+		target' <- liftIO $ readSymbolicLink link
+		if target == target'
+			then noChange
+			else makeChange updateLink
+	updateLink = bracket_ setup cleanup $ rename link' link
+	link' = link ++ ".propellor-new~"
+	setup = do
+		whenM hasOldLink' removeOldLink'
+		createSymbolicLink target link'
+	cleanup = tryIO $ removeLink link'
+	hasOldLink' = (tryIO $ getSymbolicLinkStatus link') >>= \result ->
+		case result of
+			Right stat -> return $ isSymbolicLink stat
+			Left _ -> return False
+	removeOldLink' = do
+		warningMessage $ "removing cruft from previous run: " ++ link'
+		removeLink link'
+
+
 -- | Ensures that a file/dir has the specified owner and group.
 ownerGroup :: FilePath -> User -> Group -> Property NoInfo
 ownerGroup f (User owner) (Group group) = property (f ++ " owner " ++ og) $ do
