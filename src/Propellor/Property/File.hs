@@ -82,12 +82,11 @@ fileProperty' writer desc a f = property desc $ go =<< liftIO (doesFileExist f)
 		let new = unlines (a (lines old))
 		if old == new
 			then noChange
-			else makeChange $ viaTmp updatefile f new
+			else makeChange $ updatefile new `viaStableTmp` f
 	go False = makeChange $ writer f (unlines $ a [])
 
-	-- viaTmp makes the temp file mode 600.
 	-- Replicate the original file's owner and mode.
-	updatefile f' content = do
+	updatefile content f' = do
 		writer f' content
 		s <- getFileStatus f
 		setFileMode f' (fileMode s)
@@ -119,19 +118,7 @@ link `isSymlinkedTo` target = property desc $
 		if target == target'
 			then noChange
 			else makeChange updateLink
-	updateLink = bracket_ setup cleanup $ rename link' link
-	link' = link ++ ".propellor-new~"
-	setup = do
-		whenM hasOldLink' removeOldLink'
-		createSymbolicLink target link'
-	cleanup = tryIO $ removeLink link'
-	hasOldLink' = (tryIO $ getSymbolicLinkStatus link') >>= \result ->
-		case result of
-			Right stat -> return $ isSymbolicLink stat
-			Left _ -> return False
-	removeOldLink' = do
-		warningMessage $ "removing cruft from previous run: " ++ link'
-		removeLink link'
+	updateLink = createSymbolicLink target `viaStableTmp` link
 
 -- | Ensures that a file/dir has the specified owner and group.
 ownerGroup :: FilePath -> User -> Group -> Property NoInfo
@@ -148,3 +135,27 @@ mode :: FilePath -> FileMode -> Property NoInfo
 mode f v = property (f ++ " mode " ++ show v) $ do
 	liftIO $ modifyFileMode f (const v)
 	noChange
+
+-- | A temp file to use when writing new content for a file.
+--
+-- This is a stable name so it can be removed idempotently.
+--
+-- It ends with "~" so that programs that read many config files from a
+-- directory will treat it as an editor backup file, and not read it.
+stableTmpFor :: FilePath -> FilePath
+stableTmpFor f = f ++ ".propellor-new~"
+
+-- | Creates/updates a file atomically, running the action to create the
+-- stable tmp file, and then renaming it into place.
+viaStableTmp :: (MonadMask m, MonadIO m) => (FilePath -> m ()) -> FilePath -> m ()
+viaStableTmp a f = bracketIO setup cleanup go
+  where
+	setup = do
+		createDirectoryIfMissing True (takeDirectory f)
+		let tmpfile = stableTmpFor f
+		nukeFile tmpfile
+		return tmpfile
+	cleanup tmpfile = tryIO $ removeFile tmpfile
+	go tmpfile = do
+		a tmpfile
+		liftIO $ rename tmpfile f

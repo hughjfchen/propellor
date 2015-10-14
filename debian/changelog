@@ -10,6 +10,10 @@ propellor (2.9.0) UNRELEASED; urgency=medium
   * Some renaming of instance methods, and moving of functions to more
     appropriate modules. (API change)
   * Added File.isSymlinkedTo. Thanks, Per Olofsson.
+  * fileProperty, and properties derived from it now write the new
+    file content via origfile.propellor-new~, instead of to a randomly named
+    temp file. This allows them to clean up any temp file that may have
+    been left by an interrupted run of propellor.
 
  -- Joey Hess <id@joeyh.name>  Thu, 08 Oct 2015 11:09:01 -0400
 
