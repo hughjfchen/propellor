@@ -9,6 +9,7 @@ propellor (2.9.0) UNRELEASED; urgency=medium
     (API change)
   * Some renaming of instance methods, and moving of functions to more
     appropriate modules. (API change)
+  * Added File.isSymlinkedTo. Thanks, Per Olofsson.
 
  -- Joey Hess <id@joeyh.name>  Thu, 08 Oct 2015 11:09:01 -0400
 
