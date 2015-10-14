@@ -133,7 +133,6 @@ link `isSymlinkedTo` target = property desc $
 		warningMessage $ "removing cruft from previous run: " ++ link'
 		removeLink link'
 
-
 -- | Ensures that a file/dir has the specified owner and group.
 ownerGroup :: FilePath -> User -> Group -> Property NoInfo
 ownerGroup f (User owner) (Group group) = property (f ++ " owner " ++ og) $ do
