@@ -524,7 +524,7 @@ getNamedConf = asks $ fromNamedConfMap . getInfo . hostInfo
 genSSHFP :: Domain -> Host -> Propellor [(BindDomain, Record)]
 genSSHFP domain h = concatMap mk . concat <$> (gen =<< get)
   where
-	get = fromHost [h] hostname Ssh.getPubKey
+	get = fromHost [h] hostname Ssh.getHostPubKey
 	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
 	mk r = mapMaybe (\d -> if inDomain domain d then Just (d, r) else Nothing)
 		(AbsDomain hostname : cnames)

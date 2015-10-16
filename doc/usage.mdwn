@@ -75,6 +75,10 @@ and configured in haskell.
 
   Removes a value from the privdata store.
 
+* propellor --unset-unused
+
+  Removes all values from the privdata store that are not currently in use.
+
 * propellor --dump field context
 
   Outputs the privdata value to stdout.

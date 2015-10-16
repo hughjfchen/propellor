@@ -40,8 +40,12 @@ type Release = String
 type Architecture = String
 
 type UserName = String
+
 newtype User = User UserName
+	deriving (Eq, Ord)
+
 newtype Group = Group String
+	deriving (Eq, Ord)
 
 -- | Makes a Group with the same name as the User.
 userGroup :: User -> Group

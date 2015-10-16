@@ -26,7 +26,7 @@ gitServer :: [Host] -> Property HasInfo
 gitServer knownhosts = propertyList "iabak git server" $ props
 	& Git.cloned (User "root") repo "/usr/local/IA.BAK" (Just "server")
 	& Git.cloned (User "root") repo "/usr/local/IA.BAK/client" (Just "master")
-	& Ssh.keyImported SshRsa (User "root") (Context "IA.bak.users.git")
+	& Ssh.userKeys (User "root") (Context "IA.bak.users.git") sshKeys
 	& Ssh.knownHost knownhosts "gitlab.com" (User "root")
 	& Git.cloned (User "root") userrepo "/usr/local/IA.BAK/pubkeys" (Just "master")
 	& Apt.serviceInstalledRunning "apache2"
@@ -45,7 +45,7 @@ gitServer knownhosts = propertyList "iabak git server" $ props
 registrationServer :: [Host] -> Property HasInfo
 registrationServer knownhosts = propertyList "iabak registration server" $ props
 	& User.accountFor (User "registrar")
-	& Ssh.keyImported SshRsa (User "registrar") (Context "IA.bak.users.git")
+	& Ssh.userKeys (User "registrar") (Context "IA.bak.users.git") sshKeys
 	& Ssh.knownHost knownhosts "gitlab.com" (User "registrar")
 	& Git.cloned (User "registrar") repo "/home/registrar/IA.BAK" (Just "server")
 	& Git.cloned (User "registrar") userrepo "/home/registrar/users" (Just "master")
@@ -59,6 +59,11 @@ registrationServer knownhosts = propertyList "iabak registration server" $ props
 		`requires` File.dirExists "/etc/kgb-bot/"
   where
 	link = "/usr/lib/cgi-bin/register.cgi"
+
+sshKeys :: [(SshKeyType, Ssh.PubKeyText)]
+sshKeys = 
+	[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoiE+CPiIQyfWnl/E9iKG3eo4QzlH30vi7xAgKolGaTu6qKy4XPtl+8MNm2Dqn9QEYRVyyOT/XH0yP5dRc6uyReT8dBy03MmLkVbj8Q+nKCz5YOMTxrY3sX6RRXU1zVGjeVd0DtC+rKRT7reoCxef42LAJTm8nCyZu/enAuso5qHqBbqulFz2YXEKfU1SEEXLawtvgGck1KmCyg+pqazeI1eHWXrojQf5isTBKfPQLWVppBkWAf5cA4wP5U1vN9dVirIdw66ds1M8vnGlkTBjxP/HLGBWGYhZHE7QXjXRsk2RIXlHN9q6GdNu8+F3HXS22mst47E4UAeRoiXSMMtF5")
+	]
 
 graphiteServer :: Property HasInfo
 graphiteServer = propertyList "iabak graphite server" $ props

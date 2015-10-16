@@ -12,7 +12,7 @@ import qualified Data.ByteString.Lazy as L
 -- It's fine to add new constructors.
 data PrivDataField
 	= DockerAuthentication
-	| SshPubKey SshKeyType UserName
+	| SshPubKey SshKeyType UserName -- ^ Not used anymore, but retained to avoid breaking serialization of old files
 	| SshPrivKey SshKeyType UserName -- ^ For host key, use empty UserName
 	| SshAuthorizedKeys UserName
 	| Password UserName
