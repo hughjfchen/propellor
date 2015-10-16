@@ -18,24 +18,25 @@ main :: IO ()
 main = defaultMain hosts
 
 -- The hosts propellor knows about.
--- Edit this to configure propellor!
 hosts :: [Host]
 hosts =
-	[ host "mybox.example.com"
-		& os (System (Debian Unstable) "amd64")
-		& Apt.stdSourcesList
-		& Apt.unattendedUpgrades
-		& Apt.installed ["etckeeper"]
-		& Apt.installed ["ssh"]
-		& User.hasSomePassword (User "root")
-		& Network.ipv6to4
-		& File.dirExists "/var/www"
-		& Docker.docked webserverContainer
-		& Docker.garbageCollected `period` Daily
-		& Cron.runPropellor (Cron.Times "30 * * * *")
+	[ mybox
+	]
 
-	-- add more hosts here...
-	--, host "foo.example.com" = ...
+-- An example host.
+mybox :: Host
+mybox = host "mybox.example.com"
+	& os (System (Debian Unstable) "amd64")
+	& Apt.stdSourcesList
+	& Apt.unattendedUpgrades
+	& Apt.installed ["etckeeper"]
+	& Apt.installed ["ssh"]
+	& User.hasSomePassword (User "root")
+	& Network.ipv6to4
+	& File.dirExists "/var/www"
+	& Docker.docked webserverContainer
+	& Docker.garbageCollected `period` Daily
+	& Cron.runPropellor (Cron.Times "30 * * * *")
 	]
 
 -- A generic webserver in a Docker container.
