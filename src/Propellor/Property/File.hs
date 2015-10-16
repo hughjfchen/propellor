@@ -97,8 +97,12 @@ dirExists :: FilePath -> Property NoInfo
 dirExists d = check (not <$> doesDirectoryExist d) $ property (d ++ " exists") $
 	makeChange $ createDirectoryIfMissing True d
 
--- | Creates or atomically updates a symbolic link. Does not overwrite regular
--- files or directories.
+-- | Creates or atomically updates a symbolic link.
+--
+-- The first parameter is what the link should point to.
+--
+-- The second parameter is the name of the symbolic link to create.
+-- Does not overwrite regular files or directories.
 isSymlinkedTo :: FilePath -> FilePath -> Property NoInfo
 link `isSymlinkedTo` target = property desc $
 	go =<< (liftIO $ tryIO $ getSymbolicLinkStatus link)
