@@ -28,7 +28,7 @@ providerFor users hn mp = propertyList desc $ props
   where
 	baseurl = hn ++ case mp of
 		Nothing -> ""
-		Just (Port p) -> show p
+		Just (Port p) -> ':' : show p
 	url = "http://"++baseurl++"/simpleid"
 	desc = "openid provider " ++ url
 	setbaseurl l

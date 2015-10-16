@@ -82,12 +82,11 @@ fileProperty' writer desc a f = property desc $ go =<< liftIO (doesFileExist f)
 		let new = unlines (a (lines old))
 		if old == new
 			then noChange
-			else makeChange $ viaTmp updatefile f new
+			else makeChange $ updatefile new `viaStableTmp` f
 	go False = makeChange $ writer f (unlines $ a [])
 
-	-- viaTmp makes the temp file mode 600.
 	-- Replicate the original file's owner and mode.
-	updatefile f' content = do
+	updatefile content f' = do
 		writer f' content
 		s <- getFileStatus f
 		setFileMode f' (fileMode s)
@@ -97,6 +96,29 @@ fileProperty' writer desc a f = property desc $ go =<< liftIO (doesFileExist f)
 dirExists :: FilePath -> Property NoInfo
 dirExists d = check (not <$> doesDirectoryExist d) $ property (d ++ " exists") $
 	makeChange $ createDirectoryIfMissing True d
+
+-- | Creates or atomically updates a symbolic link. Does not overwrite regular
+-- files or directories.
+isSymlinkedTo :: FilePath -> FilePath -> Property NoInfo
+link `isSymlinkedTo` target = property desc $
+	go =<< (liftIO $ tryIO $ getSymbolicLinkStatus link)
+  where
+	desc = link ++ " is symlinked to " ++ target
+	go (Right stat) =
+		if isSymbolicLink stat
+			then checkLink
+			else nonSymlinkExists
+	go (Left _) = makeChange $ createSymbolicLink target link
+
+	nonSymlinkExists = do
+		warningMessage $ link ++ " exists and is not a symlink"
+		return FailedChange
+	checkLink = do
+		target' <- liftIO $ readSymbolicLink link
+		if target == target'
+			then noChange
+			else makeChange updateLink
+	updateLink = createSymbolicLink target `viaStableTmp` link
 
 -- | Ensures that a file/dir has the specified owner and group.
 ownerGroup :: FilePath -> User -> Group -> Property NoInfo
@@ -113,3 +135,27 @@ mode :: FilePath -> FileMode -> Property NoInfo
 mode f v = property (f ++ " mode " ++ show v) $ do
 	liftIO $ modifyFileMode f (const v)
 	noChange
+
+-- | A temp file to use when writing new content for a file.
+--
+-- This is a stable name so it can be removed idempotently.
+--
+-- It ends with "~" so that programs that read many config files from a
+-- directory will treat it as an editor backup file, and not read it.
+stableTmpFor :: FilePath -> FilePath
+stableTmpFor f = f ++ ".propellor-new~"
+
+-- | Creates/updates a file atomically, running the action to create the
+-- stable tmp file, and then renaming it into place.
+viaStableTmp :: (MonadMask m, MonadIO m) => (FilePath -> m ()) -> FilePath -> m ()
+viaStableTmp a f = bracketIO setup cleanup go
+  where
+	setup = do
+		createDirectoryIfMissing True (takeDirectory f)
+		let tmpfile = stableTmpFor f
+		nukeFile tmpfile
+		return tmpfile
+	cleanup tmpfile = tryIO $ removeFile tmpfile
+	go tmpfile = do
+		a tmpfile
+		liftIO $ rename tmpfile f

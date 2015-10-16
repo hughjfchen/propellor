@@ -173,7 +173,12 @@ trivial p = adjustPropertySatisfy p $ \satisfy -> do
 -- | Makes a property that is satisfied differently depending on the host's
 -- operating system. 
 --
--- Note that the operating system may not be declared for some hosts.
+-- Note that the operating system may not be declared for all hosts.
+--
+-- > myproperty = withOS "foo installed" $ \o -> case o of
+-- > 	(Just (System (Debian suite) arch)) -> ...
+-- > 	(Just (System (Ubuntu release) arch)) -> ...
+-- >	Nothing -> ...
 withOS :: Desc -> (Maybe System -> Propellor Result) -> Property NoInfo
 withOS desc a = property desc $ a =<< getOS
 

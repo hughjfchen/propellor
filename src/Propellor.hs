@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-duplicate-exports #-}
 
--- | When propellor runs on a Host, it ensures that its list of Properties
--- is satisfied, taking action as necessary when a Property is not
+-- | When propellor runs on a Host, it ensures that its Properties
+-- are satisfied, taking action as necessary when a Property is not
 -- currently satisfied.
 --
 -- A simple propellor program example:
@@ -32,13 +32,14 @@ module Propellor (
 	, Property
 	, RevertableProperty
 	, (<!>)
-	-- * Core config file
+	, module Propellor.Types
+	-- * Config file
 	, defaultMain
 	, host
 	, (&)
 	, (!)
+	-- * Propertries
 	, describe
-	-- * Combining properties
 	-- | Properties are often combined together in your propellor
 	-- configuration. For example:
 	--
@@ -47,11 +48,6 @@ module Propellor (
 	, requires
 	, before
 	, onChange
-	-- * Included modules
-	-- | These are only the core modules you'll need. There are many
-	-- more in propellor that you can import.
-	, module Propellor.Types
-	-- | Additional data types used by propellor
 	, module Propellor.Property
 	-- | Everything you need to build your own properties,
 	-- and useful property combinators
