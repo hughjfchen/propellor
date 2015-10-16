@@ -21,7 +21,7 @@ binary over to the host and check if it runs there before replacing any
 older propellor binary with it.
 
 The other question is, how to tell propellor when to use this mode. Some
-ideas:
+ideas, which build on each other.
 
 * --spin --precompiled
 
@@ -34,12 +34,10 @@ ideas:
   automatically spins the other hosts. And if the hosts it's spinning
   have the `precompiled` property, the controller will honor it.
 
-These ideas build on each other. I think the last one is best. 
-
-Propellor's cron job will probably fail on a precompiled host, since
-even if it manages to pull changes from the central git repo (unlikely as a
-precompiled propellor currently isn't set up as a git repo), it can't
-locally compile them.
+Note that propellor's cron job will probably fail on a precompiled host,
+since even if it manages to pull changes from the central git repo
+(unlikely as a precompiled propellor currently isn't set up as a git repo),
+it can't locally compile them.
 
 So, in order to have a centralized repository with precompiled hosts,
 you need a controller that can handle sending the updated builds of
