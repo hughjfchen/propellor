@@ -36,22 +36,29 @@ stub to go run itself. No need to ever change this part.
 
 [[!format haskell """
 -- The hosts propellor knows about.
--- Edit this to configure propellor!
 hosts :: [Host]
 hosts =
-    [ host "mybox.example.com"
-    	& os (System (Debian Unstable) "amd64")
-        & Apt.stdSourcesList
-    , host "server.example.com"
-    	& os (System (Debian (Stable "jessie")) "amd64")
-        & Apt.stdSourcesList
-        & Apt.installed ["ssh"]
-    ]
+	[ mylaptop
+	, myserver
+	]
 """]]
 
-This defines a list of hosts, with two hosts in it. 
+Finally, you need to define the configuration for each host in the list:
 
-The configuration for the mybox host first tells propellor what
+[[!format haskell """
+mylaptop :: Host
+mylaptop = host "mylaptop.example.com"
+	& os (System (Debian Unstable) "amd64")
+	& Apt.stdSourcesList
+
+myserver :: Host
+myserver = host "server.example.com"
+	& os (System (Debian (Stable "jessie")) "amd64")
+	& Apt.stdSourcesList
+	& Apt.installed ["ssh"]
+"""]]
+
+The configuration for the mylaptop host first tells propellor what
 OS it's running. Then the `stdSourcesList` line tells propellor to
 configure its `/etc/apt/sources.list`, using its OS.
 (Of course you might want to change that `Unstable` to `Stable`.)
@@ -89,11 +96,11 @@ is.
 <pre>
 config.hs:30:19:
     Couldn't match expected type `RevertableProperty'
-                with actual type `Property'
+                with actual type `Property NoInfo'
     In the return type of a call of `Apt.installed'
     In the second argument of `(!)', namely `Apt.installed ["ssh"]'
     In the first argument of `(&)', namely
-      `host "mybox.example.com" & Apt.stdSourcesList Unstable
+      `host "mylaptop.example.com" & Apt.stdSourcesList Unstable
        & Apt.unattendedUpgrades
        ! Apt.installed ["ssh"]'
 </pre>
