@@ -9,6 +9,7 @@ module Propellor.PrivData (
 	addPrivData,
 	setPrivData,
 	unsetPrivData,
+	unsetPrivDataUnused,
 	dumpPrivData,
 	editPrivData,
 	filterPrivData,
@@ -158,7 +159,20 @@ setPrivData field context = do
 unsetPrivData :: PrivDataField -> Context -> IO ()
 unsetPrivData field context = do
 	modifyPrivData $ M.delete (field, context)
-	putStrLn "Private data unset."
+	descUnset field context
+
+descUnset :: PrivDataField -> Context -> IO ()
+descUnset field context =
+	putStrLn $ "Private data unset: " ++ show field ++ " " ++ show context
+
+unsetPrivDataUnused :: [Host] -> IO ()
+unsetPrivDataUnused hosts = do
+	deleted <- modifyPrivData' $ \m ->
+		let (keep, del) = M.partitionWithKey (\k _ -> k `M.member` usedby) m
+		in (keep, M.keys del)
+	mapM_ (uncurry descUnset) deleted
+  where
+	usedby = mkUsedByMap hosts
 
 dumpPrivData :: PrivDataField -> Context -> IO ()
 dumpPrivData field context = do
@@ -199,14 +213,20 @@ listPrivDataFields hosts = do
 		, shellEscape context
 		, intercalate ", " $ sort $ fromMaybe [] $ M.lookup k usedby
 		]
-	mkhostmap host mkv = M.fromList $ map (\(f, d, c) -> ((f, mkHostContext c (hostName host)), mkv d)) $
-		S.toList $ fromPrivInfo $ getInfo $ hostInfo host
-	usedby = M.unionsWith (++) $ map (\h -> mkhostmap h $ const [hostName h]) hosts
+	usedby = mkUsedByMap hosts
 	wantedmap = M.fromList $ zip (M.keys usedby) (repeat "")
-	descmap = M.unions $ map (`mkhostmap` id) hosts
+	descmap = M.unions $ map (`mkPrivDataMap` id) hosts
 	section desc = putStrLn $ "\n" ++ desc
 	showtable rows = do
 		putStr $ unlines $ formatTable $ tableWithHeader header rows
+
+mkUsedByMap :: [Host] -> M.Map (PrivDataField, Context) [HostName]
+mkUsedByMap = M.unionsWith (++) . map (\h -> mkPrivDataMap h $ const [hostName h])
+
+mkPrivDataMap :: Host -> (Maybe PrivDataSourceDesc -> a) -> M.Map (PrivDataField, Context) a
+mkPrivDataMap host mkv = M.fromList $
+	map (\(f, d, c) -> ((f, mkHostContext c (hostName host)), mkv d))
+		(S.toList $ fromPrivInfo $ getInfo $ hostInfo host)
 
 setPrivDataTo :: PrivDataField -> Context -> PrivData -> IO ()
 setPrivDataTo field context (PrivData value) = do
@@ -216,12 +236,16 @@ setPrivDataTo field context (PrivData value) = do
 	set = M.insert (field, context) value
 
 modifyPrivData :: (PrivMap -> PrivMap) -> IO ()
-modifyPrivData f = do
+modifyPrivData f = modifyPrivData' (\m -> (f m, ()))
+
+modifyPrivData' :: (PrivMap -> (PrivMap, a)) -> IO a
+modifyPrivData' f = do
 	makePrivDataDir
 	m <- decryptPrivData
-	let m' = f m
+	let (m', r) = f m
 	gpgEncrypt privDataFile (show m')
 	void $ boolSystem "git" [Param "add", File privDataFile]
+	return r
 
 decryptPrivData :: IO PrivMap
 decryptPrivData = fromMaybe M.empty . readish <$> gpgDecrypt privDataFile

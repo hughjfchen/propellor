@@ -17,6 +17,7 @@ data CmdLine
 	| ControlledRun HostName ControllerChain
 	| Set PrivDataField Context
 	| Unset PrivDataField Context
+	| UnsetUnused
 	| Dump PrivDataField Context
 	| Edit PrivDataField Context
 	| ListFields
