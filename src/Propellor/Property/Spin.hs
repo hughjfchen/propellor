@@ -57,10 +57,10 @@ instance Spinnable [Host] where
 -- >	& Spin.controller dnsservers
 -- >		`requires` Spin.controller webservers
 --
--- Multiple controllers can control the same hosts. However, if
--- propellor is already running on a host, its controller will fail
--- to run it a second time. So, if two controllers both try to
--- control the same host at the same time, one will fail.
+-- Multiple controllers can control the same hosts. However, when
+-- propellor is already running on a host, a controller will fail
+-- to run it. So, if two controllers both try to control the same
+-- host at the same time, one will fail.
 --
 -- Chains of controllers are supported; host A can control host B which
 -- controls host C. Loops of controllers are automatically prevented.
