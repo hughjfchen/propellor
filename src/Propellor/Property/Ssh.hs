@@ -255,8 +255,8 @@ userKeys user@(User name) context ks = combineProperties desc $
 		, "(" ++ unwords (map (fromKeyType . fst) ks) ++ ")"
 		]
 
--- | Sets up a user with a ssh private key and public key pair
--- both coming from the PrivData.
+-- | Sets up a user with the specified pubic key, and a private
+-- key from the privdata.
 --
 -- A file can be specified to write the key to somewhere other than
 -- the default locations. Allows a user to have multiple keys for
