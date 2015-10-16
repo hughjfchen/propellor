@@ -50,7 +50,9 @@ server hosts = propertyList "branchable server" $ props
 		, "lru-size = 128"
 		]
 	& Gpg.keyImported (Gpg.GpgKeyId obnamkey) (User "root")
-	& Ssh.keyImported SshRsa (User "root") (Context "branchable.com")
+	& Ssh.userKeys (User "root") (Context "branchable.com")
+		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC2PqTSupwncqeffNwZQXacdEWp7L+TxllIxH7WjfRMb3U74mQxWI0lwqLVW6Fox430DvhSqF1y5rJBvTHh4i49Tc9lZ7mwAxA6jNOP6bmdfteaKKYmUw5qwtJW0vISBFu28qBO11Nq3uJ1D3Oj6N+b3mM/0D3Y3NoGgF8+2dLdi81u9+l6AQ5Jsnozi2Ni/Osx2oVGZa+IQDO6gX8VEP4OrcJFNJe8qdnvItcGwoivhjbIfzaqNNvswKgGzhYLOAS5KT8HsjvIpYHWkyQ5QUX7W/lqGSbjP+6B8C3tkvm8VLXbmaD+aSkyCaYbuoXC2BoJdS7Jh8phKMwPJmdYVepn")
+		]
 	& Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
 	& Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 

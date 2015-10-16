@@ -7,6 +7,7 @@ module Propellor.Engine (
 	ensureProperty,
 	ensureProperties,
 	fromHost,
+	fromHost',
 	onlyProcess,
 	processChainOutput,
 ) where
@@ -76,17 +77,19 @@ ensureProperties ps = ensure ps NoChange
 		r <- actionMessageOn hn (propertyDesc p) (ensureProperty p)
 		ensure ls (r <> rs)
 
--- | Lifts an action into a different host.
+-- | Lifts an action into the context of a different host.
 --
--- > fromHost hosts "otherhost" getPubKey
+-- > fromHost hosts "otherhost" Ssh.getHostPubKey
 fromHost :: [Host] -> HostName -> Propellor a -> Propellor (Maybe a)
 fromHost l hn getter = case findHost l hn of
 	Nothing -> return Nothing
-	Just h -> do
-		(ret, _s, runlog) <- liftIO $
-			runRWST (runWithHost getter) h ()
-		tell runlog
-		return (Just ret)
+	Just h -> Just <$> fromHost' h getter
+
+fromHost' :: Host -> Propellor a -> Propellor a
+fromHost' h getter = do
+	(ret, _s, runlog) <- liftIO $ runRWST (runWithHost getter) h ()
+	tell runlog
+	return ret
 
 onlyProcess :: FilePath -> IO a -> IO a
 onlyProcess lockfile a = bracket lock unlock (const a)

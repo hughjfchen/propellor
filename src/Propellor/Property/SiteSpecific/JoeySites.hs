@@ -137,7 +137,10 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 		, "--client-name=spool"
 		, "--ssh-key=" ++ keyfile
 		] Obnam.OnlyClient
-		`requires` Ssh.keyImported' (Just keyfile) SshRsa (User "root") (Context "olduse.net")
+		`requires` Ssh.userKeyAt (Just keyfile)
+			(User "root")
+			(Context "olduse.net")
+			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD0F6L76SChMCIGmeyGhlFMUTgZ3BoTbATiOSs0A7KXQoI1LTE5ZtDzzUkrQRJVpJ640pfMR7cQZyBm8tv+kYIPp0238GrX43c1vgm0L78agDnBU7r2iNMyWIwhssK8O3ZAhp8Q4KCz1r8hP2nIiD0y1D1VWW8h4KWOS7I1XCEAjOTvFvEjTh6a9MyHrcIkv7teUUzTBRjNrsyijCFRk1+pEET54RueoOmEjQcWd/sK1tYRiMZjegRLBOus2wUWsUOvznJ2iniLONUTGAWRnEV+O7hLN6CD44osJ+wkZk8bPAumTS0zcSLckX1jpdHJicmAyeniWSd4FCqm1YE6/xDD")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 	keyfile = "/root/.ssh/olduse.net.key"
 
@@ -183,13 +186,18 @@ mumbleServer hosts = combineProperties hn $ props
 	& Apt.serviceInstalledRunning "mumble-server"
 	& Obnam.backup "/var/lib/mumble-server" (Cron.Times "55 5 * * *")
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/" ++ hn ++ ".obnam"
+		, "--ssh-key=" ++ sshkey
 		, "--client-name=mumble"
 		] Obnam.OnlyClient
-		`requires` Ssh.keyImported SshRsa (User "root") (Context hn)
+		`requires` Ssh.userKeyAt (Just sshkey)
+			(User "root")
+ 			(Context hn)
+			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSXXSM3mM8SNu+qel9R/LkDIkjpV3bfpUtRtYv2PTNqicHP+DdoThrr0ColFCtLH+k2vQJvR2n8uMzHn53Dq2IO3TtD27+7rJSsJwAZ8oftNzuTir8IjAwX5g6JYJs+L0Ny4RB0ausd+An0k/CPMRl79zKxpZd2MBMDNXt8hyqu0vS0v1ohq5VBEVhBBvRvmNQvWOCj7PdrKQXpUBHruZOeVVEdUUXZkVc1H0t7LVfJnE+nGKyWbw2jM+7r3Rn5Semc4R1DxsfaF8lKkZyE88/5uZQ/ddomv8ptz6YZ5b+Bg6wfooWPC3RWAALjxnHaC2yN1VONAvHmT0uNn1o6v0b")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 	& trivial (cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"])
   where
 	hn = "mumble.debian.net"
+	sshkey = "/root/.ssh/mumble.debian.net.key"
 
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property HasInfo
@@ -199,7 +207,10 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		, "--ssh-key=" ++ sshkey
 		, "--client-name=wren" -- historical
 		] Obnam.OnlyClient (Gpg.GpgKeyId "1B169BE1")
-		`requires` Ssh.keyImported' (Just sshkey) SshRsa (User "root") (Context "git.kitenet.net")
+		`requires` Ssh.userKeyAt (Just sshkey)
+			(User "root")
+			(Context "git.kitenet.net")
+			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD0F6L76SChMCIGmeyGhlFMUTgZ3BoTbATiOSs0A7KXQoI1LTE5ZtDzzUkrQRJVpJ640pfMR7cQZyBm8tv+kYIPp0238GrX43c1vgm0L78agDnBU7r2iNMyWIwhssK8O3ZAhp8Q4KCz1r8hP2nIiD0y1D1VWW8h4KWOS7I1XCEAjOTvFvEjTh6a9MyHrcIkv7teUUzTBRjNrsyijCFRk1+pEET54RueoOmEjQcWd/sK1tYRiMZjegRLBOus2wUWsUOvznJ2iniLONUTGAWRnEV+O7hLN6CD44osJ+wkZk8bPAumTS0zcSLckX1jpdHJicmAyeniWSd4FCqm1YE6/xDD")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 		`requires` Ssh.authorizedKeys (User "family") (Context "git.kitenet.net")
 		`requires` User.accountFor (User "family")
