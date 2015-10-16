@@ -222,7 +222,7 @@ instance Monoid HostKeyInfo where
 		HostKeyInfo (new `M.union` old)
 
 userPubKeys :: User -> [(SshKeyType, PubKeyText)] -> Property HasInfo
-userPubKeys u@(User n) l = pureInfoProperty ("ssh pubkey known for " ++ n) $
+userPubKeys u@(User n) l = pureInfoProperty ("ssh pubkey for " ++ n) $
 	UserKeyInfo (M.singleton u (S.fromList l))
 
 getUserPubKeys :: User -> Propellor [(SshKeyType, PubKeyText)]
@@ -246,7 +246,7 @@ instance Monoid UserKeyInfo where
 -- The public keys are added to the Info, so other properties like
 -- `authorizedKeysFrom` can use them.
 userKeys :: IsContext c => User -> c -> [(SshKeyType, PubKeyText)] -> Property HasInfo
-userKeys user@(User name) context ks = propertyList desc $
+userKeys user@(User name) context ks = combineProperties desc $
 	userPubKeys user ks : map (userKeyAt Nothing user context) ks
   where
 	desc = unwords
@@ -263,7 +263,7 @@ userKeys user@(User name) context ks = propertyList desc $
 -- different roles.
 userKeyAt :: IsContext c => Maybe FilePath -> User -> c -> (SshKeyType, PubKeyText) -> Property HasInfo
 userKeyAt dest user@(User u) context (keytype, pubkeytext) =
-	propertyList desc $ props
+	combineProperties desc $ props
 		& pubkey
 		& privkey
   where
@@ -331,7 +331,7 @@ localuser@(User ln) `authorizedKeysFrom` (remoteuser@(User rn), remotehost) =
 	go [] = do
 		warningMessage $ "no configured ssh user keys for " ++ remote
 		return FailedChange
-	go ks = ensureProperty $ propertyList desc $
+	go ks = ensureProperty $ combineProperties desc $
 		map (authorizedKey localuser . snd) ks
 
 -- | Makes a user have authorized_keys from the PrivData
