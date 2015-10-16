@@ -101,3 +101,6 @@ getAddresses = mapMaybe getIPAddr . S.toList . fromDnsInfo . getInfo
 
 hostAddresses :: HostName -> [Host] -> [IPAddr]
 hostAddresses hn hosts = maybe [] (getAddresses . hostInfo) (findHost hosts hn)
+
+addHostInfo ::IsInfo v => Host -> v -> Host
+addHostInfo h v = h { hostInfo = addInfo (hostInfo h) v }
