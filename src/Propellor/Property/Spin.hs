@@ -37,8 +37,7 @@ instance Spinnable [Host] where
 -- propellor on the controlled Hosts.
 --
 -- For example, if you have some webservers and some dnsservers,
--- and want a master that runs propellor on all of them, and only updates
--- the dnsservers once all the webservers are successfully updated:
+-- and want a master that runs propellor on all of them:
 --
 -- > import Propellor
 -- > import qualified Propellor.Property.Spin as Spin
@@ -54,6 +53,7 @@ instance Spinnable [Host] where
 -- > 
 -- > master = host "master.example.com"
 -- >	& Cron.runPropellor
+-- > 	-- Only update dnsservers once all webservers are successfully updated.
 -- >	& Spin.controller dnsservers
 -- >		`requires` Spin.controller webservers
 --
