@@ -22,8 +22,7 @@ appEnabled an cf = enable <!> disable
 		`onChange` reloaded
 	  where
 		test = not <$> doesFileExist (appVal an)
-		prop = property "uwsgi app in place" $ makeChange $
-			createSymbolicLink target dir
+		prop = dir `File.isSymlinkedTo` target
 		target = appValRelativeCfg an
 		dir = appVal an
 	disable = trivial $ File.notPresent (appVal an)

@@ -20,8 +20,7 @@ siteEnabled hn cf = enable <!> disable
 		`onChange` reloaded
 	  where
 		test = not <$> doesFileExist (siteVal hn)
-		prop = property "nginx site in place" $ makeChange $
-			createSymbolicLink target dir
+		prop = dir `File.isSymlinkedTo` target
 		target = siteValRelativeCfg hn
 		dir = siteVal hn
 	disable = trivial $ File.notPresent (siteVal hn)

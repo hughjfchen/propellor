@@ -22,8 +22,7 @@ confEnabled conf cf = enable <!> disable
 		`onChange` reloaded
 	  where
 		test = not <$> doesFileExist (confValPath conf)
-		prop = property "prosody conf in place" $ makeChange $
-			createSymbolicLink target dir
+		prop = dir `File.isSymlinkedTo` target
 		target = confValRelativePath conf
 		dir = confValPath conf
 		confValRelativePath conf' = "../conf.avail" </> conf' <.> "cfg.lua"
