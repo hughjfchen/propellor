@@ -26,6 +26,8 @@ import Propellor.Types
 import Propellor.Message
 import Propellor.Exception
 import Propellor.Info
+import Propellor.Types.Info
+import Propellor.Types.CmdLine
 import Propellor.Property
 import Utility.Exception
 import Utility.PartialPrelude
@@ -33,9 +35,9 @@ import Utility.Monad
 
 -- | Gets the Properties of a Host, and ensures them all,
 -- with nice display of what's being done.
-mainProperties :: Host -> IO ()
-mainProperties host = do
-	ret <- runPropellor host $
+mainProperties :: ControllerChain -> Host -> IO ()
+mainProperties cc host = do
+	ret <- runPropellor host' $
 		ensureProperties [ignoreInfo $ infoProperty "overall" (ensureProperties ps) mempty mempty]
 	h <- mkMessageHandle
         whenConsole h $
@@ -45,7 +47,8 @@ mainProperties host = do
 		FailedChange -> exitWith (ExitFailure 1)
 		_ -> exitWith ExitSuccess
   where
-	ps = map ignoreInfo $ hostProperties host
+	ps = map ignoreInfo $ hostProperties host'
+	host' = addHostInfo host (InfoVal cc)
 
 -- | Runs a Propellor action with the specified host.
 --
