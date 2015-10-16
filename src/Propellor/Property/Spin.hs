@@ -8,13 +8,13 @@ import Propellor.Types.CmdLine (ControllerChain(..))
 import Propellor.Types.Info
 
 class Controlled t where
-	toHosts :: t -> [Host]
+	controlledHosts :: t -> [Host]
 
 instance Controlled Host where
-	toHosts h = [h]
+	controlledHosts h = [h]
 
 instance Controlled [Host] where
-	toHosts = id
+	controlledHosts = id
 
 -- | The Host that has this Property is in control of some other Hosts.
 --
@@ -31,7 +31,7 @@ instance Controlled [Host] where
 -- Chains of controllers are supported; host A can control host B which
 -- controls host C. Loops of controllers are automatically prevented.
 controller :: Controlled h => h -> Property NoInfo
-controller h = propertyList "controller" (map controller' (toHosts h))
+controller h = propertyList "controller" (map controller' (controlledHosts h))
 
 controller' :: Host -> Property NoInfo
 controller' h = property ("controller for " ++ hostName h) $ do
