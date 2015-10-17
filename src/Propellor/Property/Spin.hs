@@ -106,7 +106,9 @@ controllerFor h = toSpin h
 	`requires` Ssh.installed
 
 -- | Uses `Propellor.Property.Ssh.keysImported` to set up the ssh keys
--- for a controller; so the corresponding private keys come from the privdata.
+-- for the root user on a controller. 
+--
+-- (The corresponding private keys come from the privdata.)
 controllerKeys :: [(SshKeyType, Ssh.PubKeyText)] -> Property HasInfo
 controllerKeys ks = Ssh.userKeys (User "root") hostContext ks
 	`requires` Ssh.installed
@@ -129,7 +131,7 @@ isControlledBy :: Host -> Controlling -> Bool
 h `isControlledBy` (Controlled hs) = any (== hostName h) (map hostName hs)
 
 instance IsInfo Controlling where
-	propigateInfo _ = False
+	propigateInfo _ = True
 
 mkControllingInfo :: Host -> Info
 mkControllingInfo controlled = addInfo mempty (Controlled [controlled])
