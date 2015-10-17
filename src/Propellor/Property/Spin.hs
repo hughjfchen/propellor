@@ -67,20 +67,20 @@ instance Spinnable [Host] where
 -- >	] ++ webservers
 -- > 
 -- > dnsserver = host "dns.example.com"
--- >	& Ssh.hostKeys hostContext [(SshEcdsa, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB3BJ2GqZiTR2LEoDXyYFgh/BduWefjdKXAsAtzS9zeI")]
+-- >	& Ssh.hostKeys hostContext [(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB3BJ2GqZiTR2LEoDXyYFgh/BduWefjdKXAsAtzS9zeI")]
 -- >    & Spin.controlledBy master
 -- >	& ...
 -- > 
 -- > webservers =
 -- >    [ host "www1.example.com"
--- >		& Ssh.hostKeys hostContext [(SshEcdsa, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICfFntnesZcYz2B2T41ay45igfckXRSh5uVffkuCQkLv")]
+-- >		& Ssh.hostKeys hostContext [(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICfFntnesZcYz2B2T41ay45igfckXRSh5uVffkuCQkLv")]
 -- > 		& Spin.controlledBy master
 -- >		& ...
 -- >	, ...
 -- >	]
 -- >
 -- > master = host "master.example.com"
--- >	& Spin.controllerKeys [(SshEcdsa, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFWD0Hau5FDLeNrDHKilNMKm9c68R3WD+NJOp2jPWvJV")]
+-- >	& Spin.controllerKeys [(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFWD0Hau5FDLeNrDHKilNMKm9c68R3WD+NJOp2jPWvJV")]
 -- > 	-- Only update dnsserver once all webservers are successfully updated.
 -- >	& Spin.controllerFor dnsserver
 -- >		`requires` Spin.controllerFor webservers
