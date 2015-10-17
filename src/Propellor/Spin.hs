@@ -40,8 +40,8 @@ commitSpin = do
 		void $ actionMessage "Push to central git repository" $
 			boolSystem "git" [Param "push"]
 
-spin :: HostName -> Maybe HostName -> ControllerChain -> Host -> IO ()
-spin target relay cc hst = do
+spin :: HostName -> Maybe HostName -> Host -> IO ()
+spin target relay hst = do
 	cacheparams <- if viarelay
 		then pure ["-A"]
 		else toCommand <$> sshCachingParams hn
@@ -89,9 +89,7 @@ spin target relay cc hst = do
 	runcmd = "cd " ++ localdir ++ " && ./propellor " ++ cmd
 	cmd = if viarelay
 		then "--serialized " ++ shellEscape (show (Spin [target] (Just target)))
-		else if cc == mempty
-			then "--continue " ++ shellEscape (show (SimpleRun target))
-			else "--continue " ++ shellEscape (show (ControlledRun target cc))
+		else "--continue " ++ shellEscape (show (SimpleRun target))
 
 -- Check if the Host contains an IP address that matches one of the IPs
 -- in the DNS for the HostName. If so, the HostName is used as-is, 
