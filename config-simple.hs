@@ -37,7 +37,6 @@ mybox = host "mybox.example.com"
 	& Docker.docked webserverContainer
 	& Docker.garbageCollected `period` Daily
 	& Cron.runPropellor (Cron.Times "30 * * * *")
-	]
 
 -- A generic webserver in a Docker container.
 webserverContainer :: Docker.Container
