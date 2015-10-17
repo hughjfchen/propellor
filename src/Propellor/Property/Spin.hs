@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
 
 module Propellor.Property.Spin (
 	Spinnable(..),
@@ -9,23 +9,31 @@ module Propellor.Property.Spin (
 
 import Propellor.Base
 import Propellor.Spin (spin)
-import Propellor.Types.CmdLine (ControllerChain(..))
 import Propellor.Types.Info
 import qualified Propellor.Property.Ssh as Ssh
 
+import qualified Data.Set as S
+
 -- | A class of things that can be spinned.
 class Spinnable t where
-	toSpin :: t -> Property NoInfo
+	toSpin :: t -> Property HasInfo
 
 instance Spinnable Host where
-	toSpin h = go `requires` Ssh.knownHost [h] (hostName h) (User "root")
+	toSpin h = infoProperty desc go (mkControllingInfo h) []
+		`requires` Ssh.knownHost [h] (hostName h) (User "root")
 	  where
-	  	go = property (cdesc (hostName h)) $ do
-			ControllerChain cc <- getControllerChain
-			if hostName h `elem` cc
-				then noChange -- avoid loop
+		desc = cdesc (hostName h)
+		go = do
+			thishost <- ask
+			if isControllerLoop thishost h
+				then errorMessage $ unwords
+					[ "controller loop detected involving"
+					, hostName thishost
+					, "and"
+					, hostName h
+					]
 				else do
-					liftIO $ spin (hostName h) Nothing (ControllerChain cc) h
+					liftIO $ spin (hostName h) Nothing h
 					-- Don't know if the spin made a change to the
 					-- remote host or not, but in any case, the
 					-- local host was not changed.
@@ -67,20 +75,20 @@ instance Spinnable [Host] where
 -- >	] ++ webservers
 -- > 
 -- > dnsserver = host "dns.example.com"
--- >	& Ssh.hostKeys hostContext [(SshEcdsa, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB3BJ2GqZiTR2LEoDXyYFgh/BduWefjdKXAsAtzS9zeI")]
+-- >	& Ssh.hostKeys hostContext [(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB3BJ2GqZiTR2LEoDXyYFgh/BduWefjdKXAsAtzS9zeI")]
 -- >    & Spin.controlledBy master
 -- >	& ...
 -- > 
 -- > webservers =
 -- >    [ host "www1.example.com"
--- >		& Ssh.hostKeys hostContext [(SshEcdsa, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICfFntnesZcYz2B2T41ay45igfckXRSh5uVffkuCQkLv")]
+-- >		& Ssh.hostKeys hostContext [(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICfFntnesZcYz2B2T41ay45igfckXRSh5uVffkuCQkLv")]
 -- > 		& Spin.controlledBy master
 -- >		& ...
 -- >	, ...
 -- >	]
 -- >
 -- > master = host "master.example.com"
--- >	& Spin.controllerKeys [(SshEcdsa, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFWD0Hau5FDLeNrDHKilNMKm9c68R3WD+NJOp2jPWvJV")]
+-- >	& Spin.controllerKeys [(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFWD0Hau5FDLeNrDHKilNMKm9c68R3WD+NJOp2jPWvJV")]
 -- > 	-- Only update dnsserver once all webservers are successfully updated.
 -- >	& Spin.controllerFor dnsserver
 -- >		`requires` Spin.controllerFor webservers
@@ -93,12 +101,14 @@ instance Spinnable [Host] where
 --
 -- Chains of controllers are supported; host A can control host B which
 -- controls host C. Loops of controllers are automatically prevented.
-controllerFor :: Spinnable h => h -> Property NoInfo
+controllerFor :: Spinnable h => h -> Property HasInfo
 controllerFor h = toSpin h
 	`requires` Ssh.installed
 
 -- | Uses `Propellor.Property.Ssh.keysImported` to set up the ssh keys
--- for a controller; so the corresponding private keys come from the privdata.
+-- for the root user on a controller. 
+--
+-- (The corresponding private keys come from the privdata.)
 controllerKeys :: [(SshKeyType, Ssh.PubKeyText)] -> Property HasInfo
 controllerKeys ks = Ssh.userKeys (User "root") hostContext ks
 	`requires` Ssh.installed
@@ -112,10 +122,30 @@ controlledBy h = User "root" `Ssh.authorizedKeysFrom` (User "root", h)
 cdesc :: String -> Desc
 cdesc n = "controller for " ++ n
 
--- | The current host is included on the chain, as well as any hosts that
--- acted as controllers to get the current propellor process to run.
-getControllerChain :: Propellor ControllerChain
-getControllerChain = do
-	hn <- hostName <$> ask
-	ControllerChain cc <- fromMaybe (ControllerChain []) . fromInfoVal <$> askInfo
-	return (ControllerChain (hn:cc))
+-- To detect loops of controlled hosts, each Host's info contains a list
+-- of the hosts it's controlling.
+newtype Controlling = Controlled [Host]
+	deriving (Typeable, Monoid)
+
+isControlledBy :: Host -> Controlling -> Bool
+h `isControlledBy` (Controlled hs) = any (== hostName h) (map hostName hs)
+
+instance IsInfo Controlling where
+	propigateInfo _ = True
+
+mkControllingInfo :: Host -> Info
+mkControllingInfo controlled = addInfo mempty (Controlled [controlled])
+
+getControlledBy :: Host -> Controlling
+getControlledBy = getInfo . hostInfo
+
+isControllerLoop :: Host -> Host -> Bool
+isControllerLoop controller controlled = go S.empty controlled
+  where
+	go checked h
+		| controller `isControlledBy` c = True
+		-- avoid checking loops that have been checked before
+		| hostName h `S.member` checked = False
+		| otherwise = any (go (S.insert (hostName h) checked)) l
+	  where
+		c@(Controlled l) = getControlledBy h

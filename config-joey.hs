@@ -27,6 +27,7 @@ import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Aiccu as Aiccu
 import qualified Propellor.Property.OS as OS
+import qualified Propellor.Property.Spin as Spin
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome

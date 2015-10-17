@@ -119,14 +119,11 @@ defaultMain hostlist = do
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin hs r) = do
 		commitSpin
-		forM_ hs $ \hn -> withhost hn $
-			spin hn r mempty
+		forM_ hs $ \hn -> withhost hn $ spin hn r
 	go False cmdline@(SimpleRun hn) = buildFirst cmdline $
 		go False (Run hn)
-	go False cmdline@(ControlledRun hn cc) = buildFirst cmdline $
-		onlyprocess $ withhost hn $ mainProperties cc
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
-		( onlyprocess $ withhost hn $ mainProperties mempty
+		( onlyprocess $ withhost hn mainProperties
 		, go True (Spin [hn] Nothing)
 		)
 
