@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
 
 module Propellor.Types.Info (
 	Info,
@@ -17,14 +17,11 @@ import Data.Monoid
 import Data.Maybe
 
 -- | Information about a Host, which can be provided by its properties.
-data Info = Info [(Dynamic, Bool)]
+newtype Info = Info [(Dynamic, Bool)]
+	deriving (Monoid)
 
 instance Show Info where
 	show (Info l) = "Info " ++ show (map (dynTypeRep . fst) l)
-
-instance Monoid Info where
- 	mempty = Info []
-	mappend (Info a) (Info b) = Info (a <> b)
 
 -- | Values stored in Info must be members of this class.
 --
@@ -40,6 +37,7 @@ class (Typeable v, Monoid v) => IsInfo v where
 addInfo :: IsInfo v => Info -> v -> Info
 addInfo (Info l) v = Info ((toDyn v, propigateInfo v):l)
 
+-- The list is reversed here because addInfo builds it up in reverse order.
 getInfo :: IsInfo v => Info -> v
 getInfo (Info l) = mconcat (mapMaybe (fromDynamic . fst) (reverse l))
 
