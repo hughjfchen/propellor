@@ -40,7 +40,7 @@ instance Spinnable Host where
 					noChange
 
 -- | Each Host in the list is spinned in turn. Does not stop on spin
--- failure; does propigate overall success/failure.
+-- failure; does propagate overall success/failure.
 instance Spinnable [Host] where
 	toSpin l = propertyList (cdesc $ unwords $ map hostName l) (map toSpin l)
 
@@ -131,7 +131,7 @@ isControlledBy :: Host -> Controlling -> Bool
 h `isControlledBy` (Controlled hs) = any (== hostName h) (map hostName hs)
 
 instance IsInfo Controlling where
-	propigateInfo _ = True
+	propagateInfo _ = True
 
 mkControllingInfo :: Host -> Info
 mkControllingInfo controlled = addInfo mempty (Controlled [controlled])

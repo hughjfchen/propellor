@@ -6,7 +6,7 @@ module Propellor.PropAccum
 	, (&)
 	, (&^)
 	, (!)
-	, propigateContainer
+	, propagateContainer
 	) where
 
 import Data.Monoid
@@ -64,17 +64,17 @@ instance PropAccum Host where
 -- propertyChidren the properties of the provided container.
 -- 
 -- The Info of the propertyChildren is adjusted to only include 
--- info that should be propigated out to the Property.
+-- info that should be propagated out to the Property.
 --
 -- Any PrivInfo that uses HostContext is adjusted to use the name
 -- of the container as its context.
-propigateContainer
+propagateContainer
 	:: (PropAccum container)
 	=> String
 	-> container
 	-> Property HasInfo
 	-> Property HasInfo
-propigateContainer containername c prop = infoProperty
+propagateContainer containername c prop = infoProperty
 	(propertyDesc prop)
 	(propertySatisfy prop)
 	(propertyInfo prop)

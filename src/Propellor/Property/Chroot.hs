@@ -7,7 +7,7 @@ module Propellor.Property.Chroot (
 	provisioned,
 	-- * Internal use
 	provisioned',
-	propigateChrootInfo,
+	propagateChrootInfo,
 	propellChroot,
 	chain,
 ) where
@@ -61,7 +61,7 @@ debootstrapped system conf location = case system of
 -- is first unmounted. Note that it does not ensure that any processes
 -- that might be running inside the chroot are stopped.
 provisioned :: Chroot -> RevertableProperty
-provisioned c = provisioned' (propigateChrootInfo c) c False
+provisioned c = provisioned' (propagateChrootInfo c) c False
 
 provisioned' :: (Property HasInfo -> Property HasInfo) -> Chroot -> Bool -> RevertableProperty
 provisioned' propigator c@(Chroot loc system builderconf _) systemdonly =
@@ -82,8 +82,8 @@ provisioned' propigator c@(Chroot loc system builderconf _) systemdonly =
 
 	teardown = toProp (revert built)
 
-propigateChrootInfo :: (IsProp (Property i)) => Chroot -> Property i -> Property HasInfo
-propigateChrootInfo c@(Chroot location _ _ _) p = propigateContainer location c p'
+propagateChrootInfo :: (IsProp (Property i)) => Chroot -> Property i -> Property HasInfo
+propagateChrootInfo c@(Chroot location _ _ _) p = propagateContainer location c p'
   where
 	p' = infoProperty
 		(propertyDesc p)

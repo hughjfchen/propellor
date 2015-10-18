@@ -29,13 +29,13 @@ instance Show Info where
 -- as info, especially type aliases which coud easily lead to bugs.
 -- We want a little bit of dynamic types here, but not too far..
 class (Typeable v, Monoid v) => IsInfo v where
-	-- | Should info of this type be propigated out of a
+	-- | Should info of this type be propagated out of a
 	-- container to its Host?
-	propigateInfo :: v -> Bool
+	propagateInfo :: v -> Bool
 
 -- | Any value in the `IsInfo` type class can be added to an Info.
 addInfo :: IsInfo v => Info -> v -> Info
-addInfo (Info l) v = Info ((toDyn v, propigateInfo v):l)
+addInfo (Info l) v = Info ((toDyn v, propagateInfo v):l)
 
 -- The list is reversed here because addInfo builds it up in reverse order.
 getInfo :: IsInfo v => Info -> v
@@ -50,13 +50,13 @@ mapInfo f (Info l) = Info (map go l)
 		Nothing -> (i, p)
 		Just v -> (toDyn (f v), p)
 
--- | Filters out parts of the Info that should not propigate out of a
+-- | Filters out parts of the Info that should not propagate out of a
 -- container.
 propigatableInfo :: Info -> Info
 propigatableInfo (Info l) = Info (filter snd l)
 
 -- | Use this to put a value in Info that is not a monoid.
--- The last value set will be used. This info does not propigate
+-- The last value set will be used. This info does not propagate
 -- out of a container.
 data InfoVal v = NoInfoVal | InfoVal v
 	deriving (Typeable)
@@ -67,7 +67,7 @@ instance Monoid (InfoVal v) where
 	mappend v NoInfoVal = v
 
 instance Typeable v => IsInfo (InfoVal v) where
-	propigateInfo _ = False
+	propagateInfo _ = False
 
 fromInfoVal :: InfoVal v -> Maybe v
 fromInfoVal NoInfoVal = Nothing

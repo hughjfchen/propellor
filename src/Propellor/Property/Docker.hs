@@ -119,13 +119,13 @@ container cn image = Container image (Host cn [] info)
 -- propellor inside the container.
 --
 -- When the container's Properties include DNS info, such as a CNAME,
--- that is propigated to the Info of the Host it's docked in.
+-- that is propagated to the Info of the Host it's docked in.
 --
 -- Reverting this property ensures that the container is stopped and
 -- removed.
 docked :: Container -> RevertableProperty
 docked ctr@(Container _ h) =
-	(propigateContainerInfo ctr (go "docked" setup))
+	(propagateContainerInfo ctr (go "docked" setup))
 		<!>
 	(go "undocked" teardown)
   where
@@ -170,8 +170,8 @@ imagePulled ctr = describe pulled msg
 	pulled = Cmd.cmdProperty dockercmd ["pull", imageIdentifier image]
 	image = getImageName ctr
 
-propigateContainerInfo :: (IsProp (Property i)) => Container -> Property i -> Property HasInfo
-propigateContainerInfo ctr@(Container _ h) p = propigateContainer cn ctr p'
+propagateContainerInfo :: (IsProp (Property i)) => Container -> Property i -> Property HasInfo
+propagateContainerInfo ctr@(Container _ h) p = propagateContainer cn ctr p'
   where
 	p' = infoProperty
 		(propertyDesc p)

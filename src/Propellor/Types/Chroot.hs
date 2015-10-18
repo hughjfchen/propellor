@@ -16,7 +16,7 @@ data ChrootInfo = ChrootInfo
 	deriving (Show, Typeable)
 
 instance IsInfo ChrootInfo where
-	propigateInfo _ = False
+	propagateInfo _ = False
 
 instance Monoid ChrootInfo where
 	mempty = ChrootInfo mempty mempty

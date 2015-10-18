@@ -16,7 +16,7 @@ data DockerInfo = DockerInfo
 	deriving (Show, Typeable)
 
 instance IsInfo DockerInfo where
-	propigateInfo _ = False
+	propagateInfo _ = False
 
 instance Monoid DockerInfo where
 	mempty = DockerInfo mempty mempty

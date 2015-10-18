@@ -37,7 +37,7 @@ and configured in haskell.
   then run on the target host, to satisfy its configured properties.
 
   A signed git commit is made by --spin, so that any changes you have made
-  get propigated to the target host.
+  get propagated to the target host.
 
   Multiple target hosts can be specified; propellor will run on each of
   them in sequence.
