@@ -71,7 +71,7 @@ forceZoneSigned domain zonefile = property ("zone signed for " ++ domain) $ lift
 		, "-3", salt
 		-- The serial number needs to be increased each time the
 		-- zone is resigned, even if there are no other changes,
-		-- so that it will propigate to secondaries. So, use the
+		-- so that it will propagate to secondaries. So, use the
 		-- unixtime serial format.
 		, "-N", "unixtime"
 		, "-o", domain

@@ -257,10 +257,10 @@ newtype PrivInfo = PrivInfo
 	{ fromPrivInfo :: S.Set (PrivDataField, Maybe PrivDataSourceDesc, HostContext) }
 	deriving (Eq, Ord, Show, Typeable, Monoid)
 
--- PrivInfo is propigated out of containers, so that propellor can see which
+-- PrivInfo is propagated out of containers, so that propellor can see which
 -- hosts need it.
 instance IsInfo PrivInfo where
-	propigateInfo _ = True
+	propagateInfo _ = True
 
 -- | Sets the context of any privdata that uses HostContext to the
 -- provided name.

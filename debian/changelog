@@ -305,7 +305,7 @@ propellor (1.3.0) unstable; urgency=medium
 propellor (1.2.2) unstable; urgency=medium
 
   * Revert ensureProperty warning message, too many false positives in places
-    where Info is correctly propigated. Better approach needed.
+    where Info is correctly propagated. Better approach needed.
 
  -- Joey Hess <id@joeyh.name>  Sun, 21 Dec 2014 21:41:11 -0400
 

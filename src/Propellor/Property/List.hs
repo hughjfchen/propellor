@@ -33,7 +33,7 @@ class PropertyList l where
 	-- | Combines a list of properties, resulting in a single property
 	-- that when run will run each property in the list in turn,
 	-- and print out the description of each as it's run. Does not stop
-	-- on failure; does propigate overall success/failure.
+	-- on failure; does propagate overall success/failure.
 	--
 	-- Note that Property HasInfo and Property NoInfo are not the same
 	-- type, and so cannot be mixed in a list. To make a list of
