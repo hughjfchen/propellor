@@ -26,7 +26,7 @@ should be taken when using `ignoreInfo`.
 It *might* be ok to ignoreInfo in this case; the agument would go that this
 is a chroot being used to create a sbuild image, so any Info belonging to
 properties of the chroot doesn't affect the host that it's built on,
-and so it doesn't need to propigate out. But, consider that this would
+and so it doesn't need to propagate out. But, consider that this would
 break any properties inside the chroot that use privdata, since
 privdata works via info.
 

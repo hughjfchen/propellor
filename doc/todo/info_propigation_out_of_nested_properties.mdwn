@@ -1,6 +1,6 @@
 > Now [[fixed|done]]!! --[[Joey]]
 
-Currently, Info about a Host's Properties is propigated to the host by
+Currently, Info about a Host's Properties is propagated to the host by
 examining the tree of Properties.
 
 This works, but there's one problem. Consider this example:
@@ -9,8 +9,8 @@ This works, but there's one problem. Consider this example:
                 (Just (System (Debian Unstable) _)) -> ensureProperty foo
 		_ -> ensureProperty bar
 
-Here, the Info of `foo` is not propigated out. Nor is `bar`'s Info.
-It's not really clear if just one Info, or both should be propigated out.
+Here, the Info of `foo` is not propagated out. Nor is `bar`'s Info.
+It's not really clear if just one Info, or both should be propagated out.
 
 ----
 
@@ -50,7 +50,7 @@ Here withInfoFrom adds foo and bar as child properties of the demo property
 that (may) call them.
 
 This approach is not fully type safe; it would be possible to call
-withInfoFrom in a way that didn't let it propigate the info.
+withInfoFrom in a way that didn't let it propagate the info.
 
 And again this doesn't solve the problem that IO can be needed to get
 a parameter of a child property.
