@@ -29,7 +29,7 @@ instance Show InfoEntry where
 -- Extracts the value from an InfoEntry but only when
 -- it's of the requested type.
 extractInfoEntry :: Typeable v => InfoEntry -> Maybe v
-extractInfoEntry (InfoEntry v) = fromDynamic (toDyn v)
+extractInfoEntry (InfoEntry v) = cast v
 
 -- | Values stored in Info must be members of this class.
 --
