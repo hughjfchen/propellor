@@ -125,7 +125,7 @@ cdesc n = "controller for " ++ n
 -- To detect loops of controlled hosts, each Host's info contains a list
 -- of the hosts it's controlling.
 newtype Controlling = Controlled [Host]
-	deriving (Typeable, Monoid)
+	deriving (Typeable, Monoid, Show)
 
 isControlledBy :: Host -> Controlling -> Bool
 h `isControlledBy` (Controlled hs) = any (== hostName h) (map hostName hs)
