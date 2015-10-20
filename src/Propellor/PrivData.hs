@@ -16,6 +16,7 @@ module Propellor.PrivData (
 	listPrivDataFields,
 	makePrivDataDir,
 	decryptPrivData,
+	readPrivData,
 	PrivMap,
 	PrivInfo,
 	forceHostContext,
@@ -248,7 +249,10 @@ modifyPrivData' f = do
 	return r
 
 decryptPrivData :: IO PrivMap
-decryptPrivData = fromMaybe M.empty . readish <$> gpgDecrypt privDataFile
+decryptPrivData = readPrivData <$> gpgDecrypt privDataFile
+
+readPrivData :: String -> PrivMap
+readPrivData = fromMaybe M.empty . readish
 
 makePrivDataDir :: IO ()
 makePrivDataDir = createDirectoryIfMissing False privDataDir

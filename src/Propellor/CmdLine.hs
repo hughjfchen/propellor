@@ -117,9 +117,10 @@ defaultMain hostlist = do
 	go _ Merge = mergeSpin
 	go True cmdline@(Spin _ _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
-	go False (Spin hs r) = do
+	go False (Spin hs mrelay) = do
 		commitSpin
-		forM_ hs $ \hn -> withhost hn $ spin hn r
+		forM_ hs $ \hn -> withhost hn $
+			spin (maybe RegularSpin RelaySpin mrelay) hn
 	go False cmdline@(SimpleRun hn) = buildFirst cmdline $
 		go False (Run hn)
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)

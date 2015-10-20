@@ -8,7 +8,8 @@ module Propellor.Property.Spin (
 ) where
 
 import Propellor.Base
-import Propellor.Spin (spin)
+import Propellor.Spin (spin, SpinMode(..))
+import Propellor.PrivData
 import Propellor.Types.Info
 import qualified Propellor.Property.Ssh as Ssh
 
@@ -19,7 +20,7 @@ class Spinnable t where
 	toSpin :: t -> Property HasInfo
 
 instance Spinnable Host where
-	toSpin h = infoProperty desc go (mkControllingInfo h) []
+	toSpin h = infoProperty desc go (mkControllingInfo h <> privinfo) []
 		`requires` Ssh.knownHost [h] (hostName h) (User "root")
 	  where
 		desc = cdesc (hostName h)
@@ -33,11 +34,18 @@ instance Spinnable Host where
 					, hostName h
 					]
 				else do
-					liftIO $ spin (hostName h) Nothing h
-					-- Don't know if the spin made a change to the
-					-- remote host or not, but in any case, the
+					liftIO $ spin ControllingSpin (hostName h) h
+					-- Don't know if the spin made a
+					-- change to the remote host or not,
+					-- but in any case, the
 					-- local host was not changed.
 					noChange
+		-- Make the controlling host have all the remote host's
+		-- PrivData, so it can send it on to the remote host
+		-- when spinning it.
+		privinfo = addInfo mempty $
+			forceHostContext (hostName h) $
+				getInfo (hostInfo h)
 
 -- | Each Host in the list is spinned in turn. Does not stop on spin
 -- failure; does propagate overall success/failure.
@@ -55,7 +63,7 @@ instance Spinnable [Host] where
 -- The controller needs to be able to ssh to the hosts it controls,
 -- and run propellor, as root. The controller is automatically configured
 -- with `Propellor.Property.Ssh.knownHost` to know the host keys of the 
--- hosts that it will ssh to. It's up to you to use `controllerKey`
+-- hosts that it will ssh to. It's up to you to use `controllerKeys`
 -- and `controlledBy` to set up the ssh keys that will let the controller
 -- log into the hosts it controls.
 --
@@ -101,6 +109,8 @@ instance Spinnable [Host] where
 --
 -- Chains of controllers are supported; host A can control host B which
 -- controls host C. Loops of controllers are automatically prevented.
+--
+-- Note that a controller can see all PrivInfo of the hosts it controls.
 controllerFor :: Spinnable h => h -> Property HasInfo
 controllerFor h = toSpin h
 	`requires` Ssh.installed

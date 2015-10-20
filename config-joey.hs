@@ -75,6 +75,7 @@ testvm = host "testvm.kitenet.net"
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net"
 	& ipv6 "2001:4830:1600:187::2"
+	& Spin.controllerFor clam
 	& Aiccu.hasConfig "T18376" "JHZ2-SIXXS"
 
 	& Apt.buildDep ["git-annex"] `period` Daily
