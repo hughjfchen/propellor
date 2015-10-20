@@ -9,7 +9,6 @@ module Propellor.Property.Spin (
 
 import Propellor.Base
 import Propellor.Spin (spin, SpinMode(..))
-import Propellor.PrivData
 import Propellor.Types.Info
 import qualified Propellor.Property.Ssh as Ssh
 
