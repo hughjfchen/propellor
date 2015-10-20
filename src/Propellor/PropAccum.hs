@@ -83,6 +83,6 @@ propagateContainer containername c prop = infoProperty
 	hostprops = map go $ getProperties c
 	go p = 
 		let i = mapInfo (forceHostContext containername)
-			(propigatableInfo (propertyInfo p))
+			(propagatableInfo (propertyInfo p))
 		    cs = map go (propertyChildren p)
 		in infoProperty (propertyDesc p) (propertySatisfy p) i cs

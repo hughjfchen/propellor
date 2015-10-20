@@ -187,7 +187,8 @@ container name mkchroot = Container name c h
 	& resolvConfed
 	& linkJournal
   where
-	c@(Chroot.Chroot _ system _ _) = mkchroot (containerDir name)
+	c = mkchroot (containerDir name)
+	system = Chroot.chrootSystem c
 	h = Host name [] mempty
 
 -- | Runs a container using systemd-nspawn.

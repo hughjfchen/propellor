@@ -209,7 +209,7 @@ getHostPubKey = fromHostKeyInfo <$> askInfo
 
 newtype HostKeyInfo = HostKeyInfo 
 	{ fromHostKeyInfo :: M.Map SshKeyType PubKeyText }
-	deriving (Eq, Ord, Typeable)
+	deriving (Eq, Ord, Typeable, Show)
 
 instance IsInfo HostKeyInfo where
 	propagateInfo _ = False
@@ -230,7 +230,7 @@ getUserPubKeys u = maybe [] S.toList . M.lookup u . fromUserKeyInfo <$> askInfo
 
 newtype UserKeyInfo = UserKeyInfo
 	{ fromUserKeyInfo :: M.Map User (S.Set (SshKeyType, PubKeyText)) }
-	deriving (Eq, Ord, Typeable)
+	deriving (Eq, Ord, Typeable, Show)
 
 instance IsInfo UserKeyInfo where
 	propagateInfo _ = False
