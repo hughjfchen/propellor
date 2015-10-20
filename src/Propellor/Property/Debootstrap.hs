@@ -48,19 +48,8 @@ toParams (c1 :+ c2) = toParams c1 <> toParams c2
 --
 -- The System can be any OS and architecture that debootstrap
 -- and the kernel support.
---
--- Reverting this property deletes the chroot and all its contents.
--- Anything mounted under the filesystem is first unmounted.
---
--- Note that reverting this property does not stop any processes
--- currently running in the chroot.
-built :: FilePath -> System -> DebootstrapConfig -> RevertableProperty
-built target system config = built' (toProp installed) target system config <!> teardown
-  where
-	teardown = check (not <$> unpopulated target) teardownprop
-	
-	teardownprop = property ("removed debootstrapped " ++ target) $
-		makeChange (removeChroot target)
+built :: FilePath -> System -> DebootstrapConfig -> Property HasInfo
+built target system config = built' (toProp installed) target system config
 
 built' :: (Combines (Property NoInfo) (Property i)) => Property i -> FilePath -> System -> DebootstrapConfig -> Property (CInfo NoInfo i)
 built' installprop target system@(System _ arch) config = 
@@ -100,9 +89,6 @@ built' installprop target system@(System _ arch) config =
 		, return False
 		)
 	
-unpopulated :: FilePath -> IO Bool
-unpopulated d = null <$> catchDefaultIO [] (dirContents d)	
-
 extractSuite :: System -> Maybe String
 extractSuite (System (Debian s) _) = Just $ Apt.showSuite s
 extractSuite (System (Ubuntu r) _) = Just r

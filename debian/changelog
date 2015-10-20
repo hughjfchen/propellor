@@ -30,6 +30,9 @@ propellor (2.9.0) UNRELEASED; urgency=medium
   * Added --unset-unused 
   * Fix typo: propigate → propagate. Thanks, Felix Gruber.
     (A minor API change)
+  * Chroot: Converted to use a ChrootBootstrapper type class, so
+    other ways to bootstrap chroots can easily be added in separate
+    modules. (API change)
 
  -- Joey Hess <id@joeyh.name>  Thu, 08 Oct 2015 11:09:01 -0400
 

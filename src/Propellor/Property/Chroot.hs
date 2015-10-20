@@ -1,15 +1,18 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, GADTs #-}
 
 module Propellor.Property.Chroot (
 	Chroot(..),
-	BuilderConf(..),
+	ChrootBootstrapper(..),
+	Debootstrapped(..),
 	debootstrapped,
+	bootstrapped,
 	provisioned,
 	-- * Internal use
 	provisioned',
 	propagateChrootInfo,
 	propellChroot,
 	chain,
+	chrootSystem,
 ) where
 
 import Propellor.Base
@@ -26,17 +29,36 @@ import qualified Data.Map as M
 import Data.List.Utils
 import System.Posix.Directory
 
-data Chroot = Chroot FilePath System BuilderConf Host
-	deriving (Show)
+data Chroot where
+	Chroot :: ChrootBootstrapper b => FilePath -> System -> b -> Host -> Chroot
 
-data BuilderConf
-	= UsingDeboostrap Debootstrap.DebootstrapConfig
-	deriving (Show)
+chrootSystem :: Chroot -> System
+chrootSystem (Chroot _ system _ _) = system
+
+instance Show Chroot where
+	show (Chroot loc system _ _) = "Chroot " ++ loc ++ " " ++ show system
 
 instance PropAccum Chroot where
 	(Chroot l s c h) `addProp` p = Chroot l s c (h & p)
 	(Chroot l s c h) `addPropFront` p = Chroot l s c (h `addPropFront` p)
 	getProperties (Chroot _ _ _ h) = hostProperties h
+
+-- | Class of things that can do initial bootstrapping of an operating
+-- System in a chroot.
+class ChrootBootstrapper b where
+	-- Do initial bootstrapping of an operating system in a chroot.
+	-- If the operating System is not supported, return Nothing.
+	buildchroot :: b -> System -> FilePath -> Maybe (Property HasInfo)
+
+-- | Use to bootstrap a chroot with debootstrap.
+data Debootstrapped = Debootstrapped Debootstrap.DebootstrapConfig
+
+instance ChrootBootstrapper Debootstrapped where
+	buildchroot (Debootstrapped cf) system loc = case system of
+		(System (Debian _) _) -> Just debootstrap
+		(System (Ubuntu _) _) -> Just debootstrap
+	  where
+		debootstrap = Debootstrap.built loc system cf
 
 -- | Defines a Chroot at the given location, built with debootstrap.
 --
@@ -46,13 +68,16 @@ instance PropAccum Chroot where
 -- >    & Apt.installed ["ghc", "haskell-platform"]
 -- >	& ...
 debootstrapped :: System -> Debootstrap.DebootstrapConfig -> FilePath -> Chroot
-debootstrapped system conf location = case system of
-	(System (Debian _) _) -> mk
-	(System (Ubuntu _) _) -> mk
+debootstrapped system conf = bootstrapped system (Debootstrapped conf)
+
+-- | Defines a Chroot at the given location, bootstrapped with the
+-- specified ChrootBootstrapper.
+bootstrapped :: ChrootBootstrapper b => System -> b -> FilePath -> Chroot
+bootstrapped system bootstrapper location =
+	Chroot location system bootstrapper h
+		& os system
   where
 	h = Host location [] mempty
-	mk = Chroot location system (UsingDeboostrap conf) h
-		& os system
 
 -- | Ensures that the chroot exists and is provisioned according to its
 -- properties.
@@ -64,23 +89,23 @@ provisioned :: Chroot -> RevertableProperty
 provisioned c = provisioned' (propagateChrootInfo c) c False
 
 provisioned' :: (Property HasInfo -> Property HasInfo) -> Chroot -> Bool -> RevertableProperty
-provisioned' propigator c@(Chroot loc system builderconf _) systemdonly =
-	(propigator $ go "exists" setup)
+provisioned' propigator c@(Chroot loc system bootstrapper _) systemdonly =
+	(propigator $ propertyList (chrootDesc c "exists") [setup])
 		<!>
-	(go "removed" teardown)
+	(propertyList (chrootDesc c "removed") [teardown])
   where
-	go desc a = propertyList (chrootDesc c desc) [a]
-
 	setup = propellChroot c (inChrootProcess (not systemdonly) c) systemdonly
 		`requires` toProp built
 	
-	built = case (system, builderconf) of
-		((System (Debian _) _), UsingDeboostrap cf) -> debootstrap cf
-		((System (Ubuntu _) _), UsingDeboostrap cf) -> debootstrap cf
+	built = case buildchroot bootstrapper system loc of
+		Just p -> p
+		Nothing -> cantbuild
 
-	debootstrap = Debootstrap.built loc system
+	cantbuild = infoProperty (chrootDesc c "built") (error $ "cannot bootstrap " ++ show system ++ " using supplied ChrootBootstrapper") mempty []
 
-	teardown = toProp (revert built)
+	teardown = check (not <$> unpopulated loc) $
+		property ("removed " ++ loc) $
+			makeChange (removeChroot loc)
 
 propagateChrootInfo :: (IsProp (Property i)) => Chroot -> Property i -> Property HasInfo
 propagateChrootInfo c@(Chroot location _ _ _) p = propagateContainer location c p'
