@@ -4,4 +4,4 @@ Needs ghc newer than 7.6.3. It may be possible to port Data.Type.Equality
 and Data.Type.Bool to older versions; I got them to compile but they didn't
 work right. --[[Joey]]
 
-[[!tag user/joey]]
+[[!tag users/joey]]
