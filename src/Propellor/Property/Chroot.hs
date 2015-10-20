@@ -29,6 +29,8 @@ import qualified Data.Map as M
 import Data.List.Utils
 import System.Posix.Directory
 
+-- | Specification of a chroot. Normally you'll use `debootstrapped` or
+-- `bootstrapped` to construct a Chroot value.
 data Chroot where
 	Chroot :: ChrootBootstrapper b => FilePath -> System -> b -> Host -> Chroot
 
@@ -46,7 +48,7 @@ instance PropAccum Chroot where
 -- | Class of things that can do initial bootstrapping of an operating
 -- System in a chroot.
 class ChrootBootstrapper b where
-	-- Do initial bootstrapping of an operating system in a chroot.
+	-- | Do initial bootstrapping of an operating system in a chroot.
 	-- If the operating System is not supported, return Nothing.
 	buildchroot :: b -> System -> FilePath -> Maybe (Property HasInfo)
 
@@ -65,8 +67,8 @@ instance ChrootBootstrapper Debootstrapped where
 -- Properties can be added to configure the Chroot.
 --
 -- > debootstrapped (System (Debian Unstable) "amd64") Debootstrap.BuildD "/srv/chroot/ghc-dev"
--- >    & Apt.installed ["ghc", "haskell-platform"]
--- >	& ...
+-- > 	& Apt.installed ["ghc", "haskell-platform"]
+-- > 	& ...
 debootstrapped :: System -> Debootstrap.DebootstrapConfig -> FilePath -> Chroot
 debootstrapped system conf = bootstrapped system (Debootstrapped conf)
 
