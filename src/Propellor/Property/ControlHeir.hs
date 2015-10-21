@@ -8,7 +8,8 @@ module Propellor.Property.ControlHeir (
 ) where
 
 import Propellor.Base
-import Propellor.Spin (spin, SpinMode(..))
+import Propellor.Spin (spin')
+import Propellor.PrivData.Paths
 import Propellor.Types.Info
 import qualified Propellor.Property.Ssh as Ssh
 
@@ -170,19 +171,21 @@ controllerFor h = infoProperty desc go (mkControllingInfo h <> privinfo) []
   where
 	desc = cdesc (hostName h)
 
-	go = do
-		liftIO $ spin ControllingSpin (hostName h) h
-		-- Don't know if the spin made a change to
-		-- the remote host or not, but in any case,
-		-- the local host was not changed.
-		noChange
-
 	-- Make the controlling host have all the remote host's
 	-- PrivData, so it can send it on to the remote host
 	-- when spinning it.
 	privinfo = addInfo mempty $
 		forceHostContext (hostName h) $
 			getInfo (hostInfo h)
+
+	go = do
+		pm <- liftIO $ filterPrivData h . readPrivData
+			<$> readFileStrictAnyEncoding privDataLocal
+		liftIO $ spin' (Just pm) Nothing (hostName h) h
+		-- Don't know if the spin made a change to
+		-- the remote host or not, but in any case,
+		-- the local host was not changed.
+		noChange
 
 -- | Use this property to let the specified controller Host ssh in
 -- and run propellor.
