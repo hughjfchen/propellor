@@ -12,8 +12,6 @@ import Propellor.Spin (spin, SpinMode(..))
 import Propellor.Types.Info
 import qualified Propellor.Property.Ssh as Ssh
 
-import qualified Data.Set as S
-
 -- | A hierarchy of control. When propellor is run on a host that
 -- is a Controller, it in turn spins each of the hosts in its control
 -- list.
@@ -63,18 +61,18 @@ instance DirectlyControlled ControlList where
 -- sub-hierarchies.
 deloop :: Host -> ControlHeir -> ControlHeir
 deloop _ (Controlled h) = Controlled h
-deloop host (Controller h cl) = Controller h (removeh cl)
+deloop thehost (Controller h cl) = Controller h (removeh cl)
   where
 	removeh (ControlList l) = ControlList (mapMaybe removeh' l)
-	removeh (ControlReq ch cl) = case removeh' ch of
-		Just ch' -> ControlReq ch' (removeh cl)
-		Nothing -> removeh cl
+	removeh (ControlReq ch cl') = case removeh' ch of
+		Just ch' -> ControlReq ch' (removeh cl')
+		Nothing -> removeh cl'
 	removeh' (Controlled h')
-		| hostName h' == hostName host = Nothing
+		| hostName h' == hostName thehost = Nothing
 		| otherwise = Just (Controlled h')
-	removeh' (Controller h' cl)
-		| hostName h' == hostName host = Nothing
-		| otherwise = Just (Controller h' (removeh cl))
+	removeh' (Controller h' cl')
+		| hostName h' == hostName thehost = Nothing
+		| otherwise = Just (Controller h' (removeh cl'))
 
 -- | Applies a ControlHeir to a list of hosts.
 --
