@@ -179,8 +179,8 @@ controllerFor h = infoProperty desc go (mkControllingInfo h <> privinfo) []
 			getInfo (hostInfo h)
 
 	go = do
-		pm <- liftIO $ filterPrivData h . readPrivData
-			<$> readFileStrictAnyEncoding privDataLocal
+		pm <- liftIO $ filterPrivData h
+			<$> readPrivDataFile privDataLocal
 		liftIO $ spin' (Just pm) Nothing (hostName h) h
 		-- Don't know if the spin made a change to
 		-- the remote host or not, but in any case,
