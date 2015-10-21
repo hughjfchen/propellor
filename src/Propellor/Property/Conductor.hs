@@ -73,7 +73,7 @@ module Propellor.Property.Conductor (
 	Conductable(..),
 ) where
 
-import Propellor.Base
+import Propellor.Base hiding (os)
 import Propellor.Spin (spin')
 import Propellor.PrivData.Paths
 import Propellor.Types.Info
@@ -142,12 +142,12 @@ combineOrchestras' (Conducted h) b
 	| sameHost h (topHost b) = Just b
 	| otherwise = Nothing
 combineOrchestras' (Conductor h os) (Conductor h' os')
-	| sameHost h h' = Just $ Conductor h (concatMap (combineos os) os')
+	| sameHost h h' = Just $ Conductor h (concatMap combineos os')
   where
-	combineos os o = case mapMaybe (`combineOrchestras` o) os of
+	combineos o = case mapMaybe (`combineOrchestras` o) os of
 		[] -> [o]
-		os' -> os'
-combineOrchestras' a@(Conductor h os) (Conducted h')
+		os'' -> os''
+combineOrchestras' a@(Conductor h _) (Conducted h')
 	| sameHost h h' = Just a
 combineOrchestras' (Conductor h os) b
 	| null (catMaybes (map snd osgrafts)) = Nothing
@@ -164,7 +164,7 @@ sameHost a b = hostName a == hostName b
 -- one seen.
 deloop :: Host -> Orchestra -> Orchestra
 deloop _ (Conducted h) = Conducted h
-deloop thehost c@(Conductor htop ostop) = Conductor htop $
+deloop thehost (Conductor htop ostop) = Conductor htop $
 	fst $ seekh [] ostop (sameHost htop thehost)
   where
 	seekh l [] seen = (l, seen)
@@ -287,7 +287,7 @@ addConductorPrivData h hs = h { hostInfo = hostInfo h <> i }
 	i = mempty 
 		`addInfo` mconcat (map privinfo hs)
 		`addInfo` Orchestrated (Any True)
-	privinfo h = forceHostContext (hostName h) $ getInfo (hostInfo h)
+	privinfo h' = forceHostContext (hostName h') $ getInfo (hostInfo h')
 
 -- Use this property to let the specified conductor ssh in and run propellor.
 conductedBy :: Host -> RevertableProperty
