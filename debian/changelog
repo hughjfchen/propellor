@@ -1,3 +1,10 @@
+propellor (2.11.0) UNRELEASED; urgency=medium
+
+  * Rewrote Propellor.Property.ControlHeir one more time, renaming it to
+    Propellor.Property.Conductor.
+
+ -- Joey Hess <id@joeyh.name>  Wed, 21 Oct 2015 15:06:26 -0400
+
 propellor (2.10.0) unstable; urgency=medium
 
   * The Propellor.Property.Spin added in the last release is replaced

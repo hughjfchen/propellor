@@ -1,5 +1,5 @@
 Name: propellor
-Version: 2.10.0
+Version: 2.11.0
 Cabal-Version: >= 1.8
 License: BSD3
 Maintainer: Joey Hess <id@joeyh.name>
@@ -76,7 +76,7 @@ Library
     Propellor.Property.Apache
     Propellor.Property.Apt
     Propellor.Property.Cmd
-    Propellor.Property.ControlHeir
+    Propellor.Property.Conductor
     Propellor.Property.Hostname
     Propellor.Property.Chroot
     Propellor.Property.ConfFile
