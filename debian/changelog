@@ -1,3 +1,10 @@
+propellor (2.10.0) UNRELEASED; urgency=medium
+
+  * The Propellor.Property.Spin added in the last release is replaced
+    with a very different Propellor.Property.ControlHeir.
+
+ -- Joey Hess <id@joeyh.name>  Tue, 20 Oct 2015 21:24:10 -0400
+
 propellor (2.9.0) unstable; urgency=medium
 
   * Added basic Uwsgi module, maintained by Félix Sipma.
