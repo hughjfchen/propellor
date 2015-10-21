@@ -213,17 +213,26 @@ extractOrchestras = filter fullOrchestra . go [] . map mkOrchestra
 orchestrate :: [Host] -> [Host]
 orchestrate hs = map go hs
   where
-	os = extractOrchestras hs
 	go h
 		| isOrchestrated (getInfo (hostInfo h)) = h
-		| otherwise = foldl orchestrate' h (map (deloop h) os)
+		| otherwise = foldl orchestrate' (removeold h) (map (deloop h) os)
+	os = extractOrchestras hs
+
+	removeold h = foldl removeold' h (oldconductorsof h)
+	removeold' h oldconductor = h & revert (conductedBy oldconductor)
+
+	oldconductors = zip hs (map (getInfo . hostInfo) hs)
+	oldconductorsof h = flip mapMaybe oldconductors $ 
+		\(oldconductor, NotConductorFor l) ->
+			if any (sameHost h) l
+				then Just oldconductor
+				else Nothing
 
 orchestrate' :: Host -> Orchestra -> Host
 orchestrate' h (Conducted _) = h
 orchestrate' h (Conductor c l)
 	| sameHost h c = cont $ addConductorPrivData h (concatMap allHosts l)
-	| any (sameHost h) (map topHost l) = cont $ h
-		& conductedBy c
+	| any (sameHost h) (map topHost l) = cont $ h & conductedBy c
 	| otherwise = cont h
   where
 	cont h' = foldl orchestrate' h' l
@@ -233,7 +242,7 @@ orchestrate' h (Conductor c l)
 -- to have any effect.
 conductorFor :: Host -> Property HasInfo
 conductorFor h = infoProperty desc go (addInfo mempty (ConductorFor [h])) []
-	`requires` Ssh.knownHost [h] (hostName h) (User "root")
+	`requires` toProp (conductorKnownHost h)
 	`requires` Ssh.installed
   where
 	desc = cdesc (hostName h)
@@ -252,6 +261,21 @@ conductorFor h = infoProperty desc go (addInfo mempty (ConductorFor [h])) []
 			return FailedChange
 		)
 
+-- Reverts conductorFor.
+notConductorFor :: Host -> Property HasInfo
+notConductorFor h = infoProperty desc (return NoChange) (addInfo mempty (NotConductorFor [h])) []
+	`requires` toProp (revert (conductorKnownHost h))
+  where
+	desc = "not " ++ cdesc (hostName h)
+
+conductorKnownHost :: Host -> RevertableProperty
+conductorKnownHost h = 
+	mk Ssh.knownHost
+		<!>
+	mk Ssh.unknownHost
+  where
+	mk p = p [h] (hostName h) (User "root")
+
 -- Gives a conductor access to all the PrivData of the specified hosts.
 -- This allows it to send it on the the hosts when conducting it.
 --
@@ -265,17 +289,14 @@ addConductorPrivData h hs = h { hostInfo = hostInfo h <> i }
 		`addInfo` Orchestrated (Any True)
 	privinfo h = forceHostContext (hostName h) $ getInfo (hostInfo h)
 
--- Reverts conductorFor.
-notConductorFor :: Host -> Property HasInfo
-notConductorFor h = pureInfoProperty desc (NotConductorFor [h])
-  where
-	desc = "not " ++ cdesc (hostName h)
-
 -- Use this property to let the specified conductor ssh in and run propellor.
-conductedBy :: Host -> Property NoInfo
-conductedBy h = User "root" `Ssh.authorizedKeysFrom` (User "root", h)
+conductedBy :: Host -> RevertableProperty
+conductedBy h = (setup <!> teardown)
 	`describe` ("conducted by " ++ hostName h)
-	`requires` Ssh.installed
+  where
+	setup = User "root" `Ssh.authorizedKeysFrom` (User "root", h)
+		`requires` Ssh.installed
+	teardown = User "root" `Ssh.unauthorizedKeysFrom` (User "root", h)
 
 cdesc :: String -> Desc
 cdesc n = "conducting " ++ n

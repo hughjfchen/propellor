@@ -2,6 +2,7 @@ propellor (2.11.0) UNRELEASED; urgency=medium
 
   * Rewrote Propellor.Property.ControlHeir one more time, renaming it to
     Propellor.Property.Conductor.
+  * Added Ssh properties to remove authorized_keys and known_hosts lines.
 
  -- Joey Hess <id@joeyh.name>  Wed, 21 Oct 2015 15:06:26 -0400
 
