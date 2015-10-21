@@ -1,7 +1,7 @@
 module Propellor.Spin (
 	commitSpin,
-	SpinMode(..),
 	spin,
+	spin',
 	update,
 	gitPushHelper,
 	mergeSpin,
@@ -41,41 +41,35 @@ commitSpin = do
 		void $ actionMessage "Push to central git repository" $
 			boolSystem "git" [Param "push"]
 
-data SpinMode
-	= RegularSpin
-	| RelaySpin HostName
-	| ControllingSpin
-	deriving (Eq)
+spin :: Maybe HostName -> HostName -> Host -> IO ()
+spin = spin' Nothing
 
-spin :: SpinMode -> HostName -> Host -> IO ()
-spin spinmode target hst = do
+spin' :: Maybe PrivMap -> Maybe HostName -> HostName -> Host -> IO ()
+spin' mprivdata relay target hst = do
 	cacheparams <- if viarelay
 		then pure ["-A"]
 		else toCommand <$> sshCachingParams hn
 	when viarelay $
 		void $ boolSystem "ssh-add" []
 
-	sshtarget <- ("root@" ++) <$> case spinmode of
-		RelaySpin r -> pure r
-		_ -> getSshTarget target hst
+	sshtarget <- ("root@" ++) <$> case relay of
+		Just r -> pure r
+		Nothing -> getSshTarget target hst
 
 	-- Install, or update the remote propellor.
-	updateServer target spinmode hst
+	updateServer target relay hst
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap probecmd])
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap updatecmd])
+		getprivdata
 
 	-- And now we can run it.
 	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", sshtarget, shellWrap runcmd])) $
 		error "remote propellor failed"
   where
-	hn = case spinmode of
-		RelaySpin h -> h
-		_ -> target
+	hn = fromMaybe target relay
 
-	relaying = spinmode == RelaySpin target
-	viarelay = not relaying && case spinmode of
-		RelaySpin _ -> True
-		_ -> False
+	relaying = relay == Just target
+	viarelay = isJust relay && not relaying
 
 	probecmd = intercalate " ; "
 		[ "if [ ! -d " ++ localdir ++ "/.git ]"
@@ -101,6 +95,17 @@ spin spinmode target hst = do
 	cmd = if viarelay
 		then "--serialized " ++ shellEscape (show (Spin [target] (Just target)))
 		else "--continue " ++ shellEscape (show (SimpleRun target))
+	
+	getprivdata = case mprivdata of
+		Nothing
+			| relaying -> do
+				let f = privDataRelay hn
+				d <- readPrivDataFile f
+				nukeFile f
+				return d
+			| otherwise -> 
+				filterPrivData hst <$> decryptPrivData
+		Just pd -> pure pd
 
 -- Check if the Host contains an IP address that matches one of the IPs
 -- in the DNS for the HostName. If so, the HostName is used as-is, 
@@ -180,22 +185,20 @@ update forhost = do
 
 updateServer
 	:: HostName
-	-> SpinMode
+	-> Maybe HostName
 	-> Host
 	-> CreateProcess
 	-> CreateProcess
+	-> IO PrivMap
 	-> IO ()
-updateServer target spinmode hst connect haveprecompiled =
+updateServer target relay hst connect haveprecompiled getprivdata =
 	withIOHandles createProcessSuccess connect go
   where
-	hn = case spinmode of
-		RelaySpin h -> h
-		_ -> target
-	relaying = spinmode == RelaySpin target
+	hn = fromMaybe target relay
 
 	go (toh, fromh) = do
 		let loop = go (toh, fromh)
-		let restart = updateServer hn spinmode hst connect haveprecompiled
+		let restart = updateServer hn relay hst connect haveprecompiled getprivdata
 		let done = return ()
 		v <- maybe Nothing readish <$> getMarked fromh statusMarker
 		case v of
@@ -214,36 +217,24 @@ updateServer target spinmode hst connect haveprecompiled =
 				hClose toh
 				hClose fromh
 				sendPrecompiled hn
-				updateServer hn spinmode hst haveprecompiled (error "loop")
+				updateServer hn relay hst haveprecompiled (error "loop") getprivdata
 			(Just NeedGitPush) -> do
 				sendGitUpdate hn fromh toh
 				hClose fromh
 				hClose toh
 				done
 			Nothing -> done
-	getprivdata
-		| relaying = do
-			let f = privDataRelay hn
-			d <- readFileStrictAnyEncoding f
-			nukeFile f
-			return d
-		| otherwise = case spinmode of
-			-- When one host is controlling another,
-			-- the controlling host's privdata includes the
-			-- privdata of the controlled host.
-			ControllingSpin -> show . filterPrivData hst . readPrivData
-				<$> readFileStrictAnyEncoding privDataLocal
-			_ -> show . filterPrivData hst <$> decryptPrivData
 
 sendRepoUrl :: Handle -> IO ()
 sendRepoUrl toh = sendMarked toh repoUrlMarker =<< (fromMaybe "" <$> getRepoUrl)
 
-sendPrivData :: HostName -> Handle -> String -> IO ()
+sendPrivData :: HostName -> Handle -> PrivMap -> IO ()
 sendPrivData hn toh privdata = void $ actionMessage msg $ do
-	sendMarked toh privDataMarker privdata
+	sendMarked toh privDataMarker d
 	return True
   where
-	msg = "Sending privdata (" ++ show (length privdata) ++ " bytes) to " ++ hn
+	msg = "Sending privdata (" ++ show (length d) ++ " bytes) to " ++ hn
+	d = show privdata
 
 sendGitUpdate :: HostName -> Handle -> Handle -> IO ()
 sendGitUpdate hn fromh toh =

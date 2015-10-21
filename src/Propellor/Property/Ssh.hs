@@ -24,9 +24,12 @@ module Propellor.Property.Ssh (
 	userKeys,
 	userKeyAt,
 	knownHost,
+	unknownHost,
 	authorizedKeysFrom,
+	unauthorizedKeysFrom,
 	authorizedKeys,
 	authorizedKey,
+	unauthorizedKey,
 	hasAuthorizedKeys,
 	getUserPubKeys,
 ) where
@@ -300,23 +303,46 @@ fromKeyType SshEd25519 = "ed25519"
 -- or `hostKey` into the known_hosts file for a user.
 knownHost :: [Host] -> HostName -> User -> Property NoInfo
 knownHost hosts hn user@(User u) = property desc $
-	go =<< fromHost hosts hn getHostPubKey
+	go =<< knownHostLines hosts hn
   where
 	desc = u ++ " knows ssh key for " ++ hn
-	go (Just m) | not (M.null m) = do
-		f <- liftIO $ dotFile "known_hosts" user
-		ensureProperty $ combineProperties desc
-			[ File.dirExists (takeDirectory f)
-			, f `File.containsLines`
-				(map (\k -> hn ++ " " ++ k) (M.elems m))
-			, File.ownerGroup f user (userGroup user)
-			, File.ownerGroup (takeDirectory f) user (userGroup user)
-			]
-	go _ = do
+
+	go [] = do
 		warningMessage $ "no configured ssh host keys for " ++ hn
 		return FailedChange
+	go ls = do
+		f <- liftIO $ dotFile "known_hosts" user
+		modKnownHost user f $
+			f `File.containsLines` ls
+				`requires` File.dirExists (takeDirectory f)
 
--- | Ensures that a local user's authorized keys contains a line allowing
+-- | Reverts `knownHost`
+unknownHost :: [Host] -> HostName -> User -> Property NoInfo
+unknownHost hosts hn user@(User u) = property desc $
+	go =<< knownHostLines hosts hn
+  where
+	desc = u ++ " does not know ssh key for " ++ hn
+
+	go [] = return NoChange
+	go ls = do
+		f <- liftIO $ dotFile "known_hosts" user
+		ifM (liftIO $ doesFileExist f)
+			( modKnownHost user f $ f `File.lacksLines` ls
+			, return NoChange
+			)
+
+knownHostLines :: [Host] -> HostName -> Propellor [File.Line]
+knownHostLines hosts hn = keylines <$> fromHost hosts hn getHostPubKey
+  where
+	keylines (Just m) = map (\k -> hn ++ " " ++ k) (M.elems m)
+	keylines Nothing = []
+
+modKnownHost :: User -> FilePath -> Property NoInfo -> Propellor Result
+modKnownHost user f p = ensureProperty $ p
+	`requires` File.ownerGroup f user (userGroup user)
+	`requires` File.ownerGroup (takeDirectory f) user (userGroup user)
+
+-- | Ensures that a local user's authorized_keys contains lines allowing
 -- logins from a remote user on the specified Host.
 --
 -- The ssh keys of the remote user can be set using `keysImported`
@@ -324,15 +350,32 @@ knownHost hosts hn user@(User u) = property desc $
 -- Any other lines in the authorized_keys file are preserved as-is.
 authorizedKeysFrom :: User -> (User, Host) -> Property NoInfo
 localuser@(User ln) `authorizedKeysFrom` (remoteuser@(User rn), remotehost) = 
-	property desc $ go =<< fromHost' remotehost (getUserPubKeys remoteuser)
+	property desc (go =<< authorizedKeyLines remoteuser remotehost)
   where
 	remote = rn ++ "@" ++ hostName remotehost
 	desc = ln ++ " authorized_keys from " ++ remote
+
 	go [] = do
 		warningMessage $ "no configured ssh user keys for " ++ remote
 		return FailedChange
-	go ks = ensureProperty $ combineProperties desc $
-		map (authorizedKey localuser . snd) ks
+	go ls = ensureProperty $ combineProperties desc $
+		map (authorizedKey localuser) ls
+
+-- | Reverts `authorizedKeysFrom`
+unauthorizedKeysFrom :: User -> (User, Host) -> Property NoInfo
+localuser@(User ln) `unauthorizedKeysFrom` (remoteuser@(User rn), remotehost) =
+	property desc (go =<< authorizedKeyLines remoteuser remotehost)
+  where
+	remote = rn ++ "@" ++ hostName remotehost
+	desc = ln ++ " unauthorized_keys from " ++ remote
+
+	go [] = return NoChange
+	go ls = ensureProperty $ combineProperties desc $
+		map (unauthorizedKey localuser) ls
+	
+authorizedKeyLines :: User -> Host -> Propellor [File.Line]
+authorizedKeyLines remoteuser remotehost = 
+	map snd <$> fromHost' remotehost (getUserPubKeys remoteuser)
 
 -- | Makes a user have authorized_keys from the PrivData
 --
@@ -354,12 +397,25 @@ authorizedKeys user@(User u) context = withPrivData (SshAuthorizedKeys u) contex
 authorizedKey :: User -> String -> Property NoInfo
 authorizedKey user@(User u) l = property desc $ do
 	f <- liftIO $ dotFile "authorized_keys" user
-	ensureProperty $ combineProperties desc
-		[ f `File.containsLine` l
+	modAuthorizedKey f user $
+		f `File.containsLine` l
 			`requires` File.dirExists (takeDirectory f)
-			`onChange` File.mode f (combineModes [ownerWriteMode, ownerReadMode])
-		, File.ownerGroup f user (userGroup user)
-		, File.ownerGroup (takeDirectory f) user (userGroup user)
-		]
   where
 	desc = u ++ " has authorized_keys"
+
+-- | Reverts `authorizedKey`
+unauthorizedKey :: User -> String -> Property NoInfo
+unauthorizedKey user@(User u) l = property desc $ do
+	f <- liftIO $ dotFile "authorized_keys" user
+	ifM (liftIO $ doesFileExist f) 
+		( modAuthorizedKey f user $ f `File.lacksLine` l
+		, return NoChange
+		)
+  where
+	desc = u ++ " lacks authorized_keys"
+
+modAuthorizedKey :: FilePath -> User -> Property NoInfo -> Propellor Result
+modAuthorizedKey f user p = ensureProperty $ p
+	`requires` File.mode f (combineModes [ownerWriteMode, ownerReadMode])
+	`requires` File.ownerGroup f user (userGroup user)
+	`requires` File.ownerGroup (takeDirectory f) user (userGroup user)
