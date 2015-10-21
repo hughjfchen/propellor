@@ -1,0 +1,47 @@
+Should be possible to add this, to construct a bunch of properties and 
+run them in parallel:
+
+	concurrently :: IsProp p => (a -> p) -> [a] -> p
+
+Another version also nice to have:
+
+	race :: IsProp p => p -> p -> p
+
+Implementation should be pretty easy; propellor does not have a lot of
+mutable state to get in the way.
+
+The only hard part is, ensuring a property may cause arbitrary output,
+and it's not line-buffered necessarily, so there could be messy
+interleaving. I'm not sure how to deal with this, short of forking
+off a sub-process to ensure the property. 
+
+And, how would that sub-process be told which property it's supposed to
+ensure? There's no property serialization, and not even a Eq to use.
+
+Hmm, if it could come up with a stable, unique Id for each property, then
+the sub-process could be told the Id, and it'd then just look through its
+Host to find the property. This could be done by propellor's defaultMain,
+using Data.Unique (or a reimplementation that lets us get at the actual
+integer, rather than a hash of it). As long as it processes properties in a
+consistent order, that will generate the same Id for a property each time
+(until propellor is recompiled of course). The Id can be paired with the
+description of the property, to catch any version skew.
+
+What about mixing concurrently with ensureProperty?
+
+	foo = property "foo" $ do
+		liftIO defCon5
+		ensureProperty $
+			missleDefense `race` diplomacy
+	  where
+		missleDefense = ...
+		diplomacy = ...
+
+Here there's no way for a propellor sub-process to know it needs to 
+run part of foo to get to diplomacy. I think it would be ok to fall back to
+sequential mode in this case. So, the sub-process could signal with a
+special exit code that it couldn't find the requested Id, and then `race`
+can just wait for missleDefense to finish, and then run diplomacy.
+(Granted, this order may not be ideal in this specific case..)
+
+[[!tag user/joey]]
