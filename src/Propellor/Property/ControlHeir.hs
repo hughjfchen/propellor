@@ -193,7 +193,7 @@ controlledBy h = User "root" `Ssh.authorizedKeysFrom` (User "root", h)
 cdesc :: String -> Desc
 cdesc n = "controller for " ++ n
 
--- | Each Host's info contains a list of the names of hosts it's controlling.
+-- | A Host's Info contains a list of the names of hosts it's controlling.
 newtype ControllerOf = ControllerOf [HostName]
 	deriving (Typeable, Monoid, Show)
 
