@@ -15,7 +15,7 @@ like this:
 	                (Just (System (Debian _) _)) -> ensureProperty fooDebian
 	                (Just (System (Ubuntu _) _)) -> ensureProperty fooUbuntu
 
-The first step for adding a new OS will be to modify <http://hackage.haskell.org/package/propellor-1.0.0/docs/Propellor-Types-OS.html>.
+The first step for adding a new OS will be to modify <http://hackage.haskell.org/package/propellor/docs/Propellor-Types-OS.html>.
 Compilation will then warn about all OS parameterized properties that
 need to be updated to support your added OS, and it can be taken from there.
 

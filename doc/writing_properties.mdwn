@@ -4,17 +4,17 @@ you'll want to write a property of your own.
 This isn't hard. Often propellor has some properties you can use to build
 the property you want. Need to modify the content of a file? Use any of
 the properties in
-[Propellor.Property.File](http://hackage.haskell.org/package/propellor-2.2.1/docs/Propellor-Property-File.htm)
-Need to run some commands? Use [Propellor.Property.Cmd](http://hackage.haskell.org/package/propellor-2.2.1/docs/Propellor-Property-Cmd.html).
+[Propellor.Property.File](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-File.htm)
+Need to run some commands? Use [Propellor.Property.Cmd](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Cmd.html).
 
 To combine properties, the easiest way is to use `requires`.
 
 	someproperty `requires` otherproperty
 
-[Propellor.Property.List](http://hackage.haskell.org/package/propellor-2.2.1/docs/Propellor-Property-List.html)
+[Propellor.Property.List](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-List.html)
 has a `propertyList` combinator that's also useful.
 
-[Propellor.Property](http://hackage.haskell.org/package/propellor-2.2.1/docs/Propellor-Property.html)
+[Propellor.Property](http://hackage.haskell.org/package/propellor/docs/Propellor-Property.html)
 has some other functions to modify Properties in useful ways.
 For example, `check` makes a Property call an `IO Bool` to check if the 
 Property needs be run.
