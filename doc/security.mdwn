@@ -33,6 +33,6 @@ extracts the private data that the $host needs, and sends it to to the
 $host using ssh. This lets a host know its own private data, without
 seeing all the rest.
 
-To securely store private data, use: `propellor --set $field $context`
+To securely store private data, use: `propellor --set $field $context`  
 Propellor will tell you the details when you use a Property that needs
 PrivData.
