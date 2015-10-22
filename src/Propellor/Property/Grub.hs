@@ -18,14 +18,19 @@ data BIOS = PC | EFI64 | EFI32 | Coreboot | Xen
 -- | Installs the grub package. This does not make grub be used as the
 -- bootloader.
 --
--- This includes running update-grub, so that the grub boot menu is
--- created. It will be automatically updated when kernel packages are
--- installed.
+-- This includes running update-grub.
 installed :: BIOS -> Property NoInfo
-installed bios = 
-	Apt.installed [pkg] `describe` "grub package installed"
-		`before`
-	cmdProperty "update-grub" []
+installed bios = installed' bios `before` mkConfig
+
+-- Run update-grub, to generate the grub boot menu. It will be
+-- automatically updated when kernel packages are
+--   -- installed.
+mkConfig :: Property NoInfo
+mkConfig = cmdProperty "update-grub" []
+
+-- | Installs grub; does not run update-grub.
+installed' :: BIOS -> Property NoInfo
+installed' bios = Apt.installed [pkg] `describe` "grub package installed"
   where
 	pkg = case bios of
 		PC -> "grub-pc"

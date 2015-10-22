@@ -292,7 +292,12 @@ type Finalization = (Property NoInfo, Property NoInfo)
 -- | Makes grub be the boot loader of the disk image.
 -- TODO not implemented
 grubBooted :: Grub.BIOS -> Finalization
-grubBooted bios = (Grub.installed bios, undefined)
+grubBooted bios = (inchroot, inimg)
+  where
+	-- Need to set up device.map manually before running update-grub.
+	inchroot = Grub.installed' bios
+
+	inimg = undefined
 
 noFinalization :: Finalization
 noFinalization = (doNothing, doNothing)
