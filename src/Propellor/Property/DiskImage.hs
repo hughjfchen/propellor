@@ -130,14 +130,14 @@ imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
 			kpartx img (partitionsPopulated chrootdir mnts)
 	rmimg = File.notPresent img
 
-partitionsPopulated :: FilePath -> [MountPoint] -> [FilePath] -> Property NoInfo
+partitionsPopulated :: FilePath -> [MountPoint] -> [LoopDev] -> Property NoInfo
 partitionsPopulated chrootdir mnts devs = property desc $ mconcat $ zipWith go mnts devs
   where
 	desc = "partitions populated from " ++ chrootdir
 
 	go Nothing _ = noChange
-	go (Just mnt) dev = withTmpDir "mnt" $ \tmpdir -> bracket
-		(liftIO $ mount "auto" dev tmpdir)
+	go (Just mnt) loopdev = withTmpDir "mnt" $ \tmpdir -> bracket
+		(liftIO $ mount "auto" (partitionLoopDev loopdev) tmpdir)
 		(const $ liftIO $ umountLazy tmpdir)
 		$ \mounted -> if mounted
 			then ensureProperty $

@@ -41,20 +41,31 @@ formatted' opts YesReallyFormatPartition fs dev =
 	-- Be quiet.
 	q l = "-q":l
 
+data LoopDev = LoopDev
+	{ partitionLoopDev :: FilePath -- ^ device for a loop partition
+	, wholeDiskLoopDev :: FilePath -- ^ corresponding device for the whole loop disk
+	} deriving (Show)
+
 -- | Uses the kpartx utility to create device maps for partitions contained
--- within a disk image file. The resulting devices are passed to the
+-- within a disk image file. The resulting loop devices are passed to the
 -- property, which can operate on them. Always cleans up after itself,
 -- by removing the device maps after the property is run.
-kpartx :: FilePath -> ([FilePath] -> Property NoInfo) -> Property NoInfo
+kpartx :: FilePath -> ([LoopDev] -> Property NoInfo) -> Property NoInfo
 kpartx diskimage mkprop = go `requires` Apt.installed ["kpartx"]
   where
 	go = property (propertyDesc (mkprop [])) $ do
 		cleanup -- idempotency
 		s <- liftIO $ readProcess "kpartx" ["-avs", diskimage]
-		r <- ensureProperty (mkprop (devlist s))
+		r <- ensureProperty (mkprop (kpartxParse s))
 		cleanup
 		return r
-	devlist = mapMaybe (finddev . words) . lines
-	finddev ("add":"map":s:_) = Just ("/dev/mapper/" ++ s)
-	finddev _ = Nothing
 	cleanup = void $ liftIO $ boolSystem "kpartx" [Param "-d", File diskimage]
+
+kpartxParse :: String -> [LoopDev]
+kpartxParse = mapMaybe (finddev . words) . lines
+  where
+	finddev ("add":"map":ld:_:_:_:_:wd:_) = Just $ LoopDev 
+		{ partitionLoopDev = "/dev/mapper/" ++ ld
+		, wholeDiskLoopDev = wd
+		}
+	finddev _ = Nothing

@@ -160,7 +160,7 @@ partitioned eep disk (PartTable tabletype parts) = property desc $ do
 		[ parted eep disk partedparams
 		, if isdev
 			then formatl (map (\n -> disk ++ show n) [1 :: Int ..])
-			else Partition.kpartx disk formatl
+			else Partition.kpartx disk (formatl . map Partition.partitionLoopDev)
 		]
   where
 	desc = disk ++ " partitioned"
