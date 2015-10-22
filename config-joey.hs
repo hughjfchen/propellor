@@ -85,7 +85,7 @@ darkstar = host "darkstar.kitenet.net"
 		[ partition EXT2 `mountedAt` "/boot" `setFlag` BootFlag
 		, partition EXT4 `mountedAt` "/" `addFreeSpace` MegaBytes 100
 		-- , swapPartition (MegaBytes 256)
-		] noFinalization -- (grubBooted PC)
+		] (grubBooted PC) -- (grubBooted PC)
   where
 	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 		& Apt.installed ["linux-image-amd64"]
