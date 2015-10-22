@@ -81,7 +81,7 @@ darkstar = host "darkstar.kitenet.net"
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
 	& JoeySites.dkimMilter
 
-	& imageBuilt "/tmp/img" c MSDOS
+	& imageBuilt "/tmp/img" c GPT
 		[ partition EXT2 `mountedAt` "/boot" `setFlag` BootFlag
 		, partition EXT4 `mountedAt` "/" `addFreeSpace` MegaBytes 100
 		-- , swapPartition (MegaBytes 256)
