@@ -4,6 +4,10 @@ module Propellor.Property.Partition where
 
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
+import Utility.Applicative
+
+import System.Posix.Files
+import Data.List
 
 -- | Filesystems etc that can be used for a partition.
 data Fs = EXT2 | EXT3 | EXT4 | BTRFS | REISERFS | XFS | FAT | VFAT | NTFS | LinuxSwap
@@ -46,6 +50,15 @@ data LoopDev = LoopDev
 	, wholeDiskLoopDev :: FilePath -- ^ corresponding device for the whole loop disk
 	} deriving (Show)
 
+isLoopDev :: LoopDev -> IO Bool
+isLoopDev l = isLoopDev' (partitionLoopDev l) <&&> isLoopDev' (wholeDiskLoopDev l)
+
+isLoopDev' :: FilePath -> IO Bool
+isLoopDev' f
+	| "loop" `isInfixOf` f = catchBoolIO $
+		isBlockDevice <$> getFileStatus f
+	| otherwise = return False
+
 -- | Uses the kpartx utility to create device maps for partitions contained
 -- within a disk image file. The resulting loop devices are passed to the
 -- property, which can operate on them. Always cleans up after itself,
@@ -55,8 +68,12 @@ kpartx diskimage mkprop = go `requires` Apt.installed ["kpartx"]
   where
 	go = property (propertyDesc (mkprop [])) $ do
 		cleanup -- idempotency
-		s <- liftIO $ readProcess "kpartx" ["-avs", diskimage]
-		r <- ensureProperty (mkprop (kpartxParse s))
+		loopdevs <- liftIO $ kpartxParse
+			<$> readProcess "kpartx" ["-avs", diskimage]
+		bad <- liftIO $ filterM (not <$$> isLoopDev) loopdevs
+		unless (null bad) $
+			error $ "kpartx output seems to include non-loop-devices (possible parse failure): " ++ show bad
+		r <- ensureProperty (mkprop loopdevs)
 		cleanup
 		return r
 	cleanup = void $ liftIO $ boolSystem "kpartx" [Param "-d", File diskimage]
