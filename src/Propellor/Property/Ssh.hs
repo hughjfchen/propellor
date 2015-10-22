@@ -4,6 +4,7 @@ module Propellor.Property.Ssh (
 	installed,
 	restarted,
 	PubKeyText,
+	SshKeyType(..),
 	-- * Daemon configuration
 	sshdConfig,
 	ConfigKeyword,
