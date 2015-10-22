@@ -6,7 +6,7 @@ Other documentation:
 * [[man page|usage]]
 * [[Haskell Newbie]]
 * [[Writing Properties]]
-* [[Centralized Git Repository]]
+* [[Automated Spins]] (and centralized git repositories)
 * [[Components]]
 * [[Contributing]]
 * [[Interface Stability]]
