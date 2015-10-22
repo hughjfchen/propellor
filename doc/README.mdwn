@@ -53,6 +53,7 @@ see [configuration for the Haskell newbie](https://propellor.branchable.com/hask
    So, edit `~/.propellor/config.hs` to configure the host, add some
    properties to it, and re-run step 6.  
    Repeat until happy and move on to the next host. :)
-8. Optionally, set up a [centralized git repository](https://propellor.branchable.com/centralized_git_repository/)
-   so that multiple hosts can be updated with a simple `git commit -S; git push`
+8. Once you have a lot of hosts, and running `propellor --spin HOST` for
+   each host becomes tiresome, you can
+   [automate that](http://propellor.branchable.com/automated_spins/).
 9. Write some neat new properties and send patches!
