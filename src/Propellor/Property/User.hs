@@ -58,14 +58,21 @@ hasPassword' (User u) context = go `requires` shadowConfig True
 setPassword :: (((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Propellor Result
 setPassword getpassword = getpassword $ go
   where
-	go (Password user, password) = set user (privDataVal password) []
-	go (CryptPassword user, hash) = set user (privDataVal hash) ["--encrypted"]
+	go (Password user, password) = chpasswd (User user) (privDataVal password) []
+	go (CryptPassword user, hash) = chpasswd (User user) (privDataVal hash) ["--encrypted"]
 	go (f, _) = error $ "Unexpected type of privdata: " ++ show f
 
-	set user v ps = makeChange $ withHandle StdinHandle createProcessSuccess
-		(proc "chpasswd" ps) $ \h -> do
-			hPutStrLn h $ user ++ ":" ++ v
-			hClose h
+-- | Makes a user's password be the passed String. Highly insecure:
+-- The password is right there in your config file for anyone to see!
+hasInsecurePassword :: User -> String -> Property NoInfo
+hasInsecurePassword u@(User n) p = property (n ++ " has insecure password") $
+	chpasswd u p []
+
+chpasswd :: User -> String -> [String] -> Propellor Result
+chpasswd (User user) v ps = makeChange $ withHandle StdinHandle createProcessSuccess
+	(proc "chpasswd" ps) $ \h -> do
+		hPutStrLn h $ user ++ ":" ++ v
+		hClose h
 
 lockedPassword :: User -> Property NoInfo
 lockedPassword user@(User u) = check (not <$> isLockedPassword user) $ cmdProperty "passwd"
