@@ -11,7 +11,7 @@ import Data.List
 
 -- | Filesystems etc that can be used for a partition.
 data Fs = EXT2 | EXT3 | EXT4 | BTRFS | REISERFS | XFS | FAT | VFAT | NTFS | LinuxSwap
-	deriving (Show)
+	deriving (Show, Eq)
 
 data Eep = YesReallyFormatPartition
 

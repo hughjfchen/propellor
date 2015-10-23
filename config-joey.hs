@@ -82,14 +82,15 @@ darkstar = host "darkstar.kitenet.net"
 	& JoeySites.dkimMilter
 
 	& imageBuilt "/tmp/img" c MSDOS (grubBooted PC)
-		[ partition EXT4 `mountedAt` "/"
-			`addFreeSpace` MegaBytes 100
+		[ partition EXT2 `mountedAt` "/boot"
 			`setFlag` BootFlag
+		, partition EXT4 `mountedAt` "/"
 		, swapPartition (MegaBytes 256)
 		]
   where
 	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 		& Apt.installed ["linux-image-amd64"]
+		& User "root" `User.hasInsecurePassword` "root"
 
 gnu :: Host
 gnu = host "gnu.kitenet.net"
