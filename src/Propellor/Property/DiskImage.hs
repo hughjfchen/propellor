@@ -62,6 +62,7 @@ type DiskImage = FilePath
 -- >			`setFlag` BootFlag
 -- >		, partition EXT4 `mountedAt` "/"
 -- >			`addFreeSpace` MegaBytes 100
+-- >			`mountOpt` errorReadonly
 -- >		, swapPartition (MegaBytes 256)
 -- >		]
 --
@@ -110,28 +111,28 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 			<$> liftIO (dirSizes chrootdir)
 		let calcsz mnts = maybe defSz fudge . getMountSz szm mnts
 		-- tie the knot!
-		let (mnts, parttable) = fitChrootSize tabletype partspec $
+		let (mnts, mntopts, parttable) = fitChrootSize tabletype partspec $
 			map (calcsz mnts) mnts
 		ensureProperty $
 			imageExists img (partTableSize parttable)
 				`before`
 			partitioned YesReallyDeleteDiskContents img parttable
 				`before`
-			kpartx img (mkimg' mnts parttable)
-	mkimg' mnts parttable devs =
-		partitionsPopulated chrootdir mnts devs
+			kpartx img (mkimg' mnts mntopts parttable)
+	mkimg' mnts mntopts parttable devs =
+		partitionsPopulated chrootdir mnts mntopts devs
 			`before`
-		imageFinalized final mnts devs parttable
+		imageFinalized final mnts mntopts devs parttable
 	rmimg = File.notPresent img
 
-partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [LoopDev] -> Property NoInfo
-partitionsPopulated chrootdir mnts devs = property desc $ mconcat $ zipWith go mnts devs
+partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> Property NoInfo
+partitionsPopulated chrootdir mnts mntopts devs = property desc $ mconcat $ zipWith3 go mnts mntopts devs
   where
 	desc = "partitions populated from " ++ chrootdir
 
-	go Nothing _ = noChange
-	go (Just mnt) loopdev = withTmpDir "mnt" $ \tmpdir -> bracket
-		(liftIO $ mount "auto" (partitionLoopDev loopdev) tmpdir)
+	go Nothing _ _ = noChange
+	go (Just mnt) mntopt loopdev = withTmpDir "mnt" $ \tmpdir -> bracket
+		(liftIO $ mount "auto" (partitionLoopDev loopdev) tmpdir mntopt)
 		(const $ liftIO $ umountLazy tmpdir)
 		$ \ismounted -> if ismounted
 			then ensureProperty $
@@ -152,10 +153,10 @@ partitionsPopulated chrootdir mnts devs = property desc $ mconcat $ zipWith go m
 
 -- The constructor for each Partition is passed the size of the files
 -- from the chroot that will be put in that partition.
-fitChrootSize :: TableType -> [PartSpec] -> [PartSize] -> ([Maybe MountPoint], PartTable)
-fitChrootSize tt l basesizes = (mounts, parttable)
+fitChrootSize :: TableType -> [PartSpec] -> [PartSize] -> ([Maybe MountPoint], [MountOpts], PartTable)
+fitChrootSize tt l basesizes = (mounts, mountopts, parttable)
   where
-	(mounts, sizers) = unzip l
+	(mounts, mountopts, sizers) = unzip3 l
 	parttable = PartTable tt (zipWith id sizers basesizes)
 
 -- | Generates a map of the sizes of the contents of 
@@ -187,15 +188,6 @@ getMountSz szm l (Just mntpt) =
   where
 	childsz = mconcat $ mapMaybe (getMountSz szm l) (filter (isChild mntpt) l)
 
--- Add 2% for filesystem overhead. Rationalle for picking 2%:
--- A filesystem with 1% overhead might just sneak by as acceptable.
--- Double that just in case. Add an additional 3 mb to deal with
--- non-scaling overhead of filesystems (eg, superblocks). 
--- Add an additional 200 mb for temp files, journals, etc.
-fudge :: PartSize -> PartSize
-fudge (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3 + 200)
-
-
 -- | Ensures that a disk image file of the specified size exists.
 -- 
 -- If the file doesn't exist, or is too small, creates a new one, full of 0's.
@@ -226,8 +218,8 @@ imageExists img sz = property ("disk image exists" ++ img) $ liftIO $ do
 -- in the partition tree.
 type Finalization = (Property NoInfo, (FilePath -> [LoopDev] -> Property NoInfo))
 
-imageFinalized :: Finalization -> [Maybe MountPoint] -> [LoopDev] -> PartTable -> Property NoInfo
-imageFinalized (_, final) mnts devs (PartTable _ parts) = 
+imageFinalized :: Finalization -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> PartTable -> Property NoInfo
+imageFinalized (_, final) mnts mntopts devs (PartTable _ parts) = 
 	property "disk image finalized" $ 
 		withTmpDir "mnt" $ \top -> 
 			go top `finally` liftIO (unmountall top)
@@ -239,19 +231,19 @@ imageFinalized (_, final) mnts devs (PartTable _ parts) =
 	
 	-- Ordered lexographically by mount point, so / comes before /usr
 	-- comes before /usr/local
-	orderedmntsdevs :: [(Maybe MountPoint, LoopDev)]
-	orderedmntsdevs = sortBy (compare `on` fst) $ zip mnts devs
+	orderedmntsdevs :: [(Maybe MountPoint, (MountOpts, LoopDev))]
+	orderedmntsdevs = sortBy (compare `on` fst) $ zip mnts (zip mntopts devs)
 	
 	swaps = map (SwapPartition . partitionLoopDev . snd) $
 		filter ((== LinuxSwap) . partFs . fst) $
 			zip parts devs
 
-	mountall top = forM_ orderedmntsdevs $ \(mp, loopdev) -> case mp of
+	mountall top = forM_ orderedmntsdevs $ \(mp, (mopts, loopdev)) -> case mp of
 		Nothing -> noop
 		Just p -> do
 			let mnt = top ++ p
 			createDirectoryIfMissing True mnt
-			unlessM (mount "auto" (partitionLoopDev loopdev) mnt) $
+			unlessM (mount "auto" (partitionLoopDev loopdev) mnt mopts) $
 				error $ "failed mounting " ++ mnt
 
 	unmountall top = do
@@ -278,8 +270,8 @@ grubBooted bios = (Grub.installed' bios, boots)
 	boots mnt loopdevs = combineProperties "disk image boots using grub"
 		-- bind mount host /dev so grub can access the loop devices
 		[ bindMount "/dev" (inmnt "/dev")
-		, mounted "proc" "proc" (inmnt "/proc")
-		, mounted "sysfs" "sys" (inmnt "/sys")
+		, mounted "proc" "proc" (inmnt "/proc") mempty
+		, mounted "sysfs" "sys" (inmnt "/sys") mempty
 		-- update the initramfs so it gets the uuid of the root partition
 		, inchroot "update-initramfs" ["-u"]
 		-- work around for http://bugs.debian.org/802717

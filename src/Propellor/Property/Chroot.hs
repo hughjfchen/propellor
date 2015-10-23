@@ -223,7 +223,7 @@ inChrootProcess keepprocmounted (Chroot loc _ _) cmd = do
 	-- /proc needs to be mounted in the chroot for the linker to use
 	-- /proc/self/exe which is necessary for some commands to work
 	mountproc = unlessM (elem procloc <$> mountPointsBelow loc) $
-		void $ mount "proc" "proc" procloc
+		void $ mount "proc" "proc" procloc mempty
 	
 	procloc = loc </> "proc"
 
