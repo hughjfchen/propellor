@@ -70,6 +70,13 @@ f `lacksLine` l = fileProperty (f ++ " remove: " ++ l) (filter (/= l)) f
 lacksLines :: FilePath -> [Line] -> Property NoInfo
 f `lacksLines` ls = fileProperty (f ++ " remove: " ++ show [ls]) (filter (`notElem` ls)) f
 
+-- | Replaces the content of a file with the transformed content of another file
+basedOn :: FilePath -> (FilePath, [Line] -> [Line]) -> Property NoInfo
+f `basedOn` (f', a) = property desc $ go =<< (liftIO $ readFile f')
+  where
+	desc = "replace " ++ f
+	go tmpl = ensureProperty $ fileProperty desc (\_ -> a $ lines $ tmpl) f
+
 -- | Removes a file. Does not remove symlinks or non-plain-files.
 notPresent :: FilePath -> Property NoInfo
 notPresent f = check (doesFileExist f) $ property (f ++ " not present") $ 

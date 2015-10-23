@@ -85,10 +85,12 @@ darkstar = host "darkstar.kitenet.net"
 		[ partition EXT2 `mountedAt` "/boot"
 			`setFlag` BootFlag
 		, partition EXT4 `mountedAt` "/"
+			`mountOpt` errorReadonly
 		, swapPartition (MegaBytes 256)
 		]
   where
-	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
+	c d = Chroot.debootstrapped mempty d
+		& os (System (Debian Unstable) "amd64")
 		& Apt.installed ["linux-image-amd64"]
 		& User "root" `User.hasInsecurePassword` "root"
 
@@ -494,14 +496,13 @@ standardSystemUnhardened hn suite arch motd = host hn
 
 -- This is my standard container setup, Featuring automatic upgrades.
 standardContainer :: Systemd.MachineName -> DebianSuite -> Architecture -> Systemd.Container
-standardContainer name suite arch = Systemd.container name chroot
-	& os system
-	& Apt.stdSourcesList `onChange` Apt.upgrade
-	& Apt.unattendedUpgrades
-	& Apt.cacheCleaned
+standardContainer name suite arch =
+	Systemd.container name system (Chroot.debootstrapped mempty)
+		& Apt.stdSourcesList `onChange` Apt.upgrade
+		& Apt.unattendedUpgrades
+		& Apt.cacheCleaned
   where
 	system = System (Debian suite) arch
-	chroot = Chroot.debootstrapped system mempty
 
 standardStableContainer :: Systemd.MachineName -> Systemd.Container
 standardStableContainer name = standardContainer name (Stable "jessie") "amd64"

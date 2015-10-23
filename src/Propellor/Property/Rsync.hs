@@ -22,10 +22,12 @@ syncDir = syncDirFiltered []
 data Filter 
 	= Include Pattern
 	| Exclude Pattern
+	| Protect Pattern
 
 instance RsyncParam Filter where
 	toRsync (Include (Pattern p)) = "--include=" ++ p
 	toRsync (Exclude (Pattern p)) = "--exclude=" ++ p
+	toRsync (Protect (Pattern p)) = "--filter=P " ++ p
 
 -- | A pattern to match against files that rsync is going to transfer.
 --

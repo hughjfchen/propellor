@@ -123,16 +123,16 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 
 		-- Remount /dev, so that block devices etc are
 		-- available for other properties to use.
-		unlessM (mount devfstype devfstype "/dev") $ do
+		unlessM (mount devfstype devfstype "/dev" mempty) $ do
 			warningMessage $ "failed mounting /dev using " ++ devfstype ++ "; falling back to MAKEDEV generic"
 			void $ boolSystem "sh" [Param "-c", Param "cd /dev && /sbin/MAKEDEV generic"]
 
 		-- Mount /sys too, needed by eg, grub-mkconfig.
-		unlessM (mount "sysfs" "sysfs" "/sys") $
+		unlessM (mount "sysfs" "sysfs" "/sys" mempty) $
 			warningMessage "failed mounting /sys"
 
 		-- And /dev/pts, used by apt.
-		unlessM (mount "devpts" "devpts" "/dev/pts") $
+		unlessM (mount "devpts" "devpts" "/dev/pts" mempty) $
 			warningMessage "failed mounting /dev/pts"
 
 		return MadeChange

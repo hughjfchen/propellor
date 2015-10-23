@@ -99,13 +99,12 @@ cabalDeps = flagFile go cabalupdated
 
 autoBuilderContainer :: (System -> Flavor -> Property HasInfo) -> System -> Flavor -> Times -> TimeOut -> Systemd.Container
 autoBuilderContainer mkprop osver@(System _ arch) flavor crontime timeout =
-	Systemd.container name bootstrap
+	Systemd.container name osver (Chroot.debootstrapped mempty)
 		& mkprop osver flavor
 		& buildDepsApt
 		& autobuilder arch crontime timeout
   where
 	name = arch ++ fromMaybe "" flavor ++ "-git-annex-builder"
-	bootstrap = Chroot.debootstrapped osver mempty
 
 type Flavor = Maybe String
 
@@ -144,8 +143,7 @@ androidContainer
 	-> Property i
 	-> FilePath
 	-> Systemd.Container
-androidContainer name setupgitannexdir gitannexdir = Systemd.container name bootstrap
-	& os osver
+androidContainer name setupgitannexdir gitannexdir = Systemd.container name osver bootstrap
 	& Apt.stdSourcesList
 	& User.accountFor (User builduser)
 	& File.dirExists gitbuilderdir
@@ -161,4 +159,4 @@ androidContainer name setupgitannexdir gitannexdir = Systemd.container name boot
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
 	osver = System (Debian (Stable "jessie")) "i386"
-	bootstrap = Chroot.debootstrapped osver mempty
+	bootstrap = Chroot.debootstrapped mempty

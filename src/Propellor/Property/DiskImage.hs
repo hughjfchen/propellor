@@ -5,28 +5,14 @@
 -- TODO avoid starting services while populating chroot and running final
 
 module Propellor.Property.DiskImage (
+	-- * Partition specification
+	module Propellor.Property.DiskImage.PartSpec,
 	-- * Properties
 	DiskImage,
 	imageBuilt,
 	imageRebuilt,
 	imageBuiltFrom,
 	imageExists,
-	-- * Partitioning
-	Partition,
-	PartSize(..),
-	Fs(..),
-	PartSpec,
-	MountPoint,
-	swapPartition,
-	partition,
-	mountedAt,
-	addFreeSpace,
-	setSize,
-	PartFlag(..),
-	setFlag,
-	TableType(..),
-	extended,
-	adjustp,
 	-- * Finalization
 	Finalization,
 	grubBooted,
@@ -35,6 +21,7 @@ module Propellor.Property.DiskImage (
 ) where
 
 import Propellor.Base
+import Propellor.Property.DiskImage.PartSpec
 import Propellor.Property.Chroot (Chroot)
 import Propellor.Property.Chroot.Util (removeChroot)
 import qualified Propellor.Property.Chroot as Chroot
@@ -75,6 +62,7 @@ type DiskImage = FilePath
 -- >			`setFlag` BootFlag
 -- >		, partition EXT4 `mountedAt` "/"
 -- >			`addFreeSpace` MegaBytes 100
+-- >			`mountOpt` errorReadonly
 -- >		, swapPartition (MegaBytes 256)
 -- >		]
 --
@@ -123,28 +111,28 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 			<$> liftIO (dirSizes chrootdir)
 		let calcsz mnts = maybe defSz fudge . getMountSz szm mnts
 		-- tie the knot!
-		let (mnts, parttable) = fitChrootSize tabletype partspec $
+		let (mnts, mntopts, parttable) = fitChrootSize tabletype partspec $
 			map (calcsz mnts) mnts
 		ensureProperty $
 			imageExists img (partTableSize parttable)
 				`before`
 			partitioned YesReallyDeleteDiskContents img parttable
 				`before`
-			kpartx img (mkimg' mnts parttable)
-	mkimg' mnts parttable devs =
-		partitionsPopulated chrootdir mnts devs
+			kpartx img (mkimg' mnts mntopts parttable)
+	mkimg' mnts mntopts parttable devs =
+		partitionsPopulated chrootdir mnts mntopts devs
 			`before`
-		imageFinalized final mnts devs parttable
+		imageFinalized final mnts mntopts devs parttable
 	rmimg = File.notPresent img
 
-partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [LoopDev] -> Property NoInfo
-partitionsPopulated chrootdir mnts devs = property desc $ mconcat $ zipWith go mnts devs
+partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> Property NoInfo
+partitionsPopulated chrootdir mnts mntopts devs = property desc $ mconcat $ zipWith3 go mnts mntopts devs
   where
 	desc = "partitions populated from " ++ chrootdir
 
-	go Nothing _ = noChange
-	go (Just mnt) loopdev = withTmpDir "mnt" $ \tmpdir -> bracket
-		(liftIO $ mount "auto" (partitionLoopDev loopdev) tmpdir)
+	go Nothing _ _ = noChange
+	go (Just mnt) mntopt loopdev = withTmpDir "mnt" $ \tmpdir -> bracket
+		(liftIO $ mount "auto" (partitionLoopDev loopdev) tmpdir mntopt)
 		(const $ liftIO $ umountLazy tmpdir)
 		$ \ismounted -> if ismounted
 			then ensureProperty $
@@ -160,26 +148,16 @@ partitionsPopulated chrootdir mnts devs = property desc $ mconcat $ zipWith go m
 			[ Include (Pattern m)
 			, Exclude (filesUnder m)
 			-- Preserve any lost+found directory that mkfs made
-			, Exclude (Pattern "lost+found")
+			, Protect (Pattern "lost+found")
 			]) childmnts
 
--- | Ensures that a disk image file of the specified size exists.
--- 
--- If the file doesn't exist, or is too small, creates a new one, full of 0's.
---
--- If the file is too large, truncates it down to the specified size.
-imageExists :: FilePath -> ByteSize -> Property NoInfo
-imageExists img sz = property ("disk image exists" ++ img) $ liftIO $ do
-	ms <- catchMaybeIO $ getFileStatus img
-	case ms of
-		Just s 
-			| toInteger (fileSize s) == toInteger sz -> return NoChange
-			| toInteger (fileSize s) > toInteger sz -> do
-				setFileSize img (fromInteger sz)
-				return MadeChange
-		_ -> do
-			L.writeFile img (L.replicate (fromIntegral sz) 0)
-			return MadeChange
+-- The constructor for each Partition is passed the size of the files
+-- from the chroot that will be put in that partition.
+fitChrootSize :: TableType -> [PartSpec] -> [PartSize] -> ([Maybe MountPoint], [MountOpts], PartTable)
+fitChrootSize tt l basesizes = (mounts, mountopts, parttable)
+  where
+	(mounts, mountopts, sizers) = unzip3 l
+	parttable = PartTable tt (zipWith id sizers basesizes)
 
 -- | Generates a map of the sizes of the contents of 
 -- every directory in a filesystem tree. 
@@ -210,84 +188,23 @@ getMountSz szm l (Just mntpt) =
   where
 	childsz = mconcat $ mapMaybe (getMountSz szm l) (filter (isChild mntpt) l)
 
-isChild :: FilePath -> Maybe MountPoint -> Bool
-isChild mntpt (Just d)
-	| d `equalFilePath` mntpt = False
-	| otherwise = mntpt `dirContains` d
-isChild _ Nothing = False
-
--- | From a location in a chroot (eg, /tmp/chroot/usr) to
--- the corresponding location inside (eg, /usr).
-toSysDir :: FilePath -> FilePath -> FilePath
-toSysDir chrootdir d = case makeRelative chrootdir d of
-		"." -> "/"
-		sysdir -> "/" ++ sysdir
-
-defSz :: PartSize
-defSz = MegaBytes 128
-
--- Add 2% for filesystem overhead. Rationalle for picking 2%:
--- A filesystem with 1% overhead might just sneak by as acceptable.
--- Double that just in case. Add an additional 3 mb to deal with
--- non-scaling overhead of filesystems (eg, superblocks). 
--- Add an additional 200 mb for temp files, journals, etc.
-fudge :: PartSize -> PartSize
-fudge (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3 + 200)
-
--- | Specifies a mount point and a constructor for a Partition.
+-- | Ensures that a disk image file of the specified size exists.
 -- 
--- The size that is eventually provided is the amount of space needed to 
--- hold the files that appear in the directory where the partition is to be
--- mounted. Plus a fudge factor, since filesystems have some space
--- overhead.
+-- If the file doesn't exist, or is too small, creates a new one, full of 0's.
 --
--- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
--- no corresponding directory in the chroot will have 128 MegaBytes
--- provided as a default size.)
-type PartSpec = (Maybe MountPoint, PartSize -> Partition)
-
--- | Specifies a swap partition of a given size.
-swapPartition :: PartSize -> PartSpec
-swapPartition sz = (Nothing, const (mkPartition LinuxSwap sz))
-
--- | Specifies a partition with a given filesystem.
---
--- The partition is not mounted anywhere by default; use the combinators
--- below to configure it.
-partition :: Fs -> PartSpec
-partition fs = (Nothing, mkPartition fs)
-
--- | Specifies where to mount a partition.
-mountedAt :: PartSpec -> FilePath -> PartSpec
-mountedAt (_, p) mp = (Just mp, p)
-
--- | Adds additional free space to the partition.
-addFreeSpace :: PartSpec -> PartSize -> PartSpec
-addFreeSpace (mp, p) freesz = (mp, \sz -> p (sz <> freesz))
-
--- | Forced a partition to be a specific size, instead of scaling to the
--- size needed for the files in the chroot.
-setSize :: PartSpec -> PartSize -> PartSpec
-setSize (mp, p) sz = (mp, const (p sz))
-
--- | Sets a flag on the partition.
-setFlag :: PartSpec -> PartFlag -> PartSpec
-setFlag s f = adjustp s $ \p -> p { partFlags = (f, True):partFlags p }
-
--- | Makes a MSDOS partition be Extended, rather than Primary.
-extended :: PartSpec -> PartSpec
-extended s = adjustp s $ \p -> p { partType = Extended }
-
-adjustp :: PartSpec -> (Partition -> Partition) -> PartSpec
-adjustp (mp, p) f = (mp, f . p)
-
--- | The constructor for each Partition is passed the size of the files
--- from the chroot that will be put in that partition.
-fitChrootSize :: TableType -> [PartSpec] -> [PartSize] -> ([Maybe MountPoint], PartTable)
-fitChrootSize tt l basesizes = (mounts, parttable)
-  where
-	(mounts, sizers) = unzip l
-	parttable = PartTable tt (zipWith id sizers basesizes)
+-- If the file is too large, truncates it down to the specified size.
+imageExists :: FilePath -> ByteSize -> Property NoInfo
+imageExists img sz = property ("disk image exists" ++ img) $ liftIO $ do
+	ms <- catchMaybeIO $ getFileStatus img
+	case ms of
+		Just s 
+			| toInteger (fileSize s) == toInteger sz -> return NoChange
+			| toInteger (fileSize s) > toInteger sz -> do
+				setFileSize img (fromInteger sz)
+				return MadeChange
+		_ -> do
+			L.writeFile img (L.replicate (fromIntegral sz) 0)
+			return MadeChange
 
 -- | A pair of properties. The first property is satisfied within the
 -- chroot, and is typically used to download the boot loader.
@@ -301,8 +218,8 @@ fitChrootSize tt l basesizes = (mounts, parttable)
 -- in the partition tree.
 type Finalization = (Property NoInfo, (FilePath -> [LoopDev] -> Property NoInfo))
 
-imageFinalized :: Finalization -> [Maybe MountPoint] -> [LoopDev] -> PartTable -> Property NoInfo
-imageFinalized (_, final) mnts devs (PartTable _ parts) = 
+imageFinalized :: Finalization -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> PartTable -> Property NoInfo
+imageFinalized (_, final) mnts mntopts devs (PartTable _ parts) = 
 	property "disk image finalized" $ 
 		withTmpDir "mnt" $ \top -> 
 			go top `finally` liftIO (unmountall top)
@@ -314,19 +231,19 @@ imageFinalized (_, final) mnts devs (PartTable _ parts) =
 	
 	-- Ordered lexographically by mount point, so / comes before /usr
 	-- comes before /usr/local
-	orderedmntsdevs :: [(Maybe MountPoint, LoopDev)]
-	orderedmntsdevs = sortBy (compare `on` fst) $ zip mnts devs
+	orderedmntsdevs :: [(Maybe MountPoint, (MountOpts, LoopDev))]
+	orderedmntsdevs = sortBy (compare `on` fst) $ zip mnts (zip mntopts devs)
 	
 	swaps = map (SwapPartition . partitionLoopDev . snd) $
 		filter ((== LinuxSwap) . partFs . fst) $
 			zip parts devs
 
-	mountall top = forM_ orderedmntsdevs $ \(mp, loopdev) -> case mp of
+	mountall top = forM_ orderedmntsdevs $ \(mp, (mopts, loopdev)) -> case mp of
 		Nothing -> noop
 		Just p -> do
 			let mnt = top ++ p
 			createDirectoryIfMissing True mnt
-			unlessM (mount "auto" (partitionLoopDev loopdev) mnt) $
+			unlessM (mount "auto" (partitionLoopDev loopdev) mnt mopts) $
 				error $ "failed mounting " ++ mnt
 
 	unmountall top = do
@@ -353,8 +270,8 @@ grubBooted bios = (Grub.installed' bios, boots)
 	boots mnt loopdevs = combineProperties "disk image boots using grub"
 		-- bind mount host /dev so grub can access the loop devices
 		[ bindMount "/dev" (inmnt "/dev")
-		, mounted "proc" "proc" (inmnt "/proc")
-		, mounted "sysfs" "sys" (inmnt "/sys")
+		, mounted "proc" "proc" (inmnt "/proc") mempty
+		, mounted "sysfs" "sys" (inmnt "/sys") mempty
 		-- update the initramfs so it gets the uuid of the root partition
 		, inchroot "update-initramfs" ["-u"]
 		-- work around for http://bugs.debian.org/802717
@@ -382,3 +299,16 @@ grubBooted bios = (Grub.installed' bios, boots)
 		wholediskloopdev = case loopdevs of
 			(l:_) -> wholeDiskLoopDev l
 			[] -> error "No loop devs provided!"
+
+isChild :: FilePath -> Maybe MountPoint -> Bool
+isChild mntpt (Just d)
+	| d `equalFilePath` mntpt = False
+	| otherwise = mntpt `dirContains` d
+isChild _ Nothing = False
+
+-- | From a location in a chroot (eg, /tmp/chroot/usr) to
+-- the corresponding location inside (eg, /usr).
+toSysDir :: FilePath -> FilePath -> FilePath
+toSysDir chrootdir d = case makeRelative chrootdir d of
+		"." -> "/"
+		sysdir -> "/" ++ sysdir

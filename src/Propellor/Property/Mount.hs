@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving, TypeSynonymInstances, FlexibleInstances #-}
+
 module Propellor.Property.Mount where
 
 import Propellor.Base
@@ -8,16 +10,36 @@ import Data.Char
 import Data.List
 import Utility.Table
 
-type FsType = String -- ^ type of filesystem to mount ("auto" to autodetect)
+-- | type of filesystem to mount ("auto" to autodetect)
+type FsType = String
 
+-- | A device or other thing to be mounted.
 type Source = String
 
+-- | A mount point for a filesystem.
 type MountPoint = FilePath
 
+-- | Filesystem mount options. Eg, "errors=remount-ro"
+newtype MountOpts = MountOpts [String]
+	deriving Monoid
+
+class ToMountOpts a where
+	toMountOpts :: a -> MountOpts
+	
+instance ToMountOpts MountOpts where
+	toMountOpts = id
+
+instance ToMountOpts String where
+	toMountOpts s = MountOpts [s]
+
+formatMountOpts :: MountOpts -> String
+formatMountOpts (MountOpts []) = "defaults"
+formatMountOpts (MountOpts l) = intercalate "," l
+
 -- | Mounts a device.
-mounted :: FsType -> Source -> MountPoint -> Property NoInfo
-mounted fs src mnt = property (mnt ++ " mounted") $ 
-	toResult <$> liftIO (mount fs src mnt)
+mounted :: FsType -> Source -> MountPoint -> MountOpts -> Property NoInfo
+mounted fs src mnt opts = property (mnt ++ " mounted") $ 
+	toResult <$> liftIO (mount fs src mnt opts)
 
 -- | Bind mounts the first directory so its contents also appear
 -- in the second directory.
@@ -25,8 +47,13 @@ bindMount :: FilePath -> FilePath -> Property NoInfo
 bindMount src dest = cmdProperty "mount" ["--bind", src, dest]
 	`describe` ("bind mounted " ++ src ++ " to " ++ dest)
 
-mount :: FsType -> Source -> MountPoint -> IO Bool
-mount fs src mnt = boolSystem "mount" [Param "-t", Param fs, Param src, Param mnt]
+mount :: FsType -> Source -> MountPoint -> MountOpts -> IO Bool
+mount fs src mnt opts = boolSystem "mount" $
+	[ Param "-t", Param fs
+	, Param "-o", Param (formatMountOpts opts)
+	, Param src
+	, Param mnt
+	]
 
 newtype SwapPartition = SwapPartition FilePath
 
@@ -64,7 +91,7 @@ genFstab mnts swaps mnttransform = do
 				]
 		, pure (mnttransform mnt)
 		, fromMaybe "auto" <$> getFsType mnt
-		, fromMaybe "defaults" <$> getFsOptions mnt
+		, formatMountOpts <$> getFsMountOpts mnt
 		, pure "0"
 		, pure (if mnt == "/" then "1" else "2")
 		]
@@ -75,7 +102,7 @@ genFstab mnts swaps mnttransform = do
 			]
 		, pure "none"
 		, pure "swap"
-		, pure "defaults"
+		, pure (formatMountOpts mempty)
 		, pure "0"
 		, pure "0"
 		]
@@ -115,8 +142,9 @@ getFsType :: MountPoint -> IO (Maybe FsType)
 getFsType = findmntField "fstype"
 
 -- | Mount options for the filesystem mounted at a given location.
-getFsOptions :: MountPoint -> IO (Maybe String)
-getFsOptions = findmntField "fs-options"
+getFsMountOpts :: MountPoint -> IO MountOpts
+getFsMountOpts p = maybe mempty toMountOpts
+	<$> findmntField "fs-options" p
 
 type UUID = String
 

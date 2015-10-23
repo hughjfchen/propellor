@@ -1,5 +1,5 @@
 Name: propellor
-Version: 2.11.0
+Version: 2.12.0
 Cabal-Version: >= 1.8
 License: BSD3
 Maintainer: Joey Hess <id@joeyh.name>
@@ -84,6 +84,7 @@ Library
     Propellor.Property.DebianMirror
     Propellor.Property.Debootstrap
     Propellor.Property.DiskImage
+    Propellor.Property.DiskImage.PartSpec
     Propellor.Property.Dns
     Propellor.Property.DnsSec
     Propellor.Property.Docker
