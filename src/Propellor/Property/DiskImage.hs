@@ -227,9 +227,10 @@ defSz = MegaBytes 128
 -- Add 2% for filesystem overhead. Rationalle for picking 2%:
 -- A filesystem with 1% overhead might just sneak by as acceptable.
 -- Double that just in case. Add an additional 3 mb to deal with
--- non-scaling overhead, of filesystems (eg, superblocks).
+-- non-scaling overhead of filesystems (eg, superblocks). 
+-- Add an additional 100 mb for temp files etc.
 fudge :: PartSize -> PartSize
-fudge (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3)
+fudge (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3 + 100)
 
 -- | Specifies a mount point and a constructor for a Partition.
 -- 
