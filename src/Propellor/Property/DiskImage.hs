@@ -331,7 +331,7 @@ grubBooted bios = (Grub.installed' bios, boots)
   where
 	boots mnt loopdevs = combineProperties "disk image boots using grub"
 		-- bind mount host /dev so grub can access the loop devices
-		[ mounted "bind" "/dev" (inmnt "/dev")
+		[ bindMount "/dev" (inmnt "/dev")
 		, mounted "proc" "proc" (inmnt "/proc")
 		, mounted "sysfs" "sys" (inmnt "/sys")
 		-- work around for http://bugs.debian.org/802717
