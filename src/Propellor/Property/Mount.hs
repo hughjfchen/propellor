@@ -56,7 +56,7 @@ genFstab mnts swaps mnttransform = do
 		]
 	legend = ["# <file system>", "<mount point>", "<type>", "<options>", "<dump>", "<pass>"]
 	getcfg mnt = sequence
-		[ fromMaybe (error "unable to find mount source")
+		[ fromMaybe (error $ "unable to find mount source for " ++ mnt)
 			<$> getM (\a -> a mnt)
 				[ uuidprefix getMountUUID
 				, sourceprefix getMountLabel
