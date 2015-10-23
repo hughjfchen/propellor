@@ -11,7 +11,7 @@ import Data.List.Utils
 -- name the `Host` has.
 --
 -- Configures both </etc/hostname> and the current hostname.
--- (However, if used inside a chroot, avoids setting the current hostname
+-- (However, when used inside a chroot, avoids setting the current hostname
 -- as that would impact the system outside the chroot.)
 --
 -- Configures </etc/mailname> with the domain part of the hostname.

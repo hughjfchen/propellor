@@ -57,7 +57,7 @@ mount fs src mnt opts = boolSystem "mount" $
 
 newtype SwapPartition = SwapPartition FilePath
 
--- | Replaces /etc/fstab with a file that should cause the currently
+-- | Replaces </etc/fstab> with a file that should cause the currently
 -- mounted partitions to be re-mounted the same way on boot.
 --
 -- For each specified MountPoint, the UUID of each partition
@@ -110,8 +110,9 @@ genFstab mnts swaps mnttransform = do
 	uuidprefix = prefix "UUID="
 	sourceprefix = prefix "LABEL="
 
--- | Checks if /etc/fstab is not configured. This is the case if it doesn't
--- exist, or consists entirely of blank lines or comments.
+-- | Checks if </etc/fstab> is not configured. 
+-- This is the case if it doesn't exist, or
+-- consists entirely of blank lines or comments.
 --
 -- So, if you want to only replace the fstab once, and then never touch it
 -- again, allowing local modifications:
