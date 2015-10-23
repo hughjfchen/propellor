@@ -1,9 +1,0 @@
-propellor 2.7.3 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Fix bug that caused provisioning new chroots to fail.
-   * Update for Debian systemd-container package split.
-   * Added Propellor.Property.Parted, for disk partitioning.
-   * Added Propellor.Property.Partition, for partition formatting etc.
-   * Added Propellor.Property.DiskImage, for bootable disk image creation.
-     (Experimental and not yet complete.)
-   * Dropped support for ghc 7.4."""]]
