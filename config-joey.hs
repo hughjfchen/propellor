@@ -84,8 +84,9 @@ darkstar = host "darkstar.kitenet.net"
 	& imageBuilt "/tmp/img" c MSDOS (grubBooted PC)
 		[ partition EXT2 `mountedAt` "/boot"
 			`setFlag` BootFlag
+			`addFreeSpace` MegaBytes 200
 		, partition EXT4 `mountedAt` "/"
-			`addFreeSpace` MegaBytes 100
+			`addFreeSpace` MegaBytes 200
 		, swapPartition (MegaBytes 256)
 		]
   where

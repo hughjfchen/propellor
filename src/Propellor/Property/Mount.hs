@@ -150,7 +150,7 @@ findmntField field mnt = catchDefaultIO Nothing $
 blkidTag :: String -> Source -> IO (Maybe String)
 blkidTag tag dev = catchDefaultIO Nothing $
 	headMaybe . filter (not . null) . lines
-		<$> readProcess "blkid" [dev, "-s", tag]
+		<$> readProcess "blkid" [dev, "-s", tag, "-o", "value"]
 
 -- | Unmounts a device or mountpoint,
 -- lazily so any running processes don't block it.
