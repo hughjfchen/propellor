@@ -324,7 +324,8 @@ imageFinalized (_, final) mnts devs (PartTable _ parts) =
 	
 	writefstab top = do
 		old <- catchDefaultIO "" $ readFileStrict "/etc/fstab"
-		new <- genFstab (catMaybes mnts) swaps (toSysDir top)
+		new <- genFstab (map (top ++) (catMaybes mnts))
+			swaps (toSysDir top)
 		writeFile "/etc/fstab" (unlines new ++ old)
 	swaps = map (SwapPartition . partitionLoopDev . snd) $
 		filter ((== LinuxSwap) . partFs . fst) $
