@@ -11,6 +11,8 @@ propellor (2.12.0) UNRELEASED; urgency=medium
     Where before debootstrapped and bootstrapped took a System parameter,
     the os property should now be added to the Chroot.
   * Follow-on change to Systemd.container, which now takes a System parameter.
+  * Generalized Property.check so it can be used with Propellor actions as
+    well as IO actions.
 
  -- Joey Hess <id@joeyh.name>  Thu, 22 Oct 2015 20:24:18 -0400
 

@@ -29,6 +29,7 @@ module Propellor.Types
 	, CombinedType
 	, combineWith
 	, Propellor(..)
+	, LiftPropellor(..)
 	, EndAction(..)
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
@@ -71,6 +72,15 @@ newtype Propellor p = Propellor { runWithHost :: RWST Host [EndAction] () IO p }
 		, MonadThrow
 		, MonadMask
 		)
+
+class LiftPropellor m where
+	liftPropellor :: m a -> Propellor a
+
+instance LiftPropellor Propellor where
+	liftPropellor = id
+
+instance LiftPropellor IO where
+	liftPropellor = liftIO
 
 instance Monoid (Propellor Result) where
 	mempty = return NoChange
