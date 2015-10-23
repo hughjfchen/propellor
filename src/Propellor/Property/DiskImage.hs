@@ -77,6 +77,10 @@ type DiskImage = FilePath
 -- >			`addFreeSpace` MegaBytes 100
 -- >		, swapPartition (MegaBytes 256)
 -- >		]
+--
+-- Note that the disk image file is reused if it already exists,
+-- to avoid expensive IO to generate a new one. And, it's updated in-place,
+-- so its contents are undefined during the build process.
 imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
 imageBuilt = imageBuilt' False
 
@@ -327,11 +331,12 @@ imageFinalized (_, final) mnts devs (PartTable _ parts) =
 		umountLazy top
 	
 	writefstab top = do
+		let fstab = top ++ "/etc/fstab"
 		old <- catchDefaultIO [] $ filter (not . unconfigured) . lines
-			<$> readFileStrict (top ++ "/etc/fstab")
+			<$> readFileStrict fstab
 		new <- genFstab (map (top ++) (catMaybes mnts))
 			swaps (toSysDir top)
-		writeFile "/etc/fstab" $ unlines $ new ++ old
+		writeFile fstab $ unlines $ new ++ old
 	-- Eg "UNCONFIGURED FSTAB FOR BASE SYSTEM"
 	unconfigured s = "UNCONFIGURED" `isInfixOf` s
 
