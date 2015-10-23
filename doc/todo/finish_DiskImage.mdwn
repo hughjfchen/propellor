@@ -1,3 +1,0 @@
-The DiskImage module is lacking an implementation of grubBooted.
-
-[[!tag user/joey]]
