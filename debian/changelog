@@ -5,6 +5,7 @@ propellor (2.11.1) UNRELEASED; urgency=medium
     as chroots. Thanks, Ben Boeckel.
   * Added Mount.fstabbed property to generate /etc/fstab to replicate
     current mounts.
+  * HostName: Improve domain extraction code.
 
  -- Joey Hess <id@joeyh.name>  Thu, 22 Oct 2015 20:24:18 -0400
 
