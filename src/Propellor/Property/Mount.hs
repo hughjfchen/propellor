@@ -36,5 +36,9 @@ unmountBelow d = do
 	forM_ submnts umountLazy
 
 -- | Mounts a device.
+mounted :: FsType -> Source -> FilePath -> Property NoInfo
+mounted fs src mnt = property (mnt ++ " mounted") $ 
+	toResult <$> liftIO (mount fs src mnt)
+
 mount :: FsType -> Source -> FilePath -> IO Bool
 mount fs src mnt = boolSystem "mount" [Param "-t", Param fs, Param src, Param mnt]
