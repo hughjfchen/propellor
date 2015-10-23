@@ -125,6 +125,7 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 		-- tie the knot!
 		let (mnts, parttable) = fitChrootSize tabletype partspec $
 			map (calcsz mnts) mnts
+		liftIO $ print mnts
 		ensureProperty $
 			imageExists img (partTableSize parttable)
 				`before`
