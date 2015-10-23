@@ -174,21 +174,22 @@ machined = go `describe` "machined installed"
 					Apt.installed ["systemd-container"]
 			_ -> noChange
 
--- | Defines a container with a given machine name.
+-- | Defines a container with a given machine name, and operating system,
+-- and how to create its chroot if not already present.
 --
 -- Properties can be added to configure the Container.
 --
--- > container "webserver" (Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty)
+-- > container "webserver" (System (Debian Unstable) "amd64") (Chroot.debootstrapped mempty)
 -- >    & Apt.installedRunning "apache2"
 -- >    & ...
-container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
-container name mkchroot = Container name c h
+container :: MachineName -> System -> (FilePath -> Chroot.Chroot) -> Container
+container name system mkchroot = Container name c h
 	& os system
 	& resolvConfed
 	& linkJournal
   where
 	c = mkchroot (containerDir name)
-	system = Chroot.chrootSystem c
+		& os system
 	h = Host name [] mempty
 
 -- | Runs a container using systemd-nspawn.
@@ -206,7 +207,7 @@ container name mkchroot = Container name c h
 -- Reverting this property stops the container, removes the systemd unit,
 -- and deletes the chroot and all its contents.
 nspawned :: Container -> RevertableProperty
-nspawned c@(Container name (Chroot.Chroot loc system builder _) h) =
+nspawned c@(Container name (Chroot.Chroot loc builder _) h) =
 	p `describe` ("nspawned " ++ name)
   where
 	p = enterScript c
@@ -226,7 +227,7 @@ nspawned c@(Container name (Chroot.Chroot loc system builder _) h) =
 			<!>
 		doNothing
 
-	chroot = Chroot.Chroot loc system builder h
+	chroot = Chroot.Chroot loc builder h
 
 -- | Sets up the service file for the container, and then starts
 -- it running.
@@ -382,7 +383,8 @@ instance Publishable (Proto, Bound Port) where
 -- > 		`requires` Systemd.running Systemd.networkd
 -- >
 -- > webserver :: Systemd.container
--- > webserver = Systemd.container "webserver" (Chroot.debootstrapped (System (Debian Testing) "amd64") mempty)
+-- > webserver = Systemd.container "webserver" (Chroot.debootstrapped mempty)
+-- >	& os (System (Debian Testing) "amd64")
 -- >	& Systemd.privateNetwork
 -- >	& Systemd.running Systemd.networkd
 -- >	& Systemd.publish (Port 80 ->- Port 8080)

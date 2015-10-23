@@ -7,6 +7,10 @@ propellor (2.11.1) UNRELEASED; urgency=medium
     current mounts.
   * HostName: Improve domain extraction code.
   * Add File.basedOn. Thanks, Per Olofsson.
+  * Changed how the operating system is provided to Chroot (API change).
+    Where before debootstrapped and bootstrapped took a System parameter,
+    the os property should now be added to the Chroot.
+  * Follow-on change to Systemd.container, which now takes a System parameter.
 
  -- Joey Hess <id@joeyh.name>  Thu, 22 Oct 2015 20:24:18 -0400
 

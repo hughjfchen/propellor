@@ -34,25 +34,26 @@ import System.Posix.Directory
 -- | Specification of a chroot. Normally you'll use `debootstrapped` or
 -- `bootstrapped` to construct a Chroot value.
 data Chroot where
-	Chroot :: ChrootBootstrapper b => FilePath -> System -> b -> Host -> Chroot
+	Chroot :: ChrootBootstrapper b => FilePath -> b -> Host -> Chroot
 
-chrootSystem :: Chroot -> System
-chrootSystem (Chroot _ system _ _) = system
+chrootSystem :: Chroot -> Maybe System
+chrootSystem (Chroot _ _ h) = fromInfoVal (getInfo (hostInfo h))
 
 instance Show Chroot where
-	show (Chroot loc system _ _) = "Chroot " ++ loc ++ " " ++ show system
+	show c@(Chroot loc _ _) = "Chroot " ++ loc ++ " " ++ show (chrootSystem c)
 
 instance PropAccum Chroot where
-	(Chroot l s c h) `addProp` p = Chroot l s c (h & p)
-	(Chroot l s c h) `addPropFront` p = Chroot l s c (h `addPropFront` p)
-	getProperties (Chroot _ _ _ h) = hostProperties h
+	(Chroot l c h) `addProp` p = Chroot l c (h & p)
+	(Chroot l c h) `addPropFront` p = Chroot l c (h `addPropFront` p)
+	getProperties (Chroot _ _ h) = hostProperties h
 
 -- | Class of things that can do initial bootstrapping of an operating
 -- System in a chroot.
 class ChrootBootstrapper b where
 	-- | Do initial bootstrapping of an operating system in a chroot.
-	-- If the operating System is not supported, return Nothing.
-	buildchroot :: b -> System -> FilePath -> Maybe (Property HasInfo)
+	-- If the operating System is not supported, return 
+	-- Left error message.
+	buildchroot :: b -> Maybe System -> FilePath -> Either String (Property HasInfo)
 
 -- | Use this to bootstrap a chroot by extracting a tarball.
 --
@@ -63,7 +64,7 @@ class ChrootBootstrapper b where
 data ChrootTarball = ChrootTarball FilePath
 
 instance ChrootBootstrapper ChrootTarball where
-	buildchroot (ChrootTarball tb) _ loc = Just $ extractTarball loc tb
+	buildchroot (ChrootTarball tb) _ loc = Right $ extractTarball loc tb
 
 extractTarball :: FilePath -> FilePath -> Property HasInfo
 extractTarball target src = toProp .
@@ -83,27 +84,28 @@ data Debootstrapped = Debootstrapped Debootstrap.DebootstrapConfig
 
 instance ChrootBootstrapper Debootstrapped where
 	buildchroot (Debootstrapped cf) system loc = case system of
-		(System (Debian _) _) -> Just debootstrap
-		(System (Ubuntu _) _) -> Just debootstrap
+		(Just s@(System (Debian _) _)) -> Right $ debootstrap s
+		(Just s@(System (Ubuntu _) _)) -> Right $ debootstrap s
+		Nothing -> Left "Cannot debootstrap; `os` property not specified"
 	  where
-		debootstrap = Debootstrap.built loc system cf
+		debootstrap s = Debootstrap.built loc s cf
 
 -- | Defines a Chroot at the given location, built with debootstrap.
 --
--- Properties can be added to configure the Chroot.
+-- Properties can be added to configure the Chroot. At a minimum,
+-- add the `os` property to specify the operating system to bootstrap.
 --
--- > debootstrapped (System (Debian Unstable) "amd64") Debootstrap.BuildD "/srv/chroot/ghc-dev"
+-- > debootstrapped Debootstrap.BuildD "/srv/chroot/ghc-dev"
+-- >	& os (System (Debian Unstable) "amd64")
 -- > 	& Apt.installed ["ghc", "haskell-platform"]
 -- > 	& ...
-debootstrapped :: System -> Debootstrap.DebootstrapConfig -> FilePath -> Chroot
-debootstrapped system conf = bootstrapped system (Debootstrapped conf)
+debootstrapped :: Debootstrap.DebootstrapConfig -> FilePath -> Chroot
+debootstrapped conf = bootstrapped (Debootstrapped conf)
 
 -- | Defines a Chroot at the given location, bootstrapped with the
 -- specified ChrootBootstrapper.
-bootstrapped :: ChrootBootstrapper b => System -> b -> FilePath -> Chroot
-bootstrapped system bootstrapper location =
-	Chroot location system bootstrapper h
-		& os system
+bootstrapped :: ChrootBootstrapper b => b -> FilePath -> Chroot
+bootstrapped bootstrapper location = Chroot location bootstrapper h
   where
 	h = Host location [] mempty
 
@@ -117,7 +119,7 @@ provisioned :: Chroot -> RevertableProperty
 provisioned c = provisioned' (propagateChrootInfo c) c False
 
 provisioned' :: (Property HasInfo -> Property HasInfo) -> Chroot -> Bool -> RevertableProperty
-provisioned' propigator c@(Chroot loc system bootstrapper _) systemdonly =
+provisioned' propigator c@(Chroot loc bootstrapper _) systemdonly =
 	(propigator $ propertyList (chrootDesc c "exists") [setup])
 		<!>
 	(propertyList (chrootDesc c "removed") [teardown])
@@ -125,18 +127,18 @@ provisioned' propigator c@(Chroot loc system bootstrapper _) systemdonly =
 	setup = propellChroot c (inChrootProcess (not systemdonly) c) systemdonly
 		`requires` toProp built
 	
-	built = case buildchroot bootstrapper system loc of
-		Just p -> p
-		Nothing -> cantbuild
+	built = case buildchroot bootstrapper (chrootSystem c) loc of
+		Right p -> p
+		Left e -> cantbuild e
 
-	cantbuild = infoProperty (chrootDesc c "built") (error $ "cannot bootstrap " ++ show system ++ " using supplied ChrootBootstrapper") mempty []
+	cantbuild e = infoProperty (chrootDesc c "built") (error e) mempty []
 
 	teardown = check (not <$> unpopulated loc) $
 		property ("removed " ++ loc) $
 			makeChange (removeChroot loc)
 
 propagateChrootInfo :: (IsProp (Property i)) => Chroot -> Property i -> Property HasInfo
-propagateChrootInfo c@(Chroot location _ _ _) p = propagateContainer location c p'
+propagateChrootInfo c@(Chroot location _ _) p = propagateContainer location c p'
   where
 	p' = infoProperty
 		(propertyDesc p)
@@ -145,12 +147,12 @@ propagateChrootInfo c@(Chroot location _ _ _) p = propagateContainer location c 
 		(propertyChildren p)
 
 chrootInfo :: Chroot -> Info
-chrootInfo (Chroot loc _ _ h) = mempty `addInfo` 
+chrootInfo (Chroot loc _ h) = mempty `addInfo` 
 	mempty { _chroots = M.singleton loc h }
 
 -- | Propellor is run inside the chroot to provision it.
 propellChroot :: Chroot -> ([String] -> IO (CreateProcess, IO ())) -> Bool -> Property NoInfo
-propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "provisioned") $ do
+propellChroot c@(Chroot loc _ _) mkproc systemdonly = property (chrootDesc c "provisioned") $ do
 	let d = localdir </> shimdir c
 	let me = localdir </> "propellor"
 	shim <- liftIO $ ifM (doesDirectoryExist d)
@@ -189,7 +191,7 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 		return r
 
 toChain :: HostName -> Chroot -> Bool -> IO CmdLine
-toChain parenthost (Chroot loc _ _ _) systemdonly = do
+toChain parenthost (Chroot loc _ _) systemdonly = do
 	onconsole <- isConsole <$> mkMessageHandle
 	return $ ChrootChain parenthost loc systemdonly onconsole
 
@@ -214,7 +216,7 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 chain _ _ = errorMessage "bad chain command"
 
 inChrootProcess :: Bool -> Chroot -> [String] -> IO (CreateProcess, IO ())
-inChrootProcess keepprocmounted (Chroot loc _ _ _) cmd = do
+inChrootProcess keepprocmounted (Chroot loc _ _) cmd = do
 	mountproc
 	return (proc "chroot" (loc:cmd), cleanup)
   where
@@ -234,10 +236,10 @@ provisioningLock :: FilePath -> FilePath
 provisioningLock containerloc = "chroot" </> mungeloc containerloc ++ ".lock"
 
 shimdir :: Chroot -> FilePath
-shimdir (Chroot loc _ _ _) = "chroot" </> mungeloc loc ++ ".shim"
+shimdir (Chroot loc _ _) = "chroot" </> mungeloc loc ++ ".shim"
 
 mungeloc :: FilePath -> String
 mungeloc = replace "/" "_"
 
 chrootDesc :: Chroot -> String -> String
-chrootDesc (Chroot loc _ _ _) desc = "chroot " ++ loc ++ " " ++ desc
+chrootDesc (Chroot loc _ _) desc = "chroot " ++ loc ++ " " ++ desc
