@@ -1,4 +1,4 @@
-propellor (2.11.1) UNRELEASED; urgency=medium
+propellor (2.12.0) UNRELEASED; urgency=medium
 
   * The DiskImage module can now make bootable images using grub.
   * Add a ChrootTarball chroot type, for using pre-built tarballs
