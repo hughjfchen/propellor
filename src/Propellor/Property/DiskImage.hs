@@ -352,6 +352,7 @@ grubBooted bios = (Grub.installed' bios, boots)
 		[ bindMount "/dev" (inmnt "/dev")
 		, mounted "proc" "proc" (inmnt "/proc")
 		, mounted "sysfs" "sys" (inmnt "/sys")
+		-- update the initramfs so it gets the uuid of the root partition
 		, inchroot "update-initramfs" ["-u"]
 		-- work around for http://bugs.debian.org/802717
 		 , check haveosprober $ inchroot "chmod" ["-x", osprober]
