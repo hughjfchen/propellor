@@ -125,7 +125,6 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 		-- tie the knot!
 		let (mnts, parttable) = fitChrootSize tabletype partspec $
 			map (calcsz mnts) mnts
-		liftIO $ print mnts
 		ensureProperty $
 			imageExists img (partTableSize parttable)
 				`before`
@@ -229,9 +228,9 @@ defSz = MegaBytes 128
 -- A filesystem with 1% overhead might just sneak by as acceptable.
 -- Double that just in case. Add an additional 3 mb to deal with
 -- non-scaling overhead of filesystems (eg, superblocks). 
--- Add an additional 100 mb for temp files etc.
+-- Add an additional 200 mb for temp files, journals, etc.
 fudge :: PartSize -> PartSize
-fudge (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3 + 100)
+fudge (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3 + 200)
 
 -- | Specifies a mount point and a constructor for a Partition.
 -- 
