@@ -160,7 +160,7 @@ partitionsPopulated chrootdir mnts devs = property desc $ mconcat $ zipWith go m
 			[ Include (Pattern m)
 			, Exclude (filesUnder m)
 			-- Preserve any lost+found directory that mkfs made
-			, Exclude (Pattern "lost+found")
+			, Protect (Pattern "lost+found")
 			]) childmnts
 
 -- | Ensures that a disk image file of the specified size exists.
