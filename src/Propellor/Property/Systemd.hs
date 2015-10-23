@@ -217,7 +217,7 @@ nspawned c@(Container name (Chroot.Chroot loc builder _) h) =
 
 	-- Chroot provisioning is run in systemd-only mode,
 	-- which sets up the chroot and ensures systemd and dbus are
-	-- installed, but does not handle the other provisions.
+	-- installed, but does not handle the other properties.
 	chrootprovisioned = Chroot.provisioned' (Chroot.propagateChrootInfo chroot) chroot True
 
 	-- Use nsenter to enter container and and run propellor to
