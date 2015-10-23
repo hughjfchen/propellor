@@ -119,18 +119,18 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 			<$> liftIO (dirSizes chrootdir)
 		let calcsz mnts = maybe defSz fudge . getMountSz szm mnts
 		-- tie the knot!
-		let (mnts, t) = fitChrootSize tabletype partspec $
+		let (mnts, parttable) = fitChrootSize tabletype partspec $
 			map (calcsz mnts) mnts
 		ensureProperty $
-			imageExists img (partTableSize t)
+			imageExists img (partTableSize parttable)
 				`before`
-			partitioned YesReallyDeleteDiskContents img t
+			partitioned YesReallyDeleteDiskContents img parttable
 				`before`
-			kpartx img (mkimg' mnts)
-	mkimg' mnts devs =
+			kpartx img (mkimg' mnts parttable)
+	mkimg' mnts parttable devs =
 		partitionsPopulated chrootdir mnts devs
 			`before`
-		imageFinalized final mnts devs
+		imageFinalized final mnts devs parttable
 	rmimg = File.notPresent img
 
 partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [LoopDev] -> Property NoInfo
@@ -294,14 +294,16 @@ fitChrootSize tt l basesizes = (mounts, parttable)
 -- in the partition tree.
 type Finalization = (Property NoInfo, (FilePath -> [LoopDev] -> Property NoInfo))
 
-imageFinalized :: Finalization -> [Maybe MountPoint] -> [LoopDev] -> Property NoInfo
-imageFinalized (_, final) mnts devs = property "disk image finalized" $ 
-	withTmpDir "mnt" $ \top -> 
-		go top `finally` liftIO (unmountall top)
+imageFinalized :: Finalization -> [Maybe MountPoint] -> [LoopDev] -> PartTable -> Property NoInfo
+imageFinalized (_, final) mnts devs (PartTable _ parts) = 
+	property "disk image finalized" $ 
+		withTmpDir "mnt" $ \top -> 
+			go top `finally` liftIO (unmountall top)
   where
-	go mnt = do
-		liftIO $ mountall mnt
-		ensureProperty $ final mnt devs
+	go top = do
+		liftIO $ mountall top
+		liftIO $ writefstab top
+		ensureProperty $ final top devs
 	
 	-- Ordered lexographically by mount point, so / comes before /usr
 	-- comes before /usr/local
@@ -319,6 +321,14 @@ imageFinalized (_, final) mnts devs = property "disk image finalized" $
 	unmountall top = do
 		unmountBelow top
 		umountLazy top
+	
+	writefstab top = do
+		old <- catchDefaultIO "" $ readFileStrict "/etc/fstab"
+		new <- genFstab (catMaybes mnts) swaps (toSysDir top)
+		writeFile "/etc/fstab" (unlines new ++ old)
+	swaps = map (SwapPartition . partitionLoopDev . snd) $
+		filter ((== LinuxSwap) . partFs . fst) $
+			zip parts devs
 
 noFinalization :: Finalization
 noFinalization = (doNothing, \_ _ -> doNothing)
