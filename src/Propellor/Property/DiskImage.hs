@@ -331,9 +331,9 @@ grubBooted bios = (Grub.installed' bios, boots)
   where
 	boots mnt loopdevs = combineProperties "disk image boots using grub"
 		-- bind mount host /dev so grub can access the loop devices
-		[ mounted "bind" "/dev" (mnt <> "dev")
-		, mounted "proc" "proc" (mnt <> "proc")
-		, mounted "sysfs" "sys" (mnt <> "sys")
+		[ mounted "bind" "/dev" (inmnt "/dev")
+		, mounted "proc" "proc" (inmnt "/proc")
+		, mounted "sysfs" "sys" (inmnt "/sys")
 		-- work around for http://bugs.debian.org/802717
 		 , check haveosprober $ inchroot "chmod" ["-x", osprober]
 		, inchroot "update-grub" []
@@ -345,9 +345,12 @@ grubBooted bios = (Grub.installed' bios, boots)
 		, cmdProperty "sync" []
 		]
 	  where
+	  	-- cannot use </> since the filepath is absolute
+		inmnt f = mnt ++ f
+
 		inchroot cmd ps = cmdProperty "chroot" ([mnt, cmd] ++ ps)
 
-		haveosprober = doesFileExist (mnt ++ osprober)
+		haveosprober = doesFileExist (inmnt osprober)
 		osprober = "/etc/grub.d/30_os-prober"
 
 		-- It doesn't matter which loopdev we use; all
