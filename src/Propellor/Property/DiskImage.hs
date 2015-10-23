@@ -133,7 +133,7 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 		imageFinalized final mnts devs
 	rmimg = File.notPresent img
 
-partitionsPopulated :: FilePath -> [MountPoint] -> [LoopDev] -> Property NoInfo
+partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [LoopDev] -> Property NoInfo
 partitionsPopulated chrootdir mnts devs = property desc $ mconcat $ zipWith go mnts devs
   where
 	desc = "partitions populated from " ++ chrootdir
@@ -197,14 +197,14 @@ dirSizes top = go M.empty top [top]
 			else go (M.insertWith (+) dir sz m) dir is
 	subdirof parent i = not (i `equalFilePath` parent) && takeDirectory i `equalFilePath` parent
 
-getMountSz :: (M.Map FilePath PartSize) -> [MountPoint] -> MountPoint -> Maybe PartSize
+getMountSz :: (M.Map FilePath PartSize) -> [Maybe MountPoint] -> Maybe MountPoint -> Maybe PartSize
 getMountSz _ _ Nothing = Nothing
 getMountSz szm l (Just mntpt) = 
 	fmap (`reducePartSize` childsz) (M.lookup mntpt szm)
   where
 	childsz = mconcat $ mapMaybe (getMountSz szm l) (filter (isChild mntpt) l)
 
-isChild :: FilePath -> MountPoint -> Bool
+isChild :: FilePath -> Maybe MountPoint -> Bool
 isChild mntpt (Just d)
 	| d `equalFilePath` mntpt = False
 	| otherwise = mntpt `dirContains` d
@@ -216,9 +216,6 @@ toSysDir :: FilePath -> FilePath -> FilePath
 toSysDir chrootdir d = case makeRelative chrootdir d of
 		"." -> "/"
 		sysdir -> "/" ++ sysdir
-
--- | Where a partition is mounted. Use Nothing for eg, LinuxSwap.
-type MountPoint = Maybe FilePath
 
 defSz :: PartSize
 defSz = MegaBytes 128
@@ -240,7 +237,7 @@ fudge (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3)
 -- (Partitions that are not to be mounted (ie, LinuxSwap), or that have
 -- no corresponding directory in the chroot will have 128 MegaBytes
 -- provided as a default size.)
-type PartSpec = (MountPoint, PartSize -> Partition)
+type PartSpec = (Maybe MountPoint, PartSize -> Partition)
 
 -- | Specifies a swap partition of a given size.
 swapPartition :: PartSize -> PartSpec
@@ -279,7 +276,7 @@ adjustp (mp, p) f = (mp, f . p)
 
 -- | The constructor for each Partition is passed the size of the files
 -- from the chroot that will be put in that partition.
-fitChrootSize :: TableType -> [PartSpec] -> [PartSize] -> ([MountPoint], PartTable)
+fitChrootSize :: TableType -> [PartSpec] -> [PartSize] -> ([Maybe MountPoint], PartTable)
 fitChrootSize tt l basesizes = (mounts, parttable)
   where
 	(mounts, sizers) = unzip l
@@ -297,7 +294,7 @@ fitChrootSize tt l basesizes = (mounts, parttable)
 -- in the partition tree.
 type Finalization = (Property NoInfo, (FilePath -> [LoopDev] -> Property NoInfo))
 
-imageFinalized :: Finalization -> [MountPoint] -> [LoopDev] -> Property NoInfo
+imageFinalized :: Finalization -> [Maybe MountPoint] -> [LoopDev] -> Property NoInfo
 imageFinalized (_, final) mnts devs = property "disk image finalized" $ 
 	withTmpDir "mnt" $ \top -> 
 		go top `finally` liftIO (unmountall top)
@@ -308,7 +305,7 @@ imageFinalized (_, final) mnts devs = property "disk image finalized" $
 	
 	-- Ordered lexographically by mount point, so / comes before /usr
 	-- comes before /usr/local
-	orderedmntsdevs :: [(MountPoint, LoopDev)]
+	orderedmntsdevs :: [(Maybe MountPoint, LoopDev)]
 	orderedmntsdevs = sortBy (compare `on` fst) $ zip mnts devs
 
 	mountall top = forM_ orderedmntsdevs $ \(mp, loopdev) -> case mp of
