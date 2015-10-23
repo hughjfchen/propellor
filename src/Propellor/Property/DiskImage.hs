@@ -69,25 +69,26 @@ type DiskImage = FilePath
 -- > let chroot d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 -- > 		& Apt.installed ["linux-image-amd64"]
 -- >		& ...
--- > in imageBuilt "/srv/images/foo.img" chroot MSDOS 
+-- > in imageBuilt "/srv/images/foo.img" chroot
+-- >		MSDOS (grubBooted PC)
 -- >		[ partition EXT2 `mountedAt` "/boot"
 -- >			`setFlag` BootFlag
 -- >		, partition EXT4 `mountedAt` "/"
 -- >			`addFreeSpace` MegaBytes 100
 -- >		, swapPartition (MegaBytes 256)
--- >		] (grubBooted PC)
-imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
+-- >		]
+imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
 imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
+imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
 imageRebuilt = imageBuilt' True
 
-imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
-imageBuilt' rebuild img mkchroot tabletype partspec final = 
-	imageBuiltFrom img chrootdir tabletype partspec final
+imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
+imageBuilt' rebuild img mkchroot tabletype final partspec = 
+	imageBuiltFrom img chrootdir tabletype final partspec
 		`requires` Chroot.provisioned chroot
 		`requires` (cleanrebuild <!> doNothing)
 		`describe` desc
@@ -106,8 +107,8 @@ imageBuilt' rebuild img mkchroot tabletype partspec final =
 		& Apt.cacheCleaned
 
 -- | Builds a disk image from the contents of a chroot.
-imageBuiltFrom :: DiskImage -> FilePath -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
-imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
+imageBuiltFrom :: DiskImage -> FilePath -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
+imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
   where
 	desc = img ++ " built from " ++ chrootdir
 	mkimg = property desc $ do
