@@ -1,13 +1,13 @@
 {-# LANGUAGE FlexibleContexts, GADTs #-}
 
 module Propellor.Property.Chroot (
+	debootstrapped,
+	bootstrapped,
+	provisioned,
 	Chroot(..),
 	ChrootBootstrapper(..),
 	Debootstrapped(..),
 	ChrootTarball(..),
-	debootstrapped,
-	bootstrapped,
-	provisioned,
 	-- * Internal use
 	provisioned',
 	propagateChrootInfo,
