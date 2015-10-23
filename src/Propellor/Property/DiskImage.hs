@@ -47,7 +47,7 @@ import Propellor.Property.Partition
 import Propellor.Property.Rsync
 import Utility.Path
 
-import Data.List (isPrefixOf, sortBy)
+import Data.List (isPrefixOf, isInfixOf, sortBy)
 import Data.Function (on)
 import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Lazy as L
@@ -309,6 +309,10 @@ imageFinalized (_, final) mnts devs (PartTable _ parts) =
 	-- comes before /usr/local
 	orderedmntsdevs :: [(Maybe MountPoint, LoopDev)]
 	orderedmntsdevs = sortBy (compare `on` fst) $ zip mnts devs
+	
+	swaps = map (SwapPartition . partitionLoopDev . snd) $
+		filter ((== LinuxSwap) . partFs . fst) $
+			zip parts devs
 
 	mountall top = forM_ orderedmntsdevs $ \(mp, loopdev) -> case mp of
 		Nothing -> noop
@@ -323,13 +327,13 @@ imageFinalized (_, final) mnts devs (PartTable _ parts) =
 		umountLazy top
 	
 	writefstab top = do
-		old <- catchDefaultIO "" $ readFileStrict "/etc/fstab"
+		old <- catchDefaultIO [] $ filter (not . unconfigured) . lines
+			<$> readFileStrict (top ++ "/etc/fstab")
 		new <- genFstab (map (top ++) (catMaybes mnts))
 			swaps (toSysDir top)
-		writeFile "/etc/fstab" (unlines new ++ old)
-	swaps = map (SwapPartition . partitionLoopDev . snd) $
-		filter ((== LinuxSwap) . partFs . fst) $
-			zip parts devs
+		writeFile "/etc/fstab" $ unlines $ new ++ old
+	-- Eg "UNCONFIGURED FSTAB FOR BASE SYSTEM"
+	unconfigured s = "UNCONFIGURED" `isInfixOf` s
 
 noFinalization :: Finalization
 noFinalization = (doNothing, \_ _ -> doNothing)

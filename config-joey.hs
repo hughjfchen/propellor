@@ -91,6 +91,7 @@ darkstar = host "darkstar.kitenet.net"
   where
 	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 		& Apt.installed ["linux-image-amd64"]
+		& User "root" `User.hasInsecurePassword` "root"
 
 gnu :: Host
 gnu = host "gnu.kitenet.net"
