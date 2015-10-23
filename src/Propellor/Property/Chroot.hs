@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, GADTs #-}
+{-# LANGUAGE FlexibleContexts, GADTs, DeriveDataTypeable #-}
 
 module Propellor.Property.Chroot (
 	debootstrapped,
@@ -8,6 +8,7 @@ module Propellor.Property.Chroot (
 	ChrootBootstrapper(..),
 	Debootstrapped(..),
 	ChrootTarball(..),
+	inChroot,
 	-- * Internal use
 	provisioned',
 	propagateChrootInfo,
@@ -207,7 +208,7 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 		changeWorkingDirectory localdir
 		when onconsole forceConsole
 		onlyProcess (provisioningLock loc) $ do
-			r <- runPropellor h $ ensureProperties $
+			r <- runPropellor (setInChroot h) $ ensureProperties $
 				if systemdonly
 					then [Systemd.installed]
 					else map ignoreInfo $
@@ -243,3 +244,18 @@ mungeloc = replace "/" "_"
 
 chrootDesc :: Chroot -> String -> String
 chrootDesc (Chroot loc _ _) desc = "chroot " ++ loc ++ " " ++ desc
+
+-- | Check if propellor is currently running within a chroot.
+--
+-- This allows properties to check and avoid performing actions that
+-- should not be done in a chroot.
+inChroot :: Propellor Bool
+inChroot = extract . fromMaybe (InChroot False) . fromInfoVal <$> askInfo
+  where
+	extract (InChroot b) = b
+
+setInChroot :: Host -> Host
+setInChroot h = h { hostInfo = hostInfo h `addInfo` InfoVal (InChroot True) }
+
+newtype InChroot = InChroot Bool
+	deriving (Typeable, Show)

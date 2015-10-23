@@ -2,13 +2,17 @@ module Propellor.Property.Hostname where
 
 import Propellor.Base
 import qualified Propellor.Property.File as File
+import Propellor.Property.Chroot (inChroot)
 
 import Data.List
 import Data.List.Utils
 
--- | Ensures that the hostname is set using best practices.
+-- | Ensures that the hostname is set using best practices, to whatever
+-- name the `Host` has.
 --
--- Configures </etc/hostname> and the current hostname.
+-- Configures both </etc/hostname> and the current hostname.
+-- (However, when used inside a chroot, avoids setting the current hostname
+-- as that would impact the system outside the chroot.)
 --
 -- Configures </etc/mailname> with the domain part of the hostname.
 --
@@ -25,6 +29,8 @@ sane' :: ExtractDomain -> Property NoInfo
 sane' extractdomain = property ("sane hostname") $
 	ensureProperty . setTo' extractdomain =<< asks hostName
 
+-- Like `sane`, but you can specify the hostname to use, instead
+-- of the default hostname of the `Host`.
 setTo :: HostName -> Property NoInfo
 setTo = setTo' extractDomain
 
@@ -41,7 +47,8 @@ setTo' extractdomain hn = combineProperties desc go
 			then Nothing 
 			else Just $ trivial $ hostsline "127.0.1.1" [hn, basehost]
 		, Just $ trivial $ hostsline "127.0.0.1" ["localhost"]
-		, Just $ trivial $ cmdProperty "hostname" [basehost]
+		, Just $ trivial $ check (not <$> inChroot) $
+			cmdProperty "hostname" [basehost]
 		, Just $ "/etc/mailname" `File.hasContent`
 			[if null domain then hn else domain]
 		]
