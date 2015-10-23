@@ -1,4 +1,4 @@
-propellor (2.12.0) UNRELEASED; urgency=medium
+propellor (2.12.0) unstable; urgency=medium
 
   * The DiskImage module can now make bootable images using grub.
   * Add a ChrootTarball chroot type, for using pre-built tarballs
@@ -16,7 +16,7 @@ propellor (2.12.0) UNRELEASED; urgency=medium
   * Hostname.sane and Hostname.setTo can now safely be used as a property
     of a chroot, and won't affect the hostname of the host system.
 
- -- Joey Hess <id@joeyh.name>  Thu, 22 Oct 2015 20:24:18 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 23 Oct 2015 17:38:32 -0400
 
 propellor (2.11.0) unstable; urgency=medium
 
