@@ -2,8 +2,6 @@
 --
 -- This module is designed to be imported unqualified.
 --
--- TODO run final
--- 
 -- TODO avoid starting services while populating chroot and running final
 
 module Propellor.Property.DiskImage (
@@ -49,7 +47,8 @@ import Propellor.Property.Partition
 import Propellor.Property.Rsync
 import Utility.Path
 
-import Data.List (isPrefixOf)
+import Data.List (isPrefixOf, sortBy)
+import Data.Function (on)
 import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Lazy as L
 import System.Posix.Files
@@ -70,25 +69,26 @@ type DiskImage = FilePath
 -- > let chroot d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 -- > 		& Apt.installed ["linux-image-amd64"]
 -- >		& ...
--- > in imageBuilt "/srv/images/foo.img" chroot MSDOS 
+-- > in imageBuilt "/srv/images/foo.img" chroot
+-- >		MSDOS (grubBooted PC)
 -- >		[ partition EXT2 `mountedAt` "/boot"
 -- >			`setFlag` BootFlag
 -- >		, partition EXT4 `mountedAt` "/"
 -- >			`addFreeSpace` MegaBytes 100
 -- >		, swapPartition (MegaBytes 256)
--- >		] (grubBooted PC)
-imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
+-- >		]
+imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
 imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
+imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
 imageRebuilt = imageBuilt' True
 
-imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> Finalization -> RevertableProperty
-imageBuilt' rebuild img mkchroot tabletype partspec final = 
-	imageBuiltFrom img chrootdir tabletype partspec (snd final)
+imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
+imageBuilt' rebuild img mkchroot tabletype final partspec = 
+	imageBuiltFrom img chrootdir tabletype final partspec
 		`requires` Chroot.provisioned chroot
 		`requires` (cleanrebuild <!> doNothing)
 		`describe` desc
@@ -107,10 +107,8 @@ imageBuilt' rebuild img mkchroot tabletype partspec final =
 		& Apt.cacheCleaned
 
 -- | Builds a disk image from the contents of a chroot.
---
--- The passed property is run inside the mounted disk image.
-imageBuiltFrom :: DiskImage -> FilePath -> TableType -> [PartSpec] -> Property NoInfo -> RevertableProperty
-imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
+imageBuiltFrom :: DiskImage -> FilePath -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
+imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
   where
 	desc = img ++ " built from " ++ chrootdir
 	mkimg = property desc $ do
@@ -121,25 +119,30 @@ imageBuiltFrom img chrootdir tabletype partspec final = mkimg <!> rmimg
 			<$> liftIO (dirSizes chrootdir)
 		let calcsz mnts = maybe defSz fudge . getMountSz szm mnts
 		-- tie the knot!
-		let (mnts, t) = fitChrootSize tabletype partspec (map (calcsz mnts) mnts)
+		let (mnts, t) = fitChrootSize tabletype partspec $
+			map (calcsz mnts) mnts
 		ensureProperty $
 			imageExists img (partTableSize t)
 				`before`
 			partitioned YesReallyDeleteDiskContents img t
 				`before`
-			kpartx img (partitionsPopulated chrootdir mnts)
+			kpartx img (mkimg' mnts)
+	mkimg' mnts devs =
+		partitionsPopulated chrootdir mnts devs
+			`before`
+		imageFinalized final mnts devs
 	rmimg = File.notPresent img
 
-partitionsPopulated :: FilePath -> [MountPoint] -> [FilePath] -> Property NoInfo
+partitionsPopulated :: FilePath -> [MountPoint] -> [LoopDev] -> Property NoInfo
 partitionsPopulated chrootdir mnts devs = property desc $ mconcat $ zipWith go mnts devs
   where
 	desc = "partitions populated from " ++ chrootdir
 
 	go Nothing _ = noChange
-	go (Just mnt) dev = withTmpDir "mnt" $ \tmpdir -> bracket
-		(liftIO $ mount "auto" dev tmpdir)
+	go (Just mnt) loopdev = withTmpDir "mnt" $ \tmpdir -> bracket
+		(liftIO $ mount "auto" (partitionLoopDev loopdev) tmpdir)
 		(const $ liftIO $ umountLazy tmpdir)
-		$ \mounted -> if mounted
+		$ \ismounted -> if ismounted
 			then ensureProperty $
 				syncDirFiltered (filtersfor mnt) (chrootdir ++ mnt) tmpdir
 			else return FailedChange
@@ -284,15 +287,76 @@ fitChrootSize tt l basesizes = (mounts, parttable)
 
 -- | A pair of properties. The first property is satisfied within the
 -- chroot, and is typically used to download the boot loader.
--- The second property is satisfied chrooted into the resulting
--- disk image, and will typically take care of installing the boot loader
--- to the disk image.
-type Finalization = (Property NoInfo, Property NoInfo)
+--
+-- The second property is run after the disk image is created,
+-- with its populated partition tree mounted in the provided
+-- location from the provided loop devices. This will typically
+-- take care of installing the boot loader to the image.
+-- 
+-- It's ok if the second property leaves additional things mounted
+-- in the partition tree.
+type Finalization = (Property NoInfo, (FilePath -> [LoopDev] -> Property NoInfo))
 
--- | Makes grub be the boot loader of the disk image.
--- TODO not implemented
-grubBooted :: Grub.BIOS -> Finalization
-grubBooted bios = (Grub.installed bios, undefined)
+imageFinalized :: Finalization -> [MountPoint] -> [LoopDev] -> Property NoInfo
+imageFinalized (_, final) mnts devs = property "disk image finalized" $ 
+	withTmpDir "mnt" $ \top -> 
+		go top `finally` liftIO (unmountall top)
+  where
+	go mnt = do
+		liftIO $ mountall mnt
+		ensureProperty $ final mnt devs
+	
+	-- Ordered lexographically by mount point, so / comes before /usr
+	-- comes before /usr/local
+	orderedmntsdevs :: [(MountPoint, LoopDev)]
+	orderedmntsdevs = sortBy (compare `on` fst) $ zip mnts devs
+
+	mountall top = forM_ orderedmntsdevs $ \(mp, loopdev) -> case mp of
+		Nothing -> noop
+		Just p -> do
+			let mnt = top ++ p
+			createDirectoryIfMissing True mnt
+			unlessM (mount "auto" (partitionLoopDev loopdev) mnt) $
+				error $ "failed mounting " ++ mnt
+
+	unmountall top = do
+		unmountBelow top
+		umountLazy top
 
 noFinalization :: Finalization
-noFinalization = (doNothing, doNothing)
+noFinalization = (doNothing, \_ _ -> doNothing)
+
+-- | Makes grub be the boot loader of the disk image.
+grubBooted :: Grub.BIOS -> Finalization
+grubBooted bios = (Grub.installed' bios, boots)
+  where
+	boots mnt loopdevs = combineProperties "disk image boots using grub"
+		-- bind mount host /dev so grub can access the loop devices
+		[ bindMount "/dev" (inmnt "/dev")
+		, mounted "proc" "proc" (inmnt "/proc")
+		, mounted "sysfs" "sys" (inmnt "/sys")
+		-- work around for http://bugs.debian.org/802717
+		 , check haveosprober $ inchroot "chmod" ["-x", osprober]
+		, inchroot "update-grub" []
+		, check haveosprober $ inchroot "chmod" ["+x", osprober]
+		, inchroot "grub-install" [wholediskloopdev]
+		-- sync all buffered changes out to the disk image
+		-- may not be necessary, but seemed needed sometimes
+		-- when using the disk image right away.
+		, cmdProperty "sync" []
+		]
+	  where
+	  	-- cannot use </> since the filepath is absolute
+		inmnt f = mnt ++ f
+
+		inchroot cmd ps = cmdProperty "chroot" ([mnt, cmd] ++ ps)
+
+		haveosprober = doesFileExist (inmnt osprober)
+		osprober = "/etc/grub.d/30_os-prober"
+
+		-- It doesn't matter which loopdev we use; all
+		-- come from the same disk image, and it's the loop dev
+		-- for the whole disk image we seek.
+		wholediskloopdev = case loopdevs of
+			(l:_) -> wholeDiskLoopDev l
+			[] -> error "No loop devs provided!"

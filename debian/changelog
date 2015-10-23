@@ -1,3 +1,11 @@
+propellor (2.11.1) UNRELEASED; urgency=medium
+
+  * The DiskImage module can now make bootable images using grub.
+  * Add a ChrootTarball chroot type, for using pre-built tarballs
+    as chroots. Thanks, Ben Boeckel.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 22 Oct 2015 20:24:18 -0400
+
 propellor (2.11.0) unstable; urgency=medium
 
   * Rewrote Propellor.Property.ControlHeir one more time, renaming it to

@@ -4,6 +4,7 @@ module Propellor.Property.Chroot (
 	Chroot(..),
 	ChrootBootstrapper(..),
 	Debootstrapped(..),
+	ChrootTarball(..),
 	debootstrapped,
 	bootstrapped,
 	provisioned,
@@ -22,6 +23,7 @@ import Propellor.Types.Info
 import Propellor.Property.Chroot.Util
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Systemd.Core as Systemd
+import qualified Propellor.Property.File as File
 import qualified Propellor.Shim as Shim
 import Propellor.Property.Mount
 
@@ -52,7 +54,31 @@ class ChrootBootstrapper b where
 	-- If the operating System is not supported, return Nothing.
 	buildchroot :: b -> System -> FilePath -> Maybe (Property HasInfo)
 
--- | Use to bootstrap a chroot with debootstrap.
+-- | Use this to bootstrap a chroot by extracting a tarball.
+--
+-- The tarball is expected to contain a root directory (no top-level
+-- directory, also known as a "tarbomb").
+-- It may be optionally compressed with any format `tar` knows how to
+-- detect automatically.
+data ChrootTarball = ChrootTarball FilePath
+
+instance ChrootBootstrapper ChrootTarball where
+	buildchroot (ChrootTarball tb) _ loc = Just $ extractTarball loc tb
+
+extractTarball :: FilePath -> FilePath -> Property HasInfo
+extractTarball target src = toProp .
+	check (unpopulated target) $
+		cmdProperty "tar" params
+			`requires` File.dirExists target
+  where
+	params =
+		[ "-C"
+		, target
+		, "-xf"
+		, src
+		]
+
+-- | Use this to bootstrap a chroot with debootstrap.
 data Debootstrapped = Debootstrapped Debootstrap.DebootstrapConfig
 
 instance ChrootBootstrapper Debootstrapped where

@@ -36,5 +36,15 @@ unmountBelow d = do
 	forM_ submnts umountLazy
 
 -- | Mounts a device.
+mounted :: FsType -> Source -> FilePath -> Property NoInfo
+mounted fs src mnt = property (mnt ++ " mounted") $ 
+	toResult <$> liftIO (mount fs src mnt)
+
+-- | Bind mounts the first directory so its contents also appear
+-- in the second directory.
+bindMount :: FilePath -> FilePath -> Property NoInfo
+bindMount src dest = cmdProperty "mount" ["--bind", src, dest]
+	`describe` ("bind mounted " ++ src ++ " to " ++ dest)
+
 mount :: FsType -> Source -> FilePath -> IO Bool
 mount fs src mnt = boolSystem "mount" [Param "-t", Param fs, Param src, Param mnt]

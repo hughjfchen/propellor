@@ -15,6 +15,7 @@ import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
+import qualified Propellor.Property.Systemd as Systemd
 import Utility.FileMode
 
 import Data.List
@@ -346,6 +347,7 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 		`onChange` Service.restarted "rsync"
 	& "/etc/default/rsync" `File.containsLine` "RSYNC_ENABLE=true"
 		`onChange` Service.running "rsync"
+	& Systemd.enabled "rsync"
 	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild"
 	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/x86_64-apple-yosemite"
 	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/windows"

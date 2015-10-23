@@ -81,11 +81,12 @@ darkstar = host "darkstar.kitenet.net"
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
 	& JoeySites.dkimMilter
 
-	& imageBuilt "/tmp/img" c MSDOS
-		[ partition EXT2 `mountedAt` "/boot" `setFlag` BootFlag
-		, partition EXT4 `mountedAt` "/" `addFreeSpace` MegaBytes 100
-		-- , swapPartition (MegaBytes 256)
-		] noFinalization -- (grubBooted PC)
+	& imageBuilt "/tmp/img" c MSDOS (grubBooted PC)
+		[ partition EXT4 `mountedAt` "/"
+			`addFreeSpace` MegaBytes 100
+			`setFlag` BootFlag
+		, swapPartition (MegaBytes 256)
+		]
   where
 	c d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
 		& Apt.installed ["linux-image-amd64"]
