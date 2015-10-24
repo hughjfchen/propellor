@@ -262,10 +262,10 @@ instance Combines (Property NoInfo) (Property NoInfo) where
 		SProperty d1 (f a1 a2) (y : cs1)
 
 instance Combines RevertableProperty RevertableProperty where
-	combineWith sf tf (RevertableProperty setup1 teardown1) (RevertableProperty setup2 teardown2) =
+	combineWith sf tf (RevertableProperty s1 t1) (RevertableProperty s2 t2) =
 		RevertableProperty
-			(combineWith sf tf setup1 setup2)
-			(combineWith tf sf teardown1 teardown2)
+			(combineWith sf tf s1 s2)
+			(combineWith tf sf t1 t2)
 
 instance Combines RevertableProperty (Property HasInfo) where
 	combineWith sf tf (RevertableProperty x _) y = combineWith sf tf x y
