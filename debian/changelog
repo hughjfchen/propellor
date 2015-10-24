@@ -1,3 +1,10 @@
+propellor (2.12.1) UNRELEASED; urgency=medium
+
+  * Added Propellor.Property.Concurrent for concurrent properties.
+    (Note that no output multiplexing is currently done.)
+
+ -- Joey Hess <id@joeyh.name>  Sat, 24 Oct 2015 15:16:45 -0400
+
 propellor (2.12.0) unstable; urgency=medium
 
   * The DiskImage module can now make bootable images using grub.

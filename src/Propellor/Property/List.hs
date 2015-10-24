@@ -5,6 +5,7 @@ module Propellor.Property.List (
 	props,
 	PropertyList(..),
 	PropertyListType,
+	PropList(..),
 ) where
 
 import Propellor.Types
