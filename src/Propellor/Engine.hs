@@ -55,7 +55,7 @@ mainProperties host = do
 -- are then also run.
 runPropellor :: Host -> Propellor Result -> IO Result
 runPropellor host a = do
-	(res, _s, endactions) <- runRWST (runWithHost a) host ()
+	(res, endactions) <- evalRWST (runWithHost a) host ()
 	endres <- mapM (runEndAction host res) endactions
 	return $ mconcat (res:endres)
 
