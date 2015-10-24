@@ -21,11 +21,11 @@ import Control.Monad.RWS.Strict
 
 -- | Ensures two properties concurrently.
 concurrently
-	:: (IsProp (Property x), IsProp (Property y), Combines (Property x) (Property y), IsProp (Property (CInfo x y)))
-	=> Property x
-	-> Property y
-	-> CombinedType (Property x) (Property y)
-concurrently p1 p2 = (combineWith go p1 p2)
+	:: (IsProp p1, IsProp p2, Combines p1 p2, IsProp (CombinedType p1 p2))
+	=> p1
+	-> p2
+	-> CombinedType p1 p2
+concurrently p1 p2 = (combineWith go go p1 p2)
 	`describe` d
   where
 	d = getDesc p1 ++ " `concurrently` " ++ getDesc p2

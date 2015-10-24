@@ -41,11 +41,11 @@ zoneSigned :: Domain -> FilePath -> RevertableProperty
 zoneSigned domain zonefile = setup <!> cleanup
   where
 	setup = check needupdate (forceZoneSigned domain zonefile)
-		`requires` toProp (keysInstalled domain)
+		`requires` keysInstalled domain
 	
 	cleanup = File.notPresent (signedZoneFile zonefile)
 		`before` File.notPresent dssetfile
-		`before` toProp (revert (keysInstalled domain))
+		`before` revert (keysInstalled domain)
 	
 	dssetfile = dir </> "-" ++ domain ++ "."
 	dir = takeDirectory zonefile

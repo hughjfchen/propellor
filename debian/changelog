@@ -1,7 +1,14 @@
-propellor (2.12.1) UNRELEASED; urgency=medium
+propellor (2.13.0) UNRELEASED; urgency=medium
 
   * Added Propellor.Property.Concurrent for concurrent properties.
     (Note that no output multiplexing is currently done.)
+  * Various property combinators that combined a RevertableProperty
+    with a non-revertable property used to yield a RevertableProperty.
+    This was a bug, because the combined property could not be fully
+    reverted in many cases. Fixed by making the combined property
+    instead be a Property HasInfo.
+  * combineWith now takes an additional parameter to control how revert
+    actions are combined (API change).
 
  -- Joey Hess <id@joeyh.name>  Sat, 24 Oct 2015 15:16:45 -0400
 
