@@ -9,6 +9,7 @@ propellor (2.13.0) UNRELEASED; urgency=medium
     instead be a Property HasInfo.
   * combineWith now takes an additional parameter to control how revert
     actions are combined (API change).
+  * Add File.isCopyOf. Thanks, Per Olofsson.
 
  -- Joey Hess <id@joeyh.name>  Sat, 24 Oct 2015 15:16:45 -0400
 
