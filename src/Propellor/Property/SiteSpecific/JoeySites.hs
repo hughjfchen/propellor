@@ -924,7 +924,7 @@ legacyWebSites = propertyList "legacy web sites" $ props
 userDirHtml :: Property HasInfo
 userDirHtml = File.fileProperty "apache userdir is html" (map munge) conf
 	`onChange` Apache.reloaded
-	`requires` (toProp $ Apache.modEnabled "userdir")
+	`requires` Apache.modEnabled "userdir"
   where
 	munge = replace "public_html" "html"
 	conf = "/etc/apache2/mods-available/userdir.conf"

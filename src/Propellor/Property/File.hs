@@ -5,6 +5,7 @@ import Utility.FileMode
 
 import System.Posix.Files
 import System.PosixCompat.Types
+import System.Exit
 
 type Line = String
 
@@ -133,6 +134,27 @@ link `isSymlinkedTo` (LinkTarget target) = property desc $
 			then noChange
 			else makeChange updateLink
 	updateLink = createSymbolicLink target `viaStableTmp` link
+
+-- | Ensures that a file is a copy of another (regular) file.
+isCopyOf :: FilePath -> FilePath -> Property NoInfo
+f `isCopyOf` f' = property desc $ go =<< (liftIO $ tryIO $ getFileStatus f')
+  where
+	desc = f ++ " is copy of " ++ f'
+	go (Right stat) = if isRegularFile stat
+		then gocmp =<< (liftIO $ cmp)
+		else warningMessage (f' ++ " is not a regular file") >>
+			return FailedChange
+	go (Left e) = warningMessage (show e) >> return FailedChange
+
+	cmp = safeSystem "cmp" [Param "-s", Param "--", File f, File f']
+	gocmp ExitSuccess = noChange
+	gocmp (ExitFailure 1) = doit
+	gocmp _ = warningMessage "cmp failed" >> return FailedChange
+
+	doit = makeChange $ copy f' `viaStableTmp` f
+	copy src dest = unlessM (runcp src dest) $ errorMessage "cp failed"
+	runcp src dest = boolSystem "cp"
+		[Param "--preserve=all", Param "--", File src, File dest]
 
 -- | Ensures that a file/dir has the specified owner and group.
 ownerGroup :: FilePath -> User -> Group -> Property NoInfo

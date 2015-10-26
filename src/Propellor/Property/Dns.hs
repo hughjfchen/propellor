@@ -164,7 +164,7 @@ signedPrimary recurrance hosts domain soa rs = setup <!> cleanup
 		`onChange` Service.reloaded "bind9"
 
 	cleanup = cleanupPrimary zonefile domain
-		`onChange` toProp (revert (zoneSigned domain zonefile))
+		`onChange` revert (zoneSigned domain zonefile)
 		`onChange` Service.reloaded "bind9"
 
 	-- Include the public keys into the zone file.

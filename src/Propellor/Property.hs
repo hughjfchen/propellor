@@ -66,30 +66,43 @@ flagFile' p getflagfile = adjustPropertySatisfy p $ \satisfy -> do
 
 -- | Indicates that the first property depends on the second,
 -- so before the first is ensured, the second must be ensured.
+--
+-- The combined property uses the description of the first property.
 requires :: Combines x y => x -> y -> CombinedType x y
-requires = (<<>>)
+requires = combineWith
+	-- Run action of y, then x
+	(flip (<>))
+	-- When reverting, run in reverse order.
+	(<>)
 
 -- | Combines together two properties, resulting in one property
 -- that ensures the first, and if the first succeeds, ensures the second.
 --
 -- The combined property uses the description of the first property.
-before :: (IsProp x, Combines y x, IsProp (CombinedType y x)) => x -> y -> CombinedType y x
-before x y = (y `requires` x) `describe` getDesc x
+before :: Combines x y => x -> y -> CombinedType x y
+before = combineWith
+	-- Run action of x, then y
+	(<>)
+	-- When reverting, run in reverse order.
+	(flip (<>))
 
 -- | Whenever a change has to be made for a Property, causes a hook
 -- Property to also be run, but not otherwise.
 onChange
-	:: (Combines (Property x) (Property y))
-	=> Property x
-        -> Property y
-        -> CombinedType (Property x) (Property y)
-onChange = combineWith $ \p hook -> do
-	r <- p
-	case r of
-		MadeChange -> do
-			r' <- hook
-			return $ r <> r'
-		_ -> return r
+	:: (Combines x y)
+	=> x
+        -> y
+        -> CombinedType x y
+onChange = combineWith combiner revertcombiner
+  where
+	combiner p hook = do
+		r <- p
+		case r of
+			MadeChange -> do
+				r' <- hook
+				return $ r <> r'
+			_ -> return r
+	revertcombiner = (<>)
 
 -- | Same as `onChange` except that if property y fails, a flag file
 -- is generated. On next run, if the flag file is present, property y
@@ -99,14 +112,14 @@ onChange = combineWith $ \p hook -> do
 -- `FailedChange`. But if this property is applied again, it returns
 -- `NoChange`. This behavior can cause trouble...
 onChangeFlagOnFail
-	:: (Combines (Property x) (Property y))
+	:: (Combines x y)
 	=> FilePath
-        -> Property x
-        -> Property y
-        -> CombinedType (Property x) (Property y)
-onChangeFlagOnFail flagfile = combineWith go
+        -> x
+        -> y
+        -> CombinedType x y
+onChangeFlagOnFail flagfile = combineWith combiner revertcombiner
   where
-	go s1 s2 = do
+	combiner s1 s2 = do
 		r1 <- s1
 		case r1 of
 			MadeChange -> flagFailed s2
@@ -114,6 +127,7 @@ onChangeFlagOnFail flagfile = combineWith go
 				(flagFailed s2
 				, return r1
 				)
+	revertcombiner = (<>)
 	flagFailed s = do
 		r <- s
 		liftIO $ case r of
@@ -151,12 +165,15 @@ check c p = adjustPropertySatisfy p $ \satisfy ->
 
 -- | Tries the first property, but if it fails to work, instead uses
 -- the second.
-fallback :: (Combines (Property p1) (Property p2)) => Property p1 -> Property p2 -> Property (CInfo p1 p2)
-fallback = combineWith $ \a1 a2 -> do
-	r <- a1
-	if r == FailedChange
-		then a2
-		else return r
+fallback :: (Combines p1 p2) => p1 -> p2 -> CombinedType p1 p2
+fallback = combineWith combiner revertcombiner
+  where
+	combiner a1 a2 = do
+		r <- a1
+		if r == FailedChange
+			then a2
+			else return r
+	revertcombiner = (<>)
 
 -- | Marks a Property as trivial. It can only return FailedChange or
 -- NoChange. 
