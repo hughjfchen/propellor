@@ -18,7 +18,7 @@ propellor (2.13.0) UNRELEASED; urgency=medium
   * combineWith now takes an additional parameter to control how revert
     actions are combined (API change).
   * Added Propellor.Property.Concurrent for concurrent properties.
-    (Note that no output multiplexing is currently done.)
+    (Note that no command output multiplexing is currently done.)
   * Add File.isCopyOf. Thanks, Per Olofsson.
 
  -- Joey Hess <id@joeyh.name>  Sat, 24 Oct 2015 15:16:45 -0400

@@ -106,9 +106,9 @@ withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 	missing = do
 		Context cname <- mkHostContext hc <$> asks hostName
 		warningMessage $ "Missing privdata " ++ intercalate " or " fieldnames ++ " (for " ++ cname ++ ")"
-		liftIO $ putStrLn $ "Fix this by running:"
-		liftIO $ showSet $
-			map (\s -> (privDataField s, Context cname, describePrivDataSource s)) srclist
+		infoMessage $ 
+			"Fix this by running:" :
+			showSet (map (\s -> (privDataField s, Context cname, describePrivDataSource s)) srclist)
 		return FailedChange
 	addinfo p = infoProperty
 		(propertyDesc p)
@@ -121,11 +121,14 @@ withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 	fieldlist = map privDataField srclist
 	hc = asHostContext c
 
-showSet :: [(PrivDataField, Context, Maybe PrivDataSourceDesc)] -> IO ()
-showSet l = forM_ l $ \(f, Context c, md) -> do
-	putStrLn $ "  propellor --set '" ++ show f ++ "' '" ++ c ++ "' \\"
-	maybe noop (\d -> putStrLn $ "    " ++ d) md
-	putStrLn ""
+showSet :: [(PrivDataField, Context, Maybe PrivDataSourceDesc)] -> [String]
+showSet = concatMap go
+  where
+	go (f, Context c, md) = catMaybes
+		[ Just $ "  propellor --set '" ++ show f ++ "' '" ++ c ++ "' \\"
+		, maybe Nothing (\d -> Just $ "    " ++ d) md
+		, Just ""
+		]
 
 addPrivData :: (PrivDataField, Maybe PrivDataSourceDesc, HostContext) -> Property HasInfo
 addPrivData v = pureInfoProperty (show v) (PrivInfo (S.singleton v))
@@ -207,7 +210,8 @@ listPrivDataFields hosts = do
 		showtable $ map mkrow missing
 
 		section "How to set missing data:"
-		showSet $ map (\(f, c) -> (f, c, join $ M.lookup (f, c) descmap)) missing
+		mapM_ putStrLn $ showSet $
+			map (\(f, c) -> (f, c, join $ M.lookup (f, c) descmap)) missing
   where
 	header = ["Field", "Context", "Used by"]
 	mkrow k@(field, Context context) =

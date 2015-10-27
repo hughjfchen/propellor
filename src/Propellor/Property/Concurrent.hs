@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
--- | Note that this module does not yet arrange for any output multiplexing,
--- so the output of concurrent properties will be scrambled together.
+-- | Note that any output of commands run by
+-- concurrent properties will be scrambled together.
 
 module Propellor.Property.Concurrent (
 	concurrently,
