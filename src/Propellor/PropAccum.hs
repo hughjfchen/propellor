@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE PackageImports, FlexibleContexts #-}
 
 module Propellor.PropAccum
 	( host
@@ -46,7 +46,7 @@ class PropAccum h where
 (&^) = addPropFront
 
 -- | Adds a property in reverted form.
-(!) :: PropAccum h => h -> RevertableProperty -> h
+(!) :: IsProp (RevertableProperty i) => PropAccum h => h -> RevertableProperty i -> h
 h ! p = h & revert p
 
 infixl 1 &

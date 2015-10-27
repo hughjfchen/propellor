@@ -116,10 +116,10 @@ bootstrapped bootstrapper location = Chroot location bootstrapper h
 -- Reverting this property removes the chroot. Anything mounted inside it
 -- is first unmounted. Note that it does not ensure that any processes
 -- that might be running inside the chroot are stopped.
-provisioned :: Chroot -> RevertableProperty
+provisioned :: Chroot -> RevertableProperty HasInfo
 provisioned c = provisioned' (propagateChrootInfo c) c False
 
-provisioned' :: (Property HasInfo -> Property HasInfo) -> Chroot -> Bool -> RevertableProperty
+provisioned' :: (Property HasInfo -> Property HasInfo) -> Chroot -> Bool -> RevertableProperty HasInfo
 provisioned' propigator c@(Chroot loc bootstrapper _) systemdonly =
 	(propigator $ propertyList (chrootDesc c "exists") [setup])
 		<!>

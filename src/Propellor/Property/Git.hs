@@ -11,7 +11,7 @@ import Data.List
 -- using git-daemon, run from inetd.
 --
 -- Note that reverting this property does not remove or stop inetd.
-daemonRunning :: FilePath -> RevertableProperty
+daemonRunning :: FilePath -> RevertableProperty NoInfo
 daemonRunning exportdir = setup <!> unsetup
   where
 	setup = containsLine conf (mkl "tcp4")

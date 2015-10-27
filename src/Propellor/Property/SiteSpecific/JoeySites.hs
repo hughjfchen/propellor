@@ -298,7 +298,7 @@ annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-ann
 		, "  </Directory>"
 		]
 
-apacheSite :: HostName -> Bool -> Apache.ConfigFile -> RevertableProperty
+apacheSite :: HostName -> Bool -> Apache.ConfigFile -> RevertableProperty NoInfo
 apacheSite hn withssl middle = Apache.siteEnabled hn $ apachecfg hn withssl middle
 
 apachecfg :: HostName -> Bool -> Apache.ConfigFile -> Apache.ConfigFile
@@ -921,7 +921,7 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "rewriterule (.*) http://joeyh.name$1 [r]"
 		]
 
-userDirHtml :: Property HasInfo
+userDirHtml :: Property NoInfo
 userDirHtml = File.fileProperty "apache userdir is html" (map munge) conf
 	`onChange` Apache.reloaded
 	`requires` Apache.modEnabled "userdir"

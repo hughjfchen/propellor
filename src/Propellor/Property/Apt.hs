@@ -212,7 +212,7 @@ autoRemove = runApt ["-y", "autoremove"]
 	`describe` "apt autoremove"
 
 -- | Enables unattended upgrades. Revert to disable.
-unattendedUpgrades :: RevertableProperty
+unattendedUpgrades :: RevertableProperty NoInfo
 unattendedUpgrades = enable <!> disable
   where
 	enable = setup True
@@ -272,7 +272,7 @@ data AptKey = AptKey
 	, pubkey :: String
 	}
 
-trustsKey :: AptKey -> RevertableProperty
+trustsKey :: AptKey -> RevertableProperty NoInfo
 trustsKey k = trustsKey' k <!> untrustKey k
 
 trustsKey' :: AptKey -> Property NoInfo

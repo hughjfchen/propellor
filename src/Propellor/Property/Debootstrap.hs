@@ -98,7 +98,7 @@ extractSuite (System (Ubuntu r) _) = Just r
 -- When necessary, falls back to installing debootstrap from source.
 -- Note that installation from source is done by downloading the tarball
 -- from a Debian mirror, with no cryptographic verification.
-installed :: RevertableProperty
+installed :: RevertableProperty NoInfo
 installed = install <!> remove
   where
 	install = withOS "debootstrap installed" $ \o -> 

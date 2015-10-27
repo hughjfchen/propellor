@@ -201,7 +201,7 @@ withOS :: Desc -> (Maybe System -> Propellor Result) -> Property NoInfo
 withOS desc a = property desc $ a =<< getOS
 
 -- | Undoes the effect of a RevertableProperty.
-revert :: RevertableProperty -> RevertableProperty
+revert :: RevertableProperty i -> RevertableProperty i
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
 makeChange :: IO () -> Propellor Result

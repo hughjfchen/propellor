@@ -11,7 +11,7 @@ type ConfigFile = [String]
 
 type Conf = String
 
-confEnabled :: Conf -> ConfigFile -> RevertableProperty
+confEnabled :: Conf -> ConfigFile -> RevertableProperty NoInfo
 confEnabled conf cf = enable <!> disable
   where
 	enable = dir `File.isSymlinkedTo` target
