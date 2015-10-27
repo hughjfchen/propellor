@@ -193,7 +193,7 @@ propellChroot c@(Chroot loc _ _) mkproc systemdonly = property (chrootDesc c "pr
 
 toChain :: HostName -> Chroot -> Bool -> IO CmdLine
 toChain parenthost (Chroot loc _ _) systemdonly = do
-	onconsole <- isConsole <$> mkMessageHandle
+	onconsole <- isConsole <$> getMessageHandle
 	return $ ChrootChain parenthost loc systemdonly onconsole
 
 chain :: [Host] -> CmdLine -> IO ()

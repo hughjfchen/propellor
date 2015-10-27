@@ -555,7 +555,7 @@ provisionContainer :: ContainerId -> Property NoInfo
 provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ do
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 	let params = ["--continue", show $ toChain cid]
-	msgh <- mkMessageHandle
+	msgh <- getMessageHandle
 	let p = inContainerProcess cid
 		(if isConsole msgh then ["-it"] else [])
 		(shim : params)

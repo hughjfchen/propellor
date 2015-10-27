@@ -9,10 +9,11 @@ import System.Log.Formatter
 import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple
 import "mtl" Control.Monad.Reader
-import Data.Maybe
 import Control.Applicative
 import System.Directory
 import Control.Monad.IfElse
+import System.IO.Unsafe (unsafePerformIO)
+import Control.Concurrent
 
 import Propellor.Types
 import Utility.Monad
@@ -20,27 +21,26 @@ import Utility.Env
 import Utility.Process
 import Utility.Exception
 
-data MessageHandle
-	= ConsoleMessageHandle
-	| TextMessageHandle
+data MessageHandle = MessageHandle
+	{ isConsole :: Bool
+	}
 
-mkMessageHandle :: IO MessageHandle
-mkMessageHandle = do
-	ifM (hIsTerminalDevice stdout <||> (isJust <$> getEnv "PROPELLOR_CONSOLE"))
-		( return ConsoleMessageHandle
-		, return TextMessageHandle
-		)
+-- | A shared global variable for the MessageHandle.
+{-# NOINLINE globalMessageHandle #-}
+globalMessageHandle :: MVar MessageHandle
+globalMessageHandle = unsafePerformIO $ do
+	c <- hIsTerminalDevice stdout
+	newMVar $ MessageHandle c
+
+getMessageHandle :: IO MessageHandle
+getMessageHandle = readMVar globalMessageHandle
 
 forceConsole :: IO ()
-forceConsole = void $ setEnv "PROPELLOR_CONSOLE" "1" True
+forceConsole = modifyMVar_ globalMessageHandle $ \mh ->
+	pure (mh { isConsole = True })
 
-isConsole :: MessageHandle -> Bool
-isConsole ConsoleMessageHandle = True
-isConsole _ = False
-
-whenConsole :: MessageHandle -> IO () -> IO ()
-whenConsole ConsoleMessageHandle a = a
-whenConsole _ _ = return ()
+whenConsole :: IO () -> IO ()
+whenConsole a = whenM (isConsole <$> getMessageHandle) a
 
 -- | Shows a message while performing an action, with a colored status
 -- display.
@@ -54,49 +54,46 @@ actionMessageOn = actionMessage' . Just
 
 actionMessage' :: (MonadIO m, ActionResult r) => Maybe HostName -> Desc -> m r -> m r
 actionMessage' mhn desc a = do
-	h <- liftIO mkMessageHandle
-	liftIO $ whenConsole h $ do
+	liftIO $ whenConsole $ do
 		setTitle $ "propellor: " ++ desc
 		hFlush stdout
 
 	r <- a
 
 	liftIO $ do
-		whenConsole h $
+		whenConsole $
 			setTitle "propellor: running"
-		showhn h mhn
+		showhn mhn
 		putStr $ desc ++ " ... "
 		let (msg, intensity, color) = getActionResult r
-		colorLine h intensity color msg
+		colorLine intensity color msg
 		hFlush stdout
 
 	return r
   where
-	showhn _ Nothing = return ()
-	showhn h (Just hn) = do
-		whenConsole h $
+	showhn Nothing = return ()
+	showhn (Just hn) = do
+		whenConsole $
 			setSGR [SetColor Foreground Dull Cyan]
 		putStr (hn ++ " ")
-		whenConsole h $
+		whenConsole $
 			setSGR []
 
 warningMessage :: MonadIO m => String -> m ()
-warningMessage s = liftIO $ do
-	h <- mkMessageHandle
-	colorLine h Vivid Magenta $ "** warning: " ++ s
+warningMessage s = liftIO $
+	colorLine Vivid Magenta $ "** warning: " ++ s
 
 errorMessage :: MonadIO m => String -> m a
 errorMessage s = liftIO $ do
-	h <- mkMessageHandle
-	colorLine h Vivid Red $ "** error: " ++ s
+	colorLine Vivid Red $ "** error: " ++ s
 	error "Cannot continue!"
 
-colorLine :: MessageHandle -> ColorIntensity -> Color -> String -> IO ()
-colorLine h intensity color msg = do
-	whenConsole h $
+colorLine :: ColorIntensity -> Color -> String -> IO ()
+colorLine intensity color msg = do
+	whenConsole $
 		setSGR [SetColor Foreground intensity color]
 	putStr msg
-	whenConsole h $
+	whenConsole $
 		setSGR []
 	-- Note this comes after the color is reset, so that
 	-- the color set and reset happen in the same line.
