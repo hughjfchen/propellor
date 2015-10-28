@@ -74,7 +74,7 @@ withLock a = do
 takeOutputLock' :: Bool -> IO Bool
 takeOutputLock' block = go =<< withLock tryTakeTMVar
   where
-	go Nothing = whenblock waitlock
+	go Nothing = whenblock waitlockchange
 	-- Something has the lock. It may be stale, so check it.
 	-- We must always be sure to fill the TMVar back with Just or Nothing.
 	go (Just orig) = case orig of
@@ -85,11 +85,7 @@ takeOutputLock' block = go =<< withLock tryTakeTMVar
 				( havelock
 				, if block
 					then do
-						hPutStr stderr "WAITFORPROCESS in lock"
-						hFlush stderr
 						void $ P.waitForProcess h
-						hPutStr stderr "WAITFORPROCESS in lock done"
-						hFlush stderr
 						havelock
 					else do
 						withLock (`putTMVar` orig)
@@ -97,21 +93,16 @@ takeOutputLock' block = go =<< withLock tryTakeTMVar
 				)
 		(Just GeneralLock) -> do
 			withLock (`putTMVar` orig)
-			whenblock waitlock
+			whenblock waitlockchange
 
 	havelock = do
 		withLock (`putTMVar` Just GeneralLock)
 		return True
 	
-	-- Wait for current lock holder (if any) to relinquish
-	-- it and take the lock for ourselves.
-	waitlock = withLock $ \l -> do
-		v <- tryTakeTMVar l
-		case v of
-			Just (Just _) -> retry
-			_ -> do
-				putTMVar l (Just GeneralLock)
-				return True
+	-- Wait for the lock to change, and try again.
+	waitlockchange = do
+		void $ withLock readTMVar
+		takeOutputLock' block
 	
 	whenblock a = if block then a else return False
 
