@@ -16,6 +16,7 @@ module Propellor.Property.Cmd (
 	safeSystemEnv,
 	shellEscape,
 	createProcess,
+	waitForProcess,
 ) where
 
 import Control.Applicative
