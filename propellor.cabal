@@ -34,7 +34,7 @@ Description:
 
 Executable propellor
   Main-Is: wrapper.hs
-  GHC-Options: -threaded -O0 -Wall -fno-warn-tabs
+  GHC-Options: -threaded -O -Wall -fno-warn-tabs
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
@@ -46,7 +46,7 @@ Executable propellor
 
 Executable propellor-config
   Main-Is: config.hs
-  GHC-Options: -threaded -O0 -Wall -fno-warn-tabs
+  GHC-Options: -threaded -O -Wall -fno-warn-tabs
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
@@ -57,7 +57,7 @@ Executable propellor-config
     Build-Depends: unix
 
 Library
-  GHC-Options: -O0 -Wall -fno-warn-tabs
+  GHC-Options: -O -Wall -fno-warn-tabs
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
