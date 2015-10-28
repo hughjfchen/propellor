@@ -135,6 +135,7 @@ Library
     Propellor.CmdLine
     Propellor.Info
     Propellor.Message
+    Propellor.Debug
     Propellor.PrivData
     Propellor.Engine
     Propellor.Exception
@@ -175,6 +176,7 @@ Library
     Utility.PartialPrelude
     Utility.PosixFiles
     Utility.Process
+    Utility.Process.Shim
     Utility.SafeCommand
     Utility.Scheduled
     Utility.Table
