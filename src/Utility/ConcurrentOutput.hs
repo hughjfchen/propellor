@@ -147,8 +147,12 @@ createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Ma
 createProcessConcurrent p
 	| willoutput (P.std_out p) || willoutput (P.std_err p) =
 		ifM tryTakeOutputLock
-			( firstprocess
-			, concurrentprocess
+			( do
+				print "IS NOT CONCURRENT"
+				firstprocess
+			, do
+				print "IS CONCURRENT"
+				concurrentprocess
 			)
 	| otherwise = P.createProcess p
   where
