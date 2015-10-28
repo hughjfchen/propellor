@@ -170,7 +170,7 @@ createProcessConcurrent p
 			, do
 				lcker <- outputLockedBy <$> getOutputHandle
 				l <- readMVar lcker
-				hPutStrLn stderr $ show ("IS CONCURRENT", l)
+				hPutStrLn stderr $ show ("IS CONCURRENT", cmd, l)
 				concurrentprocess
 			)
 	| otherwise = P.createProcess p
