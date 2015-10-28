@@ -15,6 +15,7 @@ module Propellor.Base (
 	, module Propellor.Engine
 	, module Propellor.Exception
 	, module Propellor.Message
+	, module Propellor.Debug
 	, module Propellor.Location
 	, module Propellor.Utilities
 
@@ -39,6 +40,7 @@ import Propellor.Property.Cmd
 import Propellor.PrivData
 import Propellor.Types.PrivData
 import Propellor.Message
+import Propellor.Debug
 import Propellor.Exception
 import Propellor.Info
 import Propellor.PropAccum

@@ -15,24 +15,16 @@ module Propellor.Message (
 	warningMessage,
 	infoMessage,
 	errorMessage,
-	debug,
-	checkDebugMode,
-	enableDebugMode,
 	processChainOutput,
 	messagesDone,
-	createProcess,
+	createProcessConcurrent,
 ) where
 
 import System.Console.ANSI
 import System.IO
 import System.Posix.IO
-import System.Log.Logger
-import System.Log.Formatter
-import System.Log.Handler (setFormatter)
-import System.Log.Handler.Simple
 import "mtl" Control.Monad.Reader
 import Control.Applicative
-import System.Directory
 import Control.Monad.IfElse
 import System.IO.Unsafe (unsafePerformIO)
 import Control.Concurrent
@@ -42,13 +34,12 @@ import Data.Char
 import Data.List
 import Data.Monoid
 import qualified Data.ByteString as B
+import qualified System.Process as P
 
 import Propellor.Types
 import Utility.PartialPrelude
 import Utility.Monad
-import Utility.Env
 import Utility.Exception
-import qualified Utility.Process as P
 
 data MessageHandle = MessageHandle
 	{ isConsole :: Bool
@@ -131,7 +122,7 @@ dropOutputLock :: IO ()
 dropOutputLock = do
 	lcker <- outputLockedBy <$> getMessageHandle
 	lck <- outputLock <$> getMessageHandle
-	takeMVar lcker
+	void $ takeMVar lcker
 	putMVar lck ()
 
 -- | Only safe to call after takeOutputLock; updates the Locker.
@@ -216,27 +207,6 @@ colorLine intensity color msg = do
 	putStrLn ""
 	hFlush stdout
 
-debug :: [String] -> IO ()
-debug = debugM "propellor" . unwords
-
-checkDebugMode :: IO ()
-checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
-  where
-	go (Just "1") = enableDebugMode
-	go (Just _) = noop
-	go Nothing = whenM (doesDirectoryExist ".git") $
-		whenM (elem "1" . lines <$> getgitconfig) enableDebugMode
-	getgitconfig = catchDefaultIO "" $
-		P.readProcess "git" ["config", "propellor.debug"]
-
-enableDebugMode :: IO ()
-enableDebugMode = do
-	f <- setFormatter
-		<$> streamHandler stderr DEBUG
-		<*> pure (simpleLogFormatter "[$time] $msg")
-	updateGlobalLogger rootLoggerName $ 
-		setLevel DEBUG .  setHandlers [f]
-
 -- | Reads and displays each line from the Handle, except for the last line
 -- which is a Result.
 processChainOutput :: Handle -> IO Result
@@ -244,16 +214,13 @@ processChainOutput h = go Nothing
   where
 	go lastline = do
 		v <- catchMaybeIO (hGetLine h)
-		debug ["read from chained propellor: ", show v]
 		case v of
 			Nothing -> case lastline of
 				Nothing -> do
-					debug ["chained propellor output nothing; assuming it failed"]
 					return FailedChange
 				Just l -> case readish l of
 					Just r -> pure r
 					Nothing -> do
-						debug ["chained propellor output did not end with a Result; assuming it failed"]
 						lockOutput $ do
 							putStrLn l
 							hFlush stdout
@@ -287,8 +254,8 @@ messagesDone = lockOutput $ do
 -- commands, which are based on this.
 --
 -- Also does debug logging of all commands run.
-createProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle) 
-createProcess p
+createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle) 
+createProcessConcurrent p
 	| hasoutput (P.std_out p) || hasoutput (P.std_err p) =
 		ifM tryTakeOutputLock
 			( firstprocess
@@ -319,12 +286,12 @@ createProcess p
 				then P.UseHandle toerrh
 				else P.std_err p
 			}
-		r@(_, _, _, ph) <- P.createProcess p'
+		r <- P.createProcess p'
 		hClose toouth
 		hClose toerrh
 		buf <- newMVar []
 		void $ async $ outputDrainer fromouth stdout buf
-		void $ async $ outputDrainer fromouth stderr buf
+		void $ async $ outputDrainer fromerrh stderr buf
 		void $ async $ bufferWriter buf
 		return r
 
@@ -349,6 +316,7 @@ outputDrainer fromh toh buf = do
 -- Wait to lock output, and once we can, display everything 
 -- that's put into buffer, until the end is signaled by Nothing
 -- for both stdout and stderr.
+bufferWriter :: MVar Buffer -> IO ()
 bufferWriter buf = lockOutput (go [stdout, stderr])
   where
   	go [] = return ()
@@ -364,6 +332,7 @@ bufferWriter buf = lockOutput (go [stdout, stderr])
 -- The buffer can grow up to 1 mb in size, but after that point,
 -- it's truncated to avoid propellor using unbounded memory
 -- when a process outputs a whole lot of stuff.
+bufsz :: Int
 bufsz = 1000000
 
 addBuffer :: (Handle, Maybe B.ByteString) -> Buffer -> Buffer
