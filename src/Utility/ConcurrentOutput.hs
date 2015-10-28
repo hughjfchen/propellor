@@ -132,6 +132,8 @@ withConcurrentOutput a = a `finally` drain
 		hPutStrLn stderr "DRAIN"
 		hFlush stderr
 		lockOutput (return ())
+		hPutStrLn stderr "DRAIN DONE"
+		hFlush stderr
 
 -- | Displays a string to stdout, and flush output so it's displayed.
 --
