@@ -132,13 +132,21 @@ createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Ma
 createProcessConcurrent p
 	| hasoutput (P.std_out p) || hasoutput (P.std_err p) =
 		ifM tryTakeOutputLock
-			( firstprocess
-			, concurrentprocess
+			( do
+				print ("FIRST", pc)
+				firstprocess
+			, do
+				print ("CONCURRENT", pc)
+				concurrentprocess
 			)
 	| otherwise = P.createProcess p
   where
 	hasoutput P.Inherit = True
 	hasoutput _ = False
+
+	pc = case P.cmdspec p of
+		P.ShellCommand s -> s
+		P.RawCommand c ps -> unwords (c:ps)
 
 	firstprocess = do
 		r@(_, _, _, h) <- P.createProcess p
