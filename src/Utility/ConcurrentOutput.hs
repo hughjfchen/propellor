@@ -85,11 +85,7 @@ takeOutputLock' block = go =<< withLock tryTakeTMVar
 				( havelock
 				, if block
 					then do
-						hPutStr stderr "WAITFORPROCESS in lock"
-						hFlush stderr
 						void $ P.waitForProcess h
-						hPutStr stderr "WAITFORPROCESS in lock done"
-						hFlush stderr
 						havelock
 					else do
 						withLock (`putTMVar` orig)
@@ -137,12 +133,7 @@ withConcurrentOutput a = a `finally` drain
   where
 	-- Just taking the output lock is enough to ensure that anything
 	-- that was buffering output has had a chance to flush its buffer.
-	drain = do
-		hPutStrLn stderr "DRAIN"
-		hFlush stderr
-		lockOutput (return ())
-		hPutStrLn stderr "DRAIN DONE"
-		hFlush stderr
+	drain = lockOutput (return ())
 
 -- | Displays a string to stdout, and flush output so it's displayed.
 --
