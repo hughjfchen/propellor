@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 -- | Concurrent output handling.
 
 module Utility.ConcurrentOutput (
@@ -174,7 +176,7 @@ outputConcurrent s = do
 -- as the output lock becomes free.
 createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle) 
 createProcessConcurrent p
-	| willoutput (P.std_out p) || willoutput (P.std_err p) =
+	| willOutput (P.std_out p) || willOutput (P.std_err p) =
 		ifM tryTakeOutputLock
 			( do
 				hPutStrLn stderr $ show ("NOT CONCURRENT", cmd)
@@ -188,12 +190,9 @@ createProcessConcurrent p
 			)
 	| otherwise = P.createProcess p
   where
-	willoutput P.Inherit = True
-	willoutput _ = False
-
-	rediroutput str h
-		| willoutput str = P.UseHandle h
-		| otherwise = str
+	rediroutput ss h
+		| willOutput ss = P.UseHandle h
+		| otherwise = ss
 
 	cmd = case P.cmdspec p of
 		P.ShellCommand s -> s
@@ -219,14 +218,18 @@ createProcessConcurrent p
 		hClose toouth
 		hClose toerrh
 		buf <- newMVar []
-		void $ async $ outputDrainer fromouth stdout buf
-		void $ async $ outputDrainer fromerrh stderr buf
+		void $ async $ outputDrainer (P.std_out p) fromouth stdout buf
+		void $ async $ outputDrainer (P.std_err p) fromerrh stderr buf
 		void $ async $ bufferWriter buf
 		return r
 
 	pipe = do
 		(from, to) <- createPipe
 		(,) <$> fdToHandle to <*> fdToHandle from
+
+willOutput :: P.StdStream -> Bool
+willOutput P.Inherit = True
+willOutput _ = False
 
 type Buffer = [(Handle, BufferedActivity)]
 
@@ -236,17 +239,23 @@ data BufferedActivity
 	| InTempFile FilePath
 	deriving (Eq)
 
--- Drain output from the handle, and buffer it in memory.
-outputDrainer :: Handle -> Handle -> MVar Buffer -> IO ()
-outputDrainer fromh toh buf = do
-	v <- tryIO $ B.hGetSome fromh 1024
-	case v of
-		Right b | not (B.null b) -> do
-			modifyMVar_ buf $ addBuffer (toh, Output b)
-			outputDrainer fromh toh buf
-		_ -> do
-			modifyMVar_ buf $ pure . (++ [(toh, ReachedEnd)])
-			hClose fromh
+-- Drain output from the handle, and buffer it.
+outputDrainer :: P.StdStream -> Handle -> Handle -> MVar Buffer -> IO ()
+outputDrainer ss fromh toh buf
+	| willOutput ss = go
+	| otherwise = atend
+  where
+	go = do
+		v <- tryIO $ B.hGetSome fromh 1024
+		case v of
+			Right b | not (B.null b) -> do
+				modifyMVar_ buf $ addBuffer (toh, Output b)
+				go
+			_ -> atend
+	atend = do
+		modifyMVar_ buf $ pure . (++ [(toh, ReachedEnd)])
+		hClose fromh
+		
 
 -- Wait to lock output, and once we can, display everything 
 -- that's put into buffer, until the end is signaled by Nothing
@@ -285,7 +294,7 @@ addBuffer (toh, Output b) buf
 		hClose h
 		return ((toh, InTempFile tmp) : other)
   where
-	b' = B.concat (mapMaybe getOutput this) <> b
+	!b' = B.concat (mapMaybe getOutput this) <> b
 	(this, other) = partition same buf
 	same v = fst v == toh && case snd v of
 		Output _ -> True
