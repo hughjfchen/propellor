@@ -117,12 +117,17 @@ updateOutputLocker l = do
 -- multiple processes that are running concurrently from writing
 -- to stdout/stderr at the same time.
 --
--- The first process is allowed to write to stdout and stderr in the usual way.
+-- If the process does not output to stdout or stderr, it's run
+-- by createProcess entirely as usual. Only processes that can generate
+-- output are handled specially:
 --
--- However, if another process is run concurrently with the
--- first, any stdout or stderr that would have been displayed by it is
--- instead buffered. The buffered output will be displayed the next time it
--- is safe to do so (ie, after the first process exits).
+-- A process is allowed to write to stdout and stderr in the usual
+-- way, assuming it can successfully take the output lock.
+--
+-- When the output lock is held (by another process or other caller of
+-- `lockOutput`), the process is instead run with its stdout and stderr
+-- redirected to a buffer. The buffered output will be displayed as soon
+-- as the output lock becomes free.
 createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle) 
 createProcessConcurrent p
 	| hasoutput (P.std_out p) || hasoutput (P.std_err p) =
