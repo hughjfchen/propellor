@@ -208,8 +208,10 @@ updateServer target relay hst connect haveprecompiled getprivdata =
 				loop
 			(Just NeedPrivData) -> do
 				print "START GET PRIVDATA"
+				hFlush stdout
 				pd <- getprivdata
 				print ("GOT PRIVDATA", M.size pd)
+				hFlush stdout
 				sendPrivData hn toh pd
 				loop
 			(Just NeedGitClone) -> do
