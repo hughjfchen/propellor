@@ -4,8 +4,6 @@
 -- | Concurrent output handling.
 
 module Utility.ConcurrentOutput (
-	takeOutputLock,
-	dropOutputLock,
 	withConcurrentOutput,
 	outputConcurrent,
 	createProcessConcurrent,
