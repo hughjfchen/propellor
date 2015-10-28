@@ -115,8 +115,11 @@ updateOutputLocker :: Locker -> IO ()
 updateOutputLocker l = do
 	lcker <- outputLockedBy <$> getOutputHandle
 	void $ tryTakeMVar lcker
+	hPutStrLn stderr $ show ("SETTING LOCKER")
+	hFlush stderr
 	putMVar lcker l
-	modifyMVar_ lcker (const $ return l)
+	hPutStrLn stderr $ show ("SETTING LOCKER DONE")
+	hFlush stderr
 
 -- | Use this around any IO actions that use `outputConcurrent`
 -- or `createProcessConcurrent`
