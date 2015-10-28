@@ -130,23 +130,19 @@ updateOutputLocker l = do
 -- as the output lock becomes free.
 createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle) 
 createProcessConcurrent p
-	| hasoutput (P.std_out p) || hasoutput (P.std_err p) =
+	| willoutput (P.std_out p) || willoutput (P.std_err p) =
 		ifM tryTakeOutputLock
-			( do
-				print ("FIRST", pc)
-				firstprocess
-			, do
-				print ("CONCURRENT", pc)
-				concurrentprocess
+			( firstprocess
+			, concurrentprocess
 			)
 	| otherwise = P.createProcess p
   where
-	hasoutput P.Inherit = True
-	hasoutput _ = False
+	willoutput P.Inherit = True
+	willoutput _ = False
 
-	pc = case P.cmdspec p of
-		P.ShellCommand s -> s
-		P.RawCommand c ps -> unwords (c:ps)
+	rediroutput str h
+		| willoutput str = P.UseHandle h
+		| otherwise = str
 
 	firstprocess = do
 		r@(_, _, _, h) <- P.createProcess p
@@ -161,12 +157,8 @@ createProcessConcurrent p
 		(toouth, fromouth) <- pipe
 		(toerrh, fromerrh) <- pipe
 		let p' = p
-			{ P.std_out = if hasoutput (P.std_out p)
-				then P.UseHandle toouth
-				else P.std_out p
-			, P.std_err = if hasoutput (P.std_err p)
-				then P.UseHandle toerrh
-				else P.std_err p
+			{ P.std_out = rediroutput (P.std_out p) toouth
+			, P.std_err = rediroutput (P.std_err p) toerrh
 			}
 		r <- P.createProcess p'
 		hClose toouth

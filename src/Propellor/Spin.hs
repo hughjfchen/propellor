@@ -206,7 +206,10 @@ updateServer target relay hst connect haveprecompiled getprivdata =
 				sendRepoUrl toh
 				loop
 			(Just NeedPrivData) -> do
-				sendPrivData hn toh =<< getprivdata
+				print "START GET PRIVDATA"
+				pd <- getprivdata
+				print "GOT PRIVDATA"
+				sendPrivData hn toh pd
 				loop
 			(Just NeedGitClone) -> do
 				hClose toh
