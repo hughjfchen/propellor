@@ -6,6 +6,7 @@ module Utility.ConcurrentOutput (
 	withConcurrentOutput,
 	outputConcurrent,
 	createProcessConcurrent,
+	waitForProcessConcurrent,
 ) where
 
 import System.IO
@@ -23,6 +24,7 @@ import Data.List
 import Data.Monoid
 import qualified Data.ByteString as B
 import qualified System.Process as P
+import System.Exit
 
 import Utility.Monad
 import Utility.Exception
@@ -85,7 +87,7 @@ takeOutputLock' block = go =<< withLock tryTakeTMVar
 				( havelock
 				, if block
 					then do
-						void $ P.waitForProcess h
+						void $ waitForProcessConcurrent h
 						havelock
 					else do
 						withLock (`putTMVar` orig)
@@ -205,6 +207,20 @@ createProcessConcurrent p
 	pipe = do
 		(from, to) <- createPipe
 		(,) <$> fdToHandle to <*> fdToHandle from
+
+-- | This must be used to wait for processes started with 
+-- `createProcessConcurrent`.
+--
+-- This is necessary because `System.Process.waitForProcess` has a
+-- race condition when two threads check the same process. If the race
+-- is triggered, one thread will successfully wait, but the other
+-- throws a DoesNotExist exception.
+waitForProcessConcurrent :: P.ProcessHandle -> IO ExitCode
+waitForProcessConcurrent h = do
+	v <- tryWhenExists (P.waitForProcess h)
+	case v of
+		Just r -> return r
+		Nothing -> maybe (waitForProcessConcurrent h) return =<< P.getProcessExitCode h
 
 willOutput :: P.StdStream -> Bool
 willOutput P.Inherit = True
