@@ -1,7 +1,7 @@
 -- | Concurrent output handling.
 
 module Utility.ConcurrentOutput (
-	lockOutput,
+	outputConcurrent,
 	createProcessConcurrent,
 ) where
 
@@ -113,6 +113,20 @@ updateOutputLocker l = do
 	putMVar lcker l
 	modifyMVar_ lcker (const $ return l)
 
+-- | Displays a string to stdout, and flush output so it's displayed.
+--
+-- Uses locking to ensure that the whole string is output atomically
+-- even when other threads are concurrently generating output.
+--
+-- When something else is writing to the console at the same time, this does
+-- not block. It buffers the string, so it will be displayed once the other
+-- writer is done.
+outputConcurrent :: String -> IO ()
+outputConcurrent s = do
+	putStr s
+	hFlush stdout
+	-- TODO
+
 -- | Wrapper around `System.Process.createProcess` that prevents 
 -- multiple processes that are running concurrently from writing
 -- to stdout/stderr at the same time.
@@ -124,8 +138,9 @@ updateOutputLocker l = do
 -- A process is allowed to write to stdout and stderr in the usual
 -- way, assuming it can successfully take the output lock.
 --
--- When the output lock is held (by another process or other caller of
--- `lockOutput`), the process is instead run with its stdout and stderr
+-- When the output lock is held (by another concurrent process,
+-- or because `outputConcurrent` is being called at the same time),
+-- the process is instead run with its stdout and stderr
 -- redirected to a buffer. The buffered output will be displayed as soon
 -- as the output lock becomes free.
 createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle) 

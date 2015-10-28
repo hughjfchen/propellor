@@ -20,10 +20,8 @@ module Propellor.Message (
 
 import System.Console.ANSI
 import System.IO
-import Control.Monad
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import Control.Applicative
-import Control.Monad.IfElse
 import System.IO.Unsafe (unsafePerformIO)
 import Control.Concurrent
 
@@ -55,10 +53,11 @@ forceConsole :: IO ()
 forceConsole = modifyMVar_ globalMessageHandle $ \mh ->
 	pure (mh { isConsole = True })
 
--- | Only performs the action when at the console, or when console
--- output has been forced.
-whenConsole :: IO () -> IO ()
-whenConsole a = whenM (isConsole <$> getMessageHandle) a
+whenConsole :: String -> IO String
+whenConsole s = ifM (isConsole <$> getMessageHandle)
+	( pure s
+	, pure ""
+	)
 
 -- | Shows a message while performing an action, with a colored status
 -- display.
@@ -72,55 +71,54 @@ actionMessageOn = actionMessage' . Just
 
 actionMessage' :: (MonadIO m, MonadMask m, ActionResult r) => Maybe HostName -> Desc -> m r -> m r
 actionMessage' mhn desc a = do
-	liftIO $ whenConsole $ lockOutput $ do
-		setTitle $ "propellor: " ++ desc
-		hFlush stdout
+	liftIO $ outputConcurrent
+		=<< whenConsole (setTitleCode $ "propellor: " ++ desc)
 
 	r <- a
 
-	liftIO $ lockOutput $ do
-		whenConsole $
-			setTitle "propellor: running"
-		showhn mhn
-		putStr $ desc ++ " ... "
-		let (msg, intensity, color) = getActionResult r
-		colorLine intensity color msg
-		hFlush stdout
+	liftIO $ outputConcurrent . concat =<< sequence
+		[ whenConsole $
+			setTitleCode "propellor: running"
+		, showhn mhn
+		, pure $ desc ++ " ... "
+		, let (msg, intensity, color) = getActionResult r
+		  in colorLine intensity color msg
+		]
 
 	return r
   where
-	showhn Nothing = return ()
-	showhn (Just hn) = do
-		whenConsole $
-			setSGR [SetColor Foreground Dull Cyan]
-		putStr (hn ++ " ")
-		whenConsole $
-			setSGR []
+	showhn Nothing = return ""
+	showhn (Just hn) = concat <$> sequence
+		[ whenConsole $
+			setSGRCode [SetColor Foreground Dull Cyan]
+		, pure (hn ++ " ")
+		, whenConsole $
+			setSGRCode []
+		]
 
 warningMessage :: MonadIO m => String -> m ()
-warningMessage s = liftIO $ lockOutput $
-	colorLine Vivid Magenta $ "** warning: " ++ s
+warningMessage s = liftIO $
+	outputConcurrent =<< colorLine Vivid Magenta ("** warning: " ++ s)
 
 infoMessage :: MonadIO m => [String] -> m ()
-infoMessage ls = liftIO $ lockOutput $
-	mapM_ putStrLn ls
+infoMessage ls = liftIO $ outputConcurrent $ concatMap (++ "\n") ls
 
 errorMessage :: MonadIO m => String -> m a
-errorMessage s = liftIO $ lockOutput $ do
-	colorLine Vivid Red $ "** error: " ++ s
+errorMessage s = liftIO $ do
+	outputConcurrent =<< colorLine Vivid Red ("** error: " ++ s)
 	error "Cannot continue!"
  
-colorLine :: ColorIntensity -> Color -> String -> IO ()
-colorLine intensity color msg = do
-	whenConsole $
-		setSGR [SetColor Foreground intensity color]
-	putStr msg
-	whenConsole $
-		setSGR []
+colorLine :: ColorIntensity -> Color -> String -> IO String
+colorLine intensity color msg = concat <$> sequence
+	[ whenConsole $
+		setSGRCode [SetColor Foreground intensity color]
+	, pure msg
+	, whenConsole $
+		setSGRCode []
 	-- Note this comes after the color is reset, so that
 	-- the color set and reset happen in the same line.
-	putStrLn ""
-	hFlush stdout
+	, pure "\n"
+	]
 
 -- | Reads and displays each line from the Handle, except for the last line
 -- which is a Result.
@@ -136,19 +134,14 @@ processChainOutput h = go Nothing
 				Just l -> case readish l of
 					Just r -> pure r
 					Nothing -> do
-						lockOutput $ do
-							putStrLn l
-							hFlush stdout
+						outputConcurrent l
 						return FailedChange
 			Just s -> do
-				lockOutput $ do
-					maybe noop (\l -> unless (null l) (putStrLn l)) lastline
-					hFlush stdout
+				outputConcurrent $
+					maybe "" (\l -> if null l then "" else l ++ "\n") lastline
 				go (Just s)
 
 -- | Called when all messages about properties have been printed.
 messagesDone :: IO ()
-messagesDone = lockOutput $ do
-	whenConsole $
-		setTitle "propellor: done"
-	hFlush stdout
+messagesDone = outputConcurrent
+	=<< whenConsole (setTitleCode "propellor: done")
