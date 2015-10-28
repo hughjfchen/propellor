@@ -1,14 +1,38 @@
 {-# LANGUAGE FlexibleContexts #-}
 
--- | Note that any output of commands run by
--- concurrent properties will be scrambled together.
+-- | Propellor properties can be made to run concurrently, using this
+-- module. This can speed up propellor, at the expense of using more CPUs
+-- and other resources.
+--
+-- It's up to you to make sure that properties that you make run concurrently
+-- don't implicitly depend on one-another. The worst that can happen
+-- though, is that propellor fails to ensure some of the properties,
+-- and tells you what went wrong.
+--
+-- Another potential problem is that output of concurrent properties could
+-- interleave into a scrambled mess. This is mostly prevented; all messages
+-- output by propellor are concurrency safe, including `errorMessage`,
+-- `infoMessage`, etc. However, if you write a property that directly
+-- uses `print` or `putStrLn`, you can still experience this problem.
+--
+-- Similarly, when properties run external commands, the command's output
+-- can be a problem for concurrency. No need to worry;
+-- `Propellor.Property.Cmd.createProcess` is concurrent output safe
+-- (it actually uses `Propellor.Message.createProcessConcurrent`), and
+-- everything else in propellor that runs external commands is built on top
+-- of that. Of course, if you import System.Process and use it in a
+-- property, you can bypass that and shoot yourself in the foot.
+--
+-- Finally, anything that directly accesses the tty can bypass
+-- these protections. That's sometimes done for eg, password prompts.
+-- A well-written property should avoid running interactive commands
+-- anyway.
 
 module Propellor.Property.Concurrent (
 	concurrently,
 	concurrentList,
 	props,
 	getNumProcessors,
-	withCapabilities,
 	concurrentSatisfy,
 ) where
 
@@ -20,6 +44,12 @@ import GHC.Conc (getNumProcessors)
 import Control.Monad.RWS.Strict
 
 -- | Ensures two properties concurrently.
+--
+-- >	& foo `concurrently` bar
+--
+-- To ensure three properties concurrently, just use this combinator twice:
+--
+-- >	& foo `concurrently` bar `concurrently` baz
 concurrently
 	:: (IsProp p1, IsProp p2, Combines p1 p2, IsProp (CombinedType p1 p2))
 	=> p1
@@ -95,6 +125,7 @@ withCapabilities n a = bracket setup cleanup (const a)
 		return c
 	cleanup = liftIO . setNumCapabilities
 
+-- | Running Propellor actions concurrently.
 concurrentSatisfy :: Propellor Result -> Propellor Result -> Propellor Result
 concurrentSatisfy a1 a2 = do
 	h <- ask

@@ -238,22 +238,22 @@ messagesDone = lockOutput $ do
 		setTitle "propellor: done"
 	hFlush stdout
 
--- | Wrapper around `System.Process.createProcess` that prevents processes
--- that are running concurrently from writing to the stdout/stderr at the
--- same time.
+-- | Wrapper around `System.Process.createProcess` that prevents 
+-- multiple processes that are running concurrently from writing
+-- to stdout/stderr at the same time.
 --
--- The first process run by createProcess is allowed to write to
+-- The first process is allowed to write to
 -- stdout and stderr in the usual way.
 --
--- However, if a second createProcess runs concurrently with the
+-- However, if another process runs concurrently with the
 -- first, any stdout or stderr that would have been displayed by it is
 -- instead buffered. The buffered output will be displayed the next time it
 -- is safe to do so (ie, after the first process exits).
 --
--- `Propellor.Property.Cmd` has some other useful actions for running
--- commands, which are based on this.
---
 -- Also does debug logging of all commands run.
+--
+-- Unless you manually import System.Process, every part of propellor
+-- that runs a process uses this.
 createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle) 
 createProcessConcurrent p
 	| hasoutput (P.std_out p) || hasoutput (P.std_err p) =
