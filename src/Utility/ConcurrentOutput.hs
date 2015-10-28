@@ -14,6 +14,7 @@ import Control.Monad.IO.Class (liftIO, MonadIO)
 import Control.Applicative
 import System.IO.Unsafe (unsafePerformIO)
 import Control.Concurrent
+import Control.Concurrent.STM
 import Control.Concurrent.Async
 import Data.Maybe
 import Data.List
@@ -25,8 +26,7 @@ import Utility.Monad
 import Utility.Exception
 
 data OutputHandle = OutputHandle
-	{ outputLock :: MVar () -- ^ empty when locked
-	, outputLockedBy :: MVar Locker
+	{ outputLock :: TMVar (Maybe Locker)
 	}
 
 data Locker
@@ -42,8 +42,7 @@ instance Show Locker where
 globalOutputHandle :: MVar OutputHandle
 globalOutputHandle = unsafePerformIO $ 
 	newMVar =<< OutputHandle
-		<$> newMVar ()
-		<*> newEmptyMVar
+		<$> newTMVarIO Nothing
 
 -- | Gets the global OutputHandle.
 getOutputHandle :: IO OutputHandle
@@ -62,61 +61,65 @@ takeOutputLock = void $ takeOutputLock' True
 tryTakeOutputLock :: IO Bool
 tryTakeOutputLock = takeOutputLock' False
 
-takeOutputLock' :: Bool -> IO Bool
-takeOutputLock' block = do 
+withLock :: (TMVar (Maybe Locker) -> STM a) -> IO a
+withLock a = do
 	lck <- outputLock <$> getOutputHandle
-	go =<< tryTakeMVar lck
+	atomically (a lck)
+
+-- The lock TMVar is kept full normally, even if only with Nothing,
+-- so if we take it here, that blocks anyone else from trying
+-- to take the lock while we are checking it.
+takeOutputLock' :: Bool -> IO Bool
+takeOutputLock' block = go =<< withLock tryTakeTMVar
   where
-	-- lck was full, and we've emptied it, so we hold the lock now.
-	go (Just ()) = havelock
-	-- lck is empty, so someone else is holding the lock.
-	go Nothing = do
-		lcker <- outputLockedBy <$> getOutputHandle
-		v' <- tryTakeMVar lcker
-		case v' of
-			Just orig@(ProcessLock h _) ->
-				-- if process has exited, lock is stale
-				ifM (isJust <$> P.getProcessExitCode h)
-					( havelock
-					, if block
-						then do
-							void $ P.waitForProcess h
-							havelock
-						else do
-							putMVar lcker orig
-							return False
-					)
-			Just GeneralLock -> do
-				putMVar lcker GeneralLock
-				whenblock waitlock
-			Nothing -> whenblock waitlock
+	go Nothing = whenblock waitlock
+	-- Something has the lock. It may be stale, so check it.
+	-- We must always be sure to fill the TMVar back with Just or Nothing.
+	go (Just orig) = case orig of
+		Nothing -> havelock
+		(Just (ProcessLock h _)) ->
+			-- when process has exited, lock is stale
+			ifM (isJust <$> P.getProcessExitCode h)
+				( havelock
+				, if block
+					then do
+						void $ P.waitForProcess h
+						havelock
+					else do
+						withLock (`putTMVar` orig)
+						return False
+				)
+		(Just GeneralLock) -> do
+			withLock (`putTMVar` orig)
+			whenblock waitlock
 
 	havelock = do
-		updateOutputLocker GeneralLock
+		withLock (`putTMVar` Just GeneralLock)
 		return True
-	waitlock = do
-		-- Wait for current lock holder to relinquish
-		-- it and take the lock.
-		lck <- outputLock <$> getOutputHandle
-		takeMVar lck
-		havelock
+	
+	-- Wait for current lock holder (if any) to relinquish
+	-- it and take the lock for ourselves.
+	waitlock = withLock $ \l -> do
+		v <- tryTakeTMVar l
+		case v of
+			Just (Just _) -> retry
+			_ -> do
+				putTMVar l (Just GeneralLock)
+				return True
+	
 	whenblock a = if block then a else return False
 
 -- | Only safe to call after taking the output lock.
 dropOutputLock :: IO ()
-dropOutputLock = do
-	lcker <- outputLockedBy <$> getOutputHandle
-	lck <- outputLock <$> getOutputHandle
-	void $ takeMVar lcker
-	putMVar lck ()
+dropOutputLock = withLock $ \l -> do
+	void $ takeTMVar l
+	putTMVar l Nothing
 
 -- | Only safe to call after takeOutputLock; updates the Locker.
 updateOutputLocker :: Locker -> IO ()
-updateOutputLocker l = do
-	lcker <- outputLockedBy <$> getOutputHandle
-	void $ tryTakeMVar lcker
-	putMVar lcker l
-	modifyMVar_ lcker (const $ return l)
+updateOutputLocker locker = withLock $ \l -> do
+	void $ takeTMVar l
+	putTMVar l (Just locker)
 
 -- | Use this around any IO actions that use `outputConcurrent`
 -- or `createProcessConcurrent`
@@ -174,8 +177,8 @@ createProcessConcurrent p
 				hFlush stderr
 				firstprocess
 			, do
-				lcker <- outputLockedBy <$> getOutputHandle
-				hPutStrLn stderr $ show ("IS CONCURRENT", cmd)
+				v <- withLock $ tryReadTMVar
+				hPutStrLn stderr $ show ("IS CONCURRENT", cmd, v)
 				hFlush stderr
 				concurrentprocess
 			)
