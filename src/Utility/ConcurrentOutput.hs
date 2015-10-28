@@ -31,7 +31,11 @@ data OutputHandle = OutputHandle
 
 data Locker
 	= GeneralLock
-	| ProcessLock P.ProcessHandle
+	| ProcessLock P.ProcessHandle String
+
+instance Show Locker where
+	show GeneralLock = "GeneralLock"
+	show (ProcessLock _ cmd) = "ProcessLock " ++ cmd
 
 -- | A shared global variable for the OutputHandle.
 {-# NOINLINE globalOutputHandle #-}
@@ -70,7 +74,7 @@ takeOutputLock' block = do
 		lcker <- outputLockedBy <$> getOutputHandle
 		v' <- tryTakeMVar lcker
 		case v' of
-			Just (ProcessLock h) ->
+			Just orig@(ProcessLock h _) ->
 				-- if process has exited, lock is stale
 				ifM (isJust <$> P.getProcessExitCode h)
 					( havelock
@@ -79,7 +83,7 @@ takeOutputLock' block = do
 							void $ P.waitForProcess h
 							havelock
 						else do
-							putMVar lcker (ProcessLock h)
+							putMVar lcker orig
 							return False
 					)
 			Just GeneralLock -> do
@@ -164,7 +168,9 @@ createProcessConcurrent p
 				hPutStrLn stderr "IS NOT CONCURRENT"
 				firstprocess
 			, do
-				hPutStrLn stderr "IS CONCURRENT"
+				lcker <- outputLockedBy <$> getOutputHandle
+				l <- readMVar lcker
+				hPutStrLn stderr $ show ("IS CONCURRENT", l)
 				concurrentprocess
 			)
 	| otherwise = P.createProcess p
@@ -176,10 +182,14 @@ createProcessConcurrent p
 		| willoutput str = P.UseHandle h
 		| otherwise = str
 
+	cmd = case P.cmdspec p of
+		P.ShellCommand s -> s
+		P.RawCommand c ps -> unwords (c:ps)
+
 	firstprocess = do
 		r@(_, _, _, h) <- P.createProcess p
 			`onException` dropOutputLock
-		updateOutputLocker (ProcessLock h)
+		updateOutputLocker (ProcessLock h cmd)
 		-- Output lock is still held as we return; the process
 		-- is running now, and once it exits the output lock will
 		-- be stale and can then be taken by something else.
