@@ -128,7 +128,10 @@ withConcurrentOutput a = a `finally` drain
   where
 	-- Just taking the output lock is enough to ensure that anything
 	-- that was buffering output has had a chance to flush its buffer.
-	drain = lockOutput (return ())
+	drain = do
+		hPutStrLn stderr "DRAIN"
+		hFlush stderr
+		lockOutput (return ())
 
 -- | Displays a string to stdout, and flush output so it's displayed.
 --
