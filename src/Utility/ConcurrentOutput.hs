@@ -164,7 +164,10 @@ createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Ma
 createProcessConcurrent p
 	| willoutput (P.std_out p) || willoutput (P.std_err p) =
 		ifM tryTakeOutputLock
-			( firstprocess
+			( do
+				hPutStrLn stderr $ show ("NOT CONCURRENT", cmd)
+				hFlush stderr
+				firstprocess
 			, do
 				lcker <- outputLockedBy <$> getOutputHandle
 				l <- readMVar lcker
