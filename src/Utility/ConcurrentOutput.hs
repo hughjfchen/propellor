@@ -74,16 +74,27 @@ takeOutputLock' block = do
 		lcker <- outputLockedBy <$> getOutputHandle
 		v' <- tryTakeMVar lcker
 		case v' of
-			Just orig@(ProcessLock h _) ->
+			Just orig@(ProcessLock h _) -> do
+				hPutStrLn stderr $ show ("CHECK STALE")
+				hFlush stderr	
 				-- if process has exited, lock is stale
 				ifM (isJust <$> P.getProcessExitCode h)
-					( havelock
+					( do
+						hPutStrLn stderr $ show ("WAS STALE")
+						hFlush stderr	
+						havelock
 					, if block
 						then do
+							hPutStrLn stderr $ show ("WAIT FOR PROCESS")
+							hFlush stderr	
 							void $ P.waitForProcess h
 							havelock
 						else do
+							hPutStrLn stderr $ show ("RESTORE")
+							hFlush stderr	
 							putMVar lcker orig
+							hPutStrLn stderr $ show ("RESTORE DONE")
+							hFlush stderr	
 							return False
 					)
 			Just GeneralLock -> do
