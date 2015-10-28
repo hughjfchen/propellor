@@ -83,7 +83,11 @@ takeOutputLock' block = go =<< withLock tryTakeTMVar
 				( havelock
 				, if block
 					then do
+						hPutStr stderr "WAITFORPROCESS in lock"
+						hFlush stderr
 						void $ P.waitForProcess h
+						hPutStr stderr "WAITFORPROCESS in lock done"
+						hFlush stderr
 						havelock
 					else do
 						withLock (`putTMVar` orig)
