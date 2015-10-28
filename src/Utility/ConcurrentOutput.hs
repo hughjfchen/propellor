@@ -248,7 +248,7 @@ outputDrainer ss fromh toh buf
 				go
 			_ -> atend
 	atend = do
-		modifyMVar_ buf $ pure . (++ [(toh, ReachedEnd)])
+		modifyMVar_ buf $ pure . ((toh, ReachedEnd) :)
 		hClose fromh
 
 -- Wait to lock output, and once we can, display everything 
@@ -260,7 +260,7 @@ bufferWriter buf = lockOutput (go [stdout, stderr])
   	go [] = return ()
 	go hs = do
 		l <- takeMVar buf
-		forM_ l $ \(h, ba) -> case ba of
+		forM_ (reverse l) $ \(h, ba) -> case ba of
 			Output b -> do
 				B.hPut h b
 				hFlush h
