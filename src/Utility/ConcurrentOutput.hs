@@ -116,6 +116,7 @@ updateOutputLocker l = do
 	lcker <- outputLockedBy <$> getOutputHandle
 	void $ tryTakeMVar lcker
 	putMVar lcker l
+	modifyMVar_ lcker (const $ return l)
 
 -- | Use this around any IO actions that use `outputConcurrent`
 -- or `createProcessConcurrent`
@@ -169,15 +170,11 @@ createProcessConcurrent p
 				firstprocess
 			, do
 				lcker <- outputLockedBy <$> getOutputHandle
-				l <- tryReadMVar lcker
-				hPutStrLn stderr $ show ("IS CONCURRENT", cmd, l)
+				hPutStrLn stderr $ show ("IS CONCURRENT", cmd)
 				hFlush stderr
 				concurrentprocess
 			)
-	| otherwise = do
-		hPutStrLn stderr $ show ("NO OUTPUT", cmd)
-		hFlush stderr
-		P.createProcess p
+	| otherwise = P.createProcess p
   where
 	willoutput P.Inherit = True
 	willoutput _ = False
