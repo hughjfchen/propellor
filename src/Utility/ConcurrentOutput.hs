@@ -295,7 +295,7 @@ addBuffer (toh, Output b) buf
 		return ((toh, InTempFile tmp) : other)
   where
 	!b' = B.concat (mapMaybe getOutput this) <> b
-	(this, other) = partition same buf
+	!(this, other) = partition same buf
 	same v = fst v == toh && case snd v of
 		Output _ -> True
 		_ -> False
