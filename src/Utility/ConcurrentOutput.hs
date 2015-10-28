@@ -8,6 +8,7 @@ module Utility.ConcurrentOutput (
 	outputConcurrent,
 	createProcessConcurrent,
 	waitForProcessConcurrent,
+	lockOutput,
 ) where
 
 import System.IO
@@ -53,8 +54,11 @@ globalOutputHandle = unsafePerformIO $
 getOutputHandle :: IO OutputHandle
 getOutputHandle = readMVar globalOutputHandle
 
--- | Holds a lock while performing an action. Any other threads
--- that try to lockOutput at the same time will block.
+-- | Holds a lock while performing an action that will display output.
+-- While this is running, other threads that try to lockOutput will block,
+-- and calls to `outputConcurrent` and `createProcessConcurrent`
+-- will result in that concurrent output being buffered and not
+-- displayed until the action is done.
 lockOutput :: (MonadIO m, MonadMask m) => m a -> m a
 lockOutput = bracket_ (liftIO takeOutputLock) (liftIO dropOutputLock)
 
@@ -253,8 +257,8 @@ outputDrainer ss fromh buf bufsig
 -- Wait to lock output, and once we can, display everything 
 -- that's put into the buffers, until the end.
 bufferWriter :: [(Handle, MVar Buffer, TMVar ())] -> IO ()
-bufferWriter l = do
-	worker <- async $ void $ lockOutput $ mapConcurrently go l
+bufferWriter ts = do
+	worker <- async $ void $ lockOutput $ mapConcurrently go ts
 	v <- outputThreads <$> getOutputHandle
 	atomically $ do
 		s <- takeTMVar v
