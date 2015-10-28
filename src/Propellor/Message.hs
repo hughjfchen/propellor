@@ -16,6 +16,7 @@ module Propellor.Message (
 	processChainOutput,
 	messagesDone,
 	createProcessConcurrent,
+	withConcurrentOutput,
 ) where
 
 import System.Console.ANSI

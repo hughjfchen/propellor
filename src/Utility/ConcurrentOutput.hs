@@ -1,6 +1,7 @@
 -- | Concurrent output handling.
 
 module Utility.ConcurrentOutput (
+	withConcurrentOutput,
 	outputConcurrent,
 	createProcessConcurrent,
 ) where
@@ -112,6 +113,18 @@ updateOutputLocker l = do
 	void $ tryTakeMVar lcker
 	putMVar lcker l
 	modifyMVar_ lcker (const $ return l)
+
+-- | Use this around any IO actions that use `outputConcurrent`
+-- or `createProcessConcurrent`
+--
+-- This is necessary to ensure that buffered concurrent output actually
+-- gets displayed before the program exits.
+withConcurrentOutput :: IO a -> IO a
+withConcurrentOutput a = a `finally` drain
+  where
+	-- Just taking the output lock is enough to ensure that anything
+	-- that was buffering output has had a chance to flush its buffer.
+	drain = lockOutput (return ())
 
 -- | Displays a string to stdout, and flush output so it's displayed.
 --
