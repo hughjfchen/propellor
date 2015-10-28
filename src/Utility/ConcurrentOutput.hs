@@ -162,7 +162,9 @@ outputConcurrent s = do
 -- as the output lock becomes free.
 createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle) 
 createProcessConcurrent p
-	| willoutput (P.std_out p) || willoutput (P.std_err p) =
+	| willoutput (P.std_out p) || willoutput (P.std_err p) = do
+		hPutStrLn stderr $ show ("CHECK CONCURRENT", cmd)
+		hFlush stderr
 		ifM tryTakeOutputLock
 			( do
 				hPutStrLn stderr $ show ("NOT CONCURRENT", cmd)
@@ -175,7 +177,10 @@ createProcessConcurrent p
 				hFlush stderr
 				concurrentprocess
 			)
-	| otherwise = P.createProcess p
+	| otherwise = do
+		hPutStrLn stderr $ show ("NO OUTPUT", cmd)
+		hFlush stderr
+		P.createProcess p
   where
 	willoutput P.Inherit = True
 	willoutput _ = False
