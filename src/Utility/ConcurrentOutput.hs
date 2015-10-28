@@ -38,11 +38,7 @@ data OutputHandle = OutputHandle
 
 data Locker
 	= GeneralLock
-	| ProcessLock P.ProcessHandle String
-
-instance Show Locker where
-	show GeneralLock = "GeneralLock"
-	show (ProcessLock _ cmd) = "ProcessLock " ++ cmd
+	| ProcessLock P.ProcessHandle
 
 -- | A shared global variable for the OutputHandle.
 {-# NOINLINE globalOutputHandle #-}
@@ -84,7 +80,7 @@ takeOutputLock' block = go =<< withLock tryTakeTMVar
 	-- We must always be sure to fill the TMVar back with Just or Nothing.
 	go (Just orig) = case orig of
 		Nothing -> havelock
-		(Just (ProcessLock h _)) ->
+		(Just (ProcessLock h)) ->
 			-- when process has exited, lock is stale
 			ifM (isJust <$> P.getProcessExitCode h)
 				( havelock
@@ -192,14 +188,10 @@ createProcessConcurrent p
 		| willOutput ss = P.UseHandle h
 		| otherwise = ss
 
-	cmd = case P.cmdspec p of
-		P.ShellCommand s -> s
-		P.RawCommand c ps -> unwords (c:ps)
-
 	firstprocess = do
 		r@(_, _, _, h) <- P.createProcess p
 			`onException` dropOutputLock
-		updateOutputLocker (ProcessLock h cmd)
+		updateOutputLocker (ProcessLock h)
 		-- Output lock is still held as we return; the process
 		-- is running now, and once it exits the output lock will
 		-- be stale and can then be taken by something else.
@@ -233,11 +225,6 @@ data BufferedActivity
 	| Output B.ByteString
 	| InTempFile FilePath
 	deriving (Eq)
-
-instance Show BufferedActivity where
-	show ReachedEnd = "ReachedEnd"
-	show (Output b) = "Output " ++ show (B.length b)
-	show (InTempFile t) = "InTempFile " ++ t
 
 setupBuffer :: Handle -> Handle -> P.StdStream -> Handle -> IO (Handle, MVar Buffer, TMVar ())
 setupBuffer h toh ss fromh = do
