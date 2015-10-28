@@ -148,10 +148,10 @@ createProcessConcurrent p
 	| willoutput (P.std_out p) || willoutput (P.std_err p) =
 		ifM tryTakeOutputLock
 			( do
-				print "IS NOT CONCURRENT"
+				hPutStrLn stderr "IS NOT CONCURRENT"
 				firstprocess
 			, do
-				print "IS CONCURRENT"
+				hPutStrLn stderr "IS CONCURRENT"
 				concurrentprocess
 			)
 	| otherwise = P.createProcess p
