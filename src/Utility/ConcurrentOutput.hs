@@ -137,12 +137,7 @@ withConcurrentOutput a = a `finally` drain
   where
 	-- Just taking the output lock is enough to ensure that anything
 	-- that was buffering output has had a chance to flush its buffer.
-	drain = do
-		hPutStrLn stderr "DRAIN"
-		hFlush stderr
-		lockOutput (return ())
-		hPutStrLn stderr "DRAIN DONE"
-		hFlush stderr
+	drain = lockOutput noop
 
 -- | Displays a string to stdout, and flush output so it's displayed.
 --
@@ -178,15 +173,8 @@ createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Ma
 createProcessConcurrent p
 	| willOutput (P.std_out p) || willOutput (P.std_err p) =
 		ifM tryTakeOutputLock
-			( do
-				hPutStrLn stderr $ show ("NOT CONCURRENT", cmd)
-				hFlush stderr
-				firstprocess
-			, do
-				v <- withLock $ tryReadTMVar
-				hPutStrLn stderr $ show ("IS CONCURRENT", cmd, v)
-				hFlush stderr
-				concurrentprocess
+			( firstprocess
+			, concurrentprocess
 			)
 	| otherwise = P.createProcess p
   where
