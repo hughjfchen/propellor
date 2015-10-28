@@ -15,7 +15,6 @@ import System.Posix.Directory
 import Control.Concurrent.Async
 import qualified Data.ByteString as B
 import qualified Data.Set as S
-import qualified Data.Map as M
 import Network.Socket (getAddrInfo, defaultHints, AddrInfo(..), AddrInfoFlag(..), SockAddr)
 
 import Propellor.Base
@@ -207,12 +206,7 @@ updateServer target relay hst connect haveprecompiled getprivdata =
 				sendRepoUrl toh
 				loop
 			(Just NeedPrivData) -> do
-				print "START GET PRIVDATA"
-				hFlush stdout
-				pd <- getprivdata
-				print ("GOT PRIVDATA", M.size pd)
-				hFlush stdout
-				sendPrivData hn toh pd
+				sendPrivData hn toh pd =<< getprivdata
 				loop
 			(Just NeedGitClone) -> do
 				hClose toh
