@@ -1,7 +1,21 @@
 {-# LANGUAGE BangPatterns #-}
 {-# OPTIONS_GHC -fno-warn-tabs #-}
 
--- | Concurrent output handling.
+-- | 
+-- Copyright: 2013 Joey Hess <id@joeyh.name>
+-- License: BSD-2-clause
+-- 
+-- Concurrent output handling.
+--
+-- > import Control.Concurrent.Async
+-- > import Control.Concurrent.Output
+-- >
+-- > main = withConcurrentOutput $
+-- > 	outputConcurrent "washed the car\n"
+-- > 		`concurrently`
+-- >	outputConcurrent "walked the dog\n"
+-- >		`concurrently`
+-- > 	createProcessConcurrent (proc "ls" [])
 
 module Utility.ConcurrentOutput (
 	withConcurrentOutput,
