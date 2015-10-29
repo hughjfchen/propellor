@@ -117,7 +117,7 @@ flushConcurrentOutput = do
 	atomically $ do
 		r <- takeTMVar v
 		if r == S.empty
-			then return ()
+			then putTMVar v r
 			else retry
 	-- Take output lock to ensure that nothing else is currently
 	-- generating output, and flush any buffered output.
