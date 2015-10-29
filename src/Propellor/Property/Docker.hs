@@ -540,6 +540,7 @@ init s = case toContainerId s of
 				warningMessage "Boot provision failed!"
 		void $ async $ job reapzombies
 		job $ do
+			flushConcurrentOutput
 			void $ tryIO $ ifM (inPath "bash")
 				( boolSystem "bash" [Param "-l"]
 				, boolSystem "/bin/sh" []
@@ -583,6 +584,7 @@ chain hostlist hn s = case toContainerId s of
 			r <- runPropellor h $ ensureProperties $
 				map ignoreInfo $
 					hostProperties h
+			flushConcurrentOutput
 			putStrLn $ "\n" ++ show r
 
 stopContainer :: ContainerId -> IO Bool

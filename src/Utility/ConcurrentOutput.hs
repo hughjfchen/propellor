@@ -5,6 +5,7 @@
 
 module Utility.ConcurrentOutput (
 	withConcurrentOutput,
+	flushConcurrentOutput,
 	outputConcurrent,
 	createProcessConcurrent,
 	waitForProcessConcurrent,
@@ -105,19 +106,22 @@ dropOutputLock = withLock $ void . takeTMVar
 -- This is necessary to ensure that buffered concurrent output actually
 -- gets displayed before the program exits.
 withConcurrentOutput :: IO a -> IO a
-withConcurrentOutput a = a `finally` drain
-  where
-	-- Wait for all outputThreads to finish. Then, take the output lock
-	-- to ensure that nothing is currently generating output, and flush
-	-- any buffered output.
-	drain = do
-		v <- outputThreads <$> getOutputHandle
-		atomically $ do
-			r <- takeTMVar v
-			if r == S.empty
-				then return ()
-				else retry
-		lockOutput $ return ()
+withConcurrentOutput a = a `finally` flushConcurrentOutput
+
+-- | Blocks until any processes started by `createProcessConcurrent` have
+-- finished, and any buffered output is displayed.
+flushConcurrentOutput :: IO ()
+flushConcurrentOutput = do
+	-- Wait for all outputThreads to finish.
+	v <- outputThreads <$> getOutputHandle
+	atomically $ do
+		r <- takeTMVar v
+		if r == S.empty
+			then return ()
+			else retry
+	-- Take output lock to ensure that nothing else is currently
+	-- generating output, and flush any buffered output.
+	lockOutput $ return ()
 
 -- | Displays a string to stdout, and flush output so it's displayed.
 --

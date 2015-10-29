@@ -135,7 +135,7 @@ processChainOutput h = go Nothing
 				Just l -> case readish l of
 					Just r -> pure r
 					Nothing -> do
-						outputConcurrent l
+						outputConcurrent (l ++ "\n")
 						return FailedChange
 			Just s -> do
 				outputConcurrent $

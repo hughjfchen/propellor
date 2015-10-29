@@ -213,6 +213,7 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 					then [Systemd.installed]
 					else map ignoreInfo $
 						hostProperties h
+			flushConcurrentOutput
 			putStrLn $ "\n" ++ show r
 chain _ _ = errorMessage "bad chain command"
 
