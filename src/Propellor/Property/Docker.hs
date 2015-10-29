@@ -56,6 +56,7 @@ import qualified Propellor.Property.Cmd as Cmd
 import qualified Propellor.Shim as Shim
 import Utility.Path
 import Utility.ThreadScheduler
+import Utility.ConcurrentOutput
 
 import Control.Concurrent.Async hiding (link)
 import System.Posix.Directory

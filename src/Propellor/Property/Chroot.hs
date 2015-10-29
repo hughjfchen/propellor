@@ -27,6 +27,7 @@ import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Property.File as File
 import qualified Propellor.Shim as Shim
 import Propellor.Property.Mount
+import Utility.ConcurrentOutput
 
 import qualified Data.Map as M
 import Data.List.Utils
