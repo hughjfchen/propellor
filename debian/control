@@ -19,7 +19,7 @@ Build-Depends:
 	libghc-exceptions-dev (>= 0.6),
 	libghc-stm-dev,
 	libghc-text-dev,
-Maintainer: Gergely Nagy <algernon@madhouse-project.org>
+Maintainer: Joey Hess <id@joeyh.name>
 Standards-Version: 3.9.6
 Vcs-Git: git://git.joeyh.name/propellor
 Homepage: http://propellor.branchable.com/
