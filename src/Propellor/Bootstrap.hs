@@ -82,6 +82,7 @@ depsCommand = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) ++ " 
 		, "libghc-transformers-dev"
 		, "libghc-exceptions-dev"
 		, "libghc-stm-dev"
+		, "libghc-text-dev"
 		, "make"
 		]
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-tabs #-}
 
 -- | 
@@ -20,6 +20,7 @@
 module Utility.ConcurrentOutput (
 	withConcurrentOutput,
 	flushConcurrentOutput,
+	Outputable(..),
 	outputConcurrent,
 	createProcessConcurrent,
 	waitForProcessConcurrent,
@@ -40,13 +41,14 @@ import Control.Concurrent.Async
 import Data.Maybe
 import Data.List
 import Data.Monoid
-import qualified Data.ByteString as B
 import qualified System.Process as P
 import qualified Data.Set as S
+import qualified Data.ByteString as B
+import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
 
 import Utility.Monad
 import Utility.Exception
-import Utility.FileSystemEncoding
 
 data OutputHandle = OutputHandle
 	{ outputLock :: TMVar Lock
@@ -137,27 +139,40 @@ flushConcurrentOutput = do
 	-- generating output, and flush any buffered output.
 	lockOutput $ return ()
 
--- | Displays a string to stdout, and flush output so it's displayed.
+-- | Values that can be output.
+class Outputable v where
+	toOutput :: v -> B.ByteString
+
+instance Outputable B.ByteString where
+	toOutput = id
+
+instance Outputable T.Text where
+	toOutput = encodeUtf8
+
+instance Outputable String where
+	toOutput = toOutput . T.pack
+
+-- | Displays a value to stdout, and flush output so it's displayed.
 --
--- Uses locking to ensure that the whole string is output atomically
+-- Uses locking to ensure that the whole output occurs atomically
 -- even when other threads are concurrently generating output.
 --
 -- When something else is writing to the console at the same time, this does
--- not block. It buffers the string, so it will be displayed once the other
+-- not block. It buffers the value, so it will be displayed once the other
 -- writer is done.
-outputConcurrent :: String -> IO ()
-outputConcurrent s = bracket setup cleanup go
+outputConcurrent :: Outputable v => v -> IO ()
+outputConcurrent v = bracket setup cleanup go
   where
 	setup = tryTakeOutputLock
 	cleanup False = return ()
 	cleanup True = dropOutputLock
 	go True = do
-		putStr s
+		B.hPut stdout (toOutput v)
 		hFlush stdout
 	go False = do
 		bv <- outputBuffer <$> getOutputHandle
 		oldbuf <- atomically $ takeTMVar bv
-		newbuf <- addBuffer (Output (B.pack (decodeW8NUL s))) oldbuf
+		newbuf <- addBuffer (Output (toOutput v)) oldbuf
 		atomically $ putTMVar bv newbuf
 
 -- | This must be used to wait for processes started with 

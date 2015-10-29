@@ -20,7 +20,7 @@ propellor (2.13.0) UNRELEASED; urgency=medium
   * Added Propellor.Property.Concurrent for concurrent properties.
   * Made the execProcess exported by propellor, and everything built on it,
     avoid scrambled output when run concurrently.
-  * Propellor now depends on STM.
+  * Propellor now depends on STM and text.
   * The cabal file now builds propellor with -O. While -O0 makes ghc
     take less memory while building propellor, it can lead to bad memory
     usage at runtime due to eg, disabled stream fusion.
