@@ -179,32 +179,24 @@ waitForProcessConcurrent :: ConcurrentProcessHandle -> IO ExitCode
 waitForProcessConcurrent (ConcurrentProcessHandle h) = checkexit
   where
 	checkexit = maybe waitsome return =<< P.getProcessExitCode h
-	waitsome = maybe checkexit return =<< bracket lock unlock go
+	waitsome = maybe checkexit return =<< bracket_ lock unlock go
+	lock = atomically $ putTMVar lck ()
+	unlock = atomically $ takeTMVar lck
 	lck = waitForProcessLock globalOutputHandle
-	lock = atomically $ tryPutTMVar lck ()
-	unlock True = atomically $ takeTMVar lck
-	unlock False = return ()
-	go True = do
+	go = do
 		let v = processWaiters globalOutputHandle
 		l <- atomically $ readTMVar v
 		if null l
 			-- Avoid waitAny [] which blocks forever;
 			then Just <$> P.waitForProcess h
 			else do
-				-- Wait for any of the running
+				-- Wait for the first of all the running
 				-- processes to exit. It may or may not
 				-- be the one corresponding to the
 				-- ProcessHandle. If it is,
 				-- getProcessExitCode will succeed.
 				void $ tryIO $ waitAny l
 				return Nothing
-	go False = do
-		-- Another thread took the lck first. Wait for that thread to
-		-- wait for one of the running processes to exit.
-		atomically $ do
-			putTMVar lck ()
-			takeTMVar lck
-		return Nothing
 
 -- Registers an action that waits for a process to exit,
 -- adding it to the processWaiters list, and removing it once the action
