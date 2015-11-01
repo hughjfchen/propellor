@@ -228,8 +228,6 @@ createProcessConcurrent p
 		| otherwise = ss
 
 	firstprocess = do
-		hPutStrLn stderr "RUNNING FG"
-		hFlush stderr
 		r@(_, _, _, h) <- P.createProcess p
 			`onException` dropOutputLock
 		-- Wait for the process to exit and drop the lock.
@@ -239,8 +237,6 @@ createProcessConcurrent p
 		return r
 	
 	concurrentprocess = do
-		hPutStrLn stderr "RUNNING BG"
-		hFlush stderr
 		(toouth, fromouth) <- pipe
 		(toerrh, fromerrh) <- pipe
 		let p' = p
