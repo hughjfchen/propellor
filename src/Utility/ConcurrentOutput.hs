@@ -23,6 +23,7 @@ module Utility.ConcurrentOutput (
 	outputConcurrent,
 	createProcessConcurrent,
 	waitForProcessConcurrent,
+	createProcessForeground,
 	flushConcurrentOutput,
 	lockOutput,
 	-- * Low level access to the output buffer
@@ -185,7 +186,8 @@ outputConcurrent v = bracket setup cleanup go
 		atomically $ putTMVar bv newbuf
 
 -- | This must be used to wait for processes started with 
--- `createProcessConcurrent`.
+-- `createProcessConcurrent` and `createProcessForeground`. It may also be
+-- used to wait for processes started by `System.Process.createProcess`.
 --
 -- This is necessary because `System.Process.waitForProcess` has a
 -- race condition when two threads check the same process. If the race
@@ -218,42 +220,87 @@ createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Ma
 createProcessConcurrent p
 	| willOutput (P.std_out p) || willOutput (P.std_err p) =
 		ifM tryTakeOutputLock
-			( firstprocess
-			, concurrentprocess
+			( fgProcess p
+			, bgProcess p
 			)
 	| otherwise = P.createProcess p
+
+-- | Wrapper around `System.Process.createProcess` that makes sure a process
+-- is run in the foreground, with direct access to stdout and stderr.
+-- Useful when eg, running an interactive process.
+--
+-- If another process is already running in the foreground, this will block
+-- until it finishes. Background processes may continue to run while
+-- this process is running, and their output will be buffered until it
+-- exits.
+--
+-- The obvious reason you might need to use this is in an example like this:
+--
+-- > main = withConcurrentOutput $
+-- >	createProcessConcurrent (proc "ls" [])
+-- >		`concurrently` createProcessForeground (proc "vim" [])
+--
+-- Since vim is an interactive program, it needs to run in the foreground.
+-- If it were started by `createProcessConcurrent`, it would sometimes
+-- run in the background.
+--
+-- Also, there is actually a race condition when calling
+-- `createProcessConcurrent` sequentially like this:
+--
+-- > main = withConcurrentOutput $ do
+-- > 	(Nothing, Nothing, Nothing, h) <- createProcessConcurrent (proc "ls" [])
+-- >	waitForProcessConcurrent h
+-- >	createProcessConcurrent (proc "vim" [])
+--
+-- Here vim runs about 50% of the time as a background process! Why is
+-- it not always run in the foreground? The reason is that the previous
+-- process was run in the foreground, and still holds the output lock.
+-- `waitForProcessConcurrent` waits for that process, but does not clear
+-- the output lock immediately. By the time the output lock does clear,
+-- the vim process may have already started up, in the background.
+--
+-- It would be nice to fix that race, but it can't be fixed without
+-- an Eq instance for `ProcessHandle`. In any case, when you're using
+-- this module, you're typically actually doing concurrent things,
+-- not sequential as in the example above, and so even if the race were
+-- fixed, you'd still want to use `createProcessForeground` to run vim.
+createProcessForeground :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle)
+createProcessForeground p = do
+	takeOutputLock
+	fgProcess p
+
+fgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle)
+fgProcess p = do
+	r@(_, _, _, h) <- P.createProcess p
+		`onException` dropOutputLock
+	-- Wait for the process to exit and drop the lock.
+	void $ async $ do
+		void $ tryIO $ waitForProcessConcurrent h
+		dropOutputLock
+	return r
+
+bgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle)
+bgProcess p = do
+	(toouth, fromouth) <- pipe
+	(toerrh, fromerrh) <- pipe
+	let p' = p
+		{ P.std_out = rediroutput (P.std_out p) toouth
+		, P.std_err = rediroutput (P.std_err p) toerrh
+		}
+	registerOutputThread
+	r <- P.createProcess p'
+		`onException` unregisterOutputThread
+	outbuf <- setupOutputBuffer StdOut toouth (P.std_out p) fromouth
+	errbuf <- setupOutputBuffer StdErr toerrh (P.std_err p) fromerrh
+	void $ async $ bufferWriter [outbuf, errbuf]
+	return r
   where
-	rediroutput ss h
-		| willOutput ss = P.UseHandle h
-		| otherwise = ss
-
-	firstprocess = do
-		r@(_, _, _, h) <- P.createProcess p
-			`onException` dropOutputLock
-		-- Wait for the process to exit and drop the lock.
-		void $ async $ do
-			void $ tryIO $ waitForProcessConcurrent h
-			dropOutputLock
-		return r
-	
-	concurrentprocess = do
-		(toouth, fromouth) <- pipe
-		(toerrh, fromerrh) <- pipe
-		let p' = p
-			{ P.std_out = rediroutput (P.std_out p) toouth
-			, P.std_err = rediroutput (P.std_err p) toerrh
-			}
-		registerOutputThread
-		r <- P.createProcess p'
-			`onException` unregisterOutputThread
-		outbuf <- setupOutputBuffer StdOut toouth (P.std_out p) fromouth
-		errbuf <- setupOutputBuffer StdErr toerrh (P.std_err p) fromerrh
-		void $ async $ bufferWriter [outbuf, errbuf]
-		return r
-
 	pipe = do
 		(from, to) <- createPipe
 		(,) <$> fdToHandle to <*> fdToHandle from
+	rediroutput ss h
+		| willOutput ss = P.UseHandle h
+		| otherwise = ss
 
 willOutput :: P.StdStream -> Bool
 willOutput P.Inherit = True
