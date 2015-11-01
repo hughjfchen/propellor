@@ -238,8 +238,8 @@ createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Ma
 createProcessConcurrent p
 	| willOutput (P.std_out p) || willOutput (P.std_err p) =
 		ifM tryTakeOutputLock
-			( fgProcess p
-			, bgProcess p
+			( print "IN FG">>fgProcess p
+			, print "IN BG">>bgProcess p
 			)
 	| otherwise = do
 		r@(_, _, _, h) <- P.createProcess p
