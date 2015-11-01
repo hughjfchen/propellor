@@ -197,7 +197,6 @@ waitForProcessConcurrent (ConcurrentProcessHandle h) = checkexit
 				-- ProcessHandle. If it is,
 				-- getProcessExitCode will succeed.
 				void $ tryIO $ waitAny l
-				hFlush stdout
 				return Nothing
 	go False = do
 		-- Another thread took the lck first. Wait for that thread to
