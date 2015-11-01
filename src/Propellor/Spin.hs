@@ -64,7 +64,6 @@ spin' mprivdata relay target hst = do
 		getprivdata
 
 	-- And now we can run it.
-	flushConcurrentOutput
 	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", sshtarget, shellWrap runcmd])) $
 		error "remote propellor failed"
   where
@@ -105,8 +104,10 @@ spin' mprivdata relay target hst = do
 				d <- readPrivDataFile f
 				nukeFile f
 				return d
-			| otherwise -> 
-				filterPrivData hst <$> decryptPrivData
+			| otherwise -> do
+				d <- filterPrivData hst <$> decryptPrivData
+				flushConcurrentOutput
+				return d
 		Just pd -> pure pd
 
 -- Check if the Host contains an IP address that matches one of the IPs
