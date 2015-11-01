@@ -173,7 +173,7 @@ toConcurrentProcessHandle (i, o, e, h) = (i, o, e, ConcurrentProcessHandle h)
 -- exit status.
 --
 -- Note that such processes are actually automatically waited for
--- internally, so not calling this exiplictly will not result
+-- internally, so not calling this explicitly will not result
 -- in zombie processes. This behavior differs from `P.waitForProcess`
 waitForProcessConcurrent :: ConcurrentProcessHandle -> IO ExitCode
 waitForProcessConcurrent (ConcurrentProcessHandle h) = checkexit
@@ -243,8 +243,8 @@ createProcessConcurrent p
 			)
 	| otherwise = do
 		r@(_, _, _, h) <- P.createProcess p
-		asyncProcessWaiter $ do
-			void $ P.waitForProcess h
+		asyncProcessWaiter $
+			void $ tryIO $ P.waitForProcess h
 		return (toConcurrentProcessHandle r)
 
 -- | Wrapper around `System.Process.createProcess` that makes sure a process
@@ -261,7 +261,7 @@ fgProcess p = do
 		`onException` dropOutputLock
 	-- Wait for the process to exit and drop the lock.
 	asyncProcessWaiter $ do
-		void $ P.waitForProcess h
+		void $ tryIO $ P.waitForProcess h
 		dropOutputLock
 	return (toConcurrentProcessHandle r)
 
@@ -276,7 +276,7 @@ bgProcess p = do
 	registerOutputThread
 	r@(_, _, _, h) <- P.createProcess p'
 		`onException` unregisterOutputThread
-	asyncProcessWaiter $ void $ P.waitForProcess h
+	asyncProcessWaiter $ void $ tryIO $ P.waitForProcess h
 	outbuf <- setupOutputBuffer StdOut toouth (P.std_out p) fromouth
 	errbuf <- setupOutputBuffer StdErr toerrh (P.std_err p) fromerrh
 	void $ async $ bufferWriter [outbuf, errbuf]
