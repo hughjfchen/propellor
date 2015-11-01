@@ -29,7 +29,6 @@ import Propellor.Types.Info
 import qualified Propellor.Shim as Shim
 import Utility.FileMode
 import Utility.SafeCommand
-import Utility.ConcurrentOutput
 
 commitSpin :: IO ()
 commitSpin = do
