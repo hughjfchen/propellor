@@ -27,11 +27,11 @@ import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Property.File as File
 import qualified Propellor.Shim as Shim
 import Propellor.Property.Mount
-import Utility.ConcurrentOutput
 
 import qualified Data.Map as M
 import Data.List.Utils
 import System.Posix.Directory
+import System.Console.Concurrent
 
 -- | Specification of a chroot. Normally you'll use `debootstrapped` or
 -- `bootstrapped` to construct a Chroot value.

@@ -25,9 +25,9 @@ import Control.Monad.IO.Class (liftIO, MonadIO)
 import Control.Applicative
 import System.IO.Unsafe (unsafePerformIO)
 import Control.Concurrent
+import System.Console.Concurrent
 
 import Propellor.Types
-import Utility.ConcurrentOutput
 import Utility.PartialPrelude
 import Utility.Monad
 import Utility.Exception

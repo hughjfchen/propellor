@@ -1,40 +1,14 @@
 {-# LANGUAGE BangPatterns, TypeSynonymInstances, FlexibleInstances, TupleSections #-}
 
 -- | 
--- Copyright: 2013 Joey Hess <id@joeyh.name>
+-- Copyright: 2015 Joey Hess <id@joeyh.name>
 -- License: BSD-2-clause
 -- 
--- Concurrent output handling.
+-- Concurrent output handling, internals.
 --
--- > import Control.Concurrent.Async
--- > import System.Console.Concurrent
--- >
--- > main = withConcurrentOutput $
--- > 	outputConcurrent "washed the car\n"
--- > 		`concurrently`
--- >	outputConcurrent "walked the dog\n"
--- >		`concurrently`
--- > 	createProcessConcurrent (proc "ls" [])
+-- May change at any time.
 
-module Utility.ConcurrentOutput (
-	-- * Concurrent output
-	withConcurrentOutput,
-	Outputable(..),
-	outputConcurrent,
-	createProcessConcurrent,
-	waitForProcessConcurrent,
-	createProcessForeground,
-	flushConcurrentOutput,
-	lockOutput,
-	-- * Low level access to the output buffer
-	OutputBuffer,
-	StdHandle(..),
-	bufferOutputSTM,
-	outputBufferWaiterSTM,
-	waitAnyBuffer,
-	waitCompleteLines,
-	emitOutputBuffer,
-) where
+module System.Console.Concurrent.Internal where
 
 import System.IO
 import System.Posix.IO
@@ -62,6 +36,8 @@ data OutputHandle = OutputHandle
 	, outputBuffer :: TMVar OutputBuffer
 	, errorBuffer :: TMVar OutputBuffer
 	, outputThreads :: TMVar Integer
+	, processWaiters :: TMVar [Async ()]
+	, waitForProcessLock :: TMVar ()
 	}
 
 data Lock = Locked
@@ -74,6 +50,8 @@ globalOutputHandle = unsafePerformIO $ OutputHandle
 	<*> newTMVarIO (OutputBuffer [])
 	<*> newTMVarIO (OutputBuffer [])
 	<*> newTMVarIO 0
+	<*> newTMVarIO []
+	<*> newEmptyTMVarIO
 
 -- | Holds a lock while performing an action. This allows the action to
 -- perform its own output to the console, without using functions from this
@@ -185,20 +163,69 @@ outputConcurrent v = bracket setup cleanup go
 		newbuf <- addOutputBuffer (Output (toOutput v)) oldbuf
 		atomically $ putTMVar bv newbuf
 
--- | This must be used to wait for processes started with 
--- `createProcessConcurrent` and `createProcessForeground`. It may also be
--- used to wait for processes started by `System.Process.createProcess`.
+newtype ConcurrentProcessHandle = ConcurrentProcessHandle P.ProcessHandle
+
+toConcurrentProcessHandle :: (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle) -> (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
+toConcurrentProcessHandle (i, o, e, h) = (i, o, e, ConcurrentProcessHandle h)
+
+-- | Use this to wait for processes started with 
+-- `createProcessConcurrent` and `createProcessForeground`, and get their
+-- exit status.
 --
--- This is necessary because `System.Process.waitForProcess` has a
--- race condition when two threads check the same process. If the race
--- is triggered, one thread will successfully wait, but the other
--- throws a DoesNotExist exception.
-waitForProcessConcurrent :: P.ProcessHandle -> IO ExitCode
-waitForProcessConcurrent h = do
-	v <- tryWhenExists (P.waitForProcess h)
-	case v of
-		Just r -> return r
-		Nothing -> maybe (waitForProcessConcurrent h) return =<< P.getProcessExitCode h
+-- Note that such processes are actually automatically waited for
+-- internally, so not calling this exiplictly will not result
+-- in zombie processes. This behavior differs from `P.waitForProcess`
+waitForProcessConcurrent :: ConcurrentProcessHandle -> IO ExitCode
+waitForProcessConcurrent (ConcurrentProcessHandle h) = checkexit
+  where
+	checkexit = maybe waitsome return =<< P.getProcessExitCode h
+	waitsome = maybe checkexit return =<< bracket lock unlock go
+	lck = waitForProcessLock globalOutputHandle
+	lock = atomically $ tryPutTMVar lck ()
+	unlock True = atomically $ takeTMVar lck
+	unlock False = return ()
+	go True = do
+		let v = processWaiters globalOutputHandle
+		l <- atomically $ readTMVar v
+		if null l
+			-- Avoid waitAny [] which blocks forever;
+			then Just <$> P.waitForProcess h
+			else do
+				-- Wait for any of the running
+				-- processes to exit. It may or may not
+				-- be the one corresponding to the
+				-- ProcessHandle. If it is,
+				-- getProcessExitCode will succeed.
+				void $ tryIO $ waitAny l
+				hFlush stdout
+				return Nothing
+	go False = do
+		-- Another thread took the lck first. Wait for that thread to
+		-- wait for one of the running processes to exit.
+		atomically $ do
+			putTMVar lck ()
+			takeTMVar lck
+		return Nothing
+
+-- Registers an action that waits for a process to exit,
+-- adding it to the processWaiters list, and removing it once the action
+-- completes.
+asyncProcessWaiter :: IO () -> IO ()
+asyncProcessWaiter waitaction = do
+	regdone <- newEmptyTMVarIO
+	waiter <- async $ do
+		self <- atomically (takeTMVar regdone)
+		waitaction `finally` unregister self
+	register waiter regdone
+  where
+	v = processWaiters globalOutputHandle
+  	register waiter regdone = atomically $ do
+		l <- takeTMVar v
+		putTMVar v (waiter:l)
+		putTMVar regdone waiter
+	unregister waiter = atomically $ do
+		l <- takeTMVar v
+		putTMVar v (filter (/= waiter) l)
 
 -- | Wrapper around `System.Process.createProcess` that prevents 
 -- multiple processes that are running concurrently from writing
@@ -215,71 +242,39 @@ waitForProcessConcurrent h = do
 -- or because `outputConcurrent` is being called at the same time),
 -- the process is instead run with its stdout and stderr
 -- redirected to a buffer. The buffered output will be displayed as soon
--- as the output lock becomes free, or after the command has finished.
-createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle) 
+-- as the output lock becomes free.
+createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle) 
 createProcessConcurrent p
 	| willOutput (P.std_out p) || willOutput (P.std_err p) =
 		ifM tryTakeOutputLock
 			( fgProcess p
 			, bgProcess p
 			)
-	| otherwise = P.createProcess p
+	| otherwise = do
+		r@(_, _, _, h) <- P.createProcess p
+		asyncProcessWaiter $ do
+			void $ P.waitForProcess h
+		return (toConcurrentProcessHandle r)
 
 -- | Wrapper around `System.Process.createProcess` that makes sure a process
 -- is run in the foreground, with direct access to stdout and stderr.
 -- Useful when eg, running an interactive process.
---
--- If another process is already running in the foreground, this will block
--- until it finishes. Background processes may continue to run while
--- this process is running, and their output will be buffered until it
--- exits.
---
--- The obvious reason you might need to use this is in an example like this:
---
--- > main = withConcurrentOutput $
--- >	createProcessConcurrent (proc "ls" [])
--- >		`concurrently` createProcessForeground (proc "vim" [])
---
--- Since vim is an interactive program, it needs to run in the foreground.
--- If it were started by `createProcessConcurrent`, it would sometimes
--- run in the background.
---
--- Also, there is actually a race condition when calling
--- `createProcessConcurrent` sequentially like this:
---
--- > main = withConcurrentOutput $ do
--- > 	(Nothing, Nothing, Nothing, h) <- createProcessConcurrent (proc "ls" [])
--- >	waitForProcessConcurrent h
--- >	createProcessConcurrent (proc "vim" [])
---
--- Here vim runs about 50% of the time as a background process! Why is
--- it not always run in the foreground? The reason is that the previous
--- process was run in the foreground, and still holds the output lock.
--- `waitForProcessConcurrent` waits for that process, but does not clear
--- the output lock immediately. By the time the output lock does clear,
--- the vim process may have already started up, in the background.
---
--- It would be nice to fix that race, but it can't be fixed without
--- an Eq instance for `ProcessHandle`. In any case, when you're using
--- this module, you're typically actually doing concurrent things,
--- not sequential as in the example above, and so even if the race were
--- fixed, you'd still want to use `createProcessForeground` to run vim.
-createProcessForeground :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle)
+createProcessForeground :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
 createProcessForeground p = do
 	takeOutputLock
 	fgProcess p
 
-fgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle)
+fgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
 fgProcess p = do
 	r@(_, _, _, h) <- P.createProcess p
 		`onException` dropOutputLock
 	-- Wait for the process to exit and drop the lock.
-	void $ async $ do
-		void $ tryIO $ waitForProcessConcurrent h
+	asyncProcessWaiter $ do
+		void $ P.waitForProcess h
 		dropOutputLock
-	return r
+	return (toConcurrentProcessHandle r)
 
-bgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, P.ProcessHandle)
+bgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
 bgProcess p = do
 	(toouth, fromouth) <- pipe
 	(toerrh, fromerrh) <- pipe
@@ -288,12 +283,13 @@ bgProcess p = do
 		, P.std_err = rediroutput (P.std_err p) toerrh
 		}
 	registerOutputThread
-	r <- P.createProcess p'
+	r@(_, _, _, h) <- P.createProcess p'
 		`onException` unregisterOutputThread
+	asyncProcessWaiter $ void $ P.waitForProcess h
 	outbuf <- setupOutputBuffer StdOut toouth (P.std_out p) fromouth
 	errbuf <- setupOutputBuffer StdErr toerrh (P.std_err p) fromerrh
 	void $ async $ bufferWriter [outbuf, errbuf]
-	return r
+	return (toConcurrentProcessHandle r)
   where
 	pipe = do
 		(from, to) <- createPipe

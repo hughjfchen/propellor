@@ -7,6 +7,8 @@ import System.Directory
 import Data.Maybe
 import Data.List.Utils
 import Control.Monad
+import System.Console.Concurrent
+import System.Console.Concurrent.Internal (ConcurrentProcessHandle(..))
 
 import Propellor.PrivData.Paths
 import Propellor.Message
@@ -16,7 +18,6 @@ import Utility.Monad
 import Utility.Misc
 import Utility.Tmp
 import Utility.FileSystemEncoding
-import Utility.ConcurrentOutput
 
 type KeyId = String
 
@@ -129,7 +130,7 @@ gitCommit msg ps = do
 	ps'' <- gpgSignParams ps'
 	if isNothing msg
 		then do
-			(_, _, _, p) <- createProcessForeground $
+			(_, _, _, ConcurrentProcessHandle p) <- createProcessForeground $
 				proc "git" (toCommand ps'')
 			checkSuccessProcess p
 		else boolSystem "git" ps''
