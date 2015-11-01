@@ -61,10 +61,9 @@ spin' mprivdata relay target hst = do
 	updateServer target relay hst
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap probecmd])
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap updatecmd])
-		getprivdata
+		=<< getprivdata
 
 	-- And now we can run it.
-	flushConcurrentOutput
 	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", sshtarget, shellWrap runcmd])) $
 		error "remote propellor failed"
   where
@@ -191,16 +190,16 @@ updateServer
 	-> Host
 	-> CreateProcess
 	-> CreateProcess
-	-> IO PrivMap
+	-> PrivMap
 	-> IO ()
-updateServer target relay hst connect haveprecompiled getprivdata =
+updateServer target relay hst connect haveprecompiled privdata =
 	withIOHandles createProcessSuccess connect go
   where
 	hn = fromMaybe target relay
 
 	go (toh, fromh) = do
 		let loop = go (toh, fromh)
-		let restart = updateServer hn relay hst connect haveprecompiled getprivdata
+		let restart = updateServer hn relay hst connect haveprecompiled privdata
 		let done = return ()
 		v <- maybe Nothing readish <$> getMarked fromh statusMarker
 		case v of
@@ -208,7 +207,7 @@ updateServer target relay hst connect haveprecompiled getprivdata =
 				sendRepoUrl toh
 				loop
 			(Just NeedPrivData) -> do
-				sendPrivData hn toh =<< getprivdata
+				sendPrivData hn toh privdata
 				loop
 			(Just NeedGitClone) -> do
 				hClose toh
@@ -219,7 +218,7 @@ updateServer target relay hst connect haveprecompiled getprivdata =
 				hClose toh
 				hClose fromh
 				sendPrecompiled hn
-				updateServer hn relay hst haveprecompiled (error "loop") getprivdata
+				updateServer hn relay hst haveprecompiled (error "loop") privdata
 			(Just NeedGitPush) -> do
 				sendGitUpdate hn fromh toh
 				hClose fromh
