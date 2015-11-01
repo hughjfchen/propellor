@@ -33,7 +33,8 @@ import Utility.SafeCommand
 commitSpin :: IO ()
 commitSpin = do
 	void $ actionMessage "Git commit" $
-		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param spinCommitMessage]
+		gitCommit (Just spinCommitMessage) 
+			[Param "--allow-empty", Param "-a"]
 	-- Push to central origin repo first, if possible.
 	-- The remote propellor will pull from there, which avoids
 	-- us needing to send stuff directly to the remote host.
@@ -336,8 +337,9 @@ mergeSpin = do
 	old_head <- getCurrentGitSha1 branch
 	old_commit <- findLastNonSpinCommit
 	rungit "reset" [Param old_commit]
-	rungit "commit" [Param "-a", Param "--allow-empty"]
-	rungit "merge" =<< gpgSignParams [Param "-s", Param "ours", Param old_head]
+	unlessM (gitCommit Nothing [Param "-a", Param "--allow-empty"]) $
+		error "git commit failed"
+	rungit "merge" =<< gpgSignParams [Param "-s", Param "ours", Param old_head, Param "--no-edit"]
 	current_commit <- getCurrentGitSha1 branch
 	rungit "update-ref" [Param branchref, Param current_commit]
 	rungit "checkout" [Param branch]
