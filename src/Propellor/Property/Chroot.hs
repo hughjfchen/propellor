@@ -27,6 +27,7 @@ import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Property.File as File
 import qualified Propellor.Shim as Shim
 import Propellor.Property.Mount
+import Utility.ConcurrentOutput
 
 import qualified Data.Map as M
 import Data.List.Utils
@@ -116,10 +117,10 @@ bootstrapped bootstrapper location = Chroot location bootstrapper h
 -- Reverting this property removes the chroot. Anything mounted inside it
 -- is first unmounted. Note that it does not ensure that any processes
 -- that might be running inside the chroot are stopped.
-provisioned :: Chroot -> RevertableProperty
+provisioned :: Chroot -> RevertableProperty HasInfo
 provisioned c = provisioned' (propagateChrootInfo c) c False
 
-provisioned' :: (Property HasInfo -> Property HasInfo) -> Chroot -> Bool -> RevertableProperty
+provisioned' :: (Property HasInfo -> Property HasInfo) -> Chroot -> Bool -> RevertableProperty HasInfo
 provisioned' propigator c@(Chroot loc bootstrapper _) systemdonly =
 	(propigator $ propertyList (chrootDesc c "exists") [setup])
 		<!>
@@ -193,7 +194,7 @@ propellChroot c@(Chroot loc _ _) mkproc systemdonly = property (chrootDesc c "pr
 
 toChain :: HostName -> Chroot -> Bool -> IO CmdLine
 toChain parenthost (Chroot loc _ _) systemdonly = do
-	onconsole <- isConsole <$> mkMessageHandle
+	onconsole <- isConsole <$> getMessageHandle
 	return $ ChrootChain parenthost loc systemdonly onconsole
 
 chain :: [Host] -> CmdLine -> IO ()
@@ -213,6 +214,7 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 					then [Systemd.installed]
 					else map ignoreInfo $
 						hostProperties h
+			flushConcurrentOutput
 			putStrLn $ "\n" ++ show r
 chain _ _ = errorMessage "bad chain command"
 

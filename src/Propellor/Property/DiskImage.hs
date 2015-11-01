@@ -69,16 +69,16 @@ type DiskImage = FilePath
 -- Note that the disk image file is reused if it already exists,
 -- to avoid expensive IO to generate a new one. And, it's updated in-place,
 -- so its contents are undefined during the build process.
-imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
+imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty HasInfo
 imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
+imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty HasInfo
 imageRebuilt = imageBuilt' True
 
-imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
+imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty HasInfo
 imageBuilt' rebuild img mkchroot tabletype final partspec = 
 	imageBuiltFrom img chrootdir tabletype final partspec
 		`requires` Chroot.provisioned chroot
@@ -99,7 +99,7 @@ imageBuilt' rebuild img mkchroot tabletype final partspec =
 		& Apt.cacheCleaned
 
 -- | Builds a disk image from the contents of a chroot.
-imageBuiltFrom :: DiskImage -> FilePath -> TableType -> Finalization -> [PartSpec] -> RevertableProperty
+imageBuiltFrom :: DiskImage -> FilePath -> TableType -> Finalization -> [PartSpec] -> RevertableProperty NoInfo
 imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
   where
 	desc = img ++ " built from " ++ chrootdir

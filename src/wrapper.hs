@@ -50,7 +50,7 @@ netrepo :: String
 netrepo = "https://github.com/joeyh/propellor.git"
 
 main :: IO ()
-main = do
+main = withConcurrentOutput $ do
 	args <- getArgs
 	home <- myHomeDir
 	let propellordir = home </> ".propellor"

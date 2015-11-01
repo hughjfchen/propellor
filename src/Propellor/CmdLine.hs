@@ -89,7 +89,7 @@ processCmdLine = go =<< getArgs
 
 -- | Runs propellor on hosts, as controlled by command-line options.
 defaultMain :: [Host] -> IO ()
-defaultMain hostlist = do
+defaultMain hostlist = withConcurrentOutput $ do
 	Shim.cleanEnv
 	checkDebugMode
 	cmdline <- processCmdLine

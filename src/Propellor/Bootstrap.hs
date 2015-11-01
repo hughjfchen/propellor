@@ -65,7 +65,7 @@ depsCommand = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) ++ " 
 
 	aptinstall p = "apt-get --no-upgrade --no-install-recommends -y install " ++ p
 
-	-- This is the same build deps listed in debian/control.
+	-- This is the same deps listed in debian/control.
 	debdeps =
 		[ "gnupg"
 		, "ghc"
@@ -81,6 +81,8 @@ depsCommand = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) ++ " 
 		, "libghc-mtl-dev"
 		, "libghc-transformers-dev"
 		, "libghc-exceptions-dev"
+		, "libghc-stm-dev"
+		, "libghc-text-dev"
 		, "make"
 		]
 

@@ -9,7 +9,7 @@ import qualified Propellor.Property.Service as Service
 
 type ConfigFile = [String]
 
-siteEnabled :: HostName -> ConfigFile -> RevertableProperty
+siteEnabled :: HostName -> ConfigFile -> RevertableProperty NoInfo
 siteEnabled hn cf = enable <!> disable
   where
 	enable = siteVal hn `File.isSymlinkedTo` siteValRelativeCfg hn

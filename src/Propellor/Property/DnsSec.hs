@@ -7,7 +7,7 @@ import qualified Propellor.Property.File as File
 --
 -- signedPrimary uses this, so this property does not normally need to be
 -- used directly.
-keysInstalled :: Domain -> RevertableProperty
+keysInstalled :: Domain -> RevertableProperty HasInfo
 keysInstalled domain = setup <!> cleanup
   where
 	setup = propertyList "DNSSEC keys installed" $
@@ -37,7 +37,7 @@ keysInstalled domain = setup <!> cleanup
 --
 -- signedPrimary uses this, so this property does not normally need to be
 -- used directly.
-zoneSigned :: Domain -> FilePath -> RevertableProperty
+zoneSigned :: Domain -> FilePath -> RevertableProperty HasInfo
 zoneSigned domain zonefile = setup <!> cleanup
   where
 	setup = check needupdate (forceZoneSigned domain zonefile)

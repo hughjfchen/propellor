@@ -16,7 +16,7 @@ reloaded = Service.reloaded "apache2"
 
 -- | A basic virtual host, publishing a directory, and logging to
 -- the combined apache log file.
-virtualHost :: HostName -> Port -> FilePath -> RevertableProperty
+virtualHost :: HostName -> Port -> FilePath -> RevertableProperty NoInfo
 virtualHost hn (Port p) docroot = siteEnabled hn
 	[ "<VirtualHost *:"++show p++">"
 	, "ServerName "++hn++":"++show p
@@ -30,7 +30,7 @@ virtualHost hn (Port p) docroot = siteEnabled hn
 
 type ConfigFile = [String]
 
-siteEnabled :: HostName -> ConfigFile -> RevertableProperty
+siteEnabled :: HostName -> ConfigFile -> RevertableProperty NoInfo
 siteEnabled hn cf = enable <!> disable
   where
 	enable = combineProperties ("apache site enabled " ++ hn)
@@ -59,7 +59,7 @@ siteAvailable hn cf = combineProperties ("apache site available " ++ hn) $
   where
 	comment = "# deployed with propellor, do not modify"
 
-modEnabled :: String -> RevertableProperty
+modEnabled :: String -> RevertableProperty NoInfo
 modEnabled modname = enable <!> disable
   where
 	enable = check (not <$> isenabled) $

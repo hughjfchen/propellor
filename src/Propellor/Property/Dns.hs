@@ -60,7 +60,7 @@ import Data.List
 --
 -- In either case, the secondary dns server Host should have an ipv4 and/or
 -- ipv6 property defined.
-primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
+primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty HasInfo
 primary hosts domain soa rs = setup <!> cleanup
   where
 	setup = setupPrimary zonefile id hosts domain soa rs
@@ -152,7 +152,7 @@ cleanupPrimary zonefile domain = check (doesFileExist zonefile) $
 -- This is different from the serial number used by 'primary', so if you
 -- want to later disable DNSSEC you will need to adjust the serial number
 -- passed to mkSOA to ensure it is larger.
-signedPrimary :: Recurrance -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty
+signedPrimary :: Recurrance -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty HasInfo
 signedPrimary recurrance hosts domain soa rs = setup <!> cleanup
   where
 	setup = combineProperties ("dns primary for " ++ domain ++ " (signed)")
@@ -184,12 +184,12 @@ signedPrimary recurrance hosts domain soa rs = setup <!> cleanup
 --
 -- Note that if a host is declared to be a primary and a secondary dns
 -- server for the same domain, the primary server config always wins.
-secondary :: [Host] -> Domain -> RevertableProperty
+secondary :: [Host] -> Domain -> RevertableProperty HasInfo
 secondary hosts domain = secondaryFor (otherServers Master hosts domain) hosts domain
 
 -- | This variant is useful if the primary server does not have its DNS
 -- configured via propellor.
-secondaryFor :: [HostName] -> [Host] -> Domain -> RevertableProperty
+secondaryFor :: [HostName] -> [Host] -> Domain -> RevertableProperty HasInfo
 secondaryFor masters hosts domain = setup <!> cleanup
   where
 	setup = pureInfoProperty desc (addNamedConf conf)

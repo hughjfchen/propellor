@@ -1,125 +1,148 @@
-{-# LANGUAGE PackageImports #-}
+-- | This module handles all display of output to the console when
+-- propellor is ensuring Properties.
+--
+-- When two threads both try to display a message concurrently, 
+-- the messages will be displayed sequentially.
 
-module Propellor.Message where
+module Propellor.Message (
+	getMessageHandle,
+	isConsole,
+	forceConsole,
+	actionMessage,
+	actionMessageOn,
+	warningMessage,
+	infoMessage,
+	errorMessage,
+	processChainOutput,
+	messagesDone,
+	createProcessConcurrent,
+	withConcurrentOutput,
+) where
 
 import System.Console.ANSI
 import System.IO
-import System.Log.Logger
-import System.Log.Formatter
-import System.Log.Handler (setFormatter)
-import System.Log.Handler.Simple
-import "mtl" Control.Monad.Reader
-import Data.Maybe
+import Control.Monad.IO.Class (liftIO, MonadIO)
 import Control.Applicative
-import System.Directory
-import Control.Monad.IfElse
+import System.IO.Unsafe (unsafePerformIO)
+import Control.Concurrent
 
 import Propellor.Types
+import Utility.ConcurrentOutput
+import Utility.PartialPrelude
 import Utility.Monad
-import Utility.Env
-import Utility.Process
 import Utility.Exception
 
-data MessageHandle
-	= ConsoleMessageHandle
-	| TextMessageHandle
+data MessageHandle = MessageHandle
+	{ isConsole :: Bool
+	}
 
-mkMessageHandle :: IO MessageHandle
-mkMessageHandle = do
-	ifM (hIsTerminalDevice stdout <||> (isJust <$> getEnv "PROPELLOR_CONSOLE"))
-		( return ConsoleMessageHandle
-		, return TextMessageHandle
-		)
+-- | A shared global variable for the MessageHandle.
+{-# NOINLINE globalMessageHandle #-}
+globalMessageHandle :: MVar MessageHandle
+globalMessageHandle = unsafePerformIO $ 
+	newMVar =<< MessageHandle
+		<$> hIsTerminalDevice stdout
 
+-- | Gets the global MessageHandle.
+getMessageHandle :: IO MessageHandle
+getMessageHandle = readMVar globalMessageHandle
+
+-- | Force console output. This can be used when stdout is not directly
+-- connected to a console, but is eventually going to be displayed at a
+-- console.
 forceConsole :: IO ()
-forceConsole = void $ setEnv "PROPELLOR_CONSOLE" "1" True
+forceConsole = modifyMVar_ globalMessageHandle $ \mh ->
+	pure (mh { isConsole = True })
 
-isConsole :: MessageHandle -> Bool
-isConsole ConsoleMessageHandle = True
-isConsole _ = False
-
-whenConsole :: MessageHandle -> IO () -> IO ()
-whenConsole ConsoleMessageHandle a = a
-whenConsole _ _ = return ()
+whenConsole :: String -> IO String
+whenConsole s = ifM (isConsole <$> getMessageHandle)
+	( pure s
+	, pure ""
+	)
 
 -- | Shows a message while performing an action, with a colored status
 -- display.
-actionMessage :: (MonadIO m, ActionResult r) => Desc -> m r -> m r
+actionMessage :: (MonadIO m, MonadMask m, ActionResult r) => Desc -> m r -> m r
 actionMessage = actionMessage' Nothing
 
 -- | Shows a message while performing an action on a specified host,
 -- with a colored status display.
-actionMessageOn :: (MonadIO m, ActionResult r) => HostName -> Desc -> m r -> m r
+actionMessageOn :: (MonadIO m, MonadMask m, ActionResult r) => HostName -> Desc -> m r -> m r
 actionMessageOn = actionMessage' . Just
 
-actionMessage' :: (MonadIO m, ActionResult r) => Maybe HostName -> Desc -> m r -> m r
+actionMessage' :: (MonadIO m, MonadMask m, ActionResult r) => Maybe HostName -> Desc -> m r -> m r
 actionMessage' mhn desc a = do
-	h <- liftIO mkMessageHandle
-	liftIO $ whenConsole h $ do
-		setTitle $ "propellor: " ++ desc
-		hFlush stdout
+	liftIO $ outputConcurrent
+		=<< whenConsole (setTitleCode $ "propellor: " ++ desc)
 
 	r <- a
 
-	liftIO $ do
-		whenConsole h $
-			setTitle "propellor: running"
-		showhn h mhn
-		putStr $ desc ++ " ... "
-		let (msg, intensity, color) = getActionResult r
-		colorLine h intensity color msg
-		hFlush stdout
+	liftIO $ outputConcurrent . concat =<< sequence
+		[ whenConsole $
+			setTitleCode "propellor: running"
+		, showhn mhn
+		, pure $ desc ++ " ... "
+		, let (msg, intensity, color) = getActionResult r
+		  in colorLine intensity color msg
+		]
 
 	return r
   where
-	showhn _ Nothing = return ()
-	showhn h (Just hn) = do
-		whenConsole h $
-			setSGR [SetColor Foreground Dull Cyan]
-		putStr (hn ++ " ")
-		whenConsole h $
-			setSGR []
+	showhn Nothing = return ""
+	showhn (Just hn) = concat <$> sequence
+		[ whenConsole $
+			setSGRCode [SetColor Foreground Dull Cyan]
+		, pure (hn ++ " ")
+		, whenConsole $
+			setSGRCode []
+		]
 
 warningMessage :: MonadIO m => String -> m ()
-warningMessage s = liftIO $ do
-	h <- mkMessageHandle
-	colorLine h Vivid Magenta $ "** warning: " ++ s
+warningMessage s = liftIO $
+	outputConcurrent =<< colorLine Vivid Magenta ("** warning: " ++ s)
+
+infoMessage :: MonadIO m => [String] -> m ()
+infoMessage ls = liftIO $ outputConcurrent $ concatMap (++ "\n") ls
 
 errorMessage :: MonadIO m => String -> m a
 errorMessage s = liftIO $ do
-	h <- mkMessageHandle
-	colorLine h Vivid Red $ "** error: " ++ s
+	outputConcurrent =<< colorLine Vivid Red ("** error: " ++ s)
 	error "Cannot continue!"
-
-colorLine :: MessageHandle -> ColorIntensity -> Color -> String -> IO ()
-colorLine h intensity color msg = do
-	whenConsole h $
-		setSGR [SetColor Foreground intensity color]
-	putStr msg
-	whenConsole h $
-		setSGR []
+ 
+colorLine :: ColorIntensity -> Color -> String -> IO String
+colorLine intensity color msg = concat <$> sequence
+	[ whenConsole $
+		setSGRCode [SetColor Foreground intensity color]
+	, pure msg
+	, whenConsole $
+		setSGRCode []
 	-- Note this comes after the color is reset, so that
 	-- the color set and reset happen in the same line.
-	putStrLn ""
-	hFlush stdout
+	, pure "\n"
+	]
 
-debug :: [String] -> IO ()
-debug = debugM "propellor" . unwords
-
-checkDebugMode :: IO ()
-checkDebugMode = go =<< getEnv "PROPELLOR_DEBUG"
+-- | Reads and displays each line from the Handle, except for the last line
+-- which is a Result.
+processChainOutput :: Handle -> IO Result
+processChainOutput h = go Nothing
   where
-	go (Just "1") = enableDebugMode
-	go (Just _) = noop
-	go Nothing = whenM (doesDirectoryExist ".git") $
-		whenM (elem "1" . lines <$> getgitconfig) enableDebugMode
-	getgitconfig = catchDefaultIO "" $
-		readProcess "git" ["config", "propellor.debug"]
+	go lastline = do
+		v <- catchMaybeIO (hGetLine h)
+		case v of
+			Nothing -> case lastline of
+				Nothing -> do
+					return FailedChange
+				Just l -> case readish l of
+					Just r -> pure r
+					Nothing -> do
+						outputConcurrent (l ++ "\n")
+						return FailedChange
+			Just s -> do
+				outputConcurrent $
+					maybe "" (\l -> if null l then "" else l ++ "\n") lastline
+				go (Just s)
 
-enableDebugMode :: IO ()
-enableDebugMode = do
-	f <- setFormatter
-		<$> streamHandler stderr DEBUG
-		<*> pure (simpleLogFormatter "[$time] $msg")
-	updateGlobalLogger rootLoggerName $ 
-		setLevel DEBUG .  setHandlers [f]
+-- | Called when all messages about properties have been printed.
+messagesDone :: IO ()
+messagesDone = outputConcurrent
+	=<< whenConsole (setTitleCode "propellor: done")

@@ -115,7 +115,7 @@ dotFile f user = do
 -- ports it is configured to listen on.
 --
 -- Revert to prevent it listening on a particular port.
-listenPort :: Int -> RevertableProperty
+listenPort :: Int -> RevertableProperty NoInfo
 listenPort port = enable <!> disable
   where
 	portline = "Port " ++ show port

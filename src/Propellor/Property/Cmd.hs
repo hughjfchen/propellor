@@ -16,6 +16,7 @@ module Propellor.Property.Cmd (
 	safeSystemEnv,
 	shellEscape,
 	createProcess,
+	waitForProcess,
 ) where
 
 import Control.Applicative
@@ -26,7 +27,7 @@ import Propellor.Types
 import Propellor.Property
 import Utility.SafeCommand
 import Utility.Env
-import Utility.Process (createProcess, CreateProcess)
+import Utility.Process (createProcess, CreateProcess, waitForProcess)
 
 -- | A property that can be satisfied by running a command.
 --

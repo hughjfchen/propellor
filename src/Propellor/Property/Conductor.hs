@@ -83,7 +83,7 @@ import qualified Data.Set as S
 
 -- | Class of things that can be conducted.
 class Conductable c where
-	conducts :: c -> RevertableProperty
+	conducts :: c -> RevertableProperty HasInfo
 
 instance Conductable Host where
 	-- | Conduct the specified host.
@@ -268,7 +268,7 @@ notConductorFor h = infoProperty desc (return NoChange) (addInfo mempty (NotCond
   where
 	desc = "not " ++ cdesc (hostName h)
 
-conductorKnownHost :: Host -> RevertableProperty
+conductorKnownHost :: Host -> RevertableProperty NoInfo
 conductorKnownHost h = 
 	mk Ssh.knownHost
 		<!>
@@ -290,7 +290,7 @@ addConductorPrivData h hs = h { hostInfo = hostInfo h <> i }
 	privinfo h' = forceHostContext (hostName h') $ getInfo (hostInfo h')
 
 -- Use this property to let the specified conductor ssh in and run propellor.
-conductedBy :: Host -> RevertableProperty
+conductedBy :: Host -> RevertableProperty NoInfo
 conductedBy h = (setup <!> teardown)
 	`describe` ("conducted by " ++ hostName h)
   where

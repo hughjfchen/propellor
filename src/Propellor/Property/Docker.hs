@@ -56,6 +56,7 @@ import qualified Propellor.Property.Cmd as Cmd
 import qualified Propellor.Shim as Shim
 import Utility.Path
 import Utility.ThreadScheduler
+import Utility.ConcurrentOutput
 
 import Control.Concurrent.Async hiding (link)
 import System.Posix.Directory
@@ -123,7 +124,7 @@ container cn image = Container image (Host cn [] info)
 --
 -- Reverting this property ensures that the container is stopped and
 -- removed.
-docked :: Container -> RevertableProperty
+docked :: Container -> RevertableProperty HasInfo
 docked ctr@(Container _ h) =
 	(propagateContainerInfo ctr (go "docked" setup))
 		<!>
@@ -540,6 +541,7 @@ init s = case toContainerId s of
 				warningMessage "Boot provision failed!"
 		void $ async $ job reapzombies
 		job $ do
+			flushConcurrentOutput
 			void $ tryIO $ ifM (inPath "bash")
 				( boolSystem "bash" [Param "-l"]
 				, boolSystem "/bin/sh" []
@@ -555,7 +557,7 @@ provisionContainer :: ContainerId -> Property NoInfo
 provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ do
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 	let params = ["--continue", show $ toChain cid]
-	msgh <- mkMessageHandle
+	msgh <- getMessageHandle
 	let p = inContainerProcess cid
 		(if isConsole msgh then ["-it"] else [])
 		(shim : params)
@@ -583,6 +585,7 @@ chain hostlist hn s = case toContainerId s of
 			r <- runPropellor h $ ensureProperties $
 				map ignoreInfo $
 					hostProperties h
+			flushConcurrentOutput
 			putStrLn $ "\n" ++ show r
 
 stopContainer :: ContainerId -> IO Bool

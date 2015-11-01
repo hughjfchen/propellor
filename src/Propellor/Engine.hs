@@ -9,14 +9,12 @@ module Propellor.Engine (
 	fromHost,
 	fromHost',
 	onlyProcess,
-	processChainOutput,
 ) where
 
 import System.Exit
 import System.IO
 import Data.Monoid
 import Control.Applicative
-import System.Console.ANSI
 import "mtl" Control.Monad.RWS.Strict
 import System.PosixCompat
 import System.Posix.IO
@@ -29,8 +27,6 @@ import Propellor.Exception
 import Propellor.Info
 import Propellor.Property
 import Utility.Exception
-import Utility.PartialPrelude
-import Utility.Monad
 
 -- | Gets the Properties of a Host, and ensures them all,
 -- with nice display of what's being done.
@@ -38,10 +34,7 @@ mainProperties :: Host -> IO ()
 mainProperties host = do
 	ret <- runPropellor host $
 		ensureProperties [ignoreInfo $ infoProperty "overall" (ensureProperties ps) mempty mempty]
-	h <- mkMessageHandle
-        whenConsole h $
-		setTitle "propellor: done"
-	hFlush stdout
+	messagesDone
 	case ret of
 		FailedChange -> exitWith (ExitFailure 1)
 		_ -> exitWith ExitSuccess
@@ -99,28 +92,3 @@ onlyProcess lockfile a = bracket lock unlock (const a)
 		return l
 	unlock = closeFd
 	alreadyrunning = error "Propellor is already running on this host!"
-
--- | Reads and displays each line from the Handle, except for the last line
--- which is a Result.
-processChainOutput :: Handle -> IO Result
-processChainOutput h = go Nothing
-  where
-	go lastline = do
-		v <- catchMaybeIO (hGetLine h)
-		debug ["read from chained propellor: ", show v]
-		case v of
-			Nothing -> case lastline of
-				Nothing -> do
-					debug ["chained propellor output nothing; assuming it failed"]
-					return FailedChange
-				Just l -> case readish l of
-					Just r -> pure r
-					Nothing -> do
-						debug ["chained propellor output did not end with a Result; assuming it failed"]
-						putStrLn l
-						hFlush stdout
-						return FailedChange
-			Just s -> do
-				maybe noop (\l -> unless (null l) (putStrLn l)) lastline
-				hFlush stdout
-				go (Just s)
