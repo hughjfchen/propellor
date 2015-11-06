@@ -14,13 +14,18 @@
 -- >		`concurrently`
 -- > 	createProcessConcurrent (proc "ls" [])
 
+{-# LANGUAGE CPP #-}
+
 module System.Console.Concurrent (
 	-- * Concurrent output
 	withConcurrentOutput,
 	Outputable(..),
 	outputConcurrent,
+	errorConcurrent,
 	ConcurrentProcessHandle,
+#ifndef mingw32_HOST_OS
 	createProcessConcurrent,
+#endif
 	waitForProcessConcurrent,
 	createProcessForeground,
 	flushConcurrentOutput,

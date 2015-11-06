@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns, TypeSynonymInstances, FlexibleInstances, TupleSections #-}
+{-# LANGUAGE CPP #-}
 
 -- | 
 -- Copyright: 2015 Joey Hess <id@joeyh.name>
@@ -11,7 +12,9 @@
 module System.Console.Concurrent.Internal where
 
 import System.IO
+#ifndef mingw32_HOST_OS
 import System.Posix.IO
+#endif
 import System.Directory
 import System.Exit
 import Control.Monad
@@ -149,19 +152,29 @@ instance Outputable String where
 -- not block. It buffers the value, so it will be displayed once the other
 -- writer is done.
 outputConcurrent :: Outputable v => v -> IO ()
-outputConcurrent v = bracket setup cleanup go
+outputConcurrent = outputConcurrent' StdOut
+
+-- | Like `outputConcurrent`, but displays to stderr.
+--
+-- (Does not throw an exception.)
+errorConcurrent :: Outputable v => v -> IO ()
+errorConcurrent = outputConcurrent' StdErr
+
+outputConcurrent' :: Outputable v => StdHandle -> v -> IO ()
+outputConcurrent' stdh v = bracket setup cleanup go
   where
 	setup = tryTakeOutputLock
 	cleanup False = return ()
 	cleanup True = dropOutputLock
 	go True = do
-		T.hPutStr stdout (toOutput v)
-		hFlush stdout
+		T.hPutStr h (toOutput v)
+		hFlush h
 	go False = do
-		let bv = outputBuffer globalOutputHandle
 		oldbuf <- atomically $ takeTMVar bv
 		newbuf <- addOutputBuffer (Output (toOutput v)) oldbuf
 		atomically $ putTMVar bv newbuf
+	h = toHandle stdh
+	bv = bufferFor stdh
 
 newtype ConcurrentProcessHandle = ConcurrentProcessHandle P.ProcessHandle
 
@@ -243,6 +256,9 @@ asyncProcessWaiter waitaction = do
 -- the process is instead run with its stdout and stderr
 -- redirected to a buffer. The buffered output will be displayed as soon
 -- as the output lock becomes free.
+--
+-- Currently only available on Unix systems, not Windows.
+#ifndef mingw32_HOST_OS
 createProcessConcurrent :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle) 
 createProcessConcurrent p
 	| willOutput (P.std_out p) || willOutput (P.std_err p) =
@@ -255,6 +271,7 @@ createProcessConcurrent p
 		asyncProcessWaiter $
 			void $ tryIO $ P.waitForProcess h
 		return (toConcurrentProcessHandle r)
+#endif
 
 -- | Wrapper around `System.Process.createProcess` that makes sure a process
 -- is run in the foreground, with direct access to stdout and stderr.
@@ -274,6 +291,7 @@ fgProcess p = do
 		dropOutputLock
 	return (toConcurrentProcessHandle r)
 
+#ifndef mingw32_HOST_OS
 bgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
 bgProcess p = do
 	(toouth, fromouth) <- pipe
@@ -297,6 +315,7 @@ bgProcess p = do
 	rediroutput ss h
 		| willOutput ss = P.UseHandle h
 		| otherwise = ss
+#endif
 
 willOutput :: P.StdStream -> Bool
 willOutput P.Inherit = True
@@ -473,19 +492,16 @@ bufferOutputSTM' h (OutputBuffer newbuf) = do
 --
 -- This will prevent it from being displayed in the usual way, so you'll
 -- need to use `emitOutputBuffer` to display it yourself.
-outputBufferWaiterSTM :: (OutputBuffer -> (OutputBuffer, OutputBuffer)) -> STM [(StdHandle, OutputBuffer)]
-outputBufferWaiterSTM selector = do
-	bs <- forM hs $ \h -> do
+outputBufferWaiterSTM :: (OutputBuffer -> (OutputBuffer, OutputBuffer)) -> STM (StdHandle, OutputBuffer)
+outputBufferWaiterSTM selector = waitgetbuf StdOut `orElse` waitgetbuf StdErr
+  where
+	waitgetbuf h = do
 		let bv = bufferFor h
 		(selected, rest) <- selector <$> takeTMVar bv
+		when (selected == OutputBuffer [])
+			retry
 		putTMVar bv rest
-		return selected
-	if all (== OutputBuffer []) bs
-		then retry
-		else do
-			return (zip hs bs)
-  where
-	hs = [StdOut, StdErr]
+		return (h, selected)
 
 waitAnyBuffer :: OutputBuffer -> (OutputBuffer, OutputBuffer)
 waitAnyBuffer b = (b, OutputBuffer [])
