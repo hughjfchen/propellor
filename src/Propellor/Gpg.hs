@@ -7,6 +7,8 @@ import System.Directory
 import Data.Maybe
 import Data.List.Utils
 import Control.Monad
+import System.Console.Concurrent
+import System.Console.Concurrent.Internal (ConcurrentProcessHandle(..))
 
 import Propellor.PrivData.Paths
 import Propellor.Message
@@ -111,10 +113,7 @@ gitCommitKeyRing action = do
 	-- Commit explicitly the keyring and privdata files, as other
 	-- changes may be staged by the user and shouldn't be committed.
 	tocommit <- filterM doesFileExist [ privDataFile, keyring]
-	gitCommit $ (map File tocommit) ++ 
-		[ Param "-m"
-		, Param ("propellor " ++ action)
-		]
+	gitCommit (Just ("propellor " ++ action)) (map File tocommit)
 
 -- Adds --gpg-sign if there's a keyring.
 gpgSignParams :: [CommandParam] -> IO [CommandParam]
@@ -124,10 +123,17 @@ gpgSignParams ps = ifM (doesFileExist keyring)
 	)
 
 -- Automatically sign the commit if there'a a keyring.
-gitCommit :: [CommandParam] -> IO Bool
-gitCommit ps = do
-	ps' <- gpgSignParams ps
-	boolSystem "git" (Param "commit" : ps')
+gitCommit :: Maybe String -> [CommandParam] -> IO Bool
+gitCommit msg ps = do
+	let ps' = Param "commit" : ps ++ 
+		maybe [] (\m -> [Param "-m", Param m]) msg
+	ps'' <- gpgSignParams ps'
+	if isNothing msg
+		then do
+			(_, _, _, ConcurrentProcessHandle p) <- createProcessForeground $
+				proc "git" (toCommand ps'')
+			checkSuccessProcess p
+		else boolSystem "git" ps''
 
 gpgDecrypt :: FilePath -> IO String
 gpgDecrypt f = ifM (doesFileExist f)

@@ -56,7 +56,6 @@ import qualified Propellor.Property.Cmd as Cmd
 import qualified Propellor.Shim as Shim
 import Utility.Path
 import Utility.ThreadScheduler
-import Utility.ConcurrentOutput
 
 import Control.Concurrent.Async hiding (link)
 import System.Posix.Directory
@@ -65,6 +64,7 @@ import Prelude hiding (init)
 import Data.List hiding (init)
 import Data.List.Utils
 import qualified Data.Map as M
+import System.Console.Concurrent
 
 installed :: Property NoInfo
 installed = Apt.installed ["docker.io"]

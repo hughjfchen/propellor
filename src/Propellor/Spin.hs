@@ -29,12 +29,12 @@ import Propellor.Types.Info
 import qualified Propellor.Shim as Shim
 import Utility.FileMode
 import Utility.SafeCommand
-import Utility.ConcurrentOutput
 
 commitSpin :: IO ()
 commitSpin = do
 	void $ actionMessage "Git commit" $
-		gitCommit [Param "--allow-empty", Param "-a", Param "-m", Param spinCommitMessage]
+		gitCommit (Just spinCommitMessage) 
+			[Param "--allow-empty", Param "-a"]
 	-- Push to central origin repo first, if possible.
 	-- The remote propellor will pull from there, which avoids
 	-- us needing to send stuff directly to the remote host.
@@ -61,10 +61,9 @@ spin' mprivdata relay target hst = do
 	updateServer target relay hst
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap probecmd])
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap updatecmd])
-		getprivdata
+		=<< getprivdata
 
 	-- And now we can run it.
-	flushConcurrentOutput
 	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", sshtarget, shellWrap runcmd])) $
 		error "remote propellor failed"
   where
@@ -191,16 +190,16 @@ updateServer
 	-> Host
 	-> CreateProcess
 	-> CreateProcess
-	-> IO PrivMap
+	-> PrivMap
 	-> IO ()
-updateServer target relay hst connect haveprecompiled getprivdata =
+updateServer target relay hst connect haveprecompiled privdata =
 	withIOHandles createProcessSuccess connect go
   where
 	hn = fromMaybe target relay
 
 	go (toh, fromh) = do
 		let loop = go (toh, fromh)
-		let restart = updateServer hn relay hst connect haveprecompiled getprivdata
+		let restart = updateServer hn relay hst connect haveprecompiled privdata
 		let done = return ()
 		v <- maybe Nothing readish <$> getMarked fromh statusMarker
 		case v of
@@ -208,7 +207,7 @@ updateServer target relay hst connect haveprecompiled getprivdata =
 				sendRepoUrl toh
 				loop
 			(Just NeedPrivData) -> do
-				sendPrivData hn toh =<< getprivdata
+				sendPrivData hn toh privdata
 				loop
 			(Just NeedGitClone) -> do
 				hClose toh
@@ -219,7 +218,7 @@ updateServer target relay hst connect haveprecompiled getprivdata =
 				hClose toh
 				hClose fromh
 				sendPrecompiled hn
-				updateServer hn relay hst haveprecompiled (error "loop") getprivdata
+				updateServer hn relay hst haveprecompiled (error "loop") privdata
 			(Just NeedGitPush) -> do
 				sendGitUpdate hn fromh toh
 				hClose fromh
@@ -338,8 +337,9 @@ mergeSpin = do
 	old_head <- getCurrentGitSha1 branch
 	old_commit <- findLastNonSpinCommit
 	rungit "reset" [Param old_commit]
-	rungit "commit" [Param "-a", Param "--allow-empty"]
-	rungit "merge" =<< gpgSignParams [Param "-s", Param "ours", Param old_head]
+	unlessM (gitCommit Nothing [Param "-a", Param "--allow-empty"]) $
+		error "git commit failed"
+	rungit "merge" =<< gpgSignParams [Param "-s", Param "ours", Param old_head, Param "--no-edit"]
 	current_commit <- getCurrentGitSha1 branch
 	rungit "update-ref" [Param branchref, Param current_commit]
 	rungit "checkout" [Param branch]

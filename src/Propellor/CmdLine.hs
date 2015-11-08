@@ -120,8 +120,9 @@ defaultMain hostlist = withConcurrentOutput $ do
 	go False (Spin hs mrelay) = do
 		commitSpin
 		forM_ hs $ \hn -> withhost hn $ spin mrelay hn
-	go False cmdline@(SimpleRun hn) = buildFirst cmdline $
-		go False (Run hn)
+	go False cmdline@(SimpleRun hn) = do
+		forceConsole
+		buildFirst cmdline $ go False (Run hn)
 	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
 		( onlyprocess $ withhost hn mainProperties
 		, go True (Spin [hn] Nothing)

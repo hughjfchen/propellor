@@ -36,6 +36,8 @@ import "mtl" Control.Monad.Reader
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.ByteString.Lazy as L
+import System.Console.Concurrent
+import System.Console.Concurrent.Internal (ConcurrentProcessHandle(..))
 
 import Propellor.Types
 import Propellor.Types.PrivData
@@ -54,6 +56,7 @@ import Utility.FileMode
 import Utility.Env
 import Utility.Table
 import Utility.FileSystemEncoding
+import Utility.Process
 
 -- | Allows a Property to access the value of a specific PrivDataField,
 -- for use in a specific Context or HostContext.
@@ -192,7 +195,8 @@ editPrivData field context = do
 		hClose th
 		maybe noop (\p -> writeFileProtected' f (`L.hPut` privDataByteString p)) v
 		editor <- getEnvDefault "EDITOR" "vi"
-		unlessM (boolSystem editor [File f]) $
+		(_, _, _, ConcurrentProcessHandle p) <- createProcessForeground $ proc editor [f]
+		unlessM (checkSuccessProcess p) $
 			error "Editor failed; aborting."
 		PrivData <$> readFile f
 	setPrivDataTo field context v'
