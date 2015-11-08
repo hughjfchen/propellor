@@ -1,4 +1,4 @@
-propellor (2.13.0) UNRELEASED; urgency=medium
+propellor (2.13.0) unstable; urgency=medium
 
   * RevertableProperty used to be assumed to contain info, but this is
     now made explicit, with RevertableProperty HasInfo or
@@ -26,7 +26,7 @@ propellor (2.13.0) UNRELEASED; urgency=medium
     usage at runtime due to eg, disabled stream fusion.
   * Add File.isCopyOf. Thanks, Per Olofsson.
 
- -- Joey Hess <id@joeyh.name>  Sat, 24 Oct 2015 15:16:45 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 08 Nov 2015 14:51:15 -0400
 
 propellor (2.12.0) unstable; urgency=medium
 
