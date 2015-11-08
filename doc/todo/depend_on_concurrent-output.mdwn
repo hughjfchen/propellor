@@ -1,0 +1,6 @@
+Currently a module from concurrent-output is inlined into propellor. This
+should be converted to a dependency.
+
+Waiting on concurrent-output reaching Debian stable.
+
+[[!tag user/joey]]
