@@ -109,6 +109,7 @@ Library
     Propellor.Property.Parted
     Propellor.Property.Partition
     Propellor.Property.Postfix
+    Propellor.Property.PropellorRepo
     Propellor.Property.Prosody
     Propellor.Property.Reboot
     Propellor.Property.Rsync
