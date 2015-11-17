@@ -261,8 +261,10 @@ noServices = setup <!> teardown
   where
 	f = "/usr/sbin/policy-rc.d"
 	script = [ "#!/bin/sh", "exit 101" ]
-	setup = File.mode f (combineModes (readModes ++ executeModes))
-		`requires` File.hasContent f script
+	setup = combineProperties "no services started"
+		[ File.hasContent f script
+		, File.mode f (combineModes (readModes ++ executeModes))
+		]
 	teardown = File.notPresent f
 
 -- | Check if propellor is currently running within a chroot.
