@@ -4,6 +4,7 @@ propellor (2.13.1) UNRELEASED; urgency=medium
     set the git repository url normally implicitly set when using --spin.
   * Added Chroot.noServices property.
   * DiskImage creation automatically uses Chroot.noServices.
+  * Removed the (unused) dependency on quickcheck.
 
  -- Joey Hess <id@joeyh.name>  Wed, 11 Nov 2015 13:37:00 -0400
 

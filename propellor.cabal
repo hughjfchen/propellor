@@ -38,7 +38,7 @@ Executable propellor
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers (>= 0.5), network, async, time, QuickCheck, mtl, transformers,
+   containers (>= 0.5), network, async, time, mtl, transformers,
    exceptions (>= 0.6), stm, text, unix
 
 Executable propellor-config
@@ -47,7 +47,7 @@ Executable propellor-config
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers (>= 0.5), network, async, time, QuickCheck, mtl, transformers,
+   containers (>= 0.5), network, async, time, mtl, transformers,
    exceptions (>= 0.6), stm, text, unix
 
 Library
@@ -55,7 +55,7 @@ Library
   Hs-Source-Dirs:  src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers (>= 0.5), network, async, time, QuickCheck, mtl, transformers,
+   containers (>= 0.5), network, async, time, mtl, transformers,
    exceptions (>= 0.6), stm, text, unix
 
   Exposed-Modules:
@@ -175,7 +175,6 @@ Library
     Utility.ThreadScheduler
     Utility.Tmp
     Utility.UserInfo
-    Utility.QuickCheck
     System.Console.Concurrent
     System.Console.Concurrent.Internal
     System.Process.Concurrent
