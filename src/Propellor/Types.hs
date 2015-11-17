@@ -23,7 +23,7 @@ module Propellor.Types
 	, propertyDesc
 	, propertyChildren
 	, RevertableProperty(..)
-	, (<!>)
+	, MkRevertableProperty(..)
 	, IsProp(..)
 	, Combines(..)
 	, CombinedType
