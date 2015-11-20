@@ -27,8 +27,17 @@ showPriority Standard  = "standard"
 showPriority Optional  = "optional"
 showPriority Extra     = "extra"
 
-mirror :: HostName -> FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> Cron.Times -> Property NoInfo
-mirror hn dir suites archs sections source priorities crontimes = propertyList
+data RsyncExtra = Doc | Indices | Tools | Trace
+	deriving (Show, Eq)
+
+showRsyncExtra :: RsyncExtra -> String
+showRsyncExtra Doc = "doc"
+showRsyncExtra Indices = "indices"
+showRsyncExtra Tools = "tools"
+showRsyncExtra Trace = "trace"
+
+mirror :: HostName -> FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> [RsyncExtra] -> Cron.Times -> Property NoInfo
+mirror hn dir suites archs sections source priorities rsyncextras crontimes = propertyList
 	("Debian mirror " ++ dir)
 	[ Apt.installed ["debmirror"]
 	, User.accountFor (User "debmirror")
@@ -44,6 +53,8 @@ mirror hn dir suites archs sections source priorities crontimes = propertyList
 	architecturearg = intercalate ","
 	suitearg = intercalate "," $ map Apt.showSuite suites
 	priorityRegex pp = "(" ++ intercalate "|" (map showPriority pp) ++ ")"
+	rsyncextraarg [] = "none"
+	rsyncextraarg res = intercalate "," $ map showRsyncExtra res
 	args =
 		[ "--dist" , suitearg
 		, "--arch", architecturearg archs
@@ -55,9 +66,10 @@ mirror hn dir suites archs sections source priorities crontimes = propertyList
 		++
 		[ "--host", hn
 		, "--method", "http"
+		, "--rsync-extra", rsyncextraarg rsyncextras
 		, "--keyring", "/usr/share/keyrings/debian-archive-keyring.gpg"
 		, dir
 		]
 
-mirrorCdn :: FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> Cron.Times -> Property NoInfo
+mirrorCdn :: FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> [RsyncExtra] -> Cron.Times -> Property NoInfo
 mirrorCdn = mirror "httpredir.debian.org"
