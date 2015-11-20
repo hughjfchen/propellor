@@ -27,8 +27,8 @@ showPriority Standard  = "standard"
 showPriority Optional  = "optional"
 showPriority Extra     = "extra"
 
-mirror :: Apt.Url -> FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> Cron.Times -> Property NoInfo
-mirror url dir suites archs sections source priorities crontimes = propertyList
+mirror :: HostName -> FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> Cron.Times -> Property NoInfo
+mirror hn dir suites archs sections source priorities crontimes = propertyList
 	("Debian mirror " ++ dir)
 	[ Apt.installed ["debmirror"]
 	, User.accountFor (User "debmirror")
@@ -53,11 +53,11 @@ mirror url dir suites archs sections source priorities crontimes = propertyList
 		++
 		(if source then [] else ["--nosource"])
 		++
-		[ "--host", url
+		[ "--host", hn
 		, "--method", "http"
 		, "--keyring", "/usr/share/keyrings/debian-archive-keyring.gpg"
 		, dir
 		]
 
 mirrorCdn :: FilePath -> [DebianSuite] -> [Architecture] -> [Apt.Section] -> Bool -> [DebianPriority] -> Cron.Times -> Property NoInfo
-mirrorCdn = mirror "http://httpredir.debian.org/debian"
+mirrorCdn = mirror "httpredir.debian.org"
