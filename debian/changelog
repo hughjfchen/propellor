@@ -5,7 +5,9 @@ propellor (2.14.0) UNRELEASED; urgency=medium
   * Added Chroot.noServices property.
   * DiskImage creation automatically uses Chroot.noServices.
   * Removed the (unused) dependency on quickcheck.
-  * DebianMirror: Added a new [RsyncExtra] parameter. (minor API change)
+  * DebianMirror: Added a DebianMirror type for configuration (API change)
+    Thanks, Félix Sipma.
+  * DebianMirror: Add RsyncExtra to configuration.
     Thanks, Félix Sipma.
 
  -- Joey Hess <id@joeyh.name>  Wed, 11 Nov 2015 13:37:00 -0400
