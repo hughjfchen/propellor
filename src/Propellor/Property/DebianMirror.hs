@@ -7,15 +7,15 @@ module Propellor.Property.DebianMirror
 	, RsyncExtra (..)
 	, Method (..)
 	, DebianMirror
-	, setDebianMirrorHostName
-	, setDebianMirrorSuites
-	, setDebianMirrorArchitectures
-	, setDebianMirrorSections
-	, setDebianMirrorSourceBool
-	, setDebianMirrorPriorities
-	, setDebianMirrorMethod
-	, setDebianMirrorKeyring
-	, setDebianMirrorRsyncExtra
+	, debianMirrorHostName
+	, debianMirrorSuites
+	, debianMirrorArchitectures
+	, debianMirrorSections
+	, debianMirrorSourceBool
+	, debianMirrorPriorities
+	, debianMirrorMethod
+	, debianMirrorKeyring
+	, debianMirrorRsyncExtra
 	, mkDebianMirror
 	) where
 
@@ -57,61 +57,67 @@ showMethod Https = "https"
 showMethod Rsync = "rsync"
 showMethod MirrorFile = "file"
 
+-- | To get a new DebianMirror and set options, use:
+--
+-- > mkDebianMirror mymirrordir mycrontimes
+-- > 	. debianMirrorHostName "otherhostname"
+-- > 	. debianMirrorSourceBool True
+
 data DebianMirror = DebianMirror
-	{ debianMirrorHostName :: HostName
-	, debianMirrorDir :: FilePath
-	, debianMirrorSuites :: [DebianSuite]
-	, debianMirrorArchitectures :: [Architecture]
-	, debianMirrorSections :: [Apt.Section]
-	, debianMirrorSourceBool :: Bool
-	, debianMirrorPriorities :: [DebianPriority]
-	, debianMirrorMethod :: Method
-	, debianMirrorKeyring :: FilePath
-	, debianMirrorRsyncExtra :: [RsyncExtra]
-	, debianMirrorCronTimes :: Cron.Times
+	{ _debianMirrorHostName :: HostName
+	, _debianMirrorDir :: FilePath
+	, _debianMirrorSuites :: [DebianSuite]
+	, _debianMirrorArchitectures :: [Architecture]
+	, _debianMirrorSections :: [Apt.Section]
+	, _debianMirrorSourceBool :: Bool
+	, _debianMirrorPriorities :: [DebianPriority]
+	, _debianMirrorMethod :: Method
+	, _debianMirrorKeyring :: FilePath
+	, _debianMirrorRsyncExtra :: [RsyncExtra]
+	, _debianMirrorCronTimes :: Cron.Times
 	}
 
 mkDebianMirror :: FilePath -> Cron.Times -> DebianMirror
 mkDebianMirror dir crontimes = DebianMirror
-	{ debianMirrorHostName = "httpredir.debian.org"
-	, debianMirrorDir = dir
-	, debianMirrorSuites = []
-	, debianMirrorArchitectures = []
-	, debianMirrorSections = []
-	, debianMirrorSourceBool = False
-	, debianMirrorPriorities = []
-	, debianMirrorMethod = Http
-	, debianMirrorKeyring = "/usr/share/keyrings/debian-archive-keyring.gpg"
-	, debianMirrorRsyncExtra = [Trace]
-	, debianMirrorCronTimes = crontimes
+	{ _debianMirrorHostName = "httpredir.debian.org"
+	, _debianMirrorDir = dir
+	, _debianMirrorSuites = []
+	, _debianMirrorArchitectures = []
+	, _debianMirrorSections = []
+	, _debianMirrorSourceBool = False
+	, _debianMirrorPriorities = []
+	, _debianMirrorMethod = Http
+	, _debianMirrorKeyring = "/usr/share/keyrings/debian-archive-keyring.gpg"
+	, _debianMirrorRsyncExtra = [Trace]
+	, _debianMirrorCronTimes = crontimes
 	}
 
-setDebianMirrorHostName :: HostName -> DebianMirror -> DebianMirror
-setDebianMirrorHostName hn m = m { debianMirrorHostName = hn }
+debianMirrorHostName :: HostName -> DebianMirror -> DebianMirror
+debianMirrorHostName hn m = m { _debianMirrorHostName = hn }
 
-setDebianMirrorSuites :: [DebianSuite] -> DebianMirror -> DebianMirror
-setDebianMirrorSuites s m = m { debianMirrorSuites = s }
+debianMirrorSuites :: [DebianSuite] -> DebianMirror -> DebianMirror
+debianMirrorSuites s m = m { _debianMirrorSuites = s }
 
-setDebianMirrorArchitectures :: [Architecture] -> DebianMirror -> DebianMirror
-setDebianMirrorArchitectures a m = m { debianMirrorArchitectures = a }
+debianMirrorArchitectures :: [Architecture] -> DebianMirror -> DebianMirror
+debianMirrorArchitectures a m = m { _debianMirrorArchitectures = a }
 
-setDebianMirrorSections :: [Apt.Section] -> DebianMirror -> DebianMirror
-setDebianMirrorSections s m = m { debianMirrorSections = s }
+debianMirrorSections :: [Apt.Section] -> DebianMirror -> DebianMirror
+debianMirrorSections s m = m { _debianMirrorSections = s }
 
-setDebianMirrorSourceBool :: Bool -> DebianMirror -> DebianMirror
-setDebianMirrorSourceBool s m = m { debianMirrorSourceBool = s }
+debianMirrorSourceBool :: Bool -> DebianMirror -> DebianMirror
+debianMirrorSourceBool s m = m { _debianMirrorSourceBool = s }
 
-setDebianMirrorPriorities :: [DebianPriority] -> DebianMirror -> DebianMirror
-setDebianMirrorPriorities p m = m { debianMirrorPriorities = p }
+debianMirrorPriorities :: [DebianPriority] -> DebianMirror -> DebianMirror
+debianMirrorPriorities p m = m { _debianMirrorPriorities = p }
 
-setDebianMirrorMethod :: Method -> DebianMirror -> DebianMirror
-setDebianMirrorMethod me m = m { debianMirrorMethod = me }
+debianMirrorMethod :: Method -> DebianMirror -> DebianMirror
+debianMirrorMethod me m = m { _debianMirrorMethod = me }
 
-setDebianMirrorKeyring :: FilePath -> DebianMirror -> DebianMirror
-setDebianMirrorKeyring k m = m { debianMirrorKeyring = k }
+debianMirrorKeyring :: FilePath -> DebianMirror -> DebianMirror
+debianMirrorKeyring k m = m { _debianMirrorKeyring = k }
 
-setDebianMirrorRsyncExtra :: [RsyncExtra] -> DebianMirror -> DebianMirror
-setDebianMirrorRsyncExtra r m = m { debianMirrorRsyncExtra = r }
+debianMirrorRsyncExtra :: [RsyncExtra] -> DebianMirror -> DebianMirror
+debianMirrorRsyncExtra r m = m { _debianMirrorRsyncExtra = r }
 
 mirror :: DebianMirror -> Property NoInfo
 mirror mirror' = propertyList
@@ -122,12 +128,12 @@ mirror mirror' = propertyList
 	, File.ownerGroup dir (User "debmirror") (Group "debmirror")
 	, check (not . and <$> mapM suitemirrored suites) $ cmdProperty "debmirror" args
 		`describe` "debmirror setup"
-	, Cron.niceJob ("debmirror_" ++ dir) (debianMirrorCronTimes mirror') (User "debmirror") "/" $
+	, Cron.niceJob ("debmirror_" ++ dir) (_debianMirrorCronTimes mirror') (User "debmirror") "/" $
 		unwords ("/usr/bin/debmirror" : args)
 	]
   where
-	dir = debianMirrorDir mirror'
-	suites = debianMirrorSuites mirror'
+	dir = _debianMirrorDir mirror'
+	suites = _debianMirrorSuites mirror'
 	suitemirrored suite = doesDirectoryExist $ dir </> "dists" </> Apt.showSuite suite
 	architecturearg = intercalate ","
 	suitearg = intercalate "," $ map Apt.showSuite suites
@@ -136,16 +142,16 @@ mirror mirror' = propertyList
 	rsyncextraarg res = intercalate "," $ map showRsyncExtra res
 	args =
 		[ "--dist" , suitearg
-		, "--arch", architecturearg (debianMirrorArchitectures mirror')
-		, "--section", intercalate "," (debianMirrorSections mirror')
-		, "--limit-priority", "\"" ++ priorityRegex (debianMirrorPriorities mirror') ++ "\""
+		, "--arch", architecturearg $ _debianMirrorArchitectures mirror'
+		, "--section", intercalate "," $ _debianMirrorSections mirror'
+		, "--limit-priority", "\"" ++ priorityRegex (_debianMirrorPriorities mirror') ++ "\""
 		]
 		++
-		(if (debianMirrorSourceBool mirror') then [] else ["--nosource"])
+		(if _debianMirrorSourceBool mirror' then [] else ["--nosource"])
 		++
-		[ "--host", debianMirrorHostName mirror'
-		, "--method", showMethod $ debianMirrorMethod mirror'
-		, "--rsync-extra", rsyncextraarg $ debianMirrorRsyncExtra mirror'
-		, "--keyring", debianMirrorKeyring mirror'
+		[ "--host", _debianMirrorHostName mirror'
+		, "--method", showMethod $ _debianMirrorMethod mirror'
+		, "--rsync-extra", rsyncextraarg $ _debianMirrorRsyncExtra mirror'
+		, "--keyring", _debianMirrorKeyring mirror'
 		, dir
 		]
