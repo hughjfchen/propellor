@@ -37,3 +37,5 @@ wrapEscapeLine line = "\"" ++ (foldr step "" line) ++ "\""
 """]]
 
 Usage: `cat config_file | propellor_lines` (or in Emacs, dump the config file into your propellor config, select the region and use `C-u M-|` to pipe it through).
+
+-- [[spwhitton|https://spwhitton.name]]
