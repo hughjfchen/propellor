@@ -114,3 +114,23 @@ bareRepo repo user gitshared = check (isRepo repo) $ propertyList ("git repo: " 
 			]
   where
 	isRepo repo' = isNothing <$> catchMaybeIO (readProcess "git" ["rev-parse", "--resolve-git-dir", repo'])
+
+-- | Set a key value pair in a git repo's configuration.
+repoConfigured :: FilePath -> (String, String) -> Property NoInfo
+repo `repoConfigured` (key, value) =
+	trivial $ userScriptProperty (User "root")
+		[ "cd " ++ repo
+		, "git config " ++ key ++ " " ++ value
+		]
+	`describe` ("git repo at " ++ repo
+		 ++ " config setting " ++ key ++ " set to " ++ value)
+
+-- | Whether a repo accepts non-fast-forward pushes.
+repoAcceptsNonFFs :: FilePath -> RevertableProperty NoInfo
+repoAcceptsNonFFs repo = accepts <!> refuses
+  where
+	accepts = repoConfigured repo ("receive.denyNonFastForwards", "false")
+		`describe` desc "accepts"
+	refuses = repoConfigured repo ("receive.denyNonFastForwards", "true")
+		`describe` desc "rejects"
+	desc s = "git repo " ++ repo ++ " " ++ s ++ " non-fast-forward pushes"
