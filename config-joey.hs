@@ -80,6 +80,8 @@ darkstar = host "darkstar.kitenet.net"
 
 	& JoeySites.postfixClientRelay (Context "darkstar.kitenet.net")
 	& JoeySites.dkimMilter
+	& JoeySites.alarmClock "*-*-* 7:30" (User "joey")
+		"/usr/bin/timeout 45m /home/joey/bin/goodmorning"
 
 	& imageBuilt "/tmp/img" c MSDOS (grubBooted PC)
 		[ partition EXT2 `mountedAt` "/boot"
