@@ -27,6 +27,7 @@ module Propellor.Types
 	, IsProp(..)
 	, Combines(..)
 	, CombinedType
+	, ResultCombiner
 	, Propellor(..)
 	, LiftPropellor(..)
 	, EndAction(..)

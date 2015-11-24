@@ -31,7 +31,6 @@ module Propellor (
 	  Host(..)
 	, Property
 	, RevertableProperty
-	, (<!>)
 	, module Propellor.Types
 	-- * Config file
 	, defaultMain

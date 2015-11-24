@@ -52,17 +52,21 @@ type DiskImage = FilePath
 -- > import Propellor.Property.DiskImage
 --
 -- > let chroot d = Chroot.debootstrapped (System (Debian Unstable) "amd64") mempty d
--- > 		& Apt.installed ["linux-image-amd64"]
--- >		& ...
+-- >	& Apt.installed ["linux-image-amd64"]
+-- >	& User.hasPassword (User "root")
+-- >	& User.accountFor (User "demo")
+-- > 	& User.hasPassword (User "demo")
+-- >	& User.hasDesktopGroups (User "demo")
+-- > 	& ...
 -- > in imageBuilt "/srv/images/foo.img" chroot
--- >		MSDOS (grubBooted PC)
--- >		[ partition EXT2 `mountedAt` "/boot"
--- >			`setFlag` BootFlag
--- >		, partition EXT4 `mountedAt` "/"
--- >			`addFreeSpace` MegaBytes 100
--- >			`mountOpt` errorReadonly
--- >		, swapPartition (MegaBytes 256)
--- >		]
+-- >	MSDOS (grubBooted PC)
+-- >	[ partition EXT2 `mountedAt` "/boot"
+-- >		`setFlag` BootFlag
+-- >	, partition EXT4 `mountedAt` "/"
+-- >		`addFreeSpace` MegaBytes 100
+-- >		`mountOpt` errorReadonly
+-- >	, swapPartition (MegaBytes 256)
+-- >	]
 --
 -- Note that the disk image file is reused if it already exists,
 -- to avoid expensive IO to generate a new one. And, it's updated in-place,

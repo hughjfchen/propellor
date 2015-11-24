@@ -107,6 +107,29 @@ hasGroup (User user) (Group group') = check test $ cmdProperty "adduser"
   where
 	test = not . elem group' . words <$> readProcess "groups" [user]
 
+-- | Gives a user access to the secondary groups, including audio and
+-- video, that the OS installer normally gives a desktop user access to.
+hasDesktopGroups :: User -> Property NoInfo
+hasDesktopGroups user@(User u) = combineProperties desc $ 
+	map (hasGroup user . Group) desktopgroups
+  where
+	desc = "user " ++ u ++ " is in standard desktop groups"
+	-- This list comes from user-setup's debconf
+	-- template named "passwd/user-default-groups"
+	desktopgroups = 
+		[ "audio"
+		, "cdrom"
+		, "dip"
+		, "floppy"
+		, "video"
+		, "plugdev"
+		, "netdev"
+		, "scanner"
+		, "bluetooth"
+		, "debian-tor"
+		, "lpadmin"
+		]
+
 -- | Controls whether shadow passwords are enabled or not.
 shadowConfig :: Bool -> Property NoInfo
 shadowConfig True = check (not <$> shadowExists) $
