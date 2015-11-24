@@ -8,3 +8,5 @@ This branch adds
 `Git.repoAcceptsNonFFs` is useful for running a git server, hosting repos with `Git.bareRepo`: some of them should be set to accept fast-forwards.
 
 Note that `Git.repoConfigured` uses a tuple instead of just two function arguments in order that it can be used infix in `config.hs` when connected to other properties with `&`, as `ConfFile.containsIniSetting`.
+
+> [[done]], thank you (had to fix some indents) --[[Joey]]
