@@ -130,6 +130,7 @@ repoAcceptsNonFFs :: FilePath -> RevertableProperty NoInfo
 repoAcceptsNonFFs repo = accepts <!> refuses
   where
 	accepts = repoConfigured repo ("receive.denyNonFastForwards", "false")
-		`describe` ("git repo " ++ repo ++ " accepts non-fast-forward pushes")
+		`describe` desc "accepts"
 	refuses = repoConfigured repo ("receive.denyNonFastForwards", "true")
-		`describe` ("git repo " ++ repo ++ " refuses non-fast-forward pushes")
+		`describe` desc "rejects"
+	desc s = "git repo " ++ repo ++ " " ++ s ++ " non-fast-forward pushes"
