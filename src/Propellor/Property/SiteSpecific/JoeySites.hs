@@ -6,6 +6,7 @@ module Propellor.Property.SiteSpecific.JoeySites where
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.ConfFile as ConfFile
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Git as Git
@@ -961,11 +962,11 @@ alarmClock oncalendar (User user) command = combineProperties
 		, ""
 		, "[Service]"
 		, "Type=oneshot"
-		, "ExecStart=/bin/systemd-inhibit --what=handle-lid-switch --why=goodmorning /bin/su " ++ user ++ " -c \"" ++ program ++ "\""
+		, "ExecStart=/bin/systemd-inhibit --what=handle-lid-switch --why=goodmorning /bin/su " ++ user ++ " -c \"" ++ command ++ "\""
 		]
 		`onChange` Systemd.daemonReloaded
 	, Systemd.enabled "goodmorning.timer"
 	, Systemd.started "goodmorning.timer"
-	, "/etc/systemd/logind.conf" `File.containsConfPair`
+	, "/etc/systemd/logind.conf" `ConfFile.containsIniSetting`
 		("Login", "LidSwitchIgnoreInhibited", "no")
 	]
