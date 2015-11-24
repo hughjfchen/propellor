@@ -11,6 +11,7 @@ propellor (2.14.0) UNRELEASED; urgency=medium
     Thanks, Félix Sipma.
   * Added Git.repoConfigured and Git.repoAcceptsNonFFs properties.
     Thanks, Sean Whitton
+  * Added User.hasDesktopGroups property.
 
  -- Joey Hess <id@joeyh.name>  Wed, 11 Nov 2015 13:37:00 -0400
 
