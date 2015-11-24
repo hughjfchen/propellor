@@ -1,4 +1,4 @@
-propellor (2.14.0) UNRELEASED; urgency=medium
+propellor (2.14.0) unstable; urgency=medium
 
   * Add Propellor.Property.PropellorRepo.hasOriginUrl, an explicit way to
     set the git repository url normally implicitly set when using --spin.
@@ -13,7 +13,7 @@ propellor (2.14.0) UNRELEASED; urgency=medium
     Thanks, Sean Whitton
   * Added User.hasDesktopGroups property.
 
- -- Joey Hess <id@joeyh.name>  Wed, 11 Nov 2015 13:37:00 -0400
+ -- Joey Hess <id@joeyh.name>  Tue, 24 Nov 2015 16:03:55 -0400
 
 propellor (2.13.0) unstable; urgency=medium
 
