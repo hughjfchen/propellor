@@ -2,6 +2,7 @@ propellor (2.14.1) UNRELEASED; urgency=medium
 
   * User.hasDesktopGroups changed to avoid trying to add the user to
     groups that don't exist.
+  * Added Postfix.saslPasswdSet.
 
  -- Joey Hess <id@joeyh.name>  Tue, 24 Nov 2015 17:06:12 -0400
 

@@ -157,3 +157,19 @@ saslAuthdInstalled = setupdaemon
 	postfixgroup = (User "postfix") `User.hasGroup` (Group "sasl")
 		`onChange` restarted
 	dir = "/var/spool/postfix/var/run/saslauthd"
+
+-- | Uses `saslpasswd2` to set the password for a user in the sasldb2 file.
+--
+-- The password is taken from the privdata.
+saslPasswdSet :: Domain -> User -> Property HasInfo
+saslPasswdSet domain (User user) = withPrivData src ctx $ \getpw ->
+	property ("sasl password for " ++ uatd) $ getpw $ \pw -> makeChange $
+		withHandle StdinHandle createProcessSuccess p $ \h -> do
+			hPutStrLn h (privDataVal pw)
+			hClose h
+  where
+	uatd = user ++ "@" ++ domain
+	ps = ["-p", "-c", "-u", domain, user]
+	p = proc "saslpasswd2" ps
+	ctx = Context "sasl"
+	src = PrivDataSource (Password uatd) "enter password"

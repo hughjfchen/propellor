@@ -1,7 +1,6 @@
 module Propellor.Property.User where
 
 import System.Posix
-import Data.List
 
 import Propellor.Base
 import qualified Propellor.Property.File as File

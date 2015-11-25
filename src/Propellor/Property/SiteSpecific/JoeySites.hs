@@ -541,6 +541,8 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 	& dkimInstalled
 
 	& Postfix.saslAuthdInstalled
+	& "/etc/default/saslauthd" `File.containsLine` "MECHANISMS=sasldb"
+	& Postfix.saslPasswdSet "kitenet.net" (User "errol")
 
 	& Apt.installed ["maildrop"]
 	& "/etc/maildroprc" `File.hasContent`
