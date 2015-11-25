@@ -1,6 +1,7 @@
 module Propellor.Property.User where
 
 import System.Posix
+import Data.List
 
 import Propellor.Base
 import qualified Propellor.Property.File as File
@@ -109,9 +110,15 @@ hasGroup (User user) (Group group') = check test $ cmdProperty "adduser"
 
 -- | Gives a user access to the secondary groups, including audio and
 -- video, that the OS installer normally gives a desktop user access to.
+--
+-- Note that some groups may only exit after installation of other
+-- software. When a group does not exist yet, the user won't be added to it.
 hasDesktopGroups :: User -> Property NoInfo
-hasDesktopGroups user@(User u) = combineProperties desc $ 
-	map (hasGroup user . Group) desktopgroups
+hasDesktopGroups user@(User u) = property desc $ do
+	existinggroups <- map (fst . break (== ':')) . lines
+		<$> liftIO (readFile "/etc/group")
+	let toadd = filter (`elem` existinggroups) desktopgroups
+	ensureProperty $ propertyList desc $ map (hasGroup user . Group) toadd
   where
 	desc = "user " ++ u ++ " is in standard desktop groups"
 	-- This list comes from user-setup's debconf
