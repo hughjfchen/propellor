@@ -5,3 +5,6 @@ What package creates this group?  If someone could let me know that, I will patc
 Or perhaps Joey added this group because this group exists by default on Debian Unstable.  If so then a check can be inserted for that.
 
 --[[spwhitton|https://spwhitton.name/]]
+
+> Noticed that too and made it only add the user to existant groups, which
+> is the same approach user-setup uses. [[done]] --[[Joey]]
