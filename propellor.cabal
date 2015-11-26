@@ -90,6 +90,7 @@ Library
     Propellor.Property.Kerberos
     Propellor.Property.List
     Propellor.Property.LightDM
+    Propellor.Property.Locale
     Propellor.Property.Logcheck
     Propellor.Property.Mount
     Propellor.Property.Network
