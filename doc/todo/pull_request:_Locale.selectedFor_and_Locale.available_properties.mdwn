@@ -11,3 +11,5 @@ Example usage (I'm British but I live in the US):
     & "en_US.UTF-8" `Locale.selectedFor` ["LC_PAPER"]
 
 Pretty sure I've got the indentation right this time too ;)
+
+> merged, thanks! [[done]] --[[Joey]] 
