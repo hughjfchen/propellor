@@ -12,8 +12,8 @@ type LocaleVariable = String
 
 -- | Select a locale for a list of global locale variables.
 --
--- A locale variable is of the form @LC_BLAH@, @LANG@ or @LANGUAGE@.  See @man 5
--- locale@.  One might say
+-- A locale variable is of the form @LC_BLAH@, @LANG@ or @LANGUAGE@.  See
+-- @locale(5)@.  One might say
 --
 --  >  & "en_GB.UTF-8" `Locale.selectedFor` ["LC_PAPER", "LC_MONETARY"]
 --
