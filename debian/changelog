@@ -5,6 +5,7 @@ propellor (2.14.1) UNRELEASED; urgency=medium
   * Added Postfix.saslPasswdSet.
   * Added Propellor.Property.Locale.
     Thanks, Sean Whitton.
+  * Added changesFile property combinator.
 
  -- Joey Hess <id@joeyh.name>  Tue, 24 Nov 2015 17:06:12 -0400
 
