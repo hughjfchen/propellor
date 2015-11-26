@@ -17,6 +17,7 @@ import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Systemd as Systemd
+import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import Utility.FileMode
 
 import Data.List
@@ -541,6 +542,8 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 	& dkimInstalled
 
 	& Postfix.saslAuthdInstalled
+	& Fail2Ban.installed
+	& Fail2Ban.jailEnabled "postfix-sasl"
 	& "/etc/default/saslauthd" `File.containsLine` "MECHANISMS=sasldb"
 	& Postfix.saslPasswdSet "kitenet.net" (User "errol")
 

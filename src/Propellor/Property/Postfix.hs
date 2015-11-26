@@ -134,6 +134,11 @@ dedupCf ls =
 -- Does not configure postfix to use it; eg @smtpd_sasl_auth_enable = yes@
 -- needs to be set to enable use. See
 -- <https://wiki.debian.org/PostfixAndSASL>.
+--
+-- Password brute force attacks are possible when SASL auth is enabled.
+-- It would be wise to enable fail2ban, for example:
+--
+-- > Fail2Ban.jailEnabled "postfix-sasl"
 saslAuthdInstalled :: Property NoInfo
 saslAuthdInstalled = setupdaemon
 	`requires` Service.running "saslauthd"

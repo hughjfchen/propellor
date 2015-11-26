@@ -221,7 +221,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Journald.systemMaxUse "500MiB"
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
-	& Apt.serviceInstalledRunning "fail2ban"
+	& Fail2Ban.installed
 	& Obnam.backupEncrypted "/" (Cron.Times "33 1 * * *")
 		[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
 		, "--client-name=kitenet.net"
