@@ -12,6 +12,7 @@ module Propellor.Property (
 	, check
 	, fallback
 	, trivial
+	, changesFile
 	, revert
 	-- * Property descriptions
 	, describe
@@ -33,10 +34,12 @@ import Control.Monad
 import Data.Monoid
 import Control.Monad.IfElse
 import "mtl" Control.Monad.RWS.Strict
+import System.Posix.Files
 
 import Propellor.Types
 import Propellor.Info
 import Propellor.Exception
+import Utility.Exception
 import Utility.Monad
 
 -- | Constructs a Property, from a description and an action to run to
@@ -187,6 +190,40 @@ trivial p = adjustPropertySatisfy p $ \satisfy -> do
 	if r == MadeChange
 		then return NoChange
 		else return r
+
+-- | Indicates that a Property may change a particular file. When the file
+-- is modified, the property will return MadeChange instead of NoChange.
+changesFile :: Property i -> FilePath -> Property i
+changesFile p f = adjustPropertySatisfy p $ \satisfy -> do
+	s <- getstat
+	r <- satisfy
+	if r == NoChange
+		then do
+			s' <- getstat
+			return (if samestat s s' then NoChange else MadeChange)
+		else return r
+  where
+	getstat = liftIO $ catchMaybeIO $ getSymbolicLinkStatus f
+	samestat Nothing Nothing = True
+	samestat (Just a) (Just b) = and
+		-- everything except for atime
+		[ deviceID a == deviceID b
+		, fileID a == fileID b
+		, fileMode a == fileMode b
+		, fileOwner a == fileOwner b
+		, fileGroup a == fileGroup b
+		, specialDeviceID a == specialDeviceID b
+		, fileSize a == fileSize b
+		, modificationTimeHiRes a == modificationTimeHiRes b
+		, isBlockDevice a == isBlockDevice b
+		, isCharacterDevice a == isCharacterDevice b
+		, isNamedPipe a == isNamedPipe b
+		, isRegularFile a == isRegularFile b
+		, isDirectory a == isDirectory b
+		, isSymbolicLink a == isSymbolicLink b
+		, isSocket a == isSocket b
+		]
+	samestat _ _ = False
 
 -- | Makes a property that is satisfied differently depending on the host's
 -- operating system. 
