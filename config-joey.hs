@@ -25,6 +25,7 @@ import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Chroot as Chroot
+import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.Aiccu as Aiccu
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
@@ -221,7 +222,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Journald.systemMaxUse "500MiB"
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
-	& Apt.serviceInstalledRunning "fail2ban"
+	& Fail2Ban.installed
 	& Obnam.backupEncrypted "/" (Cron.Times "33 1 * * *")
 		[ "--repository=sftp://joey@eubackup.kitenet.net/~/lib/backup/kite.obnam"
 		, "--client-name=kitenet.net"
