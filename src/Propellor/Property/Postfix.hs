@@ -32,7 +32,7 @@ satellite :: Property NoInfo
 satellite = check (not <$> mainCfIsSet "relayhost") setup
 	`requires` installed
   where
-	setup = trivial $ property "postfix satellite system" $ do
+	setup = property "postfix satellite system" $ do
 		hn <- asks hostName
 		let (_, domain) = separate (== '.') hn
 		ensureProperties
@@ -181,3 +181,4 @@ saslPasswdSet domain (User user) = withPrivData src ctx $ \getpw -> trivial $
 	p = proc "saslpasswd2" ps
 	ctx = Context "sasl"
 	src = PrivDataSource (Password uatd) "enter password"
+	trivial = flip assume NoChange

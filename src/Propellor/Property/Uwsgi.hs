@@ -19,7 +19,7 @@ appEnabled an cf = enable <!> disable
 		`requires` appAvailable an cf
 		`requires` installed
 		`onChange` reloaded
-	disable = trivial $ File.notPresent (appVal an)
+	disable = File.notPresent (appVal an)
 		`describe` ("uwsgi app disable" ++ an)
 		`requires` installed
 		`onChange` reloaded

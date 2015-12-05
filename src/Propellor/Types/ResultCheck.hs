@@ -60,7 +60,7 @@ instance Checkable UncheckedProperty i where
 --
 -- However, beware assuming `NoChange`, as that will make combinators
 -- like `onChange` not work.
-assume :: UncheckedProperty i -> Result -> Property i
-assume (UncheckedProperty p) result = adjustPropertySatisfy (checkedProp p) $ \satisfy -> do
+assume :: Checkable p i => p i -> Result -> Property i
+assume p result = adjustPropertySatisfy (checkedProp p) $ \satisfy -> do
 	r <- satisfy
 	return (r <> result)

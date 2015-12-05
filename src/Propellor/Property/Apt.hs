@@ -140,13 +140,13 @@ installed' params ps = robustly $ check (isInstallable ps) go
 		`assume` MadeChange
 
 installedBackport :: [Package] -> Property NoInfo
-installedBackport ps = trivial $ withOS desc $ \o -> case o of
+installedBackport ps = withOS desc $ \o -> case o of
 	Nothing -> error "cannot install backports; os not declared"
 	(Just (System (Debian suite) _)) -> case backportSuite suite of
 		Nothing -> notsupported o
-		Just bs -> ensureProperty $ runApt
-			(["install", "-t", bs, "-y"] ++ ps)
-			`assume` MadeChange
+		Just bs -> ensureProperty $ 
+			runApt (["install", "-t", bs, "-y"] ++ ps)
+				`changesFile` dpkgStatus
 	_ -> notsupported o
   where
 	desc = (unwords $ "apt installed backport":ps)

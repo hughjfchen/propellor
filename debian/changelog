@@ -14,6 +14,11 @@ propellor (2.15.0) UNRELEASED; urgency=medium
       change is always safe to make.
     - Or, if you know that the command should modifiy a file, use:
     	`changesFile` filename
+  * The `trivial` combinator has been removed. (API change)
+    Instead, use:
+    	`assume` NoChange
+    Or, better, use changesFile or checkResult to accurately report
+    when a property makes a change.
   * A few properties have had their Result improved, for example
     Apt.buldDep and Apt.autoRemove now check if a change was made or not.
   * User.hasDesktopGroups changed to avoid trying to add the user to
