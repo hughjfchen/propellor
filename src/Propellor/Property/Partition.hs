@@ -25,8 +25,9 @@ formatted = formatted' []
 type MkfsOpts = [String]
 
 formatted' :: MkfsOpts -> Eep -> Fs -> FilePath -> Property NoInfo
-formatted' opts YesReallyFormatPartition fs dev = 
-	cmdProperty cmd opts' `requires` Apt.installed [pkg]
+formatted' opts YesReallyFormatPartition fs dev = cmdProperty cmd opts'
+	`assume` MadeChange
+	`requires` Apt.installed [pkg]
   where
 	(cmd, opts', pkg) = case fs of
 		EXT2 -> ("mkfs.ext2", q $ eff optsdev, "e2fsprogs")

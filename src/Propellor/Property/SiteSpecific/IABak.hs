@@ -30,7 +30,7 @@ gitServer knownhosts = propertyList "iabak git server" $ props
 	& Ssh.knownHost knownhosts "gitlab.com" (User "root")
 	& Git.cloned (User "root") userrepo "/usr/local/IA.BAK/pubkeys" (Just "master")
 	& Apt.serviceInstalledRunning "apache2"
-	& cmdProperty "ln" ["-sf", "/usr/local/IA.BAK/pushme.cgi", "/usr/lib/cgi-bin/pushme.cgi"]
+	& "/usr/lib/cgi-bin/pushme.cgi" `File.isSymlinkedTo` File.LinkTarget "/usr/local/IA.BAK/pushme.cgi"
 	& File.containsLine "/etc/sudoers" "www-data ALL=NOPASSWD:/usr/local/IA.BAK/pushed.sh"
 	& Cron.niceJob "shardstats" (Cron.Times "*/30 * * * *") (User "root") "/"
 		"/usr/local/IA.BAK/shardstats-all"
@@ -51,8 +51,9 @@ registrationServer knownhosts = propertyList "iabak registration server" $ props
 	& Git.cloned (User "registrar") userrepo "/home/registrar/users" (Just "master")
 	& Apt.serviceInstalledRunning "apache2"
 	& Apt.installed ["perl", "perl-modules"]
-	& cmdProperty "ln" ["-sf", "/home/registrar/IA.BAK/registrar/register.cgi", link]
+	& link `File.isSymlinkedTo` File.LinkTarget "/home/registrar/IA.BAK/registrar/register.cgi"
 	& cmdProperty "chown" ["-h", "registrar:registrar", link]
+		`changesFile` link
 	& File.containsLine "/etc/sudoers" "www-data ALL=(registrar) NOPASSWD:/home/registrar/IA.BAK/registrar/register.pl"
 	& Apt.installed ["kgb-client"]
 	& File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf" anyContext
@@ -84,11 +85,15 @@ graphiteServer = propertyList "iabak graphite server" $ props
 		, "retentions = 60s:1d"
 		]
 	& graphiteCSRF
-	& cmdProperty "graphite-manage" ["syncdb", "--noinput"] `flagFile` "/etc/flagFiles/graphite-syncdb"
-	& cmdProperty "graphite-manage" ["createsuperuser", "--noinput", "--username=joey", "--email=joey@localhost"] `flagFile` "/etc/flagFiles/graphite-user-joey"
-		`flagFile` "/etc/graphite-superuser-joey"
-	& cmdProperty "graphite-manage" ["createsuperuser", "--noinput", "--username=db48x", "--email=db48x@localhost"] `flagFile` "/etc/flagFiles/graphite-user-db48x"
-		`flagFile` "/etc/graphite-superuser-db48x"
+	& cmdProperty "graphite-manage" ["syncdb", "--noinput"]
+		`assume` MadeChange
+		`flagFile` "/etc/flagFiles/graphite-syncdb"
+	& cmdProperty "graphite-manage" ["createsuperuser", "--noinput", "--username=joey", "--email=joey@localhost"]
+		`assume` MadeChange
+		`flagFile` "/etc/flagFiles/graphite-user-joey"
+	& cmdProperty "graphite-manage" ["createsuperuser", "--noinput", "--username=db48x", "--email=db48x@localhost"]
+		`assume` MadeChange
+		`flagFile` "/etc/flagFiles/graphite-user-db48x"
 	-- TODO: deal with passwords somehow
 	& File.ownerGroup "/var/lib/graphite/graphite.db" (User "_graphite") (Group "_graphite")
 	& "/etc/apache2/ports.conf" `File.containsLine` "Listen 8080"

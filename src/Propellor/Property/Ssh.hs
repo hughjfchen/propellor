@@ -143,8 +143,8 @@ randomHostKeys = flagFile prop "/etc/ssh/.unique_host_keys"
 			[ Param "-c"
 			, Param "rm -f /etc/ssh/ssh_host_*"
 			]
-		ensureProperty $ scriptProperty 
-			[ "DPKG_MAINTSCRIPT_NAME=postinst DPKG_MAINTSCRIPT_PACKAGE=openssh-server /var/lib/dpkg/info/openssh-server.postinst configure" ]
+		ensureProperty $ scriptProperty [ "DPKG_MAINTSCRIPT_NAME=postinst DPKG_MAINTSCRIPT_PACKAGE=openssh-server /var/lib/dpkg/info/openssh-server.postinst configure" ]
+			`assume` MadeChange
 
 -- | The text of a ssh public key, for example, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB3BJ2GqZiTR2LEoDXyYFgh/BduWefjdKXAsAtzS9zeI"
 type PubKeyText = String

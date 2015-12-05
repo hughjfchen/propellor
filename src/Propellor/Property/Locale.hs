@@ -24,12 +24,12 @@ type LocaleVariable = String
 selectedFor :: Locale -> [LocaleVariable] -> RevertableProperty NoInfo
 locale `selectedFor` vars = select <!> deselect
   where
-	select =
-		trivial $ cmdProperty "update-locale" selectArgs
+	select = cmdProperty "update-locale" selectArgs
+		`assume` NoChange
 		`requires` available locale
 		`describe` (locale ++ " locale selected")
-	deselect =
-		trivial $ cmdProperty "update-locale" vars
+	deselect = cmdProperty "update-locale" vars
+		`assume` NoChange
 		`describe` (locale ++ " locale deselected")
 	selectArgs = zipWith (++) vars (repeat ('=':locale))
 
@@ -70,4 +70,6 @@ available locale = (ensureAvailable <!> ensureUnavailable)
 	l `presentIn` ls = any (l `isPrefix`) ls
 	l `isPrefix` x = (l `isPrefixOf` x) || (("# " ++ l) `isPrefixOf` x)
 
-	regenerate = cmdProperty "dpkg-reconfigure" ["-f", "noninteractive", "locales"]
+	regenerate = cmdProperty "dpkg-reconfigure"
+		["-f", "noninteractive", "locales"]
+		`assume` MadeChange

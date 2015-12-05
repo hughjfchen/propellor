@@ -5,6 +5,7 @@ module Propellor.Types.ResultCheck (
 	unchecked,
 	checkResult,
 	Checkable,
+	assume,
 ) where
 
 import Propellor.Types
@@ -51,3 +52,15 @@ instance Checkable Property i where
 
 instance Checkable UncheckedProperty i where
 	checkedProp (UncheckedProperty p) = p
+
+-- | Sometimes it's not practical to test if a property made a change.
+-- In such a case, it's often fine to say:
+--
+-- > someprop `assume` MadeChange
+--
+-- However, beware assuming `NoChange`, as that will make combinators
+-- like `onChange` not work.
+assume :: UncheckedProperty i -> Result -> Property i
+assume (UncheckedProperty p) result = adjustPropertySatisfy (checkedProp p) $ \satisfy -> do
+	r <- satisfy
+	return (r <> result)

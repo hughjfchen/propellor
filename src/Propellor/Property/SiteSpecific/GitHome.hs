@@ -14,11 +14,13 @@ installedFor user@(User u) = check (not <$> hasGitDir user) $
 		let tmpdir = home </> "githome"
 		ensureProperty $ combineProperties "githome setup"
 			[ userScriptProperty user ["git clone " ++ url ++ " " ++ tmpdir]
+				`assume` MadeChange
 			, property "moveout" $ makeChange $ void $
 				moveout tmpdir home
 			, property "rmdir" $ makeChange $ void $
 				catchMaybeIO $ removeDirectory tmpdir
 			, userScriptProperty user ["rm -rf .aptitude/ .bashrc .profile; bin/mr checkout; bin/fixups"]
+				`assume` MadeChange
 			]
 	moveout tmpdir home = do
 		fs <- dirContents tmpdir

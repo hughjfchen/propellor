@@ -58,4 +58,5 @@ syncDirFiltered filters src dest = rsync $
 
 rsync :: [String] -> Property NoInfo
 rsync ps = cmdProperty "rsync" ps
+	`assume` MadeChange
 	`requires` Apt.installed ["rsync"]

@@ -45,6 +45,7 @@ mounted fs src mnt opts = property (mnt ++ " mounted") $
 -- in the second directory.
 bindMount :: FilePath -> FilePath -> Property NoInfo
 bindMount src dest = cmdProperty "mount" ["--bind", src, dest]
+	`assume` MadeChange
 	`describe` ("bind mounted " ++ src ++ " to " ++ dest)
 
 mount :: FsType -> Source -> MountPoint -> MountOpts -> IO Bool
