@@ -34,9 +34,13 @@ locale `selectedFor` vars = select <!> deselect
 	deselect' = cmdProperty "update-locale" vars
 		`assume` MadeChange
 	selectArgs = zipWith (++) vars (repeat ('=':locale))
-	isselected = do
-		ls <- catchDefaultIO [] $ lines <$> readFile "/etc/default/locale"
-		return $ and $ map (\v -> v ++ "=" ++ locale `elem` ls) vars
+	isselected = locale `isSelectedFor` vars
+
+isSelectedFor :: Locale -> [LocaleVariable] -> IO Bool
+locale `isSelectedFor` vars = do
+	ls <- catchDefaultIO [] $ lines <$> readFile "/etc/default/locale"
+	return $ and $ map (\v -> v ++ "=" ++ locale `elem` ls) vars
+	
 
 -- | Ensures a locale is generated (or, if reverted, ensure it's not).
 --
