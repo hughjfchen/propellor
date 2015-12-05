@@ -24,14 +24,19 @@ type LocaleVariable = String
 selectedFor :: Locale -> [LocaleVariable] -> RevertableProperty NoInfo
 locale `selectedFor` vars = select <!> deselect
   where
-	select = cmdProperty "update-locale" selectArgs
-		`assume` NoChange
+	select = check (not <$> isselected) select'
 		`requires` available locale
 		`describe` (locale ++ " locale selected")
-	deselect = cmdProperty "update-locale" vars
-		`assume` NoChange
+	select' = cmdProperty "update-locale" selectArgs
+		`assume` MadeChange
+	deselect = check isselected deselect'
 		`describe` (locale ++ " locale deselected")
+	deselect' = cmdProperty "update-locale" vars
+		`assume` MadeChange
 	selectArgs = zipWith (++) vars (repeat ('=':locale))
+	isselected = do
+		ls <- catchDefaultIO [] $ lines <$> readFile "/etc/default/locale"
+		return $ and $ map (\v -> v ++ "=" ++ locale `elem` ls) vars
 
 -- | Ensures a locale is generated (or, if reverted, ensure it's not).
 --
