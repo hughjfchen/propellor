@@ -158,19 +158,19 @@ f `isCopyOf` f' = property desc $ go =<< (liftIO $ tryIO $ getFileStatus f')
 
 -- | Ensures that a file/dir has the specified owner and group.
 ownerGroup :: FilePath -> User -> Group -> Property NoInfo
-ownerGroup f (User owner) (Group group) = property (f ++ " owner " ++ og) $ do
-	r <- ensureProperty $ cmdProperty "chown" [og, f]
-	if r == FailedChange
-		then return r
-		else noChange
+ownerGroup f (User owner) (Group group) = p `describe` (f ++ " owner " ++ og)
   where
+	p = cmdProperty "chown" [og, f]
+		`changesFile` f
 	og = owner ++ ":" ++ group
 
 -- | Ensures that a file/dir has the specfied mode.
 mode :: FilePath -> FileMode -> Property NoInfo
-mode f v = property (f ++ " mode " ++ show v) $ do
-	liftIO $ modifyFileMode f (const v)
-	noChange
+mode f v = p `changesFile` f
+  where
+	p = property (f ++ " mode " ++ show v) $ do
+		liftIO $ modifyFileMode f (const v)
+		return NoChange
 
 -- | A temp file to use when writing new content for a file.
 --

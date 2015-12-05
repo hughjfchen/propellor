@@ -194,9 +194,10 @@ partitioned eep disk (PartTable tabletype parts) = property desc $ do
 -- Parted is run in script mode, so it will never prompt for input.
 -- It is asked to use cylinder alignment for the disk.
 parted :: Eep -> FilePath -> [String] -> Property NoInfo
-parted YesReallyDeleteDiskContents disk ps = 
-	cmdProperty "parted" ("--script":"--align":"cylinder":disk:ps)
-		`requires` installed
+parted YesReallyDeleteDiskContents disk ps = p `requires` installed
+  where
+	p = cmdProperty "parted" ("--script":"--align":"cylinder":disk:ps)
+		`assume` MadeChange
 
 -- | Gets parted installed.
 installed :: Property NoInfo

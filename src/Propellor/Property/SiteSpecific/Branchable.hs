@@ -17,7 +17,7 @@ server hosts = propertyList "branchable server" $ props
 		, "en_US.UTF-8 UTF-8"
 		, "fi_FI.UTF-8 UTF-8"
 		]
-		`onChange` cmdProperty "locale-gen" []
+		`onChange` (cmdProperty "locale-gen" [] `assume` MadeChange)
 
 	& Apt.installed ["etckeeper", "ssh", "popularity-contest"]
 	& Apt.serviceInstalledRunning "apache2"

@@ -60,10 +60,12 @@ tree buildarch flavor = combineProperties "gitannexbuilder tree" $ props
 			, "cd " ++ gitbuilderdir
 			, "git checkout " ++ buildarch ++ fromMaybe "" flavor
 			]
+			`assume` MadeChange
 			`describe` "gitbuilder setup"
 	builddircloned = check (not <$> doesDirectoryExist builddir) $ userScriptProperty (User builduser)
 		[ "git clone git://git-annex.branchable.com/ " ++ builddir
 		]
+		`assume` MadeChange
 
 buildDepsApt :: Property HasInfo
 buildDepsApt = combineProperties "gitannexbuilder build deps" $ props
@@ -88,13 +90,16 @@ haskellPkgsInstalled dir = flagFile go ("/haskellpkgsinstalled")
 	go = userScriptProperty (User builduser)
 		[ "cd " ++ builddir ++ " && ./standalone/" ++ dir ++ "/install-haskell-packages"
 		]
+		`assume` MadeChange
 
 -- Installs current versions of git-annex's deps from cabal, but only
 -- does so once.
 cabalDeps :: Property NoInfo
 cabalDeps = flagFile go cabalupdated
 	where
-		go = userScriptProperty (User builduser) ["cabal update && cabal install git-annex --only-dependencies || true"]
+		go = userScriptProperty (User builduser)
+			["cabal update && cabal install git-annex --only-dependencies || true"]
+			`assume` MadeChange
 		cabalupdated = homedir </> ".cabal" </> "packages" </> "hackage.haskell.org" </> "00-index.cache"
 
 autoBuilderContainer :: (System -> Flavor -> Property HasInfo) -> System -> Flavor -> Times -> TimeOut -> Systemd.Container
@@ -158,5 +163,6 @@ androidContainer name setupgitannexdir gitannexdir = Systemd.container name osve
 	chrootsetup = scriptProperty
 		[ "cd " ++ gitannexdir ++ " && ./standalone/android/buildchroot-inchroot"
 		]
+		`assume` MadeChange
 	osver = System (Debian (Stable "jessie")) "i386"
 	bootstrap = Chroot.debootstrapped mempty

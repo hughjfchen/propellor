@@ -74,6 +74,7 @@ extractTarball :: FilePath -> FilePath -> Property HasInfo
 extractTarball target src = toProp .
 	check (unpopulated target) $
 		cmdProperty "tar" params
+			`assume` MadeChange
 			`requires` File.dirExists target
   where
 	params =

@@ -39,6 +39,7 @@ siteEnabled hn cf = enable <!> disable
 			`onChange` reloaded
 		, check (not <$> isenabled) $
 			cmdProperty "a2ensite" ["--quiet", hn]
+				`assume` MadeChange
 				`requires` installed
 				`onChange` reloaded
 		]
@@ -49,7 +50,7 @@ siteDisabled :: HostName -> Property NoInfo
 siteDisabled hn = combineProperties
 	("apache site disabled " ++ hn) 
 	(map File.notPresent (siteCfg hn))
-		`onChange` cmdProperty "a2dissite" ["--quiet", hn]
+		`onChange` (cmdProperty "a2dissite" ["--quiet", hn] `assume` MadeChange)
 		`requires` installed
 		`onChange` reloaded
 
@@ -64,11 +65,13 @@ modEnabled modname = enable <!> disable
   where
 	enable = check (not <$> isenabled) $
 		cmdProperty "a2enmod" ["--quiet", modname]
+			`assume` MadeChange
 			`describe` ("apache module enabled " ++ modname)
 			`requires` installed
 			`onChange` reloaded
 	disable = check isenabled $ 
 		cmdProperty "a2dismod" ["--quiet", modname]
+			`assume` MadeChange
 			`describe` ("apache module disabled " ++ modname)
 			`requires` installed
 			`onChange` reloaded

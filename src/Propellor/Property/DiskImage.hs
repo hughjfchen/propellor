@@ -287,15 +287,21 @@ grubBooted bios = (Grub.installed' bios, boots)
 		, mounted "sysfs" "sys" (inmnt "/sys") mempty
 		-- update the initramfs so it gets the uuid of the root partition
 		, inchroot "update-initramfs" ["-u"]
+			`assume` MadeChange
 		-- work around for http://bugs.debian.org/802717
 		 , check haveosprober $ inchroot "chmod" ["-x", osprober]
+			`assume` MadeChange
 		, inchroot "update-grub" []
+			`assume` MadeChange
 		, check haveosprober $ inchroot "chmod" ["+x", osprober]
+			`assume` MadeChange
 		, inchroot "grub-install" [wholediskloopdev]
+			`assume` MadeChange
 		-- sync all buffered changes out to the disk image
 		-- may not be necessary, but seemed needed sometimes
 		-- when using the disk image right away.
 		, cmdProperty "sync" []
+			`assume` NoChange
 		]
 	  where
 	  	-- cannot use </> since the filepath is absolute

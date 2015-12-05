@@ -4,6 +4,7 @@ import Propellor.Base
 
 now :: Property NoInfo
 now = cmdProperty "reboot" []
+	`assume` MadeChange
 	`describe` "reboot now"
 
 -- | Schedules a reboot at the end of the current propellor run.

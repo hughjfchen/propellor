@@ -71,12 +71,14 @@ instance PropAccum Container where
 -- Note that this does not configure systemd to start the service on boot,
 -- it only ensures that the service is currently running.
 started :: ServiceName -> Property NoInfo
-started n = trivial $ cmdProperty "systemctl" ["start", n]
+started n = cmdProperty "systemctl" ["start", n]
+	`assume` NoChange
 	`describe` ("service " ++ n ++ " started")
 
 -- | Stops a systemd service.
 stopped :: ServiceName -> Property NoInfo
-stopped n = trivial $ cmdProperty "systemctl" ["stop", n]
+stopped n = cmdProperty "systemctl" ["stop", n]
+	`assume` NoChange
 	`describe` ("service " ++ n ++ " stopped")
 
 -- | Enables a systemd service.
@@ -84,30 +86,35 @@ stopped n = trivial $ cmdProperty "systemctl" ["stop", n]
 -- This does not ensure the service is started, it only configures systemd
 -- to start it on boot.
 enabled :: ServiceName -> Property NoInfo
-enabled n = trivial $ cmdProperty "systemctl" ["enable", n]
+enabled n = cmdProperty "systemctl" ["enable", n]
+	`assume` NoChange
 	`describe` ("service " ++ n ++ " enabled")
 
 -- | Disables a systemd service.
 disabled :: ServiceName -> Property NoInfo
-disabled n = trivial $ cmdProperty "systemctl" ["disable", n]
+disabled n = cmdProperty "systemctl" ["disable", n]
+	`assume` NoChange
 	`describe` ("service " ++ n ++ " disabled")
 
 -- | Masks a systemd service.
 masked :: ServiceName -> RevertableProperty NoInfo
 masked n = systemdMask <!> systemdUnmask
   where
-	systemdMask   = trivial $ cmdProperty "systemctl" ["mask", n]
-	                `describe` ("service " ++ n ++ " masked")
-	systemdUnmask = trivial $ cmdProperty "systemctl" ["unmask", n]
-	                `describe` ("service " ++ n ++ " unmasked")
+	systemdMask = cmdProperty "systemctl" ["mask", n]
+		`assume` NoChange
+		`describe` ("service " ++ n ++ " masked")
+	systemdUnmask = cmdProperty "systemctl" ["unmask", n]
+		`assume` NoChange
+		`describe` ("service " ++ n ++ " unmasked")
 
 -- | Ensures that a service is both enabled and started
 running :: ServiceName -> Property NoInfo
-running n = trivial $ started n `requires` enabled n
+running n = started n `requires` enabled n
 
 -- | Restarts a systemd service.
 restarted :: ServiceName -> Property NoInfo
-restarted n = trivial $ cmdProperty "systemctl" ["restart", n]
+restarted n = cmdProperty "systemctl" ["restart", n]
+	`assume` NoChange
 	`describe` ("service " ++ n ++ " restarted")
 
 -- | The systemd-networkd service.
@@ -123,7 +130,9 @@ persistentJournal :: Property NoInfo
 persistentJournal = check (not <$> doesDirectoryExist dir) $ 
 	combineProperties "persistent systemd journal"
 		[ cmdProperty "install" ["-d", "-g", "systemd-journal", dir]
+			`assume` MadeChange
 		, cmdProperty "setfacl" ["-R", "-nm", "g:adm:rx,d:g:adm:rx", dir]
+			`assume` MadeChange
 		, started "systemd-journal-flush"
 		]
 		`requires` Apt.installed ["acl"]
@@ -154,7 +163,8 @@ configured cfgfile option value = combineProperties desc
 
 -- | Causes systemd to reload its configuration files.
 daemonReloaded :: Property NoInfo
-daemonReloaded = trivial $ cmdProperty "systemctl" ["daemon-reload"]
+daemonReloaded = cmdProperty "systemctl" ["daemon-reload"]
+	`assume` NoChange
 
 -- | Configures journald, restarting it so the changes take effect.
 journaldConfigured :: Option -> String -> Property NoInfo

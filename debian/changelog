@@ -1,11 +1,26 @@
-propellor (2.14.1) UNRELEASED; urgency=medium
+propellor (2.15.0) UNRELEASED; urgency=medium
 
+  * Added UncheckedProperty type, along with unchecked to indicate a
+    Property needs its result checked, and checkResult and changesFile
+    to check for changes.
+  * Properties that run an arbitrary command, such as cmdProperty
+    and scriptProperty are converted to use UncheckedProperty, since
+    they cannot tell on their own if the command truely made a change or not.
+    (API Change)
+    Transition guide:
+    - When GHC complains about an UncheckedProperty, add:
+    	`assume` MadeChange
+    - Since these properties used to always return MadeChange, that
+      change is always safe to make.
+    - Or, if you know that the command should modifiy a file, use:
+    	`changesFile` filename
+  * A few properties have had their Result improved, for example
+    Apt.buldDep and Apt.autoRemove now check if a change was made or not.
   * User.hasDesktopGroups changed to avoid trying to add the user to
     groups that don't exist.
   * Added Postfix.saslPasswdSet.
   * Added Propellor.Property.Locale.
     Thanks, Sean Whitton.
-  * Added changesFile property combinator.
   * Added Propellor.Property.Fail2Ban.
 
  -- Joey Hess <id@joeyh.name>  Tue, 24 Nov 2015 17:06:12 -0400

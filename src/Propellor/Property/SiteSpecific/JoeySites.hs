@@ -39,6 +39,7 @@ scrollBox = propertyList "scroll server" $ props
 		, "cabal configure"
 		, "make"
 		]
+		`assume` MadeChange
 	& s `File.hasContent`
 		[ "#!/bin/sh"
 		, "set -e"
@@ -165,7 +166,9 @@ oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 			, "dpkg -i ../" ++ pkg ++ "_*.deb || true"
 			, "apt-get -fy install" -- dependencies
 			, "rm -rf /root/tmp/oldusenet"
-			] `describe` "olduse.net built"
+			]
+			`assume` MadeChange
+			`describe` "olduse.net built"
 
 kgbServer :: Property HasInfo
 kgbServer = propertyList desc $ props
@@ -197,7 +200,8 @@ mumbleServer hosts = combineProperties hn $ props
  			(Context hn)
 			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSXXSM3mM8SNu+qel9R/LkDIkjpV3bfpUtRtYv2PTNqicHP+DdoThrr0ColFCtLH+k2vQJvR2n8uMzHn53Dq2IO3TtD27+7rJSsJwAZ8oftNzuTir8IjAwX5g6JYJs+L0Ny4RB0ausd+An0k/CPMRl79zKxpZd2MBMDNXt8hyqu0vS0v1ohq5VBEVhBBvRvmNQvWOCj7PdrKQXpUBHruZOeVVEdUUXZkVc1H0t7LVfJnE+nGKyWbw2jM+7r3Rn5Semc4R1DxsfaF8lKkZyE88/5uZQ/ddomv8ptz6YZ5b+Bg6wfooWPC3RWAALjxnHaC2yN1VONAvHmT0uNn1o6v0b")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
-	& trivial (cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"])
+	& cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
+		`assume` NoChange
   where
 	hn = "mumble.debian.net"
 	sshkey = "/root/.ssh/mumble.debian.net.key"
@@ -274,6 +278,7 @@ annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-ann
 	dir = "/srv/web/" ++ hn
 	postupdatehook = dir </> ".git/hooks/post-update"
 	setup = userScriptProperty (User "joey") setupscript
+		`assume` MadeChange
 	setupscript = 
 		[ "cd " ++ shellEscape dir
 		, "git annex reinit " ++ shellEscape uuid
@@ -393,6 +398,7 @@ twitRss = combineProperties "twitter rss" $ props
 		[ "cd " ++ dir
 		, "ghc --make twitRss" 
 		]
+		`assume` NoChange
 		`requires` Apt.installed
 			[ "libghc-xml-dev"
 			, "libghc-feed-dev"
@@ -413,7 +419,8 @@ ircBouncer = propertyList "IRC bouncer" $ props
 	& File.ownerGroup conf (User "znc") (Group "znc")
 	& Cron.job "znconboot" (Cron.Times "@reboot") (User "znc") "~" "znc"
 	-- ensure running if it was not already
-	& trivial (userScriptProperty (User "znc") ["znc || true"])
+	& userScriptProperty (User "znc") ["znc || true"]
+		`assume` NoChange
 		`describe` "znc running"
   where
 	conf = "/home/znc/.znc/configs/znc.conf"

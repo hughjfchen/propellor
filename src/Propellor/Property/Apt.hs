@@ -108,7 +108,7 @@ setSourcesListD ls basename = f `File.hasContent` ls `onChange` update
   where
 	f = "/etc/apt/sources.list.d/" ++ basename ++ ".list"
 
-runApt :: [String] -> Property NoInfo
+runApt :: [String] -> UncheckedProperty NoInfo
 runApt ps = cmdPropertyEnv "apt-get" ps noninteractiveEnv
 
 noninteractiveEnv :: [(String, String)]
@@ -119,10 +119,12 @@ noninteractiveEnv =
 
 update :: Property NoInfo
 update = runApt ["update"]
+	`assume` MadeChange
 	`describe` "apt update"
 
 upgrade :: Property NoInfo
 upgrade = runApt ["-y", "dist-upgrade"]
+	`assume` MadeChange
 	`describe` "apt dist-upgrade"
 
 type Package = String
@@ -134,15 +136,17 @@ installed' :: [String] -> [Package] -> Property NoInfo
 installed' params ps = robustly $ check (isInstallable ps) go
 	`describe` (unwords $ "apt installed":ps)
   where
-	go = runApt $ params ++ ["install"] ++ ps
+	go = runApt (params ++ ["install"] ++ ps)
+		`assume` MadeChange
 
 installedBackport :: [Package] -> Property NoInfo
 installedBackport ps = trivial $ withOS desc $ \o -> case o of
 	Nothing -> error "cannot install backports; os not declared"
 	(Just (System (Debian suite) _)) -> case backportSuite suite of
 		Nothing -> notsupported o
-		Just bs -> ensureProperty $ runApt $
-			["install", "-t", bs, "-y"] ++ ps
+		Just bs -> ensureProperty $ runApt
+			(["install", "-t", bs, "-y"] ++ ps)
+			`assume` MadeChange
 	_ -> notsupported o
   where
 	desc = (unwords $ "apt installed backport":ps)
@@ -156,10 +160,11 @@ removed :: [Package] -> Property NoInfo
 removed ps = check (or <$> isInstalled' ps) go
 	`describe` (unwords $ "apt removed":ps)
   where
-	go = runApt $ ["-y", "remove"] ++ ps
+	go = runApt (["-y", "remove"] ++ ps) `assume` MadeChange
 
 buildDep :: [Package] -> Property NoInfo
-buildDep ps = robustly go
+buildDep ps = robustly $ go
+	`changesFile` dpkgStatus
 	`describe` (unwords $ "apt build-dep":ps)
   where
 	go = runApt $ ["-y", "build-dep"] ++ ps
@@ -168,10 +173,11 @@ buildDep ps = robustly go
 -- in the specifed directory, with a dummy package also
 -- installed so that autoRemove won't remove them.
 buildDepIn :: FilePath -> Property NoInfo
-buildDepIn dir = go `requires` installedMin ["devscripts", "equivs"]
+buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
+	`changesFile` dpkgStatus
+	`requires` installedMin ["devscripts", "equivs"]
   where
-	go = cmdPropertyEnv "sh" ["-c", "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"]
-			noninteractiveEnv
+	cmd = "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"
 
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
@@ -209,6 +215,7 @@ isInstalled' ps = (mapMaybe parse . lines) <$> policy
 
 autoRemove :: Property NoInfo
 autoRemove = runApt ["-y", "autoremove"]
+	`changesFile` dpkgStatus
 	`describe` "apt autoremove"
 
 -- | Enables unattended upgrades. Revert to disable.
@@ -259,6 +266,7 @@ reConfigure package vals = reconfigure `requires` setselections
 							hPutStrLn h $ unwords [package, tmpl, tmpltype, value]
 						hClose h
 	reconfigure = cmdPropertyEnv "dpkg-reconfigure" ["-fnone", package] noninteractiveEnv
+		`assume` MadeChange
 
 -- | Ensures that a service is installed and running.
 --
@@ -295,13 +303,18 @@ aptKeyFile k = "/etc/apt/trusted.gpg.d" </> keyname k ++ ".gpg"
 -- | Cleans apt's cache of downloaded packages to avoid using up disk
 -- space.
 cacheCleaned :: Property NoInfo
-cacheCleaned = trivial $ cmdProperty "apt-get" ["clean"]
+cacheCleaned = cmdProperty "apt-get" ["clean"]
+	`assume` MadeChange
 	`describe` "apt cache cleaned"
 
 -- | Add a foreign architecture to dpkg and apt.
 hasForeignArch :: String -> Property NoInfo
-hasForeignArch arch = check notAdded add
+hasForeignArch arch = check notAdded (add `before` update)
 	`describe` ("dpkg has foreign architecture " ++ arch)
   where
 	notAdded = (not . elem arch . lines) <$> readProcess "dpkg" ["--print-foreign-architectures"]
-	add = cmdProperty "dpkg" ["--add-architecture", arch] `before` update
+	add = cmdProperty "dpkg" ["--add-architecture", arch]
+		`assume` MadeChange
+
+dpkgStatus :: FilePath
+dpkgStatus = "/var/lib/dpkg/status"

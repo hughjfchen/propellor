@@ -21,7 +21,7 @@ reloaded :: ServiceName -> Property NoInfo
 reloaded = signaled "reload" "reloaded"
 
 signaled :: String -> Desc -> ServiceName -> Property NoInfo
-signaled cmd desc svc = property (desc ++ " " ++ svc) $ do
-	void $ ensureProperty $
-		scriptProperty ["service " ++ shellEscape svc ++ " " ++ cmd ++ " >/dev/null 2>&1 || true"]
-	return NoChange
+signaled cmd desc svc = p `describe` (desc ++ " " ++ svc)
+  where
+	p = scriptProperty ["service " ++ shellEscape svc ++ " " ++ cmd ++ " >/dev/null 2>&1 || true"]
+		`assume` NoChange

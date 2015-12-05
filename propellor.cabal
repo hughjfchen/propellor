@@ -1,5 +1,5 @@
 Name: propellor
-Version: 2.14.0
+Version: 2.15.0
 Cabal-Version: >= 1.8
 License: BSD3
 Maintainer: Joey Hess <id@joeyh.name>
@@ -143,6 +143,7 @@ Library
     Propellor.Types.OS
     Propellor.Types.PrivData
     Propellor.Types.Result
+    Propellor.Types.ResultCheck
     Propellor.Types.CmdLine
   Other-Modules:
     Propellor.Bootstrap

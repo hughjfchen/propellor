@@ -45,10 +45,11 @@ setTo' extractdomain hn = combineProperties desc go
 		[ Just $ "/etc/hostname" `File.hasContent` [basehost]
 		, if null domain
 			then Nothing 
-			else Just $ trivial $ hostsline "127.0.1.1" [hn, basehost]
-		, Just $ trivial $ hostsline "127.0.0.1" ["localhost"]
-		, Just $ trivial $ check (not <$> inChroot) $
+			else Just $ hostsline "127.0.1.1" [hn, basehost]
+		, Just $ hostsline "127.0.0.1" ["localhost"]
+		, Just $ check (not <$> inChroot) $
 			cmdProperty "hostname" [basehost]
+				`assume` NoChange
 		, Just $ "/etc/mailname" `File.hasContent`
 			[if null domain then hn else domain]
 		]

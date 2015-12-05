@@ -160,6 +160,7 @@ imageBuilt directory ctr = describe built msg
   where
 	msg = "docker image " ++ (imageIdentifier image) ++ " built from " ++ directory
 	built = Cmd.cmdProperty' dockercmd ["build", "--tag", imageIdentifier image, "./"] workDir
+		`assume` MadeChange
 	workDir p = p { cwd = Just directory }
 	image = getImageName ctr
 
@@ -169,6 +170,7 @@ imagePulled ctr = describe pulled msg
   where
 	msg = "docker image " ++ (imageIdentifier image) ++ " pulled"
 	pulled = Cmd.cmdProperty dockercmd ["pull", imageIdentifier image]
+		`assume` MadeChange
 	image = getImageName ctr
 
 propagateContainerInfo :: (IsProp (Property i)) => Container -> Property i -> Property HasInfo
@@ -224,8 +226,11 @@ garbageCollected = propertyList "docker garbage collected"
 -- the pam config, to work around <https://github.com/docker/docker/issues/5663>
 -- which affects docker 1.2.0.
 tweaked :: Property NoInfo
-tweaked = trivial $
-	cmdProperty "sh" ["-c", "sed -ri 's/^session\\s+required\\s+pam_loginuid.so$/session optional pam_loginuid.so/' /etc/pam.d/*"]
+tweaked = cmdProperty "sh"
+	[ "-c"
+	, "sed -ri 's/^session\\s+required\\s+pam_loginuid.so$/session optional pam_loginuid.so/' /etc/pam.d/*"
+	]
+	`assume` NoChange
 	`describe` "tweaked for docker"
 
 -- | Configures the kernel to respect docker memory limits. 
@@ -237,7 +242,7 @@ tweaked = trivial $
 memoryLimited :: Property NoInfo
 memoryLimited = "/etc/default/grub" `File.containsLine` cfg
 	`describe` "docker memory limited" 
-	`onChange` cmdProperty "update-grub" []
+	`onChange` (cmdProperty "update-grub" [] `assume` MadeChange)
   where
 	cmdline = "cgroup_enable=memory swapaccount=1"
 	cfg = "GRUB_CMDLINE_LINUX_DEFAULT=\""++cmdline++"\""

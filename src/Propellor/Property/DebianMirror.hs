@@ -126,8 +126,10 @@ mirror mirror' = propertyList
 	, User.accountFor (User "debmirror")
 	, File.dirExists dir
 	, File.ownerGroup dir (User "debmirror") (Group "debmirror")
-	, check (not . and <$> mapM suitemirrored suites) $ cmdProperty "debmirror" args
-		`describe` "debmirror setup"
+	, check (not . and <$> mapM suitemirrored suites) $ 
+		cmdProperty "debmirror" args
+			`assume` MadeChange
+			`describe` "debmirror setup"
 	, Cron.niceJob ("debmirror_" ++ dir) (_debianMirrorCronTimes mirror') (User "debmirror") "/" $
 		unwords ("/usr/bin/debmirror" : args)
 	]

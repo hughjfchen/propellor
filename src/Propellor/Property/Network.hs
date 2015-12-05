@@ -7,6 +7,7 @@ type Interface = String
 
 ifUp :: Interface -> Property NoInfo
 ifUp iface = cmdProperty "ifup" [iface]
+	`assume` MadeChange
 
 -- | Resets /etc/network/interfaces to a clean and empty state,
 -- containing just the standard loopback interface, and with

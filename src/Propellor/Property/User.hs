@@ -8,20 +8,28 @@ import qualified Propellor.Property.File as File
 data Eep = YesReallyDeleteHome
 
 accountFor :: User -> Property NoInfo
-accountFor user@(User u) = check (isNothing <$> catchMaybeIO (homedir user)) $ cmdProperty "adduser"
-	[ "--disabled-password"
-	, "--gecos", ""
-	, u
-	]
-	`describe` ("account for " ++ u)
+accountFor user@(User u) = check nohomedir $
+	cmdProperty "adduser"
+		[ "--disabled-password"
+		, "--gecos", ""
+		, u
+		]
+		`assume` MadeChange
+		`describe` ("account for " ++ u)
+  where
+	nohomedir = isNothing <$> catchMaybeIO (homedir user)
 
 -- | Removes user home directory!! Use with caution.
 nuked :: User -> Eep -> Property NoInfo
-nuked user@(User u) _ = check (isJust <$> catchMaybeIO (homedir user)) $ cmdProperty "userdel"
-	[ "-r"
-	, u
-	]
-	`describe` ("nuked user " ++ u)
+nuked user@(User u) _ = check hashomedir $
+	cmdProperty "userdel"
+		[ "-r"
+		, u
+		]
+		`assume` MadeChange
+		`describe` ("nuked user " ++ u)
+  where
+	hashomedir = isJust <$> catchMaybeIO (homedir user)
 
 -- | Only ensures that the user has some password set. It may or may
 -- not be a password from the PrivData.
@@ -75,11 +83,13 @@ chpasswd (User user) v ps = makeChange $ withHandle StdinHandle createProcessSuc
 		hClose h
 
 lockedPassword :: User -> Property NoInfo
-lockedPassword user@(User u) = check (not <$> isLockedPassword user) $ cmdProperty "passwd"
-	[ "--lock"
-	, u
-	]
-	`describe` ("locked " ++ u ++ " password")
+lockedPassword user@(User u) = check (not <$> isLockedPassword user) $ 
+	cmdProperty "passwd"
+		[ "--lock"
+		, u
+		]
+		`assume` MadeChange
+		`describe` ("locked " ++ u ++ " password")
 
 data PasswordStatus = NoPassword | LockedPassword | HasPassword
 	deriving (Eq)
@@ -99,11 +109,13 @@ homedir :: User -> IO FilePath
 homedir (User user) = homeDirectory <$> getUserEntryForName user
 
 hasGroup :: User -> Group -> Property NoInfo
-hasGroup (User user) (Group group') = check test $ cmdProperty "adduser"
-	[ user
-	, group'
-	]
-	`describe` unwords ["user", user, "in group", group']
+hasGroup (User user) (Group group') = check test $
+	cmdProperty "adduser"
+		[ user
+		, group'
+		]
+		`assume` MadeChange
+		`describe` unwords ["user", user, "in group", group']
   where
 	test = not . elem group' . words <$> readProcess "groups" [user]
 
@@ -140,9 +152,11 @@ hasDesktopGroups user@(User u) = property desc $ do
 shadowConfig :: Bool -> Property NoInfo
 shadowConfig True = check (not <$> shadowExists) $
 	cmdProperty "shadowconfig" ["on"]
+		`assume` MadeChange
 		`describe` "shadow passwords enabled"
 shadowConfig False = check shadowExists $
 	cmdProperty "shadowconfig" ["off"]
+		`assume` MadeChange
 		`describe` "shadow passwords disabled"
 
 shadowExists :: IO Bool
@@ -156,6 +170,7 @@ hasLoginShell user loginshell = shellSetTo user loginshell `requires` shellEnabl
 shellSetTo :: User -> FilePath -> Property NoInfo
 shellSetTo (User u) loginshell = check needchangeshell $
 	cmdProperty "chsh" ["--shell", loginshell, u]
+		`assume` MadeChange
 		`describe` (u ++ " has login shell " ++ loginshell)
   where
 	needchangeshell = do
