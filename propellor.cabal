@@ -143,6 +143,7 @@ Library
     Propellor.Types.OS
     Propellor.Types.PrivData
     Propellor.Types.Result
+    Propellor.Types.ResultCheck
     Propellor.Types.CmdLine
   Other-Modules:
     Propellor.Bootstrap

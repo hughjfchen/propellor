@@ -12,7 +12,6 @@ module Propellor.Property (
 	, check
 	, fallback
 	, trivial
-	, changesFile
 	, revert
 	-- * Property descriptions
 	, describe
@@ -26,6 +25,12 @@ module Propellor.Property (
 	, noChange
 	, doNothing
 	, endAction
+	-- * Property result checking
+	, UncheckedProperty
+	, unchecked
+	, changesFile
+	, checkResult
+	, Checkable
 ) where
 
 import System.Directory
@@ -37,6 +42,7 @@ import "mtl" Control.Monad.RWS.Strict
 import System.Posix.Files
 
 import Propellor.Types
+import Propellor.Types.ResultCheck
 import Propellor.Info
 import Propellor.Exception
 import Utility.Exception
@@ -193,17 +199,13 @@ trivial p = adjustPropertySatisfy p $ \satisfy -> do
 
 -- | Indicates that a Property may change a particular file. When the file
 -- is modified, the property will return MadeChange instead of NoChange.
-changesFile :: Property i -> FilePath -> Property i
-changesFile p f = adjustPropertySatisfy p $ \satisfy -> do
-	s <- getstat
-	r <- satisfy
-	if r == NoChange
-		then do
-			s' <- getstat
-			return (if samestat s s' then NoChange else MadeChange)
-		else return r
+changesFile :: Checkable p i => p i -> FilePath -> Property i
+changesFile p f = checkResult getstat comparestat p
   where
 	getstat = liftIO $ catchMaybeIO $ getSymbolicLinkStatus f
+	comparestat oldstat = do
+		newstat <- getstat
+		return $ if samestat oldstat newstat then NoChange else MadeChange
 	samestat Nothing Nothing = True
 	samestat (Just a) (Just b) = and
 		-- everything except for atime

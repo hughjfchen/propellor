@@ -5,8 +5,10 @@ propellor (2.14.1) UNRELEASED; urgency=medium
   * Added Postfix.saslPasswdSet.
   * Added Propellor.Property.Locale.
     Thanks, Sean Whitton.
-  * Added changesFile property combinator.
   * Added Propellor.Property.Fail2Ban.
+  * Added UncheckedProperty type, along with unchecked to indicate a
+    Property needs its result checked, and checkResult and changesFile
+    to check for changes.
 
  -- Joey Hess <id@joeyh.name>  Tue, 24 Nov 2015 17:06:12 -0400
 

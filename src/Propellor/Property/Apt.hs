@@ -159,7 +159,8 @@ removed ps = check (or <$> isInstalled' ps) go
 	go = runApt $ ["-y", "remove"] ++ ps
 
 buildDep :: [Package] -> Property NoInfo
-buildDep ps = robustly go
+buildDep ps = trivial (robustly go)
+	`changesFile` "/var/lib/dpkg/status"
 	`describe` (unwords $ "apt build-dep":ps)
   where
 	go = runApt $ ["-y", "build-dep"] ++ ps
