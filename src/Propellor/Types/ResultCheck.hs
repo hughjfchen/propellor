@@ -15,9 +15,10 @@ import Data.Monoid
 import Control.Monad.IO.Class (liftIO)
 
 -- | This is a `Property` but its `Result` is not accurate; in particular
--- it may return `NoChange` despite having made a change. However, when it
--- returns `MadeChange`, it really did made a change, and `FailedChange`
--- is still an error.
+-- it may return `NoChange` despite having made a change. 
+--
+-- However, when it returns `MadeChange`, it really did make a change,
+-- and `FailedChange` is still an error.
 data UncheckedProperty i = UncheckedProperty (Property i)
 
 -- | Use to indicate that a Property is unchecked.
