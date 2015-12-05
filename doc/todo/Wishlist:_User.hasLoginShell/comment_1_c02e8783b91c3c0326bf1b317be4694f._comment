@@ -25,17 +25,16 @@ run:
 
 	shellSetTo :: UserName -> FilePath -> Property
 	shellSetTo user shell = cmdProperty "chsh" ["--shell", shell, user]
-
+:
 The only remaining problem with this is that shellSetTo runs chsh every
 time, and propellor will always display that it's made a change each time
 it runs, even when it didn't really do much. Now, there's an easy way to
-avoid that problem, we could just tell propellor that it's a trivial
-property, and then it will run chsh every time and not think it made any
-change:
+avoid that problem, we could just tell propellor to assume it's not made
+any change:
 	
 	shellSetTo :: UserName -> FilePath -> Property
-	shellSetTo user shell = trivial $
-		cmdProperty "chsh" ["--shell", shell, user]
+	shellSetTo user shell = cmdProperty "chsh" ["--shell", shell, user]
+		`assume` NoChange
 
 But, it's not much harder to do this right. Let's make the property
 check if the user's shell is already set to the desired value and avoid

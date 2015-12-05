@@ -24,7 +24,7 @@ confEnabled conf cf = enable <!> disable
 		dir = confValPath conf
 		confValRelativePath conf' = File.LinkTarget $
 			"../conf.avail" </> conf' <.> "cfg.lua"
-	disable = trivial $ File.notPresent (confValPath conf)
+	disable = File.notPresent (confValPath conf)
 		`describe` ("prosody conf disabled " ++ conf)
 		`requires` installed
 		`onChange` reloaded

@@ -17,7 +17,7 @@ siteEnabled hn cf = enable <!> disable
 		`requires` siteAvailable hn cf
 		`requires` installed
 		`onChange` reloaded
-	disable = trivial $ File.notPresent (siteVal hn)
+	disable = File.notPresent (siteVal hn)
 		`describe` ("nginx site disable" ++ hn)
 		`requires` installed
 		`onChange` reloaded

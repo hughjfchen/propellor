@@ -11,7 +11,6 @@ module Propellor.Property (
 	, flagFile'
 	, check
 	, fallback
-	, trivial
 	, revert
 	-- * Property descriptions
 	, describe
@@ -184,19 +183,6 @@ fallback = combineWith combiner revertcombiner
 			then a2
 			else return r
 	revertcombiner = (<>)
-
--- | Marks a Property as trivial. It can only return FailedChange or
--- NoChange. 
---
--- Useful when it's just as expensive to check if a change needs
--- to be made as it is to just idempotently assure the property is
--- satisfied. For example, chmodding a file.
-trivial :: Property i -> Property i
-trivial p = adjustPropertySatisfy p $ \satisfy -> do
-	r <- satisfy
-	if r == MadeChange
-		then return NoChange
-		else return r
 
 -- | Indicates that a Property may change a particular file. When the file
 -- is modified, the property will return MadeChange instead of NoChange.
