@@ -10,8 +10,8 @@ propellor (2.15.0) UNRELEASED; urgency=medium
     Transition guide:
     - When GHC complains about an UncheckedProperty, add:
     	`assume` MadeChange
-    - Since these properties used to always return MadeChange, that
-      change is always safe to make.
+      (Since these properties used to always return MadeChange, that
+      change is always safe to make.)
     - Or, if you know that the command should modifiy a file, use:
     	`changesFile` filename
   * The `trivial` combinator has been removed. (API change)
