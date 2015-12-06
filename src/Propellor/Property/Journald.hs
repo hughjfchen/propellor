@@ -17,7 +17,8 @@ type DataSize = String
 configuredSize :: Systemd.Option -> DataSize -> Property NoInfo
 configuredSize option s = case readSize dataUnits s of
 	Just sz -> configured option (systemdSizeUnits sz)
-	Nothing -> property ("unable to parse " ++ option ++ " data size " ++ s) noChange
+	Nothing -> property ("unable to parse " ++ option ++ " data size " ++ s) $
+		return FailedChange
 
 systemMaxUse :: DataSize -> Property NoInfo
 systemMaxUse = configuredSize "SystemMaxUse"
