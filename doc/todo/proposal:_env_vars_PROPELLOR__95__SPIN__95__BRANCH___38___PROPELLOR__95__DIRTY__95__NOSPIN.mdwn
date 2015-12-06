@@ -4,7 +4,7 @@ I'd like to patch the `/usr/bin/propellor` wrapper to check for two environment 
 
 - if the branch currently checked out in the `~/.propellor` repository does not match `PROPELLOR_SPIN_BRANCH`, Propellor would refuse to spin
 
-- if the `PROPELLOR_DIRTY_NOSPIN` variable is set, Propellor will refuse to spin if the `~/.propellor` repository contains uncommitted changes
+- if the `PROPELLOR_DIRTY_NOSPIN` variable is set, Propellor would refuse to spin if the `~/.propellor` repository contains uncommitted changes
 
 # Rationale
 
