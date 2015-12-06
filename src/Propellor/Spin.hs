@@ -38,9 +38,9 @@ commitSpin = do
 		Nothing -> return () -- just a noop
 		Just b -> do
 			currentBranch <- getCurrentBranch
-			when (b /= currentBranch) $ error
-				("spin aborted: check out branch "
- 				++ b ++ " first")
+			when (b /= currentBranch) $
+				error ("spin aborted: check out "
+ 					++ b ++ " branch first")
 
 	-- safety check #2: check we can commit with a dirty tree
 	noDirtySpin <- getGitConfigBool "propellor.forbid-dirty-spin"
