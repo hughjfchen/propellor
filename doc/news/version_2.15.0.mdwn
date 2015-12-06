@@ -1,0 +1,29 @@
+propellor 2.15.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Added UncheckedProperty type, along with unchecked to indicate a
+     Property needs its result checked, and checkResult and changesFile
+     to check for changes.
+   * Properties that run an arbitrary command, such as cmdProperty
+     and scriptProperty are converted to use UncheckedProperty, since
+     they cannot tell on their own if the command truely made a change or not.
+     (API Change)
+     Transition guide:
+     - When GHC complains about an UncheckedProperty, add:
+     	`assume` MadeChange
+       (Since these properties used to always return MadeChange, that
+       change is always safe to make.)
+     - Or, if you know that the command should modifiy a file, use:
+     	`changesFile` filename
+   * The `trivial` combinator has been removed. (API change)
+     Instead, use:
+     	`assume` NoChange
+     Or, better, use changesFile or checkResult to accurately report
+     when a property makes a change.
+   * A few properties have had their Result improved, for example
+     Apt.buldDep and Apt.autoRemove now check if a change was made or not.
+   * User.hasDesktopGroups changed to avoid trying to add the user to
+     groups that don't exist.
+   * Added Postfix.saslPasswdSet.
+   * Added Propellor.Property.Locale.
+     Thanks, Sean Whitton.
+   * Added Propellor.Property.Fail2Ban."""]]
