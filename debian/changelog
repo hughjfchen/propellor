@@ -1,4 +1,4 @@
-propellor (2.15.0) UNRELEASED; urgency=medium
+propellor (2.15.0) unstable; urgency=medium
 
   * Added UncheckedProperty type, along with unchecked to indicate a
     Property needs its result checked, and checkResult and changesFile
@@ -28,7 +28,7 @@ propellor (2.15.0) UNRELEASED; urgency=medium
     Thanks, Sean Whitton.
   * Added Propellor.Property.Fail2Ban.
 
- -- Joey Hess <id@joeyh.name>  Tue, 24 Nov 2015 17:06:12 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 06 Dec 2015 15:33:51 -0400
 
 propellor (2.14.0) unstable; urgency=medium
 
