@@ -289,12 +289,10 @@ grubBooted bios = (Grub.installed' bios, boots)
 		, inchroot "update-initramfs" ["-u"]
 			`assume` MadeChange
 		-- work around for http://bugs.debian.org/802717
-		 , check haveosprober $ inchroot "chmod" ["-x", osprober]
-			`assume` MadeChange
+		, check haveosprober $ inchroot "chmod" ["-x", osprober]
 		, inchroot "update-grub" []
 			`assume` MadeChange
 		, check haveosprober $ inchroot "chmod" ["+x", osprober]
-			`assume` MadeChange
 		, inchroot "grub-install" [wholediskloopdev]
 			`assume` MadeChange
 		-- sync all buffered changes out to the disk image

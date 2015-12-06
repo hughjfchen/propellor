@@ -20,11 +20,10 @@ data BIOS = PC | EFI64 | EFI32 | Coreboot | Xen
 --
 -- This includes running update-grub.
 installed :: BIOS -> Property NoInfo
-installed bios = installed' bios `before` mkConfig
+installed bios = installed' bios `onChange` mkConfig
 
 -- Run update-grub, to generate the grub boot menu. It will be
--- automatically updated when kernel packages are
---   -- installed.
+-- automatically updated when kernel packages are installed.
 mkConfig :: Property NoInfo
 mkConfig = cmdProperty "update-grub" []
 	`assume` MadeChange

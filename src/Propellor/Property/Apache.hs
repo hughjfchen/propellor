@@ -37,9 +37,8 @@ siteEnabled hn cf = enable <!> disable
 		[ siteAvailable hn cf
 			`requires` installed
 			`onChange` reloaded
-		, check (not <$> isenabled) $
-			cmdProperty "a2ensite" ["--quiet", hn]
-				`assume` MadeChange
+		, check (not <$> isenabled) 
+			(cmdProperty "a2ensite" ["--quiet", hn])
 				`requires` installed
 				`onChange` reloaded
 		]
@@ -63,15 +62,13 @@ siteAvailable hn cf = combineProperties ("apache site available " ++ hn) $
 modEnabled :: String -> RevertableProperty NoInfo
 modEnabled modname = enable <!> disable
   where
-	enable = check (not <$> isenabled) $
-		cmdProperty "a2enmod" ["--quiet", modname]
-			`assume` MadeChange
+	enable = check (not <$> isenabled)
+		(cmdProperty "a2enmod" ["--quiet", modname])
 			`describe` ("apache module enabled " ++ modname)
 			`requires` installed
 			`onChange` reloaded
-	disable = check isenabled $ 
-		cmdProperty "a2dismod" ["--quiet", modname]
-			`assume` MadeChange
+	disable = check isenabled
+		(cmdProperty "a2dismod" ["--quiet", modname])
 			`describe` ("apache module disabled " ++ modname)
 			`requires` installed
 			`onChange` reloaded

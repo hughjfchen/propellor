@@ -28,6 +28,8 @@ module Propellor.Property (
 	, UncheckedProperty
 	, unchecked
 	, changesFile
+	, changesFileContent
+	, isNewerThan
 	, checkResult
 	, Checkable
 	, assume
@@ -36,10 +38,12 @@ module Propellor.Property (
 import System.Directory
 import System.FilePath
 import Control.Monad
+import Control.Applicative
 import Data.Monoid
 import Control.Monad.IfElse
 import "mtl" Control.Monad.RWS.Strict
 import System.Posix.Files
+import qualified Data.Hash.MD5 as MD5
 
 import Propellor.Types
 import Propellor.Types.ResultCheck
@@ -47,6 +51,7 @@ import Propellor.Info
 import Propellor.Exception
 import Utility.Exception
 import Utility.Monad
+import Utility.Misc
 
 -- | Constructs a Property, from a description and an action to run to
 -- ensure the Property is met.
@@ -164,14 +169,6 @@ infixl 1 ==>
 ensureProperty :: Property NoInfo -> Propellor Result
 ensureProperty = catchPropellor . propertySatisfy
 
--- | Makes a Property only need to do anything when a test succeeds.
-check :: (LiftPropellor m) => m Bool -> Property i -> Property i
-check c p = adjustPropertySatisfy p $ \satisfy -> 
-	ifM (liftPropellor c)
-		( satisfy
-		, return NoChange
-		)
-
 -- | Tries the first property, but if it fails to work, instead uses
 -- the second.
 fallback :: (Combines p1 p2) => p1 -> p2 -> CombinedType p1 p2
@@ -185,11 +182,12 @@ fallback = combineWith combiner revertcombiner
 	revertcombiner = (<>)
 
 -- | Indicates that a Property may change a particular file. When the file
--- is modified, the property will return MadeChange instead of NoChange.
+-- is modified in any way (including changing its permissions or mtime),
+-- the property will return MadeChange instead of NoChange.
 changesFile :: Checkable p i => p i -> FilePath -> Property i
 changesFile p f = checkResult getstat comparestat p
   where
-	getstat = liftIO $ catchMaybeIO $ getSymbolicLinkStatus f
+	getstat = catchMaybeIO $ getSymbolicLinkStatus f
 	comparestat oldstat = do
 		newstat <- getstat
 		return $ if samestat oldstat newstat then NoChange else MadeChange
@@ -213,6 +211,41 @@ changesFile p f = checkResult getstat comparestat p
 		, isSocket a == isSocket b
 		]
 	samestat _ _ = False
+
+-- | Like `changesFile`, but compares the content of the file.
+-- Changes to mtime etc that do not change file content are treated as
+-- NoChange.
+changesFileContent :: Checkable p i => p i -> FilePath -> Property i
+changesFileContent p f = checkResult getmd5 comparemd5 p
+  where
+	getmd5 = catchMaybeIO $ MD5.md5 . MD5.Str <$> readFileStrictAnyEncoding f
+	comparemd5 oldmd5 = do
+		newmd5 <- getmd5
+		return $ if oldmd5 == newmd5 then NoChange else MadeChange
+
+-- | Determines if the first file is newer than the second file.
+--
+-- This can be used with `check` to only run a command when a file
+-- has changed.
+--
+-- > check ("/etc/aliases" `isNewerThan` "/etc/aliases.db")
+-- > 	(cmdProperty "newaliases" [] `assume` MadeChange) -- updates aliases.db
+--
+-- Or it can be used with `checkResult` to test if a command made a change.
+--
+-- > checkResult (return ())
+-- > 	(\_ -> "/etc/aliases.db" `isNewerThan` "/etc/aliases")
+-- > 	(cmdProperty "newaliases" [])
+--
+-- (If one of the files does not exist, the file that does exist is
+-- considered to be the newer of the two.)
+isNewerThan :: FilePath -> FilePath -> IO Bool
+isNewerThan x y = do
+	mx <- mtime x
+	my <- mtime y
+	return (mx > my)
+  where
+	mtime f = catchMaybeIO $ modificationTimeHiRes <$> getFileStatus f
 
 -- | Makes a property that is satisfied differently depending on the host's
 -- operating system. 

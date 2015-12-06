@@ -137,7 +137,6 @@ installed' params ps = robustly $ check (isInstallable ps) go
 	`describe` (unwords $ "apt installed":ps)
   where
 	go = runApt (params ++ ["install"] ++ ps)
-		`assume` MadeChange
 
 installedBackport :: [Package] -> Property NoInfo
 installedBackport ps = withOS desc $ \o -> case o of
@@ -157,10 +156,8 @@ installedMin :: [Package] -> Property NoInfo
 installedMin = installed' ["--no-install-recommends", "-y"]
 
 removed :: [Package] -> Property NoInfo
-removed ps = check (or <$> isInstalled' ps) go
+removed ps = check (or <$> isInstalled' ps) (runApt (["-y", "remove"] ++ ps))
 	`describe` (unwords $ "apt removed":ps)
-  where
-	go = runApt (["-y", "remove"] ++ ps) `assume` MadeChange
 
 buildDep :: [Package] -> Property NoInfo
 buildDep ps = robustly $ go
@@ -304,7 +301,7 @@ aptKeyFile k = "/etc/apt/trusted.gpg.d" </> keyname k ++ ".gpg"
 -- space.
 cacheCleaned :: Property NoInfo
 cacheCleaned = cmdProperty "apt-get" ["clean"]
-	`assume` MadeChange
+	`assume` NoChange
 	`describe` "apt cache cleaned"
 
 -- | Add a foreign architecture to dpkg and apt.

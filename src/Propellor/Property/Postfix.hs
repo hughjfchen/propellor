@@ -60,8 +60,8 @@ mappedFile f setup = setup f
 -- | Run newaliases command, which should be done after changing
 -- @/etc/aliases@.
 newaliases :: Property NoInfo
-newaliases = cmdProperty "newaliases" []
-	`assume` MadeChange
+newaliases = check ("/etc/aliases" `isNewerThan` "/etc/aliases.db")
+	(cmdProperty "newaliases" [])
 
 -- | The main config file for postfix.
 mainCfFile :: FilePath
@@ -75,7 +75,6 @@ mainCf (name, value) = check notset set
 	setting = name ++ "=" ++ value
 	notset = (/= Just value) <$> getMainCf name
 	set = cmdProperty "postconf" ["-e", setting]
-		`assume` MadeChange
 
 -- | Gets a main.cf setting.
 getMainCf :: String -> IO (Maybe String)
@@ -161,7 +160,6 @@ saslAuthdInstalled = setupdaemon
 	dirperm = check (not <$> doesDirectoryExist dir) $ 
 		cmdProperty "dpkg-statoverride"
 			[ "--add", "root", "sasl", "710", dir ]
-			`assume` MadeChange
 	postfixgroup = (User "postfix") `User.hasGroup` (Group "sasl")
 		`onChange` restarted
 	dir = "/var/spool/postfix/var/run/saslauthd"
@@ -170,15 +168,17 @@ saslAuthdInstalled = setupdaemon
 --
 -- The password is taken from the privdata.
 saslPasswdSet :: Domain -> User -> Property HasInfo
-saslPasswdSet domain (User user) = withPrivData src ctx $ \getpw -> trivial $
-	property ("sasl password for " ++ uatd) $ getpw $ \pw -> makeChange $
-		withHandle StdinHandle createProcessSuccess p $ \h -> do
-			hPutStrLn h (privDataVal pw)
-			hClose h
+saslPasswdSet domain (User user) = go `changesFileContent` "/etc/sasldb2"
   where
+	go = withPrivData src ctx $ \getpw ->
+		property desc $ getpw $ \pw -> liftIO $
+			withHandle StdinHandle createProcessSuccess p $ \h -> do
+				hPutStrLn h (privDataVal pw)
+				hClose h
+				return NoChange
+	desc = "sasl password for " ++ uatd
 	uatd = user ++ "@" ++ domain
 	ps = ["-p", "-c", "-u", domain, user]
 	p = proc "saslpasswd2" ps
 	ctx = Context "sasl"
 	src = PrivDataSource (Password uatd) "enter password"
-	trivial = flip assume NoChange
