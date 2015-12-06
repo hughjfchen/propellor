@@ -158,7 +158,7 @@ configured cfgfile option value = combineProperties desc
 	line = setting ++ value
 	desc = cfgfile ++ " " ++ line
 	removeother l
-		| setting `isPrefixOf` l = Nothing
+		| setting `isPrefixOf` l && l /= line = Nothing
 		| otherwise = Just l
 
 -- | Causes systemd to reload its configuration files.
