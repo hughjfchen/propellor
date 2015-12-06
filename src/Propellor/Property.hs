@@ -169,14 +169,6 @@ infixl 1 ==>
 ensureProperty :: Property NoInfo -> Propellor Result
 ensureProperty = catchPropellor . propertySatisfy
 
--- | Makes a Property only need to do anything when a test succeeds.
-check :: (LiftPropellor m) => m Bool -> Property i -> Property i
-check c p = adjustPropertySatisfy p $ \satisfy -> 
-	ifM (liftPropellor c)
-		( satisfy
-		, return NoChange
-		)
-
 -- | Tries the first property, but if it fails to work, instead uses
 -- the second.
 fallback :: (Combines p1 p2) => p1 -> p2 -> CombinedType p1 p2

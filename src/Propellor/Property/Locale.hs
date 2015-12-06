@@ -24,15 +24,11 @@ type LocaleVariable = String
 selectedFor :: Locale -> [LocaleVariable] -> RevertableProperty NoInfo
 locale `selectedFor` vars = select <!> deselect
   where
-	select = check (not <$> isselected) select'
+	select = check (not <$> isselected) (cmdProperty "update-locale" selectArgs)
 		`requires` available locale
 		`describe` (locale ++ " locale selected")
-	select' = cmdProperty "update-locale" selectArgs
-		`assume` MadeChange
-	deselect = check isselected deselect'
+	deselect = check isselected (cmdProperty "update-locale" vars)
 		`describe` (locale ++ " locale deselected")
-	deselect' = cmdProperty "update-locale" vars
-		`assume` MadeChange
 	selectArgs = zipWith (++) vars (repeat ('=':locale))
 	isselected = locale `isSelectedFor` vars
 

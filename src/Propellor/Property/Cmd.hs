@@ -6,11 +6,10 @@
 --
 -- The best approach is to `check` a property, so that the command is only
 -- run when it needs to be. With this method, you avoid running the
--- `cmdProperty` unnecessarily, and you know that whenever it runs, a
--- change was made.
+-- `cmdProperty` unnecessarily.
 --
 -- > check (not <$> userExists "bob")
--- > 	(cmdProperty "useradd" ["bob"] `assume` MadeChange)
+-- > 	(cmdProperty "useradd" ["bob"])
 --
 -- Sometimes it's just as expensive to check a property as it would be to
 -- run the command that ensures the property. So you can let the command
