@@ -60,8 +60,9 @@ mappedFile f setup = setup f
 -- | Run newaliases command, which should be done after changing
 -- @/etc/aliases@.
 newaliases :: Property NoInfo
-newaliases = cmdProperty "newaliases" []
-	`assume` MadeChange
+newaliases = check ("/etc/aliases" `isNewerThan` "/etc/aliases.db") $
+	cmdProperty "newaliases" []
+		`assume` MadeChange
 
 -- | The main config file for postfix.
 mainCfFile :: FilePath

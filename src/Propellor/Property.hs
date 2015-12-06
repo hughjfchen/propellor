@@ -29,6 +29,7 @@ module Propellor.Property (
 	, unchecked
 	, changesFile
 	, changesFileContent
+	, isNewerThan
 	, checkResult
 	, Checkable
 	, assume
@@ -229,6 +230,30 @@ changesFileContent p f = checkResult getmd5 comparemd5 p
 	comparemd5 oldmd5 = do
 		newmd5 <- getmd5
 		return $ if oldmd5 == newmd5 then NoChange else MadeChange
+
+-- | Determines if the first file is newer than the second file.
+--
+-- This can be used with `check` to only run a command when a file
+-- has changed.
+--
+-- > check ("/etc/aliases" `isNewerThan` "/etc/aliases.db")
+-- > 	(cmdProperty "newaliases" [] `assume` MadeChange) -- updates aliases.db
+--
+-- Or it can be used with `checkResult` to test if a command made a change.
+--
+-- > checkResult (return ())
+-- > 	(\_ -> "/etc/aliases.db" `isNewerThan` "/etc/aliases")
+-- > 	(cmdProperty "newaliases" [])
+--
+-- (If one of the files does not exist, the file that does exist is
+-- considered to be the newer of the two.)
+isNewerThan :: FilePath -> FilePath -> IO Bool
+isNewerThan x y = do
+	mx <- mtime x
+	my <- mtime y
+	return (mx > my)
+  where
+	mtime f = catchMaybeIO $ modificationTimeHiRes <$> getFileStatus f
 
 -- | Makes a property that is satisfied differently depending on the host's
 -- operating system. 
