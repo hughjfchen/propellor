@@ -304,7 +304,7 @@ aptKeyFile k = "/etc/apt/trusted.gpg.d" </> keyname k ++ ".gpg"
 -- space.
 cacheCleaned :: Property NoInfo
 cacheCleaned = cmdProperty "apt-get" ["clean"]
-	`assume` MadeChange
+	`assume` NoChange
 	`describe` "apt cache cleaned"
 
 -- | Add a foreign architecture to dpkg and apt.
