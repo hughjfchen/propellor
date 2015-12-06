@@ -51,16 +51,9 @@ getGitConfigBool key = do
 		_ -> False
 
 getRepoUrl :: IO (Maybe String)
-getRepoUrl = getM get urls
+getRepoUrl = getM getGitConfigValue urls
   where
 	urls = ["remote.deploy.url", "remote.origin.url"]
-	get u = do
-		v <- catchMaybeIO $ 
-			takeWhile (/= '\n') 
-				<$> readProcess "git" ["config", u]
-		return $ case v of
-			Just url | not (null url) -> Just url
-			_ -> Nothing
 
 hasOrigin :: IO Bool
 hasOrigin = catchDefaultIO False $ do
