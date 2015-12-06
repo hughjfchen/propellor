@@ -35,31 +35,33 @@ setTo :: HostName -> Property NoInfo
 setTo = setTo' extractDomain
 
 setTo' :: ExtractDomain -> HostName -> Property NoInfo
-setTo' extractdomain hn = combineProperties desc go
+setTo' extractdomain hn = combineProperties desc
+	[ "/etc/hostname" `File.hasContent` [basehost]
+	, hostslines $ catMaybes
+		[ if null domain
+			then Nothing 
+			else Just ("127.0.1.1", [hn, basehost])
+		, Just ("127.0.0.1", ["localhost"])
+		]
+	, check (not <$> inChroot) $
+		cmdProperty "hostname" [basehost]
+			`assume` NoChange
+	, "/etc/mailname" `File.hasContent`
+		[if null domain then hn else domain]
+	]
   where
 	desc = "hostname " ++ hn
 	basehost = takeWhile (/= '.') hn
 	domain = extractdomain hn
-
-	go = catMaybes
-		[ Just $ "/etc/hostname" `File.hasContent` [basehost]
-		, if null domain
-			then Nothing 
-			else Just $ hostsline "127.0.1.1" [hn, basehost]
-		, Just $ hostsline "127.0.0.1" ["localhost"]
-		, Just $ check (not <$> inChroot) $
-			cmdProperty "hostname" [basehost]
-				`assume` NoChange
-		, Just $ "/etc/mailname" `File.hasContent`
-			[if null domain then hn else domain]
-		]
 	
-	hostsline ip names = File.fileProperty desc
-		(addhostsline ip names)
-		"/etc/hosts"
-	addhostsline ip names ls =
-		(ip ++ "\t" ++ (unwords names)) : filter (not . hasip ip) ls
-	hasip ip l = headMaybe (words l) == Just ip
+	hostslines ipsnames = 
+		File.fileProperty desc (addhostslines ipsnames) "/etc/hosts"
+	addhostslines :: [(String, [String])] -> [String] -> [String]
+	addhostslines ipsnames ls =
+		let ips = map fst ipsnames
+		    hasip l = maybe False (`elem` ips) (headMaybe (words l))
+		    mkline (ip, names) = ip ++ "\t" ++ (unwords names)
+		in map mkline ipsnames ++ filter (not . hasip) ls
 
 -- | Makes </etc/resolv.conf> contain search and domain lines for 
 -- the domain that the hostname is in.
