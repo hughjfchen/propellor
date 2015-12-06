@@ -170,15 +170,17 @@ saslAuthdInstalled = setupdaemon
 --
 -- The password is taken from the privdata.
 saslPasswdSet :: Domain -> User -> Property HasInfo
-saslPasswdSet domain (User user) = withPrivData src ctx $ \getpw -> trivial $
-	property ("sasl password for " ++ uatd) $ getpw $ \pw -> makeChange $
-		withHandle StdinHandle createProcessSuccess p $ \h -> do
-			hPutStrLn h (privDataVal pw)
-			hClose h
+saslPasswdSet domain (User user) = go `changesFile` "/etc/sasldb2"
   where
+	go = withPrivData src ctx $ \getpw ->
+		property desc $ getpw $ \pw -> liftIO $
+			withHandle StdinHandle createProcessSuccess p $ \h -> do
+				hPutStrLn h (privDataVal pw)
+				hClose h
+				return NoChange
+	desc = "sasl password for " ++ uatd
 	uatd = user ++ "@" ++ domain
 	ps = ["-p", "-c", "-u", domain, user]
 	p = proc "saslpasswd2" ps
 	ctx = Context "sasl"
 	src = PrivDataSource (Password uatd) "enter password"
-	trivial = flip assume NoChange
