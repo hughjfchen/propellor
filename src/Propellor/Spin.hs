@@ -32,6 +32,24 @@ import Utility.SafeCommand
 
 commitSpin :: IO ()
 commitSpin = do
+	-- safety check #1: check we're on the configured spin branch
+	spinBranch <- getGitConfigValue "propellor.spin-branch"
+	case spinBranch of
+		Nothing -> return () -- just a noop
+		Just b -> do
+			currentBranch <- getCurrentBranch
+			when (b /= currentBranch) $
+				error ("spin aborted: check out "
+ 					++ b ++ " branch first")
+
+	-- safety check #2: check we can commit with a dirty tree
+	noDirtySpin <- getGitConfigBool "propellor.forbid-dirty-spin"
+	when noDirtySpin $ do
+		status <- takeWhile (/= '\n')
+			<$> readProcess "git" ["status", "--porcelain"]
+		when (not . null $ status) $
+			error "spin aborted: commit changes first"
+
 	void $ actionMessage "Git commit" $
 		gitCommit (Just spinCommitMessage) 
 			[Param "--allow-empty", Param "-a"]

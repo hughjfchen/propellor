@@ -105,7 +105,7 @@ and configured in haskell.
 
 * propellor --check
 
-  If propellor is able to run, this simply exists successfully.
+  If propellor is able to run, this simply exits successfully.
 
 * propellor hostname
 
@@ -123,6 +123,12 @@ other debugging information.
 
 `git config propellor.debug 1` will configure propellor to output debugging
 information.
+
+`git config propellor.spin-branch foo` will configure propellor to refuse to
+spin when the foo branch is not checked out.
+
+`git config propellor.forbid-dirty-spin true` will configure propellor to refuse
+to spin when there are uncommitted changes in the `~/.propellor` repository.
 
 The usual git configuration controls which centralized repository (if any)
 propellor pushes and pulls from. 
