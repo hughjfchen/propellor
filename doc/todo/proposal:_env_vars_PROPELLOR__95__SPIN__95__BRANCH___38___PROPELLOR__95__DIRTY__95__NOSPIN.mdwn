@@ -13,3 +13,5 @@ I'd like to patch the `/usr/bin/propellor` wrapper to check for two environment 
 `PROPELLOR_DIRTY_NOSPIN` is to prevent configuration changes ending up in commits made with the undescriptive commit message "propellor spin".  I understand that it doesn't bother Joey, but I want all configuration changes to be recorded with a descriptive commit message because it makes using `git revert` and `git cherry-pick` easier.  So for users like me this environment variable is a useful check.
 
 --[[spwhitton|https://spwhitton.name]]
+
+> nice work! [[merged|done]] --[[Joey]]
