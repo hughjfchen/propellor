@@ -41,7 +41,7 @@ data MessageHandle = MessageHandle
 globalMessageHandle :: MVar MessageHandle
 globalMessageHandle = unsafePerformIO $ 
 	newMVar =<< MessageHandle
-		<$> hIsTerminalDevice stdout
+		<$> catchDefaultIO False (hIsTerminalDevice stdout)
 
 -- | Gets the global MessageHandle.
 getMessageHandle :: IO MessageHandle
