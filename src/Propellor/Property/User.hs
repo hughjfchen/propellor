@@ -18,11 +18,11 @@ accountFor user@(User u) = check nohomedir go
 		, u
 		]
 
-simpleSystemAccount :: User -> Property NoInfo
-simpleSystemAccount u = systemAccountFor u Nothing (Just (Group "nogroup"))
+systemAccountFor :: User -> Property NoInfo
+systemAccountFor user@(User u) = systemAccountFor' user Nothing (Just (Group u))
 
-systemAccountFor :: User -> Maybe FilePath -> Maybe Group -> Property NoInfo
-systemAccountFor (User u) mhome mgroup = check nouser go
+systemAccountFor' :: User -> Maybe FilePath -> Maybe Group -> Property NoInfo
+systemAccountFor' (User u) mhome mgroup = check nouser go
 	`describe` ("system account for " ++ u)
   where
 	nouser = isNothing <$> catchMaybeIO (getUserEntryForName u)
