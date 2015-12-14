@@ -45,13 +45,9 @@ dotDir (User u) = do
 hasPrivKey :: GpgKeyId -> User -> IO Bool
 hasPrivKey (GpgKeyId keyid) (User u) = do
 	value <- catchMaybeIO $ readProcess "su" ["-c", "gpg --list-secret-keys " ++ keyid, u]
-	return $ case value of
-		Just _ -> True
-		_ -> False
+	return $ isJust value
 
 hasPubKey :: GpgKeyId -> User -> IO Bool
 hasPubKey (GpgKeyId keyid) (User u) = do
 	value <- catchMaybeIO $ readProcess "su" ["-c", "gpg --list-public-keys " ++ keyid, u]
-	return $ case value of
-		Just _ -> True
-		_ -> False
+	return $ isJust value
