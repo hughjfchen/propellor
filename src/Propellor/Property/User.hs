@@ -18,6 +18,30 @@ accountFor user@(User u) = check nohomedir go
 		, u
 		]
 
+systemAccountFor :: User -> Property NoInfo
+systemAccountFor user@(User u) = systemAccountFor' user Nothing (Just (Group u))
+
+systemAccountFor' :: User -> Maybe FilePath -> Maybe Group -> Property NoInfo
+systemAccountFor' (User u) mhome mgroup = check nouser go
+	`describe` ("system account for " ++ u)
+  where
+	nouser = isNothing <$> catchMaybeIO (getUserEntryForName u)
+	go = cmdProperty "adduser" $
+		[ "--system" ]
+		++
+		"--home" : maybe
+			["/nonexistent", "--no-create-home"]
+			( \h -> [ h ] )
+			mhome
+		++
+		maybe [] ( \(Group g) -> ["--ingroup", g] ) mgroup
+		++
+		[ "--shell", "/usr/bin/nologin"
+		, "--disabled-login"
+		, "--disabled-password"
+		, u
+		]
+
 -- | Removes user home directory!! Use with caution.
 nuked :: User -> Eep -> Property NoInfo
 nuked user@(User u) _ = check hashomedir go
@@ -131,7 +155,7 @@ hasDesktopGroups user@(User u) = property desc $ do
 	desc = "user " ++ u ++ " is in standard desktop groups"
 	-- This list comes from user-setup's debconf
 	-- template named "passwd/user-default-groups"
-	desktopgroups = 
+	desktopgroups =
 		[ "audio"
 		, "cdrom"
 		, "dip"
