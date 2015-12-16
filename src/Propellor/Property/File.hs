@@ -4,7 +4,6 @@ import Propellor.Base
 import Utility.FileMode
 
 import System.Posix.Files
-import System.PosixCompat.Types
 import System.Exit
 
 type Line = String

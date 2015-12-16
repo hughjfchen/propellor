@@ -4,6 +4,7 @@ propellor (2.15.1) UNRELEASED; urgency=medium
     Thanks, Sean Whitton.
   * Added User.systemAccountFor and User.systemAccountFor' properties.
     Thanks, Félix Sipma.
+  * Merged Utility changes from git-annex.
 
  -- Joey Hess <id@joeyh.name>  Tue, 08 Dec 2015 11:59:43 -0400
 
