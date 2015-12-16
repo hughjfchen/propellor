@@ -54,11 +54,9 @@ dotDir (User u) = do
 	return $ home </> ".gnupg"
 
 hasPrivKey :: GpgKeyId -> User -> IO Bool
-hasPrivKey (GpgKeyId keyid) (User u) = do
-	value <- catchMaybeIO $ readProcess "su" ["-c", "gpg --list-secret-keys " ++ keyid, u]
-	return $ isJust value
+hasPrivKey (GpgKeyId keyid) (User u) = catchBoolIO $
+	snd <$> processTranscript "su" ["-c", "gpg --list-secret-keys", keyid, u] Nothing
 
 hasPubKey :: GpgKeyId -> User -> IO Bool
-hasPubKey (GpgKeyId keyid) (User u) = do
-	value <- catchMaybeIO $ readProcess "su" ["-c", "gpg --list-public-keys " ++ keyid, u]
-	return $ isJust value
+hasPubKey (GpgKeyId keyid) (User u) = catchBoolIO $
+	snd <$> processTranscript "su" ["-c", "gpg --list-public-keys", keyid, u] Nothing
