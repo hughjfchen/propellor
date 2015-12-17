@@ -55,8 +55,8 @@ dotDir (User u) = do
 
 hasPrivKey :: GpgKeyId -> User -> IO Bool
 hasPrivKey (GpgKeyId keyid) (User u) = catchBoolIO $
-	snd <$> processTranscript "su" ["-c", "gpg --list-secret-keys", keyid, u] Nothing
+	snd <$> processTranscript "su" ["-c", "gpg --list-secret-keys " ++ shellEscape keyid, u] Nothing
 
 hasPubKey :: GpgKeyId -> User -> IO Bool
 hasPubKey (GpgKeyId keyid) (User u) = catchBoolIO $
-	snd <$> processTranscript "su" ["-c", "gpg --list-public-keys", keyid, u] Nothing
+	snd <$> processTranscript "su" ["-c", "gpg --list-public-keys " ++ shellEscape keyid, u] Nothing
