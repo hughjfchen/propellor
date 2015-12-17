@@ -31,7 +31,7 @@ keyImported key@(GpgKeyId keyid) user@(User u) = prop
 		property desc $ getkey $ \key' -> do
 			let keylines = privDataLines key'
 			ifM (liftIO $ hasGpgKey (parse keylines))
-				(return NoChange
+				( return NoChange
 				, makeChange $ withHandle StdinHandle createProcessSuccess
 					(proc "su" ["-c", "gpg --import", u]) $ \h -> do
 						fileEncoding h
@@ -48,11 +48,6 @@ keyImported key@(GpgKeyId keyid) user@(User u) = prop
 	hasGpgKey (Just GpgPubKey) = hasPubKey key user
 	hasGpgKey (Just GpgPrivKey) = hasPrivKey key user
 
-dotDir :: User -> IO FilePath
-dotDir (User u) = do
-	home <- homeDirectory <$> getUserEntryForName u
-	return $ home </> ".gnupg"
-
 hasPrivKey :: GpgKeyId -> User -> IO Bool
 hasPrivKey (GpgKeyId keyid) (User u) = catchBoolIO $
 	snd <$> processTranscript "su" ["-c", "gpg --list-secret-keys " ++ shellEscape keyid, u] Nothing
@@ -60,3 +55,8 @@ hasPrivKey (GpgKeyId keyid) (User u) = catchBoolIO $
 hasPubKey :: GpgKeyId -> User -> IO Bool
 hasPubKey (GpgKeyId keyid) (User u) = catchBoolIO $
 	snd <$> processTranscript "su" ["-c", "gpg --list-public-keys " ++ shellEscape keyid, u] Nothing
+
+dotDir :: User -> IO FilePath
+dotDir (User u) = do
+	home <- homeDirectory <$> getUserEntryForName u
+	return $ home </> ".gnupg"
