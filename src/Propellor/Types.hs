@@ -39,10 +39,11 @@ module Propellor.Types
 	) where
 
 import Data.Monoid
-import Control.Applicative
 import "mtl" Control.Monad.RWS.Strict
 import Control.Monad.Catch
 import Data.Typeable
+import Control.Applicative
+import Prelude
 
 import Propellor.Types.Info
 import Propellor.Types.OS

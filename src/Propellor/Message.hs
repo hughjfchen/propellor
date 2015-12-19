@@ -22,10 +22,11 @@ module Propellor.Message (
 import System.Console.ANSI
 import System.IO
 import Control.Monad.IO.Class (liftIO, MonadIO)
-import Control.Applicative
 import System.IO.Unsafe (unsafePerformIO)
 import Control.Concurrent
 import System.Console.Concurrent
+import Control.Applicative
+import Prelude
 
 import Propellor.Types
 import Utility.PartialPrelude

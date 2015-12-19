@@ -19,7 +19,6 @@ import System.Directory
 import System.Exit
 import Control.Monad
 import Control.Monad.IO.Class (liftIO, MonadIO)
-import Control.Applicative
 import System.IO.Unsafe (unsafePerformIO)
 import Control.Concurrent
 import Control.Concurrent.STM
@@ -30,6 +29,8 @@ import Data.Monoid
 import qualified System.Process as P
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import Control.Applicative
+import Prelude
 
 import Utility.Monad
 import Utility.Exception

@@ -38,12 +38,13 @@ module Propellor.Property (
 import System.Directory
 import System.FilePath
 import Control.Monad
-import Control.Applicative
 import Data.Monoid
 import Control.Monad.IfElse
 import "mtl" Control.Monad.RWS.Strict
 import System.Posix.Files
 import qualified Data.Hash.MD5 as MD5
+import Control.Applicative
+import Prelude
 
 import Propellor.Types
 import Propellor.Types.ResultCheck

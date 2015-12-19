@@ -3,10 +3,11 @@
 module Propellor.Property.Apt where
 
 import Data.Maybe
-import Control.Applicative
 import Data.List
 import System.IO
 import Control.Monad
+import Control.Applicative
+import Prelude
 
 import Propellor.Base
 import qualified Propellor.Property.File as File

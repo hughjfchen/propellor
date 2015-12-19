@@ -8,6 +8,7 @@ propellor (2.15.1) unstable; urgency=medium
     if gpg has the provided key already.
     Thanks, Félix Sipma.
   * Merged Utility changes from git-annex.
+  * Clean build with ghc 7.10.
 
  -- Joey Hess <id@joeyh.name>  Sat, 19 Dec 2015 16:43:09 -0400
 

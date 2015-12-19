@@ -24,13 +24,14 @@ import Utility.Exception
 
 import Control.Monad
 import Control.Monad.IfElse
-import Control.Applicative
 import System.Directory
 import System.FilePath
 import System.Environment (getArgs)
 import System.Exit
 import System.Posix.Directory
 import System.IO
+import Control.Applicative
+import Prelude
 
 distdir :: FilePath
 distdir = "/usr/src/propellor"

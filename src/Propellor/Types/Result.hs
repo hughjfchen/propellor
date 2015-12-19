@@ -1,7 +1,8 @@
 module Propellor.Types.Result where
 
-import Data.Monoid
 import System.Console.ANSI
+import Data.Monoid
+import Prelude
 
 -- | There can be three results of satisfying a Property.
 data Result = NoChange | MadeChange | FailedChange

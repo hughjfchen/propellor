@@ -11,6 +11,7 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Monoid
 import Control.Applicative
+import Prelude
 
 pureInfoProperty :: (IsInfo v) => Desc -> v -> Property HasInfo
 pureInfoProperty desc v = pureInfoProperty' desc (addInfo mempty v)
