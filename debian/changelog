@@ -7,7 +7,6 @@ propellor (2.15.1) unstable; urgency=medium
   * Gpg.keyImported converted to not use a flag file and instead check
     if gpg has the provided key already.
     Thanks, Félix Sipma.
-  * Merged Utility changes from git-annex.
   * Clean build with ghc 7.10.
   * Merged Utility changes from git-annex.
 
