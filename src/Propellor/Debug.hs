@@ -1,6 +1,5 @@
 module Propellor.Debug where
 
-import Control.Applicative
 import Control.Monad.IfElse
 import System.IO
 import System.Directory
@@ -8,6 +7,8 @@ import System.Log.Logger
 import System.Log.Formatter
 import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple
+import Control.Applicative
+import Prelude
 
 import Utility.Monad
 import Utility.Env

@@ -6,8 +6,9 @@ import Utility.Exception
 import Utility.Env
 import Utility.Directory
 
-import Control.Applicative
 import System.Directory
+import Control.Applicative
+import Prelude
 
 -- | When chrooting, it's useful to ensure that PATH has all the standard
 -- directories in it. This adds those directories to whatever PATH is

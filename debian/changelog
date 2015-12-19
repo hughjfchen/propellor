@@ -8,6 +8,7 @@ propellor (2.15.1) UNRELEASED; urgency=medium
   * Gpg.keyImported converted to not use a flag file and instead check
     if gpg has the provided key already.
     Thanks, Félix Sipma.
+  * Clean build with ghc 7.10.
 
  -- Joey Hess <id@joeyh.name>  Tue, 08 Dec 2015 11:59:43 -0400
 

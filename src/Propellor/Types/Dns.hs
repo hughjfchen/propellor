@@ -7,11 +7,12 @@ import Propellor.Types.Empty
 import Propellor.Types.Info
 
 import Data.Word
-import Data.Monoid
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.List
 import Data.String.Utils (split, replace)
+import Data.Monoid
+import Prelude
 
 type Domain = String
 

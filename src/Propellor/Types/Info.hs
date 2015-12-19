@@ -13,8 +13,9 @@ module Propellor.Types.Info (
 ) where
 
 import Data.Dynamic
-import Data.Monoid
 import Data.Maybe
+import Data.Monoid
+import Prelude
 
 -- | Information about a Host, which can be provided by its properties.
 newtype Info = Info [InfoEntry]

@@ -44,9 +44,10 @@ module Propellor.Property.Cmd (
 	waitForProcess,
 ) where
 
-import Control.Applicative
 import Data.List
 import "mtl" Control.Monad.Reader
+import Control.Applicative
+import Prelude
 
 import Propellor.Types
 import Propellor.Property

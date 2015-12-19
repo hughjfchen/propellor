@@ -1,6 +1,5 @@
 module Propellor.Gpg where
 
-import Control.Applicative
 import System.IO
 import System.FilePath
 import System.Directory
@@ -9,6 +8,8 @@ import Data.List.Utils
 import Control.Monad
 import System.Console.Concurrent
 import System.Console.Concurrent.Internal (ConcurrentProcessHandle(..))
+import Control.Applicative
+import Prelude
 
 import Propellor.PrivData.Paths
 import Propellor.Message
