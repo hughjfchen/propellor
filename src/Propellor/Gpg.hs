@@ -79,12 +79,12 @@ rmKey keyid = exitBool =<< allM (uncurry actionMessage)
 	]
   where
 	rmkeyring = boolSystem "gpg" $
-		(map Param useKeyringOpts) ++ 
+		(map Param useKeyringOpts) ++
 		[ Param "--batch"
 		, Param "--yes"
 		, Param "--delete-key", Param keyid
 		]
-	
+
 	gitconfig = ifM ((==) (keyid++"\n", True) <$> processTranscript "git" ["config", "user.signingkey"] Nothing)
 		( boolSystem "git"
 			[ Param "config"
@@ -92,7 +92,7 @@ rmKey keyid = exitBool =<< allM (uncurry actionMessage)
 			, Param "user.signingkey"
 			]
 		, return True
-		)	
+		)
 
 reencryptPrivData :: IO Bool
 reencryptPrivData = ifM (doesFileExist privDataFile)
@@ -101,7 +101,7 @@ reencryptPrivData = ifM (doesFileExist privDataFile)
 		gitAdd privDataFile
 	, return True
 	)
-	
+
 gitAdd :: FilePath -> IO Bool
 gitAdd f = boolSystem "git"
 	[ Param "add"
@@ -125,7 +125,7 @@ gpgSignParams ps = ifM (doesFileExist keyring)
 -- Automatically sign the commit if there'a a keyring.
 gitCommit :: Maybe String -> [CommandParam] -> IO Bool
 gitCommit msg ps = do
-	let ps' = Param "commit" : ps ++ 
+	let ps' = Param "commit" : ps ++
 		maybe [] (\m -> [Param "-m", Param m]) msg
 	ps'' <- gpgSignParams ps'
 	if isNothing msg
