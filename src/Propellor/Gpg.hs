@@ -19,6 +19,10 @@ import Utility.Monad
 import Utility.Misc
 import Utility.Tmp
 import Utility.FileSystemEncoding
+import Utility.Env
+
+getGpgBin :: IO String
+getGpgBin = getEnvDefault "GNUPGBIN" "gpg"
 
 type KeyId = String
 
@@ -27,7 +31,9 @@ keyring = privDataDir </> "keyring.gpg"
 
 -- Lists the keys in propellor's keyring.
 listPubKeys :: IO [KeyId]
-listPubKeys = parse . lines <$> readProcess "gpg" listopts
+listPubKeys = do
+	gpgbin <- getGpgBin
+	parse . lines <$> readProcess gpgbin listopts
   where
 	listopts = useKeyringOpts ++ ["--with-colons", "--list-public-keys"]
 	parse = mapMaybe (keyIdField . split ":")
@@ -43,23 +49,25 @@ useKeyringOpts =
 	]
 
 addKey :: KeyId -> IO ()
-addKey keyid = exitBool =<< allM (uncurry actionMessage)
-	[ ("adding key to propellor's keyring", addkeyring)
-	, ("staging propellor's keyring", gitAdd keyring)
-	, ("updating encryption of any privdata", reencryptPrivData)
-	, ("configuring git commit signing to use key", gitconfig)
-	, ("committing changes", gitCommitKeyRing "add-key")
-	]
+addKey keyid = do
+	gpgbin <- getGpgBin
+	exitBool =<< allM (uncurry actionMessage)
+		[ ("adding key to propellor's keyring", addkeyring gpgbin)
+		, ("staging propellor's keyring", gitAdd keyring)
+		, ("updating encryption of any privdata", reencryptPrivData)
+		, ("configuring git commit signing to use key", gitconfig gpgbin)
+		, ("committing changes", gitCommitKeyRing "add-key")
+		]
   where
-	addkeyring = do
+	addkeyring gpgbin' = do
 		createDirectoryIfMissing True privDataDir
 		boolSystem "sh"
 			[ Param "-c"
-			, Param $ "gpg --export " ++ keyid ++ " | gpg " ++
+			, Param $ gpgbin' ++ " --export " ++ keyid ++ " | gpg " ++
 				unwords (useKeyringOpts ++ ["--import"])
 			]
 
-	gitconfig = ifM (snd <$> processTranscript "gpg" ["--list-secret-keys", keyid] Nothing)
+	gitconfig gpgbin' = ifM (snd <$> processTranscript gpgbin' ["--list-secret-keys", keyid] Nothing)
 		( boolSystem "git"
 			[ Param "config"
 			, Param "user.signingkey"
@@ -71,15 +79,17 @@ addKey keyid = exitBool =<< allM (uncurry actionMessage)
 		)
 
 rmKey :: KeyId -> IO ()
-rmKey keyid = exitBool =<< allM (uncurry actionMessage)
-	[ ("removing key from propellor's keyring", rmkeyring)
-	, ("staging propellor's keyring", gitAdd keyring)
-	, ("updating encryption of any privdata", reencryptPrivData)
-	, ("configuring git commit signing to not use key", gitconfig)
-	, ("committing changes", gitCommitKeyRing "rm-key")
-	]
+rmKey keyid = do
+	gpgbin <- getGpgBin
+	exitBool =<< allM (uncurry actionMessage)
+		[ ("removing key from propellor's keyring", rmkeyring gpgbin)
+		, ("staging propellor's keyring", gitAdd keyring)
+		, ("updating encryption of any privdata", reencryptPrivData)
+		, ("configuring git commit signing to not use key", gitconfig)
+		, ("committing changes", gitCommitKeyRing "rm-key")
+		]
   where
-	rmkeyring = boolSystem "gpg" $
+	rmkeyring gpgbin' = boolSystem gpgbin' $
 		(map Param useKeyringOpts) ++
 		[ Param "--batch"
 		, Param "--yes"
@@ -137,14 +147,17 @@ gitCommit msg ps = do
 		else boolSystem "git" ps''
 
 gpgDecrypt :: FilePath -> IO String
-gpgDecrypt f = ifM (doesFileExist f)
-	( writeReadProcessEnv "gpg" ["--decrypt", f] Nothing Nothing (Just fileEncoding)
-	, return ""
-	)
+gpgDecrypt f = do
+	gpgbin <- getGpgBin
+	ifM (doesFileExist f)
+		( writeReadProcessEnv gpgbin ["--decrypt", f] Nothing Nothing (Just fileEncoding)
+		, return ""
+		)
 
 -- Encrypt file to all keys in propellor's keyring.
 gpgEncrypt :: FilePath -> String -> IO ()
 gpgEncrypt f s = do
+	gpgbin <- getGpgBin
 	keyids <- listPubKeys
 	let opts =
 		[ "--default-recipient-self"
@@ -152,7 +165,7 @@ gpgEncrypt f s = do
 		, "--encrypt"
 		, "--trust-model", "always"
 		] ++ concatMap (\k -> ["--recipient", k]) keyids
-	encrypted <- writeReadProcessEnv "gpg" opts Nothing (Just writer) Nothing
+	encrypted <- writeReadProcessEnv gpgbin opts Nothing (Just writer) Nothing
 	viaTmp writeFile f encrypted
   where
 	writer h = do
