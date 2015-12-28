@@ -37,7 +37,7 @@ clean:
 # duplicate tags with Propellor.Property. removed from the start, as we
 # often import qualified by just the module base name.
 tags:
-	find . | grep -v /.git/ | grep -v /tmp/ | grep -v /dist/ | grep -v /doc/ | egrep '\.hs$$' | xargs hothasktags | perl -ne 'print; s/Propellor\.Property\.//; print' | sort > tags  2>/dev/null || true
+	find . | grep -v /.git/ | grep -v /tmp/ | grep -v /dist/ | grep -v /doc/ | egrep '\.hs$$' | xargs hothasktags 2>/dev/null | perl -ne 'print; s/Propellor\.Property\.//; print' | sort > tags || true
 
 dist/setup-config: propellor.cabal
 	@if [ "$(CABAL)" = ./Setup ]; then ghc --make Setup; fi
