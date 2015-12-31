@@ -194,7 +194,7 @@ formatServiceLine s = unwords $ map pad
 	v f sel = maybe "-" f (sel (serviceOpts s))
 	bool True = "y"
 	bool False = "n"
-	pad (n, s) = s ++ replicate (n - 1 - length s) ' '
+	pad (n, t) = t ++ replicate (n - 1 - length t) ' '
 
 -- | Note that this does not handle multi-line service entries,
 -- in which subsequent lines are indented. `serviceLine` does not generate
