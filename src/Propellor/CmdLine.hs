@@ -118,7 +118,7 @@ defaultMain hostlist = withConcurrentOutput $ do
 	go True cmdline@(Spin _ _) = buildFirst cmdline $ go False cmdline
 	go True cmdline = updateFirst cmdline $ go False cmdline
 	go False (Spin hs mrelay) = do
-		commitSpin
+		unless (isJust mrelay) commitSpin
 		forM_ hs $ \hn -> withhost hn $ spin mrelay hn
 	go False cmdline@(SimpleRun hn) = do
 		forceConsole
