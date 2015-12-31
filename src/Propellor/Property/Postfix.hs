@@ -142,19 +142,20 @@ data Service = Service
 	deriving (Show)
 
 data ServiceType 
-	= InetService (Maybe HostName, ServicePort)
-	| UnixService FilePath
-	| FifoService FilePath
-	| PassService FilePath
+	= InetService (Maybe HostName) ServicePort
+	| UnixService FilePath PrivateService
+	| FifoService FilePath PrivateService
+	| PassService FilePath PrivateService
 	deriving (Show)
 
 -- Can be a port number or service name such as "smtp".
 type ServicePort = String
 
+type PrivateService = Bool
+
 -- | Options for a service.
 data ServiceOpts = ServiceOpts
-	{ servicePrivate :: Maybe Bool
-	, serviceUnprivileged :: Maybe Bool
+	{ serviceUnprivileged :: Maybe Bool
 	, serviceChroot :: Maybe Bool
 	, serviceWakeupTime :: Maybe Int
 	, serviceProcessLimit :: Maybe Int
@@ -163,8 +164,7 @@ data ServiceOpts = ServiceOpts
 
 defServiceOpts :: ServiceOpts
 defServiceOpts = ServiceOpts
-	{ servicePrivate = Nothing
-	, serviceUnprivileged = Nothing
+	{ serviceUnprivileged = Nothing
 	, serviceChroot = Nothing
 	, serviceWakeupTime = Nothing
 	, serviceProcessLimit = Nothing
@@ -173,17 +173,21 @@ defServiceOpts = ServiceOpts
 formatServiceLine :: Service -> File.Line
 formatServiceLine s = unwords $ map pad
 	[ (10, case serviceType s of
-		InetService (Just h, p) -> h ++ ":" ++ p
-		InetService (Nothing, p) -> p
-		UnixService f -> f
-		FifoService f -> f
-		PassService f -> f)
+		InetService (Just h) p -> h ++ ":" ++ p
+		InetService Nothing p -> p
+		UnixService f _ -> f
+		FifoService f _ -> f
+		PassService f _ -> f)
 	, (6, case serviceType s of
-		InetService _ -> "inet"
-		UnixService _ -> "unix"
-		FifoService _ -> "fifo"
-		PassService _ -> "pass")
-	, (8, v bool servicePrivate)
+		InetService _ _ -> "inet"
+		UnixService _ _ -> "unix"
+		FifoService _ _ -> "fifo"
+		PassService _ _ -> "pass")
+	, (8, case serviceType s of
+		InetService _ _ -> bool False
+		UnixService _ b -> bool b
+		FifoService _ b -> bool b
+		PassService _ b -> bool b)
 	, (8, v bool serviceUnprivileged)
 	, (8, v bool serviceChroot)
 	, (8, v show serviceWakeupTime)
@@ -216,19 +220,19 @@ parseServiceLine l = Service
 				if null p
 					then Nothing
 					else Just $ InetService
-						(if null h then Nothing else Just h, p)
-			"unix" -> UnixService <$> getword 1
-			"fifo" -> FifoService <$> getword 1
-			"pass" -> PassService <$> getword 1
+						(if null h then Nothing else Just h) p
+			"unix" -> UnixService <$> getword 1 <*> parseprivate
+			"fifo" -> FifoService <$> getword 1 <*> parseprivate
+			"pass" -> PassService <$> getword 1 <*> parseprivate
 			_ -> Nothing
+	parseprivate = join . bool =<< getword 3
 	
 	parsecommand = case unwords (drop 7 ws) of
 		"" -> Nothing
 		s -> Just s
 
 	parseopts = ServiceOpts
-		<$> (bool =<< getword 3)
-		<*> (bool =<< getword 4)
+		<$> (bool =<< getword 4)
 		<*> (bool =<< getword 5)
 		<*> (int =<< getword 6)
 		<*> (int =<< getword 7)
