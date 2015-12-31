@@ -46,6 +46,7 @@ hosts =                --                  (o)  `
 	[ darkstar
 	, gnu
 	, clam
+	, oyster
 	, orca
 	, honeybee
 	, kite
@@ -118,6 +119,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 		]
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
+	& Systemd.persistentJournal
 
 	& Tor.isRelay
 	& Tor.named "kite1"
@@ -134,14 +136,28 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
 	& alias "us.scroll.joeyh.name"
+
+oyster :: Host
+oyster = standardSystem "oyster.kitenet.net" Unstable "amd64"
+	[ "Unreliable server. Anything here may be lost at any time!" ]
+	& ipv4 "104.167.117.109"
+
+	& CloudAtCost.decruft
+	& Ssh.hostKeys hostContext
+		[ (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBP0ws/IxQegVU0RhqnIm5A/vRSPTO70wD4o2Bd1jL970dTetNyXzvWGe1spEbLjIYSLIO7WvOBSE5RhplBKFMUU=")
+		]
+	& Apt.unattendedUpgrades
+	& Network.ipv6to4
+	& Systemd.persistentJournal
+
+	& Tor.isRelay
+	& Tor.named "kite2"
+	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
 	
 	-- ssh on some extra ports to deal with horrible networks
 	-- while travelling
 	& alias "travelling.kitenet.net"
-	! Ssh.listenPort 80
-	! Ssh.listenPort 443
-
-	& Systemd.persistentJournal
+	& Ssh.listenPort 80
 
 orca :: Host
 orca = standardSystem "orca.kitenet.net" Unstable "amd64"
