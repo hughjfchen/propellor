@@ -129,6 +129,135 @@ dedupCf ls =
 		Just n | n > 1 -> dedup c (M.insert k (n - 1) kc) rest
 		_ -> dedup (fmt k v:c) kc rest
 
+-- | The master config file for postfix.
+masterCfFile :: FilePath
+masterCfFile = "/etc/postfix/master.cf"
+
+-- | A service that can be present in the master config file.
+data Service = Service
+	{ serviceType :: ServiceType
+	, serviceCommand :: String
+	, serviceOpts :: ServiceOpts
+	}
+	deriving (Show)
+
+data ServiceType 
+	= InetService (Maybe HostName, ServicePort)
+	| UnixService FilePath
+	| FifoService FilePath
+	| PassService FilePath
+	deriving (Show)
+
+-- Can be a port number or service name such as "smtp".
+type ServicePort = String
+
+-- | Options for a service.
+data ServiceOpts = ServiceOpts
+	{ servicePrivate :: Maybe Bool
+	, serviceUnprivileged :: Maybe Bool
+	, serviceChroot :: Maybe Bool
+	, serviceWakeupTime :: Maybe Int
+	, serviceProcessLimit :: Maybe Int
+	}
+	deriving (Show)
+
+defServiceOpts :: ServiceOpts
+defServiceOpts = ServiceOpts
+	{ servicePrivate = Nothing
+	, serviceUnprivileged = Nothing
+	, serviceChroot = Nothing
+	, serviceWakeupTime = Nothing
+	, serviceProcessLimit = Nothing
+	}
+
+formatServiceLine :: Service -> File.Line
+formatServiceLine s = unwords $ map pad
+	[ (10, case serviceType s of
+		InetService (Just h, p) -> h ++ ":" ++ p
+		InetService (Nothing, p) -> p
+		UnixService f -> f
+		FifoService f -> f
+		PassService f -> f)
+	, (6, case serviceType s of
+		InetService _ -> "inet"
+		UnixService _ -> "unix"
+		FifoService _ -> "fifo"
+		PassService _ -> "pass")
+	, (8, v bool servicePrivate)
+	, (8, v bool serviceUnprivileged)
+	, (8, v bool serviceChroot)
+	, (8, v show serviceWakeupTime)
+	, (8, v show serviceProcessLimit)
+	, (0, serviceCommand s)
+	]
+  where
+	v f sel = maybe "-" f (sel (serviceOpts s))
+	bool True = "y"
+	bool False = "n"
+	pad (n, s) = s ++ replicate (n - 1 - length s) ' '
+
+-- | Note that this does not handle multi-line service entries,
+-- in which subsequent lines are indented. `serviceLine` does not generate
+-- such entries.
+parseServiceLine :: File.Line -> Maybe Service
+parseServiceLine ('#':_) = Nothing
+parseServiceLine (' ':_) = Nothing -- continuation of multiline entry
+parseServiceLine l = Service
+	<$> parsetype
+	<*> parsecommand
+	<*> parseopts
+  where
+	parsetype = do
+		t <- getword 2
+		case t of
+			"inet" -> do
+				v <- getword 1
+				let (h,p) = separate (== ':') v
+				if null p
+					then Nothing
+					else Just $ InetService
+						(if null h then Nothing else Just h, p)
+			"unix" -> UnixService <$> getword 1
+			"fifo" -> FifoService <$> getword 1
+			"pass" -> PassService <$> getword 1
+			_ -> Nothing
+	
+	parsecommand = case unwords (drop 7 ws) of
+		"" -> Nothing
+		s -> Just s
+
+	parseopts = ServiceOpts
+		<$> (bool =<< getword 3)
+		<*> (bool =<< getword 4)
+		<*> (bool =<< getword 5)
+		<*> (int =<< getword 6)
+		<*> (int =<< getword 7)
+
+	bool "-" = Just Nothing
+	bool "y" = Just (Just True)
+	bool "n" = Just (Just False)
+	bool _ = Nothing
+
+	int "-" = Just Nothing
+	int n = maybe Nothing (Just . Just) (readish n)
+
+	getword n
+		| nws >= n = Just (ws !! (n -1))
+		| otherwise = Nothing
+	ws = words l
+	nws = length ws
+
+-- | Enables a `Service` in postfix's `masterCfFile`.
+service :: Service -> RevertableProperty NoInfo
+service s = (enable <!> disable)
+	`describe` ("enabled postfix service " ++ show (serviceType s))
+  where
+	enable = masterCfFile `File.containsLine` l
+		`onChange` reloaded
+	disable = masterCfFile `File.lacksLine` l
+		`onChange` reloaded
+	l = formatServiceLine s
+
 -- | Installs saslauthd and configures it for postfix, authenticating
 -- against PAM.
 --

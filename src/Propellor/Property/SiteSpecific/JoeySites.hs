@@ -694,10 +694,16 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		`describe` "pine configured to use local imap server"
 	
 	& Apt.serviceInstalledRunning "mailman"
+
+	& Postfix.service ssmtp
   where
 	ctx = Context "kitenet.net"
 	pinescript = "/usr/local/bin/pine"
 	dovecotusers = "/etc/dovecot/users"
+
+	ssmtp = Postfix.Service 
+		(Postfix.InetService (Nothing, "ssmtp"))
+		"smtpd" Postfix.defServiceOpts
 
 -- Configures postfix to relay outgoing mail to kitenet.net, with
 -- verification via tls cert.
