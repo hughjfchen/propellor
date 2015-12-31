@@ -63,7 +63,7 @@ depsCommand = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) ++ " 
 		, "cabal install --only-dependencies"
 		]
 
-	aptinstall p = "apt-get --no-upgrade --no-install-recommends -y install " ++ p
+	aptinstall p = "DEBIAN_FRONTEND=noninteractive apt-get --no-upgrade --no-install-recommends -y install " ++ p
 
 	-- This is the same deps listed in debian/control.
 	debdeps =
@@ -86,7 +86,7 @@ depsCommand = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) ++ " 
 		]
 
 installGitCommand :: ShellCommand
-installGitCommand = "if ! git --version >/dev/null; then apt-get update && apt-get --no-install-recommends --no-upgrade -y install git; fi"
+installGitCommand = "if ! git --version >/dev/null; then apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --no-upgrade -y install git; fi"
 
 buildPropellor :: IO ()
 buildPropellor = unlessM (actionMessage "Propellor build" build) $
