@@ -145,13 +145,14 @@ mayfly = standardSystem "mayfly.kitenet.net" (Stable "jessie") "amd64"
 	& ipv4 "104.167.118.15"
 
 	& CloudAtCost.decruft
-	-- & Ssh.hostKeys hostContext
-	--	[ (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBP0ws/IxQegVU0RhqnIm5A/vRSPTO70wD4o2Bd1jL970dTetNyXzvWGe1spEbLjIYSLIO7WvOBSE5RhplBKFMUU=")
-	--	]
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
 	& Systemd.persistentJournal
 	& Journald.systemMaxUse "500MiB"
+	
+	& Tor.isRelay
+	& Tor.named "kite3"
+	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
 
 oyster :: Host
 oyster = standardSystem "oyster.kitenet.net" Unstable "amd64"
