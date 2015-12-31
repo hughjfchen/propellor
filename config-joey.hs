@@ -46,6 +46,7 @@ hosts =                --                  (o)  `
 	[ darkstar
 	, gnu
 	, clam
+	, mayfly
 	, oyster
 	, orca
 	, honeybee
@@ -137,6 +138,20 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
 	& alias "us.scroll.joeyh.name"
+
+mayfly :: Host
+mayfly = standardSystem "mayfly.kitenet.net" (Stable "jessie") "amd64"
+	[ "Scratch VM. Contents can change at any time!" ]
+	& ipv4 "104.167.118.15"
+
+	& CloudAtCost.decruft
+	-- & Ssh.hostKeys hostContext
+	--	[ (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBP0ws/IxQegVU0RhqnIm5A/vRSPTO70wD4o2Bd1jL970dTetNyXzvWGe1spEbLjIYSLIO7WvOBSE5RhplBKFMUU=")
+	--	]
+	& Apt.unattendedUpgrades
+	& Network.ipv6to4
+	& Systemd.persistentJournal
+	& Journald.systemMaxUse "500MiB"
 
 oyster :: Host
 oyster = standardSystem "oyster.kitenet.net" Unstable "amd64"
