@@ -709,7 +709,8 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 -- verification via tls cert.
 postfixClientRelay :: Context -> Property HasInfo
 postfixClientRelay ctx = Postfix.mainCfFile `File.containsLines`
-	[ "relayhost = kitenet.net"
+	-- Using smtps not smtp because more networks firewall smtp
+	[ "relayhost = kitenet.net:smtps"
 	, "smtp_tls_CAfile = /etc/ssl/certs/joeyca.pem"
 	, "smtp_tls_cert_file = /etc/ssl/certs/postfix.pem"
 	, "smtp_tls_key_file = /etc/ssl/private/postfix.pem"

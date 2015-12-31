@@ -139,14 +139,14 @@ data Service = Service
 	, serviceCommand :: String
 	, serviceOpts :: ServiceOpts
 	}
-	deriving (Show)
+	deriving (Show, Eq)
 
 data ServiceType 
 	= InetService (Maybe HostName) ServicePort
 	| UnixService FilePath PrivateService
 	| FifoService FilePath PrivateService
 	| PassService FilePath PrivateService
-	deriving (Show)
+	deriving (Show, Eq)
 
 -- Can be a port number or service name such as "smtp".
 type ServicePort = String
@@ -160,7 +160,7 @@ data ServiceOpts = ServiceOpts
 	, serviceWakeupTime :: Maybe Int
 	, serviceProcessLimit :: Maybe Int
 	}
-	deriving (Show)
+	deriving (Show, Eq)
 
 defServiceOpts :: ServiceOpts
 defServiceOpts = ServiceOpts
@@ -254,13 +254,16 @@ parseServiceLine l = Service
 -- | Enables a `Service` in postfix's `masterCfFile`.
 service :: Service -> RevertableProperty NoInfo
 service s = (enable <!> disable)
-	`describe` ("enabled postfix service " ++ show (serviceType s))
+	`describe` desc
   where
-	enable = masterCfFile `File.containsLine` l
+	desc = "enabled postfix service " ++ show (serviceType s)
+	enable = masterCfFile `File.containsLine` (formatServiceLine s)
 		`onChange` reloaded
-	disable = masterCfFile `File.lacksLine` l
+	disable = File.fileProperty desc (filter (not . matches)) masterCfFile
 		`onChange` reloaded
-	l = formatServiceLine s
+	matches l = case parseServiceLine l of
+		Just s' | s' == s -> True
+		_ -> False
 
 -- | Installs saslauthd and configures it for postfix, authenticating
 -- against PAM.
