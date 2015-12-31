@@ -117,7 +117,6 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDJybAjUPUWIhvVMmer8K5ZgdfI54DM6vc8Mzw+5KmVKL0TwkvzbR1HAB4heyMGtN1F8YzkWhsI3/Txh+MQUJ+i4u8SvSYc6D1q3j3ZyCi06wZ3DJS25tZrOM/thOOA1DFA4Hhb0uI/1Kg8PguNNNSMXn8F7q3F6cFQizYgszs6z6ktiST/BTC+IXWovhcnn2vQXXU8FTcTsqBFqA5dEjZbp1WDzqp3km84ZyXGmoVlpqzXeMvlkWTIshYiQjXIwPOkALzlGYjp1lw1OaxPVI1IGFcgCbIWQQWoCReb+genX2VaR+odAYXjaOdRx0lQj7UCPTBCpqMyzBMLtT5Yiaqh")
 		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPhfvcOuw0Yt+MnsFc4TI2gWkKi62Eajxz+TgbHMO/uRTYF8c5V8fOI3o+J/3m5+lT0S5o8j8a7xIC3COvi+AVw=")
 		]
-	& Ssh.permitRootLogin WithoutPassword
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
 	& Systemd.persistentJournal
@@ -148,7 +147,6 @@ oyster = standardSystem "oyster.kitenet.net" Unstable "amd64"
 	& Ssh.hostKeys hostContext
 		[ (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBP0ws/IxQegVU0RhqnIm5A/vRSPTO70wD4o2Bd1jL970dTetNyXzvWGe1spEbLjIYSLIO7WvOBSE5RhplBKFMUU=")
 		]
-	& Ssh.permitRootLogin WithoutPassword
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
 	& Systemd.persistentJournal
@@ -241,7 +239,6 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Systemd.persistentJournal
 	& Journald.systemMaxUse "500MiB"
 	& Ssh.passwordAuthentication True
-	& Ssh.permitRootLogin WithoutPassword
 	-- Since ssh password authentication is allowed:
 	& Fail2Ban.installed
 	& Obnam.backupEncrypted "/" (Cron.Times "33 1 * * *")
@@ -327,7 +324,6 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAJkoPRhUGT8EId6m37uBdYEtq42VNwslKnc9mmO+89ody066q6seHKeFY6ImfwjcyIjM30RTzEwftuVNQnbEB0=")
 		, (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB6VtXi0uygxZeCo26n6PuCTlSFCBcwRifv6N8HdWh2Z")
 		]
-	& Ssh.permitRootLogin WithoutPassword
 
 	& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
 	& Postfix.satellite
