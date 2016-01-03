@@ -218,6 +218,9 @@ honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	-- ipv6 used for remote access thru firewalls
 	& Apt.serviceInstalledRunning "aiccu"
 	& ipv6 "2001:4830:1600:187::2"
+	-- restart to deal with failure to connect, tunnel issues, etc
+	& Cron.job "aiccu restart daily" Daily (User "root") "/"
+		"service aiccu stop; service aiccu start"
 
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
