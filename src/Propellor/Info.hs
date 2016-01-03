@@ -34,7 +34,7 @@ os system = pureInfoProperty ("Operating " ++ show system) (InfoVal system)
 getOS :: Propellor (Maybe System)
 getOS = fromInfoVal <$> askInfo
 
--- | Indidate that a host has an A record in the DNS.
+-- | Indicate that a host has an A record in the DNS.
 --
 -- When propellor is used to deploy a DNS server for a domain,
 -- the hosts in the domain are found by looking for these
@@ -46,7 +46,7 @@ getOS = fromInfoVal <$> askInfo
 ipv4 :: String -> Property HasInfo
 ipv4 = addDNS . Address . IPv4
 
--- | Indidate that a host has an AAAA record in the DNS.
+-- | Indicate that a host has an AAAA record in the DNS.
 ipv6 :: String -> Property HasInfo
 ipv6 = addDNS . Address . IPv6
 

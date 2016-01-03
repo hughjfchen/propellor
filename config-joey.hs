@@ -46,6 +46,8 @@ hosts =                --                  (o)  `
 	[ darkstar
 	, gnu
 	, clam
+	, mayfly
+	, oyster
 	, orca
 	, honeybee
 	, kite
@@ -118,6 +120,8 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 		]
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
+	& Systemd.persistentJournal
+	& Journald.systemMaxUse "500MiB"
 
 	& Tor.isRelay
 	& Tor.named "kite1"
@@ -134,14 +138,44 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
 	& alias "us.scroll.joeyh.name"
-	
-	-- ssh on some extra ports to deal with horrible networks
-	-- while travelling
-	& alias "travelling.kitenet.net"
-	! Ssh.listenPort 80
-	! Ssh.listenPort 443
 
+mayfly :: Host
+mayfly = standardSystem "mayfly.kitenet.net" (Stable "jessie") "amd64"
+	[ "Scratch VM. Contents can change at any time!" ]
+	& ipv4 "104.167.118.15"
+
+	& CloudAtCost.decruft
+	& Apt.unattendedUpgrades
+	& Network.ipv6to4
 	& Systemd.persistentJournal
+	& Journald.systemMaxUse "500MiB"
+	
+	& Tor.isRelay
+	& Tor.named "kite3"
+	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
+
+oyster :: Host
+oyster = standardSystem "oyster.kitenet.net" Unstable "amd64"
+	[ "Unreliable server. Anything here may be lost at any time!" ]
+	& ipv4 "104.167.117.109"
+
+	& CloudAtCost.decruft
+	& Ssh.hostKeys hostContext
+		[ (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBP0ws/IxQegVU0RhqnIm5A/vRSPTO70wD4o2Bd1jL970dTetNyXzvWGe1spEbLjIYSLIO7WvOBSE5RhplBKFMUU=")
+		]
+	& Apt.unattendedUpgrades
+	& Network.ipv6to4
+	& Systemd.persistentJournal
+	& Journald.systemMaxUse "500MiB"
+
+	& Tor.isRelay
+	& Tor.named "kite2"
+	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
+	
+	-- Nothing is using http port 80, so listen on
+	-- that port for ssh, for traveling on bad networks that
+	-- block 22.
+	& Ssh.listenPort 80
 
 orca :: Host
 orca = standardSystem "orca.kitenet.net" Unstable "amd64"
@@ -184,6 +218,9 @@ honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	-- ipv6 used for remote access thru firewalls
 	& Apt.serviceInstalledRunning "aiccu"
 	& ipv6 "2001:4830:1600:187::2"
+	-- restart to deal with failure to connect, tunnel issues, etc
+	& Cron.job "aiccu restart daily" Cron.Daily (User "root") "/"
+		"service aiccu stop; service aiccu start"
 
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"

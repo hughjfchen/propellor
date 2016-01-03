@@ -3,6 +3,10 @@ propellor (2.15.2) UNRELEASED; urgency=medium
   * Added GNUPGBIN environment variable to control the command run for gpg.
     Allows eg, GNUPGBIN=gpg2
     Thanks, Félix Sipma.
+  * Bootstrap apt-get installs run with deconf noninteractive frontend.
+  * spin --via: Avoid committing on relay host.
+  * Postfix: Add service property to enable/disable services in master.cf.
+  * Added Munin module, contributed by Jelmer Vernooij.
 
  -- Joey Hess <id@joeyh.name>  Wed, 30 Dec 2015 15:01:19 -0400
 
