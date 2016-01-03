@@ -118,6 +118,7 @@ standardAutoBuilder osver@(System _ arch) flavor =
 		& os osver
 		& Apt.stdSourcesList
 		& Apt.unattendedUpgrades
+		& Apt.cacheCleaned
 		& User.accountFor (User builduser)
 		& tree arch flavor
 
