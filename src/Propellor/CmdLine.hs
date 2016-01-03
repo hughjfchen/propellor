@@ -12,6 +12,7 @@ import Network.Socket
 import Propellor.Base
 import Propellor.Gpg
 import Propellor.Git
+import Propellor.Git.VerifiedBranch
 import Propellor.Bootstrap
 import Propellor.Spin
 import Propellor.Types.CmdLine

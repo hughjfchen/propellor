@@ -21,6 +21,7 @@ import Propellor.Base
 import Propellor.Protocol
 import Propellor.PrivData.Paths
 import Propellor.Git
+import Propellor.Git.Config
 import Propellor.Ssh
 import Propellor.Gpg
 import Propellor.Bootstrap

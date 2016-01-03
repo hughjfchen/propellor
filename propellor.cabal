@@ -1,5 +1,5 @@
 Name: propellor
-Version: 2.15.1
+Version: 2.15.2
 Cabal-Version: >= 1.8
 License: BSD3
 Maintainer: Joey Hess <id@joeyh.name>
@@ -148,6 +148,8 @@ Library
   Other-Modules:
     Propellor.Bootstrap
     Propellor.Git
+    Propellor.Git.Config
+    Propellor.Git.VerifiedBranch
     Propellor.Gpg
     Propellor.Spin
     Propellor.Ssh

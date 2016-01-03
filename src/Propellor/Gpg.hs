@@ -13,6 +13,7 @@ import Prelude
 
 import Propellor.PrivData.Paths
 import Propellor.Message
+import Propellor.Git.Config
 import Utility.SafeCommand
 import Utility.Process
 import Utility.Monad
@@ -21,10 +22,14 @@ import Utility.Tmp
 import Utility.FileSystemEncoding
 import Utility.Env
 
-getGpgBin :: IO String
-getGpgBin = getEnvDefault "GNUPGBIN" "gpg"
-
 type KeyId = String
+
+getGpgBin :: IO String
+getGpgBin = do
+	gitGpgBin <- getGitConfigValue "gpg.program"
+	case gitGpgBin of
+		Nothing -> getEnvDefault "GNUPGBIN" "gpg"
+		Just b -> return b
 
 keyring :: FilePath
 keyring = privDataDir </> "keyring.gpg"

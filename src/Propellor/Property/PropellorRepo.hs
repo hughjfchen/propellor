@@ -1,7 +1,7 @@
 module Propellor.Property.PropellorRepo where
 
 import Propellor.Base
-import Propellor.Git
+import Propellor.Git.Config
 
 -- | Sets the url to use as the origin of propellor's git repository.
 --
