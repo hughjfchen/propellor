@@ -13,6 +13,7 @@ import Prelude
 
 import Propellor.PrivData.Paths
 import Propellor.Message
+import Utility.Exception
 import Utility.SafeCommand
 import Utility.Process
 import Utility.Monad
@@ -22,7 +23,11 @@ import Utility.FileSystemEncoding
 import Utility.Env
 
 getGpgBin :: IO String
-getGpgBin = getEnvDefault "GNUPGBIN" "gpg"
+getGpgBin = do
+	gitGpgBin <- getGitConfigValue "gpg.program"
+	case gitGpgBin of
+		Nothing -> getEnvDefault "GNUPGBIN" "gpg"
+		Just b -> return b
 
 type KeyId = String
 
@@ -112,6 +117,15 @@ reencryptPrivData = ifM (doesFileExist privDataFile)
 		gitAdd privDataFile
 	, return True
 	)
+
+getGitConfigValue :: String -> IO (Maybe String)
+getGitConfigValue key = do
+	value <- catchMaybeIO $
+		takeWhile (/= '\n')
+			<$> readProcess "git" ["config", key]
+	return $ case value of
+		Just v | not (null v) -> Just v
+		_ -> Nothing
 
 gitAdd :: FilePath -> IO Bool
 gitAdd f = boolSystem "git"

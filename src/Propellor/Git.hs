@@ -6,11 +6,11 @@ import Propellor.Gpg
 import Utility.FileMode
 
 getCurrentBranch :: IO String
-getCurrentBranch = takeWhile (/= '\n') 
+getCurrentBranch = takeWhile (/= '\n')
 	<$> readProcess "git" ["symbolic-ref", "--short", "HEAD"]
 
 getCurrentBranchRef :: IO String
-getCurrentBranchRef = takeWhile (/= '\n') 
+getCurrentBranchRef = takeWhile (/= '\n')
 	<$> readProcess "git" ["symbolic-ref", "HEAD"]
 
 getCurrentGitSha1 :: String -> IO String
@@ -28,15 +28,6 @@ setRepoUrl url = do
 	let branchval s = "branch." ++ branch ++ "." ++ s
 	void $ boolSystem "git" [Param "config", Param (branchval "remote"), Param "origin"]
 	void $ boolSystem "git" [Param "config", Param (branchval "merge"), Param $ "refs/heads/"++branch]
-
-getGitConfigValue :: String -> IO (Maybe String)
-getGitConfigValue key = do
-	value <- catchMaybeIO $
-		takeWhile (/= '\n')
-			<$> readProcess "git" ["config", key]
-	return $ case value of
-		Just v | not (null v) -> Just v
-		_ -> Nothing
 
 -- `git config --bool propellor.blah` outputs "false" if propellor.blah is unset
 -- i.e. the git convention is that the default value of any git-config setting
@@ -92,9 +83,9 @@ fetchOrigin = do
 
 	void $ actionMessage "Pull from central git repository" $
 		boolSystem "git" [Param "fetch"]
-	
+
 	oldsha <- getCurrentGitSha1 branchref
-	
+
 	whenM (doesFileExist keyring) $
 		ifM (verifyOriginBranch originbranch)
 			( do
@@ -103,6 +94,6 @@ fetchOrigin = do
 				void $ boolSystem "git" [Param "merge", Param originbranch]
 			, warningMessage $ "git branch " ++ originbranch ++ " is not signed with a trusted gpg key; refusing to deploy it! (Running with previous configuration instead.)"
 			)
-	
+
 	newsha <- getCurrentGitSha1 branchref
 	return $ oldsha /= newsha
