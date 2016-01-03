@@ -219,7 +219,7 @@ honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	& Apt.serviceInstalledRunning "aiccu"
 	& ipv6 "2001:4830:1600:187::2"
 	-- restart to deal with failure to connect, tunnel issues, etc
-	& Cron.job "aiccu restart daily" Daily (User "root") "/"
+	& Cron.job "aiccu restart daily" Cron.Daily (User "root") "/"
 		"service aiccu stop; service aiccu start"
 
 	-- In case compiler needs more than available ram
