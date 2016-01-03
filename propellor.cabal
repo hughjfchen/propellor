@@ -148,6 +148,8 @@ Library
   Other-Modules:
     Propellor.Bootstrap
     Propellor.Git
+    Propellor.Git.Config
+    Propellor.Git.VerifiedBranch
     Propellor.Gpg
     Propellor.Spin
     Propellor.Ssh
