@@ -150,7 +150,8 @@ repoAcceptsNonFFs repo = accepts <!> refuses
 		`describe` desc "rejects"
 	desc s = "git repo " ++ repo ++ " " ++ s ++ " non-fast-forward pushes"
 
--- | Sets a bare repository's default branch.
+-- | Sets a bare repository's default branch, which will be checked out
+-- when cloning it.
 bareRepoDefaultBranch :: FilePath -> String -> Property NoInfo
 bareRepoDefaultBranch repo branch =
 	userScriptProperty (User "root")
