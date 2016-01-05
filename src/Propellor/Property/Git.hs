@@ -149,3 +149,14 @@ repoAcceptsNonFFs repo = accepts <!> refuses
 	refuses = repoConfigured repo ("receive.denyNonFastForwards", "true")
 		`describe` desc "rejects"
 	desc s = "git repo " ++ repo ++ " " ++ s ++ " non-fast-forward pushes"
+
+-- | Sets a bare repository's default branch, which will be checked out
+-- when cloning it.
+bareRepoDefaultBranch :: FilePath -> String -> Property NoInfo
+bareRepoDefaultBranch repo branch =
+	userScriptProperty (User "root")
+		[ "cd " ++ repo
+		, "git symbolic-ref HEAD refs/heads/" ++ branch
+		]
+	`changesFileContent` (repo </> "HEAD")
+	`describe` ("git repo at " ++ repo ++ " has default branch " ++ branch)
