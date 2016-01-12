@@ -4,6 +4,8 @@ import Utility.Process
 import Utility.Exception
 
 import System.Directory
+import Control.Applicative
+import Prelude
 
 getCurrentBranch :: IO String
 getCurrentBranch = takeWhile (/= '\n')
