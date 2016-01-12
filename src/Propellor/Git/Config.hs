@@ -7,6 +7,8 @@ import Utility.SafeCommand
 import Utility.Monad
 
 import Control.Monad
+import Control.Applicative
+import Prelude
 
 getGitConfigValue :: String -> IO (Maybe String)
 getGitConfigValue key = do
