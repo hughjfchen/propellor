@@ -22,11 +22,13 @@ install:
 	find dist/gittmp -print0 | xargs -0r touch --no-dereference --date="$(DATE)"
 	export GIT_AUTHOR_NAME=build \
 	&& export GIT_AUTHOR_EMAIL=build@buildhost \
+	&& export GIT_AUTHOR_DATE="$(DATE)" \
 	&& export GIT_COMMITTER_NAME=build \
 	&& export GIT_COMMITTER_EMAIL=build@buildhost \
+	&& export GIT_COMMITTER_DATE="$(DATE)" \
 	&& cd dist/gittmp && git init \
 	&& git add . \
-	&& git commit --date="$(DATE)" -q -m "distributed version of propellor" \
+	&& git commit -q -m "distributed version of propellor" \
 	&& git bundle create $(DESTDIR)/usr/src/propellor/propellor.git master HEAD \
 	&& git show-ref master --hash > $(DESTDIR)/usr/src/propellor/head
 	rm -rf dist/gittmp
