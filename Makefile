@@ -1,4 +1,5 @@
 CABAL?=cabal
+DATE := $(shell dpkg-parsechangelog | grep Date | cut -d " " -f2-)
 
 # this target is provided (and is first) to keep old versions of the
 # propellor cron job working, and will eventually be removed
@@ -23,7 +24,7 @@ install:
 	&& export GIT_COMMITTER_EMAIL=build@buildhost \
 	&& cd dist/gittmp && git init \
 	&& git add . \
-	&& git commit -q -m "distributed version of propellor" \
+	&& git commit --date="$(DATE)" -q -m "distributed version of propellor" \
 	&& git bundle create $(DESTDIR)/usr/src/propellor/propellor.git master HEAD \
 	&& git show-ref master --hash > $(DESTDIR)/usr/src/propellor/head
 	rm -rf dist/gittmp
