@@ -1,3 +1,11 @@
+propellor (2.15.4) UNRELEASED; urgency=medium
+
+  * Build /usr/src/propellor/propellor.git reproducibly,
+    which makes the whole Debian package build reproducibly.
+    Thanks, Sean Whitton.
+
+ -- Joey Hess <id@joeyh.name>  Mon, 18 Jan 2016 13:15:30 -0400
+
 propellor (2.15.3) unstable; urgency=medium
 
   * Added Git.bareRepoDefaultBranch property
