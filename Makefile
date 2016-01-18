@@ -1,4 +1,5 @@
 CABAL?=cabal
+DATE := $(shell dpkg-parsechangelog | grep Date | cut -d " " -f2-)
 
 # this target is provided (and is first) to keep old versions of the
 # propellor cron job working, and will eventually be removed
@@ -17,10 +18,14 @@ install:
 	cat dist/propellor-*.tar.gz | (cd dist/gittmp && tar zx --strip-components=1)
 	# cabal sdist does not preserve symlinks, so copy over file
 	cd dist/gittmp && for f in $$(find -type f); do rm -f $$f; cp -a ../../$$f $$f; done
+	# reset mtime on files in git bundle so bundle is reproducible
+	find dist/gittmp -print0 | xargs -0r touch --no-dereference --date="$(DATE)"
 	export GIT_AUTHOR_NAME=build \
 	&& export GIT_AUTHOR_EMAIL=build@buildhost \
+	&& export GIT_AUTHOR_DATE="$(DATE)" \
 	&& export GIT_COMMITTER_NAME=build \
 	&& export GIT_COMMITTER_EMAIL=build@buildhost \
+	&& export GIT_COMMITTER_DATE="$(DATE)" \
 	&& cd dist/gittmp && git init \
 	&& git add . \
 	&& git commit -q -m "distributed version of propellor" \
