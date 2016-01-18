@@ -5,3 +5,5 @@ This makes the generated `/usr/src/propellor/propellor.git` reproducible, so tha
 So far as I can tell, this is the only part of the propellor build that is not reproducible at present.  It's also the only issue listed on the [[reproducible builds team website|https://reproducible.debian.net/rb-pkg/unstable/amd64/propellor.html]].
 
 --spwhitton
+
+> merged; [[done]] --[[Joey]]
