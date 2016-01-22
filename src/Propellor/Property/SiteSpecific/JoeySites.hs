@@ -477,7 +477,7 @@ githubMirrors =
 	, ("etckeeper", plzuseurl "http://etckeeper.branchable.com/todo/")
 	]
   where
-	plzuseurl u = "Please submit changes to " ++ u ++ " instead of using github pull requests, which are not part of my workflow. Just open a todo item there and link to a git repository containing your changes. Did you know, git is a distributed system? The git repository doesn't even need to be on github! Please send any complaints to Github; they don't allow turning off pull requests, and their interface to git does not understand that it's a decentralized system.  -- A robot acting on behalf of Joey Hess"
+	plzuseurl u = "Please submit changes to " ++ u ++ " instead of using github pull requests, which are not part of my workflow. Just open a todo item there and link to a git repository containing your changes. Did you know, git is a distributed system? The git repository doesn't even need to be on github! Please send any complaints to Github; they don't allow turning off pull requests or redirecting them elsewhere.  -- A robot acting on behalf of Joey Hess"
 
 rsyncNetBackup :: [Host] -> Property NoInfo
 rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" (Cron.Times "30 5 * * *")
