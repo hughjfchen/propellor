@@ -21,7 +21,7 @@ data Bound v = Bound
 
 -- | Flipped version of -<- with the container value first and host value
 -- second.
-(->-) :: (containerv ~ v, hostv ~ v) => hostv -> containerv -> Bound v
+(->-) :: (containerv ~ v, hostv ~ v) => containerv -> hostv -> Bound v
 (->-) = flip (-<-)
 
 -- | Create a Bound value, that is the same on both the host and container.
