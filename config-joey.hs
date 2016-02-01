@@ -522,7 +522,7 @@ standardSystemUnhardened hn suite arch motd = host hn
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.cacheCleaned
 	& Apt.installed ["etckeeper"]
-	& Apt.installed ["ssh"]
+	& Apt.installed ["ssh", "mosh"]
 	& GitHome.installedFor (User "root")
 	& User.hasSomePassword (User "root")
 	& User.accountFor (User "joey")
