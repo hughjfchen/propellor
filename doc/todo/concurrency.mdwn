@@ -109,3 +109,6 @@ responsible for such output, but it could be printed out, with appropriate
 warnings, at the end.
 
 [[!tag user/joey]]
+
+> [[done]]; use Propellor.Property.Concurrent to make properties run
+> concurrently. --[[Joey]]
