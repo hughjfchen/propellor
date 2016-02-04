@@ -1,5 +1,5 @@
 -- | Maintainer: Arnaud Bailly <arnaud.oqube@gmail.com>
--- 
+--
 -- Properties for configuring firewall (iptables) rules
 
 module Propellor.Property.Firewall (
@@ -47,7 +47,8 @@ toIpTableArg (Proto proto) = ["-p", map toLower $ show proto]
 toIpTableArg (DPort (Port port)) = ["--dport", show port]
 toIpTableArg (DPortRange (Port f, Port t)) =
 	["--dport", show f ++ ":" ++ show t]
-toIpTableArg (IFace iface) = ["-i", iface]
+toIpTableArg (InIFace iface) = ["-i", iface]
+toIpTableArg (OutIFace iface) = ["-o", iface]
 toIpTableArg (Ctstate states) =
 	[ "-m"
 	, "conntrack"
@@ -80,7 +81,8 @@ data Rules
 	-- data type with proto + ports
 	| DPort Port
 	| DPortRange (Port,Port)
-	| IFace Network.Interface
+	| InIFace Network.Interface
+	| OutIFace Network.Interface
 	| Ctstate [ ConnectionState ]
 	| Rules :- Rules   -- ^Combine two rules
 	deriving (Eq, Show)
