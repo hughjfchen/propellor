@@ -39,7 +39,7 @@ rule c t rs = property ("firewall rule: " <> show r) addIpTable
 toIpTable :: Rule -> [CommandParam]
 toIpTable r =  map Param $
 	show (ruleChain r) :
-	toIpTableArg (ruleRules r) ++ [ "-j" , show $ ruleTarget r ]
+	toIpTableArg (ruleRules r) ++ [ "-j" , fromTarget $ ruleTarget r ]
 
 toIpTableArg :: Rules -> [String]
 toIpTableArg Everything = []
@@ -81,8 +81,12 @@ data Rule = Rule
 data Chain = INPUT | OUTPUT | FORWARD
 	deriving (Eq, Show)
 
-data Target = ACCEPT | REJECT | DROP | LOG
+data Target = ACCEPT | REJECT | DROP | LOG | CustomTarget String
 	deriving (Eq, Show)
+
+fromTarget :: Target -> String
+fromTarget (CustomTarget ct) = ct
+fromTarget t = show t
 
 data Proto = TCP | UDP | ICMP
 	deriving (Eq, Show)
