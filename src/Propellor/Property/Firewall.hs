@@ -33,13 +33,13 @@ rule c t rs = property ("firewall rule: " <> show r) addIpTable
 		if exist
 			then return NoChange
 			else toResult <$> boolSystem "iptables" (add args)
-	add params = (Param "-A") : params
-	chk params = (Param "-C") : params
+	add params = Param "-A" : params
+	chk params = Param "-C" : params
 
 toIpTable :: Rule -> [CommandParam]
 toIpTable r =  map Param $
-	(show $ ruleChain r) :
-	(toIpTableArg (ruleRules r)) ++ [ "-j" , show $ ruleTarget r ]
+	show (ruleChain r) :
+	toIpTableArg (ruleRules r) ++ [ "-j" , show $ ruleTarget r ]
 
 toIpTableArg :: Rules -> [String]
 toIpTableArg Everything = []
@@ -52,15 +52,15 @@ toIpTableArg (OutIFace iface) = ["-o", iface]
 toIpTableArg (Ctstate states) =
 	[ "-m"
 	, "conntrack"
-	, "--ctstate", concat $ intersperse "," (map show states)
+	, "--ctstate", intercalate "," (map show states)
 	]
 toIpTableArg (Source ipwm) =
 	[ "-s"
-	, concat $ intersperse "," (map fromIPWithMask ipwm)
+	, intercalate "," (map fromIPWithMask ipwm)
 	]
 toIpTableArg (Destination ipwm) =
 	[ "-d"
-	, concat $ intersperse "," (map fromIPWithMask ipwm)
+	, intercalate "," (map fromIPWithMask ipwm)
 	]
 toIpTableArg (r :- r') = toIpTableArg r <> toIpTableArg r'
 
