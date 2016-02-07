@@ -4,6 +4,7 @@ import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
+import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 
 installed :: Property NoInfo
 installed = Apt.installed ["apache2"]
@@ -14,48 +15,35 @@ restarted = Service.restarted "apache2"
 reloaded :: Property NoInfo
 reloaded = Service.reloaded "apache2"
 
--- | A basic virtual host, publishing a directory, and logging to
--- the combined apache log file.
-virtualHost :: HostName -> Port -> FilePath -> RevertableProperty NoInfo
-virtualHost hn (Port p) docroot = siteEnabled hn
-	[ "<VirtualHost *:"++show p++">"
-	, "ServerName "++hn++":"++show p
-	, "DocumentRoot " ++ docroot
-	, "ErrorLog /var/log/apache2/error.log"
-	, "LogLevel warn"
-	, "CustomLog /var/log/apache2/access.log combined"
-	, "ServerSignature On"
-	, "</VirtualHost>"
-	]
-
 type ConfigFile = [String]
 
-siteEnabled :: HostName -> ConfigFile -> RevertableProperty NoInfo
-siteEnabled hn cf = enable <!> disable
-  where
-	enable = combineProperties ("apache site enabled " ++ hn)
-		[ siteAvailable hn cf
+siteEnabled :: Domain -> ConfigFile -> RevertableProperty NoInfo
+siteEnabled domain cf = siteEnabled' domain cf <!> siteDisabled domain
+
+siteEnabled' :: Domain -> ConfigFile -> Property NoInfo
+siteEnabled' domain cf = combineProperties ("apache site enabled " ++ domain)
+	[ siteAvailable domain cf
+		`requires` installed
+		`onChange` reloaded
+	, check (not <$> isenabled) 
+		(cmdProperty "a2ensite" ["--quiet", domain])
 			`requires` installed
 			`onChange` reloaded
-		, check (not <$> isenabled) 
-			(cmdProperty "a2ensite" ["--quiet", hn])
-				`requires` installed
-				`onChange` reloaded
-		]
-	disable = siteDisabled hn
-	isenabled = boolSystem "a2query" [Param "-q", Param "-s", Param hn]
+	]
+  where
+	isenabled = boolSystem "a2query" [Param "-q", Param "-s", Param domain]
 
-siteDisabled :: HostName -> Property NoInfo
-siteDisabled hn = combineProperties
-	("apache site disabled " ++ hn) 
-	(map File.notPresent (siteCfg hn))
-		`onChange` (cmdProperty "a2dissite" ["--quiet", hn] `assume` MadeChange)
+siteDisabled :: Domain -> Property NoInfo
+siteDisabled domain = combineProperties
+	("apache site disabled " ++ domain) 
+	(map File.notPresent (siteCfg domain))
+		`onChange` (cmdProperty "a2dissite" ["--quiet", domain] `assume` MadeChange)
 		`requires` installed
 		`onChange` reloaded
 
-siteAvailable :: HostName -> ConfigFile -> Property NoInfo
-siteAvailable hn cf = combineProperties ("apache site available " ++ hn) $
-	map (`File.hasContent` (comment:cf)) (siteCfg hn)
+siteAvailable :: Domain -> ConfigFile -> Property NoInfo
+siteAvailable domain cf = combineProperties ("apache site available " ++ domain) $
+	map (`File.hasContent` (comment:cf)) (siteCfg domain)
   where
 	comment = "# deployed with propellor, do not modify"
 
@@ -86,12 +74,12 @@ listenPorts ps = "/etc/apache2/ports.conf" `File.hasContent` map portline ps
 
 -- This is a list of config files because different versions of apache
 -- use different filenames. Propellor simply writes them all.
-siteCfg :: HostName -> [FilePath]
-siteCfg hn =
+siteCfg :: Domain -> [FilePath]
+siteCfg domain =
 	-- Debian pre-2.4
-	[ "/etc/apache2/sites-available/" ++ hn
+	[ "/etc/apache2/sites-available/" ++ domain
 	-- Debian 2.4+
-	, "/etc/apache2/sites-available/" ++ hn ++ ".conf"
+	, "/etc/apache2/sites-available/" ++ domain ++ ".conf"
 	] 
 
 -- | Configure apache to use SNI to differentiate between
@@ -123,3 +111,71 @@ allowAll = unlines
 	, "Require all granted"
 	, "</IfVersion>"
 	]
+
+type WebRoot = FilePath
+
+-- | A basic virtual host, publishing a directory, and logging to
+-- the combined apache log file. Not https capable.
+virtualHost :: Domain -> Port -> WebRoot -> RevertableProperty NoInfo
+virtualHost domain (Port p) docroot = siteEnabled domain
+	[ "<VirtualHost *:"++show p++">"
+	, "ServerName "++domain++":"++show p
+	, "DocumentRoot " ++ docroot
+	, "ErrorLog /var/log/apache2/error.log"
+	, "LogLevel warn"
+	, "CustomLog /var/log/apache2/access.log combined"
+	, "ServerSignature On"
+	, "</VirtualHost>"
+	]
+
+-- | A virtual host using https, with the certificate obtained
+-- using `Propellor.Property.LetsEncrypt.letsEncrypt`.
+--
+-- http connections are redirected to https.
+--
+-- Example:
+--
+-- > httpsVirtualHost "example.com" "/var/www"
+-- > 	(LetsEncrypt.AgreeTos (Just "me@my.domain"))
+httpsVirtualHost :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> Property NoInfo
+httpsVirtualHost domain docroot letos = setup
+	`requires` modEnabled "rewrite"
+	`requires` modEnabled "ssl"
+	`before` LetsEncrypt.letsEncrypt letos domain docroot certinstaller
+  where
+	setup = siteEnabled' domain $
+		-- The sslconffile is only created after letsencrypt gets
+		-- the cert. The "*" is needed to make apache not error
+		-- when the file doesn't exist.
+		("IncludeOptional " ++ sslconffile "*")
+		: vhost (Port 80)
+			[ "RewriteEngine On"
+			-- Pass through .well-known directory on http for the
+			-- letsencrypt acme challenge.
+			, "RewriteRule ^/.well-known/(.*) - [L]"
+			-- Everything else redirects to https
+			, "RewriteRule ^/(.*) https://" ++ domain ++ "/$1 [L,R,NE]"
+			]
+	certinstaller _domain certfile privkeyfile chainfile _fullchainfile =
+		File.hasContent (sslconffile "letsencrypt")
+			( vhost (Port 443)
+				[ "SSLEngine on"
+				, "SSLCertificateFile " ++ certfile
+				, "SSLCertificateKeyFile" ++ privkeyfile
+				, "SSLCertificateChainFile " ++ chainfile
+				]
+			)
+			-- always reload; the cert has changed
+			`before` reloaded
+	sslconffile s = "/etc/apache2/sites-available/ssl/" ++ domain ++ "/" ++ s ++ ".conf"
+	vhost (Port p) ls = 
+		[ "<VirtualHost *:"++show p++">"
+		, "ServerName "++domain++":"++show p
+		, "DocumentRoot " ++ docroot
+		, "ErrorLog /var/log/apache2/error.log"
+		, "LogLevel warn"
+		, "CustomLog /var/log/apache2/access.log combined"
+		, "ServerSignature On"
+		] ++ ls ++
+		[ "</VirtualHost>"
+		]

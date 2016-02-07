@@ -89,6 +89,7 @@ Library
     Propellor.Property.Grub
     Propellor.Property.Journald
     Propellor.Property.Kerberos
+    Propellor.Property.LetsEncrypt
     Propellor.Property.List
     Propellor.Property.LightDM
     Propellor.Property.Locale
