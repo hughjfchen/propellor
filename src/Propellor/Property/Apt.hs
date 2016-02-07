@@ -223,6 +223,8 @@ unattendedUpgrades = enable <!> disable
 	enable = setup True
 		`before` Service.running "cron"
 		`before` configure
+		-- work around http://bugs.debian.org/812380
+		`before` File.notPresent "/etc/apt/apt.conf.d/50unattended-upgrades.ucf-dist"
 	disable = setup False
 
 	setup enabled = (if enabled then installed else removed) ["unattended-upgrades"]
