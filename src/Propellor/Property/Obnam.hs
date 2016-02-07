@@ -59,25 +59,29 @@ backup' dir crontimes params numclients = cronjob `describe` desc
   where
 	desc = dir ++ " backed up by obnam"
 	cronjob = Cron.niceJob ("obnam_backup" ++ dir) crontimes (User "root") "/" $
-		intercalate "&&" $ catMaybes
+		unwords $ catMaybes
 			[ if numclients == OnlyClient
-				then Just $ unwords $
-					[ "obnam"
-					, "force-lock"
-					] ++ map shellEscape params
+				-- forcelock fails if repo does not exist yet
+				then Just $ forcelock ++ " 2>/dev/null ;"
 				else Nothing
-			, Just $ unwords $
-				[ "obnam"
-				, "backup"
-				, shellEscape dir
-				] ++ map shellEscape params
+			, Just backup
 			, if any isKeepParam params
-				then Just $ unwords $
-					[ "obnam"
-					, "forget"
-					] ++ map shellEscape params
+				then Just $ "&& " ++ forget
 				else Nothing
 			]
+	forcelock = unwords $
+		[ "obnam"
+		, "force-lock"
+		] ++ map shellEscape params
+	backup = unwords $
+		[ "obnam"
+		, "backup"
+		, shellEscape dir
+		] ++ map shellEscape params
+	forget = unwords $
+		[ "obnam"
+		, "forget"
+		] ++ map shellEscape params
 
 -- | Restores a directory from an obnam backup.
 --
