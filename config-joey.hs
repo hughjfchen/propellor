@@ -19,6 +19,7 @@ import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
+import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
@@ -331,6 +332,11 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& alias "ns4.branchable.com"
 	& branchableSecondary
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
+
+	-- testing
+	& Apache.httpsVirtualHost "letsencrypt.joeyh.name" "/var/www/html"
+		(LetsEncrypt.AgreeTOS (Just "id@joeyh.name"))
+	& alias "letsencrypt.joeyh.name"
 
 elephant :: Host
 elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"

@@ -155,7 +155,7 @@ virtualHost' domain (Port p) docroot addedcfg = siteEnabled domain $
 -- Example:
 --
 -- > httpsVirtualHost "example.com" "/var/www"
--- > 	(LetsEncrypt.AgreeTos (Just "me@my.domain"))
+-- > 	(LetsEncrypt.AgreeTOS (Just "me@my.domain"))
 httpsVirtualHost :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> Property NoInfo
 httpsVirtualHost domain docroot letos = httpsVirtualHost' domain docroot letos []
 
