@@ -25,9 +25,7 @@ data NumClients = OnlyClient | MultipleClients
 --
 -- So, this property can be used to deploy a directory of content
 -- to a host, while also ensuring any changes made to it get backed up.
--- And since Obnam encrypts, just make this property depend on a gpg
--- key, and tell obnam to use the key, and your data will be backed
--- up securely. For example: 
+-- For example: 
 --
 -- >	& Obnam.backup "/srv/git" "33 3 * * *"
 -- >		[ "--repository=sftp://2318@usw-s002.rsync.net/~/mygitrepos.obnam"
@@ -35,13 +33,16 @@ data NumClients = OnlyClient | MultipleClients
 -- >		`requires` Ssh.keyImported SshRsa "root" (Context hostname)
 --
 -- How awesome is that?
+--
+-- Note that this property does not make obnam encrypt the backup
+-- repository.
 backup :: FilePath -> Cron.Times -> [ObnamParam] -> NumClients -> Property NoInfo
 backup dir crontimes params numclients =
 	backup' dir crontimes params numclients
 		`requires` restored dir params
 
 -- | Like backup, but the specified gpg key id is used to encrypt
--- the repository. 
+-- the repository.
 --
 -- The gpg secret key will be automatically imported
 -- into root's keyring using Propellor.Property.Gpg.keyImported
@@ -58,19 +59,29 @@ backup' dir crontimes params numclients = cronjob `describe` desc
   where
 	desc = dir ++ " backed up by obnam"
 	cronjob = Cron.niceJob ("obnam_backup" ++ dir) crontimes (User "root") "/" $
-		intercalate ";" $ catMaybes
+		unwords $ catMaybes
 			[ if numclients == OnlyClient
-				then Just $ unwords $
-					[ "obnam"
-					, "force-lock"
-					] ++ map shellEscape params
+				-- forcelock fails if repo does not exist yet
+				then Just $ forcelock ++ " 2>/dev/null ;"
 				else Nothing
-			, Just $ unwords $
-				[ "obnam"
-				, "backup"
-				, shellEscape dir
-				] ++ map shellEscape params
+			, Just backup
+			, if any isKeepParam params
+				then Just $ "&& " ++ forget
+				else Nothing
 			]
+	forcelock = unwords $
+		[ "obnam"
+		, "force-lock"
+		] ++ map shellEscape params
+	backup = unwords $
+		[ "obnam"
+		, "backup"
+		, shellEscape dir
+		] ++ map shellEscape params
+	forget = unwords $
+		[ "obnam"
+		, "forget"
+		] ++ map shellEscape params
 
 -- | Restores a directory from an obnam backup.
 --
@@ -106,6 +117,34 @@ restored dir params = property (dir ++ " restored by obnam") go
 				return MadeChange
 			, return FailedChange
 			)
+
+-- | Policy for backup generations to keep. For example, KeepDays 30 will
+-- keep the latest backup for each day when a backup was made, and keep the
+-- last 30 such backups. When multiple KeepPolicies are combined together,
+-- backups meeting any policy are kept. See obnam's man page for details.
+data KeepPolicy 
+	= KeepHours Int
+	| KeepDays Int
+	| KeepWeeks Int
+	| KeepMonths Int
+	| KeepYears Int
+
+-- | Constructs an ObnamParam that specifies which old backup generations
+-- to keep. By default, all generations are kept. However, when this parameter
+-- is passed to the `backup` or `backupEncrypted` properties, they will run
+-- obnam forget to clean out generations not specified here.
+keepParam :: [KeepPolicy] -> ObnamParam
+keepParam ps = "--keep=" ++ intercalate "," (map go ps)
+  where
+	go (KeepHours n) = mk n 'h'
+	go (KeepDays n) = mk n 'd'
+	go (KeepWeeks n) = mk n 'w'
+	go (KeepMonths n) = mk n 'm'
+	go (KeepYears n) = mk n 'y'
+	mk n c = show n ++ [c]
+
+isKeepParam :: ObnamParam -> Bool
+isKeepParam p = "--keep=" `isPrefixOf` p
 
 installed :: Property NoInfo
 installed = Apt.installed ["obnam"]

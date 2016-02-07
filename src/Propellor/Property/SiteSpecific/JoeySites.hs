@@ -140,6 +140,7 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/olduse.net"
 		, "--client-name=spool"
 		, "--ssh-key=" ++ keyfile
+		, Obnam.keepParam [Obnam.KeepDays 30]
 		] Obnam.OnlyClient
 		`requires` Ssh.userKeyAt (Just keyfile)
 			(User "root")
@@ -194,6 +195,7 @@ mumbleServer hosts = combineProperties hn $ props
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/" ++ hn ++ ".obnam"
 		, "--ssh-key=" ++ sshkey
 		, "--client-name=mumble"
+		, Obnam.keepParam [Obnam.KeepDays 30]
 		] Obnam.OnlyClient
 		`requires` Ssh.userKeyAt (Just sshkey)
 			(User "root")
@@ -213,6 +215,7 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
 		, "--ssh-key=" ++ sshkey
 		, "--client-name=wren" -- historical
+		, Obnam.keepParam [Obnam.KeepDays 30]
 		] Obnam.OnlyClient (Gpg.GpgKeyId "1B169BE1")
 		`requires` Ssh.userKeyAt (Just sshkey)
 			(User "root")
