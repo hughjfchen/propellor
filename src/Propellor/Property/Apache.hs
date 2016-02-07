@@ -180,16 +180,19 @@ httpsVirtualHost' domain docroot letos addedcfg = setup
 			, "RewriteRule ^/(.*) https://" ++ domain ++ "/$1 [L,R,NE]"
 			]
 	certinstaller _domain certfile privkeyfile chainfile _fullchainfile =
-		File.hasContent (sslconffile "letsencrypt")
-			( vhost (Port 443)
+		combineProperties (domain ++ " ssl cert installed")
+			[ File.dirExists (takeDirectory cf)
+			, File.hasContent cf $ vhost (Port 443)
 				[ "SSLEngine on"
 				, "SSLCertificateFile " ++ certfile
 				, "SSLCertificateKeyFile" ++ privkeyfile
 				, "SSLCertificateChainFile " ++ chainfile
 				]
-			)
 			-- always reload; the cert has changed
-			`before` reloaded
+			, reloaded
+			]
+	  where
+		cf = sslconffile "letsencrypt"
 	sslconffile s = "/etc/apache2/sites-available/ssl/" ++ domain ++ "/" ++ s ++ ".conf"
 	vhost (Port p) ls = 
 		[ "<VirtualHost *:"++show p++">"
