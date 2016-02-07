@@ -15,7 +15,9 @@ restarted = Service.restarted "apache2"
 reloaded :: Property NoInfo
 reloaded = Service.reloaded "apache2"
 
-type ConfigFile = [String]
+type ConfigLine = String
+
+type ConfigFile = [ConfigLine]
 
 siteEnabled :: Domain -> ConfigFile -> RevertableProperty NoInfo
 siteEnabled domain cf = siteEnabled' domain cf <!> siteDisabled domain
@@ -101,7 +103,7 @@ multiSSL = check (doesDirectoryExist "/etc/apache2/conf.d") $
 --
 -- Works with multiple versions of apache that have different ways to do
 -- it.
-allowAll :: String
+allowAll :: ConfigLine
 allowAll = unlines
 	[ "<IfVersion < 2.4>"
 	, "Order allow,deny"
@@ -112,12 +114,27 @@ allowAll = unlines
 	, "</IfVersion>"
 	]
 
+-- | Config file fragment that can be inserted into a <VirtualHost>
+-- stanza to allow apache to display directory index icons.
+iconDir :: ConfigLine
+iconDir = unlines
+	[ "<Directory \"/usr/share/apache2/icons\">"
+	, "Options Indexes MultiViews"
+	, "AllowOverride None"
+	, allowAll
+	, "  </Directory>"
+	]
+
 type WebRoot = FilePath
 
 -- | A basic virtual host, publishing a directory, and logging to
 -- the combined apache log file. Not https capable.
 virtualHost :: Domain -> Port -> WebRoot -> RevertableProperty NoInfo
-virtualHost domain (Port p) docroot = siteEnabled domain
+virtualHost domain (Port p) docroot = virtualHost' domain (Port p) docroot []
+
+-- | Like `virtualHost` but with additional config lines added.
+virtualHost' :: Domain -> Port -> WebRoot -> [ConfigLine] -> RevertableProperty NoInfo
+virtualHost' domain (Port p) docroot addedcfg = siteEnabled domain $
 	[ "<VirtualHost *:"++show p++">"
 	, "ServerName "++domain++":"++show p
 	, "DocumentRoot " ++ docroot
@@ -125,7 +142,9 @@ virtualHost domain (Port p) docroot = siteEnabled domain
 	, "LogLevel warn"
 	, "CustomLog /var/log/apache2/access.log combined"
 	, "ServerSignature On"
-	, "</VirtualHost>"
+	]
+	++ addedcfg ++
+	[ "</VirtualHost>"
 	]
 
 -- | A virtual host using https, with the certificate obtained
@@ -138,7 +157,11 @@ virtualHost domain (Port p) docroot = siteEnabled domain
 -- > httpsVirtualHost "example.com" "/var/www"
 -- > 	(LetsEncrypt.AgreeTos (Just "me@my.domain"))
 httpsVirtualHost :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> Property NoInfo
-httpsVirtualHost domain docroot letos = setup
+httpsVirtualHost domain docroot letos = httpsVirtualHost' domain docroot letos []
+
+-- | Like `httpsVirtualHost` but with additional config lines added.
+httpsVirtualHost' :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> [ConfigLine] -> Property NoInfo
+httpsVirtualHost' domain docroot letos addedcfg = setup
 	`requires` modEnabled "rewrite"
 	`requires` modEnabled "ssl"
 	`before` LetsEncrypt.letsEncrypt letos domain docroot certinstaller
@@ -176,6 +199,6 @@ httpsVirtualHost domain docroot letos = setup
 		, "LogLevel warn"
 		, "CustomLog /var/log/apache2/access.log combined"
 		, "ServerSignature On"
-		] ++ ls ++
+		] ++ ls ++ addedcfg ++
 		[ "</VirtualHost>"
 		]
