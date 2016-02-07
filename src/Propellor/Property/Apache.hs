@@ -185,7 +185,7 @@ httpsVirtualHost' domain docroot letos addedcfg = setup
 			, File.hasContent cf $ vhost (Port 443)
 				[ "SSLEngine on"
 				, "SSLCertificateFile " ++ certfile
-				, "SSLCertificateKeyFile" ++ privkeyfile
+				, "SSLCertificateKeyFile " ++ privkeyfile
 				, "SSLCertificateChainFile " ++ chainfile
 				]
 			-- always reload; the cert has changed
