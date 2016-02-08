@@ -15,7 +15,8 @@ module Propellor.Property.Firewall (
 	Proto(..),
 	Rules(..),
 	ConnectionState(..),
-	IPWithMask(..)
+	IPWithMask(..),
+	fromIPWithMask
 ) where
 
 import Data.Monoid
