@@ -11,6 +11,8 @@ propellor (2.15.4) UNRELEASED; urgency=medium
   * Added Propellor.Property.LetsEncrypt
   * Apache.httpsVirtualHost: New property, setting up a https vhost
     with the certificate automatically obtained using letsencrypt.
+  * Allow using combineProperties and propertyList with lists of
+    RevertableProperty.
 
  -- Joey Hess <id@joeyh.name>  Mon, 18 Jan 2016 13:15:30 -0400
 

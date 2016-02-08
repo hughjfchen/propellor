@@ -182,7 +182,10 @@ propertyChildren (SProperty _ _ cs) = cs
 
 -- | A property that can be reverted. The first Property is run
 -- normally and the second is run when it's reverted.
-data RevertableProperty i = RevertableProperty (Property i) (Property i)
+data RevertableProperty i = RevertableProperty
+	{ setupRevertableProperty :: Property i
+	, undoRevertableProperty :: Property i
+	}
 
 instance Show (RevertableProperty i) where
         show (RevertableProperty p _) = show p

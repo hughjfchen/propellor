@@ -50,6 +50,8 @@ class PropertyList l where
 type family PropertyListType t
 type instance PropertyListType [Property HasInfo] = HasInfo
 type instance PropertyListType [Property NoInfo] = NoInfo
+type instance PropertyListType [RevertableProperty NoInfo] = NoInfo
+type instance PropertyListType [RevertableProperty HasInfo] = HasInfo
 type instance PropertyListType PropList = HasInfo
 
 instance PropertyList [Property NoInfo] where
@@ -62,6 +64,14 @@ instance PropertyList [Property HasInfo] where
 	-- that way.
 	propertyList desc ps = infoProperty desc (ensureProperties $ map ignoreInfo ps) mempty ps
 	combineProperties desc ps = infoProperty desc (combineSatisfy ps NoChange) mempty ps
+
+instance PropertyList [RevertableProperty HasInfo] where
+	propertyList desc ps = propertyList desc (map setupRevertableProperty ps)
+	combineProperties desc ps = combineProperties desc (map setupRevertableProperty ps)
+
+instance PropertyList [RevertableProperty NoInfo] where
+	propertyList desc ps = propertyList desc (map setupRevertableProperty ps)
+	combineProperties desc ps = combineProperties desc (map setupRevertableProperty ps)
 
 instance PropertyList PropList where
 	propertyList desc = propertyList desc . getProperties
