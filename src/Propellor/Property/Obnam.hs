@@ -62,23 +62,23 @@ backup' dir crontimes params numclients = cronjob `describe` desc
 		unwords $ catMaybes
 			[ if numclients == OnlyClient
 				-- forcelock fails if repo does not exist yet
-				then Just $ forcelock ++ " 2>/dev/null ;"
+				then Just $ forcelockcmd ++ " 2>/dev/null ;"
 				else Nothing
-			, Just backup
+			, Just backupcmd
 			, if any isKeepParam params
-				then Just $ "&& " ++ forget
+				then Just $ "&& " ++ forgetcmd
 				else Nothing
 			]
-	forcelock = unwords $
+	forcelockcmd = unwords $
 		[ "obnam"
 		, "force-lock"
 		] ++ map shellEscape params
-	backup = unwords $
+	backupcmd = unwords $
 		[ "obnam"
 		, "backup"
 		, shellEscape dir
 		] ++ map shellEscape params
-	forget = unwords $
+	forgetcmd = unwords $
 		[ "obnam"
 		, "forget"
 		] ++ map shellEscape params

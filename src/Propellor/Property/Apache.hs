@@ -155,18 +155,23 @@ virtualHost' domain (Port p) docroot addedcfg = siteEnabled domain $
 -- Example:
 --
 -- > httpsVirtualHost "example.com" "/var/www"
--- > 	(LetsEncrypt.AgreeTos (Just "me@my.domain"))
-httpsVirtualHost :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> Property NoInfo
+-- > 	(LetsEncrypt.AgreeTOS (Just "me@my.domain"))
+--
+-- Note that reverting this property does not remove the certificate from
+-- letsencrypt's cert store.
+httpsVirtualHost :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> RevertableProperty NoInfo
 httpsVirtualHost domain docroot letos = httpsVirtualHost' domain docroot letos []
 
 -- | Like `httpsVirtualHost` but with additional config lines added.
-httpsVirtualHost' :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> [ConfigLine] -> Property NoInfo
-httpsVirtualHost' domain docroot letos addedcfg = setup
-	`requires` modEnabled "rewrite"
-	`requires` modEnabled "ssl"
-	`before` LetsEncrypt.letsEncrypt letos domain docroot certinstaller
+httpsVirtualHost' :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> [ConfigLine] -> RevertableProperty NoInfo
+httpsVirtualHost' domain docroot letos addedcfg = setup <!> teardown
   where
-	setup = siteEnabled' domain $
+	setup = setuphttp
+		`requires` modEnabled "rewrite"
+		`requires` modEnabled "ssl"
+		`before` setuphttps
+	teardown = siteDisabled domain
+	setuphttp = siteEnabled' domain $
 		-- The sslconffile is only created after letsencrypt gets
 		-- the cert. The "*" is needed to make apache not error
 		-- when the file doesn't exist.
@@ -179,20 +184,22 @@ httpsVirtualHost' domain docroot letos addedcfg = setup
 			-- Everything else redirects to https
 			, "RewriteRule ^/(.*) https://" ++ domain ++ "/$1 [L,R,NE]"
 			]
-	certinstaller _domain certfile privkeyfile chainfile _fullchainfile =
-		combineProperties (domain ++ " ssl cert installed")
+	setuphttps = LetsEncrypt.letsEncrypt letos domain docroot
+		`onChange` combineProperties (domain ++ " ssl cert installed")
 			[ File.dirExists (takeDirectory cf)
-			, File.hasContent cf $ vhost (Port 443)
-				[ "SSLEngine on"
-				, "SSLCertificateFile " ++ certfile
-				, "SSLCertificateKeyFile" ++ privkeyfile
-				, "SSLCertificateChainFile " ++ chainfile
-				]
-			-- always reload; the cert has changed
+			, File.hasContent cf sslvhost
+				`onChange` reloaded
+			-- always reload since the cert has changed
 			, reloaded
 			]
 	  where
 		cf = sslconffile "letsencrypt"
+		sslvhost = vhost (Port 443)
+			[ "SSLEngine on"
+			, "SSLCertificateFile " ++ LetsEncrypt.certFile domain
+			, "SSLCertificateKeyFile " ++ LetsEncrypt.privKeyFile domain
+			, "SSLCertificateChainFile " ++ LetsEncrypt.chainFile domain
+			]
 	sslconffile s = "/etc/apache2/sites-available/ssl/" ++ domain ++ "/" ++ s ++ ".conf"
 	vhost (Port p) ls = 
 		[ "<VirtualHost *:"++show p++">"
