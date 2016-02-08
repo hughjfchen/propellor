@@ -37,8 +37,8 @@ type WebRoot = FilePath
 -- > letsEncrypt (AgreeTOS (Just "me@example.com")) "example.com" "/var/www"
 -- > 	`onChange` Apache.reload
 --
--- See `Propellor.Property.Apache.httpsVirtualHost` for a simpler way to
--- use letsencrypt, that is built on top of this.
+-- See `Propellor.Property.Apache.httpsVirtualHost` for a more complete
+-- integration of apache with letsencrypt, that's built on top of this.
 letsEncrypt :: AgreeTOS -> Domain -> WebRoot -> Property NoInfo
 letsEncrypt tos domain = letsEncrypt' tos domain []
 
