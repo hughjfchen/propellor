@@ -337,8 +337,6 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Apache.httpsVirtualHost "letsencrypt.joeyh.name" "/var/www/html"
 		(LetsEncrypt.AgreeTOS (Just "id@joeyh.name"))
 	& alias "letsencrypt.joeyh.name"
-	-- to revert above, partially:
-	-- ! Apache.virtualHost "letsencrypt.joeyh.name" (Port 443) "/var/www/html"
 
 elephant :: Host
 elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"

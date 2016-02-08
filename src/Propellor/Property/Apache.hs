@@ -156,16 +156,21 @@ virtualHost' domain (Port p) docroot addedcfg = siteEnabled domain $
 --
 -- > httpsVirtualHost "example.com" "/var/www"
 -- > 	(LetsEncrypt.AgreeTOS (Just "me@my.domain"))
-httpsVirtualHost :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> Property NoInfo
+--
+-- Note that reverting this property does not remove the certificate from
+-- letsencrypt's cert store.
+httpsVirtualHost :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> RevertableProperty NoInfo
 httpsVirtualHost domain docroot letos = httpsVirtualHost' domain docroot letos []
 
 -- | Like `httpsVirtualHost` but with additional config lines added.
-httpsVirtualHost' :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> [ConfigLine] -> Property NoInfo
-httpsVirtualHost' domain docroot letos addedcfg = setuphttp
-	`requires` modEnabled "rewrite"
-	`requires` modEnabled "ssl"
-	`before` setuphttps
+httpsVirtualHost' :: Domain -> WebRoot -> LetsEncrypt.AgreeTOS -> [ConfigLine] -> RevertableProperty NoInfo
+httpsVirtualHost' domain docroot letos addedcfg = setup <!> teardown
   where
+	setup = setuphttp
+		`requires` modEnabled "rewrite"
+		`requires` modEnabled "ssl"
+		`before` setuphttps
+	teardown = siteDisabled domain
 	setuphttp = siteEnabled' domain $
 		-- The sslconffile is only created after letsencrypt gets
 		-- the cert. The "*" is needed to make apache not error
