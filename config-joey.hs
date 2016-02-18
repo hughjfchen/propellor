@@ -267,9 +267,10 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 		, "--exclude=/var/cache"
 		, "--exclude=/var/tmp"
 		, "--exclude=/home/joey/lib"
+		, "--exclude=/srv/git"
+		, "--exclude=/var/spool/oldusenet"
 		, "--exclude=.*/tmp/"
 		, "--one-file-system"
-		, "--lru-size=128" -- half default, was running out of ram
 		, Obnam.keepParam [Obnam.KeepDays 7, Obnam.KeepWeeks 4, Obnam.KeepMonths 6]
 		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
 		`requires` Ssh.userKeys (User "root")
