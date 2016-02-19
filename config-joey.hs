@@ -261,25 +261,32 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Ssh.passwordAuthentication True
 	-- Since ssh password authentication is allowed:
 	& Fail2Ban.installed
+	& Apt.serviceInstalledRunning "ntp"
+	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
+
 	& Obnam.backupEncrypted "/" (Cron.Times "33 1 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/kite.obnam"
+		[ "--repository=sftp://2318@usw-s002.rsync.net/~/kite-root.obnam"
 		, "--client-name=kitenet.net"
+		, "--exclude=/home"
 		, "--exclude=/var/cache"
 		, "--exclude=/var/tmp"
-		, "--exclude=/home/joey/lib"
 		, "--exclude=/srv/git"
 		, "--exclude=/var/spool/oldusenet"
 		, "--exclude=.*/tmp/"
 		, "--one-file-system"
 		, Obnam.keepParam [Obnam.KeepDays 7, Obnam.KeepWeeks 4, Obnam.KeepMonths 6]
 		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
-		`requires` Ssh.userKeys (User "root")
-			(Context "kite.kitenet.net")
-			[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC5Gza2sNqSKfNtUN4dN/Z3rlqw18nijmXFx6df2GtBoZbkIak73uQfDuZLP+AXlyfHocwdkdHEf/zrxgXS4EokQMGLZhJ37Pr3edrEn/NEnqroiffw7kyd7EqaziA6UOezcLTjWGv+Zqg9JhitYs4WWTpNzrPH3yQf1V9FunZnkzb4gJGndts13wGmPEwSuf+QHbgQvjMOMCJwWSNcJGdhDR66hFlxfG26xx50uIczXYAbgLfHp5W6WuR/lcaS9J6i7HAPwcsPDA04XDinrcpl29QwsMW1HyGS/4FSCgrDqNZ2jzP49Bka78iCLRqfl1efyYas/Zo1jQ0x+pxq2RMr root@kite")
-			]
+		`requires` rootsshkey
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
-	& Apt.serviceInstalledRunning "ntp"
-	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
+	& Obnam.backupEncrypted "/home" (Cron.Times "33 3 * * *")
+		[ "--repository=sftp://2318@usw-s002.rsync.net/~/kite-home.obnam"
+		, "--client-name=kitenet.net"
+		, "--exclude=/home/joey/lib"
+		, "--one-file-system"
+		, Obnam.keepParam [Obnam.KeepDays 7, Obnam.KeepWeeks 4, Obnam.KeepMonths 6]
+		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
+		`requires` rootsshkey
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 
 	& alias "smtp.kitenet.net"
 	& alias "imap.kitenet.net"
@@ -339,6 +346,11 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& Apache.httpsVirtualHost "letsencrypt.joeyh.name" "/var/www/html"
 		(LetsEncrypt.AgreeTOS (Just "id@joeyh.name"))
 	& alias "letsencrypt.joeyh.name"
+  where
+	rootsshkey = Ssh.userKeys (User "root")
+		(Context "kite.kitenet.net")
+		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC5Gza2sNqSKfNtUN4dN/Z3rlqw18nijmXFx6df2GtBoZbkIak73uQfDuZLP+AXlyfHocwdkdHEf/zrxgXS4EokQMGLZhJ37Pr3edrEn/NEnqroiffw7kyd7EqaziA6UOezcLTjWGv+Zqg9JhitYs4WWTpNzrPH3yQf1V9FunZnkzb4gJGndts13wGmPEwSuf+QHbgQvjMOMCJwWSNcJGdhDR66hFlxfG26xx50uIczXYAbgLfHp5W6WuR/lcaS9J6i7HAPwcsPDA04XDinrcpl29QwsMW1HyGS/4FSCgrDqNZ2jzP49Bka78iCLRqfl1efyYas/Zo1jQ0x+pxq2RMr root@kite")
+		]
 
 elephant :: Host
 elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
