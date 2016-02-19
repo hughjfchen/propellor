@@ -1,9 +1,13 @@
-propellor (2.15.5) UNRELEASED; urgency=medium
+propellor (2.16.0) UNRELEASED; urgency=medium
 
   * Obnam: Only let one backup job run at a time when a host has multiple
     different backup properties, to avoid concurrent jobs fighting over
     scarce resources (particularly memory). Other jobs block on a lock
     file.
+  * Removed references to *buntu from code and documentation because of
+    an unfortunate trademark use policy.
+    http://joeyh.name/blog/entry/trademark_nonsense/
+  * That included changing a data constructor to "FooBuntu", an API change.
 
  -- Joey Hess <id@joeyh.name>  Fri, 19 Feb 2016 11:29:53 -0400
 

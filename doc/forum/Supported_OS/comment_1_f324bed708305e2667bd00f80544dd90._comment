@@ -7,13 +7,13 @@ I have heard of propellor being used on OSX. Probably that user wrote their
 own code for OSX specific stuff.
 
 Propellor properites can be parameterized by OS. Currently it has support
-for Debian and some untested support for Ubuntu. A property can be parameterized
+for Debian and some untested support for *buntu. A property can be parameterized
 like this:
 
 	foo :: Property
 	foo = property "foo" withOS desc $ \o -> case o of
 	                (Just (System (Debian _) _)) -> ensureProperty fooDebian
-	                (Just (System (Ubuntu _) _)) -> ensureProperty fooUbuntu
+	                (Just (System (FooBuntu _) _)) -> ensureProperty fooBuntu
 
 The first step for adding a new OS will be to modify <http://hackage.haskell.org/package/propellor/docs/Propellor-Types-OS.html>.
 Compilation will then warn about all OS parameterized properties that
