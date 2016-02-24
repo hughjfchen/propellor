@@ -90,7 +90,7 @@ data Debootstrapped = Debootstrapped Debootstrap.DebootstrapConfig
 instance ChrootBootstrapper Debootstrapped where
 	buildchroot (Debootstrapped cf) system loc = case system of
 		(Just s@(System (Debian _) _)) -> Right $ debootstrap s
-		(Just s@(System (Ubuntu _) _)) -> Right $ debootstrap s
+		(Just s@(System (FooBuntu _) _)) -> Right $ debootstrap s
 		Nothing -> Left "Cannot debootstrap; `os` property not specified"
 	  where
 		debootstrap s = Debootstrap.built loc s cf

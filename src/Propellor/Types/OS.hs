@@ -24,7 +24,7 @@ data System = System Distribution Architecture
 
 data Distribution
 	= Debian DebianSuite
-	| Ubuntu Release
+	| FooBuntu Release -- ^ "*buntu" (The actual name of this distribution is not used in Propellor per <http://joeyh.name/blog/entry/trademark_nonsense/>)
 	deriving (Show, Eq)
 
 -- | Debian has several rolling suites, and a number of stable releases,

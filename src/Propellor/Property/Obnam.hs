@@ -36,6 +36,10 @@ data NumClients = OnlyClient | MultipleClients
 --
 -- Note that this property does not make obnam encrypt the backup
 -- repository.
+--
+-- Since obnam uses a fair amount of system resources, only one obnam
+-- backup job will be run at a time. Other jobs will wait their turns to
+-- run.
 backup :: FilePath -> Cron.Times -> [ObnamParam] -> NumClients -> Property NoInfo
 backup dir crontimes params numclients =
 	backup' dir crontimes params numclients
@@ -59,16 +63,18 @@ backup' dir crontimes params numclients = cronjob `describe` desc
   where
 	desc = dir ++ " backed up by obnam"
 	cronjob = Cron.niceJob ("obnam_backup" ++ dir) crontimes (User "root") "/" $
-		unwords $ catMaybes
-			[ if numclients == OnlyClient
-				-- forcelock fails if repo does not exist yet
-				then Just $ forcelockcmd ++ " 2>/dev/null ;"
-				else Nothing
-			, Just backupcmd
-			, if any isKeepParam params
-				then Just $ "&& " ++ forgetcmd
-				else Nothing
-			]
+		"flock " ++ shellEscape lockfile ++ " sh -c " ++ shellEscape cmdline
+	lockfile = "/var/lock/propellor-obnam.lock"
+	cmdline = unwords $ catMaybes
+		[ if numclients == OnlyClient
+			-- forcelock fails if repo does not exist yet
+			then Just $ forcelockcmd ++ " 2>/dev/null ;"
+			else Nothing
+		, Just backupcmd
+		, if any isKeepParam params
+			then Just $ "&& " ++ forgetcmd
+			else Nothing
+		]
 	forcelockcmd = unwords $
 		[ "obnam"
 		, "force-lock"
