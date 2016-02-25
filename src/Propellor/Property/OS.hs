@@ -85,7 +85,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 
 	osbootstrapped = withOS (newOSDir ++ " bootstrapped") $ \o -> case o of
 		(Just d@(System (Debian _) _)) -> debootstrap d
-		(Just u@(System (FooBuntu _) _)) -> debootstrap u
+		(Just u@(System (Buntish _) _)) -> debootstrap u
 		_ -> error "os is not declared to be Debian or *buntu"
 	
 	debootstrap targetos = ensureProperty $
