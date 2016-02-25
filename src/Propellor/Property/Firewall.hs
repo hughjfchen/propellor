@@ -94,11 +94,11 @@ toIpTableTable f = ["-t", table, "-j", target]
 	(table, target) = toIpTableTable' f
 
 toIpTableTable' :: Table -> (String, String)
-toIpTableTable' (Filter target) = ("filter", fromTargetFilter target)
-toIpTableTable' (Nat target) = ("nat", fromTargetNat target)
-toIpTableTable' (Mangle target) = ("mangle", fromTargetMangle target)
-toIpTableTable' (Raw target) = ("raw", fromTargetRaw target)
-toIpTableTable' (Security target) = ("security", fromTargetSecurity target)
+toIpTableTable' (Filter target) = ("filter", fromTarget target)
+toIpTableTable' (Nat target) = ("nat", fromTarget target)
+toIpTableTable' (Mangle target) = ("mangle", fromTarget target)
+toIpTableTable' (Raw target) = ("raw", fromTarget target)
+toIpTableTable' (Security target) = ("security", fromTarget target)
 
 data Chain = INPUT | OUTPUT | FORWARD
 	deriving (Eq, Show)
@@ -106,49 +106,52 @@ data Chain = INPUT | OUTPUT | FORWARD
 data TargetFilter = ACCEPT | REJECT | DROP | LOG | FilterCustom String
 	deriving (Eq, Show)
 
-fromTargetFilter :: TargetFilter -> String
-fromTargetFilter ACCEPT = "ACCEPT"
-fromTargetFilter REJECT = "REJECT"
-fromTargetFilter DROP = "DROP"
-fromTargetFilter LOG = "LOG"
-fromTargetFilter (FilterCustom f) = f
+class FromTarget a where
+	fromTarget :: a -> String
+
+instance FromTarget TargetFilter where
+	fromTarget ACCEPT = "ACCEPT"
+	fromTarget REJECT = "REJECT"
+	fromTarget DROP = "DROP"
+	fromTarget LOG = "LOG"
+	fromTarget (FilterCustom f) = f
 
 data TargetNat = NatPREROUTING | NatOUTPUT | NatPOSTROUTING | NatCustom String
 	deriving (Eq, Show)
 
-fromTargetNat :: TargetNat -> String
-fromTargetNat NatPREROUTING = "PREROUTING"
-fromTargetNat NatOUTPUT = "OUTPUT"
-fromTargetNat NatPOSTROUTING = "POSTROUTING"
-fromTargetNat (NatCustom f) = f
+instance FromTarget TargetNat where
+	fromTarget NatPREROUTING = "PREROUTING"
+	fromTarget NatOUTPUT = "OUTPUT"
+	fromTarget NatPOSTROUTING = "POSTROUTING"
+	fromTarget (NatCustom f) = f
 
 data TargetMangle = ManglePREROUTING | MangleOUTPUT | MangleINPUT | MangleFORWARD | ManglePOSTROUTING | MangleCustom String
 	deriving (Eq, Show)
 
-fromTargetMangle :: TargetMangle -> String
-fromTargetMangle ManglePREROUTING = "PREROUTING"
-fromTargetMangle MangleOUTPUT = "OUTPUT"
-fromTargetMangle MangleINPUT = "INPUT"
-fromTargetMangle MangleFORWARD = "FORWARD"
-fromTargetMangle ManglePOSTROUTING = "POSTROUTING"
-fromTargetMangle (MangleCustom f) = f
+instance FromTarget TargetMangle where
+	fromTarget ManglePREROUTING = "PREROUTING"
+	fromTarget MangleOUTPUT = "OUTPUT"
+	fromTarget MangleINPUT = "INPUT"
+	fromTarget MangleFORWARD = "FORWARD"
+	fromTarget ManglePOSTROUTING = "POSTROUTING"
+	fromTarget (MangleCustom f) = f
 
 data TargetRaw = RawPREROUTING | RawOUTPUT | RawCustom String
 	deriving (Eq, Show)
 
-fromTargetRaw :: TargetRaw -> String
-fromTargetRaw RawPREROUTING = "PREROUTING"
-fromTargetRaw RawOUTPUT = "OUTPUT"
-fromTargetRaw (RawCustom f) = f
+instance FromTarget TargetRaw where
+	fromTarget RawPREROUTING = "PREROUTING"
+	fromTarget RawOUTPUT = "OUTPUT"
+	fromTarget (RawCustom f) = f
 
 data TargetSecurity = SecurityINPUT | SecurityOUTPUT | SecurityFORWARD | SecurityCustom String
 	deriving (Eq, Show)
 
-fromTargetSecurity :: TargetSecurity -> String
-fromTargetSecurity SecurityINPUT = "INPUT"
-fromTargetSecurity SecurityOUTPUT = "OUTPUT"
-fromTargetSecurity SecurityFORWARD = "FORWARD"
-fromTargetSecurity (SecurityCustom f) = f
+instance FromTarget TargetSecurity where
+	fromTarget SecurityINPUT = "INPUT"
+	fromTarget SecurityOUTPUT = "OUTPUT"
+	fromTarget SecurityFORWARD = "FORWARD"
+	fromTarget (SecurityCustom f) = f
 
 data Proto = TCP | UDP | ICMP
 	deriving (Eq, Show)
