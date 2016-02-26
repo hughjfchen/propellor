@@ -12,6 +12,8 @@ propellor (2.16.0) UNRELEASED; urgency=medium
     add CustomTarget, and more improvements.
     Thanks, Félix Sipma.
   * Firewall.rule: Now takes a Table parameter. (API change)
+  * Ssh.authorizedKey: Fix bug preventing it from working when the
+    authorized_keys file does not yet exist.
 
  -- Joey Hess <id@joeyh.name>  Fri, 19 Feb 2016 11:29:53 -0400
 
