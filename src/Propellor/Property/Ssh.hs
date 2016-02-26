@@ -30,7 +30,6 @@ module Propellor.Property.Ssh (
 	unauthorizedKeysFrom,
 	authorizedKeys,
 	authorizedKey,
-	unauthorizedKey,
 	hasAuthorizedKeys,
 	getUserPubKeys,
 ) where
@@ -372,7 +371,7 @@ localuser@(User ln) `unauthorizedKeysFrom` (remoteuser@(User rn), remotehost) =
 
 	go [] = return NoChange
 	go ls = ensureProperty $ combineProperties desc $
-		map (unauthorizedKey localuser) ls
+		map (revert . authorizedKey localuser) ls
 	
 authorizedKeyLines :: User -> Host -> Propellor [File.Line]
 authorizedKeyLines remoteuser remotehost = 
@@ -395,25 +394,20 @@ authorizedKeys user@(User u) context = withPrivData (SshAuthorizedKeys u) contex
 
 -- | Ensures that a user's authorized_keys contains a line.
 -- Any other lines in the file are preserved as-is.
-authorizedKey :: User -> String -> Property NoInfo
-authorizedKey user@(User u) l = property desc $ do
-	f <- liftIO $ dotFile "authorized_keys" user
-	modAuthorizedKey f user $
-		f `File.containsLine` l
-			`requires` File.dirExists (takeDirectory f)
+authorizedKey :: User -> String -> RevertableProperty NoInfo
+authorizedKey user@(User u) l = add <!> remove
   where
-	desc = u ++ " has authorized_keys"
-
--- | Reverts `authorizedKey`
-unauthorizedKey :: User -> String -> Property NoInfo
-unauthorizedKey user@(User u) l = property desc $ do
-	f <- liftIO $ dotFile "authorized_keys" user
-	ifM (liftIO $ doesFileExist f) 
-		( modAuthorizedKey f user $ f `File.lacksLine` l
-		, return NoChange
-		)
-  where
-	desc = u ++ " lacks authorized_keys"
+	add = property (u ++ " has authorized_keys") $ do
+		f <- liftIO $ dotFile "authorized_keys" user
+		modAuthorizedKey f user $
+			f `File.containsLine` l
+				`requires` File.dirExists (takeDirectory f)
+	remove = property (u ++ " lacks authorized_keys") $ do
+		f <- liftIO $ dotFile "authorized_keys" user
+		ifM (liftIO $ doesFileExist f) 
+			( modAuthorizedKey f user $ f `File.lacksLine` l
+			, return NoChange
+			)
 
 modAuthorizedKey :: FilePath -> User -> Property NoInfo -> Propellor Result
 modAuthorizedKey f user p = ensureProperty $ p
