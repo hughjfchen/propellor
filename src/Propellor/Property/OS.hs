@@ -221,7 +221,7 @@ preserveRootSshAuthorized :: Property NoInfo
 preserveRootSshAuthorized = check (fileExist oldloc) $
 	property (newloc ++ " copied from old OS") $ do
 		ks <- liftIO $ lines <$> readFile oldloc
-		ensureProperties (map (Ssh.authorizedKey (User "root")) ks)
+		ensureProperties (map (setupRevertableProperty . Ssh.authorizedKey (User "root")) ks)
   where
 	newloc = "/root/.ssh/authorized_keys"
 	oldloc = oldOSDir ++ newloc
