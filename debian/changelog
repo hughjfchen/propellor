@@ -4,10 +4,16 @@ propellor (2.16.0) UNRELEASED; urgency=medium
     different backup properties, to avoid concurrent jobs fighting over
     scarce resources (particularly memory). Other jobs block on a lock
     file.
-  * Removed references to *buntu from code and documentation because of
-    an unfortunate trademark use policy.
+  * Removed references to a Debian derivative from code and documentation
+    because of an unfortunate trademark use policy.
     http://joeyh.name/blog/entry/trademark_nonsense/
-  * That included changing a data constructor to "FooBuntu", an API change.
+  * That included changing a data constructor to "Buntish", an API change.
+  * Firewall: add InIFace/OutIFace Rules, add Source/Destination Rules,
+    add CustomTarget, and more improvements.
+    Thanks, Félix Sipma.
+  * Firewall.rule: Now takes a Table parameter. (API change)
+  * Ssh.authorizedKey: Fix bug preventing it from working when the
+    authorized_keys file does not yet exist.
 
  -- Joey Hess <id@joeyh.name>  Fri, 19 Feb 2016 11:29:53 -0400
 

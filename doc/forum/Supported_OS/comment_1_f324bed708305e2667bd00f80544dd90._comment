@@ -13,7 +13,7 @@ like this:
 	foo :: Property
 	foo = property "foo" withOS desc $ \o -> case o of
 	                (Just (System (Debian _) _)) -> ensureProperty fooDebian
-	                (Just (System (FooBuntu _) _)) -> ensureProperty fooBuntu
+	                (Just (System (Buntish _) _)) -> ensureProperty fooBuntu
 
 The first step for adding a new OS will be to modify <http://hackage.haskell.org/package/propellor/docs/Propellor-Types-OS.html>.
 Compilation will then warn about all OS parameterized properties that

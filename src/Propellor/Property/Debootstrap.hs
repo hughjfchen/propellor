@@ -91,7 +91,7 @@ built' installprop target system@(System _ arch) config =
 	
 extractSuite :: System -> Maybe String
 extractSuite (System (Debian s) _) = Just $ Apt.showSuite s
-extractSuite (System (FooBuntu r) _) = Just r
+extractSuite (System (Buntish r) _) = Just r
 
 -- | Ensures debootstrap is installed.
 --
@@ -108,12 +108,12 @@ installed = install <!> remove
 			)
 
 	installon (Just (System (Debian _) _)) = aptinstall
-	installon (Just (System (FooBuntu _) _)) = aptinstall
+	installon (Just (System (Buntish _) _)) = aptinstall
 	installon _ = sourceInstall
 
 	remove = withOS "debootstrap removed" $ ensureProperty . removefrom
 	removefrom (Just (System (Debian _) _)) = aptremove
-	removefrom (Just (System (FooBuntu _) _)) = aptremove
+	removefrom (Just (System (Buntish _) _)) = aptremove
 	removefrom _ = sourceRemove
 			
 	aptinstall = Apt.installed ["debootstrap"]

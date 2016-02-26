@@ -417,6 +417,6 @@ unauthorizedKey user@(User u) l = property desc $ do
 
 modAuthorizedKey :: FilePath -> User -> Property NoInfo -> Propellor Result
 modAuthorizedKey f user p = ensureProperty $ p
-	`requires` File.mode f (combineModes [ownerWriteMode, ownerReadMode])
-	`requires` File.ownerGroup f user (userGroup user)
-	`requires` File.ownerGroup (takeDirectory f) user (userGroup user)
+	`before` File.mode f (combineModes [ownerWriteMode, ownerReadMode])
+	`before` File.ownerGroup f user (userGroup user)
+	`before` File.ownerGroup (takeDirectory f) user (userGroup user)
