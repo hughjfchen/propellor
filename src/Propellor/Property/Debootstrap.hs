@@ -23,7 +23,7 @@ import System.Posix.Files
 
 type Url = String
 
--- | A monoid for debootstrap configuration. 
+-- | A monoid for debootstrap configuration.
 -- mempty is a default debootstrapped system.
 data DebootstrapConfig
 	= DefaultConfig
@@ -34,8 +34,8 @@ data DebootstrapConfig
 	deriving (Show)
 
 instance Monoid DebootstrapConfig where
-        mempty  = DefaultConfig
-        mappend = (:+)
+	mempty  = DefaultConfig
+	mappend = (:+)
 
 toParams :: DebootstrapConfig -> [CommandParam]
 toParams DefaultConfig = []
@@ -52,7 +52,7 @@ built :: FilePath -> System -> DebootstrapConfig -> Property HasInfo
 built target system config = built' (toProp installed) target system config
 
 built' :: (Combines (Property NoInfo) (Property i)) => Property i -> FilePath -> System -> DebootstrapConfig -> Property (CInfo NoInfo i)
-built' installprop target system@(System _ arch) config = 
+built' installprop target system@(System _ arch) config =
 	check (unpopulated target <||> ispartial) setupprop
 		`requires` installprop
   where
@@ -88,10 +88,11 @@ built' installprop target system@(System _ arch) config =
 			return True
 		, return False
 		)
-	
+
 extractSuite :: System -> Maybe String
 extractSuite (System (Debian s) _) = Just $ Apt.showSuite s
 extractSuite (System (Buntish r) _) = Just r
+extractSuite _ = error "Not supported unless Debian or Buntish."
 
 -- | Ensures debootstrap is installed.
 --
@@ -101,7 +102,7 @@ extractSuite (System (Buntish r) _) = Just r
 installed :: RevertableProperty NoInfo
 installed = install <!> remove
   where
-	install = withOS "debootstrap installed" $ \o -> 
+	install = withOS "debootstrap installed" $ \o ->
 		ifM (liftIO $ isJust <$> programPath)
 			( return NoChange
 			, ensureProperty (installon o)
@@ -115,7 +116,7 @@ installed = install <!> remove
 	removefrom (Just (System (Debian _) _)) = aptremove
 	removefrom (Just (System (Buntish _) _)) = aptremove
 	removefrom _ = sourceRemove
-			
+
 	aptinstall = Apt.installed ["debootstrap"]
 	aptremove = Apt.removed ["debootstrap"]
 
@@ -273,9 +274,9 @@ extractUrls base = collect [] . map toLower
 		_ -> findend l r
 	collect l (_:cs) = collect l cs
 
-	findend l s = 
+	findend l s =
 		let (u, r) = break (== '"') s
 		    u' = if "http" `isPrefixOf` u
-		    	then u
+			then u
 			else base </> u
 		in collect (u':l) r

@@ -83,6 +83,9 @@ Library
     Propellor.Property.Fail2Ban
     Propellor.Property.File
     Propellor.Property.Firewall
+    Propellor.Property.FreeBSD
+    Propellor.Property.FreeBSD.Pkg
+    Propellor.Property.FreeBSD.Poudriere
     Propellor.Property.Git
     Propellor.Property.Gpg
     Propellor.Property.Group
@@ -117,6 +120,9 @@ Library
     Propellor.Property.Unbound
     Propellor.Property.User
     Propellor.Property.Uwsgi
+    Propellor.Property.ZFS
+    Propellor.Property.ZFS.Process
+    Propellor.Property.ZFS.Properties
     Propellor.Property.HostingProvider.CloudAtCost
     Propellor.Property.HostingProvider.DigitalOcean
     Propellor.Property.HostingProvider.Linode
@@ -146,6 +152,7 @@ Library
     Propellor.Types.Result
     Propellor.Types.ResultCheck
     Propellor.Types.CmdLine
+    Propellor.Types.ZFS
   Other-Modules:
     Propellor.Bootstrap
     Propellor.Git

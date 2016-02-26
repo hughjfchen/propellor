@@ -21,7 +21,7 @@ data Times
 -- | Installs a cron job, that will run as a specified user in a particular
 -- directory. Note that the Desc must be unique, as it is used for the
 -- cron job filename.
--- 
+--
 -- Only one instance of the cron job is allowed to run at a time, no matter
 -- how long it runs. This is accomplished using flock locking of the cron
 -- job file.
@@ -47,7 +47,7 @@ job desc times (User u) cddir command = combineProperties ("cronned " ++ desc)
 	, case times of
 		Times _ -> doNothing
 		_ -> cronjobfile `File.mode` combineModes (readModes ++ executeModes)
-	-- Use a separate script because it makes the cron job name 
+	-- Use a separate script because it makes the cron job name
 	-- prettier in emails, and also allows running the job manually.
 	, scriptfile `File.hasContent`
 		[ "#!/bin/sh"
@@ -81,5 +81,5 @@ niceJob desc times user cddir command = job desc times user cddir
 
 -- | Installs a cron job to run propellor.
 runPropellor :: Times -> Property NoInfo
-runPropellor times = niceJob "propellor" times (User "root") localdir
-	(bootstrapPropellorCommand ++ "; ./propellor")
+runPropellor times = niceJob "propellor" times (User "root") localdir "true"
+--	(bootstrapPropellorCommand ++ "; ./propellor")

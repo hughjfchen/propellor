@@ -1,3 +1,5 @@
+{-# Language ScopedTypeVariables #-}
+
 module Propellor.Spin (
 	commitSpin,
 	spin,
@@ -41,7 +43,7 @@ commitSpin = do
 			currentBranch <- getCurrentBranch
 			when (b /= currentBranch) $
 				error ("spin aborted: check out "
- 					++ b ++ " branch first")
+					++ b ++ " branch first")
 
 	-- safety check #2: check we can commit with a dirty tree
 	noDirtySpin <- getGitConfigBool "propellor.forbid-dirty-spin"
@@ -52,7 +54,7 @@ commitSpin = do
 			error "spin aborted: commit changes first"
 
 	void $ actionMessage "Git commit" $
-		gitCommit (Just spinCommitMessage) 
+		gitCommit (Just spinCommitMessage)
 			[Param "--allow-empty", Param "-a"]
 	-- Push to central origin repo first, if possible.
 	-- The remote propellor will pull from there, which avoids
@@ -76,10 +78,12 @@ spin' mprivdata relay target hst = do
 		Just r -> pure r
 		Nothing -> getSshTarget target hst
 
+	let (InfoVal o) = (getInfo $ hostInfo hst) :: InfoVal System
+
 	-- Install, or update the remote propellor.
 	updateServer target relay hst
-		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap probecmd])
-		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap updatecmd])
+		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap (probecmd o)])
+		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap (updatecmd o)])
 		=<< getprivdata
 
 	-- And now we can run it.
@@ -91,19 +95,19 @@ spin' mprivdata relay target hst = do
 	relaying = relay == Just target
 	viarelay = isJust relay && not relaying
 
-	probecmd = intercalate " ; "
-		[ "if [ ! -d " ++ localdir ++ "/.git ]"
+	probecmd sys = intercalate " ; "
+		["if [ ! -d " ++ localdir ++ "/.git ]"
 		, "then (" ++ intercalate " && "
-			[ installGitCommand
+			[ installGitCommand sys
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			] ++ ") || echo " ++ toMarked statusMarker (show NeedPrecompiled)
-		, "else " ++ updatecmd
+		, "else " ++ (updatecmd sys)
 		, "fi"
 		]
-	
-	updatecmd = intercalate " && "
+
+	updatecmd sys = intercalate " && "
 		[ "cd " ++ localdir
-		, bootstrapPropellorCommand
+		, bootstrapPropellorCommand sys
 		, if viarelay
 			then "./propellor --continue " ++
 				shellEscape (show (Relay target))
@@ -116,7 +120,7 @@ spin' mprivdata relay target hst = do
 	cmdline
 		| viarelay = Spin [target] (Just target)
 		| otherwise = SimpleRun target
-	
+
 	getprivdata = case mprivdata of
 		Nothing
 			| relaying -> do
@@ -124,12 +128,12 @@ spin' mprivdata relay target hst = do
 				d <- readPrivDataFile f
 				nukeFile f
 				return d
-			| otherwise -> 
+			| otherwise ->
 				filterPrivData hst <$> decryptPrivData
 		Just pd -> pure pd
 
 -- Check if the Host contains an IP address that matches one of the IPs
--- in the DNS for the HostName. If so, the HostName is used as-is, 
+-- in the DNS for the HostName. If so, the HostName is used as-is,
 -- but if the DNS is out of sync with the Host config, or doesn't have
 -- the host in it at all, use one of the Host's IPs instead.
 getSshTarget :: HostName -> Host -> IO String
@@ -199,7 +203,7 @@ update forhost = do
 		, Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout
 		, Param "."
 		]
-	
+
 	-- When --spin --relay is run, get a privdata file
 	-- to be relayed to the target host.
 	privfile = maybe privDataLocal privDataRelay forhost

@@ -1,0 +1,19 @@
+# FreeBSD Support for Propellor
+
+This branch is to add FreeBSD support to Propellor. The first steps
+will focus around package management with pkg-ng.
+
+# Bootstrapping
+
+The current Bootstrap process is very apt-centric, so current efforts
+are focusing on passing the System information down into Bootstrap.
+
+Affected functions are:
+
+* `installGitCommand`, which has to install pkg itself, then install
+  git. The `ASSUME_ALWAYS_YES` environment variable must be set so pkg
+  will just do its thing.
+
+* `depsCommand`, which installs as many Haskell dependencies from the
+  system package manager. We also install gmake, but I'm not sure
+  where this is used yet.
