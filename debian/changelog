@@ -8,10 +8,10 @@ propellor (2.16.0) unstable; urgency=medium
     because of an unfortunate trademark use policy.
     http://joeyh.name/blog/entry/trademark_nonsense/
   * That included changing a data constructor to "Buntish", an API change.
+  * Firewall.rule: Now takes a Table parameter. (API change)
   * Firewall: add InIFace/OutIFace Rules, add Source/Destination Rules,
     add CustomTarget, and more improvements.
     Thanks, Félix Sipma.
-  * Firewall.rule: Now takes a Table parameter. (API change)
   * Ssh.authorizedKey: Fix bug preventing it from working when the
     authorized_keys file does not yet exist.
   * Removed Ssh.unauthorizedKey and made Ssh.authorizedKey revertable.
