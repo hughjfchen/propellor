@@ -123,10 +123,27 @@ update = runApt ["update"]
 	`assume` MadeChange
 	`describe` "apt update"
 
+-- | Have apt upgrade packages, adding new packages and removing old as
+-- necessary.
 upgrade :: Property NoInfo
-upgrade = runApt ["-y", "dist-upgrade"]
-	`assume` MadeChange
-	`describe` "apt dist-upgrade"
+upgrade = upgrade' "dist-upgrade"
+
+upgrade' :: String -> Property NoInfo
+upgrade' p = combineProperties ("apt " ++ p)
+	[ runApt ["-y", p]
+		`assume` MadeChange
+	, dpkgConfigured
+	]
+
+-- | Have apt upgrade packages, but never add new packages or remove 
+-- old packages. Not suitable for upgrading acrocess major versions
+-- of the distribution.
+safeUpgrade :: Property NoInfo
+safeUpgrade = upgrade' "upgrade"
+
+dpkgConfigured :: Property NoInfo
+dpkgConfigured = cmdProperty "dpkg" ["--confugure", "--pending"]
+	`describe` "dpkg configured pending"
 
 type Package = String
 

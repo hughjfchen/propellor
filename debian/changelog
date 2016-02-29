@@ -1,3 +1,11 @@
+propellor (2.16.1) UNRELEASED; urgency=medium
+
+  * Apt.upgrade: Run dpkg --configure -a first, to recover from
+    interrupted upgrades.
+  * Apt: Add safeupgrade.
+
+ -- Joey Hess <id@joeyh.name>  Mon, 29 Feb 2016 17:58:08 -0400
+
 propellor (2.16.0) unstable; urgency=medium
 
   * Obnam: Only let one backup job run at a time when a host has multiple
