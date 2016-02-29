@@ -12,6 +12,7 @@ module Propellor.Property.Firewall (
 	Rules(..),
 	ConnectionState(..),
 	ICMPTypeMatch(..),
+	Frequency(..),
 	IPWithMask(..),
 	fromIPWithMask
 ) where
@@ -63,6 +64,11 @@ toIpTableArg (ICMPType i) =
 	[ "-m"
 	, "icmp"
 	, "--icmp-type", fromICMPTypeMatch i
+	]
+toIpTableArg (RateLimit f) =
+	[ "-m"
+	, "limit"
+	, "--limit", fromFrequency f
 	]
 toIpTableArg (Source ipwm) =
 	[ "-s"
@@ -177,6 +183,12 @@ fromICMPTypeMatch :: ICMPTypeMatch -> String
 fromICMPTypeMatch (ICMPTypeName t) = t
 fromICMPTypeMatch (ICMPTypeCode c) = show c
 
+data Frequency = NumBySecond Int
+	deriving (Eq, Show)
+
+fromFrequency :: Frequency -> String
+fromFrequency (NumBySecond n) = show n ++ "/second"
+
 data Rules
 	= Everything
 	| Proto Proto
@@ -188,6 +200,7 @@ data Rules
 	| OutIFace Network.Interface
 	| Ctstate [ ConnectionState ]
 	| ICMPType ICMPTypeMatch
+	| RateLimit Frequency
 	| Source [ IPWithMask ]
 	| Destination [ IPWithMask ]
 	| Rules :- Rules   -- ^Combine two rules
