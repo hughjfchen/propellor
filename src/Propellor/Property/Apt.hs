@@ -143,7 +143,7 @@ safeUpgrade = upgrade' "upgrade"
 
 -- | Have dpkg try to configure any packages that are not fully configured.
 pendingConfigured :: Property NoInfo
-pendingConfigured = cmdProperty "dpkg" ["--confugure", "--pending"]
+pendingConfigured = cmdPropertyEnv "dpkg" ["--confugure", "--pending"] noninteractiveEnv
 	`assume` MadeChange
 	`describe` "dpkg configured pending"
 
