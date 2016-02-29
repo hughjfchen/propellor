@@ -11,6 +11,7 @@ module Propellor.Property.Firewall (
 	Proto(..),
 	Rules(..),
 	ConnectionState(..),
+	ICMPTypeMatch(..),
 	IPWithMask(..),
 	fromIPWithMask
 ) where
@@ -57,6 +58,11 @@ toIpTableArg (Ctstate states) =
 	[ "-m"
 	, "conntrack"
 	, "--ctstate", intercalate "," (map show states)
+	]
+toIpTableArg (ICMPType i) =
+	[ "-m"
+	, "icmp"
+	, "--icmp-type", fromICMPTypeMatch i
 	]
 toIpTableArg (Source ipwm) =
 	[ "-s"
@@ -164,6 +170,13 @@ data Proto = TCP | UDP | ICMP
 data ConnectionState = ESTABLISHED | RELATED | NEW | INVALID
 	deriving (Eq, Show)
 
+data ICMPTypeMatch = ICMPTypeName String | ICMPTypeCode Int
+	deriving (Eq, Show)
+
+fromICMPTypeMatch :: ICMPTypeMatch -> String
+fromICMPTypeMatch (ICMPTypeName t) = t
+fromICMPTypeMatch (ICMPTypeCode c) = show c
+
 data Rules
 	= Everything
 	| Proto Proto
@@ -174,6 +187,7 @@ data Rules
 	| InIFace Network.Interface
 	| OutIFace Network.Interface
 	| Ctstate [ ConnectionState ]
+	| ICMPType ICMPTypeMatch
 	| Source [ IPWithMask ]
 	| Destination [ IPWithMask ]
 	| Rules :- Rules   -- ^Combine two rules
