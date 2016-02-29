@@ -130,9 +130,9 @@ upgrade = upgrade' "dist-upgrade"
 
 upgrade' :: String -> Property NoInfo
 upgrade' p = combineProperties ("apt " ++ p)
-	[ runApt ["-y", p]
+	[ pendingConfigured
+	, runApt ["-y", p]
 		`assume` MadeChange
-	, dpkgConfigured
 	]
 
 -- | Have apt upgrade packages, but never add new packages or remove 
@@ -141,8 +141,10 @@ upgrade' p = combineProperties ("apt " ++ p)
 safeUpgrade :: Property NoInfo
 safeUpgrade = upgrade' "upgrade"
 
-dpkgConfigured :: Property NoInfo
-dpkgConfigured = cmdProperty "dpkg" ["--confugure", "--pending"]
+-- | Have dpkg try to configure any packages that are not fully configured.
+pendingConfigured :: Property NoInfo
+pendingConfigured = cmdProperty "dpkg" ["--confugure", "--pending"]
+	`assume` MadeChange
 	`describe` "dpkg configured pending"
 
 type Package = String
