@@ -77,6 +77,7 @@ toIpTableArg (TCPFlags m c) =
 	, intercalate "," (map show m)
 	, intercalate "," (map show c)
 	]
+toIpTableArg TCPSyn = ["--syn"]
 toIpTableArg (Source ipwm) =
 	[ "-s"
 	, intercalate "," (map fromIPWithMask ipwm)
@@ -216,6 +217,7 @@ data Rules
 	| ICMPType ICMPTypeMatch
 	| RateLimit Frequency
 	| TCPFlags TCPFlagMask TCPFlagComp
+	| TCPSyn
 	| Source [ IPWithMask ]
 	| Destination [ IPWithMask ]
 	| Rules :- Rules   -- ^Combine two rules
