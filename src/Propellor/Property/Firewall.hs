@@ -70,6 +70,13 @@ toIpTableArg (RateLimit f) =
 	, "limit"
 	, "--limit", fromFrequency f
 	]
+toIpTableArg (TCPFlags m c) =
+	[ "-m"
+	, "tcp"
+	, "--tcp-flags"
+	, intercalate "," (map show m)
+	, intercalate "," (map show c)
+	]
 toIpTableArg (Source ipwm) =
 	[ "-s"
 	, intercalate "," (map fromIPWithMask ipwm)
@@ -189,6 +196,13 @@ data Frequency = NumBySecond Int
 fromFrequency :: Frequency -> String
 fromFrequency (NumBySecond n) = show n ++ "/second"
 
+type TCPFlagMask = [TCPFlag]
+
+type TCPFlagComp = [TCPFlag]
+
+data TCPFlag = SYN | ACK | FIN | RST | URG | PSH | ALL | NONE
+	deriving (Eq, Show)
+
 data Rules
 	= Everything
 	| Proto Proto
@@ -201,6 +215,7 @@ data Rules
 	| Ctstate [ ConnectionState ]
 	| ICMPType ICMPTypeMatch
 	| RateLimit Frequency
+	| TCPFlags TCPFlagMask TCPFlagComp
 	| Source [ IPWithMask ]
 	| Destination [ IPWithMask ]
 	| Rules :- Rules   -- ^Combine two rules
