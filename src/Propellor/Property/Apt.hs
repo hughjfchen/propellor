@@ -135,7 +135,7 @@ upgrade' p = combineProperties ("apt " ++ p)
 		`assume` MadeChange
 	]
 
--- | Have apt upgrade packages, but never add new packages or remove 
+-- | Have apt upgrade packages, but never add new packages or remove
 -- old packages. Not suitable for upgrading acrocess major versions
 -- of the distribution.
 safeUpgrade :: Property NoInfo
@@ -143,7 +143,7 @@ safeUpgrade = upgrade' "upgrade"
 
 -- | Have dpkg try to configure any packages that are not fully configured.
 pendingConfigured :: Property NoInfo
-pendingConfigured = cmdPropertyEnv "dpkg" ["--confugure", "--pending"] noninteractiveEnv
+pendingConfigured = cmdPropertyEnv "dpkg" ["--configure", "--pending"] noninteractiveEnv
 	`assume` MadeChange
 	`describe` "dpkg configured pending"
 
@@ -163,7 +163,7 @@ installedBackport ps = withOS desc $ \o -> case o of
 	Nothing -> error "cannot install backports; os not declared"
 	(Just (System (Debian suite) _)) -> case backportSuite suite of
 		Nothing -> notsupported o
-		Just bs -> ensureProperty $ 
+		Just bs -> ensureProperty $
 			runApt (["install", "-t", bs, "-y"] ++ ps)
 				`changesFile` dpkgStatus
 	_ -> notsupported o
@@ -275,8 +275,8 @@ reConfigure :: Package -> [(DebconfTemplate, DebconfTemplateType, DebconfTemplat
 reConfigure package vals = reconfigure `requires` setselections
 	`describe` ("reconfigure " ++ package)
   where
-	setselections = property "preseed" $ 
-		if null vals 
+	setselections = property "preseed" $
+		if null vals
 			then noChange
 			else makeChange $
 				withHandle StdinHandle createProcessSuccess
