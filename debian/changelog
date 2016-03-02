@@ -1,4 +1,4 @@
-propellor (2.16.1) UNRELEASED; urgency=medium
+propellor (2.17.0) UNRELEASED; urgency=medium
 
   * Apt.upgrade: Run dpkg --configure -a first, to recover from
     interrupted upgrades.
