@@ -7,14 +7,12 @@ module Propellor.Property.Firewall (
 	installed,
 	Chain(..),
 	Table(..),
-	TargetFilter(..),
-	TargetNat(..),
-	TargetMangle(..),
-	TargetRaw(..),
-	TargetSecurity(..),
+	Target(..),
 	Proto(..),
 	Rules(..),
 	ConnectionState(..),
+	ICMPTypeMatch(..),
+	Frequency(..),
 	IPWithMask(..),
 	fromIPWithMask
 ) where
@@ -30,10 +28,10 @@ import qualified Propellor.Property.Network as Network
 installed :: Property NoInfo
 installed = Apt.installed ["iptables"]
 
-rule :: Chain -> Table -> Rules -> Property NoInfo
-rule c t rs = property ("firewall rule: " <> show r) addIpTable
+rule :: Chain -> Table -> Target -> Rules -> Property NoInfo
+rule c tb tg rs = property ("firewall rule: " <> show r) addIpTable
   where
-	r = Rule c t rs
+	r = Rule c tb tg rs
 	addIpTable = liftIO $ do
 		let args = toIpTable r
 		exist <- boolSystem "iptables" (chk args)
@@ -45,8 +43,9 @@ rule c t rs = property ("firewall rule: " <> show r) addIpTable
 
 toIpTable :: Rule -> [CommandParam]
 toIpTable r =  map Param $
-	show (ruleChain r) :
-	toIpTableArg (ruleRules r) ++ toIpTableTable (ruleTable r)
+	fromChain (ruleChain r) :
+	toIpTableArg (ruleRules r) ++
+	["-t", fromTable (ruleTable r), "-j", fromTarget (ruleTarget r)]
 
 toIpTableArg :: Rules -> [String]
 toIpTableArg Everything = []
@@ -61,6 +60,24 @@ toIpTableArg (Ctstate states) =
 	, "conntrack"
 	, "--ctstate", intercalate "," (map show states)
 	]
+toIpTableArg (ICMPType i) =
+	[ "-m"
+	, "icmp"
+	, "--icmp-type", fromICMPTypeMatch i
+	]
+toIpTableArg (RateLimit f) =
+	[ "-m"
+	, "limit"
+	, "--limit", fromFrequency f
+	]
+toIpTableArg (TCPFlags m c) =
+	[ "-m"
+	, "tcp"
+	, "--tcp-flags"
+	, intercalate "," (map show m)
+	, intercalate "," (map show c)
+	]
+toIpTableArg TCPSyn = ["--syn"]
 toIpTableArg (Source ipwm) =
 	[ "-s"
 	, intercalate "," (map fromIPWithMask ipwm)
@@ -80,83 +97,111 @@ fromIPWithMask (IPWithIPMask ip ipm) = fromIPAddr ip ++ "/" ++ fromIPAddr ipm
 fromIPWithMask (IPWithNumMask ip m) = fromIPAddr ip ++ "/" ++ show m
 
 data Rule = Rule
-	{ ruleChain :: Chain
-	, ruleTable :: Table
-	, ruleRules :: Rules
+	{ ruleChain  :: Chain
+	, ruleTable  :: Table
+	, ruleTarget :: Target
+	, ruleRules  :: Rules
 	} deriving (Eq, Show)
 
-data Table = Filter TargetFilter | Nat TargetNat | Mangle TargetMangle | Raw TargetRaw | Security TargetSecurity
+data Table = Filter | Nat | Mangle | Raw | Security
 	deriving (Eq, Show)
 
-toIpTableTable :: Table -> [String]
-toIpTableTable f = ["-t", table, "-j", target]
-  where
-	(table, target) = toIpTableTable' f
+fromTable :: Table -> String
+fromTable Filter = "filter"
+fromTable Nat = "nat"
+fromTable Mangle = "mangle"
+fromTable Raw = "raw"
+fromTable Security = "security"
 
-toIpTableTable' :: Table -> (String, String)
-toIpTableTable' (Filter target) = ("filter", fromTarget target)
-toIpTableTable' (Nat target) = ("nat", fromTarget target)
-toIpTableTable' (Mangle target) = ("mangle", fromTarget target)
-toIpTableTable' (Raw target) = ("raw", fromTarget target)
-toIpTableTable' (Security target) = ("security", fromTarget target)
-
-data Chain = INPUT | OUTPUT | FORWARD
+data Target = ACCEPT | REJECT | DROP | LOG | TargetCustom String
 	deriving (Eq, Show)
 
-data TargetFilter = ACCEPT | REJECT | DROP | LOG | FilterCustom String
+fromTarget :: Target -> String
+fromTarget ACCEPT = "ACCEPT"
+fromTarget REJECT = "REJECT"
+fromTarget DROP = "DROP"
+fromTarget LOG = "LOG"
+fromTarget (TargetCustom t) = t
+
+data Chain = ChainFilter | ChainNat | ChainMangle | ChainRaw | ChainSecurity
 	deriving (Eq, Show)
 
-class FromTarget a where
-	fromTarget :: a -> String
+instance FromChain Chain where
+	fromChain = fromChain
 
-instance FromTarget TargetFilter where
-	fromTarget ACCEPT = "ACCEPT"
-	fromTarget REJECT = "REJECT"
-	fromTarget DROP = "DROP"
-	fromTarget LOG = "LOG"
-	fromTarget (FilterCustom f) = f
+class FromChain a where
+	fromChain :: a -> String
 
-data TargetNat = NatPREROUTING | NatOUTPUT | NatPOSTROUTING | NatCustom String
+data ChainFilter = INPUT | OUTPUT | FORWARD | FilterCustom String
 	deriving (Eq, Show)
 
-instance FromTarget TargetNat where
-	fromTarget NatPREROUTING = "PREROUTING"
-	fromTarget NatOUTPUT = "OUTPUT"
-	fromTarget NatPOSTROUTING = "POSTROUTING"
-	fromTarget (NatCustom f) = f
+instance FromChain ChainFilter where
+	fromChain INPUT = "INPUT"
+	fromChain OUTPUT = "OUTPUT"
+	fromChain FORWARD = "FORWARD"
+	fromChain (FilterCustom c) = c
 
-data TargetMangle = ManglePREROUTING | MangleOUTPUT | MangleINPUT | MangleFORWARD | ManglePOSTROUTING | MangleCustom String
+data ChainNat = NatPREROUTING | NatOUTPUT | NatPOSTROUTING | NatCustom String
 	deriving (Eq, Show)
 
-instance FromTarget TargetMangle where
-	fromTarget ManglePREROUTING = "PREROUTING"
-	fromTarget MangleOUTPUT = "OUTPUT"
-	fromTarget MangleINPUT = "INPUT"
-	fromTarget MangleFORWARD = "FORWARD"
-	fromTarget ManglePOSTROUTING = "POSTROUTING"
-	fromTarget (MangleCustom f) = f
+instance FromChain ChainNat where
+	fromChain NatPREROUTING = "PREROUTING"
+	fromChain NatOUTPUT = "OUTPUT"
+	fromChain NatPOSTROUTING = "POSTROUTING"
+	fromChain (NatCustom f) = f
 
-data TargetRaw = RawPREROUTING | RawOUTPUT | RawCustom String
+data ChainMangle = ManglePREROUTING | MangleOUTPUT | MangleINPUT | MangleFORWARD | ManglePOSTROUTING | MangleCustom String
 	deriving (Eq, Show)
 
-instance FromTarget TargetRaw where
-	fromTarget RawPREROUTING = "PREROUTING"
-	fromTarget RawOUTPUT = "OUTPUT"
-	fromTarget (RawCustom f) = f
+instance FromChain ChainMangle where
+	fromChain ManglePREROUTING = "PREROUTING"
+	fromChain MangleOUTPUT = "OUTPUT"
+	fromChain MangleINPUT = "INPUT"
+	fromChain MangleFORWARD = "FORWARD"
+	fromChain ManglePOSTROUTING = "POSTROUTING"
+	fromChain (MangleCustom f) = f
 
-data TargetSecurity = SecurityINPUT | SecurityOUTPUT | SecurityFORWARD | SecurityCustom String
+data ChainRaw = RawPREROUTING | RawOUTPUT | RawCustom String
 	deriving (Eq, Show)
 
-instance FromTarget TargetSecurity where
-	fromTarget SecurityINPUT = "INPUT"
-	fromTarget SecurityOUTPUT = "OUTPUT"
-	fromTarget SecurityFORWARD = "FORWARD"
-	fromTarget (SecurityCustom f) = f
+instance FromChain ChainRaw where
+	fromChain RawPREROUTING = "PREROUTING"
+	fromChain RawOUTPUT = "OUTPUT"
+	fromChain (RawCustom f) = f
+
+data ChainSecurity = SecurityINPUT | SecurityOUTPUT | SecurityFORWARD | SecurityCustom String
+	deriving (Eq, Show)
+
+instance FromChain ChainSecurity where
+	fromChain SecurityINPUT = "INPUT"
+	fromChain SecurityOUTPUT = "OUTPUT"
+	fromChain SecurityFORWARD = "FORWARD"
+	fromChain (SecurityCustom f) = f
 
 data Proto = TCP | UDP | ICMP
 	deriving (Eq, Show)
 
 data ConnectionState = ESTABLISHED | RELATED | NEW | INVALID
+	deriving (Eq, Show)
+
+data ICMPTypeMatch = ICMPTypeName String | ICMPTypeCode Int
+	deriving (Eq, Show)
+
+fromICMPTypeMatch :: ICMPTypeMatch -> String
+fromICMPTypeMatch (ICMPTypeName t) = t
+fromICMPTypeMatch (ICMPTypeCode c) = show c
+
+data Frequency = NumBySecond Int
+	deriving (Eq, Show)
+
+fromFrequency :: Frequency -> String
+fromFrequency (NumBySecond n) = show n ++ "/second"
+
+type TCPFlagMask = [TCPFlag]
+
+type TCPFlagComp = [TCPFlag]
+
+data TCPFlag = SYN | ACK | FIN | RST | URG | PSH | ALL | NONE
 	deriving (Eq, Show)
 
 data Rules
@@ -169,6 +214,10 @@ data Rules
 	| InIFace Network.Interface
 	| OutIFace Network.Interface
 	| Ctstate [ ConnectionState ]
+	| ICMPType ICMPTypeMatch
+	| RateLimit Frequency
+	| TCPFlags TCPFlagMask TCPFlagComp
+	| TCPSyn
 	| Source [ IPWithMask ]
 	| Destination [ IPWithMask ]
 	| Rules :- Rules   -- ^Combine two rules
