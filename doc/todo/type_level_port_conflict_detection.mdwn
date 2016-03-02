@@ -4,4 +4,7 @@ Needs ghc newer than 7.6.3. It may be possible to port Data.Type.Equality
 and Data.Type.Bool to older versions; I got them to compile but they didn't
 work right. --[[Joey]]
 
+I have a `resourceconflict` branch that adds this in Propellor.Resources,
+but it is not yet integrated into the Property types. --[[Joey]]
+
 [[!tag user/joey]]
