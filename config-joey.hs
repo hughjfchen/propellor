@@ -87,13 +87,13 @@ darkstar = host "darkstar.kitenet.net"
 	& JoeySites.alarmClock "*-*-* 7:30" (User "joey")
 		"/usr/bin/timeout 45m /home/joey/bin/goodmorning"
 
-	& imageBuilt "/tmp/img" c MSDOS (grubBooted PC)
-		[ partition EXT2 `mountedAt` "/boot"
-			`setFlag` BootFlag
-		, partition EXT4 `mountedAt` "/"
-			`mountOpt` errorReadonly
-		, swapPartition (MegaBytes 256)
-		]
+	-- & imageBuilt "/tmp/img" c MSDOS (grubBooted PC)
+	--	[ partition EXT2 `mountedAt` "/boot"
+	--		`setFlag` BootFlag
+	--	, partition EXT4 `mountedAt` "/"
+	--		`mountOpt` errorReadonly
+	--	, swapPartition (MegaBytes 256)
+	--	]
   where
 	c d = Chroot.debootstrapped mempty d
 		& os (System (Debian Unstable) "amd64")
