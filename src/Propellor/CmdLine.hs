@@ -122,22 +122,23 @@ defaultMain hostlist = withConcurrentOutput $ do
 		forM_ hs $ \hn -> withhost hn $ spin mrelay hn
 	go cr (Run hn) = fetchFirst $
 		ifM ((==) 0 <$> getRealUserID)
-			( onlyprocess $ withhost hn mainProperties
+			( runhost hn
 			, go cr (Spin [hn] Nothing)
 			)
-	go cr (SimpleRun hn) = go cr (Run hn)
-	go cr (Continue cmdline@(SimpleRun _)) =
+	go _ (SimpleRun hn) = runhost hn
+	go cr (Continue cmdline@(SimpleRun hn)) =
 		-- --continue SimpleRun is used by --spin,
 		-- and unlike all other uses of --continue, this legacy one
-		-- wants an update first (to get any changes from the
-		-- central git repo)
-		forceConsole >> updateFirst cr cmdline (go NoRebuild cmdline)
+		-- wants a build first
+		forceConsole >> fetchFirst (buildFirst cr cmdline (runhost hn))
 	-- When continuing after a rebuild, don't want to rebuild again.
 	go _ (Continue cmdline) = go NoRebuild cmdline
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
 	
+	runhost hn = onlyprocess $ withhost hn mainProperties
+
 	onlyprocess = onlyProcess (localdir </> ".lock")
 
 unknownhost :: HostName -> [Host] -> IO a
