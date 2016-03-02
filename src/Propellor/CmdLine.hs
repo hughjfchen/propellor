@@ -88,6 +88,8 @@ processCmdLine = go =<< getArgs
 		Just cmdline -> return $ mk cmdline
 		Nothing -> errorMessage $ "serialization failure (" ++ s ++ ")"
 
+data CanRebuild = CanRebuild | NoRebuild
+
 -- | Runs propellor on hosts, as controlled by command-line options.
 defaultMain :: [Host] -> IO ()
 defaultMain hostlist = withConcurrentOutput $ do
@@ -95,10 +97,9 @@ defaultMain hostlist = withConcurrentOutput $ do
 	checkDebugMode
 	cmdline <- processCmdLine
 	debug ["command line: ", show cmdline]
-	go True cmdline
+	go CanRebuild cmdline
   where
-	go _ (Serialized cmdline) = go True cmdline
-	go _ (Continue cmdline) = go False cmdline
+	go cr (Serialized cmdline) = go cr cmdline
 	go _ Check = return ()
 	go _ (Set field context) = setPrivData field context
 	go _ (Unset field context) = unsetPrivData field context
@@ -112,22 +113,27 @@ defaultMain hostlist = withConcurrentOutput $ do
 	go _ (DockerChain hn cid) = Docker.chain hostlist hn cid
 	go _ (DockerInit hn) = Docker.init hn
 	go _ (GitPush fin fout) = gitPushHelper fin fout
-	go _ (Relay h) = forceConsole >> updateFirst (Update (Just h)) (update (Just h))
+	go cr (Relay h) = forceConsole >> updateFirst cr (Update (Just h)) (update (Just h))
 	go _ (Update Nothing) = forceConsole >> fetchFirst (onlyprocess (update Nothing))
 	go _ (Update (Just h)) = update (Just h)
 	go _ Merge = mergeSpin
-	go True cmdline@(Spin _ _) = buildFirst cmdline $ go False cmdline
-	go True cmdline = updateFirst cmdline $ go False cmdline
-	go False (Spin hs mrelay) = do
+	go cr cmdline@(Spin hs mrelay) = buildFirst cr cmdline $ do
 		unless (isJust mrelay) commitSpin
 		forM_ hs $ \hn -> withhost hn $ spin mrelay hn
-	go False cmdline@(SimpleRun hn) = do
-		forceConsole
-		buildFirst cmdline $ go False (Run hn)
-	go False (Run hn) = ifM ((==) 0 <$> getRealUserID)
-		( onlyprocess $ withhost hn mainProperties
-		, go True (Spin [hn] Nothing)
-		)
+	go cr (Run hn) = fetchFirst $
+		ifM ((==) 0 <$> getRealUserID)
+			( onlyprocess $ withhost hn mainProperties
+			, go cr (Spin [hn] Nothing)
+			)
+	go cr (SimpleRun hn) = go cr (Run hn)
+	go cr (Continue cmdline@(SimpleRun _)) =
+		-- --continue SimpleRun is used by --spin,
+		-- and unlike all other uses of --continue, this legacy one
+		-- wants an update first (to get any changes from the
+		-- central git repo)
+		forceConsole >> updateFirst cr cmdline (go NoRebuild cmdline)
+	-- When continuing after a rebuild, don't want to rebuild again.
+	go _ (Continue cmdline) = go NoRebuild cmdline
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
@@ -142,8 +148,8 @@ unknownhost h hosts = errorMessage $ unlines
 	, "Known hosts: " ++ unwords (map hostName hosts)
 	]
 
-buildFirst :: CmdLine -> IO () -> IO ()
-buildFirst cmdline next = do
+buildFirst :: CanRebuild -> CmdLine -> IO () -> IO ()
+buildFirst CanRebuild cmdline next = do
 	oldtime <- getmtime
 	buildPropellor
 	newtime <- getmtime
@@ -155,6 +161,7 @@ buildFirst cmdline next = do
 			]
   where
 	getmtime = catchMaybeIO $ getModificationTime "propellor"
+buildFirst NoRebuild _ next = next
 
 fetchFirst :: IO () -> IO ()
 fetchFirst next = do
@@ -162,11 +169,14 @@ fetchFirst next = do
 		void fetchOrigin
 	next
 
-updateFirst :: CmdLine -> IO () -> IO ()
-updateFirst cmdline next = ifM hasOrigin (updateFirst' cmdline next, next)
+updateFirst :: CanRebuild -> CmdLine -> IO () -> IO ()
+updateFirst canrebuild cmdline next = ifM hasOrigin
+	( updateFirst' canrebuild cmdline next
+	, next
+	)
 
-updateFirst' :: CmdLine -> IO () -> IO ()
-updateFirst' cmdline next = ifM fetchOrigin
+updateFirst' :: CanRebuild -> CmdLine -> IO () -> IO ()
+updateFirst' CanRebuild cmdline next = ifM fetchOrigin
 	( do
 		buildPropellor
 		void $ boolSystem "./propellor"
@@ -175,6 +185,7 @@ updateFirst' cmdline next = ifM fetchOrigin
 			]
 	, next
 	)
+updateFirst' NoRebuild _ next = next
 
 -- Gets the fully qualified domain name, given a string that might be
 -- a short name to look up in the DNS.
