@@ -12,6 +12,7 @@ module Propellor.Property.Firewall (
 	Rules(..),
 	ConnectionState(..),
 	ICMPTypeMatch(..),
+	TCPFlag(..),
 	Frequency(..),
 	IPWithMask(..),
 	fromIPWithMask
