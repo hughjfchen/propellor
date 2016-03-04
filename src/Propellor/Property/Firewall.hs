@@ -124,60 +124,16 @@ fromTarget DROP = "DROP"
 fromTarget LOG = "LOG"
 fromTarget (TargetCustom t) = t
 
-data Chain = ChainFilter | ChainNat | ChainMangle | ChainRaw | ChainSecurity
+data Chain = INPUT | OUTPUT | FORWARD | PREROUTING | POSTROUTING | ChainCustom String
 	deriving (Eq, Show)
 
-instance FromChain Chain where
-	fromChain = fromChain
-
-class FromChain a where
-	fromChain :: a -> String
-
-data ChainFilter = INPUT | OUTPUT | FORWARD | FilterCustom String
-	deriving (Eq, Show)
-
-instance FromChain ChainFilter where
-	fromChain INPUT = "INPUT"
-	fromChain OUTPUT = "OUTPUT"
-	fromChain FORWARD = "FORWARD"
-	fromChain (FilterCustom c) = c
-
-data ChainNat = NatPREROUTING | NatOUTPUT | NatPOSTROUTING | NatCustom String
-	deriving (Eq, Show)
-
-instance FromChain ChainNat where
-	fromChain NatPREROUTING = "PREROUTING"
-	fromChain NatOUTPUT = "OUTPUT"
-	fromChain NatPOSTROUTING = "POSTROUTING"
-	fromChain (NatCustom f) = f
-
-data ChainMangle = ManglePREROUTING | MangleOUTPUT | MangleINPUT | MangleFORWARD | ManglePOSTROUTING | MangleCustom String
-	deriving (Eq, Show)
-
-instance FromChain ChainMangle where
-	fromChain ManglePREROUTING = "PREROUTING"
-	fromChain MangleOUTPUT = "OUTPUT"
-	fromChain MangleINPUT = "INPUT"
-	fromChain MangleFORWARD = "FORWARD"
-	fromChain ManglePOSTROUTING = "POSTROUTING"
-	fromChain (MangleCustom f) = f
-
-data ChainRaw = RawPREROUTING | RawOUTPUT | RawCustom String
-	deriving (Eq, Show)
-
-instance FromChain ChainRaw where
-	fromChain RawPREROUTING = "PREROUTING"
-	fromChain RawOUTPUT = "OUTPUT"
-	fromChain (RawCustom f) = f
-
-data ChainSecurity = SecurityINPUT | SecurityOUTPUT | SecurityFORWARD | SecurityCustom String
-	deriving (Eq, Show)
-
-instance FromChain ChainSecurity where
-	fromChain SecurityINPUT = "INPUT"
-	fromChain SecurityOUTPUT = "OUTPUT"
-	fromChain SecurityFORWARD = "FORWARD"
-	fromChain (SecurityCustom f) = f
+fromChain :: Chain -> String
+fromChain INPUT = "INPUT"
+fromChain OUTPUT = "OUTPUT"
+fromChain FORWARD = "FORWARD"
+fromChain PREROUTING = "PREROUTING"
+fromChain POSTROUTING = "POSTROUTING"
+fromChain (ChainCustom c) = c
 
 data Proto = TCP | UDP | ICMP
 	deriving (Eq, Show)
