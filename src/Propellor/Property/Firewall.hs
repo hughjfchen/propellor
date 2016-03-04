@@ -6,11 +6,6 @@ module Propellor.Property.Firewall (
 	rule,
 	installed,
 	Chain(..),
-	ChainFilterT(..),
-	ChainNatT(..),
-	ChainMangleT(..),
-	ChainRawT(..),
-	ChainSecurityT(..),
 	Table(..),
 	Target(..),
 	Proto(..),
@@ -129,65 +124,16 @@ fromTarget DROP = "DROP"
 fromTarget LOG = "LOG"
 fromTarget (TargetCustom t) = t
 
-data Chain
-	= ChainFilter ChainFilterT
-	| ChainNat ChainNatT
-	| ChainMangle ChainMangleT
-	| ChainRaw ChainRawT
-	| ChainSecurity ChainSecurityT
+data Chain = INPUT | OUTPUT | FORWARD | PREROUTING | POSTROUTING | ChainCustom String
 	deriving (Eq, Show)
 
-instance FromChain Chain where
-	fromChain = fromChain
-
-class FromChain a where
-	fromChain :: a -> String
-
-data ChainFilterT = INPUT | OUTPUT | FORWARD | FilterCustom String
-	deriving (Eq, Show)
-
-instance FromChain ChainFilterT where
-	fromChain INPUT = "INPUT"
-	fromChain OUTPUT = "OUTPUT"
-	fromChain FORWARD = "FORWARD"
-	fromChain (FilterCustom c) = c
-
-data ChainNatT = NatPREROUTING | NatOUTPUT | NatPOSTROUTING | NatCustom String
-	deriving (Eq, Show)
-
-instance FromChain ChainNatT where
-	fromChain NatPREROUTING = "PREROUTING"
-	fromChain NatOUTPUT = "OUTPUT"
-	fromChain NatPOSTROUTING = "POSTROUTING"
-	fromChain (NatCustom f) = f
-
-data ChainMangleT = ManglePREROUTING | MangleOUTPUT | MangleINPUT | MangleFORWARD | ManglePOSTROUTING | MangleCustom String
-	deriving (Eq, Show)
-
-instance FromChain ChainMangleT where
-	fromChain ManglePREROUTING = "PREROUTING"
-	fromChain MangleOUTPUT = "OUTPUT"
-	fromChain MangleINPUT = "INPUT"
-	fromChain MangleFORWARD = "FORWARD"
-	fromChain ManglePOSTROUTING = "POSTROUTING"
-	fromChain (MangleCustom f) = f
-
-data ChainRawT = RawPREROUTING | RawOUTPUT | RawCustom String
-	deriving (Eq, Show)
-
-instance FromChain ChainRawT where
-	fromChain RawPREROUTING = "PREROUTING"
-	fromChain RawOUTPUT = "OUTPUT"
-	fromChain (RawCustom f) = f
-
-data ChainSecurityT = SecurityINPUT | SecurityOUTPUT | SecurityFORWARD | SecurityCustom String
-	deriving (Eq, Show)
-
-instance FromChain ChainSecurityT where
-	fromChain SecurityINPUT = "INPUT"
-	fromChain SecurityOUTPUT = "OUTPUT"
-	fromChain SecurityFORWARD = "FORWARD"
-	fromChain (SecurityCustom f) = f
+fromChain :: Chain -> String
+fromChain INPUT = "INPUT"
+fromChain OUTPUT = "OUTPUT"
+fromChain FORWARD = "FORWARD"
+fromChain PREROUTING = "PREROUTING"
+fromChain POSTROUTING = "POSTROUTING"
+fromChain (ChainCustom c) = c
 
 data Proto = TCP | UDP | ICMP
 	deriving (Eq, Show)
