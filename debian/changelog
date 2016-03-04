@@ -5,8 +5,7 @@ propellor (2.17.0) UNRELEASED; urgency=medium
   * Apt: Add safeupgrade.
   * Avoid repeated re-building on systems such as FreeBSD where building
     re-links the binary even when there are no changes.
-  * Firewall: Renamed TargetNat, TargetMangle, ... to 
-    ChainNat,  ChainMangle, ... (API change)
+  * Firewall: Reorganized Chain data type. (API change)
     Thanks, Félix Sipma.
   * Firewall: Separated Table and Target (API change)
     Thanks, Félix Sipma.
