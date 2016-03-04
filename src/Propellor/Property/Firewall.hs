@@ -6,6 +6,11 @@ module Propellor.Property.Firewall (
 	rule,
 	installed,
 	Chain(..),
+	ChainFilterT(..),
+	ChainNatT(..),
+	ChainMangleT(..),
+	ChainRawT(..),
+	ChainSecurityT(..),
 	Table(..),
 	Target(..),
 	Proto(..),
@@ -124,7 +129,12 @@ fromTarget DROP = "DROP"
 fromTarget LOG = "LOG"
 fromTarget (TargetCustom t) = t
 
-data Chain = ChainFilter | ChainNat | ChainMangle | ChainRaw | ChainSecurity
+data Chain
+	= ChainFilter ChainFilterT
+	| ChainNat ChainNatT
+	| ChainMangle ChainMangleT
+	| ChainRaw ChainRawT
+	| ChainSecurity ChainSecurityT
 	deriving (Eq, Show)
 
 instance FromChain Chain where
@@ -133,28 +143,28 @@ instance FromChain Chain where
 class FromChain a where
 	fromChain :: a -> String
 
-data ChainFilter = INPUT | OUTPUT | FORWARD | FilterCustom String
+data ChainFilterT = INPUT | OUTPUT | FORWARD | FilterCustom String
 	deriving (Eq, Show)
 
-instance FromChain ChainFilter where
+instance FromChain ChainFilterT where
 	fromChain INPUT = "INPUT"
 	fromChain OUTPUT = "OUTPUT"
 	fromChain FORWARD = "FORWARD"
 	fromChain (FilterCustom c) = c
 
-data ChainNat = NatPREROUTING | NatOUTPUT | NatPOSTROUTING | NatCustom String
+data ChainNatT = NatPREROUTING | NatOUTPUT | NatPOSTROUTING | NatCustom String
 	deriving (Eq, Show)
 
-instance FromChain ChainNat where
+instance FromChain ChainNatT where
 	fromChain NatPREROUTING = "PREROUTING"
 	fromChain NatOUTPUT = "OUTPUT"
 	fromChain NatPOSTROUTING = "POSTROUTING"
 	fromChain (NatCustom f) = f
 
-data ChainMangle = ManglePREROUTING | MangleOUTPUT | MangleINPUT | MangleFORWARD | ManglePOSTROUTING | MangleCustom String
+data ChainMangleT = ManglePREROUTING | MangleOUTPUT | MangleINPUT | MangleFORWARD | ManglePOSTROUTING | MangleCustom String
 	deriving (Eq, Show)
 
-instance FromChain ChainMangle where
+instance FromChain ChainMangleT where
 	fromChain ManglePREROUTING = "PREROUTING"
 	fromChain MangleOUTPUT = "OUTPUT"
 	fromChain MangleINPUT = "INPUT"
@@ -162,18 +172,18 @@ instance FromChain ChainMangle where
 	fromChain ManglePOSTROUTING = "POSTROUTING"
 	fromChain (MangleCustom f) = f
 
-data ChainRaw = RawPREROUTING | RawOUTPUT | RawCustom String
+data ChainRawT = RawPREROUTING | RawOUTPUT | RawCustom String
 	deriving (Eq, Show)
 
-instance FromChain ChainRaw where
+instance FromChain ChainRawT where
 	fromChain RawPREROUTING = "PREROUTING"
 	fromChain RawOUTPUT = "OUTPUT"
 	fromChain (RawCustom f) = f
 
-data ChainSecurity = SecurityINPUT | SecurityOUTPUT | SecurityFORWARD | SecurityCustom String
+data ChainSecurityT = SecurityINPUT | SecurityOUTPUT | SecurityFORWARD | SecurityCustom String
 	deriving (Eq, Show)
 
-instance FromChain ChainSecurity where
+instance FromChain ChainSecurityT where
 	fromChain SecurityINPUT = "INPUT"
 	fromChain SecurityOUTPUT = "OUTPUT"
 	fromChain SecurityFORWARD = "FORWARD"
