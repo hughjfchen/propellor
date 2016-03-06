@@ -14,7 +14,7 @@ getGitConfigValue :: String -> IO (Maybe String)
 getGitConfigValue key = do
 	value <- catchMaybeIO $
 		takeWhile (/= '\n')
-			<$> readProcess "git" ["config", key]
+			<$> readProcess"git" ["config", key]
 	return $ case value of
 		Just v | not (null v) -> Just v
 		_ -> Nothing
