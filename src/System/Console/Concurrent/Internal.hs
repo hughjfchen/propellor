@@ -452,7 +452,7 @@ bufferWriter ts = do
 					bufferOutputSTM' outh b
 			-- worker1 might be blocked waiting for the output
 			-- lock, and we've already done its job, so cancel it
-			-- cancel worker1
+			cancel worker1
 
 -- Adds a value to the OutputBuffer. When adding Output to a Handle,
 -- it's cheaper to combine it with any already buffered Output to that
