@@ -11,6 +11,9 @@ propellor (2.17.0) UNRELEASED; urgency=medium
     Thanks, Félix Sipma.
   * Firewall: add TCPFlag, Frequency, TCPSyn, ICMPTypeMatch
     Thanks, Félix Sipma.
+  * Locale.available: Run locale-gen, instead of dpkg-reconfigure locales,
+    which modified the locale.gen file and sometimes caused the property to
+    need to make changes every time.
 
  -- Joey Hess <id@joeyh.name>  Mon, 29 Feb 2016 17:58:08 -0400
 
