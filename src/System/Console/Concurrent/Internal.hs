@@ -284,6 +284,7 @@ createProcessForeground p = do
 
 fgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
 fgProcess p = do
+	print ("fgProcess", showProc p)
 	r@(_, _, _, h) <- P.createProcess p
 		`onException` dropOutputLock
 	-- Wait for the process to exit and drop the lock.
@@ -297,6 +298,7 @@ bgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, Co
 bgProcess p = do
 	(toouth, fromouth) <- pipe
 	(toerrh, fromerrh) <- pipe
+	print ("bgProcess", showProc p)
 	let p' = p
 		{ P.std_out = rediroutput (P.std_out p) toouth
 		, P.std_err = rediroutput (P.std_err p) toerrh
@@ -317,6 +319,11 @@ bgProcess p = do
 		| willOutput ss = P.UseHandle h
 		| otherwise = ss
 #endif
+
+showProc = go . P.cmdspec
+  where
+	go (P.ShellCommand s) = s
+	go (P.RawCommand s ps) = show (s, ps)
 
 willOutput :: P.StdStream -> Bool
 willOutput P.Inherit = True
