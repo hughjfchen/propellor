@@ -310,7 +310,7 @@ bgProcess p = do
 	asyncProcessWaiter $ void $ tryIO $ P.waitForProcess h
 	outbuf <- setupOutputBuffer StdOut toouth (P.std_out p) fromouth
 	errbuf <- setupOutputBuffer StdErr toerrh (P.std_err p) fromerrh
-	void $ async $ bufferWriter [outbuf, errbuf]
+	void $ async $ bufferWriter p [outbuf, errbuf]
 	return (toConcurrentProcessHandle r)
   where
 	pipe = do
@@ -402,12 +402,14 @@ unregisterOutputThread = do
 --
 -- If end is reached before lock is taken, instead add the command's
 -- buffers to the global outputBuffer and errorBuffer.
-bufferWriter :: [(StdHandle, MVar OutputBuffer, TMVar BufSig, TMVar AtEnd)] -> IO ()
-bufferWriter ts = do
+bufferWriter :: P.CreateProcess -> [(StdHandle, MVar OutputBuffer, TMVar BufSig, TMVar AtEnd)] -> IO ()
+bufferWriter p ts = do
 	activitysig <- atomically newEmptyTMVar
 	worker1 <- async $ lockOutput $
 		ifM (atomically $ tryPutTMVar activitysig ())
-			( void $ mapConcurrently displaybuf ts
+			( do
+				hPutStrLn stderr $ show ("bufferWriter calling displaybuf", showProc p)
+				void $ mapConcurrently displaybuf ts
 			, noop -- buffers already moved to global
 			)
 	worker2 <- async $ void $ globalbuf activitysig
@@ -437,6 +439,7 @@ bufferWriter ts = do
 				mapM_ (\(_outh, _buf, _bufsig, bufend) -> takeTMVar bufend) ts
 			return ok
 		when ok $ do
+			hPutStrLn stderr $ show ("bufferWriter saving in global buffer", showProc p)
 			-- add all of the command's buffered output to the
 			-- global output buffer, atomically
 			bs <- forM ts $ \(outh, buf, _bufsig, _bufend) ->
