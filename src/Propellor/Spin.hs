@@ -31,6 +31,8 @@ import qualified Propellor.Shim as Shim
 import Utility.FileMode
 import Utility.SafeCommand
 
+import System.Console.Concurrent
+
 commitSpin :: IO ()
 commitSpin = do
 	-- safety check #1: check we're on the configured spin branch
@@ -81,7 +83,7 @@ spin' mprivdata relay target hst = do
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap probecmd])
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap updatecmd])
 		=<< getprivdata
-	async $ boolSystem "sleep" [Param "500"]
+	async $ createProcessForeground $ proc "sleep" ["500"]
 
 	-- And now we can run it.
 	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", sshtarget, shellWrap runcmd])) $
