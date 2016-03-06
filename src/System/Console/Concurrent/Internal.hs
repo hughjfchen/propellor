@@ -291,6 +291,7 @@ fgProcess p = do
 	asyncProcessWaiter $ do
 		void $ tryIO $ P.waitForProcess h
 		dropOutputLock
+		print ("fgProcess done", showProc p)
 	return (toConcurrentProcessHandle r)
 
 #ifndef mingw32_HOST_OS
