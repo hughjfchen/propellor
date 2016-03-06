@@ -149,6 +149,9 @@ unknownhost h hosts = errorMessage $ unlines
 	, "Known hosts: " ++ unwords (map hostName hosts)
 	]
 
+-- Builds propellor (when allowed) and if it looks like a new binary,
+-- re-execs it to continue.
+-- Otherwise, runs the IO action to continue.
 buildFirst :: CanRebuild -> CmdLine -> IO () -> IO ()
 buildFirst CanRebuild cmdline next = do
 	oldtime <- getmtime
@@ -156,13 +159,19 @@ buildFirst CanRebuild cmdline next = do
 	newtime <- getmtime
 	if newtime == oldtime
 		then next
-		else void $ boolSystem "./propellor"
-			[ Param "--continue"
-			, Param (show cmdline)
-			]
+		else continueAfterBuild cmdline
   where
 	getmtime = catchMaybeIO $ getModificationTime "propellor"
 buildFirst NoRebuild _ next = next
+
+continueAfterBuild :: CmdLine -> IO a
+continueAfterBuild cmdline = go =<< boolSystem "./propellor"
+	[ Param "--continue"
+	, Param (show cmdline)
+	]
+  where
+	go True = exitSuccess
+	go False = exitWith (ExitFailure 1)
 
 fetchFirst :: IO () -> IO ()
 fetchFirst next = do
@@ -176,14 +185,14 @@ updateFirst canrebuild cmdline next = ifM hasOrigin
 	, next
 	)
 
+-- If changes can be fetched from origin,  Builds propellor (when allowed)
+-- and re-execs the updated propellor binary to continue.
+-- Otherwise, runs the IO action to continue.
 updateFirst' :: CanRebuild -> CmdLine -> IO () -> IO ()
 updateFirst' CanRebuild cmdline next = ifM fetchOrigin
 	( do
 		buildPropellor
-		void $ boolSystem "./propellor"
-			[ Param "--continue"
-			, Param (show cmdline)
-			]
+		continueAfterBuild cmdline
 	, next
 	)
 updateFirst' NoRebuild _ next = next
