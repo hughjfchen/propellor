@@ -284,13 +284,11 @@ createProcessForeground p = do
 
 fgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
 fgProcess p = do
-	hPutStrLn stderr $ show ("fgProcess", showProc p)
 	r@(_, _, _, h) <- P.createProcess p
 		`onException` dropOutputLock
 	-- Wait for the process to exit and drop the lock.
 	asyncProcessWaiter $ do
 		void $ tryIO $ P.waitForProcess h
-		hPutStrLn stderr $ show ("fgProcess done", showProc p)
 		dropOutputLock
 	return (toConcurrentProcessHandle r)
 
@@ -299,7 +297,6 @@ bgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, Co
 bgProcess p = do
 	(toouth, fromouth) <- pipe
 	(toerrh, fromerrh) <- pipe
-	hPutStrLn stderr $ show ("bgProcess", showProc p)
 	let p' = p
 		{ P.std_out = rediroutput (P.std_out p) toouth
 		, P.std_err = rediroutput (P.std_err p) toerrh
@@ -310,7 +307,7 @@ bgProcess p = do
 	asyncProcessWaiter $ void $ tryIO $ P.waitForProcess h
 	outbuf <- setupOutputBuffer StdOut toouth (P.std_out p) fromouth
 	errbuf <- setupOutputBuffer StdErr toerrh (P.std_err p) fromerrh
-	void $ async $ bufferWriter p [outbuf, errbuf]
+	void $ async $ bufferWriter [outbuf, errbuf]
 	return (toConcurrentProcessHandle r)
   where
 	pipe = do
@@ -320,11 +317,6 @@ bgProcess p = do
 		| willOutput ss = P.UseHandle h
 		| otherwise = ss
 #endif
-
-showProc = go . P.cmdspec
-  where
-	go (P.ShellCommand s) = s
-	go (P.RawCommand s ps) = show (s, ps)
 
 willOutput :: P.StdStream -> Bool
 willOutput P.Inherit = True
@@ -402,14 +394,12 @@ unregisterOutputThread = do
 --
 -- If end is reached before lock is taken, instead add the command's
 -- buffers to the global outputBuffer and errorBuffer.
-bufferWriter :: P.CreateProcess -> [(StdHandle, MVar OutputBuffer, TMVar BufSig, TMVar AtEnd)] -> IO ()
-bufferWriter p ts = do
+bufferWriter :: [(StdHandle, MVar OutputBuffer, TMVar BufSig, TMVar AtEnd)] -> IO ()
+bufferWriter ts = do
 	activitysig <- atomically newEmptyTMVar
 	worker1 <- async $ lockOutput $
 		ifM (atomically $ tryPutTMVar activitysig ())
-			( do
-				hPutStrLn stderr $ show ("bufferWriter calling displaybuf", showProc p)
-				void $ mapConcurrently displaybuf ts
+			( void $ mapConcurrently displaybuf ts
 			, noop -- buffers already moved to global
 			)
 	worker2 <- async $ void $ globalbuf activitysig
@@ -439,7 +429,6 @@ bufferWriter p ts = do
 				mapM_ (\(_outh, _buf, _bufsig, bufend) -> takeTMVar bufend) ts
 			return ok
 		when ok $ do
-			hPutStrLn stderr $ show ("bufferWriter saving in global buffer", showProc p)
 			-- add all of the command's buffered output to the
 			-- global output buffer, atomically
 			bs <- forM ts $ \(outh, buf, _bufsig, _bufend) ->
