@@ -77,7 +77,7 @@ tryTakeOutputLock :: IO Bool
 tryTakeOutputLock = takeOutputLock' False
 
 withLock :: (TMVar Lock -> STM a) -> IO a
-withLock a = atomicallyD "withLock" $ a (outputLock globalOutputHandle)
+withLock a = atomically $ a (outputLock globalOutputHandle)
 
 takeOutputLock' :: Bool -> IO Bool
 takeOutputLock' block = do
@@ -94,7 +94,7 @@ takeOutputLock' block = do
 				putTMVar l Locked
 				return True
 	when locked $ do
-		(outbuf, errbuf) <- atomicallyD "takeOutputLock" $ (,)
+		(outbuf, errbuf) <- atomically $ (,)
 			<$> swapTMVar (outputBuffer globalOutputHandle) (OutputBuffer [])
 			<*> swapTMVar (errorBuffer globalOutputHandle) (OutputBuffer [])
 		emitOutputBuffer StdOut outbuf
@@ -122,7 +122,7 @@ flushConcurrentOutput :: IO ()
 flushConcurrentOutput = do
 	-- Wait for all outputThreads to finish.
 	let v = outputThreads globalOutputHandle
-	atomicallyD "flushConcurrentOutput" $ do
+	atomically $ do
 		r <- takeTMVar v
 		if r <= 0
 			then putTMVar v r
@@ -171,9 +171,9 @@ outputConcurrent' stdh v = bracket setup cleanup go
 		T.hPutStr h (toOutput v)
 		hFlush h
 	go False = do
-		oldbuf <- atomicallyD "outputConcurrent" $ takeTMVar bv
+		oldbuf <- atomically $ takeTMVar bv
 		newbuf <- addOutputBuffer (Output (toOutput v)) oldbuf
-		atomicallyD "outputConcurrent 2" $ putTMVar bv newbuf
+		atomically $ putTMVar bv newbuf
 	h = toHandle stdh
 	bv = bufferFor stdh
 
@@ -194,14 +194,14 @@ waitForProcessConcurrent (ConcurrentProcessHandle h) =
 	bracket lock unlock checkexit
   where
 	lck = waitForProcessLock globalOutputHandle
-	lock = atomicallyD "waitForProcessConcurrent" $ tryPutTMVar lck ()
-	unlock True = atomicallyD "waitForProcessConcurrent 2" $ takeTMVar lck
+	lock = atomically $ tryPutTMVar lck ()
+	unlock True = atomically $ takeTMVar lck
 	unlock False = return ()
 	checkexit locked = maybe (waitsome locked) return
 		=<< P.getProcessExitCode h
 	waitsome True = do
 		let v = processWaiters globalOutputHandle
-		l <- atomicallyD "waitForProcessConcurrent 3" $ readTMVar v
+		l <- atomically $ readTMVar v
 		if null l
 			-- Avoid waitAny [] which blocks forever
 			then P.waitForProcess h
@@ -216,7 +216,7 @@ waitForProcessConcurrent (ConcurrentProcessHandle h) =
 	waitsome False = do
 		-- Another thread took the lck first. Wait for that thread to
 		-- wait for one of the running processes to exit.
-		atomicallyD "waitForProcessConcurrent 4" $ do
+		atomically $ do
 			putTMVar lck ()
 			takeTMVar lck
 		checkexit False
@@ -228,16 +228,16 @@ asyncProcessWaiter :: IO () -> IO ()
 asyncProcessWaiter waitaction = do
 	regdone <- newEmptyTMVarIO
 	waiter <- async $ do
-		self <- atomicallyD "asyncProcessWaiter" (takeTMVar regdone)
+		self <- atomically (takeTMVar regdone)
 		waitaction `finally` unregister self
 	register waiter regdone
   where
 	v = processWaiters globalOutputHandle
-  	register waiter regdone = atomicallyD "asyncProcessWaiter 2" $ do
+  	register waiter regdone = atomically $ do
 		l <- takeTMVar v
 		putTMVar v (waiter:l)
 		putTMVar regdone waiter
-	unregister waiter = atomicallyD "asyncProcessWaiter 3" $ do
+	unregister waiter = atomically $ do
 		l <- takeTMVar v
 		putTMVar v (filter (/= waiter) l)
 
@@ -284,14 +284,12 @@ createProcessForeground p = do
 
 fgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
 fgProcess p = do
-	liftIO $ print ("fgProcess", showproc (P.cmdspec p))
 	r@(_, _, _, h) <- P.createProcess p
 		`onException` dropOutputLock
 	-- Wait for the process to exit and drop the lock.
 	asyncProcessWaiter $ do
 		void $ tryIO $ P.waitForProcess h
 		dropOutputLock
-		liftIO $ print ("fgProcess done", showproc (P.cmdspec p))
 	return (toConcurrentProcessHandle r)
 
 #ifndef mingw32_HOST_OS
@@ -304,7 +302,6 @@ bgProcess p = do
 		, P.std_err = rediroutput (P.std_err p) toerrh
 		}
 	registerOutputThread
-	liftIO $ print ("bgProcess", showproc (P.cmdspec p'))
 	r@(_, _, _, h) <- P.createProcess p'
 		`onException` unregisterOutputThread
 	asyncProcessWaiter $ void $ tryIO $ P.waitForProcess h
@@ -320,9 +317,6 @@ bgProcess p = do
 		| willOutput ss = P.UseHandle h
 		| otherwise = ss
 #endif
-	
-showproc (P.RawCommand c ps) = show (c, ps)
-showproc (P.ShellCommand s) = show s
 
 willOutput :: P.StdStream -> Bool
 willOutput P.Inherit = True
@@ -359,8 +353,8 @@ setupOutputBuffer :: StdHandle -> Handle -> P.StdStream -> Handle -> IO (StdHand
 setupOutputBuffer h toh ss fromh = do
 	hClose toh
 	buf <- newMVar (OutputBuffer [])
-	bufsig <- atomicallyD "setupOutputBuffer" newEmptyTMVar
-	bufend <- atomicallyD "setupOutputBuffer 2" newEmptyTMVar
+	bufsig <- atomically newEmptyTMVar
+	bufend <- atomically newEmptyTMVar
 	void $ async $ outputDrainer ss fromh buf bufsig bufend
 	return (h, buf, bufsig, bufend)
 
@@ -379,21 +373,21 @@ outputDrainer ss fromh buf bufsig bufend
 				changed
 				go
 	atend = do
-		atomicallyD  "atend" $ putTMVar bufend AtEnd
+		atomically $ putTMVar bufend AtEnd
 		hClose fromh
-	changed = atomicallyD "changed" $ do
+	changed = atomically $ do
 		void $ tryTakeTMVar bufsig
 		putTMVar bufsig BufSig
 
 registerOutputThread :: IO ()
 registerOutputThread = do
 	let v = outputThreads globalOutputHandle
-	atomicallyD "registerOutputThread" $ putTMVar v . succ =<< takeTMVar v
+	atomically $ putTMVar v . succ =<< takeTMVar v
 	
 unregisterOutputThread :: IO ()
 unregisterOutputThread = do
 	let v = outputThreads globalOutputHandle
-	atomicallyD "unregisterOutputThread" $ putTMVar v . pred =<< takeTMVar v
+	atomically $ putTMVar v . pred =<< takeTMVar v
 
 -- Wait to lock output, and once we can, display everything 
 -- that's put into the buffers, until the end.
@@ -402,9 +396,9 @@ unregisterOutputThread = do
 -- buffers to the global outputBuffer and errorBuffer.
 bufferWriter :: [(StdHandle, MVar OutputBuffer, TMVar BufSig, TMVar AtEnd)] -> IO ()
 bufferWriter ts = do
-	activitysig <- atomicallyD "bufferWriter" newEmptyTMVar
+	activitysig <- atomically newEmptyTMVar
 	worker1 <- async $ lockOutput $
-		ifM (atomicallyD "bufferWriter 2" $ tryPutTMVar activitysig ())
+		ifM (atomically $ tryPutTMVar activitysig ())
 			( void $ mapConcurrently displaybuf ts
 			, noop -- buffers already moved to global
 			)
@@ -415,7 +409,7 @@ bufferWriter ts = do
 		unregisterOutputThread
   where
 	displaybuf v@(outh, buf, bufsig, bufend) = do
-		change <- atomicallyD "bufferWriter 3" $
+		change <- atomically $
 			(Right <$> takeTMVar bufsig)
 				`orElse`
 			(Left <$> takeTMVar bufend)
@@ -426,7 +420,7 @@ bufferWriter ts = do
 			Right BufSig -> displaybuf v
 			Left AtEnd -> return ()
 	globalbuf activitysig = do
-		ok <- atomicallyD "bufferWriter 4" $ do
+		ok <- atomically $ do
 			-- signal we're going to handle it
 			-- (returns false if the displaybuf already did)
 			ok <- tryPutTMVar activitysig ()
@@ -439,7 +433,7 @@ bufferWriter ts = do
 			-- global output buffer, atomically
 			bs <- forM ts $ \(outh, buf, _bufsig, _bufend) ->
 				(outh,) <$> takeMVar buf
-			atomicallyD "bufferWriter 5" $
+			atomically $
 				forM_ bs $ \(outh, b) -> 
 					bufferOutputSTM' outh b
 
@@ -543,9 +537,3 @@ emitOutputBuffer stdh (OutputBuffer l) =
 	emit t = void $ tryIO $ do
 		T.hPutStr outh t
 		hFlush outh
-
-atomicallyD m a = do
-	putStrLn ("START " ++ m)
-	r <- atomically a
-	putStrLn ("END " ++ m)
-	return r
