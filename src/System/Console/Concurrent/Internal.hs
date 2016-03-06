@@ -290,8 +290,8 @@ fgProcess p = do
 	-- Wait for the process to exit and drop the lock.
 	asyncProcessWaiter $ do
 		void $ tryIO $ P.waitForProcess h
-		dropOutputLock
 		print ("fgProcess done", showProc p)
+		dropOutputLock
 	return (toConcurrentProcessHandle r)
 
 #ifndef mingw32_HOST_OS
