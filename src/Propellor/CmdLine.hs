@@ -113,8 +113,10 @@ defaultMain hostlist = withConcurrentOutput $ do
 	go _ (DockerChain hn cid) = Docker.chain hostlist hn cid
 	go _ (DockerInit hn) = Docker.init hn
 	go _ (GitPush fin fout) = gitPushHelper fin fout
-	go cr (Relay h) = forceConsole >> updateFirst cr (Update (Just h)) (update (Just h))
-	go _ (Update Nothing) = forceConsole >> fetchFirst (onlyprocess (update Nothing))
+	go cr (Relay h) = forceConsole >>
+		updateFirst cr (Update (Just h)) (update (Just h))
+	go _ (Update Nothing) = forceConsole >>
+		fetchFirst (onlyprocess (update Nothing))
 	go _ (Update (Just h)) = update (Just h)
 	go _ Merge = mergeSpin
 	go cr cmdline@(Spin hs mrelay) = buildFirst cr cmdline $ do
