@@ -297,7 +297,7 @@ fgProcess p = do
 	return (toConcurrentProcessHandle r)
 	
 debug :: [String] -> IO ()
-debug = debugM "concurrent-output" . unwords
+debug = hPutStrLn stderr . unwords
 
 showProc :: P.CreateProcess -> String
 showProc = go . P.cmdspec
