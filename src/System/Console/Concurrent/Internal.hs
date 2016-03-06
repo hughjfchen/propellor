@@ -77,7 +77,7 @@ tryTakeOutputLock :: IO Bool
 tryTakeOutputLock = takeOutputLock' False
 
 withLock :: (TMVar Lock -> STM a) -> IO a
-withLock a = atomically $ a (outputLock globalOutputHandle)
+withLock a = atomicallyD "withLock" $ a (outputLock globalOutputHandle)
 
 takeOutputLock' :: Bool -> IO Bool
 takeOutputLock' block = do
@@ -94,7 +94,7 @@ takeOutputLock' block = do
 				putTMVar l Locked
 				return True
 	when locked $ do
-		(outbuf, errbuf) <- atomically $ (,)
+		(outbuf, errbuf) <- atomicallyD "takeOutputLock" $ (,)
 			<$> swapTMVar (outputBuffer globalOutputHandle) (OutputBuffer [])
 			<*> swapTMVar (errorBuffer globalOutputHandle) (OutputBuffer [])
 		emitOutputBuffer StdOut outbuf
@@ -122,7 +122,7 @@ flushConcurrentOutput :: IO ()
 flushConcurrentOutput = do
 	-- Wait for all outputThreads to finish.
 	let v = outputThreads globalOutputHandle
-	atomically $ do
+	atomicallyD "flushConcurrentOutput" $ do
 		r <- takeTMVar v
 		if r <= 0
 			then putTMVar v r
@@ -171,9 +171,9 @@ outputConcurrent' stdh v = bracket setup cleanup go
 		T.hPutStr h (toOutput v)
 		hFlush h
 	go False = do
-		oldbuf <- atomically $ takeTMVar bv
+		oldbuf <- atomicallyD "outputConcurrent" $ takeTMVar bv
 		newbuf <- addOutputBuffer (Output (toOutput v)) oldbuf
-		atomically $ putTMVar bv newbuf
+		atomicallyD "outputConcurrent 2" $ putTMVar bv newbuf
 	h = toHandle stdh
 	bv = bufferFor stdh
 
@@ -194,14 +194,14 @@ waitForProcessConcurrent (ConcurrentProcessHandle h) =
 	bracket lock unlock checkexit
   where
 	lck = waitForProcessLock globalOutputHandle
-	lock = atomically $ tryPutTMVar lck ()
-	unlock True = atomically $ takeTMVar lck
+	lock = atomicallyD "waitForProcessConcurrent" $ tryPutTMVar lck ()
+	unlock True = atomicallyD "waitForProcessConcurrent 2" $ takeTMVar lck
 	unlock False = return ()
 	checkexit locked = maybe (waitsome locked) return
 		=<< P.getProcessExitCode h
 	waitsome True = do
 		let v = processWaiters globalOutputHandle
-		l <- atomically $ readTMVar v
+		l <- atomicallyD "waitForProcessConcurrent 3" $ readTMVar v
 		if null l
 			-- Avoid waitAny [] which blocks forever
 			then P.waitForProcess h
@@ -216,7 +216,7 @@ waitForProcessConcurrent (ConcurrentProcessHandle h) =
 	waitsome False = do
 		-- Another thread took the lck first. Wait for that thread to
 		-- wait for one of the running processes to exit.
-		atomically $ do
+		atomicallyD "waitForProcessConcurrent 4" $ do
 			putTMVar lck ()
 			takeTMVar lck
 		checkexit False
@@ -228,16 +228,16 @@ asyncProcessWaiter :: IO () -> IO ()
 asyncProcessWaiter waitaction = do
 	regdone <- newEmptyTMVarIO
 	waiter <- async $ do
-		self <- atomically (takeTMVar regdone)
+		self <- atomicallyD "asyncProcessWaiter" (takeTMVar regdone)
 		waitaction `finally` unregister self
 	register waiter regdone
   where
 	v = processWaiters globalOutputHandle
-  	register waiter regdone = atomically $ do
+  	register waiter regdone = atomicallyD "asyncProcessWaiter 2" $ do
 		l <- takeTMVar v
 		putTMVar v (waiter:l)
 		putTMVar regdone waiter
-	unregister waiter = atomically $ do
+	unregister waiter = atomicallyD "asyncProcessWaiter 3" $ do
 		l <- takeTMVar v
 		putTMVar v (filter (/= waiter) l)
 
@@ -359,8 +359,8 @@ setupOutputBuffer :: StdHandle -> Handle -> P.StdStream -> Handle -> IO (StdHand
 setupOutputBuffer h toh ss fromh = do
 	hClose toh
 	buf <- newMVar (OutputBuffer [])
-	bufsig <- atomically newEmptyTMVar
-	bufend <- atomically newEmptyTMVar
+	bufsig <- atomicallyD "setupOutputBuffer" newEmptyTMVar
+	bufend <- atomicallyD "setupOutputBuffer 2" newEmptyTMVar
 	void $ async $ outputDrainer ss fromh buf bufsig bufend
 	return (h, buf, bufsig, bufend)
 
@@ -379,21 +379,21 @@ outputDrainer ss fromh buf bufsig bufend
 				changed
 				go
 	atend = do
-		atomically $ putTMVar bufend AtEnd
+		atomicallyD  "atend" $ putTMVar bufend AtEnd
 		hClose fromh
-	changed = atomically $ do
+	changed = atomicallyD "changed" $ do
 		void $ tryTakeTMVar bufsig
 		putTMVar bufsig BufSig
 
 registerOutputThread :: IO ()
 registerOutputThread = do
 	let v = outputThreads globalOutputHandle
-	atomically $ putTMVar v . succ =<< takeTMVar v
+	atomicallyD "registerOutputThread" $ putTMVar v . succ =<< takeTMVar v
 	
 unregisterOutputThread :: IO ()
 unregisterOutputThread = do
 	let v = outputThreads globalOutputHandle
-	atomically $ putTMVar v . pred =<< takeTMVar v
+	atomicallyD "unregisterOutputThread" $ putTMVar v . pred =<< takeTMVar v
 
 -- Wait to lock output, and once we can, display everything 
 -- that's put into the buffers, until the end.
@@ -402,9 +402,9 @@ unregisterOutputThread = do
 -- buffers to the global outputBuffer and errorBuffer.
 bufferWriter :: [(StdHandle, MVar OutputBuffer, TMVar BufSig, TMVar AtEnd)] -> IO ()
 bufferWriter ts = do
-	activitysig <- atomically newEmptyTMVar
+	activitysig <- atomicallyD "bufferWriter" newEmptyTMVar
 	worker1 <- async $ lockOutput $
-		ifM (atomically $ tryPutTMVar activitysig ())
+		ifM (atomicallyD "bufferWriter 2" $ tryPutTMVar activitysig ())
 			( void $ mapConcurrently displaybuf ts
 			, noop -- buffers already moved to global
 			)
@@ -415,7 +415,7 @@ bufferWriter ts = do
 		unregisterOutputThread
   where
 	displaybuf v@(outh, buf, bufsig, bufend) = do
-		change <- atomically $
+		change <- atomicallyD "bufferWriter 3" $
 			(Right <$> takeTMVar bufsig)
 				`orElse`
 			(Left <$> takeTMVar bufend)
@@ -426,7 +426,7 @@ bufferWriter ts = do
 			Right BufSig -> displaybuf v
 			Left AtEnd -> return ()
 	globalbuf activitysig = do
-		ok <- atomically $ do
+		ok <- atomicallyD "bufferWriter 4" $ do
 			-- signal we're going to handle it
 			-- (returns false if the displaybuf already did)
 			ok <- tryPutTMVar activitysig ()
@@ -439,7 +439,7 @@ bufferWriter ts = do
 			-- global output buffer, atomically
 			bs <- forM ts $ \(outh, buf, _bufsig, _bufend) ->
 				(outh,) <$> takeMVar buf
-			atomically $
+			atomicallyD "bufferWriter 5" $
 				forM_ bs $ \(outh, b) -> 
 					bufferOutputSTM' outh b
 
@@ -543,3 +543,9 @@ emitOutputBuffer stdh (OutputBuffer l) =
 	emit t = void $ tryIO $ do
 		T.hPutStr outh t
 		hFlush outh
+
+atomicallyD m a = do
+	putStrLn ("START " ++ m)
+	r <- atomically a
+	putStrLn ("END " ++ m)
+	return r
