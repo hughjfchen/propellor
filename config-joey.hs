@@ -44,7 +44,7 @@ main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
      Deployed -}          --  `/-==__ _/__|/__=-|          (       \_
 hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                --                  (o)  `
-	[ darkstar
+	[ darkstar 
 	, gnu
 	, clam
 	, mayfly
