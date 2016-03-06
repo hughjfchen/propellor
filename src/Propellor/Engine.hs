@@ -32,7 +32,7 @@ import Utility.Exception
 -- | Gets the Properties of a Host, and ensures them all,
 -- with nice display of what's being done.
 mainProperties :: Host -> IO ()
-mainProperties host = withConcurrentOutput $ do
+mainProperties host = do
 	ret <- runPropellor host $
 		ensureProperties [ignoreInfo $ infoProperty "overall" (ensureProperties ps) mempty mempty]
 	messagesDone
