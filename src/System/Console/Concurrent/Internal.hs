@@ -302,6 +302,7 @@ bgProcess p = do
 		, P.std_err = rediroutput (P.std_err p) toerrh
 		}
 	registerOutputThread
+	liftIO $ print ("bgProcess", showproc (P.cmdspec p'))
 	r@(_, _, _, h) <- P.createProcess p'
 		`onException` unregisterOutputThread
 	asyncProcessWaiter $ void $ tryIO $ P.waitForProcess h
@@ -316,6 +317,8 @@ bgProcess p = do
 	rediroutput ss h
 		| willOutput ss = P.UseHandle h
 		| otherwise = ss
+	showproc (P.RawCommand c ps) = show (c, ps)
+	showproc (P.ShellCommand s) = show s
 #endif
 
 willOutput :: P.StdStream -> Bool
