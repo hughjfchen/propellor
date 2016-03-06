@@ -57,7 +57,7 @@ available locale = (ensureAvailable <!> ensureUnavailable)
 					if locale `presentIn` locales
 					then ensureProperty $
 						fileProperty desc (foldr uncomment []) f
-						`onChange` regenerate
+							`onChange` regenerate
 					else return FailedChange -- locale unavailable for generation
 	ensureUnavailable =
 		fileProperty (locale ++ " locale not generated") (foldr comment []) f
@@ -75,6 +75,5 @@ available locale = (ensureAvailable <!> ensureUnavailable)
 	l `presentIn` ls = any (l `isPrefix`) ls
 	l `isPrefix` x = (l `isPrefixOf` x) || (("# " ++ l) `isPrefixOf` x)
 
-	regenerate = cmdProperty "dpkg-reconfigure"
-		["-f", "noninteractive", "locales"]
+	regenerate = cmdProperty "locale-gen" []
 		`assume` MadeChange
