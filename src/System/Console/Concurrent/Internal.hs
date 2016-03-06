@@ -284,13 +284,13 @@ createProcessForeground p = do
 
 fgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
 fgProcess p = do
-	print ("fgProcess", showProc p)
+	hPutStrLn stderr $ show ("fgProcess", showProc p)
 	r@(_, _, _, h) <- P.createProcess p
 		`onException` dropOutputLock
 	-- Wait for the process to exit and drop the lock.
 	asyncProcessWaiter $ do
 		void $ tryIO $ P.waitForProcess h
-		print ("fgProcess done", showProc p)
+		hPutStrLn stderr $ show ("fgProcess done", showProc p)
 		dropOutputLock
 	return (toConcurrentProcessHandle r)
 
@@ -299,7 +299,7 @@ bgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, Co
 bgProcess p = do
 	(toouth, fromouth) <- pipe
 	(toerrh, fromerrh) <- pipe
-	print ("bgProcess", showProc p)
+	hPutStrLn stderr $ show ("bgProcess", showProc p)
 	let p' = p
 		{ P.std_out = rediroutput (P.std_out p) toouth
 		, P.std_err = rediroutput (P.std_err p) toerrh
