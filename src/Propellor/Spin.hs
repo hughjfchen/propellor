@@ -112,9 +112,10 @@ spin' mprivdata relay target hst = do
 		]
 
 	runcmd = "cd " ++ localdir ++ " && ./propellor " ++ cmd
-	cmd = if viarelay
-		then "--serialized " ++ shellEscape (show (Spin [target] (Just target)))
-		else "--continue " ++ shellEscape (show (SimpleRun target))
+	cmd = "--serialized " ++ shellEscape (show cmdline)
+	cmdline
+		| viarelay = Spin [target] (Just target)
+		| otherwise = SimpleRun target
 	
 	getprivdata = case mprivdata of
 		Nothing

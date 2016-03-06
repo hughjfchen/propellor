@@ -125,12 +125,8 @@ defaultMain hostlist = withConcurrentOutput $ do
 			( runhost hn
 			, go cr (Spin [hn] Nothing)
 			)
-	go _ (SimpleRun hn) = runhost hn
-	go cr (Continue cmdline@(SimpleRun hn)) =
-		-- --continue SimpleRun is used by --spin,
-		-- and unlike all other uses of --continue, this legacy one
-		-- wants a build first
-		forceConsole >> fetchFirst (buildFirst cr cmdline (runhost hn))
+	go cr cmdline@(SimpleRun hn) = forceConsole >>
+		fetchFirst (buildFirst cr cmdline (runhost hn))
 	-- When continuing after a rebuild, don't want to rebuild again.
 	go _ (Continue cmdline) = go NoRebuild cmdline
 
