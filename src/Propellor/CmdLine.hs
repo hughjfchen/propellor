@@ -113,8 +113,10 @@ defaultMain hostlist = withConcurrentOutput $ do
 	go _ (DockerChain hn cid) = Docker.chain hostlist hn cid
 	go _ (DockerInit hn) = Docker.init hn
 	go _ (GitPush fin fout) = gitPushHelper fin fout
-	go cr (Relay h) = forceConsole >> updateFirst cr (Update (Just h)) (update (Just h))
-	go _ (Update Nothing) = forceConsole >> fetchFirst (onlyprocess (update Nothing))
+	go cr (Relay h) = forceConsole >>
+		updateFirst cr (Update (Just h)) (update (Just h))
+	go _ (Update Nothing) = forceConsole >>
+		fetchFirst (onlyprocess (update Nothing))
 	go _ (Update (Just h)) = update (Just h)
 	go _ Merge = mergeSpin
 	go cr cmdline@(Spin hs mrelay) = buildFirst cr cmdline $ do
@@ -125,12 +127,8 @@ defaultMain hostlist = withConcurrentOutput $ do
 			( runhost hn
 			, go cr (Spin [hn] Nothing)
 			)
-	go _ (SimpleRun hn) = runhost hn
-	go cr (Continue cmdline@(SimpleRun hn)) =
-		-- --continue SimpleRun is used by --spin,
-		-- and unlike all other uses of --continue, this legacy one
-		-- wants a build first
-		forceConsole >> fetchFirst (buildFirst cr cmdline (runhost hn))
+	go cr cmdline@(SimpleRun hn) = forceConsole >>
+		fetchFirst (buildFirst cr cmdline (runhost hn))
 	-- When continuing after a rebuild, don't want to rebuild again.
 	go _ (Continue cmdline) = go NoRebuild cmdline
 
@@ -149,6 +147,9 @@ unknownhost h hosts = errorMessage $ unlines
 	, "Known hosts: " ++ unwords (map hostName hosts)
 	]
 
+-- Builds propellor (when allowed) and if it looks like a new binary,
+-- re-execs it to continue.
+-- Otherwise, runs the IO action to continue.
 buildFirst :: CanRebuild -> CmdLine -> IO () -> IO ()
 buildFirst CanRebuild cmdline next = do
 	oldtime <- getmtime
@@ -156,13 +157,19 @@ buildFirst CanRebuild cmdline next = do
 	newtime <- getmtime
 	if newtime == oldtime
 		then next
-		else void $ boolSystem "./propellor"
-			[ Param "--continue"
-			, Param (show cmdline)
-			]
+		else continueAfterBuild cmdline
   where
 	getmtime = catchMaybeIO $ getModificationTime "propellor"
 buildFirst NoRebuild _ next = next
+
+continueAfterBuild :: CmdLine -> IO a
+continueAfterBuild cmdline = go =<< boolSystem "./propellor"
+	[ Param "--continue"
+	, Param (show cmdline)
+	]
+  where
+	go True = exitSuccess
+	go False = exitWith (ExitFailure 1)
 
 fetchFirst :: IO () -> IO ()
 fetchFirst next = do
@@ -176,14 +183,14 @@ updateFirst canrebuild cmdline next = ifM hasOrigin
 	, next
 	)
 
+-- If changes can be fetched from origin,  Builds propellor (when allowed)
+-- and re-execs the updated propellor binary to continue.
+-- Otherwise, runs the IO action to continue.
 updateFirst' :: CanRebuild -> CmdLine -> IO () -> IO ()
 updateFirst' CanRebuild cmdline next = ifM fetchOrigin
 	( do
 		buildPropellor
-		void $ boolSystem "./propellor"
-			[ Param "--continue"
-			, Param (show cmdline)
-			]
+		continueAfterBuild cmdline
 	, next
 	)
 updateFirst' NoRebuild _ next = next

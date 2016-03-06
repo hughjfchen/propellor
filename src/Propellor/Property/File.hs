@@ -92,11 +92,7 @@ fileProperty' writer desc a f = property desc $ go =<< liftIO (doesFileExist f)
 		let new = unlines (a (lines old))
 		if old == new
 			then noChange
-			else makeChange $ do
-				writeFile "/tmp/a" old
-				writeFile "/tmp/b" new
-				print ("MAKE CHANGE", f)
-				updatefile new `viaStableTmp` f
+			else makeChange $ updatefile new `viaStableTmp` f
 	go False = makeChange $ writer f (unlines $ a [])
 
 	-- Replicate the original file's owner and mode.
