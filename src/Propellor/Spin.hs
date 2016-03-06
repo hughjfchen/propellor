@@ -66,7 +66,6 @@ spin = spin' Nothing
 
 spin' :: Maybe PrivMap -> Maybe HostName -> HostName -> Host -> IO ()
 spin' mprivdata relay target hst = do
-	async $ boolSystem "sleep" [Param "500"]
 	cacheparams <- if viarelay
 		then pure ["-A"]
 		else toCommand <$> sshCachingParams hn
@@ -82,6 +81,7 @@ spin' mprivdata relay target hst = do
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap probecmd])
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap updatecmd])
 		=<< getprivdata
+	async $ boolSystem "sleep" [Param "500"]
 
 	-- And now we can run it.
 	unlessM (boolSystem "ssh" (map Param $ cacheparams ++ ["-t", sshtarget, shellWrap runcmd])) $
