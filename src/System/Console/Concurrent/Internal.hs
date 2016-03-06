@@ -31,6 +31,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Control.Applicative
 import Prelude
+import System.Log.Logger
 
 import Utility.Monad
 import Utility.Exception
@@ -114,21 +115,20 @@ withConcurrentOutput :: (MonadIO m, MonadMask m) => m a -> m a
 withConcurrentOutput a = a `finally` liftIO flushConcurrentOutput
 
 -- | Blocks until any processes started by `createProcessConcurrent` have
--- finished, and any buffered output is displayed. 
+-- finished, and any buffered output is displayed. Also blocks while
+-- `lockOutput` is is use.
 --
--- `withConcurrentOutput` calls this at the end; you can call it anytime
--- you want to flush output.
+-- `withConcurrentOutput` calls this at the end, so you do not normally
+-- need to use this.
 flushConcurrentOutput :: IO ()
 flushConcurrentOutput = do
-	-- Wait for all outputThreads to finish.
-	let v = outputThreads globalOutputHandle
 	atomically $ do
-		r <- takeTMVar v
+		r <- takeTMVar (outputThreads globalOutputHandle)
 		if r <= 0
-			then putTMVar v r
+			then putTMVar (outputThreads globalOutputHandle) r
 			else retry
-	-- Take output lock to ensure that nothing else is currently
-	-- generating output, and flush any buffered output.
+	-- Take output lock to wait for anything else that might be
+	-- currently generating output.
 	lockOutput $ return ()
 
 -- | Values that can be output.
@@ -286,17 +286,31 @@ fgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, Co
 fgProcess p = do
 	r@(_, _, _, h) <- P.createProcess p
 		`onException` dropOutputLock
+	registerOutputThread
+	debug ["fgProcess", showProc p]
 	-- Wait for the process to exit and drop the lock.
 	asyncProcessWaiter $ do
 		void $ tryIO $ P.waitForProcess h
+		unregisterOutputThread
 		dropOutputLock
+		debug ["fgProcess done", showProc p]
 	return (toConcurrentProcessHandle r)
+	
+debug :: [String] -> IO ()
+debug = debugM "concurrent-output" . unwords
+
+showProc :: P.CreateProcess -> String
+showProc = go . P.cmdspec
+  where
+	go (P.ShellCommand s) = s
+	go (P.RawCommand c ps) = show (c, ps)
 
 #ifndef mingw32_HOST_OS
 bgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
 bgProcess p = do
 	(toouth, fromouth) <- pipe
 	(toerrh, fromerrh) <- pipe
+	debug ["bgProcess", showProc p]
 	let p' = p
 		{ P.std_out = rediroutput (P.std_out p) toouth
 		, P.std_err = rediroutput (P.std_err p) toerrh
@@ -402,7 +416,7 @@ bufferWriter ts = do
 			( void $ mapConcurrently displaybuf ts
 			, noop -- buffers already moved to global
 			)
-	worker2 <- async $ void $ globalbuf activitysig
+	worker2 <- async $ void $ globalbuf activitysig worker1
 	void $ async $ do
 		void $ waitCatch worker1
 		void $ waitCatch worker2
@@ -419,7 +433,7 @@ bufferWriter ts = do
 		case change of
 			Right BufSig -> displaybuf v
 			Left AtEnd -> return ()
-	globalbuf activitysig = do
+	globalbuf activitysig worker1 = do
 		ok <- atomically $ do
 			-- signal we're going to handle it
 			-- (returns false if the displaybuf already did)
@@ -436,6 +450,9 @@ bufferWriter ts = do
 			atomically $
 				forM_ bs $ \(outh, b) -> 
 					bufferOutputSTM' outh b
+			-- worker1 might be blocked waiting for the output
+			-- lock, and we've already done its job, so cancel it
+			cancel worker1
 
 -- Adds a value to the OutputBuffer. When adding Output to a Handle,
 -- it's cheaper to combine it with any already buffered Output to that
