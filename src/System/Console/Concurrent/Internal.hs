@@ -284,12 +284,14 @@ createProcessForeground p = do
 
 fgProcess :: P.CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ConcurrentProcessHandle)
 fgProcess p = do
+	liftIO $ print ("fgProcess", showproc (P.cmdspec p))
 	r@(_, _, _, h) <- P.createProcess p
 		`onException` dropOutputLock
 	-- Wait for the process to exit and drop the lock.
 	asyncProcessWaiter $ do
 		void $ tryIO $ P.waitForProcess h
 		dropOutputLock
+		liftIO $ print ("fgProcess done", showproc (P.cmdspec p))
 	return (toConcurrentProcessHandle r)
 
 #ifndef mingw32_HOST_OS
@@ -317,9 +319,10 @@ bgProcess p = do
 	rediroutput ss h
 		| willOutput ss = P.UseHandle h
 		| otherwise = ss
-	showproc (P.RawCommand c ps) = show (c, ps)
-	showproc (P.ShellCommand s) = show s
 #endif
+	
+showproc (P.RawCommand c ps) = show (c, ps)
+showproc (P.ShellCommand s) = show s
 
 willOutput :: P.StdStream -> Bool
 willOutput P.Inherit = True
