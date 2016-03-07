@@ -16,8 +16,7 @@ type ShellCommand = String
 -- Should be run inside the propellor config dir, and will install
 -- all necessary build dependencies and build propellor.
 bootstrapPropellorCommand :: System -> ShellCommand
-bootstrapPropellorCommand sys =
-  (checkDepsCommand sys) ++
+bootstrapPropellorCommand sys = checkDepsCommand sys ++
 	"&& if ! test -x ./propellor; then "
 		++ buildCommand ++
 	"; fi;" ++ checkBinaryCommand
