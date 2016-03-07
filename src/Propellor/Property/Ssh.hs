@@ -75,7 +75,7 @@ setSshdConfig setting val = File.fileProperty desc f sshdConfig
 		| s == cfgline = True
 		| (setting ++ " ") `isPrefixOf` s = False
 		| otherwise = True
-	f ls 
+	f ls
 		| cfgline `elem` ls = filter wantedline ls
 		| otherwise = filter wantedline ls ++ [cfgline]
 
@@ -94,7 +94,7 @@ passwordAuthentication = setSshdConfigBool "PasswordAuthentication"
 
 -- | Configure ssh to not allow password logins.
 --
--- To prevent lock-out, this is done only once root's 
+-- To prevent lock-out, this is done only once root's
 -- authorized_keys is in place.
 noPasswords :: Property NoInfo
 noPasswords = check (hasAuthorizedKeys (User "root")) $
@@ -114,10 +114,10 @@ dotFile f user = do
 -- ports it is configured to listen on.
 --
 -- Revert to prevent it listening on a particular port.
-listenPort :: Int -> RevertableProperty NoInfo
+listenPort :: Port -> RevertableProperty NoInfo
 listenPort port = enable <!> disable
   where
-	portline = "Port " ++ show port
+	portline = "Port " ++ fromPort port
 	enable = sshdConfig `File.containsLine` portline
 		`describe` ("ssh listening on " ++ portline)
 		`onChange` restarted
@@ -173,7 +173,7 @@ hostKeys ctx l = propertyList desc $ catMaybes $
 -- | Installs a single ssh host key of a particular type.
 --
 -- The public key is provided to this function;
--- the private key comes from the privdata; 
+-- the private key comes from the privdata;
 hostKey :: IsContext c => c -> SshKeyType -> PubKeyText -> Property HasInfo
 hostKey context keytype pub = combineProperties desc
 	[ hostPubKey keytype pub
@@ -210,7 +210,7 @@ hostPubKey t = pureInfoProperty "ssh pubkey known" . HostKeyInfo . M.singleton t
 getHostPubKey :: Propellor (M.Map SshKeyType PubKeyText)
 getHostPubKey = fromHostKeyInfo <$> askInfo
 
-newtype HostKeyInfo = HostKeyInfo 
+newtype HostKeyInfo = HostKeyInfo
 	{ fromHostKeyInfo :: M.Map SshKeyType PubKeyText }
 	deriving (Eq, Ord, Typeable, Show)
 
@@ -219,7 +219,7 @@ instance IsInfo HostKeyInfo where
 
 instance Monoid HostKeyInfo where
 	mempty = HostKeyInfo M.empty
-	mappend (HostKeyInfo old) (HostKeyInfo new) = 
+	mappend (HostKeyInfo old) (HostKeyInfo new) =
 		-- new first because union prefers values from the first
 		-- parameter when there is a duplicate key
 		HostKeyInfo (new `M.union` old)
@@ -240,12 +240,12 @@ instance IsInfo UserKeyInfo where
 
 instance Monoid UserKeyInfo where
 	mempty = UserKeyInfo M.empty
-	mappend (UserKeyInfo old) (UserKeyInfo new) = 
+	mappend (UserKeyInfo old) (UserKeyInfo new) =
 		UserKeyInfo (M.unionWith S.union old new)
 
 -- | Sets up a user with the specified public keys, and the corresponding
 -- private keys from the privdata.
--- 
+--
 -- The public keys are added to the Info, so other properties like
 -- `authorizedKeysFrom` can use them.
 userKeys :: IsContext c => User -> c -> [(SshKeyType, PubKeyText)] -> Property HasInfo
@@ -277,7 +277,7 @@ userKeyAt dest user@(User u) context (keytype, pubkeytext) =
 		, Just $ "(" ++ fromKeyType keytype ++ ")"
 		]
 	pubkey = property desc $ install File.hasContent ".pub" [pubkeytext]
-	privkey = withPrivData (SshPrivKey keytype u) context $ \getkey -> 
+	privkey = withPrivData (SshPrivKey keytype u) context $ \getkey ->
 		property desc $ getkey $
 			install File.hasContentProtected "" . privDataLines
 	install writer ext key = do
@@ -349,7 +349,7 @@ modKnownHost user f p = ensureProperty $ p
 --
 -- Any other lines in the authorized_keys file are preserved as-is.
 authorizedKeysFrom :: User -> (User, Host) -> Property NoInfo
-localuser@(User ln) `authorizedKeysFrom` (remoteuser@(User rn), remotehost) = 
+localuser@(User ln) `authorizedKeysFrom` (remoteuser@(User rn), remotehost) =
 	property desc (go =<< authorizedKeyLines remoteuser remotehost)
   where
 	remote = rn ++ "@" ++ hostName remotehost
@@ -372,9 +372,9 @@ localuser@(User ln) `unauthorizedKeysFrom` (remoteuser@(User rn), remotehost) =
 	go [] = return NoChange
 	go ls = ensureProperty $ combineProperties desc $
 		map (revert . authorizedKey localuser) ls
-	
+
 authorizedKeyLines :: User -> Host -> Propellor [File.Line]
-authorizedKeyLines remoteuser remotehost = 
+authorizedKeyLines remoteuser remotehost =
 	map snd <$> fromHost' remotehost (getUserPubKeys remoteuser)
 
 -- | Makes a user have authorized_keys from the PrivData
@@ -404,7 +404,7 @@ authorizedKey user@(User u) l = add <!> remove
 				`requires` File.dirExists (takeDirectory f)
 	remove = property (u ++ " lacks authorized_keys") $ do
 		f <- liftIO $ dotFile "authorized_keys" user
-		ifM (liftIO $ doesFileExist f) 
+		ifM (liftIO $ doesFileExist f)
 			( modAuthorizedKey f user $ f `File.lacksLine` l
 			, return NoChange
 			)
