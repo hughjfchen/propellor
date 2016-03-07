@@ -16,8 +16,9 @@ Extra-Source-Files:
   CHANGELOG
   Makefile
   config-simple.hs
-  config-joey.hs
+  joeyconfig.hs
   config.hs
+  contrib/post-checkout-hook
   debian/changelog
   debian/README.Debian
   debian/compat
