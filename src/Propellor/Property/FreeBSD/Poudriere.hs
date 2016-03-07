@@ -30,20 +30,16 @@ setConfigured :: Property HasInfo
 setConfigured = pureInfoProperty "Poudriere Configured" (PoudriereConfigured "")
 
 poudriere :: Poudriere -> Property HasInfo
-poudriere conf@(Poudriere _ _ _ _ _ _ zfs) =
-	let
-		confProp =
-			File.containsLines poudriereConfigPath (toLines conf)
-		setZfs (PoudriereZFS z p) = ZFS.zfsSetProperties z p `describe` "Configuring Poudriere with ZFS"
-		prop :: CombinedType (Property NoInfo) (Property NoInfo)
-		prop =
-			if isJust zfs
-				then ((setZfs $ fromJust zfs) `before` confProp)
-				else propertyList "Configuring Poudriere without ZFS" [confProp]
-	in
-		prop
-		`requires` Pkg.installed "poudriere"
-		`before` setConfigured
+poudriere conf@(Poudriere _ _ _ _ _ _ zfs) = prop
+	`requires` Pkg.installed "poudriere"
+	`before` setConfigured
+  where
+	confProp = File.containsLines poudriereConfigPath (toLines conf)
+	setZfs (PoudriereZFS z p) = ZFS.zfsSetProperties z p `describe` "Configuring Poudriere with ZFS"
+	prop :: CombinedType (Property NoInfo) (Property NoInfo)
+	prop
+		| isJust zfs = ((setZfs $ fromJust zfs) `before` confProp)
+		| otherwise = propertyList "Configuring Poudriere without ZFS" [confProp]
 
 poudriereCommand :: String -> [String] -> (String, [String])
 poudriereCommand cmd args = ("poudriere", cmd:args)
@@ -63,22 +59,19 @@ jailExists (Jail name _ _) = isInfixOf [name] <$> listJails
 
 jail :: Jail -> Property NoInfo
 jail j@(Jail name version arch) =
-	let
-		cfgd = poudriereConfigured <$> askInfo
-
-		notExists :: IO Bool
-		notExists = not <$> jailExists j
-		chk = do
-			c <- cfgd
-			x <- liftIO notExists
-			return $ c && x
-
-		(cmd, args) = poudriereCommand "jail"  ["-c", "-j", name, "-a", show arch, "-v", show version]
-		createJail = cmdProperty cmd args
-	in
-		checkResult chk (\_ -> return MadeChange) createJail
+	checkResult chk (\_ -> return MadeChange) createJail
 		`describe` unwords ["Create poudriere jail", name]
+  where
+	cfgd = poudriereConfigured <$> askInfo
 
+	notExists :: IO Bool
+	notExists = not <$> jailExists j
+	chk = do
+		c <- cfgd
+		x <- liftIO notExists
+		return $ c && x
+	(cmd, args) = poudriereCommand "jail"  ["-c", "-j", name, "-a", show arch, "-v", show version]
+	createJail = cmdProperty cmd args
 
 data Poudriere = Poudriere
 	{ _resolvConf :: String
@@ -87,7 +80,8 @@ data Poudriere = Poudriere
 	, _usePortLint :: Bool
 	, _distFilesCache :: FilePath
 	, _svnHost :: String
-	, _zfs :: Maybe PoudriereZFS}
+	, _zfs :: Maybe PoudriereZFS
+	}
 
 defaultConfig :: Poudriere
 defaultConfig = Poudriere
@@ -118,18 +112,20 @@ yesNoProp b = if b then "yes" else "no"
 
 instance ToShellConfigLines Poudriere where
 	toAssoc c = map (\(k, f) -> (k, f c))
-		[("RESOLV_CONF", _resolvConf)
-		,("FREEBSD_HOST", _freebsdHost)
-		,("BASEFS", _baseFs)
-		,("USE_PORTLINT", yesNoProp . _usePortLint)
-		,("DISTFILES_CACHE", _distFilesCache)
-		,("SVN_HOST", _svnHost)] ++ maybe [("NO_ZFS", "yes")] toAssoc (_zfs c)
+		[ ("RESOLV_CONF", _resolvConf)
+		, ("FREEBSD_HOST", _freebsdHost)
+		, ("BASEFS", _baseFs)
+		, ("USE_PORTLINT", yesNoProp . _usePortLint)
+		, ("DISTFILES_CACHE", _distFilesCache)
+		, ("SVN_HOST", _svnHost)
+		] ++ maybe [ ("NO_ZFS", "yes") ] toAssoc (_zfs c)
 
 instance ToShellConfigLines PoudriereZFS where
 	toAssoc (PoudriereZFS (ZFS.ZFS (ZFS.ZPool pool) dataset) _) =
-		[("NO_ZFS", "no")
+		[ ("NO_ZFS", "no")
 		, ("ZPOOL", pool)
-		, ("ZROOTFS", show dataset)]
+		, ("ZROOTFS", show dataset)
+		]
 
 type ConfigLine = String
 type ConfigFile = [ConfigLine]
@@ -138,7 +134,7 @@ class ToShellConfigLines a where
 	toAssoc :: a -> [(String, String)]
 
 	toLines :: a -> [ConfigLine]
-	toLines c = map (\(k, v) -> intercalate "=" [k, v]) $ toAssoc c
+	toLines c = map (\(k, v) -> intercalate "=" [k, v]) (toAssoc c)
 
 confFile :: FilePath
 confFile = "/usr/local/etc/poudriere.conf"
