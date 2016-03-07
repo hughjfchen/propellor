@@ -87,6 +87,10 @@ toIpTableArg (Destination ipwm) =
 	[ "-d"
 	, intercalate "," (map fromIPWithMask ipwm)
 	]
+toIpTableArg (NatDestination ip mport) =
+	[ "--to-destination"
+	, fromIPAddr ip ++ maybe "" (\p -> ":" ++ fromPort p) mport
+	]
 toIpTableArg (r :- r') = toIpTableArg r <> toIpTableArg r'
 
 data IPWithMask = IPWithNoMask IPAddr | IPWithIPMask IPAddr IPAddr | IPWithNumMask IPAddr Int
@@ -177,6 +181,7 @@ data Rules
 	| TCPSyn
 	| Source [ IPWithMask ]
 	| Destination [ IPWithMask ]
+	| NatDestination IPAddr (Maybe Port)
 	| Rules :- Rules   -- ^Combine two rules
 	deriving (Eq, Show)
 
