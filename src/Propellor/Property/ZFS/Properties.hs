@@ -1,7 +1,6 @@
--- | Functions defining zfs Properties.
---
--- Copyright 2016 Evan Cofsky <evan@theunixman.com>
--- License: BSD 2-clause
+-- | Maintainer: 2016 Evan Cofsky <evan@theunixman.com>
+-- 
+-- Functions defining zfs Properties.
 
 module Propellor.Property.ZFS.Properties (
 	zfsExists, zfsSetProperties

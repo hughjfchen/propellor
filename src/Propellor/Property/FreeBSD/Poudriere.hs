@@ -1,11 +1,8 @@
--- | FreeBSD Poudriere properties
---
--- Copyright 2016 Evan Cofsky <evan@theunixman.com>
--- License: BSD 2-clause
+-- | Maintainer: 2016 Evan Cofsky <evan@theunixman.com>
+-- 
+-- FreeBSD Poudriere properties
 
 {-# Language GeneralizedNewtypeDeriving #-}
-
--- | Maintainer: Evan Cofsky <evan@theunixman.com>
 
 module Propellor.Property.FreeBSD.Poudriere where
 

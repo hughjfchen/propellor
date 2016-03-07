@@ -1,7 +1,6 @@
--- | Functions running zfs processes.
---
--- Copyright 2016 Evan Cofsky <evan@theunixman.com>
--- License: BSD 2-clause
+-- | Maintainer: 2016 Evan Cofsky <evan@theunixman.com>
+-- 
+-- Functions running zfs processes.
 
 module Propellor.Property.ZFS.Process where
 

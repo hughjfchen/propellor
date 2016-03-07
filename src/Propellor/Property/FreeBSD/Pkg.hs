@@ -1,7 +1,6 @@
--- | FreeBSD pkgng properties
---
--- Copyright 2016 Evan Cofsky <evan@theunixman.com>
--- License: BSD 2-clause
+-- | Maintainer: 2016 Evan Cofsky <evan@theunixman.com>
+-- 
+-- FreeBSD pkgng properties
 
 {-# Language ScopedTypeVariables, GeneralizedNewtypeDeriving #-}
 
