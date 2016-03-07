@@ -92,7 +92,7 @@ built' installprop target system@(System _ arch) config =
 extractSuite :: System -> Maybe String
 extractSuite (System (Debian s) _) = Just $ Apt.showSuite s
 extractSuite (System (Buntish r) _) = Just r
-extractSuite _ = error "Not supported unless Debian or Buntish."
+extractSuite (System (FreeBSD _) _) = Nothing
 
 -- | Ensures debootstrap is installed.
 --
