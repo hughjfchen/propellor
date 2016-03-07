@@ -1,5 +1,5 @@
 -- | Maintainer: 2016 Evan Cofsky <evan@theunixman.com>
--- 
+--
 -- FreeBSD Poudriere properties
 
 {-# Language GeneralizedNewtypeDeriving #-}
@@ -10,6 +10,7 @@ import Propellor.Base
 import Propellor.Types.Info
 import Data.List
 import Data.String (IsString(..))
+import Data.String.Utils (splitWs)
 
 import qualified Propellor.Property.FreeBSD.Pkg as Pkg
 import qualified Propellor.Property.ZFS as ZFS
@@ -52,26 +53,27 @@ runPoudriere cmd args =
 		lines <$> readProcess p a
 
 listJails :: IO [String]
-listJails = runPoudriere "jail" ["-l", "-q"]
+listJails =
+	map ((\(n:_) -> n ) . take 1 . splitWs) <$> runPoudriere "jail" ["-l", "-q"]
 
 jailExists :: Jail -> IO Bool
 jailExists (Jail name _ _) = isInfixOf [name] <$> listJails
 
 jail :: Jail -> Property NoInfo
 jail j@(Jail name version arch) =
-	checkResult chk (\_ -> return MadeChange) createJail
-		`describe` unwords ["Create poudriere jail", name]
-  where
-	cfgd = poudriereConfigured <$> askInfo
+	let
+		chk = do
+			c <- poudriereConfigured <$> askInfo
+			nx <- liftIO $ not <$> jailExists j
+			return $ c && nx
 
-	notExists :: IO Bool
-	notExists = not <$> jailExists j
-	chk = do
-		c <- cfgd
-		x <- liftIO notExists
-		return $ c && x
-	(cmd, args) = poudriereCommand "jail"  ["-c", "-j", name, "-a", show arch, "-v", show version]
-	createJail = cmdProperty cmd args
+		(cmd, args) = poudriereCommand "jail"  ["-c", "-j", name, "-a", show arch, "-v", show version]
+		createJail = cmdProperty cmd args
+	in
+		check chk createJail
+		`describe` unwords ["Create poudriere jail", name]
+
+data JailInfo = JailInfo String
 
 data Poudriere = Poudriere
 	{ _resolvConf :: String
