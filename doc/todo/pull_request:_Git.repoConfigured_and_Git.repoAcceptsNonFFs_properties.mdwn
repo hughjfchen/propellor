@@ -10,3 +10,4 @@ This branch adds
 Note that `Git.repoConfigured` uses a tuple instead of just two function arguments in order that it can be used infix in `config.hs` when connected to other properties with `&`, as `ConfFile.containsIniSetting`.
 
 > [[done]], thank you (had to fix some indents) --[[Joey]]
+>> Sorry about that!  Thought I had Emacs set up for your style guide.  --spwhitton

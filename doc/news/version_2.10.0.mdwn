@@ -1,4 +1,0 @@
-propellor 2.10.0 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * The Propellor.Property.Spin added in the last release is replaced
-     with a very different Propellor.Property.ControlHeir."""]]

@@ -1,0 +1,9 @@
+propellor 2.15.2 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Added GNUPGBIN environment variable or git.program git config
+     to control the command run for gpg. Allows eg, GNUPGBIN=gpg2
+     Thanks, Félix Sipma.
+   * Bootstrap apt-get installs run with deconf noninteractive frontend.
+   * spin --via: Avoid committing on relay host.
+   * Postfix: Add service property to enable/disable services in master.cf.
+   * Added Munin module, contributed by Jelmer Vernooij."""]]

@@ -1,5 +1,4 @@
 dist/*
-propellor
 tags
 privdata/local
 privdata/keyring.gpg~
@@ -12,3 +11,7 @@ propellor.1
 .lock
 .lastchecked
 .stack-work/*
+.cabal-sandbox/
+.dir-locals.el
+cabal.sandbox.config
+*~

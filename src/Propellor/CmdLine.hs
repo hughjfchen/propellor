@@ -21,7 +21,7 @@ import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Shim as Shim
 
 usage :: Handle -> IO ()
-usage h = hPutStrLn h $ unlines 
+usage h = hPutStrLn h $ unlines
 	[ "Usage:"
 	, "  propellor"
 	, "  propellor hostname"
@@ -47,10 +47,10 @@ usageError ps = do
 processCmdLine :: IO CmdLine
 processCmdLine = go =<< getArgs
   where
-  	go ("--check":_) = return Check
+	go ("--check":_) = return Check
 	go ("--spin":ps) = case reverse ps of
-		(r:"--via":hs) -> Spin 
-			<$> mapM hostname (reverse hs) 
+		(r:"--via":hs) -> Spin
+			<$> mapM hostname (reverse hs)
 			<*> pure (Just r)
 		_ -> Spin <$> mapM hostname ps <*> pure Nothing
 	go ("--add-key":k:[]) = return $ AddKey k
@@ -62,7 +62,7 @@ processCmdLine = go =<< getArgs
 	go ("--edit":f:c:[]) = withprivfield f c Edit
 	go ("--list-fields":[]) = return ListFields
 	go ("--merge":[]) = return Merge
-	go ("--help":_) = do	
+	go ("--help":_) = do
 		usage stdout
 		exitFailure
 	go ("--boot":_:[]) = return $ Update Nothing -- for back-compat
@@ -134,7 +134,7 @@ defaultMain hostlist = withConcurrentOutput $ do
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)
-	
+
 	runhost hn = onlyprocess $ withhost hn mainProperties
 
 	onlyprocess = onlyProcess (localdir </> ".lock")
@@ -205,5 +205,5 @@ hostname s = go =<< catchDefaultIO [] dnslookup
 	go (AddrInfo { addrCanonName = Just v } : _) = pure v
 	go _
 		| "." `isInfixOf` s = pure s -- assume it's a fqdn
-		| otherwise = 
+		| otherwise =
 			error $ "cannot find host " ++ s ++ " in the DNS"
