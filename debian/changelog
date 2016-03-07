@@ -19,6 +19,10 @@ propellor (2.17.0) UNRELEASED; urgency=medium
     Thanks, Félix Sipma.
   * Ssh: hange type of listenPort from Int to Port (API change)
     Thanks, Félix Sipma.
+  * Added initial support for FreeBSD.
+    Thanks, Evan Cofsky.
+  * Added Propellor.Property.ZFS.
+    Thanks, Evan Cofsky.
 
  -- Joey Hess <id@joeyh.name>  Mon, 29 Feb 2016 17:58:08 -0400
 
