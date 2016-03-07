@@ -14,7 +14,6 @@ import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.FreeBSD.Pkg as Pkg
 import qualified Propellor.Property.ZFS as ZFS
 import qualified Propellor.Property.FreeBSD.Poudriere as Poudriere
-import Data.String (fromString)
 
 main :: IO ()
 main = defaultMain hosts

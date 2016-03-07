@@ -72,3 +72,4 @@ import Propellor.Info
 import Propellor.PropAccum
 
 import Data.Monoid as X
+import Data.String as X (fromString)
