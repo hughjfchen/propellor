@@ -107,11 +107,18 @@ depsCommand (System distr _) = "( " ++ intercalate " ; " (concat [osinstall, cab
 		]
 
 installGitCommand :: System -> ShellCommand
-installGitCommand (System distr _) = case distr of
-	(FreeBSD _) ->
-		"if ! git --version >/dev/null; then ASSUME_ALWAYS_YES=yes pkg update && ASSUME_ALWAYS_YES=yes pkg install git; fi"
-	_ ->
-		"if ! git --version >/dev/null; then apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --no-upgrade -y install git; fi"
+installGitCommand (System distr _) =
+	"if ! git --version >/dev/null; then " ++ intercalate " && " cmds ++ "; fi"
+  where
+	cmds = case distr of
+		(FreeBSD _) -> 
+			[ "ASSUME_ALWAYS_YES=yes pkg update"
+			, "ASSUME_ALWAYS_YES=yes pkg install git"
+			]
+		_ -> 
+			[ "apt-get update"
+			, "DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --no-upgrade -y install git"
+			]
 
 buildPropellor :: IO ()
 buildPropellor = unlessM (actionMessage "Propellor build" build) $
