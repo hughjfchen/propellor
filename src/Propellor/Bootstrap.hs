@@ -41,7 +41,7 @@ buildCommand = intercalate " && "
 -- Run cabal configure to check if all dependencies are installed;
 -- if not, run the depsCommand.
 checkDepsCommand :: System -> ShellCommand
-checkDepsCommand sys = "if ! cabal configure >/dev/null 2>&1; then " ++ (depsCommand sys) ++ "; fi"
+checkDepsCommand sys = "if ! cabal configure >/dev/null 2>&1; then " ++ depsCommand sys ++ "; fi"
 
 -- Install build dependencies of propellor.
 --
