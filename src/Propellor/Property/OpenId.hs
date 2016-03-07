@@ -28,21 +28,21 @@ providerFor users hn mp = propertyList desc $ props
   where
 	baseurl = hn ++ case mp of
 		Nothing -> ""
-		Just (Port p) -> ':' : show p
+		Just p -> ':' : fromPort p
 	url = "http://"++baseurl++"/simpleid"
 	desc = "openid provider " ++ url
 	setbaseurl l
-		| "SIMPLEID_BASE_URL" `isInfixOf` l = 
+		| "SIMPLEID_BASE_URL" `isInfixOf` l =
 			"define('SIMPLEID_BASE_URL', '"++url++"');"
 		| otherwise = l
-	
+
 	apacheconfigured = case mp of
 		Nothing -> toProp $
 			Apache.virtualHost hn (Port 80) "/var/www/html"
 		Just p -> propertyList desc $ props
 			& Apache.listenPorts [p]
 			& Apache.virtualHost hn p "/var/www/html"
-	
+
 	-- the identities directory controls access, so open up
 	-- file mode
 	identfile (User u) = File.hasPrivContentExposed

@@ -47,10 +47,9 @@ hostListFragment' hs os = concatMap muninHost hs
 	muninHost :: Host -> [String]
 	muninHost h = [ "[" ++ (hostName h) ++ "]"
 		      , "  address " ++ maybe (hostName h) (fromIPAddr . fst) (hOverride h)
-		      ] ++ (maybe [] (\x -> ["  port " ++ (show $ fromPort $ snd x)]) (hOverride h)) ++ [""]
+		      ] ++ (maybe [] (\x -> ["  port " ++ (fromPort $ snd x)]) (hOverride h)) ++ [""]
 	hOverride :: Host -> Maybe (IPAddr, Port)
 	hOverride h = lookup (hostName h) os
-	fromPort (Port p) = p
 
 -- | Create the host list fragment for master config.
 hostListFragment :: [Host] -> [String]

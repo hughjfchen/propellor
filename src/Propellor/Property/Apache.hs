@@ -27,7 +27,7 @@ siteEnabled' domain cf = combineProperties ("apache site enabled " ++ domain)
 	[ siteAvailable domain cf
 		`requires` installed
 		`onChange` reloaded
-	, check (not <$> isenabled) 
+	, check (not <$> isenabled)
 		(cmdProperty "a2ensite" ["--quiet", domain])
 			`requires` installed
 			`onChange` reloaded
@@ -37,7 +37,7 @@ siteEnabled' domain cf = combineProperties ("apache site enabled " ++ domain)
 
 siteDisabled :: Domain -> Property NoInfo
 siteDisabled domain = combineProperties
-	("apache site disabled " ++ domain) 
+	("apache site disabled " ++ domain)
 	(map File.notPresent (siteCfg domain))
 		`onChange` (cmdProperty "a2dissite" ["--quiet", domain] `assume` MadeChange)
 		`requires` installed
@@ -72,7 +72,7 @@ listenPorts :: [Port] -> Property NoInfo
 listenPorts ps = "/etc/apache2/ports.conf" `File.hasContent` map portline ps
 	`onChange` restarted
   where
-	portline (Port n) = "Listen " ++ show n
+	portline port = "Listen " ++ fromPort port
 
 -- This is a list of config files because different versions of apache
 -- use different filenames. Propellor simply writes them all.
@@ -82,7 +82,7 @@ siteCfg domain =
 	[ "/etc/apache2/sites-available/" ++ domain
 	-- Debian 2.4+
 	, "/etc/apache2/sites-available/" ++ domain ++ ".conf"
-	] 
+	]
 
 -- | Configure apache to use SNI to differentiate between
 -- https hosts.
@@ -130,13 +130,13 @@ type WebRoot = FilePath
 -- | A basic virtual host, publishing a directory, and logging to
 -- the combined apache log file. Not https capable.
 virtualHost :: Domain -> Port -> WebRoot -> RevertableProperty NoInfo
-virtualHost domain (Port p) docroot = virtualHost' domain (Port p) docroot []
+virtualHost domain port docroot = virtualHost' domain port docroot []
 
 -- | Like `virtualHost` but with additional config lines added.
 virtualHost' :: Domain -> Port -> WebRoot -> [ConfigLine] -> RevertableProperty NoInfo
-virtualHost' domain (Port p) docroot addedcfg = siteEnabled domain $
-	[ "<VirtualHost *:"++show p++">"
-	, "ServerName "++domain++":"++show p
+virtualHost' domain port docroot addedcfg = siteEnabled domain $
+	[ "<VirtualHost *:" ++ fromPort port ++ ">"
+	, "ServerName " ++ domain ++ ":" ++ fromPort port
 	, "DocumentRoot " ++ docroot
 	, "ErrorLog /var/log/apache2/error.log"
 	, "LogLevel warn"
@@ -201,9 +201,9 @@ httpsVirtualHost' domain docroot letos addedcfg = setup <!> teardown
 			, "SSLCertificateChainFile " ++ LetsEncrypt.chainFile domain
 			]
 	sslconffile s = "/etc/apache2/sites-available/ssl/" ++ domain ++ "/" ++ s ++ ".conf"
-	vhost (Port p) ls = 
-		[ "<VirtualHost *:"++show p++">"
-		, "ServerName "++domain++":"++show p
+	vhost p ls =
+		[ "<VirtualHost *:" ++ fromPort p ++">"
+		, "ServerName " ++ domain ++ ":" ++ fromPort p
 		, "DocumentRoot " ++ docroot
 		, "ErrorLog /var/log/apache2/error.log"
 		, "LogLevel warn"

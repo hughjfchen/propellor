@@ -75,7 +75,7 @@ configured :: Property HasInfo
 configured = prop `requires` installed
   where
 	prop = withPrivData src anyContext $ \getcfg ->
-		property "docker configured" $ getcfg $ \cfg -> ensureProperty $ 
+		property "docker configured" $ getcfg $ \cfg -> ensureProperty $
 			"/root/.dockercfg" `File.hasContent` privDataLines cfg
 	src = PrivDataSourceFileFromCommand DockerAuthentication
 		"/root/.dockercfg" "docker login"
@@ -115,7 +115,7 @@ container cn image = Container image (Host cn [] info)
 	info = dockerInfo mempty
 
 -- | Ensures that a docker container is set up and running.
--- 
+--
 -- The container has its own Properties which are handled by running
 -- propellor inside the container.
 --
@@ -186,7 +186,7 @@ propagateContainerInfo ctr@(Container _ h) p = propagateContainer cn ctr p'
 	cn = hostName h
 
 mkContainerInfo :: ContainerId -> Container -> ContainerInfo
-mkContainerInfo cid@(ContainerId hn _cn) (Container img h) = 
+mkContainerInfo cid@(ContainerId hn _cn) (Container img h) =
 	ContainerInfo img runparams
   where
 	runparams = map (\(DockerRunParam mkparam) -> mkparam hn)
@@ -233,7 +233,7 @@ tweaked = cmdProperty "sh"
 	`assume` NoChange
 	`describe` "tweaked for docker"
 
--- | Configures the kernel to respect docker memory limits. 
+-- | Configures the kernel to respect docker memory limits.
 --
 -- This assumes the system boots using grub 2. And that you don't need any
 -- other GRUB_CMDLINE_LINUX_DEFAULT settings.
@@ -241,7 +241,7 @@ tweaked = cmdProperty "sh"
 -- Only takes effect after reboot. (Not automated.)
 memoryLimited :: Property NoInfo
 memoryLimited = "/etc/default/grub" `File.containsLine` cfg
-	`describe` "docker memory limited" 
+	`describe` "docker memory limited"
 	`onChange` (cmdProperty "update-grub" [] `assume` MadeChange)
   where
 	cmdline = "cgroup_enable=memory swapaccount=1"
@@ -315,7 +315,7 @@ class Publishable p where
 	toPublish :: p -> String
 
 instance Publishable (Bound Port) where
-	toPublish p = show (hostSide p) ++ ":" ++ show (containerSide p)
+	toPublish p = fromPort (hostSide p) ++ ":" ++ fromPort (containerSide p)
 
 -- | string format: ip:hostPort:containerPort | ip::containerPort | hostPort:containerPort
 instance Publishable String where
@@ -355,7 +355,7 @@ volumes_from :: ContainerName -> Property HasInfo
 volumes_from cn = genProp "volumes-from" $ \hn ->
 	fromContainerId (ContainerId hn cn)
 
--- | Work dir inside the container. 
+-- | Work dir inside the container.
 workdir :: String -> Property HasInfo
 workdir = runProp "workdir"
 
@@ -409,7 +409,7 @@ environment (k, v) = runProp "env" $ k ++ "=" ++ v
 
 -- | A container is identified by its name, and the host
 -- on which it's deployed.
-data ContainerId = ContainerId 
+data ContainerId = ContainerId
 	{ containerHostName :: HostName
 	, containerName :: ContainerName
 	}
@@ -503,7 +503,7 @@ runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ prope
 		v <- a
 		case v of
 			Right Nothing -> do
-				threadDelaySeconds (Seconds 1)		
+				threadDelaySeconds (Seconds 1)
 				retry (n-1) a
 			_ -> return v
 
@@ -569,7 +569,7 @@ provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ d
 	r <- withHandle StdoutHandle createProcessSuccess p $
 		processChainOutput
 	when (r /= FailedChange) $
-		setProvisionedFlag cid 
+		setProvisionedFlag cid
 	return r
 
 toChain :: ContainerId -> CmdLine
@@ -600,9 +600,9 @@ startContainer :: ContainerId -> IO Bool
 startContainer cid = boolSystem dockercmd [Param "start", Param $ fromContainerId cid ]
 
 stoppedContainer :: ContainerId -> Property NoInfo
-stoppedContainer cid = containerDesc cid $ property desc $ 
+stoppedContainer cid = containerDesc cid $ property desc $
 	ifM (liftIO $ elem cid <$> listContainers RunningContainers)
-		( liftIO cleanup `after` ensureProperty 
+		( liftIO cleanup `after` ensureProperty
 			(property desc $ liftIO $ toResult <$> stopContainer cid)
 		, return NoChange
 		)
@@ -638,7 +638,7 @@ data ContainerFilter = RunningContainers | AllContainers
 
 -- | Only lists propellor managed containers.
 listContainers :: ContainerFilter -> IO [ContainerId]
-listContainers status = 
+listContainers status =
 	mapMaybe toContainerId . concatMap (split ",")
 		. mapMaybe (lastMaybe . words) . lines
 		<$> readProcess dockercmd ps

@@ -13,6 +13,7 @@ module Propellor.Types.OS (
 	Group(..),
 	userGroup,
 	Port(..),
+	fromPort,
 ) where
 
 import Network.BSD (HostName)
@@ -53,3 +54,6 @@ userGroup (User u) = Group u
 
 newtype Port = Port Int
 	deriving (Eq, Show)
+
+fromPort :: Port -> String
+fromPort (Port p) = show p
