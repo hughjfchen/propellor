@@ -3,6 +3,8 @@ module Propellor.Property.Network where
 import Propellor.Base
 import Propellor.Property.File
 
+import Data.Char
+
 type Interface = String
 
 ifUp :: Interface -> Property NoInfo
@@ -96,19 +98,13 @@ interfacesFile :: FilePath
 interfacesFile = "/etc/network/interfaces"
 
 -- | A file in the interfaces.d directory.
--- /etc/network/interfaces.d/ files have to match -- ^[a-zA-Z0-9_-]+$
--- see "man 5 interfaces"
 interfaceDFile :: Interface -> FilePath
-interfaceDFile i = interfaceDFile' (escapeInterfaceDName i)
+interfaceDFile i = "/etc/network/interfaces.d" </> escapeInterfaceDName i
 
-interfaceDFile' :: Interface -> FilePath
-interfaceDFile' iface = "/etc/network/interfaces.d" </> iface
-
+-- | /etc/network/interfaces.d/ files have to match -- ^[a-zA-Z0-9_-]+$
+-- see "man 5 interfaces"
 escapeInterfaceDName :: Interface -> FilePath
-escapeInterfaceDName "" = ""
-escapeInterfaceDName (':' : xs) = escapeInterfaceDName xs
-escapeInterfaceDName ('.' : xs) = escapeInterfaceDName xs
-escapeInterfaceDName (x : xs) = x : escapeInterfaceDName xs
+escapeInterfaceDName = filter (\c -> isAscii c && (isAlphaNum c || c `elem` "_-"))
 
 -- | Ensures that files in the the interfaces.d directory are used.
 interfacesDEnabled :: Property NoInfo
