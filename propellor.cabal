@@ -16,6 +16,7 @@ Extra-Source-Files:
   CHANGELOG
   Makefile
   config-simple.hs
+  config-freebsd.hs
   config-joey.hs
   config.hs
   debian/changelog
