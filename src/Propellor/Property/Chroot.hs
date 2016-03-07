@@ -55,7 +55,7 @@ instance PropAccum Chroot where
 -- System in a chroot.
 class ChrootBootstrapper b where
 	-- | Do initial bootstrapping of an operating system in a chroot.
-	-- If the operating System is not supported, return 
+	-- If the operating System is not supported, return
 	-- Left error message.
 	buildchroot :: b -> Maybe System -> FilePath -> Either String (Property HasInfo)
 
@@ -91,6 +91,7 @@ instance ChrootBootstrapper Debootstrapped where
 	buildchroot (Debootstrapped cf) system loc = case system of
 		(Just s@(System (Debian _) _)) -> Right $ debootstrap s
 		(Just s@(System (Buntish _) _)) -> Right $ debootstrap s
+		(Just (System (FreeBSD _) _)) -> Left "FreeBSD not supported by Debbootstrap."
 		Nothing -> Left "Cannot debootstrap; `os` property not specified"
 	  where
 		debootstrap s = Debootstrap.built loc s cf
@@ -102,8 +103,8 @@ instance ChrootBootstrapper Debootstrapped where
 --
 -- > debootstrapped Debootstrap.BuildD "/srv/chroot/ghc-dev"
 -- >	& os (System (Debian Unstable) "amd64")
--- > 	& Apt.installed ["ghc", "haskell-platform"]
--- > 	& ...
+-- >	& Apt.installed ["ghc", "haskell-platform"]
+-- >	& ...
 debootstrapped :: Debootstrap.DebootstrapConfig -> FilePath -> Chroot
 debootstrapped conf = bootstrapped (Debootstrapped conf)
 
@@ -131,7 +132,7 @@ provisioned' propigator c@(Chroot loc bootstrapper _) systemdonly =
   where
 	setup = propellChroot c (inChrootProcess (not systemdonly) c) systemdonly
 		`requires` toProp built
-	
+
 	built = case buildchroot bootstrapper (chrootSystem c) loc of
 		Right p -> p
 		Left e -> cantbuild e
@@ -152,7 +153,7 @@ propagateChrootInfo c@(Chroot location _ _) p = propagateContainer location c p'
 		(propertyChildren p)
 
 chrootInfo :: Chroot -> Info
-chrootInfo (Chroot loc _ h) = mempty `addInfo` 
+chrootInfo (Chroot loc _ h) = mempty `addInfo`
 	mempty { _chroots = M.singleton loc h }
 
 -- | Propellor is run inside the chroot to provision it.
@@ -201,7 +202,7 @@ toChain parenthost (Chroot loc _ _) systemdonly = do
 	return $ ChrootChain parenthost loc systemdonly onconsole
 
 chain :: [Host] -> CmdLine -> IO ()
-chain hostlist (ChrootChain hn loc systemdonly onconsole) = 
+chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 	case findHostNoAlias hostlist hn of
 		Nothing -> errorMessage ("cannot find host " ++ hn)
 		Just parenthost -> case M.lookup loc (_chroots $ getInfo $ hostInfo parenthost) of
@@ -230,7 +231,7 @@ inChrootProcess keepprocmounted (Chroot loc _ _) cmd = do
 	-- /proc/self/exe which is necessary for some commands to work
 	mountproc = unlessM (elem procloc <$> mountPointsBelow loc) $
 		void $ mount "proc" "proc" procloc mempty
-	
+
 	procloc = loc </> "proc"
 
 	cleanup
