@@ -77,7 +77,9 @@ isInstallable :: Package -> IO Bool
 isInstallable p = (not <$> isInstalled p) <&&> exists p
 
 isInstalled :: Package -> IO Bool
-isInstalled p = catch (runPkg "info" [p] >> return True) (\(_ :: IOError ) -> return False)
+isInstalled p = (runPkg "info" [p] >> return True)
+	`catchIO` (\_ -> return False)
 
 exists :: Package -> IO Bool
-exists p = catch (runPkg "search" ["--search", "name", "--exact", p] >> return True) (\(_ :: IOError ) -> return False)
+exists p = (runPkg "search" ["--search", "name", "--exact", p] >> return True)
+	`catchIO` (\_ -> return False)
