@@ -71,15 +71,10 @@ upgrade =
 type Package = String
 
 installed :: Package -> Property NoInfo
-installed pkg =
-	check (isInstallable pkg) $ pkgCmdProperty "install" [pkg]
+installed pkg = check (isInstallable pkg) $ pkgCmdProperty "install" [pkg]
 
 isInstallable :: Package -> IO Bool
-isInstallable p = do
-	l <- isInstalled p
-	e <- exists p
-
-	return $ (not l) && e
+isInstallable p = (not <$> isInstalled p) <&&> exists p
 
 isInstalled :: Package -> IO Bool
 isInstalled p = catch (runPkg "info" [p] >> return True) (\(_ :: IOError ) -> return False)
