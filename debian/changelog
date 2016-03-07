@@ -9,13 +9,15 @@ propellor (2.17.0) UNRELEASED; urgency=medium
     Thanks, Félix Sipma.
   * Firewall: Separated Table and Target (API change)
     Thanks, Félix Sipma.
-  * Firewall: add TCPFlag, Frequency, TCPSyn, ICMPTypeMatch
+  * Firewall: add TCPFlag, Frequency, TCPSyn, ICMPTypeMatch, NatDestination
     Thanks, Félix Sipma.
   * Locale.available: Run locale-gen, instead of dpkg-reconfigure locales,
     which modified the locale.gen file and sometimes caused the property to
     need to make changes every time.
   * Force ssh, scp, and git commands to be run in the foreground.
   * Network: Filter out characters not allowed in interfaces.d files.
+    Thanks, Félix Sipma.
+  * Ssh: hange type of listenPort from Int to Port (API change)
     Thanks, Félix Sipma.
 
  -- Joey Hess <id@joeyh.name>  Mon, 29 Feb 2016 17:58:08 -0400

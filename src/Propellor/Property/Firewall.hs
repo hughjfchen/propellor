@@ -51,9 +51,9 @@ toIpTable r =  map Param $
 toIpTableArg :: Rules -> [String]
 toIpTableArg Everything = []
 toIpTableArg (Proto proto) = ["-p", map toLower $ show proto]
-toIpTableArg (DPort (Port port)) = ["--dport", show port]
-toIpTableArg (DPortRange (Port f, Port t)) =
-	["--dport", show f ++ ":" ++ show t]
+toIpTableArg (DPort port) = ["--dport", fromPort port]
+toIpTableArg (DPortRange (portf, portt)) =
+	["--dport", fromPort portf ++ ":" ++ fromPort portt]
 toIpTableArg (InIFace iface) = ["-i", iface]
 toIpTableArg (OutIFace iface) = ["-o", iface]
 toIpTableArg (Ctstate states) =
@@ -86,6 +86,10 @@ toIpTableArg (Source ipwm) =
 toIpTableArg (Destination ipwm) =
 	[ "-d"
 	, intercalate "," (map fromIPWithMask ipwm)
+	]
+toIpTableArg (NatDestination ip mport) =
+	[ "--to-destination"
+	, fromIPAddr ip ++ maybe "" (\p -> ":" ++ fromPort p) mport
 	]
 toIpTableArg (r :- r') = toIpTableArg r <> toIpTableArg r'
 
@@ -167,7 +171,7 @@ data Rules
 	-- ^There is actually some order dependency between proto and port so this should be a specific
 	-- data type with proto + ports
 	| DPort Port
-	| DPortRange (Port,Port)
+	| DPortRange (Port, Port)
 	| InIFace Network.Interface
 	| OutIFace Network.Interface
 	| Ctstate [ ConnectionState ]
@@ -177,6 +181,7 @@ data Rules
 	| TCPSyn
 	| Source [ IPWithMask ]
 	| Destination [ IPWithMask ]
+	| NatDestination IPAddr (Maybe Port)
 	| Rules :- Rules   -- ^Combine two rules
 	deriving (Eq, Show)
 

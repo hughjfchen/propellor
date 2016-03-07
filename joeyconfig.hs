@@ -38,7 +38,7 @@ import qualified Propellor.Property.SiteSpecific.Branchable as Branchable
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 import Propellor.Property.DiskImage
 
-main :: IO ()           --     _         ______`|                       ,-.__ 
+main :: IO ()           --     _         ______`|                       ,-.__
 main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
   {- Propellor            -- \          / | /    )          _.-"-._
      Deployed -}          --  `/-==__ _/__|/__=-|          (       \_
@@ -133,7 +133,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 	& File.notPresent "/var/www/index.html"
 	& "/var/www/html/index.html" `File.hasContent` ["hello, world"]
 	& alias "helloworld.kitenet.net"
-	
+
 	& Systemd.nspawned oldusenetShellBox
 
 	& JoeySites.scrollBox
@@ -150,7 +150,7 @@ mayfly = standardSystem "mayfly.kitenet.net" (Stable "jessie") "amd64"
 	& Network.ipv6to4
 	& Systemd.persistentJournal
 	& Journald.systemMaxUse "500MiB"
-	
+
 	& Tor.isRelay
 	& Tor.named "kite3"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
@@ -172,11 +172,11 @@ oyster = standardSystem "oyster.kitenet.net" Unstable "amd64"
 	& Tor.isRelay
 	& Tor.named "kite2"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
-	
+
 	-- Nothing is using http port 80, so listen on
 	-- that port for ssh, for traveling on bad networks that
 	-- block 22.
-	& Ssh.listenPort 80
+	& Ssh.listenPort (Port 80)
 
 orca :: Host
 orca = standardSystem "orca.kitenet.net" Unstable "amd64"
@@ -203,7 +203,7 @@ orca = standardSystem "orca.kitenet.net" Unstable "amd64"
 honeybee :: Host
 honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	[ "Arm git-annex build box." ]
-	
+
 	-- I have to travel to get console access, so no automatic
 	-- upgrades, and try to be robust.
 	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
@@ -213,7 +213,7 @@ honeybee = standardSystem "honeybee.kitenet.net" Testing "armhf"
 	& Apt.installed ["linux-image-armmp"]
 	& Network.dhcp "eth0" `requires` Network.cleanInterfacesFile
 	& Postfix.satellite
-	
+
 	-- ipv6 used for remote access thru firewalls
 	& Apt.serviceInstalledRunning "aiccu"
 	& ipv6 "2001:4830:1600:187::2"
@@ -291,12 +291,12 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 	& alias "pop.kitenet.net"
 	& alias "mail.kitenet.net"
 	& JoeySites.kiteMailServer
-	
+
 	& JoeySites.kitenetHttps
 	& JoeySites.legacyWebSites
 	& File.ownerGroup "/srv/web" (User "joey") (Group "joey")
 	& Apt.installed ["analog"]
-	
+
 	& alias "git.kitenet.net"
 	& alias "git.joeyh.name"
 	& JoeySites.gitServer hosts
@@ -312,7 +312,7 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 		, "User = bitlbee"
 		, "AuthMode = Registered"
 		, "[defaults]"
-		] 
+		]
 		`onChange` Service.restarted "bitlbee"
 	& "/etc/default/bitlbee" `File.containsLine` "BITLBEE_PORT=\"6767\""
 		`onChange` Service.restarted "bitlbee"
@@ -325,10 +325,10 @@ kite = standardSystemUnhardened "kite.kitenet.net" Testing "amd64"
 		-- Some users have zsh as their login shell.
 		, "zsh"
 		]
-	
+
 	& alias "nntp.olduse.net"
 	& JoeySites.oldUseNetServer hosts
-	
+
 	& alias "ns4.kitenet.net"
 	& myDnsPrimary True "kitenet.net" []
 	& myDnsPrimary True "joeyh.name" []
@@ -370,7 +370,7 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	& Systemd.persistentJournal
 	& Ssh.userKeys (User "joey") hostContext
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC4wJuQEGno+nJvtE75IKL6JQ08sJHZ9Bzs9Dvu0zuxSEZE30MWK98/twNwCH9PVf2N9m4apfN7f9GHgHTUongfo8xnLAk4PuBSTV74YgKyOCvNYqANuKKa+76PsS/vFf/or3ct++uTEWsRyYD29cQndufwKA4rthAqHG+fifbLDC53AjcldI0zI1RckpPzT+AMazlnSBFMlpKvGD2uzSXALVRXa3vSqWkWd0z7qmIkpmpq0AAgbDLwrGBcUGV/h0rOa2s8zSeirA0tLmHNROl4cZsX0T/6VBGfBRkrHSxL67xJziATw4WPq6spYlxg84pC/5qJVr9SC5HosppbDqgj joey@elephant")
-		] 
+		]
 	& Apt.serviceInstalledRunning "swapspace"
 
 	& alias "eubackup.kitenet.net"
@@ -381,27 +381,27 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 
 	& alias "podcatcher.kitenet.net"
 	& JoeySites.podcatcher
-	
+
 	& alias "znc.kitenet.net"
 	& JoeySites.ircBouncer
 	& alias "kgb.kitenet.net"
 	& JoeySites.kgbServer
-	
+
 	& alias "mumble.kitenet.net"
 	& JoeySites.mumbleServer hosts
-	
+
 	& alias "ns3.kitenet.net"
 	& myDnsSecondary
-	
+
 	& Systemd.nspawned oldusenetShellBox
 	& Systemd.nspawned ancientKitenet
 	& Systemd.nspawned openidProvider
 	 	`requires` Apt.serviceInstalledRunning "ntp"
-	
+
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
 	& alias "eu.scroll.joeyh.name"
-	
+
 	-- For https port 443, shellinabox with ssh login to
 	-- kitenet.net
 	& alias "shell.kitenet.net"
@@ -409,7 +409,7 @@ elephant = standardSystem "elephant.kitenet.net" Unstable "amd64"
 	-- Nothing is using http port 80, so listen on
 	-- that port for ssh, for traveling on bad networks that
 	-- block 22.
-	& Ssh.listenPort 80
+	& Ssh.listenPort (Port 80)
 
 beaver :: Host
 beaver = host "beaver.kitenet.net"
@@ -429,7 +429,7 @@ pell = host "pell.branchable.com"
 	& alias "branchable.com"
 	& ipv4 "66.228.46.55"
 	& ipv6 "2600:3c03::f03c:91ff:fedf:c0e5"
-	
+
 	-- All the websites I host at branchable that don't use
 	-- branchable.com dns.
 	& alias "olduse.net"
@@ -596,7 +596,7 @@ monsters :: [Host]    -- Systems I don't manage with propellor,
 monsters =            -- but do want to track their public keys etc.
 	[ host "usw-s002.rsync.net"
 		& Ssh.hostPubKey SshEd25519 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB7yTEBGfQYdwG/oeL+U9XPMIh/dW7XNs9T+M79YIOrd"
-	, host "github.com" 
+	, host "github.com"
 		& Ssh.hostPubKey SshRsa "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
 	, host "gitlab.com"
 		& Ssh.hostPubKey SshEcdsa "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY="
