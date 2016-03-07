@@ -174,15 +174,13 @@ journaldConfigured option value =
 
 -- | Ensures machined and machinectl are installed
 machined :: Property NoInfo
-machined = go `describe` "machined installed"
-  where
-	go = withOS ("standard sources.list") $ \o ->
-		case o of
-			-- Split into separate debian package since systemd 225.
-			(Just (System (Debian suite) _))
-				| not (isStable suite) -> ensureProperty $
-					Apt.installed ["systemd-container"]
-			_ -> noChange
+machined = withOS "machined installed" $ \o ->
+	case o of
+		-- Split into separate debian package since systemd 225.
+		(Just (System (Debian suite) _))
+			| not (isStable suite) -> ensureProperty $
+				Apt.installed ["systemd-container"]
+		_ -> noChange
 
 -- | Defines a container with a given machine name, and operating system,
 -- and how to create its chroot if not already present.
