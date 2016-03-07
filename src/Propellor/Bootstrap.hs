@@ -57,8 +57,8 @@ depsCommand :: System -> ShellCommand
 depsCommand (System distr _) = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) ++ " ) || true"
   where
 	osinstall = case distr of
-	  (FreeBSD _) -> map pkginstall fbsddeps
-	  _ -> "apt-get update" : map aptinstall debdeps
+		(FreeBSD _) -> map pkginstall fbsddeps
+		_ -> "apt-get update" : map aptinstall debdeps
 
 	cabalinstall =
 		[ "cabal update"
@@ -106,14 +106,12 @@ depsCommand (System distr _) = "( " ++ intercalate " ; " (concat [osinstall, cab
 		, "gmake"
 		]
 
-
 installGitCommand :: System -> ShellCommand
-installGitCommand (System distr _) =
-  case distr of
-    (FreeBSD _) ->
-	       "if ! git --version >/dev/null; then ASSUME_ALWAYS_YES=yes pkg update && ASSUME_ALWAYS_YES=yes pkg install git; fi"
-    _ ->
-	       "if ! git --version >/dev/null; then apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --no-upgrade -y install git; fi"
+installGitCommand (System distr _) = case distr of
+	(FreeBSD _) ->
+		"if ! git --version >/dev/null; then ASSUME_ALWAYS_YES=yes pkg update && ASSUME_ALWAYS_YES=yes pkg install git; fi"
+	_ ->
+		"if ! git --version >/dev/null; then apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --no-upgrade -y install git; fi"
 
 buildPropellor :: IO ()
 buildPropellor = unlessM (actionMessage "Propellor build" build) $
