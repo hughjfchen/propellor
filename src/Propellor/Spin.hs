@@ -84,7 +84,7 @@ spin' mprivdata relay target hst = do
 	-- Install, or update the remote propellor.
 	updateServer target relay hst
 		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap (probecmd o)])
-		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap (updatecmd o)])
+		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap (updatecmd (Just o))])
 		=<< getprivdata
 
 	-- And now we can run it.
@@ -102,7 +102,7 @@ spin' mprivdata relay target hst = do
 			[ installGitCommand sys
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			] ++ ") || echo " ++ toMarked statusMarker (show NeedPrecompiled)
-		, "else " ++ (updatecmd sys)
+		, "else " ++ (updatecmd (Just sys))
 		, "fi"
 		]
 
