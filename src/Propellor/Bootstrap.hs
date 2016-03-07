@@ -27,8 +27,7 @@ checkBinaryCommand :: ShellCommand
 checkBinaryCommand = "if test -x ./propellor && ! ./propellor --check; then " ++ go ++ "; fi"
   where
 	go = intercalate " && "
-		[ "./propellor --check"
-		,"cabal clean"
+		[ "cabal clean"
 		, buildCommand
 		]
 
