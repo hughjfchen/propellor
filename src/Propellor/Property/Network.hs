@@ -3,6 +3,8 @@ module Propellor.Property.Network where
 import Propellor.Base
 import Propellor.Property.File
 
+import Data.Char
+
 type Interface = String
 
 ifUp :: Interface -> Property NoInfo
@@ -45,7 +47,7 @@ dhcp iface = hasContent (interfaceDFile iface)
 --
 -- If the interface file already exists, this property does nothing,
 -- no matter its content.
--- 
+--
 -- (ipv6 addresses are not included because it's assumed they come up
 -- automatically in most situations.)
 static :: Interface -> Property NoInfo
@@ -97,7 +99,12 @@ interfacesFile = "/etc/network/interfaces"
 
 -- | A file in the interfaces.d directory.
 interfaceDFile :: Interface -> FilePath
-interfaceDFile iface = "/etc/network/interfaces.d" </> iface
+interfaceDFile i = "/etc/network/interfaces.d" </> escapeInterfaceDName i
+
+-- | /etc/network/interfaces.d/ files have to match -- ^[a-zA-Z0-9_-]+$
+-- see "man 5 interfaces"
+escapeInterfaceDName :: Interface -> FilePath
+escapeInterfaceDName = filter (\c -> isAscii c && (isAlphaNum c || c `elem` "_-"))
 
 -- | Ensures that files in the the interfaces.d directory are used.
 interfacesDEnabled :: Property NoInfo
