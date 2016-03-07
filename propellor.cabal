@@ -175,6 +175,7 @@ Library
     Utility.PosixFiles
     Utility.Process
     Utility.Process.Shim
+    Utility.Process.NonConcurrent
     Utility.SafeCommand
     Utility.Scheduled
     Utility.Table
