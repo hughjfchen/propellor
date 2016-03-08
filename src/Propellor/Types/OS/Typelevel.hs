@@ -43,9 +43,8 @@ freeBSD = typeOS OSFreeBSD
 typeOS :: SupportedOS -> OSList os
 typeOS o = OSList [o]
 
--- FIXME, should type check
--- foo :: OSList '[OSDebian, OSFreeBSD]
--- foo = (debian `combineSupportedOS` freeBSD ) `intersectSupportedOS` unixlike 
+foo :: OSList '[OSDebian, OSFreeBSD]
+foo = (debian `combineSupportedOS` freeBSD ) `intersectSupportedOS` unixlike 
 
 -- | Combines two lists of supported OS's, yielding a list with the
 -- contents of both.
@@ -63,11 +62,19 @@ type instance ConcatOSList (a ': rest) list2 = a ': ConcatOSList rest list2
 
 -- | The intersection between two lists of supported OS's.
 intersectSupportedOS
-	:: (r ~ IntersectOSList l1 l2)
+	:: (r ~ IntersectOSList l1 l2, CannotCombineOS l1 l2 r ~ CanCombineOS)
 	=> OSList l1
 	-> OSList l2
 	-> OSList r
 intersectSupportedOS (OSList l1) (OSList l2) = OSList (filter (`elem` l2) l1)
+
+-- | Detect intersection of two lists that don't have any common OS.
+-- 
+-- The name of this was chosen to make type errors a more understandable.
+type family CannotCombineOS (list1 :: [a]) (list2 :: [a]) (listr :: [a]) :: CheckIntersection
+type instance CannotCombineOS l1 l2 '[] = 'CannotCombineOS
+type instance CannotCombineOS l1 l2 (a ': rest) = 'CanCombineOS
+data CheckIntersection = CannotCombineOS | CanCombineOS
 
 -- | Type level intersection for OSList
 type family IntersectOSList (list1 :: [a]) (list2 :: [a]) :: [a]

@@ -11,7 +11,9 @@ For example, `Property i '[Debian, FreeBSD]` combined with `Property i '[Debian,
 yields a `Property i '[Debian]` -- the intersection of the OS's supported by
 the combined properties.
 
-And, combining two properties that demand different OS's would need to be a
+Combining two properties that demand different OS's would yield a
+`Property i '[]` -- since the type level OS list is empty,
+
 type error. Can a type level function combine two types successfully, and
 fail to combine two others somehow? Don't know. Maybe combine to an
 IncoherentOS and don't allow a `Property i IncoherentOS` to be used in a
