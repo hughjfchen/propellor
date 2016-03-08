@@ -20,6 +20,7 @@ module Propellor.Property (
 	, property
 	, ensureProperty
 	, withOS
+	, unsupportedOS
 	, makeChange
 	, noChange
 	, doNothing
@@ -256,9 +257,17 @@ isNewerThan x y = do
 -- > myproperty = withOS "foo installed" $ \o -> case o of
 -- > 	(Just (System (Debian suite) arch)) -> ...
 -- > 	(Just (System (Buntish release) arch)) -> ...
--- >	Nothing -> ...
+-- >	Nothing -> unsupportedOS
 withOS :: Desc -> (Maybe System -> Propellor Result) -> Property NoInfo
 withOS desc a = property desc $ a =<< getOS
+
+-- | Throws an error, for use in `withOS` when a property is lacking
+-- support for an OS.
+unsupportedOS :: Propellor a
+unsupportedOS = go =<< getOS
+  where
+	go Nothing = error "Unknown host OS is not supported by this property."
+	go (Just o) = error $ "This property is not implemented for " ++ show o
 
 -- | Undoes the effect of a RevertableProperty.
 revert :: RevertableProperty i -> RevertableProperty i

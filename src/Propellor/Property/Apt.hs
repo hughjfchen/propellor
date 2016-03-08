@@ -160,16 +160,14 @@ installed' params ps = robustly $ check (isInstallable ps) go
 
 installedBackport :: [Package] -> Property NoInfo
 installedBackport ps = withOS desc $ \o -> case o of
-	Nothing -> error "cannot install backports; os not declared"
 	(Just (System (Debian suite) _)) -> case backportSuite suite of
-		Nothing -> notsupported o
+		Nothing -> unsupportedOS
 		Just bs -> ensureProperty $
 			runApt (["install", "-t", bs, "-y"] ++ ps)
 				`changesFile` dpkgStatus
-	_ -> notsupported o
+	_ -> unsupportedOS
   where
 	desc = unwords ("apt installed backport":ps)
-	notsupported o = error $ "backports not supported on " ++ show o
 
 -- | Minimal install of package, without recommends.
 installedMin :: [Package] -> Property NoInfo
