@@ -17,8 +17,9 @@ Extra-Source-Files:
   Makefile
   config-simple.hs
   config-freebsd.hs
-  config-joey.hs
+  joeyconfig.hs
   config.hs
+  contrib/post-checkout-hook
   debian/changelog
   debian/README.Debian
   debian/compat

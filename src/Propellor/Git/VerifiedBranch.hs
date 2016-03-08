@@ -2,7 +2,6 @@ module Propellor.Git.VerifiedBranch where
 
 import Propellor.Base
 import Propellor.Git
-import Propellor.Gpg
 import Propellor.PrivData.Paths
 import Utility.FileMode
 
@@ -14,6 +13,7 @@ import Utility.FileMode
 verifyOriginBranch :: String -> IO Bool
 verifyOriginBranch originbranch = do
 	let gpgconf = privDataDir </> "gpg.conf"
+	keyring <- privDataKeyring
 	writeFile gpgconf $ unlines
 		[ " keyring " ++ keyring
 		, "no-auto-check-trustdb"
@@ -38,6 +38,7 @@ fetchOrigin = do
 
 	oldsha <- getCurrentGitSha1 branchref
 
+	keyring <- privDataKeyring
 	whenM (doesFileExist keyring) $
 		ifM (verifyOriginBranch originbranch)
 			( do

@@ -251,12 +251,13 @@ modifyPrivData' f = do
 	makePrivDataDir
 	m <- decryptPrivData
 	let (m', r) = f m
-	gpgEncrypt privDataFile (show m')
-	void $ boolSystem "git" [Param "add", File privDataFile]
+	privdata <- privDataFile
+	gpgEncrypt privdata (show m')
+	void $ boolSystem "git" [Param "add", File privdata]
 	return r
 
 decryptPrivData :: IO PrivMap
-decryptPrivData = readPrivData <$> gpgDecrypt privDataFile
+decryptPrivData = readPrivData <$> (gpgDecrypt =<< privDataFile)
 
 readPrivData :: String -> PrivMap
 readPrivData = fromMaybe M.empty . readish
