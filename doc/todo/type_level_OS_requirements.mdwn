@@ -4,11 +4,11 @@ Using `withOS` means throwing a runtime error on an unsupported OS. Yuck.
 
 Could the OS of a property be lifted to the type level?
 
-If we had `Property i [OS]` then combining properties would need to update
+If we had `Property i '[OS]` then combining properties would need to update
 the type-level OS list. 
 
-For example, `Property i [Debian, FreeBSD]` combined with `Property i [Debian, Buntish]` 
-yields a `Property i [Debian]` -- the intersection of the OS's supported by
+For example, `Property i '[Debian, FreeBSD]` combined with `Property i '[Debian, Buntish]` 
+yields a `Property i '[Debian]` -- the intersection of the OS's supported by
 the combined properties.
 
 And, combining two properties that demand different OS's would need to be a
@@ -19,7 +19,7 @@ Host?
 
 Another kind of property combination would be to glue two properties that
 support different OS's together, yielding a property that supports both,
-and so has both in its [OS] type list, and that choses which to run using
+and so has both in its '[OS] type list, and that choses which to run using
 withOS.
 
 The `os` property would need to yield a `Property (os:[])`, where the type
@@ -30,7 +30,7 @@ Or, alternatively, could have less polymorphic `debian` etc
 properties replace the `os` property.
 
 If a Host's list of properties, when all combined together,
-contains more than one element in its [OS], that needs to be a type error,
+contains more than one element in its '[OS], that needs to be a type error,
 the OS of the Host is indeterminite. Which would be fixed by using the `os`
 property to specify.
 

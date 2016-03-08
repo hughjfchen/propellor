@@ -6,42 +6,60 @@
 ensureProperty presents a problem. Its type would become something like
 this:
 
-	ensureProperty :: Property NoInfo [OS] -> Propellor Result
+	ensureProperty :: Property NoInfo '[OS] -> Propellor Result
 
 So, using ensureProperty inside a Property would not make the outer
 Property inherit the OS requirements of the inner properties.
 
-I don't see a way to propigate the [OS] out to the outer Property
+I don't see a way to propigate the '[OS] out to the outer Property
 from the Propellor monad where ensureProperty is used.
 
-Hmm, perhaps the outer Property's [OS] could be reified and passed into
+Hmm, perhaps the outer Property's '[OS] could be reified and passed into
 ensureProperty. Then reflect it back to a type, and require that inner
-Property's [OS] contains everything in the outer [OS] list.
+Property's '[OS] contains everything in the outer '[OS] list.
 
 I'm still vague on reifying and reflecting types, so I don't know if
 this can be done in a way that lets the type checker detect errors.
 
 Something like this, maybe:
 
-	foo :: Property NoInfo [Debian]
-	foo = property "foo" [Debian] $ do
+	debian :: '[Debian]
+	debian = undefined
+
+	foo :: Property NoInfo '[Debian]
+	foo = reify debian $ \os -> mkproperty os "foo" $ do
 		os <- getOSList
 		ensureProperty os (Pkg.install "bar" :: Property NoInfo [FreeBSD])
 		-- type error; FreeBSD not in [Debian]
 
-Where getOSList would pull the [Debian] out of Propellor monad
+Where getOSList would pull the `debian` value out of Propellor monad
 state. (Of course, ensureProperty could run getReifiedOSList itself,
 `os` is only passed explicitly for illustration.)
 
-This would need `property` to lift its [OS] parameter to a type-level
-list for the resulting `Property`. How?
+The type of `mkproperty` thus reflects the reified type passed into it.
+Here's a demo showing how to do that:
+	
+	demo :: (Reifies s t) => proxy s -> (Bool, t)
+	demo p = (True, reflect p)
+
+	*Main> :t (reify "foo") demo
+	(reify "foo") demo :: (Bool, [Char])
+	*Main> :t (reify False) demo
+	(reify False) demo :: (Bool, Bool)
+
+Similary:
+
+	mkproperty :: (Reifies s os) => proxy s -> Desc -> Propellor Result -> Property NoInfo os
+	mkproperty os desc a = Property desc $ do
+		setOSList (reflect os)
+		a
 
 As for ensureProperty, something like this could work for the
-implementation, if I understand reify right:
+implementation:
 
-	ensureProperty :: [OS] -> Property Noinfo -> Propellor Result
+	ensureProperty :: '[OS] -> Property Noinfo -> Propellor Result
 	ensureProperty outeros p@(Property NoInfo inneros)
-		| checkUnification (reify inneros) (reify outeros) = do
+		| (reify inneros $ \t1 -> reify outeros $ \t2 -> checkUnification t1 t2) = do
 			...
 		| otherwise = error "type checker should never let this be reached"
 	
