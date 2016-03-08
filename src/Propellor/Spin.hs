@@ -79,12 +79,10 @@ spin' mprivdata relay target hst = do
 		Just r -> pure r
 		Nothing -> getSshTarget target hst
 
-	let (InfoVal o) = (getInfo $ hostInfo hst) :: InfoVal System
-
 	-- Install, or update the remote propellor.
 	updateServer target relay hst
-		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap (probecmd o)])
-		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap (updatecmd (Just o))])
+		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap probecmd])
+		(proc "ssh" $ cacheparams ++ [sshtarget, shellWrap updatecmd])
 		=<< getprivdata
 
 	-- And now we can run it.
@@ -92,21 +90,24 @@ spin' mprivdata relay target hst = do
 		error "remote propellor failed"
   where
 	hn = fromMaybe target relay
+	sys = case getInfo (hostInfo hst) of
+		InfoVal o -> Just o
+		NoInfoVal -> Nothing
 
 	relaying = relay == Just target
 	viarelay = isJust relay && not relaying
 
-	probecmd sys = intercalate " ; "
+	probecmd = intercalate " ; "
 		["if [ ! -d " ++ localdir ++ "/.git ]"
 		, "then (" ++ intercalate " && "
 			[ installGitCommand sys
 			, "echo " ++ toMarked statusMarker (show NeedGitClone)
 			] ++ ") || echo " ++ toMarked statusMarker (show NeedPrecompiled)
-		, "else " ++ (updatecmd (Just sys))
+		, "else " ++ updatecmd
 		, "fi"
 		]
 
-	updatecmd sys = intercalate " && "
+	updatecmd = intercalate " && "
 		[ "cd " ++ localdir
 		, bootstrapPropellorCommand sys
 		, if viarelay
