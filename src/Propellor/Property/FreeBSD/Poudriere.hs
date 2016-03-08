@@ -52,8 +52,8 @@ runPoudriere cmd args =
 		lines <$> readProcess p a
 
 listJails :: IO [String]
-listJails =
-	map ((\(n:_) -> n ) . take 1 . words) <$> runPoudriere "jail" ["-l", "-q"]
+listJails = mapMaybe (headMaybe . take 1 . words)
+	<$> runPoudriere "jail" ["-l", "-q"]
 
 jailExists :: Jail -> IO Bool
 jailExists (Jail name _ _) = isInfixOf [name] <$> listJails
