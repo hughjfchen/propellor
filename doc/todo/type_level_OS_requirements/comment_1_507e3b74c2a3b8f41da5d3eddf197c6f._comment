@@ -29,8 +29,8 @@ Something like this, maybe:
 	foo :: Property NoInfo '[Debian]
 	foo = reify debian $ \os -> mkproperty os "foo" $ do
 		os <- getOSList
-		ensureProperty os (Pkg.install "bar" :: Property NoInfo [FreeBSD])
-		-- type error; FreeBSD not in [Debian]
+		ensureProperty os (Pkg.install "bar" :: Property NoInfo '[FreeBSD])
+		-- type error; FreeBSD not in '[Debian]
 
 Where getOSList would pull the `debian` value out of Propellor monad
 state. (Of course, ensureProperty could run getReifiedOSList itself,
