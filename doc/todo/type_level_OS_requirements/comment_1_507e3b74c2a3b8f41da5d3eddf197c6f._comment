@@ -1,0 +1,57 @@
+[[!comment format=mdwn
+ username="joey"
+ subject="""comment 1"""
+ date="2016-03-08T07:31:51Z"
+ content="""
+ensureProperty presents a problem. Its type would become something like
+this:
+
+	ensureProperty :: Property NoInfo [OS] -> Propellor Result
+
+So, using ensureProperty inside a Property would not make the outer
+Property inherit the OS requirements of the inner properties.
+
+I don't see a way to propigate the [OS] out to the outer Property
+from the Propellor monad where ensureProperty is used.
+
+Hmm, perhaps the outer Property's [OS] could be reified and passed into
+ensureProperty. Then reflect it back to a type, and require that inner
+Property's [OS] contains everything in the outer [OS] list.
+
+I'm still vague on reifying and reflecting types, so I don't know if
+this can be done in a way that lets the type checker detect errors.
+
+Something like this, maybe:
+
+	foo :: Property NoInfo [Debian]
+	foo = property "foo" [Debian] $ do
+		os <- getOSList
+		ensureProperty os (Pkg.install "bar" :: Property NoInfo [FreeBSD])
+		-- type error; FreeBSD not in [Debian]
+
+Where getOSList would pull the [Debian] out of Propellor monad
+state. (Of course, ensureProperty could run getReifiedOSList itself,
+`os` is only passed explicitly for illustration.)
+
+This would need `property` to lift its [OS] parameter to a type-level
+list for the resulting `Property`. How?
+
+As for ensureProperty, something like this could work for the
+implementation, if I understand reify right:
+
+	ensureProperty :: [OS] -> Property Noinfo -> Propellor Result
+	ensureProperty outeros p@(Property NoInfo inneros)
+		| checkUnification (reify inneros) (reify outeros) = do
+			...
+		| otherwise = error "type checker should never let this be reached"
+	
+	checkUnification
+		:: (Reifies s1 t1, Reifies s2 t2, TypesUnify t1 t2)
+		=> proxy1 s1
+		-> proxy2 s2
+		-> Bool
+	checkUnification _ _ = True -- all done at type level
+
+	type family TypesUnify t1 t2
+	...
+"""]]
