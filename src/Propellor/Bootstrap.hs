@@ -16,7 +16,7 @@ type ShellCommand = String
 -- Should be run inside the propellor config dir, and will install
 -- all necessary build dependencies and build propellor.
 bootstrapPropellorCommand :: Maybe System -> ShellCommand
-bootstrapPropellorCommand msys = maybe "true" checkDepsCommand msys ++
+bootstrapPropellorCommand msys = checkDepsCommand msys ++
 	"&& if ! test -x ./propellor; then "
 		++ buildCommand ++
 	"; fi;" ++ checkBinaryCommand
@@ -40,7 +40,7 @@ buildCommand = intercalate " && "
 
 -- Run cabal configure to check if all dependencies are installed;
 -- if not, run the depsCommand.
-checkDepsCommand :: System -> ShellCommand
+checkDepsCommand :: Maybe System -> ShellCommand
 checkDepsCommand sys = "if ! cabal configure >/dev/null 2>&1; then " ++ depsCommand sys ++ "; fi"
 
 -- Install build dependencies of propellor.
@@ -53,12 +53,17 @@ checkDepsCommand sys = "if ! cabal configure >/dev/null 2>&1; then " ++ depsComm
 -- So, as a second step, cabal is used to install all dependencies.
 --
 -- Note: May succeed and leave some deps not installed.
-depsCommand :: System -> ShellCommand
-depsCommand (System distr _) = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) ++ " ) || true"
+depsCommand :: Maybe System -> ShellCommand
+depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) ++ " ) || true"
   where
-	osinstall = case distr of
-		(FreeBSD _) -> map pkginstall fbsddeps
-		_ -> "apt-get update" : map aptinstall debdeps
+	osinstall = case msys of
+		Just (System (FreeBSD _) _) -> map pkginstall fbsddeps
+		Just (System (Debian _) _) -> useapt
+		Just (System (Buntish _) _) -> useapt
+		-- assume a debian derived system when not specified
+		Nothing -> useapt
+
+	useapt = "apt-get update" : map aptinstall debdeps
 
 	cabalinstall =
 		[ "cabal update"
@@ -106,19 +111,22 @@ depsCommand (System distr _) = "( " ++ intercalate " ; " (concat [osinstall, cab
 		, "gmake"
 		]
 
-installGitCommand :: System -> ShellCommand
-installGitCommand (System distr _) =
-	"if ! git --version >/dev/null; then " ++ intercalate " && " cmds ++ "; fi"
+installGitCommand :: Maybe System -> ShellCommand
+installGitCommand msys = case msys of
+	(Just (System (Debian _) _)) -> use apt
+	(Just (System (Buntish _) _)) -> use apt
+	(Just (System (FreeBSD _) _)) -> use
+		[ "ASSUME_ALWAYS_YES=yes pkg update"
+		, "ASSUME_ALWAYS_YES=yes pkg install git"
+		]
+	-- assume a debian derived system when not specified
+	Nothing -> use apt
   where
-	cmds = case distr of
-		(FreeBSD _) -> 
-			[ "ASSUME_ALWAYS_YES=yes pkg update"
-			, "ASSUME_ALWAYS_YES=yes pkg install git"
-			]
-		_ -> 
-			[ "apt-get update"
-			, "DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --no-upgrade -y install git"
-			]
+	use cmds = "if ! git --version >/dev/null; then " ++ intercalate " && " cmds ++ "; fi"
+	apt = 
+		[ "apt-get update"
+		, "DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --no-upgrade -y install git"
+		]
 
 buildPropellor :: IO ()
 buildPropellor = unlessM (actionMessage "Propellor build" build) $
