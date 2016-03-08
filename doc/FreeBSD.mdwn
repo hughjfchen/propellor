@@ -5,4 +5,4 @@ However, many other properties assume they're being run on a
 Debian Linux system, and need additional porting to support FreeBSD.
 
 [Sample config file](http://git.joeyh.name/?p=propellor.git;a=blob;f=config-freebsd.hs)
-which configures a FreeBSD system, as well as a Linux one:
+which configures a FreeBSD system, as well as a Linux one.
