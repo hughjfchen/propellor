@@ -12,10 +12,7 @@ yields a `Property i '[Debian]` -- the intersection of the OS's supported by
 the combined properties.
 
 And, combining two properties that demand different OS's would need to be a
-type error. Can a type level function combine two types successfully, and
-fail to combine two others somehow? Don't know. Maybe combine to an
-IncoherentOS and don't allow a `Property i IncoherentOS` to be used in a
-Host?
+type error.
 
 Another kind of property combination would be to glue two properties that
 support different OS's together, yielding a property that supports both,
@@ -35,7 +32,7 @@ the OS of the Host is indeterminite. Which would be fixed by using the `os`
 property to specify.
 
 On the other hand, if a Host's list of properties yields a single OS 
-(or perhaps no OS requirement), the type needs to be just `Host`.
+the type needs to be just `Host`.
 After all, propellor operates on a `[Host]`; if we had `Host OS`,
 the list couldn't contain host's with different OS's. 
 
