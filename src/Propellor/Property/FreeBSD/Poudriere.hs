@@ -10,7 +10,6 @@ import Propellor.Base
 import Propellor.Types.Info
 import Data.List
 import Data.String (IsString(..))
-import Data.String.Utils (splitWs)
 
 import qualified Propellor.Property.FreeBSD.Pkg as Pkg
 import qualified Propellor.Property.ZFS as ZFS
@@ -54,7 +53,7 @@ runPoudriere cmd args =
 
 listJails :: IO [String]
 listJails =
-	map ((\(n:_) -> n ) . take 1 . splitWs) <$> runPoudriere "jail" ["-l", "-q"]
+	map ((\(n:_) -> n ) . take 1 . words) <$> runPoudriere "jail" ["-l", "-q"]
 
 jailExists :: Jail -> IO Bool
 jailExists (Jail name _ _) = isInfixOf [name] <$> listJails
