@@ -1,7 +1,7 @@
 -- This is the main configuration file for Propellor, and is used to build
 -- the propellor program.
 --
--- This shows how to as a FreeBSD, as well as a Linux host.
+-- This shows how to set up a FreeBSD host (and a Linux host too).
 
 import Propellor
 import qualified Propellor.Property.File as File
@@ -21,13 +21,29 @@ main = defaultMain hosts
 -- The hosts propellor knows about.
 hosts :: [Host]
 hosts =
-	[ mybox
-	, freebsd
+	[ freebsdbox
+	, linuxbox
 	]
 
+-- An example freebsd host.
+freebsdbox :: Host
+freebsdbox = host "freebsdbox.example.com"
+	& os (System (FreeBSD (FBSDProduction FBSD102)) "amd64")
+	& Pkg.update
+	& Pkg.upgrade
+	& Poudriere.poudriere poudriereZFS
+	& Poudriere.jail (Poudriere.Jail "formail" (fromString "10.2-RELEASE") (fromString "amd64"))
+
+poudriereZFS :: Poudriere.Poudriere
+poudriereZFS = Poudriere.defaultConfig
+	{ Poudriere._zfs = Just $ Poudriere.PoudriereZFS
+		(ZFS.ZFS (fromString "zroot") (fromString "poudriere"))
+		(ZFS.fromList [ZFS.Mountpoint (fromString "/poudriere"), ZFS.ACLInherit ZFS.AIPassthrough])
+	}
+
 -- An example linux host.
-mybox :: Host
-mybox = host "mybox.example.com"
+linuxbox :: Host
+linuxbox = host "linuxbox.example.com"
 	& os (System (Debian Unstable) "amd64")
 	& Apt.stdSourcesList
 	& Apt.unattendedUpgrades
@@ -49,18 +65,3 @@ webserverContainer = Docker.container "webserver" (Docker.latestImage "debian")
 	& Docker.volume "/var/www:/var/www"
 	& Apt.serviceInstalledRunning "apache2"
 
--- An example freebsd host.
-freebsd :: Host
-freebsd = host "freebsd.example.com"
-	& os (System (FreeBSD (FBSDProduction FBSD102)) "amd64")
-	& Pkg.update
-	& Pkg.upgrade
-	& Poudriere.poudriere poudriereZFS
-	& Poudriere.jail (Poudriere.Jail "formail" (fromString "10.2-RELEASE") (fromString "amd64"))
-
-poudriereZFS :: Poudriere.Poudriere
-poudriereZFS = Poudriere.defaultConfig
-	{ Poudriere._zfs = Just $ Poudriere.PoudriereZFS
-		(ZFS.ZFS (fromString "zroot") (fromString "poudriere"))
-		(ZFS.fromList [ZFS.Mountpoint (fromString "/poudriere"), ZFS.ACLInherit ZFS.AIPassthrough])
-	}
