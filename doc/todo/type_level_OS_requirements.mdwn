@@ -25,6 +25,7 @@ withOS.
 The `os` property would need to yield a `Property (os:[])`, where the type
 level list contains a type-level eqivilant of the value passed to the
 property. Is that possible to do? reification or something?
+(See: <https://www.schoolofhaskell.com/user/thoughtpolice/using-reflection>)
 Or, alternatively, could have less polymorphic `debian` etc
 properties replace the `os` property.
 
