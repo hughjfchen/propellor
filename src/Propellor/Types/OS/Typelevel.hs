@@ -63,19 +63,19 @@ type instance ConcatOSList (a ': rest) list2 = a ': ConcatOSList rest list2
 
 -- | The intersection between two lists of supported OS's.
 intersectSupportedOS
-	:: (r ~ IntersectOSList '[] l1 l2)
+	:: (r ~ IntersectOSList l1 l2)
 	=> OSList l1
 	-> OSList l2
 	-> OSList r
 intersectSupportedOS (OSList l1) (OSList l2) = OSList (filter (`elem` l2) l1)
 
 -- | Type level intersection for OSList
-type family IntersectOSList (coll :: [a]) (list1 :: [a]) (list2 :: [a]) :: [a]
-type instance IntersectOSList coll '[] list2 = coll
-type instance IntersectOSList coll (a ': rest) list2 = 
+type family IntersectOSList (list1 :: [a]) (list2 :: [a]) :: [a]
+type instance IntersectOSList '[] list2 = list2
+type instance IntersectOSList (a ': rest) list2 = 
 	If (ElemOSList a list2)
-		(IntersectOSList (a ': coll) rest list2)
-		(IntersectOSList coll rest list2)
+		(a ': IntersectOSList rest list2)
+		(IntersectOSList rest list2)
 
 -- | Type level elem for OSList
 type family ElemOSList a (list :: [b]) :: Bool
