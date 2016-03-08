@@ -2,6 +2,8 @@
 configuration management system using Haskell and Git.
 Each system has a list of properties, which Propellor ensures
 are satisfied.
+[Linux](http://propellor.branchable.com/Linux/) and
+[FreeBSD](http://propellor.branchable.com/FreeBSD/) are supported.
 
 Propellor is configured via a git repository, which typically lives
 in `~/.propellor/` on your development machine. Propellor clones the
