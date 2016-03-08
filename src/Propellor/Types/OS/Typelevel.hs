@@ -71,14 +71,14 @@ intersectSupportedOS (OSList l1) (OSList l2) = OSList (filter (`elem` l2) l1)
 
 -- | Type level intersection for OSList
 type family IntersectOSList (list1 :: [a]) (list2 :: [a]) :: [a]
-type instance IntersectOSList '[] list2 = list2
+type instance IntersectOSList '[] list2 = '[]
 type instance IntersectOSList (a ': rest) list2 = 
 	If (ElemOSList a list2)
 		(a ': IntersectOSList rest list2)
 		(IntersectOSList rest list2)
 
 -- | Type level elem for OSList
-type family ElemOSList a (list :: [b]) :: Bool
+type family ElemOSList (a :: SupportedOS) (list :: [SupportedOS]) :: Bool
 type instance ElemOSList a '[] = False
 type instance ElemOSList a (b ': bs) = 
 	If (a == b)
