@@ -87,10 +87,7 @@ type instance IntersectOSList (a ': rest) list2 =
 -- | Type level elem for OSList
 type family ElemOSList (a :: SupportedOS) (list :: [SupportedOS]) :: Bool
 type instance ElemOSList a '[] = False
-type instance ElemOSList a (b ': bs) = 
-	If (a == b)
-		True
-		(ElemOSList a bs)
+type instance ElemOSList a (b ': bs) = a == b || ElemOSList a bs
 
 -- | Type level equality for SupportedOS
 type family EqOS (a :: SupportedOS) (b :: SupportedOS) where
