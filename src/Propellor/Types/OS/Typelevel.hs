@@ -7,7 +7,7 @@ module Propellor.Types.OS.TypeLevel (
 	buntish,
 	freeBSD,
 	unixlike,
-	combineSupportedOS,
+	includeSupportedOS,
 	intersectSupportedOS,
 ) where
 
@@ -41,17 +41,35 @@ freeBSD = typeOS OSFreeBSD
 typeOS :: SupportedOS -> OSList os
 typeOS o = OSList [o]
 
-foo :: OSList '[OSDebian, OSFreeBSD]
-foo = (debian `combineSupportedOS` freeBSD ) `intersectSupportedOS` unixlike 
+data Property os = Property os (IO ())
 
--- | Combines two lists of supported OS's, yielding a list with the
--- contents of both.
-combineSupportedOS
+mkProperty :: os -> IO () -> Property os
+mkProperty os a = Property os a
+
+-- Intentionally a type error! :)
+--foo :: Property (OSList '[OSDebian, OSFreeBSD])
+--foo = mkProperty supportedos $ do
+--	ensureProperty supportedos jail
+--  where supportedos = includeSupportedOS debian
+
+jail :: Property (OSList '[OSFreeBSD])
+jail = Property freeBSD $ do
+	return ()
+
+ensureProperty
+	:: (CannotCombineOS outeros inneros (IntersectOSList outeros inneros) ~ CanCombineOS)
+	=> OSList outeros
+	-> Property (OSList inneros)
+	-> IO ()
+ensureProperty outeros (Property inneros a) = a
+
+-- | Adds to a list of supported OS's.
+includeSupportedOS
 	:: (r ~ ConcatOSList l1 l2)
 	=> OSList l1
 	-> OSList l2
 	-> OSList r
-combineSupportedOS (OSList l1) (OSList l2) = OSList (l1 ++ l2)
+includeSupportedOS (OSList l1) (OSList l2) = OSList (l1 ++ l2)
 
 -- | Type level concat for OSList.
 type family ConcatOSList (list1 :: [a]) (list2 :: [a]) :: [a]
