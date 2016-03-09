@@ -40,7 +40,7 @@ foo = Property supportedos $ do
 	ensureProperty supportedos jail
   where supportedos = includeTarget debian freeBSD
 
-jail :: Property (Targeting '[OSFreeBSD])
+jail :: Property FreeBSDOnly
 jail = target freeBSD $ mkProperty $ do
 	return ()
 ----- END DEMO ----------
@@ -76,6 +76,9 @@ freeBSD = targeting OSFreeBSD
 targeting :: Target -> Targeting os
 targeting o = Targeting [o]
 
+-- FIXME: Wrong for eg, inner [Debian] vs outer [Debian,FreeBSD], since
+-- they interesect to [Debian]. All things in the outer *must* be present
+-- in the inner.
 ensureProperty
 	:: (CannotCombineTargets outertarget innertarget (IntersectTarget outertarget innertarget) ~ CanCombineTargets)
 	=> Targeting outertarget
