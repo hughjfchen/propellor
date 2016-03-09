@@ -47,9 +47,7 @@ This is somewhat similar to [[type_level_port_conflict_detection]].
 ----
 
 Note that propellor needs to remain buildable with Debian stable's
-ghc 7.6.3. Stuff like type level lists needs a newer ghc. So any work on
-this may need to be deferred merging into propellor mainline unless it can
-be made to build with the old ghc (even if perhaps not doing the full type
-checking of OS's there).
+ghc 7.6.3. I was able to get the type level OS implementation backported to
+work with that version, with some added ugliness.
 
 --[[Joey]]
