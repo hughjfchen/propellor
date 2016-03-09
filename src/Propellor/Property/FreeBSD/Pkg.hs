@@ -2,7 +2,7 @@
 -- 
 -- FreeBSD pkgng properties
 
-{-# Language ScopedTypeVariables, GeneralizedNewtypeDeriving #-}
+{-# Language ScopedTypeVariables, GeneralizedNewtypeDeriving, DeriveDataTypeable #-}
 
 module Propellor.Property.FreeBSD.Pkg where
 
