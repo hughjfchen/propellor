@@ -45,7 +45,7 @@ main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
 hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                --                  (o)  `
 	[ darkstar
-	, gnu
+	, gnu 
 	, clam
 	, mayfly
 	, oyster
