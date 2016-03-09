@@ -14,8 +14,6 @@ module Propellor.Types.OS.TypeLevel (
 import Network.BSD (HostName)
 import Data.Typeable
 import Data.String
-import Data.Type.Bool
-import Data.Type.Equality
 
 -- | A supported operating system.
 data SupportedOS = OSDebian | OSBuntish | OSFreeBSD
@@ -86,11 +84,35 @@ type instance IntersectOSList (a ': rest) list2 =
 
 -- | Type level elem for OSList
 type family ElemOSList (a :: SupportedOS) (list :: [SupportedOS]) :: Bool
-type instance ElemOSList a '[] = False
-type instance ElemOSList a (b ': bs) = a == b || ElemOSList a bs
+type instance ElemOSList a '[] = 'False
+type instance ElemOSList a (b ': bs) = EqOS a b || ElemOSList a bs
 
 -- | Type level equality for SupportedOS
-type family EqOS (a :: SupportedOS) (b :: SupportedOS) where
-	EqOS a a = True
-	EqOS a b = False
-type instance a == b = EqOS a b
+--
+-- This is a very clumsy implmentation, but it works back to ghc 7.6.
+type family EqOS (a :: SupportedOS) (b :: SupportedOS) :: Bool
+type instance EqOS OSDebian  OSDebian  = 'True
+type instance EqOS OSBuntish OSBuntish = 'True
+type instance EqOS OSFreeBSD OSFreeBSD = 'True
+type instance EqOS OSDebian  OSBuntish = 'False
+type instance EqOS OSDebian  OSFreeBSD = 'False
+type instance EqOS OSBuntish OSDebian  = 'False
+type instance EqOS OSBuntish OSFreeBSD = 'False
+type instance EqOS OSFreeBSD OSDebian  = 'False
+type instance EqOS OSFreeBSD OSBuntish = 'False
+-- More modern version if the combinatiorial explosion gets too bad later:
+--
+-- type family EqOS (a :: SupportedOS) (b :: SupportedOS) where
+-- 	EqOS a a = True
+-- 	EqOS a b = False
+
+-- | This is in Data.Type.Bool with modern versions of ghc, but is included
+-- here to support ghc 7.6.
+type family If (cond :: Bool) (tru :: a) (fls :: a) :: a
+type instance If 'True  tru fls = tru
+type instance If 'False tru fls = fls
+type family (a :: Bool) || (b :: Bool) :: Bool
+type instance 'False || 'False = 'False
+type instance 'True  || 'True  = 'True
+type instance 'True  || 'False = 'True
+type instance 'False || 'True  = 'True
