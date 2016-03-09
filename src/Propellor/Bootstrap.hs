@@ -34,7 +34,7 @@ checkBinaryCommand = "if test -x ./propellor && ! ./propellor --check; then " ++
 buildCommand :: ShellCommand
 buildCommand = intercalate " && "
 	[ "cabal configure"
-	, "cabal build"
+	, "cabal build propellor-config"
 	, "ln -sf dist/build/propellor-config/propellor-config propellor"
 	]
 
@@ -141,7 +141,7 @@ build :: IO Bool
 build = catchBoolIO $ do
 	make "dist/setup-config" ["propellor.cabal"] $
 		cabal ["configure"]
-	unlessM (cabal ["build"]) $ do
+	unlessM (cabal ["build", "propellor-config"]) $ do
 		void $ cabal ["configure"]
 		unlessM (cabal ["build"]) $
 			error "cabal build failed"

@@ -24,6 +24,8 @@ propellor (2.17.0) UNRELEASED; urgency=medium
   * Locale.available: Run locale-gen, instead of dpkg-reconfigure locales,
     which modified the locale.gen file and sometimes caused the property to
     need to make changes every time.
+  * Speed up propellor's build of itself, by asking cabal to only build
+    the propellor-config binary and not all the libraries.
 
  -- Joey Hess <id@joeyh.name>  Mon, 29 Feb 2016 17:58:08 -0400
 
