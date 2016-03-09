@@ -2,7 +2,7 @@
 --
 -- FreeBSD Poudriere properties
 
-{-# Language GeneralizedNewtypeDeriving #-}
+{-# Language GeneralizedNewtypeDeriving, DeriveDataTypeable #-}
 
 module Propellor.Property.FreeBSD.Poudriere where
 

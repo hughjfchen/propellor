@@ -122,11 +122,10 @@ defaultMain hostlist = withConcurrentOutput $ do
 	go cr cmdline@(Spin hs mrelay) = buildFirst cr cmdline $ do
 		unless (isJust mrelay) commitSpin
 		forM_ hs $ \hn -> withhost hn $ spin mrelay hn
-	go cr (Run hn) = fetchFirst $
-		ifM ((==) 0 <$> getRealUserID)
-			( runhost hn
-			, go cr (Spin [hn] Nothing)
-			)
+	go cr cmdline@(Run hn) = ifM ((==) 0 <$> getRealUserID)
+		( updateFirst cr cmdline $ runhost hn
+		, fetchFirst $ go cr (Spin [hn] Nothing)
+		)
 	go cr cmdline@(SimpleRun hn) = forceConsole >>
 		fetchFirst (buildFirst cr cmdline (runhost hn))
 	-- When continuing after a rebuild, don't want to rebuild again.
