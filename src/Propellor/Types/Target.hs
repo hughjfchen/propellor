@@ -3,10 +3,15 @@
 module Propellor.Types.Target (
 	Target(..),
 	Targeting(..),
+	target,
+	UnixLike,
+	unixLike,
+	DebianOnly,
 	debian,
+	BuntishOnly,
 	buntish,
+	FreeBSDOnly,
 	freeBSD,
-	unixlike,
 	includeTarget,
 	intersectTarget,
 ) where
@@ -15,20 +20,28 @@ import Network.BSD (HostName)
 import Data.Typeable
 import Data.String
 
+data Property target = Property target (IO ())
+
+mkProperty :: IO () -> Property UnixLike
+mkProperty a = Property unixLike a
+
+-- | Changes the target of a property.
+--
+-- This can only tighten the target list to contain fewer targets.
+target 
+	:: (newtarget' ~ IntersectTarget oldtarget newtarget,  CannotCombineTargets oldtarget newtarget newtarget' ~ CanCombineTargets)
+	=> Targeting newtarget -> Property (Targeting oldtarget) -> Property (Targeting newtarget')
+target newtarget (Property oldtarget a) = Property (intersectTarget oldtarget newtarget) a
+
 ----- DEMO ----------
-data Property os = Property os (IO ())
-
-mkProperty :: os -> IO () -> Property os
-mkProperty os a = Property os a
-
 -- Intentionally a type error! :)
---foo :: Property (Targeting '[OSDebian, OSFreeBSD])
---foo = mkProperty supportedos $ do
---	ensureProperty supportedos jail
---  where supportedos = includeTarget debian
+foo :: Property (Targeting '[OSDebian, OSFreeBSD])
+foo = Property supportedos $ do
+	ensureProperty supportedos jail
+  where supportedos = includeTarget debian freeBSD
 
 jail :: Property (Targeting '[OSFreeBSD])
-jail = Property freeBSD $ do
+jail = target freeBSD $ mkProperty $ do
 	return ()
 ----- END DEMO ----------
 
@@ -40,24 +53,31 @@ data Target = OSDebian | OSBuntish | OSFreeBSD
 data Targeting (os :: [Target]) = Targeting [Target]
 	deriving (Show, Eq)
 
--- | Any unix-like OS.
-unixlike :: Targeting '[OSDebian, OSBuntish, OSFreeBSD]
-unixlike = Targeting [OSDebian, OSBuntish, OSFreeBSD]
+type UnixLike = Targeting '[OSDebian, OSBuntish, OSFreeBSD]
 
-debian :: Targeting '[OSDebian]
-debian = typeOS OSDebian
+unixLike :: UnixLike
+unixLike = Targeting [OSDebian, OSBuntish, OSFreeBSD]
 
-buntish :: Targeting '[OSBuntish]
-buntish = typeOS OSBuntish
+type DebianOnly = Targeting '[OSDebian]
 
-freeBSD :: Targeting '[OSFreeBSD]
-freeBSD = typeOS OSFreeBSD
+debian :: DebianOnly
+debian = targeting OSDebian
 
-typeOS :: Target -> Targeting os
-typeOS o = Targeting [o]
+type BuntishOnly = Targeting '[OSBuntish]
+
+buntish :: BuntishOnly
+buntish = targeting OSBuntish
+
+type FreeBSDOnly = Targeting '[OSFreeBSD]
+
+freeBSD :: FreeBSDOnly
+freeBSD = targeting OSFreeBSD
+
+targeting :: Target -> Targeting os
+targeting o = Targeting [o]
 
 ensureProperty
-	:: (CannotCombineTargets outertarget innertarget (IntersectTargeting outertarget innertarget) ~ CanCombineTargets)
+	:: (CannotCombineTargets outertarget innertarget (IntersectTarget outertarget innertarget) ~ CanCombineTargets)
 	=> Targeting outertarget
 	-> Property (Targeting innertarget)
 	-> IO ()
@@ -78,7 +98,7 @@ type instance ConcatTargeting (a ': rest) list2 = a ': ConcatTargeting rest list
 
 -- | The intersection between two lists of Targets.
 intersectTarget
-	:: (r ~ IntersectTargeting l1 l2, CannotCombineTargets l1 l2 r ~ CanCombineTargets)
+	:: (r ~ IntersectTarget l1 l2, CannotCombineTargets l1 l2 r ~ CanCombineTargets)
 	=> Targeting l1
 	-> Targeting l2
 	-> Targeting r
@@ -93,12 +113,12 @@ type instance CannotCombineTargets l1 l2 (a ': rest) = 'CanCombineTargets
 data CheckIntersection = CannotCombineTargets | CanCombineTargets
 
 -- | Type level intersection for Targeting
-type family IntersectTargeting (list1 :: [a]) (list2 :: [a]) :: [a]
-type instance IntersectTargeting '[] list2 = '[]
-type instance IntersectTargeting (a ': rest) list2 = 
+type family IntersectTarget (list1 :: [a]) (list2 :: [a]) :: [a]
+type instance IntersectTarget '[] list2 = '[]
+type instance IntersectTarget (a ': rest) list2 = 
 	If (ElemTargeting a list2)
-		(a ': IntersectTargeting rest list2)
-		(IntersectTargeting rest list2)
+		(a ': IntersectTarget rest list2)
+		(IntersectTarget rest list2)
 
 -- | Type level elem for Targeting
 type family ElemTargeting (a :: Target) (list :: [Target]) :: Bool
