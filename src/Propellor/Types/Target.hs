@@ -35,10 +35,10 @@ target newtarget (Property oldtarget a) = Property (intersectTarget oldtarget ne
 
 ----- DEMO ----------
 -- Intentionally a type error! :)
-foo :: Property (Targeting '[OSDebian, OSFreeBSD])
-foo = Property supportedos $ do
-	ensureProperty supportedos jail
-  where supportedos = includeTarget debian freeBSD
+--foo :: Property (Targeting '[OSDebian, OSFreeBSD])
+--foo = Property supportedos $ do
+--	ensureProperty supportedos jail
+--  where supportedos = includeTarget debian freeBSD
 
 jail :: Property FreeBSDOnly
 jail = target freeBSD $ mkProperty $ do
@@ -76,11 +76,8 @@ freeBSD = targeting OSFreeBSD
 targeting :: Target -> Targeting os
 targeting o = Targeting [o]
 
--- FIXME: Wrong for eg, inner [Debian] vs outer [Debian,FreeBSD], since
--- they interesect to [Debian]. All things in the outer *must* be present
--- in the inner.
 ensureProperty
-	:: (CannotCombineTargets outertarget innertarget (IntersectTarget outertarget innertarget) ~ CanCombineTargets)
+	:: ((innertarget `NotSupersetTargets` outertarget) ~ CanCombineTargets)
 	=> Targeting outertarget
 	-> Property (Targeting innertarget)
 	-> IO ()
@@ -107,26 +104,37 @@ intersectTarget
 	-> Targeting r
 intersectTarget (Targeting l1) (Targeting l2) = Targeting (filter (`elem` l2) l1)
 
+data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
+
 -- | Detect intersection of two lists that don't have any common OS.
 -- 
 -- The name of this was chosen to make type errors a more understandable.
-type family CannotCombineTargets (list1 :: [a]) (list2 :: [a]) (listr :: [a]) :: CheckIntersection
+type family CannotCombineTargets (list1 :: [a]) (list2 :: [a]) (listr :: [a]) :: CheckCombineTargets
 type instance CannotCombineTargets l1 l2 '[] = 'CannotCombineTargets
 type instance CannotCombineTargets l1 l2 (a ': rest) = 'CanCombineTargets
-data CheckIntersection = CannotCombineTargets | CanCombineTargets
+
+-- | Everything in the subset must be in the superset.
+--
+-- The name of this was chosen to make type errors a more understandable.
+type family NotSupersetTargets (superset :: [a]) (subset :: [a]) :: CheckCombineTargets
+type instance NotSupersetTargets superset '[] = 'CanCombineTargets
+type instance NotSupersetTargets superset (s ': rest) = 
+	If (ElemTarget s superset)
+		(NotSupersetTargets superset rest)
+		'CannotCombineTargets
 
 -- | Type level intersection for Targeting
 type family IntersectTarget (list1 :: [a]) (list2 :: [a]) :: [a]
 type instance IntersectTarget '[] list2 = '[]
 type instance IntersectTarget (a ': rest) list2 = 
-	If (ElemTargeting a list2)
+	If (ElemTarget a list2)
 		(a ': IntersectTarget rest list2)
 		(IntersectTarget rest list2)
 
--- | Type level elem for Targeting
-type family ElemTargeting (a :: Target) (list :: [Target]) :: Bool
-type instance ElemTargeting a '[] = 'False
-type instance ElemTargeting a (b ': bs) = EqTarget a b || ElemTargeting a bs
+-- | Type level elem for Target
+type family ElemTarget (a :: Target) (list :: [Target]) :: Bool
+type instance ElemTarget a '[] = 'False
+type instance ElemTarget a (b ': bs) = EqTarget a b || ElemTarget a bs
 
 -- | Type level equality for Target
 --
