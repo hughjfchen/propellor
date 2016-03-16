@@ -33,12 +33,35 @@ target
 	=> Targeting newtarget -> Property (Targeting oldtarget) -> Property (Targeting newtarget')
 target newtarget (Property oldtarget a) = Property (intersectTarget oldtarget newtarget) a
 
+-- | Makes a property that uses either of the two input properties,
+-- depending on the targeted OS.
+--
+-- If both input properties support the targeted OS, then the first will be
+-- used.
+orProperty
+	:: Property (Targeting a)
+	-> Property (Targeting b)
+	-> Property (Targeting (UnionTarget a b))
+orProperty a@(Property ta ioa) b@(Property tb iob) =
+	Property (unionTarget ta tb) io
+  where
+	-- TODO pick with of ioa or iob to use based on final OS of
+	-- system being run on.
+	io = undefined
+
 ----- DEMO ----------
 -- Intentionally a type error! :)
 --foo :: Property (Targeting '[OSDebian, OSFreeBSD])
 --foo = Property supportedos $ do
 --	ensureProperty supportedos jail
 --  where supportedos = includeTarget debian freeBSD
+
+--bar :: Property (Targeting '[OSDebian, OSFreeBSD])
+bar = aptinstall `orProperty` jail
+
+aptinstall :: Property DebianOnly
+aptinstall = target debian $ mkProperty $ do
+	return ()
 
 jail :: Property FreeBSDOnly
 jail = target freeBSD $ mkProperty $ do
