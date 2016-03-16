@@ -12,13 +12,16 @@ module Propellor.Types.Target (
 	buntish,
 	FreeBSDOnly,
 	freeBSD,
-	includeTarget,
+	unionTargets,
 	intersectTarget,
+	orProperty,
+	ensureProperty,
 ) where
 
 import Network.BSD (HostName)
 import Data.Typeable
 import Data.String
+import Data.List
 
 data Property target = Property target (IO ())
 
@@ -29,21 +32,23 @@ mkProperty a = Property unixLike a
 --
 -- This can only tighten the target list to contain fewer targets.
 target 
-	:: (newtarget' ~ IntersectTarget oldtarget newtarget,  CannotCombineTargets oldtarget newtarget newtarget' ~ CanCombineTargets)
-	=> Targeting newtarget -> Property (Targeting oldtarget) -> Property (Targeting newtarget')
+	:: (combinedtarget ~ IntersectTarget oldtarget newtarget,  CannotCombineTargets oldtarget newtarget combinedtarget ~ CanCombineTargets)
+	=> Targeting newtarget
+	-> Property (Targeting oldtarget)
+	-> Property (Targeting combinedtarget)
 target newtarget (Property oldtarget a) = Property (intersectTarget oldtarget newtarget) a
 
--- | Makes a property that uses either of the two input properties,
+-- | Picks one of the two input properties to use,
 -- depending on the targeted OS.
 --
--- If both input properties support the targeted OS, then the first will be
--- used.
+-- If both input properties support the targeted OS, then the
+-- first will be used.
 orProperty
 	:: Property (Targeting a)
 	-> Property (Targeting b)
 	-> Property (Targeting (UnionTarget a b))
 orProperty a@(Property ta ioa) b@(Property tb iob) =
-	Property (unionTarget ta tb) io
+	Property (unionTargets ta tb) io
   where
 	-- TODO pick with of ioa or iob to use based on final OS of
 	-- system being run on.
@@ -54,7 +59,7 @@ orProperty a@(Property ta ioa) b@(Property tb iob) =
 --foo :: Property (Targeting '[OSDebian, OSFreeBSD])
 --foo = Property supportedos $ do
 --	ensureProperty supportedos jail
---  where supportedos = includeTarget debian freeBSD
+--  where supportedos = unionTargets debian freeBSD
 
 --bar :: Property (Targeting '[OSDebian, OSFreeBSD])
 bar = aptinstall `orProperty` jail
@@ -73,7 +78,7 @@ data Target = OSDebian | OSBuntish | OSFreeBSD
 	deriving (Show, Eq)
 
 -- | A type-level and value-level list of targets.
-data Targeting (os :: [Target]) = Targeting [Target]
+data Targeting (targets :: [Target]) = Targeting [Target]
 	deriving (Show, Eq)
 
 type UnixLike = Targeting '[OSDebian, OSBuntish, OSFreeBSD]
@@ -99,6 +104,9 @@ freeBSD = targeting OSFreeBSD
 targeting :: Target -> Targeting os
 targeting o = Targeting [o]
 
+-- Demo. The outeros parameter would come from the Propellor monad in real
+-- life.
+-- XXX Can type inference work if outeros comes from Propellor monad?
 ensureProperty
 	:: ((innertarget `NotSupersetTargets` outertarget) ~ CanCombineTargets)
 	=> Targeting outertarget
@@ -106,18 +114,13 @@ ensureProperty
 	-> IO ()
 ensureProperty outeros (Property inneros a) = a
 
--- | Adds to a list of targets.
-includeTarget
-	:: (r ~ ConcatTargeting l1 l2)
-	=> Targeting l1
+-- | The union of two lists of Targets.
+unionTargets
+	:: Targeting l1
 	-> Targeting l2
-	-> Targeting r
-includeTarget (Targeting l1) (Targeting l2) = Targeting (l1 ++ l2)
-
--- | Type level concat for Targeting.
-type family ConcatTargeting (list1 :: [a]) (list2 :: [a]) :: [a]
-type instance ConcatTargeting '[] list2 = list2
-type instance ConcatTargeting (a ': rest) list2 = a ': ConcatTargeting rest list2
+	-> Targeting (UnionTarget l1 l2)
+unionTargets (Targeting l1) (Targeting l2) =
+	Targeting $ nub $ l1 ++ l2
 
 -- | The intersection between two lists of Targets.
 intersectTarget
@@ -125,7 +128,8 @@ intersectTarget
 	=> Targeting l1
 	-> Targeting l2
 	-> Targeting r
-intersectTarget (Targeting l1) (Targeting l2) = Targeting (filter (`elem` l2) l1)
+intersectTarget (Targeting l1) (Targeting l2) =
+	Targeting $ nub $ filter (`elem` l2) l1
 
 data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
 
@@ -146,13 +150,21 @@ type instance NotSupersetTargets superset (s ': rest) =
 		(NotSupersetTargets superset rest)
 		'CannotCombineTargets
 
--- | Type level intersection for Targeting
+-- | Type level intersection of lists of Targets
 type family IntersectTarget (list1 :: [a]) (list2 :: [a]) :: [a]
 type instance IntersectTarget '[] list2 = '[]
 type instance IntersectTarget (a ': rest) list2 = 
-	If (ElemTarget a list2)
+	If (ElemTarget a list2 && Not (ElemTarget a rest))
 		(a ': IntersectTarget rest list2)
 		(IntersectTarget rest list2)
+
+-- | Type level union of lists of Targets
+type family UnionTarget (list1 :: [a]) (list2 :: [a]) :: [a]
+type instance UnionTarget '[] list2 = list2
+type instance UnionTarget (a ': rest) list2 =
+	If (ElemTarget a list2 || ElemTarget a rest)
+		(UnionTarget rest list2)
+		(a ': UnionTarget rest list2)
 
 -- | Type level elem for Target
 type family ElemTarget (a :: Target) (list :: [Target]) :: Bool
@@ -178,13 +190,21 @@ type instance EqTarget OSFreeBSD OSBuntish = 'False
 -- 	EqTarget a a = True
 -- 	EqTarget a b = False
 
--- | This is in Data.Type.Bool with modern versions of ghc, but is included
--- here to support ghc 7.6.
+-- | An equivilant to the following is in Data.Type.Bool in
+-- modern versions of ghc, but is included here to support ghc 7.6.
 type family If (cond :: Bool) (tru :: a) (fls :: a) :: a
 type instance If 'True  tru fls = tru
 type instance If 'False tru fls = fls
 type family (a :: Bool) || (b :: Bool) :: Bool
-type instance 'False || 'False = 'False
-type instance 'True  || 'True  = 'True
-type instance 'True  || 'False = 'True
-type instance 'False || 'True  = 'True
+type instance    'False || 'False = 'False
+type instance    'True  || 'True  = 'True
+type instance    'True  || 'False = 'True
+type instance    'False || 'True  = 'True
+type family (a :: Bool) && (b :: Bool) :: Bool
+type instance    'False && 'False = 'False
+type instance    'True  && 'True  = 'True
+type instance    'True  && 'False = 'False
+type instance    'False && 'True  = 'False
+type family Not (a :: Bool) :: Bool
+type instance Not 'False = 'True
+type instance Not 'True = 'False
