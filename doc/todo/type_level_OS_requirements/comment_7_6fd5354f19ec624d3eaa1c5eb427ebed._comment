@@ -36,10 +36,4 @@ HasInfo would be used instead of an explicit NoInfo, so:
 
 `Property (HasInfo ': DebianOnly)`
 
-Hmm, this should also allow ensureProperty to be used on Property HasInfo.
-Because the new version of ensureProperty has access to the type list of the
-outer property, it could just enforce that, when the inner property HasInfo,
-so does the outer property.
-
-Cool!
 """]]
