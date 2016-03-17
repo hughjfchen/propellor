@@ -1,6 +1,7 @@
-{-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, AllowAmbiguousTypes #-}
 
 module Propellor.Types.Target (
+{-
 	Target(..),
 	Targeting(..),
 	mkProperty,
@@ -19,6 +20,7 @@ module Propellor.Types.Target (
 	freeBSD,
 	unionTargets,
 	intersectTarget,
+-}
 ) where
 
 import Network.BSD (HostName)
@@ -26,15 +28,17 @@ import Data.Typeable
 import Data.String
 import Data.List
 
-data Property target = Property target (IO ())
+data Property proptypes = Property proptypes (IO ())
 
-mkProperty :: Targeting targets -> IO () -> Property (Targeting targets)
-mkProperty target a = Property target a
+mkProperty :: proptypes -> IO () -> Property proptypes
+mkProperty proptypes a = Property proptypes a
 
-mkProperty' :: Targeting targets -> (OuterTarget targets -> IO ()) -> Property (Targeting targets)
-mkProperty' target@(Targeting l) a = Property target (a (OuterTarget l))
+{-
 
-data OuterTarget (targets :: [Target]) = OuterTarget [Target]
+mkProperty' :: proptypes -> (OuterPropTypes proptypes -> IO ()) -> Property proptypes
+mkProperty' target@l a = Property target (a (OuterPropTypes l))
+
+data OuterPropTypes (proptypes :: PropTypes) = OuterPropTypes PropTypes
 
 -- | Use `mkProperty'` to get the `OuterTarget`. Only properties whose
 -- targets are a superset of the outer targets can be ensured.
@@ -95,42 +99,54 @@ jail = mkProperty freeBSD $ do
 	return ()
 ----- END DEMO ----------
 
+-}
+
 -- | A Target system, where a Property is indended to be used.
 data Target = OSDebian | OSBuntish | OSFreeBSD
 	deriving (Show, Eq)
 
--- | A type-level and value-level set of targets.
---
--- Note that the current implementation uses a list, although most
--- operations remove duplicate values. The ordering of the list should not
--- matter; it would be better to use the type-level-sets package, but it
--- needs a newer version of ghc than the minimum version propellor
--- supports.
-data Targeting (targets :: [Target]) = Targeting [Target]
+-- | A property has a list of associated PropType's
+data PropType
+	= Targeting Target -- ^ A target OS of a Property
+	| HasInfo          -- ^ Indicates that a Property has associated Info
 	deriving (Show, Eq)
 
-type UnixLike = Targeting '[OSDebian, OSBuntish, OSFreeBSD]
+data PropTypes (proptypes :: [PropType]) = PropTypes [PropType]
+
+type UnixLike = PropTypes '[Targeting OSDebian, Targeting OSBuntish, Targeting OSFreeBSD]
 
 unixLike :: UnixLike
-unixLike = Targeting [OSDebian, OSBuntish, OSFreeBSD]
+unixLike = PropTypes [Targeting OSDebian, Targeting OSBuntish, Targeting OSFreeBSD]
 
-type DebianOnly = Targeting '[OSDebian]
+type DebianOnly = PropTypes '[Targeting OSDebian]
 
 debian :: DebianOnly
 debian = targeting OSDebian
 
-type BuntishOnly = Targeting '[OSBuntish]
+type BuntishOnly = PropTypes '[Targeting OSBuntish]
 
 buntish :: BuntishOnly
 buntish = targeting OSBuntish
 
-type FreeBSDOnly = Targeting '[OSFreeBSD]
+type FreeBSDOnly = PropTypes '[Targeting OSFreeBSD]
 
 freeBSD :: FreeBSDOnly
 freeBSD = targeting OSFreeBSD
 
-targeting :: Target -> Targeting os
-targeting o = Targeting [o]
+targeting :: Target -> PropTypes l
+targeting o = PropTypes [Targeting o]
+
+foo :: PropTypes (HasInfo :+: DebianOnly)
+foo = HasInfo `also` debian
+
+also :: (l' ~ (:+:) t (PropTypes l))  => PropType -> (PropTypes l) -> PropTypes l'
+p `also` PropTypes l = PropTypes (p:l)
+
+-- | Add a PropType to a PropTypes
+type family (p :: PropType) :+: l :: l2
+type instance p :+: (PropTypes l) = PropTypes (p ': l)
+
+{-
 
 -- | The union of two lists of Targets.
 unionTargets
@@ -226,3 +242,6 @@ type instance    'False && 'True  = 'False
 type family Not (a :: Bool) :: Bool
 type instance Not 'False = 'True
 type instance Not 'True = 'False
+
+
+-}
