@@ -104,15 +104,13 @@ freeBSD = targeting OSFreeBSD
 targeting :: Target -> Targeting os
 targeting o = Targeting [o]
 
--- Demo. The outeros parameter would come from the Propellor monad in real
--- life.
--- XXX Can type inference work if outeros comes from Propellor monad?
+-- The outertarget parameter needs to be passed in from the outer property.
 ensureProperty
 	:: ((innertarget `NotSupersetTargets` outertarget) ~ CanCombineTargets)
 	=> Targeting outertarget
 	-> Property (Targeting innertarget)
 	-> IO ()
-ensureProperty outeros (Property inneros a) = a
+ensureProperty outertarget (Property inneros a) = a
 
 -- | The union of two lists of Targets.
 unionTargets
