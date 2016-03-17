@@ -3,6 +3,11 @@
 module Propellor.Types.Target (
 	Target(..),
 	Targeting(..),
+	mkProperty,
+	mkProperty',
+	OuterTarget,
+	ensureProperty,
+	orProperty,
 	target,
 	UnixLike,
 	unixLike,
@@ -14,8 +19,6 @@ module Propellor.Types.Target (
 	freeBSD,
 	unionTargets,
 	intersectTarget,
-	orProperty,
-	ensureProperty,
 ) where
 
 import Network.BSD (HostName)
@@ -25,8 +28,22 @@ import Data.List
 
 data Property target = Property target (IO ())
 
-mkProperty :: IO () -> Property UnixLike
-mkProperty a = Property unixLike a
+mkProperty :: Targeting targets -> IO () -> Property (Targeting targets)
+mkProperty target a = Property target a
+
+mkProperty' :: Targeting targets -> (OuterTarget targets -> IO ()) -> Property (Targeting targets)
+mkProperty' target@(Targeting l) a = Property target (a (OuterTarget l))
+
+data OuterTarget (targets :: [Target]) = OuterTarget [Target]
+
+-- | Use `mkProperty'` to get the `OuterTarget`. Only properties whose
+-- targets are a superset of the outer targets can be ensured.
+ensureProperty
+	:: ((innertargets `NotSupersetTargets` outertargets) ~ CanCombineTargets)
+	=> OuterTarget outertargets
+	-> Property (Targeting innertargets)
+	-> IO ()
+ensureProperty outertarget (Property innertarget a) = a
 
 -- | Changes the target of a property.
 --
@@ -61,15 +78,19 @@ orProperty a@(Property ta ioa) b@(Property tb iob) =
 --	ensureProperty supportedos jail
 --  where supportedos = unionTargets debian freeBSD
 
+foo :: Property (Targeting '[OSFreeBSD])
+foo = mkProperty' freeBSD $ \t -> do
+	ensureProperty t jail
+
 --bar :: Property (Targeting '[OSDebian, OSFreeBSD])
 bar = aptinstall `orProperty` jail
 
 aptinstall :: Property DebianOnly
-aptinstall = target debian $ mkProperty $ do
+aptinstall = mkProperty debian $ do
 	return ()
 
 jail :: Property FreeBSDOnly
-jail = target freeBSD $ mkProperty $ do
+jail = mkProperty freeBSD $ do
 	return ()
 ----- END DEMO ----------
 
@@ -103,14 +124,6 @@ freeBSD = targeting OSFreeBSD
 
 targeting :: Target -> Targeting os
 targeting o = Targeting [o]
-
--- The outertarget parameter needs to be passed in from the outer property.
-ensureProperty
-	:: ((innertarget `NotSupersetTargets` outertarget) ~ CanCombineTargets)
-	=> Targeting outertarget
-	-> Property (Targeting innertarget)
-	-> IO ()
-ensureProperty outertarget (Property inneros a) = a
 
 -- | The union of two lists of Targets.
 unionTargets
