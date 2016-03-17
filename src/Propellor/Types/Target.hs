@@ -53,7 +53,8 @@ target
 	=> Targeting newtarget
 	-> Property (Targeting oldtarget)
 	-> Property (Targeting combinedtarget)
-target newtarget (Property oldtarget a) = Property (intersectTarget oldtarget newtarget) a
+target newtarget (Property oldtarget a) =
+	Property (intersectTarget oldtarget newtarget) a
 
 -- | Picks one of the two input properties to use,
 -- depending on the targeted OS.
@@ -82,7 +83,7 @@ foo :: Property (Targeting '[OSFreeBSD])
 foo = mkProperty' freeBSD $ \t -> do
 	ensureProperty t jail
 
---bar :: Property (Targeting '[OSDebian, OSFreeBSD])
+bar :: Property (Targeting '[OSDebian, OSFreeBSD])
 bar = aptinstall `orProperty` jail
 
 aptinstall :: Property DebianOnly
@@ -98,7 +99,13 @@ jail = mkProperty freeBSD $ do
 data Target = OSDebian | OSBuntish | OSFreeBSD
 	deriving (Show, Eq)
 
--- | A type-level and value-level list of targets.
+-- | A type-level and value-level set of targets.
+--
+-- Note that the current implementation uses a list, although most
+-- operations remove duplicate values. The ordering of the list should not
+-- matter; it would be better to use the type-level-sets package, but it
+-- needs a newer version of ghc than the minimum version propellor
+-- supports.
 data Targeting (targets :: [Target]) = Targeting [Target]
 	deriving (Show, Eq)
 
