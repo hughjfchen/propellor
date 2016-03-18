@@ -143,7 +143,7 @@ clam = standardSystem "clam.kitenet.net" Unstable "amd64"
 mayfly :: Host
 mayfly = standardSystem "mayfly.kitenet.net" (Stable "jessie") "amd64"
 	[ "Scratch VM. Contents can change at any time!" ]
-	& ipv4 "104.167.118.15"
+	& ipv4 "167.88.36.193"
 
 	& CloudAtCost.decruft
 	& Apt.unattendedUpgrades
