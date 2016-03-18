@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, AllowAmbiguousTypes #-}
+{-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, AllowAmbiguousTypes, TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables, GADTs #-}
 
 module Propellor.Types.Target (
 {-
@@ -28,26 +28,116 @@ import Data.Typeable
 import Data.String
 import Data.List
 
-data Property proptypes = Property proptypes (IO ())
+----- DEMO ----------
 
-mkProperty :: proptypes -> IO () -> Property proptypes
-mkProperty proptypes a = Property proptypes a
+-- Intentionally a type error! :)
+--foo :: Property (Targeting '[OSDebian, OSFreeBSD])
+--foo = Property supportedos $ do
+--	ensureProperty supportedos jail
+--  where supportedos = unionTargets debian freeBSD
 
 {-
+bar :: Property (Targeting '[OSDebian, OSFreeBSD])
+bar = aptinstall `orProperty` jail
 
-mkProperty' :: proptypes -> (OuterPropTypes proptypes -> IO ()) -> Property proptypes
-mkProperty' target@l a = Property target (a (OuterPropTypes l))
+-}
 
-data OuterPropTypes (proptypes :: PropTypes) = OuterPropTypes PropTypes
+foo :: Property FreeBSDOnly
+foo = mkProperty' $ \t -> do
+	ensureProperty t jail
 
--- | Use `mkProperty'` to get the `OuterTarget`. Only properties whose
--- targets are a superset of the outer targets can be ensured.
+aptinstall :: Property DebianOnly
+aptinstall = mkProperty $ do
+	return ()
+
+jail :: Property (HasInfo :+: FreeBSDOnly)
+jail = mkProperty $ do
+	return ()
+
+----- END DEMO ----------
+
+data Property proptypes = Property proptypes (IO ())
+
+mkProperty :: Sing l => IO () -> Property (WithTypes l)
+mkProperty = mkProperty' . const
+
+mkProperty' :: Sing l => (OuterPropTypes l -> IO ()) -> Property (WithTypes l)
+mkProperty' a = 
+	let p = Property sing (a (outerPropTypes p))
+	in p
+
+data OS = OSDebian | OSBuntish | OSFreeBSD
+	deriving (Show, Eq)
+
+data PropType
+	= Targeting OS -- ^ A target OS of a Property
+	| WithInfo     -- ^ Indicates that a Property has associated Info
+	deriving (Show, Eq)
+
+-- | Any unix-like system
+type UnixLike = WithTypes '[Targeting OSDebian, Targeting OSBuntish, Targeting OSFreeBSD]
+type DebianOnly = WithTypes '[Targeting OSDebian]
+type BuntishOnly = WithTypes '[Targeting OSBuntish]
+type FreeBSDOnly = WithTypes '[Targeting OSFreeBSD]
+
+type HasInfo = WithTypes '[WithInfo]
+
+data family WithTypes (x :: k)
+
+class Sing t where
+	-- Constructor for a singleton WithTypes list.
+	sing :: WithTypes t
+
+data instance WithTypes (x :: [k]) where
+	Nil :: WithTypes '[]
+	Cons :: WithTypes x -> WithTypes xs -> WithTypes (x ': xs)
+
+instance (Sing x, Sing xs) => Sing (x ': xs) where sing = Cons sing sing
+instance Sing '[] where sing = Nil
+
+-- This boilerplatw would not be needed if the singletons library were
+-- used. However, we're targeting too old a version of ghc to use it yet.
+data instance WithTypes (x :: PropType) where
+	OSDebianS :: WithTypes ('Targeting OSDebian)
+	OSBuntishS :: WithTypes ('Targeting OSBuntish)
+	OSFreeBSDS :: WithTypes ('Targeting OSFreeBSD)
+	WithInfoS :: WithTypes 'WithInfo
+instance Sing ('Targeting OSDebian) where sing = OSDebianS
+instance Sing ('Targeting OSBuntish) where sing = OSBuntishS
+instance Sing ('Targeting OSFreeBSD) where sing = OSFreeBSDS
+instance Sing 'WithInfo where sing = WithInfoS
+
+-- | Convenience type operator to combine two WithTypes lists.
+--
+-- For example, to add HasInfo to the DebianOnly list:
+--
+-- > HasInfo :+: DebianOnly
+--
+-- Which is shorthand for this type:
+--
+-- > WithTypes '[WithInfo, Targeting OSDebian]
+type family a :+: b :: ab
+type instance (WithTypes a) :+: (WithTypes b) = WithTypes (Concat a b)
+
+type family Concat (list1 :: [a]) (list2 :: [a]) :: [a]
+type instance Concat '[] bs = bs
+type instance Concat (a ': as) bs = a ': (Concat as bs)
+
+newtype OuterPropTypes l = OuterPropTypes (WithTypes l)
+
+outerPropTypes :: Property (WithTypes l) -> OuterPropTypes l
+outerPropTypes (Property proptypes _) = OuterPropTypes proptypes
+
+-- | Use `mkProperty''` to get the `OuterPropTypes`. Only properties whose
+-- PropTypes are a superset of the OuterPropTypes can be ensured.
 ensureProperty
-	:: ((innertargets `NotSupersetTargets` outertargets) ~ CanCombineTargets)
-	=> OuterTarget outertargets
-	-> Property (Targeting innertargets)
+	:: ((inner `NotSupersetTargets` outer) ~ CanCombineTargets)
+	=> OuterPropTypes outer
+	-> Property inner
 	-> IO ()
-ensureProperty outertarget (Property innertarget a) = a
+ensureProperty (OuterPropTypes outerproptypes) (Property innerproptypes a) = a
+
+{-
 
 -- | Changes the target of a property.
 --
@@ -76,78 +166,6 @@ orProperty a@(Property ta ioa) b@(Property tb iob) =
 	-- system being run on.
 	io = undefined
 
------ DEMO ----------
--- Intentionally a type error! :)
---foo :: Property (Targeting '[OSDebian, OSFreeBSD])
---foo = Property supportedos $ do
---	ensureProperty supportedos jail
---  where supportedos = unionTargets debian freeBSD
-
-foo :: Property (Targeting '[OSFreeBSD])
-foo = mkProperty' freeBSD $ \t -> do
-	ensureProperty t jail
-
-bar :: Property (Targeting '[OSDebian, OSFreeBSD])
-bar = aptinstall `orProperty` jail
-
-aptinstall :: Property DebianOnly
-aptinstall = mkProperty debian $ do
-	return ()
-
-jail :: Property FreeBSDOnly
-jail = mkProperty freeBSD $ do
-	return ()
------ END DEMO ----------
-
--}
-
--- | A Target system, where a Property is indended to be used.
-data Target = OSDebian | OSBuntish | OSFreeBSD
-	deriving (Show, Eq)
-
--- | A property has a list of associated PropType's
-data PropType
-	= Targeting Target -- ^ A target OS of a Property
-	| HasInfo          -- ^ Indicates that a Property has associated Info
-	deriving (Show, Eq)
-
-data PropTypes (proptypes :: [PropType]) = PropTypes [PropType]
-
-type UnixLike = PropTypes '[Targeting OSDebian, Targeting OSBuntish, Targeting OSFreeBSD]
-
-unixLike :: UnixLike
-unixLike = PropTypes [Targeting OSDebian, Targeting OSBuntish, Targeting OSFreeBSD]
-
-type DebianOnly = PropTypes '[Targeting OSDebian]
-
-debian :: DebianOnly
-debian = targeting OSDebian
-
-type BuntishOnly = PropTypes '[Targeting OSBuntish]
-
-buntish :: BuntishOnly
-buntish = targeting OSBuntish
-
-type FreeBSDOnly = PropTypes '[Targeting OSFreeBSD]
-
-freeBSD :: FreeBSDOnly
-freeBSD = targeting OSFreeBSD
-
-targeting :: Target -> PropTypes l
-targeting o = PropTypes [Targeting o]
-
-foo :: PropTypes (HasInfo :+: DebianOnly)
-foo = HasInfo `also` debian
-
-also :: (l' ~ (:+:) t (PropTypes l))  => PropType -> (PropTypes l) -> PropTypes l'
-p `also` PropTypes l = PropTypes (p:l)
-
--- | Add a PropType to a PropTypes
-type family (p :: PropType) :+: l :: l2
-type instance p :+: (PropTypes l) = PropTypes (p ': l)
-
-{-
-
 -- | The union of two lists of Targets.
 unionTargets
 	:: Targeting l1
@@ -165,7 +183,11 @@ intersectTarget
 intersectTarget (Targeting l1) (Targeting l2) =
 	Targeting $ nub $ filter (`elem` l2) l1
 
+-}
+
 data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
+
+{-
 
 -- | Detect intersection of two lists that don't have any common OS.
 -- 
@@ -174,7 +196,9 @@ type family CannotCombineTargets (list1 :: [a]) (list2 :: [a]) (listr :: [a]) ::
 type instance CannotCombineTargets l1 l2 '[] = 'CannotCombineTargets
 type instance CannotCombineTargets l1 l2 (a ': rest) = 'CanCombineTargets
 
--- | Everything in the subset must be in the superset.
+-}
+
+-- | Every target in the subset must be in the superset.
 --
 -- The name of this was chosen to make type errors a more understandable.
 type family NotSupersetTargets (superset :: [a]) (subset :: [a]) :: CheckCombineTargets
@@ -183,6 +207,8 @@ type instance NotSupersetTargets superset (s ': rest) =
 	If (ElemTarget s superset)
 		(NotSupersetTargets superset rest)
 		'CannotCombineTargets
+
+{-
 
 -- | Type level intersection of lists of Targets
 type family IntersectTarget (list1 :: [a]) (list2 :: [a]) :: [a]
@@ -224,6 +250,8 @@ type instance EqTarget OSFreeBSD OSBuntish = 'False
 -- 	EqTarget a a = True
 -- 	EqTarget a b = False
 
+-}
+
 -- | An equivilant to the following is in Data.Type.Bool in
 -- modern versions of ghc, but is included here to support ghc 7.6.
 type family If (cond :: Bool) (tru :: a) (fls :: a) :: a
@@ -243,5 +271,3 @@ type family Not (a :: Bool) :: Bool
 type instance Not 'False = 'True
 type instance Not 'True = 'False
 
-
--}
