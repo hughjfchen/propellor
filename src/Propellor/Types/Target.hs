@@ -42,15 +42,15 @@ bar = aptinstall `orProperty` jail
 
 -}
 
-foo :: Property FreeBSDOnly
+foo :: Property (HasInfo :+: FreeBSD)
 foo = mkProperty' $ \t -> do
 	ensureProperty t jail
 
-aptinstall :: Property DebianOnly
+aptinstall :: Property Debian
 aptinstall = mkProperty $ do
 	return ()
 
-jail :: Property (HasInfo :+: FreeBSDOnly)
+jail :: Property FreeBSD
 jail = mkProperty $ do
 	return ()
 
@@ -76,9 +76,9 @@ data PropType
 
 -- | Any unix-like system
 type UnixLike = WithTypes '[Targeting OSDebian, Targeting OSBuntish, Targeting OSFreeBSD]
-type DebianOnly = WithTypes '[Targeting OSDebian]
-type BuntishOnly = WithTypes '[Targeting OSBuntish]
-type FreeBSDOnly = WithTypes '[Targeting OSFreeBSD]
+type Debian = WithTypes '[Targeting OSDebian]
+type Buntish = WithTypes '[Targeting OSBuntish]
+type FreeBSD = WithTypes '[Targeting OSFreeBSD]
 
 type HasInfo = WithTypes '[WithInfo]
 
@@ -109,9 +109,9 @@ instance Sing 'WithInfo where sing = WithInfoS
 
 -- | Convenience type operator to combine two WithTypes lists.
 --
--- For example, to add HasInfo to the DebianOnly list:
+-- For example:
 --
--- > HasInfo :+: DebianOnly
+-- > HasInfo :+: Debian
 --
 -- Which is shorthand for this type:
 --
@@ -128,14 +128,29 @@ newtype OuterPropTypes l = OuterPropTypes (WithTypes l)
 outerPropTypes :: Property (WithTypes l) -> OuterPropTypes l
 outerPropTypes (Property proptypes _) = OuterPropTypes proptypes
 
--- | Use `mkProperty''` to get the `OuterPropTypes`. Only properties whose
--- PropTypes are a superset of the OuterPropTypes can be ensured.
+-- | Use `mkProperty''` to get the `OuterPropTypes`. For example:
+--
+-- > foo = Property Debian
+-- > foo = mkProperty' $ \t -> do
+-- >	ensureProperty t (aptInstall "foo")
+--
+-- The type checker will prevent using ensureProperty with a property
+-- that does not support the target OSes needed by the OuterPropTypes.
+-- In the example above, aptInstall must support Debian.
+--
+-- The type checker will also prevent using ensureProperty with a property
+-- with HasInfo in its PropTypes. Doing so would cause the info associated
+-- with the property to be lost.
 ensureProperty
-	:: ((inner `NotSupersetTargets` outer) ~ CanCombineTargets)
+	:: ((Targets inner `NotSuperset` Targets outer) ~ CanCombine, NoInfo inner ~ True)
 	=> OuterPropTypes outer
-	-> Property inner
+	-> Property (WithTypes inner)
 	-> IO ()
 ensureProperty (OuterPropTypes outerproptypes) (Property innerproptypes a) = a
+
+type family NoInfo (l :: [a]) :: Bool
+type instance NoInfo '[] = 'True
+type instance NoInfo (t ': ts) = Not (t `EqT` WithInfo) && NoInfo ts
 
 {-
 
@@ -185,28 +200,39 @@ intersectTarget (Targeting l1) (Targeting l2) =
 
 -}
 
-data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
+data CheckCombine = CannotCombine | CanCombine
 
 {-
 
 -- | Detect intersection of two lists that don't have any common OS.
 -- 
 -- The name of this was chosen to make type errors a more understandable.
-type family CannotCombineTargets (list1 :: [a]) (list2 :: [a]) (listr :: [a]) :: CheckCombineTargets
+type family CannotCombineTargets (list1 :: [a]) (list2 :: [a]) (listr :: [a]) :: CheckCombine
 type instance CannotCombineTargets l1 l2 '[] = 'CannotCombineTargets
 type instance CannotCombineTargets l1 l2 (a ': rest) = 'CanCombineTargets
 
 -}
 
--- | Every target in the subset must be in the superset.
+-- | Every item in the subset must be in the superset.
 --
 -- The name of this was chosen to make type errors a more understandable.
-type family NotSupersetTargets (superset :: [a]) (subset :: [a]) :: CheckCombineTargets
-type instance NotSupersetTargets superset '[] = 'CanCombineTargets
-type instance NotSupersetTargets superset (s ': rest) = 
-	If (ElemTarget s superset)
-		(NotSupersetTargets superset rest)
-		'CannotCombineTargets
+type family NotSuperset (superset :: [a]) (subset :: [a]) :: CheckCombine
+type instance NotSuperset superset '[] = 'CanCombine
+type instance NotSuperset superset (s ': rest) =
+	If (Elem s superset)
+		(NotSuperset superset rest)
+		'CannotCombine
+
+type family Targets (l :: [a]) :: [a]
+type instance Targets '[] = '[]
+type instance Targets (x ': xs) =
+	If (IsTarget x)
+		(x ': Targets xs)
+		(Targets xs)
+
+type family IsTarget (a :: t) :: Bool
+type instance IsTarget (Targeting a) = True
+type instance IsTarget HasInfo = False
 
 {-
 
@@ -226,31 +252,35 @@ type instance UnionTarget (a ': rest) list2 =
 		(UnionTarget rest list2)
 		(a ': UnionTarget rest list2)
 
--- | Type level elem for Target
-type family ElemTarget (a :: Target) (list :: [Target]) :: Bool
-type instance ElemTarget a '[] = 'False
-type instance ElemTarget a (b ': bs) = EqTarget a b || ElemTarget a bs
+-}
 
--- | Type level equality for Target
+-- | Type level elem
+type family Elem (a :: t) (list :: [t]) :: Bool
+type instance Elem a '[] = 'False
+type instance Elem a (b ': bs) = EqT a b || Elem a bs
+
+-- | Type level equality
 --
 -- This is a very clumsy implmentation, but it works back to ghc 7.6.
-type family EqTarget (a :: Target) (b :: Target) :: Bool
-type instance EqTarget OSDebian  OSDebian  = 'True
-type instance EqTarget OSBuntish OSBuntish = 'True
-type instance EqTarget OSFreeBSD OSFreeBSD = 'True
-type instance EqTarget OSDebian  OSBuntish = 'False
-type instance EqTarget OSDebian  OSFreeBSD = 'False
-type instance EqTarget OSBuntish OSDebian  = 'False
-type instance EqTarget OSBuntish OSFreeBSD = 'False
-type instance EqTarget OSFreeBSD OSDebian  = 'False
-type instance EqTarget OSFreeBSD OSBuntish = 'False
+type family EqT (a :: t) (b :: t) :: Bool
+type instance EqT (Targeting a) (Targeting b)  = EqT a b
+type instance EqT WithInfo      WithInfo       = 'True
+type instance EqT WithInfo      (Targeting b)  = 'False
+type instance EqT (Targeting a) WithInfo       = 'False
+type instance EqT OSDebian  OSDebian  = 'True
+type instance EqT OSBuntish OSBuntish = 'True
+type instance EqT OSFreeBSD OSFreeBSD = 'True
+type instance EqT OSDebian  OSBuntish = 'False
+type instance EqT OSDebian  OSFreeBSD = 'False
+type instance EqT OSBuntish OSDebian  = 'False
+type instance EqT OSBuntish OSFreeBSD = 'False
+type instance EqT OSFreeBSD OSDebian  = 'False
+type instance EqT OSFreeBSD OSBuntish = 'False
 -- More modern version if the combinatiorial explosion gets too bad later:
 --
--- type family EqTarget (a :: Target) (b :: Target) where
--- 	EqTarget a a = True
--- 	EqTarget a b = False
-
--}
+-- type family Eq (a :: PropType) (b :: PropType) where
+-- 	Eq a a = True
+-- 	Eq a b = False
 
 -- | An equivilant to the following is in Data.Type.Bool in
 -- modern versions of ghc, but is included here to support ghc 7.6.
