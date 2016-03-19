@@ -142,15 +142,16 @@ outerPropTypes (Property proptypes _) = OuterPropTypes proptypes
 -- with HasInfo in its PropTypes. Doing so would cause the info associated
 -- with the property to be lost.
 ensureProperty
-	:: ((Targets inner `NotSuperset` Targets outer) ~ CanCombine, NoInfo inner ~ True)
+	:: ((Targets inner `NotSuperset` Targets outer) ~ CanCombine, CannotUseEnsurePropertyWithInfo inner ~ True)
 	=> OuterPropTypes outer
 	-> Property (WithTypes inner)
 	-> IO ()
 ensureProperty (OuterPropTypes outerproptypes) (Property innerproptypes a) = a
 
-type family NoInfo (l :: [a]) :: Bool
-type instance NoInfo '[] = 'True
-type instance NoInfo (t ': ts) = Not (t `EqT` WithInfo) && NoInfo ts
+-- The name of this was chosen to make type errors a more understandable.
+type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
+type instance CannotUseEnsurePropertyWithInfo '[] = 'True
+type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` WithInfo) && CannotUseEnsurePropertyWithInfo ts
 
 {-
 
@@ -232,7 +233,7 @@ type instance Targets (x ': xs) =
 
 type family IsTarget (a :: t) :: Bool
 type instance IsTarget (Targeting a) = True
-type instance IsTarget HasInfo = False
+type instance IsTarget WithInfo = False
 
 {-
 
