@@ -73,8 +73,12 @@ torPrivKeyDir = "/var/lib/tor/keys"
 -- Don't use if you just want to run tor for personal use.
 server :: Property NoInfo
 server = configured [("SocksPort", "0")]
-	`requires` Apt.installed ["tor", "ntp"]
+	`requires` installed
+	`requires` Apt.installed ["ntp"]
 	`describe` "tor server"
+
+installed :: Property NoInfo
+installed = Apt.installed ["tor"]
 
 -- | Specifies configuration settings. Any lines in the config file
 -- that set other values for the specified settings will be removed,
