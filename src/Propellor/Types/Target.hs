@@ -1,26 +1,21 @@
 {-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, AllowAmbiguousTypes, TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables, GADTs #-}
 
 module Propellor.Types.Target (
-{-
-	Target(..),
-	Targeting(..),
+	Property(..),
 	mkProperty,
 	mkProperty',
-	OuterTarget,
-	ensureProperty,
-	orProperty,
-	target,
+	OS(..),
+	PropType(..),
 	UnixLike,
-	unixLike,
-	DebianOnly,
-	debian,
-	BuntishOnly,
-	buntish,
-	FreeBSDOnly,
-	freeBSD,
-	unionTargets,
-	intersectTarget,
--}
+	Debian,
+	Buntish,
+	FreeBSD,
+	HasInfo,
+	(:+:),
+	OuterPropTypes,
+	ensureProperty,
+	Sing,
+	WithTypes,
 ) where
 
 import Network.BSD (HostName)
@@ -30,21 +25,14 @@ import Data.List
 
 ----- DEMO ----------
 
--- Intentionally a type error! :)
---foo :: Property (Targeting '[OSDebian, OSFreeBSD])
---foo = Property supportedos $ do
---	ensureProperty supportedos jail
---  where supportedos = unionTargets debian freeBSD
+foo :: Property (HasInfo :+: FreeBSD)
+foo = mkProperty' $ \t -> do
+	ensureProperty t jail
 
 {-
 bar :: Property (Targeting '[OSDebian, OSFreeBSD])
 bar = aptinstall `orProperty` jail
-
 -}
-
-foo :: Property (HasInfo :+: FreeBSD)
-foo = mkProperty' $ \t -> do
-	ensureProperty t jail
 
 aptinstall :: Property Debian
 aptinstall = mkProperty $ do
@@ -66,7 +54,10 @@ mkProperty' a =
 	let p = Property sing (a (outerPropTypes p))
 	in p
 
-data OS = OSDebian | OSBuntish | OSFreeBSD
+data OS
+	= OSDebian
+	| OSBuntish -- ^ A well-known Debian derivative founded by a space tourist. The actual name of this distribution is not used in Propellor per <http://joeyh.name/blog/entry/trademark_nonsense/>)
+	| OSFreeBSD
 	deriving (Show, Eq)
 
 data PropType
@@ -80,12 +71,14 @@ type Debian = WithTypes '[Targeting OSDebian]
 type Buntish = WithTypes '[Targeting OSBuntish]
 type FreeBSD = WithTypes '[Targeting OSFreeBSD]
 
+-- | Used to indicate that a Property adds Info to the Host where it's used.
 type HasInfo = WithTypes '[WithInfo]
 
+-- | A family of type-level lists of [`PropType`]
 data family WithTypes (x :: k)
 
+-- | Singletons 
 class Sing t where
-	-- Constructor for a singleton WithTypes list.
 	sing :: WithTypes t
 
 data instance WithTypes (x :: [k]) where
@@ -107,7 +100,7 @@ instance Sing ('Targeting OSBuntish) where sing = OSBuntishS
 instance Sing ('Targeting OSFreeBSD) where sing = OSFreeBSDS
 instance Sing 'WithInfo where sing = WithInfoS
 
--- | Convenience type operator to combine two WithTypes lists.
+-- | Convenience type operator to combine two `WithTypes` lists.
 --
 -- For example:
 --
