@@ -135,7 +135,9 @@ outerPropTypes (Property proptypes _) = OuterPropTypes proptypes
 -- with HasInfo in its PropTypes. Doing so would cause the info associated
 -- with the property to be lost.
 ensureProperty
-	:: ((Targets inner `NotSuperset` Targets outer) ~ CanCombine, CannotUseEnsurePropertyWithInfo inner ~ True)
+	:: ((Targets inner `NotSuperset` Targets outer) ~ CanCombineTargets
+	   , CannotUseEnsurePropertyWithInfo inner ~ True
+	   )
 	=> OuterPropTypes outer
 	-> Property (WithTypes inner)
 	-> IO ()
@@ -146,15 +148,17 @@ type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
 type instance CannotUseEnsurePropertyWithInfo '[] = 'True
 type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` WithInfo) && CannotUseEnsurePropertyWithInfo ts
 
--- | Changes the target of a property.
+-- | Tightens the PropType list of a Property, to contain fewer targets.
 --
--- This can only tighten the target list to contain fewer targets.
-target 
-	:: (combined ~ IntersectTarget old new,  CannotCombineTargets old new combined ~ CanCombineTargets)
-	=> Targeting newtarget
+-- Anything else in the PropType list is passed through unchanged.
+tightenTargets
+	:: ( combined ~ Concat (NonTargets old) (Intersect (Targets old) newtargets)
+	   , CannotCombineTargets old new combined ~ CanCombineTargets
+	   )
+	=> Targeting newtargets
 	-> Property (WithTypes old)
-	-> Property (WithTypes new)
-target newtarget (Property old a) = Property (intersectTarget old new) a
+	-> Property (WithTypes combined)
+tightenTargets _ (Property old a) = Property sing a
 
 {-
 
@@ -167,75 +171,11 @@ orProperty
 	:: Property (Targeting a)
 	-> Property (Targeting b)
 	-> Property (Targeting (UnionTarget a b))
-orProperty a@(Property ta ioa) b@(Property tb iob) =
-	Property (unionTargets ta tb) io
+orProperty a@(Property ta ioa) b@(Property tb iob) = Property sing io
   where
 	-- TODO pick with of ioa or iob to use based on final OS of
 	-- system being run on.
 	io = undefined
-
--- | The union of two lists of Targets.
-unionTargets
-	:: Targeting l1
-	-> Targeting l2
-	-> Targeting (UnionTarget l1 l2)
-unionTargets (Targeting l1) (Targeting l2) =
-	Targeting $ nub $ l1 ++ l2
-
--}
-
--- | The intersection between two lists of Targets.
-intersectTarget
-	:: (r ~ IntersectTarget l1 l2, CannotCombineTargets l1 l2 r ~ CanCombineTargets)
-	=> Targeting l1
-	-> Targeting l2
-	-> Targeting r
-intersectTarget (Targeting l1) (Targeting l2) =
-	Targeting $ nub $ filter (`elem` l2) l1
-
-data CheckCombine = CannotCombine | CanCombine
-
-{-
-
--- | Detect intersection of two lists that don't have any common OS.
--- 
--- The name of this was chosen to make type errors a more understandable.
-type family CannotCombineTargets (list1 :: [a]) (list2 :: [a]) (listr :: [a]) :: CheckCombine
-type instance CannotCombineTargets l1 l2 '[] = 'CannotCombineTargets
-type instance CannotCombineTargets l1 l2 (a ': rest) = 'CanCombineTargets
-
--}
-
--- | Every item in the subset must be in the superset.
---
--- The name of this was chosen to make type errors a more understandable.
-type family NotSuperset (superset :: [a]) (subset :: [a]) :: CheckCombine
-type instance NotSuperset superset '[] = 'CanCombine
-type instance NotSuperset superset (s ': rest) =
-	If (Elem s superset)
-		(NotSuperset superset rest)
-		'CannotCombine
-
-type family Targets (l :: [a]) :: [a]
-type instance Targets '[] = '[]
-type instance Targets (x ': xs) =
-	If (IsTarget x)
-		(x ': Targets xs)
-		(Targets xs)
-
-type family IsTarget (a :: t) :: Bool
-type instance IsTarget (Targeting a) = True
-type instance IsTarget WithInfo = False
-
-{-
-
--- | Type level intersection of lists of Targets
-type family IntersectTarget (list1 :: [a]) (list2 :: [a]) :: [a]
-type instance IntersectTarget '[] list2 = '[]
-type instance IntersectTarget (a ': rest) list2 = 
-	If (ElemTarget a list2 && Not (ElemTarget a rest))
-		(a ': IntersectTarget rest list2)
-		(IntersectTarget rest list2)
 
 -- | Type level union of lists of Targets
 type family UnionTarget (list1 :: [a]) (list2 :: [a]) :: [a]
@@ -247,10 +187,55 @@ type instance UnionTarget (a ': rest) list2 =
 
 -}
 
+data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
+
+-- | Detect intersection of two lists that don't have any common targets.
+-- 
+-- The name of this was chosen to make type errors a more understandable.
+type family CannotCombineTargets (list1 :: [a]) (list2 :: [a]) (listr :: [a]) :: CheckCombineTargets
+type instance CannotCombineTargets l1 l2 '[] = 'CannotCombineTargets
+type instance CannotCombineTargets l1 l2 (a ': rest) = 'CanCombineTargets
+
+-- | Every item in the subset must be in the superset.
+--
+-- The name of this was chosen to make type errors a more understandable.
+type family NotSuperset (superset :: [a]) (subset :: [a]) :: CheckCombineTargets
+type instance NotSuperset superset '[] = 'CanCombineTargets
+type instance NotSuperset superset (s ': rest) =
+	If (Elem s superset)
+		(NotSuperset superset rest)
+		'CannotCombineTargets
+
+type family IsTarget (a :: t) :: Bool
+type instance IsTarget (Targeting a) = True
+type instance IsTarget WithInfo = False
+
+type family Targets (l :: [a]) :: [a]
+type instance Targets '[] = '[]
+type instance Targets (x ': xs) =
+	If (IsTarget x)
+		(x ': Targets xs)
+		(Targets xs)
+
+type family NonTargets (l :: [a]) :: [a]
+type instance NonTargets '[] = '[]
+type instance NonTargets (x ': xs) =
+	If (IsTarget x)
+		(Targets xs)
+		(x ': Targets xs)
+
 -- | Type level elem
 type family Elem (a :: t) (list :: [t]) :: Bool
 type instance Elem a '[] = 'False
 type instance Elem a (b ': bs) = EqT a b || Elem a bs
+
+-- | Type level intersection. Duplicate list items are eliminated.
+type family Intersect (list1 :: [a]) (list2 :: [a]) :: [a]
+type instance Intersect '[] list2 = '[]
+type instance Intersect (a ': rest) list2 = 
+	If (Elem a list2 && Not (Elem a rest))
+		(a ': Intersect rest list2)
+		(Intersect rest list2)
 
 -- | Type level equality
 --
