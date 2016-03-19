@@ -54,17 +54,31 @@ named n = configured [("Nickname", n')]
 torPrivKey :: Context -> Property HasInfo
 torPrivKey context = f `File.hasPrivContent` context
 	`onChange` File.ownerGroup f user (userGroup user)
-	-- install tor first, so the directory exists with right perms
-	`requires` Apt.installed ["tor"]
+	`requires` torPrivKeyDirExists
   where
-	f = "/var/lib/tor/keys/secret_id_key"
+	f = torPrivKeyDir </> "secret_id_key"
+
+torPrivKeyDirExists :: Property NoInfo
+torPrivKeyDirExists = File.dirExists torPrivKeyDir
+	`onChange` setperms
+	`requires` installed
+  where
+	setperms = File.ownerGroup torPrivKeyDir user (userGroup user)
+		`before` File.mode torPrivKeyDir 0O2700
+
+torPrivKeyDir :: FilePath
+torPrivKeyDir = "/var/lib/tor/keys"
 
 -- | A tor server (bridge, relay, or exit)
 -- Don't use if you just want to run tor for personal use.
 server :: Property NoInfo
 server = configured [("SocksPort", "0")]
-	`requires` Apt.installed ["tor", "ntp"]
+	`requires` installed
+	`requires` Apt.installed ["ntp"]
 	`describe` "tor server"
+
+installed :: Property NoInfo
+installed = Apt.installed ["tor"]
 
 -- | Specifies configuration settings. Any lines in the config file
 -- that set other values for the specified settings will be removed,
