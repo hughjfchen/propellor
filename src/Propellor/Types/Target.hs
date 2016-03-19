@@ -56,7 +56,7 @@ mkProperty' a =
 
 data OS
 	= OSDebian
-	| OSBuntish -- ^ A well-known Debian derivative founded by a space tourist. The actual name of this distribution is not used in Propellor per <http://joeyh.name/blog/entry/trademark_nonsense/>)
+	| OSBuntish -- ^ A well-known Debian derivative founded by a space tourist. The actual name of this distribution is not used in Propellor per <http://joeyh.name/blog/entry/trademark_nonsense/>
 	| OSFreeBSD
 	deriving (Show, Eq)
 
