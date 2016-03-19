@@ -26,6 +26,8 @@ propellor (2.17.0) UNRELEASED; urgency=medium
     need to make changes every time.
   * Speed up propellor's build of itself, by asking cabal to only build
     the propellor-config binary and not all the libraries.
+  * Tor.named: Fix bug that sometimes caused the property to fail the first
+    time, though retrying succeeded.
 
  -- Joey Hess <id@joeyh.name>  Mon, 29 Feb 2016 17:58:08 -0400
 
