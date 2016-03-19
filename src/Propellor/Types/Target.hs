@@ -146,18 +146,17 @@ type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
 type instance CannotUseEnsurePropertyWithInfo '[] = 'True
 type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` WithInfo) && CannotUseEnsurePropertyWithInfo ts
 
-{-
-
 -- | Changes the target of a property.
 --
 -- This can only tighten the target list to contain fewer targets.
 target 
-	:: (combinedtarget ~ IntersectTarget oldtarget newtarget,  CannotCombineTargets oldtarget newtarget combinedtarget ~ CanCombineTargets)
+	:: (combined ~ IntersectTarget old new,  CannotCombineTargets old new combined ~ CanCombineTargets)
 	=> Targeting newtarget
-	-> Property (Targeting oldtarget)
-	-> Property (Targeting combinedtarget)
-target newtarget (Property oldtarget a) =
-	Property (intersectTarget oldtarget newtarget) a
+	-> Property (WithTypes old)
+	-> Property (WithTypes new)
+target newtarget (Property old a) = Property (intersectTarget old new) a
+
+{-
 
 -- | Picks one of the two input properties to use,
 -- depending on the targeted OS.
@@ -183,6 +182,8 @@ unionTargets
 unionTargets (Targeting l1) (Targeting l2) =
 	Targeting $ nub $ l1 ++ l2
 
+-}
+
 -- | The intersection between two lists of Targets.
 intersectTarget
 	:: (r ~ IntersectTarget l1 l2, CannotCombineTargets l1 l2 r ~ CanCombineTargets)
@@ -191,8 +192,6 @@ intersectTarget
 	-> Targeting r
 intersectTarget (Targeting l1) (Targeting l2) =
 	Targeting $ nub $ filter (`elem` l2) l1
-
--}
 
 data CheckCombine = CannotCombine | CanCombine
 
