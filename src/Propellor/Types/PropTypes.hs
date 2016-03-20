@@ -25,7 +25,7 @@ import GHC.TypeLits (Nat)
 
 -- Older versions of ghc lack this module.
 -- #if MIN_VERSION_base(4,8,0)
--- import Data.Type.Equality
+import Data.Type.Equality
 -- #endif
 
 ----- DEMO ----------
@@ -271,12 +271,12 @@ type instance EqT 'OSBuntish 'OSFreeBSD = 'False
 type instance EqT 'OSFreeBSD 'OSDebian  = 'False
 type instance EqT 'OSFreeBSD 'OSBuntish = 'False
 -- #if MIN_VERSION_base(4,8,0)
--- type instance EqT ('UsedPort a) ('UsedPort b) = a == b
+type instance EqT ('UsedPort a) ('UsedPort b) = a == b
 -- #else
 -- On older ghc, equality testing of type Nats is not implemented.
 -- Assume two Nats are equal. This means that type level port conflict
 -- detection won't work when using ghc 7.6.3.
-type instance EqT ('UsedPort a) ('UsedPort b) = True
+--type instance EqT ('UsedPort a) ('UsedPort b) = True
 -- #endif
 -- More modern version if the combinatiorial explosion gets too bad later:
 --
