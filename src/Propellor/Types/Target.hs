@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, AllowAmbiguousTypes, TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables, GADTs #-}
+{-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, FlexibleInstances, GADTs #-}
 
 module Propellor.Types.Target (
 	Property(..),
