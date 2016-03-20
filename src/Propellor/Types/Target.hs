@@ -135,9 +135,10 @@ outerPropTypes (Property proptypes _) = OuterPropTypes proptypes
 -- with HasInfo in its PropTypes. Doing so would cause the info associated
 -- with the property to be lost.
 ensureProperty
-	:: ((Targets inner `NotSuperset` Targets outer) ~ CanCombineTargets
-	   , CannotUseEnsurePropertyWithInfo inner ~ True
-	   )
+	::
+		( (Targets inner `NotSuperset` Targets outer) ~ CanCombineTargets
+		, CannotUseEnsurePropertyWithInfo inner ~ True
+		)
 	=> OuterPropTypes outer
 	-> Property (WithTypes inner)
 	-> IO ()
@@ -152,10 +153,12 @@ type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` WithInfo)
 --
 -- Anything else in the PropType list is passed through unchanged.
 tightenTargets
-	:: ( combined ~ Concat (NonTargets old) (Intersect (Targets old) newtargets)
-	   , CannotCombineTargets old new combined ~ CanCombineTargets
-	   )
-	=> Targeting newtargets
+	:: 
+		( combined ~ Concat (NonTargets old) (Intersect (Targets old) (Targets new))
+		, CannotCombineTargets old new combined ~ CanCombineTargets
+		, Sing combined
+		)
+	=> WithTypes new
 	-> Property (WithTypes old)
 	-> Property (WithTypes combined)
 tightenTargets _ (Property old a) = Property sing a
