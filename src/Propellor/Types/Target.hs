@@ -14,14 +14,11 @@ module Propellor.Types.Target (
 	(:+:),
 	OuterPropTypes,
 	ensureProperty,
+	tightenTargets,
+	orProperty,
 	Sing,
 	WithTypes,
 ) where
-
-import Network.BSD (HostName)
-import Data.Typeable
-import Data.String
-import Data.List
 
 ----- DEMO ----------
 
@@ -64,13 +61,13 @@ data PropType
 	deriving (Show, Eq)
 
 -- | Any unix-like system
-type UnixLike = WithTypes '[Targeting OSDebian, Targeting OSBuntish, Targeting OSFreeBSD]
-type Debian = WithTypes '[Targeting OSDebian]
-type Buntish = WithTypes '[Targeting OSBuntish]
-type FreeBSD = WithTypes '[Targeting OSFreeBSD]
+type UnixLike = WithTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish, 'Targeting 'OSFreeBSD ]
+type Debian = WithTypes '[ 'Targeting 'OSDebian ]
+type Buntish = WithTypes '[ 'Targeting 'OSBuntish ]
+type FreeBSD = WithTypes '[ 'Targeting 'OSFreeBSD ]
 
 -- | Used to indicate that a Property adds Info to the Host where it's used.
-type HasInfo = WithTypes '[WithInfo]
+type HasInfo = WithTypes '[ 'WithInfo ]
 
 -- | A family of type-level lists of [`PropType`]
 data family WithTypes (x :: k)
@@ -89,13 +86,13 @@ instance Sing '[] where sing = Nil
 -- This boilerplatw would not be needed if the singletons library were
 -- used. However, we're targeting too old a version of ghc to use it yet.
 data instance WithTypes (x :: PropType) where
-	OSDebianS :: WithTypes ('Targeting OSDebian)
-	OSBuntishS :: WithTypes ('Targeting OSBuntish)
-	OSFreeBSDS :: WithTypes ('Targeting OSFreeBSD)
+	OSDebianS :: WithTypes ('Targeting 'OSDebian)
+	OSBuntishS :: WithTypes ('Targeting 'OSBuntish)
+	OSFreeBSDS :: WithTypes ('Targeting 'OSFreeBSD)
 	WithInfoS :: WithTypes 'WithInfo
-instance Sing ('Targeting OSDebian) where sing = OSDebianS
-instance Sing ('Targeting OSBuntish) where sing = OSBuntishS
-instance Sing ('Targeting OSFreeBSD) where sing = OSFreeBSDS
+instance Sing ('Targeting 'OSDebian) where sing = OSDebianS
+instance Sing ('Targeting 'OSBuntish) where sing = OSBuntishS
+instance Sing ('Targeting 'OSFreeBSD) where sing = OSFreeBSDS
 instance Sing 'WithInfo where sing = WithInfoS
 
 -- | Convenience type operator to combine two `WithTypes` lists.
@@ -134,8 +131,8 @@ outerPropTypes (Property proptypes _) = OuterPropTypes proptypes
 -- with the property to be lost.
 ensureProperty
 	::
-		( (Targets inner `NotSuperset` Targets outer) ~ CanCombineTargets
-		, CannotUseEnsurePropertyWithInfo inner ~ True
+		( (Targets inner `NotSuperset` Targets outer) ~ 'CanCombineTargets
+		, CannotUseEnsurePropertyWithInfo inner ~ 'True
 		)
 	=> OuterPropTypes outer
 	-> Property (WithTypes inner)
@@ -145,7 +142,7 @@ ensureProperty (OuterPropTypes outerproptypes) (Property innerproptypes a) = a
 -- The name of this was chosen to make type errors a more understandable.
 type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
 type instance CannotUseEnsurePropertyWithInfo '[] = 'True
-type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` WithInfo) && CannotUseEnsurePropertyWithInfo ts
+type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` 'WithInfo) && CannotUseEnsurePropertyWithInfo ts
 
 -- | Tightens the PropType list of a Property, to contain fewer targets.
 --
@@ -153,7 +150,7 @@ type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` WithInfo)
 tightenTargets
 	:: 
 		( combined ~ Concat (NonTargets old) (Intersect (Targets old) (Targets new))
-		, CannotCombineTargets old new combined ~ CanCombineTargets
+		, CannotCombineTargets old new combined ~ 'CanCombineTargets
 		, Sing combined
 		)
 	=> WithTypes new
@@ -200,8 +197,8 @@ type instance NotSuperset superset (s ': rest) =
 		'CannotCombineTargets
 
 type family IsTarget (a :: t) :: Bool
-type instance IsTarget (Targeting a) = True
-type instance IsTarget WithInfo = False
+type instance IsTarget ('Targeting a) = 'True
+type instance IsTarget 'WithInfo = 'False
 
 type family Targets (l :: [a]) :: [a]
 type instance Targets '[] = '[]
@@ -242,19 +239,19 @@ type instance Intersect (a ': rest) list2 =
 --
 -- This is a very clumsy implmentation, but it works back to ghc 7.6.
 type family EqT (a :: t) (b :: t) :: Bool
-type instance EqT (Targeting a) (Targeting b)  = EqT a b
-type instance EqT WithInfo      WithInfo       = 'True
-type instance EqT WithInfo      (Targeting b)  = 'False
-type instance EqT (Targeting a) WithInfo       = 'False
-type instance EqT OSDebian  OSDebian  = 'True
-type instance EqT OSBuntish OSBuntish = 'True
-type instance EqT OSFreeBSD OSFreeBSD = 'True
-type instance EqT OSDebian  OSBuntish = 'False
-type instance EqT OSDebian  OSFreeBSD = 'False
-type instance EqT OSBuntish OSDebian  = 'False
-type instance EqT OSBuntish OSFreeBSD = 'False
-type instance EqT OSFreeBSD OSDebian  = 'False
-type instance EqT OSFreeBSD OSBuntish = 'False
+type instance EqT ('Targeting a) ('Targeting b)  = EqT a b
+type instance EqT 'WithInfo      'WithInfo       = 'True
+type instance EqT 'WithInfo      ('Targeting b)  = 'False
+type instance EqT ('Targeting a) 'WithInfo       = 'False
+type instance EqT 'OSDebian  'OSDebian  = 'True
+type instance EqT 'OSBuntish 'OSBuntish = 'True
+type instance EqT 'OSFreeBSD 'OSFreeBSD = 'True
+type instance EqT 'OSDebian  'OSBuntish = 'False
+type instance EqT 'OSDebian  'OSFreeBSD = 'False
+type instance EqT 'OSBuntish 'OSDebian  = 'False
+type instance EqT 'OSBuntish 'OSFreeBSD = 'False
+type instance EqT 'OSFreeBSD 'OSDebian  = 'False
+type instance EqT 'OSFreeBSD 'OSBuntish = 'False
 -- More modern version if the combinatiorial explosion gets too bad later:
 --
 -- type family Eq (a :: PropType) (b :: PropType) where
