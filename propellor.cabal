@@ -152,9 +152,9 @@ Library
     Propellor.Types.Info
     Propellor.Types.OS
     Propellor.Types.PrivData
+    Propellor.Types.PropTypes
     Propellor.Types.Result
     Propellor.Types.ResultCheck
-    Propellor.Types.Target
     Propellor.Types.ZFS
   Other-Modules:
     Propellor.Bootstrap

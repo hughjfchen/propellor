@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, FlexibleInstances, GADTs #-}
 
-module Propellor.Types.Target (
+module Propellor.Types.PropTypes (
 	Property(..),
 	mkProperty,
 	mkProperty',
