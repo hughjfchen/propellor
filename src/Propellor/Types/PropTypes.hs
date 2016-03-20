@@ -1,11 +1,11 @@
-{-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, FlexibleInstances, GADTs #-}
+{-# LANGUAGE CPP, TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, FlexibleInstances, GADTs #-}
 
 module Propellor.Types.PropTypes (
 	Property(..),
 	mkProperty,
 	mkProperty',
-	OS(..),
 	PropType(..),
+	OS(..),
 	UnixLike,
 	Debian,
 	Buntish,
@@ -20,16 +20,23 @@ module Propellor.Types.PropTypes (
 	WithTypes,
 ) where
 
+import GHC.TypeLits (Nat)
+
+-- Older versions of ghc lack this module.
+-- #if MIN_VERSION_base(4,8,0)
+-- import Data.Type.Equality
+-- #endif
+
 ----- DEMO ----------
 
 foo :: Property (HasInfo + FreeBSD)
 foo = mkProperty' $ \t -> do
 	ensureProperty t jail
 
-bar :: Property (Debian + FreeBSD)
-bar = aptinstall `pickOS` jail
+-- bar :: Property (Debian + UsesPort 80 + FreeBSD)
+-- bar = aptinstall `pickOS` jail
 
-aptinstall :: Property Debian
+aptinstall :: Property (Debian + UsesPort 80)
 aptinstall = mkProperty $ do
 	return ()
 
@@ -49,15 +56,15 @@ mkProperty' a =
 	let p = Property sing (a (outerPropTypes p))
 	in p
 
+data PropType
+	= Targeting OS -- ^ A target OS of a Property
+	| WithInfo     -- ^ Indicates that a Property has associated Info
+	| UsedPort Nat -- ^ Indicates that a network port is used by a Property
+
 data OS
 	= OSDebian
 	| OSBuntish -- ^ A well-known Debian derivative founded by a space tourist. The actual name of this distribution is not used in Propellor per <http://joeyh.name/blog/entry/trademark_nonsense/>
 	| OSFreeBSD
-	deriving (Show, Eq)
-
-data PropType
-	= Targeting OS -- ^ A target OS of a Property
-	| WithInfo     -- ^ Indicates that a Property has associated Info
 	deriving (Show, Eq)
 
 -- | Any unix-like system
@@ -69,19 +76,15 @@ type FreeBSD = WithTypes '[ 'Targeting 'OSFreeBSD ]
 -- | Used to indicate that a Property adds Info to the Host where it's used.
 type HasInfo = WithTypes '[ 'WithInfo ]
 
+-- | Used to indicate that a Property uses a network port
+type UsesPort n = WithTypes '[ 'UsedPort n ]
+
 -- | A family of type-level lists of [`PropType`]
 data family WithTypes (x :: k)
 
 -- | Singletons 
 class Sing t where
 	sing :: WithTypes t
-
-data instance WithTypes (x :: [k]) where
-	Nil :: WithTypes '[]
-	Cons :: WithTypes x -> WithTypes xs -> WithTypes (x ': xs)
-
-instance (Sing x, Sing xs) => Sing (x ': xs) where sing = Cons sing sing
-instance Sing '[] where sing = Nil
 
 -- This boilerplatw would not be needed if the singletons library were
 -- used. However, we're targeting too old a version of ghc to use it yet.
@@ -90,10 +93,24 @@ data instance WithTypes (x :: PropType) where
 	OSBuntishS :: WithTypes ('Targeting 'OSBuntish)
 	OSFreeBSDS :: WithTypes ('Targeting 'OSFreeBSD)
 	WithInfoS :: WithTypes 'WithInfo
+	WithUsedPortS :: WithTypes n -> WithTypes ('UsedPort n)
 instance Sing ('Targeting 'OSDebian) where sing = OSDebianS
 instance Sing ('Targeting 'OSBuntish) where sing = OSBuntishS
 instance Sing ('Targeting 'OSFreeBSD) where sing = OSFreeBSDS
 instance Sing 'WithInfo where sing = WithInfoS
+instance (Sing n) => Sing ('UsedPort n) where sing = WithUsedPortS sing
+
+data instance WithTypes (x :: [k]) where
+	Nil :: WithTypes '[]
+	Cons :: WithTypes x -> WithTypes xs -> WithTypes (x ': xs)
+instance (Sing x, Sing xs) => Sing (x ': xs) where sing = Cons sing sing
+instance Sing '[] where sing = Nil
+
+-- FIXME: How to implement sing for Nat?
+--
+-- Since we don't actually currently use the values of singletons, 
+-- getting by with undefined for now.
+instance Sing (n :: Nat) where sing = undefined
 
 -- | Convenience type operator to combine two `WithTypes` lists.
 --
@@ -252,6 +269,14 @@ type instance EqT 'OSBuntish 'OSDebian  = 'False
 type instance EqT 'OSBuntish 'OSFreeBSD = 'False
 type instance EqT 'OSFreeBSD 'OSDebian  = 'False
 type instance EqT 'OSFreeBSD 'OSBuntish = 'False
+-- #if MIN_VERSION_base(4,8,0)
+-- type instance EqT ('UsedPort a) ('UsedPort b) = a == b
+-- #else
+-- On older ghc, equality testing of type Nats is not implemented.
+-- Assume two Nats are equal. This means that type level port conflict
+-- detection won't work when using ghc 7.6.3.
+type instance EqT ('UsedPort a) ('UsedPort b) = True
+-- #endif
 -- More modern version if the combinatiorial explosion gets too bad later:
 --
 -- type family Eq (a :: PropType) (b :: PropType) where
