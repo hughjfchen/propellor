@@ -1,5 +1,5 @@
 CABAL?=cabal
-DATE := $(shell dpkg-parsechangelog | grep Date | cut -d " " -f2-)
+DATE := $(shell dpkg-parsechangelog 2>/dev/null | grep Date | cut -d " " -f2-)
 
 # this target is provided (and is first) to keep old versions of the
 # propellor cron job working, and will eventually be removed

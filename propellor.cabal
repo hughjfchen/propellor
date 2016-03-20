@@ -38,10 +38,12 @@ Executable propellor
   Main-Is: wrapper.hs
   GHC-Options: -threaded -Wall -fno-warn-tabs
   Hs-Source-Dirs: src
-  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
-   IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers (>= 0.5), network, async, time, mtl, transformers,
-   exceptions (>= 0.6), stm, text, unix
+  Build-Depends: 
+    -- propellor needs to support the ghc shipped in Debian stable
+    base >= 4.5, base < 5,
+    MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
+    unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
+    time, mtl, transformers, exceptions (>= 0.6), stm, text
 
 Executable propellor-config
   Main-Is: config.hs

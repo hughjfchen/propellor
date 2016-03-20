@@ -11,13 +11,8 @@ For example, `Property i '[Debian, FreeBSD]` combined with `Property i '[Debian,
 yields a `Property i '[Debian]` -- the intersection of the OS's supported by
 the combined properties.
 
-Combining two properties that demand different OS's would yield a
-`Property i '[]` -- since the type level OS list is empty,
-
-type error. Can a type level function combine two types successfully, and
-fail to combine two others somehow? Don't know. Maybe combine to an
-IncoherentOS and don't allow a `Property i IncoherentOS` to be used in a
-Host?
+And, combining two properties that demand different OS's would need to be a
+type error.
 
 Another kind of property combination would be to glue two properties that
 support different OS's together, yielding a property that supports both,
@@ -37,7 +32,7 @@ the OS of the Host is indeterminite. Which would be fixed by using the `os`
 property to specify.
 
 On the other hand, if a Host's list of properties yields a single OS 
-(or perhaps no OS requirement), the type needs to be just `Host`.
+the type needs to be just `Host`.
 After all, propellor operates on a `[Host]`; if we had `Host OS`,
 the list couldn't contain host's with different OS's. 
 
@@ -49,4 +44,12 @@ the Propellor Result extracted from the resulting single property.
 
 This is somewhat similar to [[type_level_port_conflict_detection]].
 
+----
+
+Note that propellor needs to remain buildable with Debian stable's
+ghc 7.6.3. I was able to get the type level OS implementation backported to
+work with that version, with some added ugliness.
+
 --[[Joey]]
+
+[[!tag user/joey]]
