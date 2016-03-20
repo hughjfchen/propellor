@@ -17,7 +17,8 @@ module Propellor.Types.PropTypes (
 	tightenTargets,
 	pickOS,
 	Sing,
-	WithTypes,
+	sing,
+	SingI,
 ) where
 
 import GHC.TypeLits (Nat)
@@ -48,10 +49,10 @@ jail = mkProperty $ do
 
 data Property proptypes = Property proptypes (IO ())
 
-mkProperty :: Sing l => IO () -> Property (WithTypes l)
+mkProperty :: SingI l => IO () -> Property (Sing l)
 mkProperty = mkProperty' . const
 
-mkProperty' :: Sing l => (OuterPropTypes l -> IO ()) -> Property (WithTypes l)
+mkProperty' :: SingI l => (OuterPropTypes l -> IO ()) -> Property (Sing l)
 mkProperty' a = 
 	let p = Property sing (a (outerPropTypes p))
 	in p
@@ -68,51 +69,51 @@ data OS
 	deriving (Show, Eq)
 
 -- | Any unix-like system
-type UnixLike = WithTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish, 'Targeting 'OSFreeBSD ]
-type Debian = WithTypes '[ 'Targeting 'OSDebian ]
-type Buntish = WithTypes '[ 'Targeting 'OSBuntish ]
-type FreeBSD = WithTypes '[ 'Targeting 'OSFreeBSD ]
+type UnixLike = Sing '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish, 'Targeting 'OSFreeBSD ]
+type Debian = Sing '[ 'Targeting 'OSDebian ]
+type Buntish = Sing '[ 'Targeting 'OSBuntish ]
+type FreeBSD = Sing '[ 'Targeting 'OSFreeBSD ]
 
 -- | Used to indicate that a Property adds Info to the Host where it's used.
-type HasInfo = WithTypes '[ 'WithInfo ]
+type HasInfo = Sing '[ 'WithInfo ]
 
 -- | Used to indicate that a Property uses a network port
-type UsesPort n = WithTypes '[ 'UsedPort n ]
+type UsesPort n = Sing '[ 'UsedPort n ]
 
--- | A family of type-level lists of [`PropType`]
-data family WithTypes (x :: k)
+-- | The data family of singleton types.
+data family Sing (x :: k)
 
--- | Singletons 
-class Sing t where
-	sing :: WithTypes t
+-- | A class used to pass singleton values implicitly.
+class SingI t where
+	sing :: Sing t
 
 -- This boilerplatw would not be needed if the singletons library were
 -- used. However, we're targeting too old a version of ghc to use it yet.
-data instance WithTypes (x :: PropType) where
-	OSDebianS :: WithTypes ('Targeting 'OSDebian)
-	OSBuntishS :: WithTypes ('Targeting 'OSBuntish)
-	OSFreeBSDS :: WithTypes ('Targeting 'OSFreeBSD)
-	WithInfoS :: WithTypes 'WithInfo
-	WithUsedPortS :: WithTypes n -> WithTypes ('UsedPort n)
-instance Sing ('Targeting 'OSDebian) where sing = OSDebianS
-instance Sing ('Targeting 'OSBuntish) where sing = OSBuntishS
-instance Sing ('Targeting 'OSFreeBSD) where sing = OSFreeBSDS
-instance Sing 'WithInfo where sing = WithInfoS
-instance (Sing n) => Sing ('UsedPort n) where sing = WithUsedPortS sing
+data instance Sing (x :: PropType) where
+	OSDebianS :: Sing ('Targeting 'OSDebian)
+	OSBuntishS :: Sing ('Targeting 'OSBuntish)
+	OSFreeBSDS :: Sing ('Targeting 'OSFreeBSD)
+	WithInfoS :: Sing 'WithInfo
+	WithUsedPortS :: Sing n -> Sing ('UsedPort n)
+instance SingI ('Targeting 'OSDebian) where sing = OSDebianS
+instance SingI ('Targeting 'OSBuntish) where sing = OSBuntishS
+instance SingI ('Targeting 'OSFreeBSD) where sing = OSFreeBSDS
+instance SingI 'WithInfo where sing = WithInfoS
+instance (SingI n) => SingI ('UsedPort n) where sing = WithUsedPortS sing
 
-data instance WithTypes (x :: [k]) where
-	Nil :: WithTypes '[]
-	Cons :: WithTypes x -> WithTypes xs -> WithTypes (x ': xs)
-instance (Sing x, Sing xs) => Sing (x ': xs) where sing = Cons sing sing
-instance Sing '[] where sing = Nil
+data instance Sing (x :: [k]) where
+	Nil :: Sing '[]
+	Cons :: Sing x -> Sing xs -> Sing (x ': xs)
+instance (SingI x, SingI xs) => SingI (x ': xs) where sing = Cons sing sing
+instance SingI '[] where sing = Nil
 
 -- FIXME: How to implement sing for Nat?
 --
 -- Since we don't actually currently use the values of singletons, 
 -- getting by with undefined for now.
-instance Sing (n :: Nat) where sing = undefined
+instance SingI (n :: Nat) where sing = undefined
 
--- | Convenience type operator to combine two `WithTypes` lists.
+-- | Convenience type operator to combine two `Sing` lists.
 --
 -- For example:
 --
@@ -120,17 +121,17 @@ instance Sing (n :: Nat) where sing = undefined
 --
 -- Which is shorthand for this type:
 --
--- > WithTypes '[WithInfo, Targeting OSDebian]
+-- > Sing '[WithInfo, Targeting OSDebian]
 type family a + b :: ab
-type instance (WithTypes a) + (WithTypes b) = WithTypes (Concat a b)
+type instance (Sing a) + (Sing b) = Sing (Concat a b)
 
 type family Concat (list1 :: [a]) (list2 :: [a]) :: [a]
 type instance Concat '[] bs = bs
 type instance Concat (a ': as) bs = a ': (Concat as bs)
 
-newtype OuterPropTypes l = OuterPropTypes (WithTypes l)
+newtype OuterPropTypes l = OuterPropTypes (Sing l)
 
-outerPropTypes :: Property (WithTypes l) -> OuterPropTypes l
+outerPropTypes :: Property (Sing l) -> OuterPropTypes l
 outerPropTypes (Property proptypes _) = OuterPropTypes proptypes
 
 -- | Use `mkProperty''` to get the `OuterPropTypes`. For example:
@@ -152,7 +153,7 @@ ensureProperty
 		, CannotUseEnsurePropertyWithInfo inner ~ 'True
 		)
 	=> OuterPropTypes outer
-	-> Property (WithTypes inner)
+	-> Property (Sing inner)
 	-> IO ()
 ensureProperty (OuterPropTypes outerproptypes) (Property innerproptypes a) = a
 
@@ -168,11 +169,11 @@ tightenTargets
 	:: 
 		( combined ~ Concat (NonTargets old) (Intersect (Targets old) (Targets new))
 		, CannotCombineTargets old new combined ~ 'CanCombineTargets
-		, Sing combined
+		, SingI combined
 		)
-	=> WithTypes new
-	-> Property (WithTypes old)
-	-> Property (WithTypes combined)
+	=> Sing new
+	-> Property (Sing old)
+	-> Property (Sing combined)
 tightenTargets _ (Property old a) = Property sing a
 
 -- | Picks one of the two input properties to use,
@@ -183,11 +184,11 @@ tightenTargets _ (Property old a) = Property sing a
 pickOS
 	::
 		( combined ~ Union a b
-		, Sing combined
+		, SingI combined
 		)
-	=> Property (WithTypes a)
-	-> Property (WithTypes b)
-	-> Property (WithTypes combined)
+	=> Property (Sing a)
+	-> Property (Sing b)
+	-> Property (Sing combined)
 pickOS a@(Property ta ioa) b@(Property tb iob) = Property sing io
   where
 	-- TODO pick with of ioa or iob to use based on final OS of
