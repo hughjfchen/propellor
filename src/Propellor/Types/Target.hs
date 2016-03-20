@@ -15,7 +15,7 @@ module Propellor.Types.Target (
 	OuterPropTypes,
 	ensureProperty,
 	tightenTargets,
-	orProperty,
+	pickOS,
 	Sing,
 	WithTypes,
 ) where
@@ -27,7 +27,7 @@ foo = mkProperty' $ \t -> do
 	ensureProperty t jail
 
 bar :: Property (Debian :+: FreeBSD)
-bar = aptinstall `orProperty` jail
+bar = aptinstall `pickOS` jail
 
 aptinstall :: Property Debian
 aptinstall = mkProperty $ do
@@ -163,7 +163,7 @@ tightenTargets _ (Property old a) = Property sing a
 --
 -- If both input properties support the targeted OS, then the
 -- first will be used.
-orProperty
+pickOS
 	::
 		( combined ~ Union a b
 		, Sing combined
@@ -171,7 +171,7 @@ orProperty
 	=> Property (WithTypes a)
 	-> Property (WithTypes b)
 	-> Property (WithTypes combined)
-orProperty a@(Property ta ioa) b@(Property tb iob) = Property sing io
+pickOS a@(Property ta ioa) b@(Property tb iob) = Property sing io
   where
 	-- TODO pick with of ioa or iob to use based on final OS of
 	-- system being run on.
