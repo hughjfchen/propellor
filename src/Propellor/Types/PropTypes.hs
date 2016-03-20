@@ -11,7 +11,7 @@ module Propellor.Types.PropTypes (
 	Buntish,
 	FreeBSD,
 	HasInfo,
-	(:+:),
+	(+),
 	OuterPropTypes,
 	ensureProperty,
 	tightenTargets,
@@ -22,11 +22,11 @@ module Propellor.Types.PropTypes (
 
 ----- DEMO ----------
 
-foo :: Property (HasInfo :+: FreeBSD)
+foo :: Property (HasInfo + FreeBSD)
 foo = mkProperty' $ \t -> do
 	ensureProperty t jail
 
-bar :: Property (Debian :+: FreeBSD)
+bar :: Property (Debian + FreeBSD)
 bar = aptinstall `pickOS` jail
 
 aptinstall :: Property Debian
@@ -99,13 +99,13 @@ instance Sing 'WithInfo where sing = WithInfoS
 --
 -- For example:
 --
--- > HasInfo :+: Debian
+-- > HasInfo + Debian
 --
 -- Which is shorthand for this type:
 --
 -- > WithTypes '[WithInfo, Targeting OSDebian]
-type family a :+: b :: ab
-type instance (WithTypes a) :+: (WithTypes b) = WithTypes (Concat a b)
+type family a + b :: ab
+type instance (WithTypes a) + (WithTypes b) = WithTypes (Concat a b)
 
 type family Concat (list1 :: [a]) (list2 :: [a]) :: [a]
 type instance Concat '[] bs = bs
