@@ -29,10 +29,8 @@ foo :: Property (HasInfo :+: FreeBSD)
 foo = mkProperty' $ \t -> do
 	ensureProperty t jail
 
-{-
-bar :: Property (Targeting '[OSDebian, OSFreeBSD])
+bar :: Property (Debian :+: FreeBSD)
 bar = aptinstall `orProperty` jail
--}
 
 aptinstall :: Property Debian
 aptinstall = mkProperty $ do
@@ -163,32 +161,24 @@ tightenTargets
 	-> Property (WithTypes combined)
 tightenTargets _ (Property old a) = Property sing a
 
-{-
-
 -- | Picks one of the two input properties to use,
 -- depending on the targeted OS.
 --
 -- If both input properties support the targeted OS, then the
 -- first will be used.
 orProperty
-	:: Property (Targeting a)
-	-> Property (Targeting b)
-	-> Property (Targeting (UnionTarget a b))
+	::
+		( combined ~ Union a b
+		, Sing combined
+		)
+	=> Property (WithTypes a)
+	-> Property (WithTypes b)
+	-> Property (WithTypes combined)
 orProperty a@(Property ta ioa) b@(Property tb iob) = Property sing io
   where
 	-- TODO pick with of ioa or iob to use based on final OS of
 	-- system being run on.
 	io = undefined
-
--- | Type level union of lists of Targets
-type family UnionTarget (list1 :: [a]) (list2 :: [a]) :: [a]
-type instance UnionTarget '[] list2 = list2
-type instance UnionTarget (a ': rest) list2 =
-	If (ElemTarget a list2 || ElemTarget a rest)
-		(UnionTarget rest list2)
-		(a ': UnionTarget rest list2)
-
--}
 
 data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
 
@@ -231,6 +221,14 @@ type instance NonTargets (x ': xs) =
 type family Elem (a :: t) (list :: [t]) :: Bool
 type instance Elem a '[] = 'False
 type instance Elem a (b ': bs) = EqT a b || Elem a bs
+
+-- | Type level union.
+type family Union (list1 :: [a]) (list2 :: [a]) :: [a]
+type instance Union '[] list2 = list2
+type instance Union (a ': rest) list2 =
+	If (Elem a list2 || Elem a rest)
+		(Union rest list2)
+		(a ': Union rest list2)
 
 -- | Type level intersection. Duplicate list items are eliminated.
 type family Intersect (list1 :: [a]) (list2 :: [a]) :: [a]
