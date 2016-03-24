@@ -152,9 +152,9 @@ Library
     Propellor.Types.Dns
     Propellor.Types.Empty
     Propellor.Types.Info
+    Propellor.Types.MetaTypes
     Propellor.Types.OS
     Propellor.Types.PrivData
-    Propellor.Types.PropTypes
     Propellor.Types.Result
     Propellor.Types.ResultCheck
     Propellor.Types.ZFS

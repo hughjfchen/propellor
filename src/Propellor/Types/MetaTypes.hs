@@ -1,9 +1,6 @@
 {-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, FlexibleInstances, GADTs #-}
 
 module Propellor.Types.MetaTypes (
-	Property(..),
-	mkProperty,
-	mkProperty',
 	MetaType(..),
 	OS(..),
 	UnixLike,
@@ -19,6 +16,7 @@ module Propellor.Types.MetaTypes (
 	Sing,
 	sing,
 	SingI,
+	Union,
 ) where
 
 ----- DEMO ----------
@@ -27,8 +25,8 @@ foo :: Property (HasInfo + FreeBSD)
 foo = mkProperty' $ \t -> do
 	ensureProperty t jail
 
--- bar :: Property (Debian + UsesPort 80 + FreeBSD)
--- bar = aptinstall `pickOS` jail
+bar :: Property (Debian + FreeBSD)
+bar = aptinstall `pickOS` jail
 
 aptinstall :: Property Debian
 aptinstall = mkProperty $ do
