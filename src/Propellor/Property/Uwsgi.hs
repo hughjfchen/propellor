@@ -31,13 +31,13 @@ appAvailable an cf = ("uwsgi app available " ++ an) ==>
 	comment = "# deployed with propellor, do not modify"
 
 appCfg :: AppName -> FilePath
-appCfg an = "/etc/uwsgi/apps-available/" ++ an
+appCfg an = "/etc/uwsgi/apps-available" </> an <.> "ini"
 
 appVal :: AppName -> FilePath
-appVal an = "/etc/uwsgi/apps-enabled/" ++ an
+appVal an = "/etc/uwsgi/apps-enabled/" </> an <.> "ini"
 
 appValRelativeCfg :: AppName -> File.LinkTarget
-appValRelativeCfg an = File.LinkTarget $ "../apps-available/" ++ an
+appValRelativeCfg an = File.LinkTarget $ "../apps-available" </> an <.> "ini"
 
 installed :: Property NoInfo
 installed = Apt.installed ["uwsgi"]
