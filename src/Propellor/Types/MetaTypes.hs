@@ -9,45 +9,18 @@ module Propellor.Types.MetaTypes (
 	FreeBSD,
 	HasInfo,
 	type (+),
-	OuterMetaTypes,
-	ensureProperty,
-	tightenTargets,
-	pickOS,
 	Sing,
 	sing,
 	SingI,
 	Union,
 	IncludesInfo,
+	Targets,
+	NotSuperset,
+	CheckCombineTargets(..),
+	type (&&),
+	Not,
+	EqT,
 ) where
-
------ DEMO ----------
-
-foo :: Property (HasInfo + FreeBSD)
-foo = mkProperty' $ \t -> do
-	ensureProperty t jail
-
-bar :: Property (Debian + FreeBSD)
-bar = aptinstall `pickOS` jail
-
-aptinstall :: Property Debian
-aptinstall = mkProperty $ do
-	return ()
-
-jail :: Property FreeBSD
-jail = mkProperty $ do
-	return ()
-
------ END DEMO ----------
-
-data Property metatypes = Property metatypes (IO ())
-
-mkProperty :: SingI l => IO () -> Property (Sing l)
-mkProperty = mkProperty' . const
-
-mkProperty' :: SingI l => (OuterMetaTypes l -> IO ()) -> Property (Sing l)
-mkProperty' a = 
-	let p = Property sing (a (outerMetaTypes p))
-	in p
 
 data MetaType
 	= Targeting OS -- ^ A target OS of a Property
@@ -112,38 +85,12 @@ type instance Concat (a ': as) bs = a ': (Concat as bs)
 type family IncludesInfo t :: Bool
 type instance IncludesInfo (Sing l) = Elem 'WithInfo l
 
-newtype OuterMetaTypes l = OuterMetaTypes (Sing l)
-
-outerMetaTypes :: Property (Sing l) -> OuterMetaTypes l
-outerMetaTypes (Property metatypes _) = OuterMetaTypes metatypes
-
--- | Use `mkProperty''` to get the `OuterMetaTypes`. For example:
---
--- > foo = Property Debian
--- > foo = mkProperty' $ \t -> do
--- >	ensureProperty t (aptInstall "foo")
---
--- The type checker will prevent using ensureProperty with a property
--- that does not support the target OSes needed by the OuterMetaTypes.
--- In the example above, aptInstall must support Debian.
---
--- The type checker will also prevent using ensureProperty with a property
--- with HasInfo in its MetaTypes. Doing so would cause the info associated
--- with the property to be lost.
-ensureProperty
-	::
-		( (Targets inner `NotSuperset` Targets outer) ~ 'CanCombineTargets
-		, CannotUseEnsurePropertyWithInfo inner ~ 'True
-		)
-	=> OuterMetaTypes outer
-	-> Property (Sing inner)
-	-> IO ()
-ensureProperty (OuterMetaTypes outermetatypes) (Property innermetatypes a) = a
-
 -- The name of this was chosen to make type errors a more understandable.
 type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
 type instance CannotUseEnsurePropertyWithInfo '[] = 'True
 type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` 'WithInfo) && CannotUseEnsurePropertyWithInfo ts
+
+{-
 
 -- | Tightens the MetaType list of a Property, to contain fewer targets.
 --
@@ -177,6 +124,8 @@ pickOS a@(Property ta ioa) b@(Property tb iob) = Property sing io
 	-- TODO pick with of ioa or iob to use based on final OS of
 	-- system being run on.
 	io = undefined
+
+-}
 
 data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
 

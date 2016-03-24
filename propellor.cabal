@@ -143,6 +143,7 @@ Library
     Propellor.Debug
     Propellor.PrivData
     Propellor.Engine
+    Propellor.EnsureProperty
     Propellor.Exception
     Propellor.Types
     Propellor.Types.Chroot

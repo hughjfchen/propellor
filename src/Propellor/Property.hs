@@ -18,7 +18,8 @@ module Propellor.Property (
 	-- * Constructing properties
 	, Propellor
 	, property
-	--, ensureProperty
+	, property'
+	, ensureProperty
 	--, withOS
 	, unsupportedOS
 	, makeChange
@@ -49,8 +50,10 @@ import Prelude
 
 import Propellor.Types
 import Propellor.Types.ResultCheck
+import Propellor.Types.MetaTypes
 import Propellor.Info
 import Propellor.Exception
+import Propellor.EnsureProperty
 import Utility.Exception
 import Utility.Monad
 import Utility.Misc
@@ -158,13 +161,6 @@ describe = setDesc
 (==>) :: IsProp (Property i) => Desc -> Property i -> Property i
 (==>) = flip describe
 infixl 1 ==>
-
--- | For when code running in the Propellor monad needs to ensure a
--- Property.
---
--- This can only be used on a Property that has NoInfo.
---ensureProperty :: Property NoInfo -> Propellor Result
---ensureProperty = catchPropellor . propertySatisfy
 
 -- | Tries the first property, but if it fails to work, instead uses
 -- the second.

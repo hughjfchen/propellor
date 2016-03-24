@@ -13,9 +13,9 @@
 module Propellor.Types
 	( Host(..)
 	, Property(..)
+	, property
 	, Info
 	, Desc
-	, property
 	, MetaType(..)
 	, OS(..)
 	, UnixLike
@@ -172,7 +172,7 @@ ignoreInfo =
 
 -- | Gets the action that can be run to satisfy a Property.
 -- You should never run this action directly. Use
--- 'Propellor.Engine.ensureProperty` instead.
+-- 'Propellor.EnsureProperty.ensureProperty` instead.
 propertySatisfy :: Property metatypes -> Propellor Result
 propertySatisfy (Property _ _ a _ _) = a
 
