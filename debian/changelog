@@ -8,7 +8,7 @@ propellor (3.0.0) UNRELEASED; urgency=medium
       "RevertableProperty UnixLike UnixLike"
     - Change "RevertableProperty HasInfo" to
       "RevertableProperty (HasInfo + UnixLike) UnixLike"
-    - GHC needs {-# LANGUAGE PolyKinds #-} to use these new type signatures.
+    - GHC needs {-# LANGUAGE TypeOperators #-} to use these new type signatures.
       This is enabled by default for all modules in propellor.cabal. But
       if you are using propellor as a library, you may need to enable it
       manually.

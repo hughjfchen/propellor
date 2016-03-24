@@ -149,11 +149,12 @@ mkProperty d a = Property sing d a mempty mempty
 --
 -- The new Property will include HasInfo in its metatypes.
 addInfoProperty
-	:: (metatypes' ~ (+) HasInfo metatypes, SingI metatypes')
+	:: (Sing metatypes' ~ (+) HasInfo metatypes, SingI metatypes')
 	=> Property metatypes
 	-> Info
 	-> Property (Sing metatypes')
-addInfoProperty (Property metatypes d a i c) newi = Property sing d a (i <> newi) c
+addInfoProperty (Property metatypes d a oldi c) newi =
+	Property sing d a (oldi <> newi) c
 
 {-
 

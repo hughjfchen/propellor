@@ -13,11 +13,14 @@ import Data.Monoid
 import Control.Applicative
 import Prelude
 
-pureInfoProperty :: (IsInfo v) => Desc -> v -> Property HasInfo
+pureInfoProperty :: (IsInfo v) => Desc -> v -> Property (HasInfo + UnixLike)
 pureInfoProperty desc v = pureInfoProperty' desc (addInfo mempty v)
 
-pureInfoProperty' :: Desc -> Info -> Property HasInfo
-pureInfoProperty' desc i = infoProperty ("has " ++ desc) (return NoChange) i mempty
+pureInfoProperty' :: Desc -> Info -> Property (HasInfo + UnixLike)
+pureInfoProperty' desc i = addInfoProperty p i
+  where
+	p :: Property UnixLike
+	p = mkProperty ("has " ++ desc) (return NoChange)
 
 -- | Gets a value from the host's Info.
 askInfo :: (IsInfo v) => Propellor v
@@ -27,7 +30,7 @@ askInfo = asks (getInfo . hostInfo)
 --
 -- This only provides info for other Properties, so they can act
 -- conditionally on the os.
-os :: System -> Property HasInfo
+os :: System -> Property (HasInfo + UnixLike)
 os system = pureInfoProperty ("Operating " ++ show system) (InfoVal system)
 
 --  Gets the operating system of a host, if it has been specified.
@@ -43,11 +46,11 @@ getOS = fromInfoVal <$> askInfo
 -- When propellor --spin is used to deploy a host, it checks
 -- if the host's IP Property matches the DNS. If the DNS is missing or
 -- out of date, the host will instead be contacted directly by IP address.
-ipv4 :: String -> Property HasInfo
+ipv4 :: String -> Property (HasInfo + UnixLike)
 ipv4 = addDNS . Address . IPv4
 
 -- | Indicate that a host has an AAAA record in the DNS.
-ipv6 :: String -> Property HasInfo
+ipv6 :: String -> Property (HasInfo + UnixLike)
 ipv6 = addDNS . Address . IPv6
 
 -- | Indicates another name for the host in the DNS.
@@ -56,14 +59,14 @@ ipv6 = addDNS . Address . IPv6
 -- to use their address, rather than using a CNAME. This avoids various
 -- problems with CNAMEs, and also means that when multiple hosts have the
 -- same alias, a DNS round-robin is automatically set up.
-alias :: Domain -> Property HasInfo
+alias :: Domain -> Property (HasInfo + UnixLike)
 alias d = pureInfoProperty' ("alias " ++ d) $ mempty
 	`addInfo` toAliasesInfo [d]
 	-- A CNAME is added here, but the DNS setup code converts it to an
 	-- IP address when that makes sense.
 	`addInfo` (toDnsInfo $ S.singleton $ CNAME $ AbsDomain d)
 
-addDNS :: Record -> Property HasInfo
+addDNS :: Record -> Property (HasInfo + UnixLike)
 addDNS r = pureInfoProperty (rdesc r) (toDnsInfo (S.singleton r))
   where
 	rdesc (CNAME d) = unwords ["alias", ddesc d]
