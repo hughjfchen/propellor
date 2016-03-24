@@ -12,10 +12,10 @@
 
 module Propellor.Types
 	( Host(..)
-	, Property
+	, Property(..)
 	, Info
 	, Desc
-	, mkProperty
+	, property
 	, MetaType(..)
 	, OS(..)
 	, UnixLike
@@ -43,6 +43,7 @@ module Propellor.Types
 	, module Propellor.Types.Result
 	, module Propellor.Types.ZFS
 	, propertySatisfy
+	, Sing
 	) where
 
 import Data.Monoid
@@ -127,7 +128,8 @@ data ChildProperty = ChildProperty Desc (Propellor Result) Info [ChildProperty]
 instance Show ChildProperty where
 	show (ChildProperty desc _ _ _) = desc
 
--- | Constructs a Property.
+-- | Constructs a Property, from a description and an action to run to
+-- ensure the Property is met.
 --
 -- You can specify any metatypes that make sense to indicate what OS
 -- the property targets, etc.
@@ -138,12 +140,12 @@ instance Show ChildProperty where
 -- > foo = mkProperty "foo" (...)
 --
 -- Note that using this needs LANGUAGE PolyKinds.
-mkProperty
+property
 	:: SingI metatypes
 	=> Desc
 	-> Propellor Result
 	-> Property (Sing metatypes)
-mkProperty d a = Property sing d a mempty mempty
+property d a = Property sing d a mempty mempty
 
 -- | Adds info to a Property.
 --

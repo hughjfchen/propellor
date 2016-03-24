@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
 
 module Propellor.PrivData (
 	withPrivData,
@@ -40,6 +42,7 @@ import Prelude
 
 import Propellor.Types
 import Propellor.Types.PrivData
+import Propellor.Types.MetaTypes
 import Propellor.Types.Info
 import Propellor.Message
 import Propellor.Info
@@ -75,29 +78,41 @@ import Utility.FileSystemEncoding
 -- being used, which is necessary to ensure that the privdata is sent to
 -- the remote host by propellor.
 withPrivData
-	:: (IsContext c, IsPrivDataSource s, IsProp (Property i))
+	::
+		( IsContext c
+		, IsPrivDataSource s
+		, IncludesInfo metatypes ~ True
+		)
 	=> s
 	-> c
-	-> (((PrivData -> Propellor Result) -> Propellor Result) -> Property i)
-	-> Property HasInfo
+	-> (((PrivData -> Propellor Result) -> Propellor Result) -> Property metatypes)
+	-> Property metatypes
 withPrivData s = withPrivData' snd [s]
 
 -- Like withPrivData, but here any one of a list of PrivDataFields can be used.
 withSomePrivData
-	:: (IsContext c, IsPrivDataSource s, IsProp (Property i))
+	::
+		( IsContext c
+		, IsPrivDataSource s
+		, IncludesInfo metatypes ~ True
+		)
 	=> [s]
 	-> c
-	-> ((((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Property i)
-	-> Property HasInfo
+	-> ((((PrivDataField, PrivData) -> Propellor Result) -> Propellor Result) -> Property metatypes)
+	-> Property metatypes
 withSomePrivData = withPrivData' id
 
 withPrivData' 
-	:: (IsContext c, IsPrivDataSource s, IsProp (Property i))
+	::
+		( IsContext c
+		, IsPrivDataSource s
+		, IncludesInfo metatypes ~ True
+		)
 	=> ((PrivDataField, PrivData) -> v)
 	-> [s]
 	-> c
-	-> (((v -> Propellor Result) -> Propellor Result) -> Property i)
-	-> Property HasInfo
+	-> (((v -> Propellor Result) -> Propellor Result) -> Property metatypes)
+	-> Property metatypes
 withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 	maybe missing (a . feed) =<< getM get fieldlist
   where
@@ -112,7 +127,7 @@ withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 			"Fix this by running:" :
 			showSet (map (\s -> (privDataField s, Context cname, describePrivDataSource s)) srclist)
 		return FailedChange
-	addinfo p = infoProperty
+	addinfo p = Property undefined -- FIXME: should use sing here
 		(propertyDesc p)
 		(propertySatisfy p)
 		(propertyInfo p `addInfo` privset)
@@ -132,7 +147,7 @@ showSet = concatMap go
 		, Just ""
 		]
 
-addPrivData :: (PrivDataField, Maybe PrivDataSourceDesc, HostContext) -> Property HasInfo
+addPrivData :: (PrivDataField, Maybe PrivDataSourceDesc, HostContext) -> Property (HasInfo + UnixLike)
 addPrivData v = pureInfoProperty (show v) (PrivInfo (S.singleton v))
 
 {- Gets the requested field's value, in the specified context if it's
