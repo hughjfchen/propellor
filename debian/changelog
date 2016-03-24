@@ -1,4 +1,4 @@
-propellor (2.17.0) UNRELEASED; urgency=medium
+propellor (2.17.0) unstable; urgency=medium
 
   * Added initial support for FreeBSD.
     Thanks, Evan Cofsky.
@@ -29,7 +29,7 @@ propellor (2.17.0) UNRELEASED; urgency=medium
   * Tor.named: Fix bug that sometimes caused the property to fail the first
     time, though retrying succeeded.
 
- -- Joey Hess <id@joeyh.name>  Mon, 29 Feb 2016 17:58:08 -0400
+ -- Joey Hess <id@joeyh.name>  Thu, 24 Mar 2016 14:53:31 -0400
 
 propellor (2.16.0) unstable; urgency=medium
 
