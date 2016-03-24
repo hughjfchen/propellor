@@ -1,3 +1,31 @@
+propellor (3.0.0) UNRELEASED; urgency=medium
+
+  * Property types have been improved to indicate what systems they target.
+    Transition guide:
+    - Change "Property NoInfo" to "Property UnixLike"
+    - Change "Property HasInfo" to "Property (HasInfo + UnixLike)"
+    - Change "RevertableProperty NoInfo" to
+      "RevertableProperty UnixLike UnixLike"
+    - Change "RevertableProperty HasInfo" to
+      "RevertableProperty (HasInfo + UnixLike) UnixLike"
+    - GHC needs {-# LANGUAGE PolyKinds #-} to use these new type signatures.
+      This is enabled by default for all modules in propellor.cabal. But
+      if you are using propellor as a library, you may need to enable it
+      manually.
+    - If you know a property only works on a particular OS, like Debian
+      or FreeBSD, use that instead of "UnixLike". For example:
+      "Property (HasInfo + Debian)"
+    - It's also possible make a property support a set of OS's, for example:
+      "Property (HasInfo + Debian + FreeBSD)"
+    - The new `pickOS` property combinator can be used to combine different
+      properties, supporting different OS's, into one Property that chooses
+      what to do based on the Host's OS.
+    - `ensureProperty` now needs information about the metatypes of the
+      property it's used in to be passed to it. See the documentation
+      of `ensureProperty` for an example.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 24 Mar 2016 15:02:33 -0400
+
 propellor (2.17.0) unstable; urgency=medium
 
   * Added initial support for FreeBSD.
@@ -470,12 +498,12 @@ propellor (2.0.0) unstable; urgency=medium
     This was done to make sure that ensureProperty is only used on
     properties that do not have Info.
     Transition guide:
-    - Change all "Property" to "Property NoInfo" or "Property WithInfo"
+    - Change all "Property" to "Property NoInfo" or "Property HasInfo"
       (The compiler can tell you if you got it wrong!)
     - To construct a RevertableProperty, it is useful to use the new
       (<!>) operator
     - Constructing a list of properties can be problimatic, since
-      Property NoInto and Property WithInfo are different types and cannot
+      Property NoInto and Property HasInfo are different types and cannot
       appear in the same list. To deal with this, "props" has been added,
       and can built up a list of properties of different types,
       using the same (&) and (!) operators that are used to build
