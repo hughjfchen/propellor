@@ -30,6 +30,7 @@ module Propellor.Types
 	, propertyDesc
 	, propertyChildren
 	, RevertableProperty(..)
+	, ChildProperty
 	, IsProp(..)
 	, Combines(..)
 	, CombinedType
@@ -230,16 +231,13 @@ instance IsProp ChildProperty where
 		i <> mconcat (map getInfoRecursive c)
 
 instance IsProp (RevertableProperty setupmetatypes undometatypes) where
-	setDesc = setDescR
+	-- | Sets the description of both sides.
+	setDesc (RevertableProperty p1 p2) d =
+		RevertableProperty (setDesc p1 d) (setDesc p2 ("not " ++ d))
 	getDesc (RevertableProperty p1 _) = getDesc p1
 	-- toProp (RevertableProperty p1 _) = p1
 	-- | Return the Info of the currently active side.
 	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
-
--- | Sets the description of both sides.
-setDescR :: IsProp (Property setupmetatypes) => RevertableProperty setupmetatypes undometatypes -> Desc -> RevertableProperty setupmetatypes undometatypes
-setDescR (RevertableProperty p1 p2) d =
-	RevertableProperty (setDesc p1 d) (setDesc p2 ("not " ++ d))
 
 -- | Type level calculation of the type that results from combining two
 -- types of properties.
