@@ -18,8 +18,8 @@ module Propellor.Property (
 	-- * Constructing properties
 	, Propellor
 	, property
-	, ensureProperty
-	, withOS
+	--, ensureProperty
+	--, withOS
 	, unsupportedOS
 	, makeChange
 	, noChange
@@ -54,11 +54,6 @@ import Propellor.Exception
 import Utility.Exception
 import Utility.Monad
 import Utility.Misc
-
--- | Constructs a Property, from a description and an action to run to
--- ensure the Property is met.
-property :: Desc -> Propellor Result -> Property NoInfo
-property d s = simpleProperty d s mempty
 
 -- | Makes a perhaps non-idempotent Property be idempotent by using a flag
 -- file to indicate whether it has run before.
@@ -168,8 +163,8 @@ infixl 1 ==>
 -- Property.
 --
 -- This can only be used on a Property that has NoInfo.
-ensureProperty :: Property NoInfo -> Propellor Result
-ensureProperty = catchPropellor . propertySatisfy
+--ensureProperty :: Property NoInfo -> Propellor Result
+--ensureProperty = catchPropellor . propertySatisfy
 
 -- | Tries the first property, but if it fails to work, instead uses
 -- the second.
@@ -258,8 +253,8 @@ isNewerThan x y = do
 -- > 	(Just (System (Debian suite) arch)) -> ...
 -- > 	(Just (System (Buntish release) arch)) -> ...
 -- >	Nothing -> unsupportedOS
-withOS :: Desc -> (Maybe System -> Propellor Result) -> Property NoInfo
-withOS desc a = property desc $ a =<< getOS
+--withOS :: Desc -> (Maybe System -> Propellor Result) -> Property NoInfo
+--withOS desc a = property desc $ a =<< getOS
 
 -- | Throws an error, for use in `withOS` when a property is lacking
 -- support for an OS.
@@ -270,7 +265,7 @@ unsupportedOS = go =<< getOS
 	go (Just o) = error $ "This property is not implemented for " ++ show o
 
 -- | Undoes the effect of a RevertableProperty.
-revert :: RevertableProperty i -> RevertableProperty i
+revert :: RevertableProperty setup undo -> RevertableProperty undo setup
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
 makeChange :: IO () -> Propellor Result
@@ -279,7 +274,7 @@ makeChange a = liftIO a >> return MadeChange
 noChange :: Propellor Result
 noChange = return NoChange
 
-doNothing :: Property NoInfo
+doNothing :: Property UnixLike
 doNothing = property "noop property" noChange
 
 -- | Registers an action that should be run at the very end, after
