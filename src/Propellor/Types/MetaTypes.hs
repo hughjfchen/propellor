@@ -1,10 +1,10 @@
 {-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, FlexibleInstances, GADTs #-}
 
-module Propellor.Types.PropTypes (
+module Propellor.Types.MetaTypes (
 	Property(..),
 	mkProperty,
 	mkProperty',
-	PropType(..),
+	MetaType(..),
 	OS(..),
 	UnixLike,
 	Debian,
@@ -12,7 +12,7 @@ module Propellor.Types.PropTypes (
 	FreeBSD,
 	HasInfo,
 	type (+),
-	OuterPropTypes,
+	OuterMetaTypes,
 	ensureProperty,
 	tightenTargets,
 	pickOS,
@@ -40,17 +40,17 @@ jail = mkProperty $ do
 
 ----- END DEMO ----------
 
-data Property proptypes = Property proptypes (IO ())
+data Property metatypes = Property metatypes (IO ())
 
 mkProperty :: SingI l => IO () -> Property (Sing l)
 mkProperty = mkProperty' . const
 
-mkProperty' :: SingI l => (OuterPropTypes l -> IO ()) -> Property (Sing l)
+mkProperty' :: SingI l => (OuterMetaTypes l -> IO ()) -> Property (Sing l)
 mkProperty' a = 
-	let p = Property sing (a (outerPropTypes p))
+	let p = Property sing (a (outerMetaTypes p))
 	in p
 
-data PropType
+data MetaType
 	= Targeting OS -- ^ A target OS of a Property
 	| WithInfo     -- ^ Indicates that a Property has associated Info
 
@@ -78,7 +78,7 @@ class SingI t where
 
 -- This boilerplatw would not be needed if the singletons library were
 -- used. However, we're targeting too old a version of ghc to use it yet.
-data instance Sing (x :: PropType) where
+data instance Sing (x :: MetaType) where
 	OSDebianS :: Sing ('Targeting 'OSDebian)
 	OSBuntishS :: Sing ('Targeting 'OSBuntish)
 	OSFreeBSDS :: Sing ('Targeting 'OSFreeBSD)
@@ -110,42 +110,42 @@ type family Concat (list1 :: [a]) (list2 :: [a]) :: [a]
 type instance Concat '[] bs = bs
 type instance Concat (a ': as) bs = a ': (Concat as bs)
 
-newtype OuterPropTypes l = OuterPropTypes (Sing l)
+newtype OuterMetaTypes l = OuterMetaTypes (Sing l)
 
-outerPropTypes :: Property (Sing l) -> OuterPropTypes l
-outerPropTypes (Property proptypes _) = OuterPropTypes proptypes
+outerMetaTypes :: Property (Sing l) -> OuterMetaTypes l
+outerMetaTypes (Property metatypes _) = OuterMetaTypes metatypes
 
--- | Use `mkProperty''` to get the `OuterPropTypes`. For example:
+-- | Use `mkProperty''` to get the `OuterMetaTypes`. For example:
 --
 -- > foo = Property Debian
 -- > foo = mkProperty' $ \t -> do
 -- >	ensureProperty t (aptInstall "foo")
 --
 -- The type checker will prevent using ensureProperty with a property
--- that does not support the target OSes needed by the OuterPropTypes.
+-- that does not support the target OSes needed by the OuterMetaTypes.
 -- In the example above, aptInstall must support Debian.
 --
 -- The type checker will also prevent using ensureProperty with a property
--- with HasInfo in its PropTypes. Doing so would cause the info associated
+-- with HasInfo in its MetaTypes. Doing so would cause the info associated
 -- with the property to be lost.
 ensureProperty
 	::
 		( (Targets inner `NotSuperset` Targets outer) ~ 'CanCombineTargets
 		, CannotUseEnsurePropertyWithInfo inner ~ 'True
 		)
-	=> OuterPropTypes outer
+	=> OuterMetaTypes outer
 	-> Property (Sing inner)
 	-> IO ()
-ensureProperty (OuterPropTypes outerproptypes) (Property innerproptypes a) = a
+ensureProperty (OuterMetaTypes outermetatypes) (Property innermetatypes a) = a
 
 -- The name of this was chosen to make type errors a more understandable.
 type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
 type instance CannotUseEnsurePropertyWithInfo '[] = 'True
 type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` 'WithInfo) && CannotUseEnsurePropertyWithInfo ts
 
--- | Tightens the PropType list of a Property, to contain fewer targets.
+-- | Tightens the MetaType list of a Property, to contain fewer targets.
 --
--- Anything else in the PropType list is passed through unchanged.
+-- Anything else in the MetaType list is passed through unchanged.
 tightenTargets
 	:: 
 		( combined ~ Concat (NonTargets old) (Intersect (Targets old) (Targets new))
@@ -253,7 +253,7 @@ type instance EqT 'OSFreeBSD 'OSDebian  = 'False
 type instance EqT 'OSFreeBSD 'OSBuntish = 'False
 -- More modern version if the combinatiorial explosion gets too bad later:
 --
--- type family Eq (a :: PropType) (b :: PropType) where
+-- type family Eq (a :: MetaType) (b :: MetaType) where
 -- 	Eq a a = True
 -- 	Eq a b = False
 
