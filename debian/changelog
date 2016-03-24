@@ -1,7 +1,8 @@
 propellor (3.0.0) UNRELEASED; urgency=medium
 
   * Property types have been improved to indicate what systems they target.
-    Transition guide:
+    This allows, eg, Property Debian to not be used on a FreeBSD system.
+    Transition guide for this sweeping API change:
     - Change "Property NoInfo" to "Property UnixLike"
     - Change "Property HasInfo" to "Property (HasInfo + UnixLike)"
     - Change "RevertableProperty NoInfo" to
@@ -17,12 +18,14 @@ propellor (3.0.0) UNRELEASED; urgency=medium
       "Property (HasInfo + Debian)"
     - It's also possible make a property support a set of OS's, for example:
       "Property (HasInfo + Debian + FreeBSD)"
+    - `ensureProperty` now needs information about the metatypes of the
+      property it's used in to be passed to it. See the documentation
+      of `ensureProperty` for an example, but basically, change
+      this:     foo = property desc $ ... ensureProperty bar
+      to this:  foo = property' desc $ \o -> ... ensureProperty o bar
     - The new `pickOS` property combinator can be used to combine different
       properties, supporting different OS's, into one Property that chooses
       what to do based on the Host's OS.
-    - `ensureProperty` now needs information about the metatypes of the
-      property it's used in to be passed to it. See the documentation
-      of `ensureProperty` for an example.
 
  -- Joey Hess <id@joeyh.name>  Thu, 24 Mar 2016 15:02:33 -0400
 
