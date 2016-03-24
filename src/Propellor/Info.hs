@@ -14,13 +14,13 @@ import Control.Applicative
 import Prelude
 
 pureInfoProperty :: (IsInfo v) => Desc -> v -> Property (HasInfo + UnixLike)
-pureInfoProperty desc v = pureInfoProperty' desc (addInfo mempty v)
+pureInfoProperty desc v = pureInfoProperty' desc (toInfo v)
 
 pureInfoProperty' :: Desc -> Info -> Property (HasInfo + UnixLike)
 pureInfoProperty' desc i = addInfoProperty p i
   where
 	p :: Property UnixLike
-	p = mkProperty ("has " ++ desc) (return NoChange)
+	p = property ("has " ++ desc) (return NoChange)
 
 -- | Gets a value from the host's Info.
 askInfo :: (IsInfo v) => Propellor v
