@@ -192,24 +192,20 @@ propertyChildren (Property _ _ _ _ c) = c
 
 -- | A property that can be reverted. The first Property is run
 -- normally and the second is run when it's reverted.
-data RevertableProperty metatypes = RevertableProperty
-	{ setupRevertableProperty :: Property metatypes
-	, undoRevertableProperty :: Property metatypes
+data RevertableProperty setupmetatypes undometatypes = RevertableProperty
+	{ setupRevertableProperty :: Property setupmetatypes
+	, undoRevertableProperty :: Property undometatypes
 	}
 
-instance Show (RevertableProperty metatypes) where
+instance Show (RevertableProperty setupmetatypes undometatypes) where
 	show (RevertableProperty p _) = show p
 
--- | Shorthand to construct a revertable property from any two Properties
--- whose MetaTypes can be combined.
+-- | Shorthand to construct a revertable property from any two Properties.
 (<!>)
-	:: (metatypes ~ (+) metatypes1 metatypes2, SingI metatypes)
-	=> Property metatypes1
-	-> Property metatypes2
-	-> RevertableProperty (Sing metatypes)
-Property _ d1 s1 i1 c1 <!> Property _ d2 s2 i2 c2 = RevertableProperty
-	(Property sing d1 s1 i1 c1)
-	(Property sing d2 s2 i2 c2)
+	:: Property setupmetatypes
+	-> Property undometatypes
+	-> RevertableProperty setupmetatypes undometatypes
+setup <!> undo = RevertableProperty setup undo
 
 -- | Class of types that can be used as properties of a host.
 class IsProp p where
@@ -233,7 +229,7 @@ instance IsProp ChildProperty where
 	getInfoRecursive (ChildProperty _ _ i c) =
 		i <> mconcat (map getInfoRecursive c)
 
-instance IsProp (RevertableProperty metatypes) where
+instance IsProp (RevertableProperty setupmetatypes undometatypes) where
 	setDesc = setDescR
 	getDesc (RevertableProperty p1 _) = getDesc p1
 	-- toProp (RevertableProperty p1 _) = p1
@@ -241,7 +237,7 @@ instance IsProp (RevertableProperty metatypes) where
 	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
 
 -- | Sets the description of both sides.
-setDescR :: IsProp (Property metatypes) => RevertableProperty metatypes -> Desc -> RevertableProperty metatypes
+setDescR :: IsProp (Property setupmetatypes) => RevertableProperty setupmetatypes undometatypes -> Desc -> RevertableProperty setupmetatypes undometatypes
 setDescR (RevertableProperty p1 p2) d =
 	RevertableProperty (setDesc p1 d) (setDesc p2 ("not " ++ d))
 
@@ -249,11 +245,11 @@ setDescR (RevertableProperty p1 p2) d =
 -- types of properties.
 type family CombinedType x y
 type instance CombinedType (Property (Sing x)) (Property (Sing y)) = Property (Sing (Union x y))
-type instance CombinedType (RevertableProperty (Sing x)) (RevertableProperty (Sing y)) = RevertableProperty (Sing (Union x y))
+type instance CombinedType (RevertableProperty (Sing x) (Sing x')) (RevertableProperty (Sing y) (Sing y')) = RevertableProperty (Sing (Union x y)) (Sing (Union x' y'))
 -- When only one of the properties is revertable, the combined property is
 -- not fully revertable, so is not a RevertableProperty.
-type instance CombinedType (RevertableProperty (Sing x)) (Property (Sing y)) = Property (Sing (Union x y))
-type instance CombinedType (Property (Sing x)) (RevertableProperty (Sing y)) = Property (Sing (Union x y))
+type instance CombinedType (RevertableProperty (Sing x) (Sing x')) (Property (Sing y)) = Property (Sing (Union x y))
+type instance CombinedType (Property (Sing x)) (RevertableProperty (Sing y) (Sing y')) = Property (Sing (Union x y))
 
 type ResultCombiner = Propellor Result -> Propellor Result -> Propellor Result
 
@@ -274,12 +270,12 @@ class Combines x y where
 instance (CombinedType (Property (Sing x)) (Property (Sing y)) ~ Property (Sing (Union x y)), SingI (Union x y)) => Combines (Property (Sing x)) (Property (Sing y)) where
 	combineWith f _ (Property t1 d1 a1 i1 c1) (Property _t2 d2 a2 i2 c2) =
 		Property sing d1 (f a1 a2) i1 (ChildProperty d2 a2 i2 c2 : c1)
-instance (CombinedType (RevertableProperty (Sing x)) (RevertableProperty (Sing y)) ~ RevertableProperty (Sing (Union x y)), SingI (Union x y)) => Combines (RevertableProperty (Sing x)) (RevertableProperty (Sing y)) where
+instance (CombinedType (RevertableProperty (Sing x) (Sing x')) (RevertableProperty (Sing y) (Sing y')) ~ RevertableProperty (Sing (Union x y)) (Sing (Union x' y')), SingI (Union x y), SingI (Union x' y')) => Combines (RevertableProperty (Sing x) (Sing x')) (RevertableProperty (Sing y) (Sing y')) where
 	combineWith sf tf (RevertableProperty s1 t1) (RevertableProperty s2 t2) =
 		RevertableProperty
 			(combineWith sf tf s1 s2)
 			(combineWith tf sf t1 t2)
-instance (CombinedType (RevertableProperty (Sing x)) (Property (Sing y)) ~ Property (Sing (Union x y)), SingI (Union x y)) => Combines (RevertableProperty (Sing x)) (Property (Sing y)) where
+instance (CombinedType (RevertableProperty (Sing x) (Sing x')) (Property (Sing y)) ~ Property (Sing (Union x y)), SingI (Union x y)) => Combines (RevertableProperty (Sing x) (Sing x')) (Property (Sing y)) where
 	combineWith sf tf (RevertableProperty x _) y = combineWith sf tf x y
-instance (CombinedType (Property (Sing x)) (RevertableProperty (Sing y)) ~ Property (Sing (Union x y)), SingI (Union x y)) => Combines (Property (Sing x)) (RevertableProperty (Sing y)) where
+instance (CombinedType (Property (Sing x)) (RevertableProperty (Sing y) (Sing y')) ~ Property (Sing (Union x y)), SingI (Union x y)) => Combines (Property (Sing x)) (RevertableProperty (Sing y) (Sing y')) where
 	combineWith sf tf x (RevertableProperty y _) = combineWith sf tf x y
