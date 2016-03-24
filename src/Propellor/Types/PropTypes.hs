@@ -11,7 +11,7 @@ module Propellor.Types.PropTypes (
 	Buntish,
 	FreeBSD,
 	HasInfo,
-	(+),
+	type (+),
 	OuterPropTypes,
 	ensureProperty,
 	tightenTargets,
