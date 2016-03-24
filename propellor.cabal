@@ -19,7 +19,7 @@ Extra-Source-Files:
   config-freebsd.hs
   joeyconfig.hs
   config.hs
-  contrib/post-checkout-hook
+  contrib/post-merge-hook
   debian/changelog
   debian/README.Debian
   debian/compat
