@@ -17,6 +17,7 @@ module Propellor.Types.MetaTypes (
 	sing,
 	SingI,
 	Union,
+	IncludesInfo,
 ) where
 
 ----- DEMO ----------
@@ -107,6 +108,9 @@ type instance (Sing a) + (Sing b) = Sing (Concat a b)
 type family Concat (list1 :: [a]) (list2 :: [a]) :: [a]
 type instance Concat '[] bs = bs
 type instance Concat (a ': as) bs = a ': (Concat as bs)
+
+type family IncludesInfo t :: Bool
+type instance IncludesInfo (Sing l) = Elem 'WithInfo l
 
 newtype OuterMetaTypes l = OuterMetaTypes (Sing l)
 
