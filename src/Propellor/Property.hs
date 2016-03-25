@@ -56,7 +56,6 @@ import Propellor.Types
 import Propellor.Types.ResultCheck
 import Propellor.Types.MetaTypes
 import Propellor.Info
-import Propellor.Exception
 import Propellor.EnsureProperty
 import Utility.Exception
 import Utility.Monad
@@ -256,13 +255,13 @@ isNewerThan x y = do
 tightenTargets
 	:: 
 		-- Note that this uses PolyKinds
-		( (Targets old `NotSuperset` Targets new) ~ CanCombineTargets
-		, (NonTargets new `NotSuperset` NonTargets old) ~ CanCombineTargets
+		( (Targets old `NotSuperset` Targets new) ~ 'CanCombineTargets
+		, (NonTargets new `NotSuperset` NonTargets old) ~ 'CanCombineTargets
 		, SingI new
 		)
 	=> Property (MetaTypes old)
 	-> Property (MetaTypes new)
-tightenTargets (Property old d a i c) = Property sing d a i c
+tightenTargets (Property _old d a i c) = Property sing d a i c
 
 {-
 

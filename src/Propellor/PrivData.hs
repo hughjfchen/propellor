@@ -81,7 +81,7 @@ withPrivData
 	::
 		( IsContext c
 		, IsPrivDataSource s
-		, IncludesInfo metatypes ~ True
+		, IncludesInfo metatypes ~ 'True
 		)
 	=> s
 	-> c
@@ -94,7 +94,7 @@ withSomePrivData
 	::
 		( IsContext c
 		, IsPrivDataSource s
-		, IncludesInfo metatypes ~ True
+		, IncludesInfo metatypes ~ 'True
 		)
 	=> [s]
 	-> c
@@ -106,7 +106,7 @@ withPrivData'
 	::
 		( IsContext c
 		, IsPrivDataSource s
-		, IncludesInfo metatypes ~ True
+		, IncludesInfo metatypes ~ 'True
 		)
 	=> ((PrivDataField, PrivData) -> v)
 	-> [s]
