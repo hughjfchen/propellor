@@ -1,8 +1,14 @@
-{-# LANGUAGE PackageImports, FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DataKinds #-}
 
 module Propellor.PropAccum
 	( host
-	, PropAccum(..)
+	, Props(..)
+	, props
 	, (&)
 	, (&^)
 	, (!)
@@ -12,53 +18,70 @@ module Propellor.PropAccum
 import Data.Monoid
 
 import Propellor.Types
+import Propellor.Types.MetaTypes
 import Propellor.Property
 import Propellor.Types.Info
 import Propellor.PrivData
 
--- | Starts accumulating the properties of a Host.
+-- | Defines a host and its properties.
 --
--- > host "example.com"
+-- > host "example.com" $ props
 -- > 	& someproperty
 -- > 	! oldproperty
 -- > 	& otherproperty
-host :: HostName -> Host
-host hn = Host hn [] mempty
+host :: HostName -> Props metatypes -> Host
+host hn (Props i c) = Host hn c i
 
--- | Something that can accumulate properties.
-class PropAccum h where
-	-- | Adds a property.
-	addProp :: IsProp p => h -> p -> h
+-- | Props is a combination of a list of properties, with their combined 
+-- metatypes and info.
+data Props metatypes = Props Info [ChildProperty]
 
-	-- | Like addProp, but adds the property at the front of the list.
-	addPropFront :: IsProp p => h -> p -> h
-
-	getProperties :: h -> [ChildProperty]
-
--- | Adds a property to a `Host` or other `PropAccum`
---
--- Can add Properties and RevertableProperties
-(&) :: (PropAccum h, IsProp p) => h -> p -> h
-(&) = addProp
-
--- | Adds a property before any other properties.
-(&^) :: (PropAccum h, IsProp p) => h -> p -> h
-(&^) = addPropFront
-
--- | Adds a property in reverted form.
-(!) :: IsProp (RevertableProperty undometatypes setupmetatypes) => PropAccum h => h -> RevertableProperty setupmetatypes undometatypes -> h
-h ! p = h & revert p
+-- | Start constructing a Props. Properties can then be added to it using
+-- `(&)` etc.
+props :: Props UnixLike
+props = Props mempty []
 
 infixl 1 &
 infixl 1 &^
 infixl 1 !
 
-instance PropAccum Host where
-	(Host hn ps is) `addProp`  p = Host hn (ps ++ [toProp p])
-		(is <> getInfoRecursive p)
-	(Host hn ps is) `addPropFront` p = Host hn (toProp p : ps)
-		(getInfoRecursive p <> is)
-	getProperties = hostProperties
+type family GetMetaTypes x
+type instance GetMetaTypes (Property (MetaTypes t)) = MetaTypes t
+type instance GetMetaTypes (RevertableProperty (MetaTypes t) undo) = MetaTypes t
+
+-- | Adds a property to a Props.
+--
+-- Can add Properties and RevertableProperties
+(&)
+	::
+		( IsProp p
+		, MetaTypes y ~ GetMetaTypes p
+		, CheckCombinable x y ~ 'CanCombine
+		)
+	=> Props (MetaTypes x)
+	-> p
+	-> Props (MetaTypes (Combine x y))
+Props i c & p = Props (i <> getInfoRecursive p) (c ++ [toProp p])
+
+-- | Adds a property before any other properties.
+(&^)
+	::
+		( IsProp p
+		, MetaTypes y ~ GetMetaTypes p
+		, CheckCombinable x y ~ 'CanCombine
+		)
+	=> Props (MetaTypes x)
+	-> p
+	-> Props (MetaTypes (Combine x y))
+Props i c &^ p = Props (i <> getInfoRecursive p) (toProp p : c)
+
+-- | Adds a property in reverted form.
+(!)
+	:: (CheckCombinable x z ~ 'CanCombine)
+	=> Props (MetaTypes x)
+	-> RevertableProperty (MetaTypes y) (MetaTypes z)
+	-> Props (MetaTypes (Combine x z))
+Props i c ! p = Props (i <> getInfoRecursive p) (c ++ [toProp (revert p)])
 
 {-
 
