@@ -15,13 +15,12 @@ module Propellor.PropAccum
 	--, propagateContainer
 	) where
 
-import Data.Monoid
-
 import Propellor.Types
 import Propellor.Types.MetaTypes
 import Propellor.Property
-import Propellor.Types.Info
-import Propellor.PrivData
+
+import Data.Monoid
+import Prelude
 
 -- | Defines a host and its properties.
 --

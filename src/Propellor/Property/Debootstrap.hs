@@ -101,18 +101,18 @@ extractSuite (System (FreeBSD _) _) = Nothing
 installed :: RevertableProperty Linux Linux
 installed = install <!> remove
   where
-	install = withOS "debootstrap installed" $ \o os ->
+	install = withOS "debootstrap installed" $ \w o ->
 		ifM (liftIO $ isJust <$> programPath)
 			( return NoChange
-			, ensureProperty o (installon os)
+			, ensureProperty w (installon o)
 			)
 
 	installon (Just (System (Debian _) _)) = aptinstall
 	installon (Just (System (Buntish _) _)) = aptinstall
 	installon _ = sourceInstall
 
-	remove = withOS "debootstrap removed" $ \o os -> 
-		ensureProperty o (removefrom os)
+	remove = withOS "debootstrap removed" $ \w o -> 
+		ensureProperty w (removefrom o)
 	removefrom (Just (System (Debian _) _)) = aptremove
 	removefrom (Just (System (Buntish _) _)) = aptremove
 	removefrom _ = sourceRemove

@@ -13,7 +13,6 @@ module Propellor.Property.List (
 ) where
 
 import Propellor.Types
-import Propellor.Types.MetaTypes
 import Propellor.PropAccum
 import Propellor.Engine
 import Propellor.Exception

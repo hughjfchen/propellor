@@ -7,7 +7,7 @@ import qualified Propellor.Property.Apt as Apt
 
 import System.Posix.Files
 
-installed :: Property NoInfo
+installed :: Property DebianLike
 installed = Apt.installed ["letsencrypt"]
 
 -- | Tell the letsencrypt client that you agree with the Let's Encrypt
@@ -39,15 +39,16 @@ type WebRoot = FilePath
 --
 -- See `Propellor.Property.Apache.httpsVirtualHost` for a more complete
 -- integration of apache with letsencrypt, that's built on top of this.
-letsEncrypt :: AgreeTOS -> Domain -> WebRoot -> Property NoInfo
+letsEncrypt :: AgreeTOS -> Domain -> WebRoot -> Property DebianLike
 letsEncrypt tos domain = letsEncrypt' tos domain []
 
 -- | Like `letsEncrypt`, but the certificate can be obtained for multiple
 -- domains.
-letsEncrypt' :: AgreeTOS -> Domain -> [Domain] -> WebRoot -> Property NoInfo
+letsEncrypt' :: AgreeTOS -> Domain -> [Domain] -> WebRoot -> Property DebianLike
 letsEncrypt' (AgreeTOS memail) domain domains webroot =
 	prop `requires` installed
   where
+	prop :: Property UnixLike
 	prop = property desc $ do
 		startstats <- liftIO getstats
 		(transcript, ok) <- liftIO $

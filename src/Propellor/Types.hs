@@ -44,6 +44,7 @@ module Propellor.Types
 	, module Propellor.Types.Result
 	, module Propellor.Types.ZFS
 	, TightenTargets(..)
+	, SingI
 	) where
 
 import Data.Monoid
