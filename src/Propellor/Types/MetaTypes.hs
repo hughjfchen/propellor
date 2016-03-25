@@ -9,8 +9,8 @@ module Propellor.Types.MetaTypes (
 	Buntish,
 	FreeBSD,
 	HasInfo,
-	type (+),
 	MetaTypes,
+	type (+),
 	sing,
 	SingI,
 	IncludesInfo,
@@ -73,7 +73,7 @@ data instance Sing (x :: [k]) where
 instance (SingI x, SingI xs) => SingI (x ': xs) where sing = Cons sing sing
 instance SingI '[] where sing = Nil
 
--- | Convenience type operator to combine two `Sing` lists.
+-- | Convenience type operator to combine two `MetaTypes` lists.
 --
 -- For example:
 --
@@ -81,9 +81,9 @@ instance SingI '[] where sing = Nil
 --
 -- Which is shorthand for this type:
 --
--- > Sing '[WithInfo, Targeting OSDebian]
+-- > MetaTypes '[WithInfo, Targeting OSDebian]
 type family a + b :: ab
-type instance (Sing a) + (Sing b) = Sing (Concat a b)
+type instance (MetaTypes a) + (MetaTypes b) = MetaTypes (Concat a b)
 
 type family Concat (list1 :: [a]) (list2 :: [a]) :: [a]
 type instance Concat '[] bs = bs
@@ -99,7 +99,7 @@ type instance Combine (list1 :: [a]) (list2 :: [a]) =
 	)
 
 type family IncludesInfo t :: Bool
-type instance IncludesInfo (Sing l) = Elem 'WithInfo l
+type instance IncludesInfo (MetaTypes l) = Elem 'WithInfo l
 
 -- The name of this was chosen to make type errors a more understandable.
 type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
