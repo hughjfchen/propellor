@@ -5,6 +5,7 @@ module Propellor.Types.MetaTypes (
 	OS(..),
 	UnixLike,
 	Debian,
+	DebianLike,
 	Buntish,
 	FreeBSD,
 	HasInfo,
@@ -13,10 +14,14 @@ module Propellor.Types.MetaTypes (
 	sing,
 	SingI,
 	Union,
+	Intersect,
+	Concat,
 	IncludesInfo,
 	Targets,
+	NonTargets,
 	NotSuperset,
 	CheckCombineTargets(..),
+	CannotCombineTargets,
 	type (&&),
 	Not,
 	EqT,
@@ -35,6 +40,8 @@ data OS
 -- | Any unix-like system
 type UnixLike = Sing '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish, 'Targeting 'OSFreeBSD ]
 type Debian = Sing '[ 'Targeting 'OSDebian ]
+-- | Debian and derivatives.
+type DebianLike = Sing '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish ]
 type Buntish = Sing '[ 'Targeting 'OSBuntish ]
 type FreeBSD = Sing '[ 'Targeting 'OSFreeBSD ]
 
@@ -90,43 +97,6 @@ type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
 type instance CannotUseEnsurePropertyWithInfo '[] = 'True
 type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` 'WithInfo) && CannotUseEnsurePropertyWithInfo ts
 
-{-
-
--- | Tightens the MetaType list of a Property, to contain fewer targets.
---
--- Anything else in the MetaType list is passed through unchanged.
-tightenTargets
-	:: 
-		( combined ~ Concat (NonTargets old) (Intersect (Targets old) (Targets new))
-		, CannotCombineTargets old new combined ~ 'CanCombineTargets
-		, SingI combined
-		)
-	=> Sing new
-	-> Property (Sing old)
-	-> Property (Sing combined)
-tightenTargets _ (Property old a) = Property sing a
-
--- | Picks one of the two input properties to use,
--- depending on the targeted OS.
---
--- If both input properties support the targeted OS, then the
--- first will be used.
-pickOS
-	::
-		( combined ~ Union a b
-		, SingI combined
-		)
-	=> Property (Sing a)
-	-> Property (Sing b)
-	-> Property (Sing combined)
-pickOS a@(Property ta ioa) b@(Property tb iob) = Property sing io
-  where
-	-- TODO pick with of ioa or iob to use based on final OS of
-	-- system being run on.
-	io = undefined
-
--}
-
 data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
 
 -- | Detect intersection of two lists that don't have any common targets.
@@ -138,7 +108,7 @@ type instance CannotCombineTargets l1 l2 (a ': rest) = 'CanCombineTargets
 
 -- | Every item in the subset must be in the superset.
 --
--- The name of this was chosen to make type errors a more understandable.
+-- The name of this was chosen to make type errors more understandable.
 type family NotSuperset (superset :: [a]) (subset :: [a]) :: CheckCombineTargets
 type instance NotSuperset superset '[] = 'CanCombineTargets
 type instance NotSuperset superset (s ': rest) =
@@ -161,8 +131,8 @@ type family NonTargets (l :: [a]) :: [a]
 type instance NonTargets '[] = '[]
 type instance NonTargets (x ': xs) =
 	If (IsTarget x)
-		(Targets xs)
-		(x ': Targets xs)
+		(NonTargets xs)
+		(x ': NonTargets xs)
 
 -- | Type level elem
 type family Elem (a :: t) (list :: [t]) :: Bool
