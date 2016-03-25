@@ -16,6 +16,7 @@ module Propellor.Types
 	, OS(..)
 	, UnixLike
 	, Debian
+	, DebianLike
 	, Buntish
 	, FreeBSD
 	, HasInfo
@@ -210,24 +211,25 @@ setup <!> undo = RevertableProperty setup undo
 -- | Class of types that can be used as properties of a host.
 class IsProp p where
 	setDesc :: p -> Desc -> p
-	-- toProp :: p -> Property HasInfo
 	getDesc :: p -> Desc
 	-- | Gets the info of the property, combined with all info
 	-- of all children properties.
 	getInfoRecursive :: p -> Info
+	toProp :: p -> ChildProperty
 
 instance IsProp (Property metatypes) where
 	setDesc (Property t _ a i c) d = Property t d a i c
-	-- toProp = id
 	getDesc = propertyDesc
 	getInfoRecursive (Property _ _ _ i c) =
 		i <> mconcat (map getInfoRecursive c)
+	toProp (Property _ d a i c) = ChildProperty d a i c
 
 instance IsProp ChildProperty where
 	setDesc (ChildProperty _ a i c) d = ChildProperty d a i c
 	getDesc (ChildProperty d _ _ _) = d
 	getInfoRecursive (ChildProperty _ _ i c) =
 		i <> mconcat (map getInfoRecursive c)
+	toProp = id
 
 instance IsProp (RevertableProperty setupmetatypes undometatypes) where
 	-- | Sets the description of both sides.
@@ -237,6 +239,7 @@ instance IsProp (RevertableProperty setupmetatypes undometatypes) where
 	-- toProp (RevertableProperty p1 _) = p1
 	-- | Return the Info of the currently active side.
 	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
+	toProp (RevertableProperty p1 _p2) = toProp p1
 
 -- | Type level calculation of the type that results from combining two
 -- types of properties.
