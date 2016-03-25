@@ -36,7 +36,8 @@ Description:
 
 Executable propellor
   Main-Is: wrapper.hs
-  GHC-Options: -threaded -Wall -fno-warn-tabs -XTypeOperators
+  GHC-Options: -threaded -Wall -fno-warn-tabs
+  Extensions: TypeOperators
   Hs-Source-Dirs: src
   Build-Depends: 
     -- propellor needs to support the ghc shipped in Debian stable
@@ -47,7 +48,8 @@ Executable propellor
 
 Executable propellor-config
   Main-Is: config.hs
-  GHC-Options: -threaded -Wall -fno-warn-tabs -XTypeOperators
+  GHC-Options: -threaded -Wall -fno-warn-tabs
+  Extensions: TypeOperators
   Hs-Source-Dirs: src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
@@ -55,7 +57,8 @@ Executable propellor-config
    exceptions (>= 0.6), stm, text, unix
 
 Library
-  GHC-Options: -Wall -fno-warn-tabs -XTypeOperators
+  GHC-Options: -Wall -fno-warn-tabs
+  Extensions: TypeOperators
   Hs-Source-Dirs: src
   Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
    IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
