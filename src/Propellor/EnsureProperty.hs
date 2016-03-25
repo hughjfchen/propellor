@@ -34,7 +34,7 @@ import Propellor.Exception
 ensureProperty
 	::
 		( (Targets inner `NotSuperset` Targets outer) ~ 'CanCombineTargets
-		, CannotUseEnsurePropertyWithInfo inner ~ 'True
+		, CannotUse_ensureProperty_WithInfo inner ~ 'True
 		)
 	=> OuterMetaTypes outer
 	-> Property (Sing inner)
@@ -42,10 +42,10 @@ ensureProperty
 ensureProperty _ = catchPropellor . propertySatisfy
 
 -- The name of this was chosen to make type errors a more understandable.
-type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
-type instance CannotUseEnsurePropertyWithInfo '[] = 'True
-type instance CannotUseEnsurePropertyWithInfo (t ': ts) =
-	Not (t `EqT` 'WithInfo) && CannotUseEnsurePropertyWithInfo ts
+type family CannotUse_ensureProperty_WithInfo (l :: [a]) :: Bool
+type instance CannotUse_ensureProperty_WithInfo '[] = 'True
+type instance CannotUse_ensureProperty_WithInfo (t ': ts) =
+	Not (t `EqT` 'WithInfo) && CannotUse_ensureProperty_WithInfo ts
 
 -- | Constructs a property, like `property`, but provides its
 -- `OuterMetaTypes`.
