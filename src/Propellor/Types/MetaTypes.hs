@@ -4,8 +4,9 @@ module Propellor.Types.MetaTypes (
 	MetaType(..),
 	OS(..),
 	UnixLike,
-	Debian,
+	Linux,
 	DebianLike,
+	Debian,
 	Buntish,
 	FreeBSD,
 	HasInfo,
@@ -37,11 +38,13 @@ data OS
 
 -- | Any unix-like system
 type UnixLike = MetaTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish, 'Targeting 'OSFreeBSD ]
+-- | Any linux system
+type Linux = MetaTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish ]
+-- | Debian and derivatives.
+type DebianLike = Debian + Buntish
 type Debian = MetaTypes '[ 'Targeting 'OSDebian ]
 type Buntish = MetaTypes '[ 'Targeting 'OSBuntish ]
 type FreeBSD = MetaTypes '[ 'Targeting 'OSFreeBSD ]
--- | Debian and derivatives.
-type DebianLike = Debian + Buntish
 
 -- | Used to indicate that a Property adds Info to the Host where it's used.
 type HasInfo = MetaTypes '[ 'WithInfo ]

@@ -66,12 +66,12 @@ import Data.List.Utils
 import qualified Data.Map as M
 import System.Console.Concurrent
 
-installed :: Property NoInfo
+installed :: Property DebianLike
 installed = Apt.installed ["docker.io"]
 
 -- | Configures docker with an authentication file, so that images can be
 -- pushed to index.docker.io. Optional.
-configured :: Property HasInfo
+configured :: Property DebianLike
 configured = prop `requires` installed
   where
 	prop = withPrivData src anyContext $ \getcfg ->
@@ -97,22 +97,17 @@ instance HasImage Image where
 instance HasImage Container where
 	getImageName (Container i _) = i
 
-instance PropAccum Container where
-	(Container i h) `addProp` p = Container i (h `addProp` p)
-	(Container i h) `addPropFront` p = Container i (h `addPropFront` p)
-	getProperties (Container _ h) = hostProperties h
-
 -- | Defines a Container with a given name, image, and properties.
--- Properties can be added to configure the Container.
+-- Add properties to configure the Container.
 --
--- > container "web-server" "debian"
+-- > container "web-server" (latestImage "debian") $ props
 -- >    & publish "80:80"
 -- >    & Apt.installed {"apache2"]
 -- >    & ...
-container :: ContainerName -> Image -> Container
-container cn image = Container image (Host cn [] info)
+container :: ContainerName -> Image -> Props -> Container
+container cn image (Props ps) = Container image (Host cn ps info)
   where
-	info = dockerInfo mempty
+	info = dockerInfo mempty <> mconcat (map getInfoRecursive ps)
 
 -- | Ensures that a docker container is set up and running.
 --
@@ -135,7 +130,7 @@ docked ctr@(Container _ h) =
 	go desc a = property (desc ++ " " ++ cn) $ do
 		hn <- asks hostName
 		let cid = ContainerId hn cn
-		ensureProperties [a cid (mkContainerInfo cid ctr)]
+		ensureChildProperties [a cid (mkContainerInfo cid ctr)]
 
 	setup cid (ContainerInfo image runparams) =
 		provisionContainer cid
@@ -155,7 +150,7 @@ docked ctr@(Container _ h) =
 			]
 
 -- | Build the image from a directory containing a Dockerfile.
-imageBuilt :: HasImage c => FilePath -> c -> Property NoInfo
+imageBuilt :: HasImage c => FilePath -> c -> Property Linux
 imageBuilt directory ctr = describe built msg
   where
 	msg = "docker image " ++ (imageIdentifier image) ++ " built from " ++ directory
@@ -165,7 +160,7 @@ imageBuilt directory ctr = describe built msg
 	image = getImageName ctr
 
 -- | Pull the image from the standard Docker Hub registry.
-imagePulled :: HasImage c => c -> Property NoInfo
+imagePulled :: HasImage c => c -> Property Linux
 imagePulled ctr = describe pulled msg
   where
 	msg = "docker image " ++ (imageIdentifier image) ++ " pulled"
@@ -173,7 +168,7 @@ imagePulled ctr = describe pulled msg
 		`assume` MadeChange
 	image = getImageName ctr
 
-propagateContainerInfo :: (IsProp (Property i)) => Container -> Property i -> Property HasInfo
+propagateContainerInfo :: (IsProp (Property i)) => Container -> Property i -> Property (HasInfo + Linux)
 propagateContainerInfo ctr@(Container _ h) p = propagateContainer cn ctr p'
   where
 	p' = infoProperty
@@ -209,11 +204,10 @@ mkContainerInfo cid@(ContainerId hn _cn) (Container img h) =
 -- that were not set up using propellor.
 --
 -- Generally, should come after the properties for the desired containers.
-garbageCollected :: Property NoInfo
-garbageCollected = propertyList "docker garbage collected"
-	[ gccontainers
-	, gcimages
-	]
+garbageCollected :: Property Linux
+garbageCollected = propertyList "docker garbage collected" $ props
+	& gccontainers
+	& gcimages
   where
 	gccontainers = property "docker containers garbage collected" $
 		liftIO $ report <$> (mapM removeContainer =<< listContainers AllContainers)
@@ -225,7 +219,7 @@ garbageCollected = propertyList "docker garbage collected"
 -- Currently, this consists of making pam_loginuid lines optional in
 -- the pam config, to work around <https://github.com/docker/docker/issues/5663>
 -- which affects docker 1.2.0.
-tweaked :: Property NoInfo
+tweaked :: Property Linux
 tweaked = cmdProperty "sh"
 	[ "-c"
 	, "sed -ri 's/^session\\s+required\\s+pam_loginuid.so$/session optional pam_loginuid.so/' /etc/pam.d/*"
@@ -239,7 +233,7 @@ tweaked = cmdProperty "sh"
 -- other GRUB_CMDLINE_LINUX_DEFAULT settings.
 --
 -- Only takes effect after reboot. (Not automated.)
-memoryLimited :: Property NoInfo
+memoryLimited :: Property DebianLike
 memoryLimited = "/etc/default/grub" `File.containsLine` cfg
 	`describe` "docker memory limited"
 	`onChange` (cmdProperty "update-grub" [] `assume` MadeChange)
@@ -443,7 +437,7 @@ containerDesc cid p = p `describe` desc
   where
 	desc = "container " ++ fromContainerId cid ++ " " ++ propertyDesc p
 
-runningContainer :: ContainerId -> Image -> [RunParam] -> Property NoInfo
+runningContainer :: ContainerId -> Image -> [RunParam] -> Property Linux
 runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ property "running" $ do
 	l <- liftIO $ listContainers RunningContainers
 	if cid `elem` l
@@ -558,7 +552,7 @@ init s = case toContainerId s of
 
 -- | Once a container is running, propellor can be run inside
 -- it to provision it.
-provisionContainer :: ContainerId -> Property NoInfo
+provisionContainer :: ContainerId -> Property Linux
 provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ do
 	let shim = Shim.file (localdir </> "propellor") (localdir </> shimdir cid)
 	let params = ["--continue", show $ toChain cid]
@@ -587,7 +581,7 @@ chain hostlist hn s = case toContainerId s of
 	go cid h = do
 		changeWorkingDirectory localdir
 		onlyProcess (provisioningLock cid) $ do
-			r <- runPropellor h $ ensureProperties $
+			r <- runPropellor h $ ensureChildProperties $
 				map ignoreInfo $
 					hostProperties h
 			flushConcurrentOutput
@@ -599,10 +593,10 @@ stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId 
 startContainer :: ContainerId -> IO Bool
 startContainer cid = boolSystem dockercmd [Param "start", Param $ fromContainerId cid ]
 
-stoppedContainer :: ContainerId -> Property NoInfo
-stoppedContainer cid = containerDesc cid $ property desc $
+stoppedContainer :: ContainerId -> Property Linux
+stoppedContainer cid = containerDesc cid $ property' desc $ \o ->
 	ifM (liftIO $ elem cid <$> listContainers RunningContainers)
-		( liftIO cleanup `after` ensureProperty
+		( liftIO cleanup `after` ensureProperty o
 			(property desc $ liftIO $ toResult <$> stopContainer cid)
 		, return NoChange
 		)

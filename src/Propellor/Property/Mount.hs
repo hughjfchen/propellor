@@ -37,16 +37,17 @@ formatMountOpts (MountOpts []) = "defaults"
 formatMountOpts (MountOpts l) = intercalate "," l
 
 -- | Mounts a device.
-mounted :: FsType -> Source -> MountPoint -> MountOpts -> Property NoInfo
+mounted :: FsType -> Source -> MountPoint -> MountOpts -> Property UnixLike
 mounted fs src mnt opts = property (mnt ++ " mounted") $ 
 	toResult <$> liftIO (mount fs src mnt opts)
 
 -- | Bind mounts the first directory so its contents also appear
 -- in the second directory.
-bindMount :: FilePath -> FilePath -> Property NoInfo
-bindMount src dest = cmdProperty "mount" ["--bind", src, dest]
-	`assume` MadeChange
-	`describe` ("bind mounted " ++ src ++ " to " ++ dest)
+bindMount :: FilePath -> FilePath -> Property Linux
+bindMount src dest = tightenTargets $
+	cmdProperty "mount" ["--bind", src, dest]
+		`assume` MadeChange
+		`describe` ("bind mounted " ++ src ++ " to " ++ dest)
 
 mount :: FsType -> Source -> MountPoint -> MountOpts -> IO Bool
 mount fs src mnt opts = boolSystem "mount" $
@@ -66,10 +67,10 @@ newtype SwapPartition = SwapPartition FilePath
 -- and its mount options are all automatically probed.
 --
 -- The SwapPartitions are also included in the generated fstab.
-fstabbed :: [MountPoint] -> [SwapPartition] -> Property NoInfo
-fstabbed mnts swaps = property "fstabbed" $ do
+fstabbed :: [MountPoint] -> [SwapPartition] -> Property Linux
+fstabbed mnts swaps = property' "fstabbed" $ \o -> do
 	fstab <- liftIO $ genFstab mnts swaps id
-	ensureProperty $ 
+	ensureProperty o $ 
 		"/etc/fstab" `File.hasContent` fstab
 
 genFstab :: [MountPoint] -> [SwapPartition] -> (MountPoint -> MountPoint) -> IO [String]
