@@ -2,9 +2,11 @@ module Propellor.Ssh where
 
 import Propellor.Base
 import Utility.UserInfo
+import Utility.FileSystemEncoding
 
 import System.PosixCompat
 import Data.Time.Clock.POSIX
+import qualified Data.Hash.MD5 as MD5
 
 -- Parameters can be passed to both ssh and scp, to enable a ssh connection
 -- caching socket.
@@ -16,9 +18,8 @@ import Data.Time.Clock.POSIX
 sshCachingParams :: HostName -> IO [CommandParam]
 sshCachingParams hn = do
 	home <- myHomeDir
-	let cachedir = home </> ".ssh" </> "propellor"
-	createDirectoryIfMissing False cachedir
-	let socketfile = cachedir </> hn ++ ".sock"
+	let socketfile = socketFile home hn
+	createDirectoryIfMissing False (takeDirectory socketfile)
 	let ps =
 		[ Param "-o"
 		, Param ("ControlPath=" ++ socketfile)
@@ -42,3 +43,37 @@ sshCachingParams hn = do
 					[ Param "localhost" ]
 				nukeFile f
 	tenminutes = 600
+
+-- Generate a socket filename inside the home directory.
+--
+-- There's a limit in the size of unix domain sockets, of approximately
+-- 100 bytes. Try to never construct a filename longer than that.
+--
+-- When space allows, include the full hostname in the socket filename.
+-- Otherwise, include at least a partial md5sum of it,
+-- to avoid using the same socket file for multiple hosts.
+socketFile :: FilePath -> HostName -> FilePath
+socketFile home hn = selectSocketFile
+	[  sshdir </> hn ++ ".sock"
+	, sshdir </> hn
+	, sshdir </> take 10 hn ++ "-" ++ md5
+	, sshdir </> md5
+	, home </> ".propellor-" ++ md5
+	]
+	(".propellor-" ++ md5)
+  where
+	sshdir = home </> ".ssh" </> "propellor"
+	md5 = take 9 $ MD5.md5s $ MD5.Str hn
+
+selectSocketFile :: [FilePath] -> FilePath -> FilePath
+selectSocketFile [] fallback = fallback
+selectSocketFile [f] _ = f
+selectSocketFile (f:fs) fallback
+	| valid_unix_socket_path f = f
+	| otherwise = selectSocketFile fs fallback
+
+valid_unix_socket_path :: FilePath -> Bool
+valid_unix_socket_path f = length (decodeW8 f) < 100 - reservedbyssh
+  where
+	-- ssh tacks on 17 or so characters when making a socket
+	reservedbyssh = 18

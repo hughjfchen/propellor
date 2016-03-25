@@ -1,3 +1,11 @@
+propellor (2.17.1) UNRELEASED; urgency=medium
+
+  * Avoid generating excessively long paths to the unix socket file
+    used for ssh connection caching. Mostly. Can still generate a too long
+    one if $HOME is longer than 60 bytes.
+
+ -- Joey Hess <id@joeyh.name>  Fri, 25 Mar 2016 17:23:25 -0400
+
 propellor (2.17.0) unstable; urgency=medium
 
   * Added initial support for FreeBSD.
