@@ -7,12 +7,12 @@ module Propellor.Base (
 	  module Propellor.Types
 	, module Propellor.Property
 	, module Propellor.Property.Cmd
-	--, module Propellor.Property.List
+	, module Propellor.Property.List
 	, module Propellor.Types.PrivData
 	, module Propellor.PropAccum
 	, module Propellor.Info
 	, module Propellor.PrivData
-	--, module Propellor.Engine
+	, module Propellor.Engine
 	, module Propellor.Exception
 	, module Propellor.Message
 	, module Propellor.Debug
@@ -34,8 +34,8 @@ module Propellor.Base (
 
 import Propellor.Types
 import Propellor.Property
---import Propellor.Engine
---import Propellor.Property.List
+import Propellor.Engine
+import Propellor.Property.List
 import Propellor.Property.Cmd
 import Propellor.PrivData
 import Propellor.Types.PrivData

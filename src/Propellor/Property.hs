@@ -255,12 +255,12 @@ isNewerThan x y = do
 tightenTargets
 	:: 
 		-- Note that this uses PolyKinds
-		( (Targets old `NotSuperset` Targets new) ~ 'CanCombine
-		, (NonTargets new `NotSuperset` NonTargets old) ~ 'CanCombine
-		, SingI new
+		( (Targets untightened `NotSuperset` Targets tightened) ~ 'CanCombine
+		, (NonTargets tightened `NotSuperset` NonTargets untightened) ~ 'CanCombine
+		, SingI tightened
 		)
-	=> Property (MetaTypes old)
-	-> Property (MetaTypes new)
+	=> Property (MetaTypes untightened)
+	-> Property (MetaTypes tightened)
 tightenTargets (Property _old d a i c) = Property sing d a i c
 
 {-

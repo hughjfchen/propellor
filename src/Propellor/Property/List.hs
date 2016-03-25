@@ -7,17 +7,21 @@
 module Propellor.Property.List (
 	props,
 	Props,
+	toProps,
 	propertyList,
 	combineProperties,
 ) where
 
 import Propellor.Types
 import Propellor.Types.MetaTypes
-import Propellor.Engine
 import Propellor.PropAccum
+import Propellor.Engine
 import Propellor.Exception
 
 import Data.Monoid
+
+toProps :: [Property (MetaTypes metatypes)] -> Props (MetaTypes metatypes)
+toProps ps = Props (map toProp ps)
 
 -- | Combines a list of properties, resulting in a single property
 -- that when run will run each property in the list in turn,
@@ -30,7 +34,7 @@ import Data.Monoid
 -- > 	& bar
 -- > 	& baz
 propertyList :: SingI metatypes => Desc -> Props (MetaTypes metatypes) -> Property (MetaTypes metatypes)
-propertyList desc (Props _i ps) = 
+propertyList desc (Props ps) = 
 	property desc (ensureChildProperties cs)
 		`modifyChildren` (++ cs)
   where
@@ -39,7 +43,7 @@ propertyList desc (Props _i ps) =
 -- | Combines a list of properties, resulting in one property that
 -- ensures each in turn. Stops if a property fails.
 combineProperties :: SingI metatypes => Desc -> Props (MetaTypes metatypes) -> Property (MetaTypes metatypes)
-combineProperties desc (Props _i ps) = 
+combineProperties desc (Props ps) = 
 	property desc (combineSatisfy cs NoChange)
 		`modifyChildren` (++ cs)
   where
