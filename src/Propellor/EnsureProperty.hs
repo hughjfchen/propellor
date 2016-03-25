@@ -39,7 +39,7 @@ ensureProperty
 	=> OuterMetaTypes outer
 	-> Property (MetaTypes inner)
 	-> Propellor Result
-ensureProperty _ = catchPropellor . propertySatisfy
+ensureProperty _ = catchPropellor . getSatisfy
 
 -- The name of this was chosen to make type errors a more understandable.
 type family CannotUse_ensureProperty_WithInfo (l :: [a]) :: Bool

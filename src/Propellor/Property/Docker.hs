@@ -178,7 +178,7 @@ propagateContainerInfo ctr@(Container _ h) p = propagateContainer cn ctr p'
   where
 	p' = infoProperty
 		(propertyDesc p)
-		(propertySatisfy p)
+		(getSatisfy p)
 		(propertyInfo p <> dockerinfo)
 		(propertyChildren p)
 	dockerinfo = dockerInfo $

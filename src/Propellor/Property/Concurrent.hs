@@ -97,7 +97,7 @@ concurrentList getn d (PropList ps) = infoProperty d go mempty ps
 			(p:rest) -> return (rest, Just p)
 		case v of
 			Nothing -> return r
-			-- This use of propertySatisfy does not lose any
+			-- This use of getSatisfy does not lose any
 			-- Info asociated with the property, because
 			-- concurrentList sets all the properties as
 			-- children, and so propigates their info.
@@ -105,7 +105,7 @@ concurrentList getn d (PropList ps) = infoProperty d go mempty ps
 				hn <- asks hostName
 				r' <- actionMessageOn hn
 					(propertyDesc p)
-					(propertySatisfy p)
+					(getSatisfy p)
 				worker q (r <> r')
 
 -- | Run an action with the number of capabiities increased as necessary to

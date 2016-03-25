@@ -129,7 +129,7 @@ withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 		return FailedChange
 	addinfo p = Property undefined -- FIXME: should use sing here
 		(propertyDesc p)
-		(propertySatisfy p)
+		(getSatisfy p)
 		(propertyInfo p `addInfo` privset)
 		(propertyChildren p)
 	privset = PrivInfo $ S.fromList $

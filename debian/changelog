@@ -1,37 +1,43 @@
 propellor (3.0.0) UNRELEASED; urgency=medium
 
   * Property types have been improved to indicate what systems they target.
-    This allows, eg, Property Debian to not be used on a FreeBSD system.
+    This prevents using eg, Property FreeBSD on a Debian system.
     Transition guide for this sweeping API change:
+    - Change "host name & foo & bar"
+      to     "host name $ props & foo & bar"
+    - Similarly, Chroot and Docker need `props` to be used to combine
+      together the properies used inside them.
+    - And similarly, `propertyList` and `combineProperties` need `props`
+      to be used to combine together properties; lists of properties will
+      no longer work.
     - Change "Property NoInfo" to "Property UnixLike"
     - Change "Property HasInfo" to "Property (HasInfo + UnixLike)"
     - Change "RevertableProperty NoInfo" to
       "RevertableProperty UnixLike UnixLike"
     - Change "RevertableProperty HasInfo" to
       "RevertableProperty (HasInfo + UnixLike) UnixLike"
-    - GHC needs {-# LANGUAGE TypeOperators #-} to use these new type signatures.
+    - GHC needs {-# LANGUAGE TypeOperators #-} to use these fancy types.
       This is enabled by default for all modules in propellor.cabal. But
       if you are using propellor as a library, you may need to enable it
       manually.
     - If you know a property only works on a particular OS, like Debian
       or FreeBSD, use that instead of "UnixLike". For example:
-      "Property (HasInfo + Debian)"
+      "Property Debian"
     - It's also possible make a property support a set of OS's, for example:
-      "Property (HasInfo + Debian + FreeBSD)"
-    - `ensureProperty` now needs information about the metatypes of the
-      property it's used in to be passed to it. See the documentation
-      of `ensureProperty` for an example, but basically, change
-      this:     foo = property desc $ ... ensureProperty bar
-      to this:  foo = property' desc $ \o -> ... ensureProperty o bar
+      "Property (Debian + FreeBSD)"
+    - `ensureProperty` now needs to be passed information about the
+      property it's used in.
+      change this:  foo = property desc $ ... ensureProperty bar
+      to this:      foo = property' desc $ \o -> ... ensureProperty o bar
     - General purpose properties like cmdProperty have type "Property UnixLike".
       When using that to run a command only available on Debian, you can
-      tighten the targets to only the OS that your more specific
-      property works on. For example:
+      tighten the type to only the OS that your more specific property works on.
+      For example:
         upgraded :: Property Debian
         upgraded = tightenTargets (cmdProperty "apt-get" ["upgrade"])
-    - The new `pickOS` property combinator can be used to combine different
-      properties, supporting different OS's, into one Property that chooses
-      what to do based on the Host's OS.
+  * The new `pickOS` property combinator can be used to combine different
+    properties, supporting different OS's, into one Property that chooses
+    what to do based on the Host's OS.
 
  -- Joey Hess <id@joeyh.name>  Thu, 24 Mar 2016 15:02:33 -0400
 

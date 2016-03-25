@@ -2,10 +2,10 @@
 {-# LANGUAGE GADTs #-}
 
 module Propellor.Engine (
-	mainProperties,
+	-- mainProperties,
 	runPropellor,
 	ensureProperty,
-	ensureProperties,
+	ensureChildProperties,
 	fromHost,
 	fromHost',
 	onlyProcess,
@@ -29,6 +29,8 @@ import Propellor.Info
 import Propellor.Property
 import Utility.Exception
 
+{-
+
 -- | Gets the Properties of a Host, and ensures them all,
 -- with nice display of what's being done.
 mainProperties :: Host -> IO ()
@@ -41,6 +43,8 @@ mainProperties host = do
 		_ -> exitWith ExitSuccess
   where
 	ps = map ignoreInfo $ hostProperties host
+
+-}
 
 -- | Runs a Propellor action with the specified host.
 --
@@ -58,14 +62,14 @@ runEndAction host res (EndAction desc a) = actionMessageOn (hostName host) desc 
 	(ret, _s, _) <- runRWST (runWithHost (catchPropellor (a res))) host ()
 	return ret
 
--- | Ensures a list of Properties, with a display of each as it runs.
-ensureProperties :: [Property NoInfo] -> Propellor Result
-ensureProperties ps = ensure ps NoChange
+-- | Ensures the child properties, with a display of each as it runs.
+ensureChildProperties :: [ChildProperty] -> Propellor Result
+ensureChildProperties ps = ensure ps NoChange
   where
 	ensure [] rs = return rs
 	ensure (p:ls) rs = do
 		hn <- asks hostName
-		r <- actionMessageOn hn (propertyDesc p) (ensureProperty p)
+		r <- actionMessageOn hn (getDesc p) (catchPropellor $ getSatisfy p)
 		ensure ls (r <> rs)
 
 -- | Lifts an action into the context of a different host.

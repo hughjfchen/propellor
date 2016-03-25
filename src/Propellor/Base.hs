@@ -9,7 +9,7 @@ module Propellor.Base (
 	, module Propellor.Property.Cmd
 	--, module Propellor.Property.List
 	, module Propellor.Types.PrivData
-	--, module Propellor.PropAccum
+	, module Propellor.PropAccum
 	, module Propellor.Info
 	, module Propellor.PrivData
 	--, module Propellor.Engine
@@ -43,7 +43,7 @@ import Propellor.Message
 import Propellor.Debug
 import Propellor.Exception
 import Propellor.Info
---import Propellor.PropAccum
+import Propellor.PropAccum
 import Propellor.Location
 import Propellor.Utilities
 

@@ -14,6 +14,7 @@ module Propellor.Types
 	, Info
 	, Desc
 	, MetaType(..)
+	, MetaTypes
 	, OS(..)
 	, UnixLike
 	, Debian
@@ -41,8 +42,6 @@ module Propellor.Types
 	, module Propellor.Types.Dns
 	, module Propellor.Types.Result
 	, module Propellor.Types.ZFS
-	, propertySatisfy
-	, MetaTypes
 	) where
 
 import Data.Monoid
@@ -169,12 +168,6 @@ ignoreInfo =
 
 -}
 
--- | Gets the action that can be run to satisfy a Property.
--- You should never run this action directly. Use
--- 'Propellor.EnsureProperty.ensureProperty` instead.
-propertySatisfy :: Property metatypes -> Propellor Result
-propertySatisfy (Property _ _ a _ _) = a
-
 -- | Changes the action that is performed to satisfy a property.
 adjustPropertySatisfy :: Property metatypes -> (Propellor Result -> Propellor Result) -> Property metatypes
 adjustPropertySatisfy (Property t d s i c) f = Property t d (f s) i c
@@ -214,34 +207,45 @@ setup <!> undo = RevertableProperty setup undo
 class IsProp p where
 	setDesc :: p -> Desc -> p
 	getDesc :: p -> Desc
+	modifyChildren :: p -> ([ChildProperty] -> [ChildProperty]) -> p
 	-- | Gets the info of the property, combined with all info
 	-- of all children properties.
 	getInfoRecursive :: p -> Info
 	toProp :: p -> ChildProperty
+	-- | Gets the action that can be run to satisfy a Property.
+	-- You should never run this action directly. Use
+	-- 'Propellor.EnsureProperty.ensureProperty` instead.
+	getSatisfy :: p -> Propellor Result
 
 instance IsProp (Property metatypes) where
 	setDesc (Property t _ a i c) d = Property t d a i c
 	getDesc = propertyDesc
+	modifyChildren (Property t d a i c) f = Property t d a i (f c)
 	getInfoRecursive (Property _ _ _ i c) =
 		i <> mconcat (map getInfoRecursive c)
 	toProp (Property _ d a i c) = ChildProperty d a i c
+	getSatisfy (Property _ _ a _ _) = a
 
 instance IsProp ChildProperty where
 	setDesc (ChildProperty _ a i c) d = ChildProperty d a i c
 	getDesc (ChildProperty d _ _ _) = d
+	modifyChildren (ChildProperty d a i c) f = ChildProperty d a i (f c)
 	getInfoRecursive (ChildProperty _ _ i c) =
 		i <> mconcat (map getInfoRecursive c)
 	toProp = id
+	getSatisfy (ChildProperty _ a _ _) = a
 
 instance IsProp (RevertableProperty setupmetatypes undometatypes) where
 	-- | Sets the description of both sides.
 	setDesc (RevertableProperty p1 p2) d =
 		RevertableProperty (setDesc p1 d) (setDesc p2 ("not " ++ d))
 	getDesc (RevertableProperty p1 _) = getDesc p1
+	modifyChildren (RevertableProperty p1 p2) f = RevertableProperty (modifyChildren p1 f) (modifyChildren p2 f)
 	-- toProp (RevertableProperty p1 _) = p1
 	-- | Return the Info of the currently active side.
 	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
 	toProp (RevertableProperty p1 _p2) = toProp p1
+	getSatisfy (RevertableProperty p1 _) = getSatisfy p1
 
 -- | Type level calculation of the type that results from combining two
 -- types of properties.
