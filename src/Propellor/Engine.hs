@@ -1,8 +1,8 @@
 {-# LANGUAGE PackageImports #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 
 module Propellor.Engine (
-	-- mainProperties,
+	mainProperties,
 	runPropellor,
 	ensureProperty,
 	ensureChildProperties,
@@ -29,22 +29,19 @@ import Propellor.Info
 import Propellor.Property
 import Utility.Exception
 
-{-
-
 -- | Gets the Properties of a Host, and ensures them all,
 -- with nice display of what's being done.
 mainProperties :: Host -> IO ()
 mainProperties host = do
-	ret <- runPropellor host $
-		ensureProperties [ignoreInfo $ infoProperty "overall" (ensureProperties ps) mempty mempty]
+	ret <- runPropellor host $ ensureChildProperties [toProp overall]
 	messagesDone
 	case ret of
 		FailedChange -> exitWith (ExitFailure 1)
 		_ -> exitWith ExitSuccess
   where
-	ps = map ignoreInfo $ hostProperties host
-
--}
+	overall :: Property (MetaTypes '[])
+	overall = property "overall" $
+		ensureChildProperties (hostProperties host)
 
 -- | Runs a Propellor action with the specified host.
 --
