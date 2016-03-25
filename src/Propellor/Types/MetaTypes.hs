@@ -13,14 +13,12 @@ module Propellor.Types.MetaTypes (
 	Sing,
 	sing,
 	SingI,
-	Union,
-	Intersect,
-	Concat,
 	IncludesInfo,
 	Targets,
 	NonTargets,
 	NotSuperset,
 	CheckCombineTargets(..),
+	Combine,
 	CannotCombineTargets,
 	type (&&),
 	Not,
@@ -89,6 +87,15 @@ type family Concat (list1 :: [a]) (list2 :: [a]) :: [a]
 type instance Concat '[] bs = bs
 type instance Concat (a ': as) bs = a ': (Concat as bs)
 
+-- | Combine two MetaTypes lists, yielding a list
+-- that has targets present in both, and nontargets present in either.
+type family Combine (list1 :: [a]) (list2 :: [a]) :: [a]
+type instance Combine (list1 :: [a]) (list2 :: [a]) =
+	(Concat
+		(NonTargets list1 `Union` NonTargets list2)
+		(Targets list1 `Intersect` Targets list2)
+	)
+
 type family IncludesInfo t :: Bool
 type instance IncludesInfo (Sing l) = Elem 'WithInfo l
 
@@ -97,14 +104,14 @@ type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
 type instance CannotUseEnsurePropertyWithInfo '[] = 'True
 type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` 'WithInfo) && CannotUseEnsurePropertyWithInfo ts
 
-data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
-
 -- | Detect intersection of two lists that don't have any common targets.
 -- 
 -- The name of this was chosen to make type errors a more understandable.
 type family CannotCombineTargets (list1 :: [a]) (list2 :: [a]) (listr :: [a]) :: CheckCombineTargets
 type instance CannotCombineTargets l1 l2 '[] = 'CannotCombineTargets
 type instance CannotCombineTargets l1 l2 (a ': rest) = 'CanCombineTargets
+
+data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
 
 -- | Every item in the subset must be in the superset.
 --

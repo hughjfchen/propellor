@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE DataKinds #-}
 
 module Propellor.Types
 	( Host(..)
@@ -244,12 +245,12 @@ instance IsProp (RevertableProperty setupmetatypes undometatypes) where
 -- | Type level calculation of the type that results from combining two
 -- types of properties.
 type family CombinedType x y
-type instance CombinedType (Property (Sing x)) (Property (Sing y)) = Property (Sing (Union x y))
-type instance CombinedType (RevertableProperty (Sing x) (Sing x')) (RevertableProperty (Sing y) (Sing y')) = RevertableProperty (Sing (Union x y)) (Sing (Union x' y'))
+type instance CombinedType (Property (Sing x)) (Property (Sing y)) = Property (Sing (Combine x y))
+type instance CombinedType (RevertableProperty (Sing x) (Sing x')) (RevertableProperty (Sing y) (Sing y')) = RevertableProperty (Sing (Combine x y)) (Sing (Combine x' y'))
 -- When only one of the properties is revertable, the combined property is
 -- not fully revertable, so is not a RevertableProperty.
-type instance CombinedType (RevertableProperty (Sing x) (Sing x')) (Property (Sing y)) = Property (Sing (Union x y))
-type instance CombinedType (Property (Sing x)) (RevertableProperty (Sing y) (Sing y')) = Property (Sing (Union x y))
+type instance CombinedType (RevertableProperty (Sing x) (Sing x')) (Property (Sing y)) = Property (Sing (Combine x y))
+type instance CombinedType (Property (Sing x)) (RevertableProperty (Sing y) (Sing y')) = Property (Sing (Combine x y))
 
 type ResultCombiner = Propellor Result -> Propellor Result -> Propellor Result
 
@@ -267,15 +268,15 @@ class Combines x y where
 		-> y
 		-> CombinedType x y
 
-instance (CombinedType (Property (Sing x)) (Property (Sing y)) ~ Property (Sing (Union x y)), SingI (Union x y)) => Combines (Property (Sing x)) (Property (Sing y)) where
+instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (Property (Sing x)) (Property (Sing y)) where
 	combineWith f _ (Property t1 d1 a1 i1 c1) (Property _t2 d2 a2 i2 c2) =
 		Property sing d1 (f a1 a2) i1 (ChildProperty d2 a2 i2 c2 : c1)
-instance (CombinedType (RevertableProperty (Sing x) (Sing x')) (RevertableProperty (Sing y) (Sing y')) ~ RevertableProperty (Sing (Union x y)) (Sing (Union x' y')), SingI (Union x y), SingI (Union x' y')) => Combines (RevertableProperty (Sing x) (Sing x')) (RevertableProperty (Sing y) (Sing y')) where
+instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, CannotCombineTargets x' y' (Combine x' y') ~ 'CanCombineTargets, SingI (Combine x y), SingI (Combine x' y')) => Combines (RevertableProperty (Sing x) (Sing x')) (RevertableProperty (Sing y) (Sing y')) where
 	combineWith sf tf (RevertableProperty s1 t1) (RevertableProperty s2 t2) =
 		RevertableProperty
 			(combineWith sf tf s1 s2)
 			(combineWith tf sf t1 t2)
-instance (CombinedType (RevertableProperty (Sing x) (Sing x')) (Property (Sing y)) ~ Property (Sing (Union x y)), SingI (Union x y)) => Combines (RevertableProperty (Sing x) (Sing x')) (Property (Sing y)) where
+instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (RevertableProperty (Sing x) (Sing x')) (Property (Sing y)) where
 	combineWith sf tf (RevertableProperty x _) y = combineWith sf tf x y
-instance (CombinedType (Property (Sing x)) (RevertableProperty (Sing y) (Sing y')) ~ Property (Sing (Union x y)), SingI (Union x y)) => Combines (Property (Sing x)) (RevertableProperty (Sing y) (Sing y')) where
+instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (Property (Sing x)) (RevertableProperty (Sing y) (Sing y')) where
 	combineWith sf tf x (RevertableProperty y _) = combineWith sf tf x y
