@@ -1,5 +1,8 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE PolyKinds #-}
 
 module Propellor.Property (
 	-- * Property combinators
@@ -20,6 +23,7 @@ module Propellor.Property (
 	, property
 	, property'
 	, ensureProperty
+	, tightenTargets
 	--, withOS
 	, unsupportedOS
 	, makeChange
@@ -239,6 +243,49 @@ isNewerThan x y = do
 	return (mx > my)
   where
 	mtime f = catchMaybeIO $ modificationTimeHiRes <$> getFileStatus f
+
+-- | Tightens the MetaType list of a Property, to contain fewer targets.
+--
+-- Anything else in the MetaType list is passed through unchanged.
+--
+-- For example, to make a property that uses apt-get, which is only
+-- available on DebianLike systems:
+--
+-- > upgraded :: Property DebianLike
+-- > upgraded = tightenTargets $ cmdProperty "apt-get" ["upgrade"]
+tightenTargets
+	:: 
+		-- Note that this uses PolyKinds
+		( (Targets old `NotSuperset` Targets new) ~ CanCombineTargets
+		, (NonTargets new `NotSuperset` NonTargets old) ~ CanCombineTargets
+		, SingI new
+		)
+	=> Property (Sing old)
+	-> Property (Sing new)
+tightenTargets (Property old d a i c) = Property sing d a i c
+
+{-
+
+-- | Picks one of the two input properties to use,
+-- depending on the targeted OS.
+--
+-- If both input properties support the targeted OS, then the
+-- first will be used.
+pickOS
+	::
+		( combined ~ Union a b
+		, SingI combined
+		)
+	=> Property (Sing a)
+	-> Property (Sing b)
+	-> Property (Sing combined)
+pickOS a@(Property ta ioa) b@(Property tb iob) = Property sing io
+  where
+	-- TODO pick with of ioa or iob to use based on final OS of
+	-- system being run on.
+	io = undefined
+
+-}
 
 -- | Makes a property that is satisfied differently depending on the host's
 -- operating system. 

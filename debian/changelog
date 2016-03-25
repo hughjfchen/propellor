@@ -23,6 +23,12 @@ propellor (3.0.0) UNRELEASED; urgency=medium
       of `ensureProperty` for an example, but basically, change
       this:     foo = property desc $ ... ensureProperty bar
       to this:  foo = property' desc $ \o -> ... ensureProperty o bar
+    - General purpose properties like cmdProperty have type "Property UnixLike".
+      When using that to run a command only available on Debian, you can
+      tighten the targets to only the OS that your more specific
+      property works on. For example:
+        upgraded :: Property Debian
+        upgraded = tightenTargets (cmdProperty "apt-get" ["upgrade"])
     - The new `pickOS` property combinator can be used to combine different
       properties, supporting different OS's, into one Property that chooses
       what to do based on the Host's OS.
