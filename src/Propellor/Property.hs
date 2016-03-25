@@ -22,7 +22,7 @@ module Propellor.Property (
 	, Propellor
 	, property
 	, property'
-	, OuterMetaTypes
+	, OuterMetaTypesWitness
 	, ensureProperty
 	, withOS
 	, unsupportedOS
@@ -270,9 +270,9 @@ pickOS a@(Property ta ioa) b@(Property tb iob) = Property sing io
 -- of the host's operating system.
 --
 -- > myproperty :: Property Debian
--- > myproperty = withOS "foo installed" $ \o os -> case os of
--- > 	(Just (System (Debian (Stable release)) arch)) -> ensureProperty o ...
--- > 	(Just (System (Debian suite) arch)) -> ensureProperty o ...
+-- > myproperty = withOS "foo installed" $ \w o -> case o of
+-- > 	(Just (System (Debian (Stable release)) arch)) -> ensureProperty w ...
+-- > 	(Just (System (Debian suite) arch)) -> ensureProperty w ...
 -- >	_ -> unsupportedOS
 --
 -- Note that the operating system specifics may not be declared for all hosts,
@@ -280,15 +280,15 @@ pickOS a@(Property ta ioa) b@(Property tb iob) = Property sing io
 withOS
 	:: (SingI metatypes)
 	=> Desc
-	-> (OuterMetaTypes '[] -> Maybe System -> Propellor Result)
+	-> (OuterMetaTypesWitness '[] -> Maybe System -> Propellor Result)
 	-> Property (MetaTypes metatypes)
 withOS desc a = property desc $ a dummyoutermetatypes =<< getOS
   where
 	-- Using this dummy value allows ensureProperty to be used
 	-- even though the inner property probably doesn't target everything
 	-- that the outer withOS property targets.
-	dummyoutermetatypes :: OuterMetaTypes ('[])
-	dummyoutermetatypes = OuterMetaTypes sing
+	dummyoutermetatypes :: OuterMetaTypesWitness ('[])
+	dummyoutermetatypes = OuterMetaTypesWitness sing
 
 -- | Throws an error, for use in `withOS` when a property is lacking
 -- support for an OS.

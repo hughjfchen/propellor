@@ -81,9 +81,9 @@ securityUpdates suite
 -- Since the CDN is sometimes unreliable, also adds backup lines using
 -- kernel.org.
 stdSourcesList :: Property Debian
-stdSourcesList = withOS "standard sources.list" $ \o os -> case os of
+stdSourcesList = withOS "standard sources.list" $ \w o -> case o of
 	(Just (System (Debian suite) _)) ->
-		ensureProperty o $ stdSourcesListFor suite
+		ensureProperty w $ stdSourcesListFor suite
 	_ -> unsupportedOS
 
 stdSourcesListFor :: DebianSuite -> Property Debian
@@ -158,10 +158,10 @@ installed' params ps = robustly $ check (isInstallable ps) go
 	go = runApt (params ++ ["install"] ++ ps)
 
 installedBackport :: [Package] -> Property DebianLike
-installedBackport ps = withOS desc $ \o os -> case os of
+installedBackport ps = withOS desc $ \w o -> case o of
 	(Just (System (Debian suite) _)) -> case backportSuite suite of
 		Nothing -> unsupportedOS
-		Just bs -> ensureProperty o $
+		Just bs -> ensureProperty w $
 			runApt (["install", "-t", bs, "-y"] ++ ps)
 				`changesFile` dpkgStatus
 	_ -> unsupportedOS
@@ -247,11 +247,11 @@ unattendedUpgrades = enable <!> disable
 			| otherwise = "false"
 
 	configure :: Property DebianLike
-	configure = withOS "unattended upgrades configured" $ \o os ->
-		case os of
+	configure = withOS "unattended upgrades configured" $ \w o ->
+		case o of
 			-- the package defaults to only upgrading stable
 			(Just (System (Debian suite) _))
-				| not (isStable suite) -> ensureProperty o $
+				| not (isStable suite) -> ensureProperty w $
 					"/etc/apt/apt.conf.d/50unattended-upgrades"
 						`File.containsLine`
 					("Unattended-Upgrade::Origins-Pattern { \"o=Debian,a="++showSuite suite++"\"; };")

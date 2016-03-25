@@ -116,8 +116,8 @@ type family CheckCombinable (list1 :: [a]) (list2 :: [a]) :: CheckCombine
 -- one target, so can only happen if there's already been a type error.
 -- This special case lets the type checker show only the original type
 -- error, and not an extra error due to a later CheckCombinable constraint.
-type instance CheckCombinable '[] list2 = CanCombine
-type instance CheckCombinable list1 '[] = CanCombine
+type instance CheckCombinable '[] list2 = 'CanCombine
+type instance CheckCombinable list1 '[] = 'CanCombine
 type instance CheckCombinable (l1 ': list1) (l2 ': list2) =
 	CheckCombinable' (Combine (l1 ': list1) (l2 ': list2))
 type family CheckCombinable' (combinedlist :: [a]) :: CheckCombine

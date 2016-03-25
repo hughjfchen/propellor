@@ -7,7 +7,7 @@
 module Propellor.EnsureProperty
 	( ensureProperty
 	, property'
-	, OuterMetaTypes(..)
+	, OuterMetaTypesWitness(..)
 	) where
 
 import Propellor.Types
@@ -17,14 +17,14 @@ import Propellor.Exception
 -- | For when code running in the Propellor monad needs to ensure a
 -- Property.
 --
--- Use `property'` to get the `OuterMetaTypes`. For example:
+-- Use `property'` to get the `OuterMetaTypesWithness`. For example:
 --
 -- > foo = Property Debian
--- > foo = property' $ \o -> do
--- > 	ensureProperty o (aptInstall "foo")
+-- > foo = property' $ \w -> do
+-- > 	ensureProperty w (aptInstall "foo")
 --
 -- The type checker will prevent using ensureProperty with a property
--- that does not support the target OSes needed by the OuterMetaTypes.
+-- that does not support the target OSes needed by the OuterMetaTypesWitness.
 -- In the example above, aptInstall must support Debian, since foo
 -- is supposed to support Debian.
 --
@@ -36,7 +36,7 @@ ensureProperty
 		( Cannot_ensureProperty_WithInfo inner ~ 'True
 		, (Targets inner `NotSuperset` Targets outer) ~ 'CanCombine
 		)
-	=> OuterMetaTypes outer
+	=> OuterMetaTypesWitness outer
 	-> Property (MetaTypes inner)
 	-> Propellor Result
 ensureProperty _ = catchPropellor . getSatisfy
@@ -48,19 +48,19 @@ type instance Cannot_ensureProperty_WithInfo (t ': ts) =
 	Not (t `EqT` 'WithInfo) && Cannot_ensureProperty_WithInfo ts
 
 -- | Constructs a property, like `property`, but provides its
--- `OuterMetaTypes`.
+-- `OuterMetaTypesWitness`.
 property'
 	:: SingI metatypes
 	=> Desc
-	-> (OuterMetaTypes metatypes -> Propellor Result)
+	-> (OuterMetaTypesWitness metatypes -> Propellor Result)
 	-> Property (MetaTypes metatypes)
 property' d a =
-	let p = Property sing d (a (outerMetaTypes p)) mempty mempty
+	let p = Property sing d (a (outerMetaTypesWitness p)) mempty mempty
 	in p
 
 -- | Used to provide the metatypes of a Property to calls to 
 -- 'ensureProperty` within it.
-newtype OuterMetaTypes metatypes = OuterMetaTypes (MetaTypes metatypes)
+newtype OuterMetaTypesWitness metatypes = OuterMetaTypesWitness (MetaTypes metatypes)
 
-outerMetaTypes :: Property (MetaTypes l) -> OuterMetaTypes l
-outerMetaTypes (Property metatypes _ _ _ _) = OuterMetaTypes metatypes
+outerMetaTypesWitness :: Property (MetaTypes l) -> OuterMetaTypesWitness l
+outerMetaTypesWitness (Property metatypes _ _ _ _) = OuterMetaTypesWitness metatypes
