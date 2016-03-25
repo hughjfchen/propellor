@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
 
 module Propellor.Property.Scheduled
 	( period
@@ -36,10 +36,10 @@ period prop recurrance = flip describe desc $ adjustPropertySatisfy prop $ \sati
 	desc = propertyDesc prop ++ " (period " ++ fromRecurrance recurrance ++ ")"
 
 -- | Like period, but parse a human-friendly string.
-periodParse :: Property NoInfo -> String -> Property NoInfo
+periodParse :: (IsProp (Property i)) => Property i -> String -> Property i
 periodParse prop s = case toRecurrance s of
 	Just recurrance -> period prop recurrance
-	Nothing -> property "periodParse" $ do
+	Nothing -> adjustPropertySatisfy prop $ \_ -> do
 		liftIO $ warningMessage $ "failed periodParse: " ++ s
 		noChange
 
