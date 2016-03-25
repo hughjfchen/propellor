@@ -158,18 +158,6 @@ addInfoProperty
 addInfoProperty (Property _ d a oldi c) newi =
 	Property sing d a (oldi <> newi) c
 
-{-
-
--- | Makes a version of a Proprty without its Info.
--- Use with caution!
-ignoreInfo
-	:: (metatypes' ~ 
-	=> Property metatypes
-	-> Property (MetaTypes metatypes')
-ignoreInfo = 
-
--}
-
 -- | Changes the action that is performed to satisfy a property.
 adjustPropertySatisfy :: Property metatypes -> (Propellor Result -> Propellor Result) -> Property metatypes
 adjustPropertySatisfy (Property t d s i c) f = Property t d (f s) i c
@@ -213,7 +201,9 @@ class IsProp p where
 	-- | Gets the info of the property, combined with all info
 	-- of all children properties.
 	getInfoRecursive :: p -> Info
-	toProp :: p -> ChildProperty
+	-- | Gets a ChildProperty representing the Property.
+	-- You should not normally need to use this.
+	toChildProperty :: p -> ChildProperty
 	-- | Gets the action that can be run to satisfy a Property.
 	-- You should never run this action directly. Use
 	-- 'Propellor.EnsureProperty.ensureProperty` instead.
@@ -225,7 +215,7 @@ instance IsProp (Property metatypes) where
 	modifyChildren (Property t d a i c) f = Property t d a i (f c)
 	getInfoRecursive (Property _ _ _ i c) =
 		i <> mconcat (map getInfoRecursive c)
-	toProp (Property _ d a i c) = ChildProperty d a i c
+	toChildProperty (Property _ d a i c) = ChildProperty d a i c
 	getSatisfy (Property _ _ a _ _) = a
 
 instance IsProp ChildProperty where
@@ -234,7 +224,7 @@ instance IsProp ChildProperty where
 	modifyChildren (ChildProperty d a i c) f = ChildProperty d a i (f c)
 	getInfoRecursive (ChildProperty _ _ i c) =
 		i <> mconcat (map getInfoRecursive c)
-	toProp = id
+	toChildProperty = id
 	getSatisfy (ChildProperty _ a _ _) = a
 
 instance IsProp (RevertableProperty setupmetatypes undometatypes) where
@@ -243,10 +233,9 @@ instance IsProp (RevertableProperty setupmetatypes undometatypes) where
 		RevertableProperty (setDesc p1 d) (setDesc p2 ("not " ++ d))
 	getDesc (RevertableProperty p1 _) = getDesc p1
 	modifyChildren (RevertableProperty p1 p2) f = RevertableProperty (modifyChildren p1 f) (modifyChildren p2 f)
-	-- toProp (RevertableProperty p1 _) = p1
 	-- | Return the Info of the currently active side.
 	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
-	toProp (RevertableProperty p1 _p2) = toProp p1
+	toChildProperty (RevertableProperty p1 _p2) = toChildProperty p1
 	getSatisfy (RevertableProperty p1 _) = getSatisfy p1
 
 -- | Type level calculation of the type that results from combining two

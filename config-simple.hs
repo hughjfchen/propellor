@@ -12,7 +12,6 @@ import Propellor.Property.Scheduled
 import qualified Propellor.Property.User as User
 --import qualified Propellor.Property.Hostname as Hostname
 --import qualified Propellor.Property.Tor as Tor
-import qualified Propellor.Property.Docker as Docker
 
 main :: IO ()
 main = defaultMain hosts
@@ -34,15 +33,4 @@ mybox = host "mybox.example.com" $ props
 	& User.hasSomePassword (User "root")
 	& Network.ipv6to4
 	& File.dirExists "/var/www"
-	& Docker.docked webserverContainer
-	& Docker.garbageCollected `period` Daily
 	& Cron.runPropellor (Cron.Times "30 * * * *")
-
--- A generic webserver in a Docker container.
-webserverContainer :: Docker.Container
-webserverContainer = Docker.container "webserver" (Docker.latestImage "debian") $ props
-	& os (System (Debian (Stable "jessie")) "amd64")
-	& Apt.stdSourcesList
-	& Docker.publish "80:80"
-	& Docker.volume "/var/www:/var/www"
-	& Apt.serviceInstalledRunning "apache2"

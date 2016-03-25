@@ -62,7 +62,7 @@ type instance GetMetaTypes (RevertableProperty (MetaTypes t) undo) = MetaTypes t
 	=> Props (MetaTypes x)
 	-> p
 	-> Props (MetaTypes (Combine x y))
-Props c & p = Props (c ++ [toProp p])
+Props c & p = Props (c ++ [toChildProperty p])
 
 -- | Adds a property before any other properties.
 (&^)
@@ -74,7 +74,7 @@ Props c & p = Props (c ++ [toProp p])
 	=> Props (MetaTypes x)
 	-> p
 	-> Props (MetaTypes (Combine x y))
-Props c &^ p = Props (toProp p : c)
+Props c &^ p = Props (toChildProperty p : c)
 
 -- | Adds a property in reverted form.
 (!)
@@ -82,7 +82,7 @@ Props c &^ p = Props (toProp p : c)
 	=> Props (MetaTypes x)
 	-> RevertableProperty (MetaTypes y) (MetaTypes z)
 	-> Props (MetaTypes (Combine x z))
-Props c ! p = Props (c ++ [toProp (revert p)])
+Props c ! p = Props (c ++ [toChildProperty (revert p)])
 
 {-
 

@@ -21,7 +21,7 @@ import Propellor.Exception
 import Data.Monoid
 
 toProps :: [Property (MetaTypes metatypes)] -> Props (MetaTypes metatypes)
-toProps ps = Props (map toProp ps)
+toProps ps = Props (map toChildProperty ps)
 
 -- | Combines a list of properties, resulting in a single property
 -- that when run will run each property in the list in turn,
@@ -38,7 +38,7 @@ propertyList desc (Props ps) =
 	property desc (ensureChildProperties cs)
 		`modifyChildren` (++ cs)
   where
-	cs = map toProp ps
+	cs = map toChildProperty ps
 
 -- | Combines a list of properties, resulting in one property that
 -- ensures each in turn. Stops if a property fails.
@@ -47,7 +47,7 @@ combineProperties desc (Props ps) =
 	property desc (combineSatisfy cs NoChange)
 		`modifyChildren` (++ cs)
   where
-	cs = map toProp ps
+	cs = map toChildProperty ps
 
 combineSatisfy :: [ChildProperty] -> Result -> Propellor Result
 combineSatisfy [] rs = return rs

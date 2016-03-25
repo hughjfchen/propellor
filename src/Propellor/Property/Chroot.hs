@@ -213,11 +213,10 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 		changeWorkingDirectory localdir
 		when onconsole forceConsole
 		onlyProcess (provisioningLock loc) $ do
-			r <- runPropellor (setInChroot h) $ ensureProperties $
+			r <- runPropellor (setInChroot h) $ ensureChildProperties $
 				if systemdonly
-					then [Systemd.installed]
-					else map ignoreInfo $
-						hostProperties h
+					then [toProp Systemd.installed]
+					else hostProperties h
 			flushConcurrentOutput
 			putStrLn $ "\n" ++ show r
 chain _ _ = errorMessage "bad chain command"
