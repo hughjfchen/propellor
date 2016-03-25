@@ -41,7 +41,7 @@ module Propellor.Types
 	, module Propellor.Types.Result
 	, module Propellor.Types.ZFS
 	, propertySatisfy
-	, Sing
+	, MetaTypes
 	) where
 
 import Data.Monoid
@@ -142,17 +142,17 @@ property
 	:: SingI metatypes
 	=> Desc
 	-> Propellor Result
-	-> Property (Sing metatypes)
+	-> Property (MetaTypes metatypes)
 property d a = Property sing d a mempty mempty
 
 -- | Adds info to a Property.
 --
 -- The new Property will include HasInfo in its metatypes.
 addInfoProperty
-	:: (Sing metatypes' ~ (+) HasInfo metatypes, SingI metatypes')
+	:: (MetaTypes metatypes' ~ (+) HasInfo metatypes, SingI metatypes')
 	=> Property metatypes
 	-> Info
-	-> Property (Sing metatypes')
+	-> Property (MetaTypes metatypes')
 addInfoProperty (Property metatypes d a oldi c) newi =
 	Property sing d a (oldi <> newi) c
 
@@ -163,7 +163,7 @@ addInfoProperty (Property metatypes d a oldi c) newi =
 ignoreInfo
 	:: (metatypes' ~ 
 	=> Property metatypes
-	-> Property (Sing metatypes')
+	-> Property (MetaTypes metatypes')
 ignoreInfo = 
 
 -}
@@ -245,12 +245,12 @@ instance IsProp (RevertableProperty setupmetatypes undometatypes) where
 -- | Type level calculation of the type that results from combining two
 -- types of properties.
 type family CombinedType x y
-type instance CombinedType (Property (Sing x)) (Property (Sing y)) = Property (Sing (Combine x y))
-type instance CombinedType (RevertableProperty (Sing x) (Sing x')) (RevertableProperty (Sing y) (Sing y')) = RevertableProperty (Sing (Combine x y)) (Sing (Combine x' y'))
+type instance CombinedType (Property (MetaTypes x)) (Property (MetaTypes y)) = Property (MetaTypes (Combine x y))
+type instance CombinedType (RevertableProperty (MetaTypes x) (MetaTypes x')) (RevertableProperty (MetaTypes y) (MetaTypes y')) = RevertableProperty (MetaTypes (Combine x y)) (MetaTypes (Combine x' y'))
 -- When only one of the properties is revertable, the combined property is
 -- not fully revertable, so is not a RevertableProperty.
-type instance CombinedType (RevertableProperty (Sing x) (Sing x')) (Property (Sing y)) = Property (Sing (Combine x y))
-type instance CombinedType (Property (Sing x)) (RevertableProperty (Sing y) (Sing y')) = Property (Sing (Combine x y))
+type instance CombinedType (RevertableProperty (MetaTypes x) (MetaTypes x')) (Property (MetaTypes y)) = Property (MetaTypes (Combine x y))
+type instance CombinedType (Property (MetaTypes x)) (RevertableProperty (MetaTypes y) (MetaTypes y')) = Property (MetaTypes (Combine x y))
 
 type ResultCombiner = Propellor Result -> Propellor Result -> Propellor Result
 
@@ -268,15 +268,15 @@ class Combines x y where
 		-> y
 		-> CombinedType x y
 
-instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (Property (Sing x)) (Property (Sing y)) where
+instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (Property (MetaTypes y)) where
 	combineWith f _ (Property t1 d1 a1 i1 c1) (Property _t2 d2 a2 i2 c2) =
 		Property sing d1 (f a1 a2) i1 (ChildProperty d2 a2 i2 c2 : c1)
-instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, CannotCombineTargets x' y' (Combine x' y') ~ 'CanCombineTargets, SingI (Combine x y), SingI (Combine x' y')) => Combines (RevertableProperty (Sing x) (Sing x')) (RevertableProperty (Sing y) (Sing y')) where
+instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, CannotCombineTargets x' y' (Combine x' y') ~ 'CanCombineTargets, SingI (Combine x y), SingI (Combine x' y')) => Combines (RevertableProperty (MetaTypes x) (MetaTypes x')) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
 	combineWith sf tf (RevertableProperty s1 t1) (RevertableProperty s2 t2) =
 		RevertableProperty
 			(combineWith sf tf s1 s2)
 			(combineWith tf sf t1 t2)
-instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (RevertableProperty (Sing x) (Sing x')) (Property (Sing y)) where
+instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (RevertableProperty (MetaTypes x) (MetaTypes x')) (Property (MetaTypes y)) where
 	combineWith sf tf (RevertableProperty x _) y = combineWith sf tf x y
-instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (Property (Sing x)) (RevertableProperty (Sing y) (Sing y')) where
+instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
 	combineWith sf tf x (RevertableProperty y _) = combineWith sf tf x y

@@ -10,7 +10,7 @@ module Propellor.Types.MetaTypes (
 	FreeBSD,
 	HasInfo,
 	type (+),
-	Sing,
+	MetaTypes,
 	sing,
 	SingI,
 	IncludesInfo,
@@ -36,15 +36,17 @@ data OS
 	deriving (Show, Eq)
 
 -- | Any unix-like system
-type UnixLike = Sing '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish, 'Targeting 'OSFreeBSD ]
-type Debian = Sing '[ 'Targeting 'OSDebian ]
+type UnixLike = MetaTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish, 'Targeting 'OSFreeBSD ]
+type Debian = MetaTypes '[ 'Targeting 'OSDebian ]
+type Buntish = MetaTypes '[ 'Targeting 'OSBuntish ]
+type FreeBSD = MetaTypes '[ 'Targeting 'OSFreeBSD ]
 -- | Debian and derivatives.
-type DebianLike = Sing '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish ]
-type Buntish = Sing '[ 'Targeting 'OSBuntish ]
-type FreeBSD = Sing '[ 'Targeting 'OSFreeBSD ]
+type DebianLike = Debian + Buntish
 
 -- | Used to indicate that a Property adds Info to the Host where it's used.
-type HasInfo = Sing '[ 'WithInfo ]
+type HasInfo = MetaTypes '[ 'WithInfo ]
+
+type MetaTypes = Sing
 
 -- | The data family of singleton types.
 data family Sing (x :: k)

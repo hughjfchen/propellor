@@ -260,8 +260,8 @@ tightenTargets
 		, (NonTargets new `NotSuperset` NonTargets old) ~ CanCombineTargets
 		, SingI new
 		)
-	=> Property (Sing old)
-	-> Property (Sing new)
+	=> Property (MetaTypes old)
+	-> Property (MetaTypes new)
 tightenTargets (Property old d a i c) = Property sing d a i c
 
 {-
@@ -276,9 +276,9 @@ pickOS
 		( combined ~ Union a b
 		, SingI combined
 		)
-	=> Property (Sing a)
-	-> Property (Sing b)
-	-> Property (Sing combined)
+	=> Property (MetaTypes a)
+	-> Property (MetaTypes b)
+	-> Property (MetaTypes combined)
 pickOS a@(Property ta ioa) b@(Property tb iob) = Property sing io
   where
 	-- TODO pick with of ioa or iob to use based on final OS of

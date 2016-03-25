@@ -37,7 +37,7 @@ ensureProperty
 		, CannotUse_ensureProperty_WithInfo inner ~ 'True
 		)
 	=> OuterMetaTypes outer
-	-> Property (Sing inner)
+	-> Property (MetaTypes inner)
 	-> Propellor Result
 ensureProperty _ = catchPropellor . propertySatisfy
 
@@ -53,14 +53,14 @@ property'
 	:: SingI metatypes
 	=> Desc
 	-> (OuterMetaTypes metatypes -> Propellor Result)
-	-> Property (Sing metatypes)
+	-> Property (MetaTypes metatypes)
 property' d a =
 	let p = Property sing d (a (outerMetaTypes p)) mempty mempty
 	in p
 
 -- | Used to provide the metatypes of a Property to calls to 
 -- 'ensureProperty` within it.
-newtype OuterMetaTypes metatypes = OuterMetaTypes (Sing metatypes)
+newtype OuterMetaTypes metatypes = OuterMetaTypes (MetaTypes metatypes)
 
-outerMetaTypes :: Property (Sing l) -> OuterMetaTypes l
+outerMetaTypes :: Property (MetaTypes l) -> OuterMetaTypes l
 outerMetaTypes (Property metatypes _ _ _ _) = OuterMetaTypes metatypes
