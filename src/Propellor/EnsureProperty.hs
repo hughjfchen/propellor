@@ -33,7 +33,7 @@ import Propellor.Exception
 -- with the property to be lost.
 ensureProperty
 	::
-		( (Targets inner `NotSuperset` Targets outer) ~ 'CanCombineTargets
+		( (Targets inner `NotSuperset` Targets outer) ~ 'CanCombine
 		, CannotUse_ensureProperty_WithInfo inner ~ 'True
 		)
 	=> OuterMetaTypes outer

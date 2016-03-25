@@ -269,15 +269,15 @@ class Combines x y where
 		-> y
 		-> CombinedType x y
 
-instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (Property (MetaTypes y)) where
+instance (CheckCombinable x y ~ 'CanCombine, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (Property (MetaTypes y)) where
 	combineWith f _ (Property _ d1 a1 i1 c1) (Property _ d2 a2 i2 c2) =
 		Property sing d1 (f a1 a2) i1 (ChildProperty d2 a2 i2 c2 : c1)
-instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, CannotCombineTargets x' y' (Combine x' y') ~ 'CanCombineTargets, SingI (Combine x y), SingI (Combine x' y')) => Combines (RevertableProperty (MetaTypes x) (MetaTypes x')) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
+instance (CheckCombinable x y ~ 'CanCombine, CheckCombinable x' y' ~ 'CanCombine, SingI (Combine x y), SingI (Combine x' y')) => Combines (RevertableProperty (MetaTypes x) (MetaTypes x')) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
 	combineWith sf tf (RevertableProperty s1 t1) (RevertableProperty s2 t2) =
 		RevertableProperty
 			(combineWith sf tf s1 s2)
 			(combineWith tf sf t1 t2)
-instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (RevertableProperty (MetaTypes x) (MetaTypes x')) (Property (MetaTypes y)) where
+instance (CheckCombinable x y ~ 'CanCombine, SingI (Combine x y)) => Combines (RevertableProperty (MetaTypes x) (MetaTypes x')) (Property (MetaTypes y)) where
 	combineWith sf tf (RevertableProperty x _) y = combineWith sf tf x y
-instance (CannotCombineTargets x y (Combine x y) ~ 'CanCombineTargets, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
+instance (CheckCombinable x y ~ 'CanCombine, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
 	combineWith sf tf x (RevertableProperty y _) = combineWith sf tf x y

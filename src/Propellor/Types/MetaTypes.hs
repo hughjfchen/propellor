@@ -17,9 +17,9 @@ module Propellor.Types.MetaTypes (
 	Targets,
 	NonTargets,
 	NotSuperset,
-	CheckCombineTargets(..),
 	Combine,
-	CannotCombineTargets,
+	CheckCombine(..),
+	CheckCombinable,
 	type (&&),
 	Not,
 	EqT,
@@ -45,6 +45,9 @@ type DebianLike = Debian + Buntish
 
 -- | Used to indicate that a Property adds Info to the Host where it's used.
 type HasInfo = MetaTypes '[ 'WithInfo ]
+
+type family IncludesInfo t :: Bool
+type instance IncludesInfo (MetaTypes l) = Elem 'WithInfo l
 
 type MetaTypes = Sing
 
@@ -98,28 +101,36 @@ type instance Combine (list1 :: [a]) (list2 :: [a]) =
 		(Targets list1 `Intersect` Targets list2)
 	)
 
-type family IncludesInfo t :: Bool
-type instance IncludesInfo (MetaTypes l) = Elem 'WithInfo l
+-- | Checks if two MetaTypes lists can be safely combined.
+--
+-- This should be used anywhere Combine is used, as an additional
+-- constraint. For example:
+--
+-- > foo :: (CheckCombinable x y ~ 'CanCombine) => x -> y -> Combine x y
+type family CheckCombinable (list1 :: [a]) (list2 :: [a]) :: CheckCombine
+-- As a special case, if either list is empty, let it be combined with the
+-- other. This relies on MetaTypes list always containing at least
+-- one target, so can only happen if there's already been a type error.
+-- This special case lets the type checker show only the original type
+-- error, and not an extra error due to a later CheckCombinable constraint.
+type instance CheckCombinable '[] list2 = CanCombine
+type instance CheckCombinable list1 '[] = CanCombine
+type instance CheckCombinable (l1 ': list1) (l2 ': list2) =
+	CheckCombinable' (Combine (l1 ': list1) (l2 ': list2))
+type family CheckCombinable' (combinedlist :: [a]) :: CheckCombine
+type instance CheckCombinable' '[] = 'CannotCombineTargets
+type instance CheckCombinable' (a ': rest) 
+	= If (IsTarget a)
+		'CanCombine
+		(CheckCombinable' rest)
 
--- The name of this was chosen to make type errors a more understandable.
-type family CannotUseEnsurePropertyWithInfo (l :: [a]) :: Bool
-type instance CannotUseEnsurePropertyWithInfo '[] = 'True
-type instance CannotUseEnsurePropertyWithInfo (t ': ts) = Not (t `EqT` 'WithInfo) && CannotUseEnsurePropertyWithInfo ts
-
--- | Detect intersection of two lists that don't have any common targets.
--- 
--- The name of this was chosen to make type errors a more understandable.
-type family CannotCombineTargets (list1 :: [a]) (list2 :: [a]) (listr :: [a]) :: CheckCombineTargets
-type instance CannotCombineTargets l1 l2 '[] = 'CannotCombineTargets
-type instance CannotCombineTargets l1 l2 (a ': rest) = 'CanCombineTargets
-
-data CheckCombineTargets = CannotCombineTargets | CanCombineTargets
+data CheckCombine = CannotCombineTargets | CanCombine
 
 -- | Every item in the subset must be in the superset.
 --
 -- The name of this was chosen to make type errors more understandable.
-type family NotSuperset (superset :: [a]) (subset :: [a]) :: CheckCombineTargets
-type instance NotSuperset superset '[] = 'CanCombineTargets
+type family NotSuperset (superset :: [a]) (subset :: [a]) :: CheckCombine
+type instance NotSuperset superset '[] = 'CanCombine
 type instance NotSuperset superset (s ': rest) =
 	If (Elem s superset)
 		(NotSuperset superset rest)
