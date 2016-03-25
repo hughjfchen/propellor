@@ -75,7 +75,7 @@ securityUpdates suite
 		in [l, srcLine l]
 	| otherwise = []
 
--- | Makes sources.list have a standard content using the mirror CDN,
+-- | Makes sources.list have a standard content using the Debian mirror CDN,
 -- with the Debian suite configured by the os.
 --
 -- Since the CDN is sometimes unreliable, also adds backup lines using
@@ -196,13 +196,7 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
 robustly :: Property DebianLike -> Property DebianLike
-robustly p = adjustPropertySatisfy p $ \satisfy -> do
-	r <- satisfy
-	if r == FailedChange
-		-- Safe to use getSatisfy because we're re-running
-		-- the same property as before.
-		then getSatisfy $ p `requires` update
-		else return r
+robustly p = p `fallback` (update `before` p)
 
 isInstallable :: [Package] -> IO Bool
 isInstallable ps = do
