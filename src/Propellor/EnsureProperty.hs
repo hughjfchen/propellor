@@ -7,7 +7,7 @@
 module Propellor.EnsureProperty
 	( ensureProperty
 	, property'
-	, OuterMetaTypes
+	, OuterMetaTypes(..)
 	) where
 
 import Propellor.Types
@@ -33,8 +33,8 @@ import Propellor.Exception
 -- with the property to be lost.
 ensureProperty
 	::
-		( (Targets inner `NotSuperset` Targets outer) ~ 'CanCombine
-		, CannotUse_ensureProperty_WithInfo inner ~ 'True
+		( Cannot_ensureProperty_WithInfo inner ~ 'True
+		, (Targets inner `NotSuperset` Targets outer) ~ 'CanCombine
 		)
 	=> OuterMetaTypes outer
 	-> Property (MetaTypes inner)
@@ -42,10 +42,10 @@ ensureProperty
 ensureProperty _ = catchPropellor . getSatisfy
 
 -- The name of this was chosen to make type errors a more understandable.
-type family CannotUse_ensureProperty_WithInfo (l :: [a]) :: Bool
-type instance CannotUse_ensureProperty_WithInfo '[] = 'True
-type instance CannotUse_ensureProperty_WithInfo (t ': ts) =
-	Not (t `EqT` 'WithInfo) && CannotUse_ensureProperty_WithInfo ts
+type family Cannot_ensureProperty_WithInfo (l :: [a]) :: Bool
+type instance Cannot_ensureProperty_WithInfo '[] = 'True
+type instance Cannot_ensureProperty_WithInfo (t ': ts) =
+	Not (t `EqT` 'WithInfo) && Cannot_ensureProperty_WithInfo ts
 
 -- | Constructs a property, like `property`, but provides its
 -- `OuterMetaTypes`.

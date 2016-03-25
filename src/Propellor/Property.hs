@@ -22,9 +22,9 @@ module Propellor.Property (
 	, Propellor
 	, property
 	, property'
+	, OuterMetaTypes
 	, ensureProperty
-	, tightenTargets
-	--, withOS
+	, withOS
 	, unsupportedOS
 	, makeChange
 	, noChange
@@ -243,26 +243,6 @@ isNewerThan x y = do
   where
 	mtime f = catchMaybeIO $ modificationTimeHiRes <$> getFileStatus f
 
--- | Tightens the MetaType list of a Property, to contain fewer targets.
---
--- Anything else in the MetaType list is passed through unchanged.
---
--- For example, to make a property that uses apt-get, which is only
--- available on DebianLike systems:
---
--- > upgraded :: Property DebianLike
--- > upgraded = tightenTargets $ cmdProperty "apt-get" ["upgrade"]
-tightenTargets
-	:: 
-		-- Note that this uses PolyKinds
-		( (Targets untightened `NotSuperset` Targets tightened) ~ 'CanCombine
-		, (NonTargets tightened `NotSuperset` NonTargets untightened) ~ 'CanCombine
-		, SingI tightened
-		)
-	=> Property (MetaTypes untightened)
-	-> Property (MetaTypes tightened)
-tightenTargets (Property _old d a i c) = Property sing d a i c
-
 {-
 
 -- | Picks one of the two input properties to use,
@@ -286,17 +266,29 @@ pickOS a@(Property ta ioa) b@(Property tb iob) = Property sing io
 
 -}
 
--- | Makes a property that is satisfied differently depending on the host's
--- operating system. 
+-- | Makes a property that is satisfied differently depending on specifics
+-- of the host's operating system.
 --
--- Note that the operating system may not be declared for all hosts.
+-- > myproperty :: Property Debian
+-- > myproperty = withOS "foo installed" $ \o os -> case os of
+-- > 	(Just (System (Debian (Stable release)) arch)) -> ensureProperty o ...
+-- > 	(Just (System (Debian suite) arch)) -> ensureProperty o ...
+-- >	_ -> unsupportedOS
 --
--- > myproperty = withOS "foo installed" $ \o -> case o of
--- > 	(Just (System (Debian suite) arch)) -> ...
--- > 	(Just (System (Buntish release) arch)) -> ...
--- >	Nothing -> unsupportedOS
---withOS :: Desc -> (Maybe System -> Propellor Result) -> Property NoInfo
---withOS desc a = property desc $ a =<< getOS
+-- Note that the operating system specifics may not be declared for all hosts,
+-- which is where Nothing comes in.
+withOS
+	:: (SingI metatypes)
+	=> Desc
+	-> (OuterMetaTypes '[] -> Maybe System -> Propellor Result)
+	-> Property (MetaTypes metatypes)
+withOS desc a = property desc $ a dummyoutermetatypes =<< getOS
+  where
+	-- Using this dummy value allows ensureProperty to be used
+	-- even though the inner property probably doesn't target everything
+	-- that the outer withOS property targets.
+	dummyoutermetatypes :: OuterMetaTypes ('[])
+	dummyoutermetatypes = OuterMetaTypes sing
 
 -- | Throws an error, for use in `withOS` when a property is lacking
 -- support for an OS.

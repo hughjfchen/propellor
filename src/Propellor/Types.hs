@@ -42,6 +42,7 @@ module Propellor.Types
 	, module Propellor.Types.Dns
 	, module Propellor.Types.Result
 	, module Propellor.Types.ZFS
+	, TightenTargets(..)
 	) where
 
 import Data.Monoid
@@ -285,3 +286,25 @@ instance (CheckCombinable x y ~ 'CanCombine, SingI (Combine x y)) => Combines (R
 	combineWith sf tf (RevertableProperty x _) y = combineWith sf tf x y
 instance (CheckCombinable x y ~ 'CanCombine, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
 	combineWith sf tf x (RevertableProperty y _) = combineWith sf tf x y
+
+class TightenTargets p where
+	-- | Tightens the MetaType list of a Property (or similar),
+	-- to contain fewer targets.
+	--
+	-- For example, to make a property that uses apt-get, which is only
+	-- available on DebianLike systems:
+	--
+	-- > upgraded :: Property DebianLike
+	-- > upgraded = tightenTargets $ cmdProperty "apt-get" ["upgrade"]
+	tightenTargets
+		:: 
+			-- Note that this uses PolyKinds
+			( (Targets untightened `NotSuperset` Targets tightened) ~ 'CanCombine
+			, (NonTargets tightened `NotSuperset` NonTargets untightened) ~ 'CanCombine
+			, SingI tightened
+			)
+		=> p (MetaTypes untightened)
+		-> p (MetaTypes tightened)
+
+instance TightenTargets Property where
+	tightenTargets (Property _ d a i c) = Property sing d a i c

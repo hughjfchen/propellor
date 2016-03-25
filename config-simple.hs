@@ -25,7 +25,7 @@ hosts =
 
 -- An example host.
 mybox :: Host
-mybox = host "mybox.example.com"
+mybox = host "mybox.example.com" $ props
 	& os (System (Debian Unstable) "amd64")
 	& Apt.stdSourcesList
 	& Apt.unattendedUpgrades
@@ -40,7 +40,7 @@ mybox = host "mybox.example.com"
 
 -- A generic webserver in a Docker container.
 webserverContainer :: Docker.Container
-webserverContainer = Docker.container "webserver" (Docker.latestImage "debian")
+webserverContainer = Docker.container "webserver" (Docker.latestImage "debian") $ props
 	& os (System (Debian (Stable "jessie")) "amd64")
 	& Apt.stdSourcesList
 	& Docker.publish "80:80"
