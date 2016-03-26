@@ -90,7 +90,7 @@ spin' mprivdata relay target hst = do
 		error "remote propellor failed"
   where
 	hn = fromMaybe target relay
-	sys = case getInfo (hostInfo hst) of
+	sys = case fromInfo (hostInfo hst) of
 		InfoVal o -> Just o
 		NoInfoVal -> Nothing
 
@@ -170,7 +170,7 @@ getSshTarget target hst
 					return ip
 
 	configips = map fromIPAddr $ mapMaybe getIPAddr $
-		S.toList $ fromDnsInfo $ getInfo $ hostInfo hst
+		S.toList $ fromDnsInfo $ fromInfo $ hostInfo hst
 
 -- Update the privdata, repo url, and git repo over the ssh
 -- connection, talking to the user's local propellor instance which is

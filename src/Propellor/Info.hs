@@ -42,7 +42,7 @@ pureInfoProperty' desc i = addInfoProperty p i
 
 -- | Gets a value from the host's Info.
 askInfo :: (IsInfo v) => Propellor v
-askInfo = asks (getInfo . hostInfo)
+askInfo = asks (fromInfo . hostInfo)
 
 -- | Specifies that a host's operating system is Debian,
 -- and further indicates the suite and architecture.
@@ -129,7 +129,7 @@ hostMap l = M.fromList $ zip (map hostName l) l
 
 aliasMap :: [Host] -> M.Map HostName Host
 aliasMap = M.fromList . concat .
-	map (\h -> map (\aka -> (aka, h)) $ fromAliasesInfo $ getInfo $ hostInfo h)
+	map (\h -> map (\aka -> (aka, h)) $ fromAliasesInfo $ fromInfo $ hostInfo h)
 
 findHost :: [Host] -> HostName -> Maybe Host
 findHost l hn = (findHostNoAlias l hn) <|> (findAlias l hn)
@@ -141,7 +141,7 @@ findAlias :: [Host] -> HostName -> Maybe Host
 findAlias l hn = M.lookup hn (aliasMap l)
 
 getAddresses :: Info -> [IPAddr]
-getAddresses = mapMaybe getIPAddr . S.toList . fromDnsInfo . getInfo
+getAddresses = mapMaybe getIPAddr . S.toList . fromDnsInfo . fromInfo
 
 hostAddresses :: HostName -> [Host] -> [IPAddr]
 hostAddresses hn hosts = maybe [] (getAddresses . hostInfo) (findHost hosts hn)

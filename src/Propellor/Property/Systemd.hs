@@ -214,13 +214,13 @@ container name system mkchroot = Container name c h
 --
 -- Reverting this property stops the container, removes the systemd unit,
 -- and deletes the chroot and all its contents.
-nspawned :: Container -> RevertableProperty HasInfo
+nspawned :: Container -> RevertableProperty (HasInfo + UnixLike) UnixLike
 nspawned c@(Container name (Chroot.Chroot loc builder _) h) =
 	p `describe` ("nspawned " ++ name)
   where
 	p = enterScript c
 		`before` chrootprovisioned
-		`before` nspawnService c (_chrootCfg $ getInfo $ hostInfo h)
+		`before` nspawnService c (_chrootCfg $ fromInfo $ hostInfo h)
 		`before` containerprovisioned
 
 	-- Chroot provisioning is run in systemd-only mode,
@@ -336,7 +336,7 @@ mungename = replace "/" "_"
 -- When there is no leading dash, "--" is prepended to the parameter.
 --
 -- Reverting the property will remove a parameter, if it's present.
-containerCfg :: String -> RevertableProperty HasInfo
+containerCfg :: String -> RevertableProperty (HasInfo + UnixLike) UnixLike
 containerCfg p = RevertableProperty (mk True) (mk False)
   where
 	mk b = pureInfoProperty ("container configuration " ++ (if b then "" else "without ") ++ p') $
@@ -348,18 +348,18 @@ containerCfg p = RevertableProperty (mk True) (mk False)
 -- | Bind mounts </etc/resolv.conf> from the host into the container.
 --
 -- This property is enabled by default. Revert it to disable it.
-resolvConfed :: RevertableProperty HasInfo
+resolvConfed :: RevertableProperty (HasInfo + UnixLike) UnixLike
 resolvConfed = containerCfg "bind=/etc/resolv.conf"
 
 -- | Link the container's journal to the host's if possible.
 -- (Only works if the host has persistent journal enabled.)
 --
 -- This property is enabled by default. Revert it to disable it.
-linkJournal :: RevertableProperty HasInfo
+linkJournal :: RevertableProperty (HasInfo + UnixLike) UnixLike
 linkJournal = containerCfg "link-journal=try-guest"
 
 -- | Disconnect networking of the container from the host.
-privateNetwork :: RevertableProperty HasInfo
+privateNetwork :: RevertableProperty (HasInfo + UnixLike) UnixLike
 privateNetwork = containerCfg "private-network"
 
 class Publishable a where
@@ -397,7 +397,7 @@ instance Publishable (Proto, Bound Port) where
 -- >	& Systemd.running Systemd.networkd
 -- >	& Systemd.publish (Port 80 ->- Port 8080)
 -- >	& Apt.installedRunning "apache2"
-publish :: Publishable p => p -> RevertableProperty HasInfo
+publish :: Publishable p => p -> RevertableProperty (HasInfo + UnixLike) UnixLike
 publish p = containerCfg $ "--port=" ++ toPublish p
 
 class Bindable a where
@@ -410,9 +410,9 @@ instance Bindable (Bound FilePath) where
 	toBind v = hostSide v ++ ":" ++ containerSide v
 
 -- | Bind mount a file or directory from the host into the container.
-bind :: Bindable p => p -> RevertableProperty HasInfo
+bind :: Bindable p => p -> RevertableProperty (HasInfo + UnixLike) UnixLike
 bind p = containerCfg $ "--bind=" ++ toBind p
 
 -- | Read-only mind mount.
-bindRo :: Bindable p => p -> RevertableProperty HasInfo
+bindRo :: Bindable p => p -> RevertableProperty (HasInfo + UnixLike) UnixLike
 bindRo p = containerCfg $ "--bind-ro=" ++ toBind p

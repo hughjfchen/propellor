@@ -5,7 +5,7 @@ module Propellor.Types.Info (
 	IsInfo(..),
 	addInfo,
 	toInfo,
-	getInfo,
+	fromInfo,
 	mapInfo,
 	propagatableInfo,
 	InfoVal(..),
@@ -51,8 +51,8 @@ toInfo :: IsInfo v => v -> Info
 toInfo = addInfo mempty
 
 -- The list is reversed here because addInfo builds it up in reverse order.
-getInfo :: IsInfo v => Info -> v
-getInfo (Info l) = mconcat (mapMaybe extractInfoEntry (reverse l))
+fromInfo :: IsInfo v => Info -> v
+fromInfo (Info l) = mconcat (mapMaybe extractInfoEntry (reverse l))
 
 -- | Maps a function over all values stored in the Info that are of the
 -- appropriate type.

@@ -49,6 +49,11 @@ propellor (3.0.0) UNRELEASED; urgency=medium
       For example:
         upgraded :: Property Debian
         upgraded = tightenTargets (cmdProperty "apt-get" ["upgrade"])
+    - Several utility functions have been renamed:
+      getInfo to fromInfo
+      propertyInfo to getInfo
+      propertyDesc to getDesc
+      propertyChildren to getChildren
   * The new `pickOS` property combinator can be used to combine different
     properties, supporting different OS's, into one Property that chooses
     what to do based on the Host's OS.

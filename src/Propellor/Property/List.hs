@@ -35,7 +35,7 @@ toProps ps = Props (map toChildProperty ps)
 propertyList :: SingI metatypes => Desc -> Props (MetaTypes metatypes) -> Property (MetaTypes metatypes)
 propertyList desc (Props ps) = 
 	property desc (ensureChildProperties cs)
-		`modifyChildren` (++ cs)
+		`addChildren` cs
   where
 	cs = map toChildProperty ps
 
@@ -44,7 +44,7 @@ propertyList desc (Props ps) =
 combineProperties :: SingI metatypes => Desc -> Props (MetaTypes metatypes) -> Property (MetaTypes metatypes)
 combineProperties desc (Props ps) = 
 	property desc (combineSatisfy cs NoChange)
-		`modifyChildren` (++ cs)
+		`addChildren` cs
   where
 	cs = map toChildProperty ps
 

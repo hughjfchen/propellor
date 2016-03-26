@@ -304,7 +304,7 @@ saslAuthdInstalled = setupdaemon
 -- | Uses `saslpasswd2` to set the password for a user in the sasldb2 file.
 --
 -- The password is taken from the privdata.
-saslPasswdSet :: Domain -> User -> Property HasInfo
+saslPasswdSet :: Domain -> User -> Property (HasInfo + UnixLike)
 saslPasswdSet domain (User user) = go `changesFileContent` "/etc/sasldb2"
   where
 	go = withPrivData src ctx $ \getpw ->

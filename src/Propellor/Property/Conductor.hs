@@ -126,7 +126,7 @@ mkOrchestra = fromJust . go S.empty
   where
 	go seen h
 		| S.member (hostName h) seen = Nothing -- break loop
-		| otherwise = Just $ case getInfo (hostInfo h) of
+		| otherwise = Just $ case fromInfo (hostInfo h) of
 			ConductorFor [] -> Conducted h
 			ConductorFor l -> 
 				let seen' = S.insert (hostName h) seen
@@ -214,7 +214,7 @@ orchestrate :: [Host] -> [Host]
 orchestrate hs = map go hs
   where
 	go h
-		| isOrchestrated (getInfo (hostInfo h)) = h
+		| isOrchestrated (fromInfo (hostInfo h)) = h
 		| otherwise = foldl orchestrate' (removeold h) (map (deloop h) os)
 	os = extractOrchestras hs
 
@@ -222,7 +222,7 @@ orchestrate hs = map go hs
 	removeold' h oldconductor = addPropHost h $
 		undoRevertableProperty $ conductedBy oldconductor
 
-	oldconductors = zip hs (map (getInfo . hostInfo) hs)
+	oldconductors = zip hs (map (fromInfo . hostInfo) hs)
 	oldconductorsof h = flip mapMaybe oldconductors $ 
 		\(oldconductor, NotConductorFor l) ->
 			if any (sameHost h) l
@@ -299,7 +299,7 @@ addConductorPrivData h hs = h { hostInfo = hostInfo h <> i }
 	i = mempty 
 		`addInfo` mconcat (map privinfo hs)
 		`addInfo` Orchestrated (Any True)
-	privinfo h' = forceHostContext (hostName h') $ getInfo (hostInfo h')
+	privinfo h' = forceHostContext (hostName h') $ fromInfo (hostInfo h')
 
 -- Use this property to let the specified conductor ssh in and run propellor.
 conductedBy :: Host -> RevertableProperty DebianLike UnixLike

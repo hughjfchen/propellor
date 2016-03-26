@@ -172,9 +172,9 @@ propagateContainerInfo :: (IsProp (Property i)) => Container -> Property i -> Pr
 propagateContainerInfo ctr@(Container _ h) p = propagateContainer cn ctr p'
   where
 	p' = infoProperty
-		(propertyDesc p)
+		(getDesc p)
 		(getSatisfy p)
-		(propertyInfo p <> dockerinfo)
+		(getInfo p <> dockerinfo)
 		(propertyChildren p)
 	dockerinfo = dockerInfo $
 		mempty { _dockerContainers = M.singleton cn h }
@@ -186,7 +186,7 @@ mkContainerInfo cid@(ContainerId hn _cn) (Container img h) =
   where
 	runparams = map (\(DockerRunParam mkparam) -> mkparam hn)
 		(_dockerRunParams info)
-	info = getInfo $ hostInfo h'
+	info = fromInfo $ hostInfo h'
 	h' = h
 		-- Restart by default so container comes up on
 		-- boot or when docker is upgraded.
@@ -435,7 +435,7 @@ myContainerSuffix = ".propellor"
 containerDesc :: (IsProp (Property i)) => ContainerId -> Property i -> Property i
 containerDesc cid p = p `describe` desc
   where
-	desc = "container " ++ fromContainerId cid ++ " " ++ propertyDesc p
+	desc = "container " ++ fromContainerId cid ++ " " ++ getDesc p
 
 runningContainer :: ContainerId -> Image -> [RunParam] -> Property Linux
 runningContainer cid@(ContainerId hn cn) image runps = containerDesc cid $ property "running" $ do
@@ -574,7 +574,7 @@ chain hostlist hn s = case toContainerId s of
 	Nothing -> errorMessage "bad container id"
 	Just cid -> case findHostNoAlias hostlist hn of
 		Nothing -> errorMessage ("cannot find host " ++ hn)
-		Just parenthost -> case M.lookup (containerName cid) (_dockerContainers $ getInfo $ hostInfo parenthost) of
+		Just parenthost -> case M.lookup (containerName cid) (_dockerContainers $ fromInfo $ hostInfo parenthost) of
 			Nothing -> errorMessage ("cannot find container " ++ containerName cid ++ " docked on host " ++ hn)
 			Just h -> go cid h
   where

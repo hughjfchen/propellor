@@ -141,6 +141,7 @@ Library
     Propellor.PropAccum
     Propellor.Utilities
     Propellor.CmdLine
+    Propellor.Container
     Propellor.Info
     Propellor.Message
     Propellor.Debug

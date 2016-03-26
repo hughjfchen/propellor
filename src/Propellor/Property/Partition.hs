@@ -68,7 +68,7 @@ kpartx :: FilePath -> ([LoopDev] -> Property DebianLike) -> Property DebianLike
 kpartx diskimage mkprop = go `requires` Apt.installed ["kpartx"]
   where
 	go :: Property DebianLike
-	go = property' (propertyDesc (mkprop [])) $ \w -> do
+	go = property' (getDesc (mkprop [])) $ \w -> do
 		cleanup -- idempotency
 		loopdevs <- liftIO $ kpartxParse
 			<$> readProcess "kpartx" ["-avs", diskimage]

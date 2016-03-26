@@ -26,11 +26,7 @@ module Propellor.Types
 	, type (+)
 	, addInfoProperty
 	, addInfoProperty'
-	, addChildrenProperty
 	, adjustPropertySatisfy
-	, propertyInfo
-	, propertyDesc
-	, propertyChildren
 	, RevertableProperty(..)
 	, (<!>)
 	, ChildProperty
@@ -124,12 +120,15 @@ type Desc = String
 -- internally, so you needn't worry about them.
 data Property metatypes = Property metatypes Desc (Propellor Result) Info [ChildProperty]
 
+instance Show (Property metatypes) where
+	show p = "property " ++ show (getDesc p)
+
 -- | Since there are many different types of Properties, they cannot be put
 -- into a list. The simplified ChildProperty can be put into a list.
 data ChildProperty = ChildProperty Desc (Propellor Result) Info [ChildProperty]
 
 instance Show ChildProperty where
-	show (ChildProperty desc _ _ _) = desc
+	show = getDesc
 
 -- | Constructs a Property, from a description and an action to run to
 -- ensure the Property is met.
@@ -170,27 +169,9 @@ addInfoProperty'
 addInfoProperty' (Property t d a oldi c) newi =
 	Property t d a (oldi <> newi) c
 
--- | Adds children to a Property.
-addChildrenProperty :: Property metatypes -> [ChildProperty] -> Property metatypes
-addChildrenProperty (Property t s a i cs) cs' = Property t s a i (cs ++ cs')
-
 -- | Changes the action that is performed to satisfy a property.
 adjustPropertySatisfy :: Property metatypes -> (Propellor Result -> Propellor Result) -> Property metatypes
 adjustPropertySatisfy (Property t d s i c) f = Property t d (f s) i c
-
-propertyInfo :: Property metatypes -> Info
-propertyInfo (Property _ _ _ i _) = i
-
-propertyDesc :: Property metatypes -> Desc
-propertyDesc (Property _ d _ _ _) = d
-
-instance Show (Property metatypes) where
-	show p = "property " ++ show (propertyDesc p)
-
--- | A Property can include a list of child properties that it also
--- satisfies. This allows them to be introspected to collect their info, etc.
-propertyChildren :: Property metatypes -> [ChildProperty]
-propertyChildren (Property _ _ _ _ c) = c
 
 -- | A property that can be reverted. The first Property is run
 -- normally and the second is run when it's reverted.
@@ -209,14 +190,16 @@ instance Show (RevertableProperty setupmetatypes undometatypes) where
 	-> RevertableProperty setupmetatypes undometatypes
 setup <!> undo = RevertableProperty setup undo
 
--- | Class of types that can be used as properties of a host.
 class IsProp p where
 	setDesc :: p -> Desc -> p
 	getDesc :: p -> Desc
-	modifyChildren :: p -> ([ChildProperty] -> [ChildProperty]) -> p
+	getChildren :: p -> [ChildProperty]
+	addChildren :: p -> [ChildProperty] -> p
 	-- | Gets the info of the property, combined with all info
 	-- of all children properties.
 	getInfoRecursive :: p -> Info
+	-- | Info, not including info from children.
+	getInfo :: p -> Info
 	-- | Gets a ChildProperty representing the Property.
 	-- You should not normally need to use this.
 	toChildProperty :: p -> ChildProperty
@@ -227,19 +210,23 @@ class IsProp p where
 
 instance IsProp (Property metatypes) where
 	setDesc (Property t _ a i c) d = Property t d a i c
-	getDesc = propertyDesc
-	modifyChildren (Property t d a i c) f = Property t d a i (f c)
+	getDesc (Property _ d _ _ _) = d
+	getChildren (Property _ _ _ _ c) = c
+	addChildren (Property t d a i c) c' = Property t d a i (c ++ c')
 	getInfoRecursive (Property _ _ _ i c) =
 		i <> mconcat (map getInfoRecursive c)
+	getInfo (Property _ _ _ i _) = i
 	toChildProperty (Property _ d a i c) = ChildProperty d a i c
 	getSatisfy (Property _ _ a _ _) = a
 
 instance IsProp ChildProperty where
 	setDesc (ChildProperty _ a i c) d = ChildProperty d a i c
 	getDesc (ChildProperty d _ _ _) = d
-	modifyChildren (ChildProperty d a i c) f = ChildProperty d a i (f c)
+	getChildren (ChildProperty _ _ _ c) = c
+	addChildren (ChildProperty d a i c) c' = ChildProperty d a i (c ++ c')
 	getInfoRecursive (ChildProperty _ _ i c) =
 		i <> mconcat (map getInfoRecursive c)
+	getInfo (ChildProperty _ _ i _) = i
 	toChildProperty = id
 	getSatisfy (ChildProperty _ a _ _) = a
 
@@ -248,9 +235,12 @@ instance IsProp (RevertableProperty setupmetatypes undometatypes) where
 	setDesc (RevertableProperty p1 p2) d =
 		RevertableProperty (setDesc p1 d) (setDesc p2 ("not " ++ d))
 	getDesc (RevertableProperty p1 _) = getDesc p1
-	modifyChildren (RevertableProperty p1 p2) f = RevertableProperty (modifyChildren p1 f) (modifyChildren p2 f)
+	getChildren (RevertableProperty p1 _) = getChildren p1
+	-- | Only add children to the active side.
+	addChildren (RevertableProperty p1 p2) c = RevertableProperty (addChildren p1 c) p2
 	-- | Return the Info of the currently active side.
 	getInfoRecursive (RevertableProperty p1 _p2) = getInfoRecursive p1
+	getInfo (RevertableProperty p1 _p2) = getInfo p1
 	toChildProperty (RevertableProperty p1 _p2) = toChildProperty p1
 	getSatisfy (RevertableProperty p1 _) = getSatisfy p1
 

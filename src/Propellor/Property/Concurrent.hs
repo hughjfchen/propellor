@@ -78,7 +78,7 @@ concurrently p1 p2 = (combineWith go go p1 p2)
 -- The above example will run foo and bar concurrently, and once either of
 -- those 2 properties finishes, will start running baz.
 concurrentList :: SingI metatypes => IO Int -> Desc -> Props (MetaTypes metatypes) -> Property (MetaTypes metatypes)
-concurrentList getn d (Props ps) = property d go `modifyChildren` (++ ps)
+concurrentList getn d (Props ps) = property d go `addChildren` ps
   where
 	go = do
 		n <- liftIO getn

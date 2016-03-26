@@ -12,7 +12,6 @@ module Propellor.PropAccum
 	, (&)
 	, (&^)
 	, (!)
-	--, propagateContainer
 	) where
 
 import Propellor.Types
@@ -82,35 +81,3 @@ Props c &^ p = Props (toChildProperty p : c)
 	-> RevertableProperty (MetaTypes y) (MetaTypes z)
 	-> Props (MetaTypes (Combine x z))
 Props c ! p = Props (c ++ [toChildProperty (revert p)])
-
-{-
-
--- | Adjust the provided Property, adding to its
--- propertyChidren the properties of the provided container.
--- 
--- The Info of the propertyChildren is adjusted to only include 
--- info that should be propagated out to the Property.
---
--- Any PrivInfo that uses HostContext is adjusted to use the name
--- of the container as its context.
-propagateContainer
-	:: (PropAccum container)
-	=> String
-	-> container
-	-> Property metatypes
-	-> Property metatypes
-propagateContainer containername c prop = Property
-	undefined
-	(propertyDesc prop)
-	(getSatisfy prop)
-	(propertyInfo prop)
-	(propertyChildren prop ++ hostprops)
-  where
-	hostprops = map go $ getProperties c
-	go p = 
-		let i = mapInfo (forceHostContext containername)
-			(propagatableInfo (propertyInfo p))
-		    cs = map go (propertyChildren p)
-		in infoProperty (propertyDesc p) (getSatisfy p) i cs
-
--}
