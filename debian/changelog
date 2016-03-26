@@ -5,11 +5,11 @@ propellor (3.0.0) UNRELEASED; urgency=medium
     Transition guide for this sweeping API change:
     - Change "host name & foo & bar"
       to     "host name $ props & foo & bar"
-    - Similarly, Chroot and Docker need `props` to be used to combine
+    - Similarly, `propertyList` and `combineProperties` need `props`
+      to be used to combine together properties; they no longer accept
+      lists of properties. (If you have such a list, use `toProps`.)
+    - And similarly, Chroot and Docker need `props` to be used to combine
       together the properies used inside them.
-    - And similarly, `propertyList` and `combineProperties` need `props`
-      to be used to combine together properties; lists of properties will
-      no longer work.
     - Change "Property NoInfo" to "Property UnixLike"
     - Change "Property HasInfo" to "Property (HasInfo + UnixLike)"
     - Change "RevertableProperty NoInfo" to
