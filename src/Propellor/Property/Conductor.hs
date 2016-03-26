@@ -73,7 +73,7 @@ module Propellor.Property.Conductor (
 	Conductable(..),
 ) where
 
-import Propellor.Base hiding (os)
+import Propellor.Base
 import Propellor.Spin (spin')
 import Propellor.PrivData.Paths
 import Propellor.Types.Info
@@ -83,7 +83,7 @@ import qualified Data.Set as S
 
 -- | Class of things that can be conducted.
 class Conductable c where
-	conducts :: c -> RevertableProperty (HasInfo + UnixLike) (HasInfo + UnixLike)
+	conducts :: c -> RevertableProperty (HasInfo + DebianLike) (HasInfo + UnixLike)
 
 instance Conductable Host where
 	-- | Conduct the specified host.
@@ -219,7 +219,8 @@ orchestrate hs = map go hs
 	os = extractOrchestras hs
 
 	removeold h = foldl removeold' h (oldconductorsof h)
-	removeold' h oldconductor = h & revert (conductedBy oldconductor)
+	removeold' h oldconductor = addPropHost h $
+		undoRevertableProperty $ conductedBy oldconductor
 
 	oldconductors = zip hs (map (getInfo . hostInfo) hs)
 	oldconductorsof h = flip mapMaybe oldconductors $ 
@@ -232,23 +233,31 @@ orchestrate' :: Host -> Orchestra -> Host
 orchestrate' h (Conducted _) = h
 orchestrate' h (Conductor c l)
 	| sameHost h c = cont $ addConductorPrivData h (concatMap allHosts l)
-	| any (sameHost h) (map topHost l) = cont $ h & conductedBy c
+	| any (sameHost h) (map topHost l) = cont $ addPropHost h $
+		setupRevertableProperty $ conductedBy c
 	| otherwise = cont h
   where
 	cont h' = foldl orchestrate' h' l
 
+addPropHost :: Host -> Property i -> Host
+addPropHost (Host hn ps i) p = Host hn ps' i'
+  where
+	ps' = ps ++ [toChildProperty p]
+	i' = i <> getInfoRecursive p
+
 -- The host this property is added to becomes the conductor for the
 -- specified Host. Note that `orchestrate` must be used for this property
 -- to have any effect.
-conductorFor :: Host -> Property (HasInfo + UnixLike)
-conductorFor h = property desc go
+conductorFor :: Host -> Property (HasInfo + DebianLike)
+conductorFor h = go
 	`addInfoProperty` (toInfo (ConductorFor [h]))
 	`requires` setupRevertableProperty (conductorKnownHost h)
 	`requires` Ssh.installed
   where
 	desc = cdesc (hostName h)
 
-	go = ifM (isOrchestrated <$> askInfo)
+	go :: Property UnixLike
+	go = property desc $ ifM (isOrchestrated <$> askInfo)
 		( do
 			pm <- liftIO $ filterPrivData h
 				<$> readPrivDataFile privDataLocal
@@ -264,8 +273,9 @@ conductorFor h = property desc go
 
 -- Reverts conductorFor.
 notConductorFor :: Host -> Property (HasInfo + UnixLike)
-notConductorFor h = property desc (return NoChange)
+notConductorFor h = doNothing
 	`addInfoProperty` (toInfo (NotConductorFor [h]))
+	`describe` desc
 	`requires` undoRevertableProperty (conductorKnownHost h)
   where
 	desc = "not " ++ cdesc (hostName h)
