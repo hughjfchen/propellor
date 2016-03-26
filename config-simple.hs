@@ -25,7 +25,7 @@ hosts =
 -- An example host.
 mybox :: Host
 mybox = host "mybox.example.com" $ props
-	& os (System (Debian Unstable) "amd64")
+	& osDebian Unstable "amd64"
 	& Apt.stdSourcesList
 	& Apt.unattendedUpgrades
 	& Apt.installed ["etckeeper"]

@@ -46,7 +46,7 @@ import Control.Exception (throw)
 -- install succeeds, to bootstrap from the cleanly installed system to
 -- a fully working system. For example:
 --
--- > & os (System (Debian Unstable) "amd64")
+-- > & osDebian Unstable "amd64"
 -- > & cleanInstallOnce (Confirmed "foo.example.com")
 -- >    `onChange` propertyList "fixing up after clean install"
 -- >        [ preserveNetwork

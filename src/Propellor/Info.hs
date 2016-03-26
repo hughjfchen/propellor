@@ -1,6 +1,24 @@
 {-# LANGUAGE PackageImports #-}
 
-module Propellor.Info where
+module Propellor.Info (
+	osDebian,
+	osBuntish,
+	osFreeBSD,
+	pureInfoProperty,
+	pureInfoProperty',
+	askInfo,
+	getOS,
+	ipv4,
+	ipv6,
+	alias,
+	addDNS,
+	hostMap,
+	aliasMap,
+	findHost,
+	findHostNoAlias,
+	getAddresses,
+	hostAddresses,
+) where
 
 import Propellor.Types
 import Propellor.Types.Info
@@ -26,10 +44,32 @@ pureInfoProperty' desc i = addInfoProperty p i
 askInfo :: (IsInfo v) => Propellor v
 askInfo = asks (getInfo . hostInfo)
 
--- | Specifies the operating system of a host.
+-- | Specifies that a host's operating system is Debian,
+-- and further indicates the suite and architecture.
+-- 
+-- This provides info for other Properties, so they can act
+-- conditionally on the details of the OS.
 --
--- This only provides info for other Properties, so they can act
--- conditionally on the os.
+-- It also lets the type checker know that all the properties of the
+-- host must support Debian.
+--
+-- > & osDebian (Stable "jessie") "amd64"
+osDebian :: DebianSuite -> Architecture -> Property (HasInfo + Debian)
+osDebian suite arch = tightenTargets $ os (System (Debian suite) arch)
+
+-- | Specifies that a host's operating system is a well-known Debian
+-- derivative founded by a space tourist.
+--
+-- (The actual name of this distribution is not used in Propellor per
+-- <http://joeyh.name/blog/entry/trademark_nonsense/>)
+osBuntish :: Release -> Architecture -> Property (HasInfo + Buntish)
+osBuntish release arch = tightenTargets $ os (System (Buntish release) arch)
+
+-- | Specifies that a host's operating system is FreeBSD
+-- and further indicates the release and architecture.
+osFreeBSD :: FreeBSDRelease -> Architecture -> Property (HasInfo + FreeBSD)
+osFreeBSD release arch = tightenTargets $ os (System (FreeBSD release) arch)
+
 os :: System -> Property (HasInfo + UnixLike)
 os system = pureInfoProperty ("Operating " ++ show system) (InfoVal system)
 
@@ -105,6 +145,3 @@ getAddresses = mapMaybe getIPAddr . S.toList . fromDnsInfo . getInfo
 
 hostAddresses :: HostName -> [Host] -> [IPAddr]
 hostAddresses hn hosts = maybe [] (getAddresses . hostInfo) (findHost hosts hn)
-
-addHostInfo ::IsInfo v => Host -> v -> Host
-addHostInfo h v = h { hostInfo = addInfo (hostInfo h) v }

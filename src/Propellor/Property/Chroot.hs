@@ -102,7 +102,7 @@ instance ChrootBootstrapper Debootstrapped where
 -- add the `os` property to specify the operating system to bootstrap.
 --
 -- > debootstrapped Debootstrap.BuildD "/srv/chroot/ghc-dev"
--- >	& os (System (Debian Unstable) "amd64")
+-- >	& osDebian Unstable "amd64"
 -- >	& Apt.installed ["ghc", "haskell-platform"]
 -- >	& ...
 debootstrapped :: Debootstrap.DebootstrapConfig -> FilePath -> Chroot
