@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances, DeriveDataTypeable, GeneralizedNewtypeDeriving, TypeFamilies #-}
 
 -- | This module adds conductors to propellor. A conductor is a Host that
 -- is responsible for running propellor on other hosts
@@ -83,7 +83,7 @@ import qualified Data.Set as S
 
 -- | Class of things that can be conducted.
 class Conductable c where
-	conducts :: c -> RevertableProperty HasInfo
+	conducts :: c -> RevertableProperty (HasInfo + UnixLike) (HasInfo + UnixLike)
 
 instance Conductable Host where
 	-- | Conduct the specified host.
@@ -94,9 +94,9 @@ instance Conductable Host where
 -- will be propagated as an overall failure of the property.
 instance Conductable [Host] where
 	conducts hs = 
-		propertyList desc (map (toProp . conducts) hs)
+		propertyList desc (toProps $ map (setupRevertableProperty . conducts) hs)
 			<!>
-		propertyList desc (map (toProp . revert . conducts) hs)
+		propertyList desc (toProps $ map (undoRevertableProperty . conducts) hs)
 	  where
 		desc = cdesc $ unwords $ map hostName hs
 
@@ -240,9 +240,10 @@ orchestrate' h (Conductor c l)
 -- The host this property is added to becomes the conductor for the
 -- specified Host. Note that `orchestrate` must be used for this property
 -- to have any effect.
-conductorFor :: Host -> Property HasInfo
-conductorFor h = infoProperty desc go (addInfo mempty (ConductorFor [h])) []
-	`requires` toProp (conductorKnownHost h)
+conductorFor :: Host -> Property (HasInfo + UnixLike)
+conductorFor h = property desc go
+	`addInfoProperty` (toInfo (ConductorFor [h]))
+	`requires` setupRevertableProperty (conductorKnownHost h)
 	`requires` Ssh.installed
   where
 	desc = cdesc (hostName h)
@@ -262,13 +263,14 @@ conductorFor h = infoProperty desc go (addInfo mempty (ConductorFor [h])) []
 		)
 
 -- Reverts conductorFor.
-notConductorFor :: Host -> Property HasInfo
-notConductorFor h = infoProperty desc (return NoChange) (addInfo mempty (NotConductorFor [h])) []
-	`requires` toProp (revert (conductorKnownHost h))
+notConductorFor :: Host -> Property (HasInfo + UnixLike)
+notConductorFor h = property desc (return NoChange)
+	`addInfoProperty` (toInfo (NotConductorFor [h]))
+	`requires` undoRevertableProperty (conductorKnownHost h)
   where
 	desc = "not " ++ cdesc (hostName h)
 
-conductorKnownHost :: Host -> RevertableProperty NoInfo
+conductorKnownHost :: Host -> RevertableProperty UnixLike UnixLike
 conductorKnownHost h = 
 	mk Ssh.knownHost
 		<!>
@@ -290,7 +292,7 @@ addConductorPrivData h hs = h { hostInfo = hostInfo h <> i }
 	privinfo h' = forceHostContext (hostName h') $ getInfo (hostInfo h')
 
 -- Use this property to let the specified conductor ssh in and run propellor.
-conductedBy :: Host -> RevertableProperty NoInfo
+conductedBy :: Host -> RevertableProperty DebianLike UnixLike
 conductedBy h = (setup <!> teardown)
 	`describe` ("conducted by " ++ hostName h)
   where
