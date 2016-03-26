@@ -127,11 +127,7 @@ withPrivData' feed srclist c mkprop = addinfo $ mkprop $ \a ->
 			"Fix this by running:" :
 			showSet (map (\s -> (privDataField s, Context cname, describePrivDataSource s)) srclist)
 		return FailedChange
-	addinfo p = Property undefined -- FIXME: should use sing here
-		(propertyDesc p)
-		(getSatisfy p)
-		(propertyInfo p `addInfo` privset)
-		(propertyChildren p)
+	addinfo p = p `addInfoProperty'` (toInfo privset)
 	privset = PrivInfo $ S.fromList $
 		map (\s -> (privDataField s, describePrivDataSource s, hc)) srclist
 	fieldnames = map show fieldlist

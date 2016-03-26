@@ -25,6 +25,8 @@ module Propellor.Types
 	, HasInfo
 	, type (+)
 	, addInfoProperty
+	, addInfoProperty'
+	, addChildrenProperty
 	, adjustPropertySatisfy
 	, propertyInfo
 	, propertyDesc
@@ -158,6 +160,19 @@ addInfoProperty
 	-> Property (MetaTypes metatypes')
 addInfoProperty (Property _ d a oldi c) newi =
 	Property sing d a (oldi <> newi) c
+
+-- | Adds more info to a Property that already HasInfo.
+addInfoProperty'
+	:: (IncludesInfo metatypes ~ 'True)
+	=> Property metatypes
+	-> Info
+	-> Property metatypes
+addInfoProperty' (Property t d a oldi c) newi =
+	Property t d a (oldi <> newi) c
+
+-- | Adds children to a Property.
+addChildrenProperty :: Property metatypes -> [ChildProperty] -> Property metatypes
+addChildrenProperty (Property t s a i cs) cs' = Property t s a i (cs ++ cs')
 
 -- | Changes the action that is performed to satisfy a property.
 adjustPropertySatisfy :: Property metatypes -> (Propellor Result -> Propellor Result) -> Property metatypes
