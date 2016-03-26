@@ -96,7 +96,7 @@ is.
 <pre>
 config.hs:30:19:
     Couldn't match expected type `RevertableProperty'
-                with actual type `Property NoInfo'
+                with actual type `Property DebianLike'
     In the return type of a call of `Apt.installed'
     In the second argument of `(!)', namely `Apt.installed ["ssh"]'
     In the first argument of `(&)', namely
