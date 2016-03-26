@@ -155,18 +155,21 @@ type PubKeyText = String
 --
 -- Any host keys that are not in the list are removed from the host.
 hostKeys :: IsContext c => c -> [(SshKeyType, PubKeyText)] -> Property (HasInfo + DebianLike)
-hostKeys ctx l = propertyList desc $ toProps $ catMaybes $
-	map (\(t, pub) -> Just $ hostKey ctx t pub) l ++ [cleanup]
+hostKeys ctx l = go `before` cleanup
   where
 	desc = "ssh host keys configured " ++ typelist (map fst l)
+	go :: Property (HasInfo + DebianLike)
+	go = propertyList desc $ toProps $ catMaybes $
+		map (\(t, pub) -> Just $ hostKey ctx t pub) l
 	typelist tl = "(" ++ unwords (map fromKeyType tl) ++ ")"
 	alltypes = [minBound..maxBound]
 	staletypes = let have = map fst l in filter (`notElem` have) alltypes
-	removestale b = map (File.notPresent . flip keyFile b) staletypes
-	cleanup :: Maybe (Property DebianLike)
+	removestale :: Bool -> [Property DebianLike]
+	removestale b = map (tightenTargets . File.notPresent . flip keyFile b) staletypes
+	cleanup :: Property DebianLike
 	cleanup
-		| null staletypes || null l = Nothing
-		| otherwise = Just $
+		| null staletypes || null l = tightenTargets doNothing
+		| otherwise =
 			combineProperties ("any other ssh host keys removed " ++ typelist staletypes)
 				(toProps $ removestale True ++ removestale False)
 				`onChange` restarted
@@ -176,23 +179,26 @@ hostKeys ctx l = propertyList desc $ toProps $ catMaybes $
 -- The public key is provided to this function;
 -- the private key comes from the privdata;
 hostKey :: IsContext c => c -> SshKeyType -> PubKeyText -> Property (HasInfo + DebianLike)
-hostKey context keytype pub = combineProperties desc (props
-	& hostPubKey keytype pub
-	& installpub
-	& installpriv
-	) `onChange` restarted
+hostKey context keytype pub = go `onChange` restarted
   where
+	go = combineProperties desc $ props
+		& hostPubKey keytype pub
+		& installpub
+		& installpriv
 	desc = "ssh host key configured (" ++ fromKeyType keytype ++ ")"
-	install w writer ispub keylines = do
-		let f = keyFile keytype ispub
-		ensureProperty w $ writer f (keyFileContent keylines)
 	keysrc ext field = PrivDataSourceFileFromCommand field ("sshkey"++ext)
 		("ssh-keygen -t " ++ sshKeyTypeParam keytype ++ " -f sshkey")
-	installpub = property' desc $ \w -> install w File.hasContent True (lines pub)
+	installpub :: Property UnixLike
+	installpub = keywriter File.hasContent True (lines pub)
+	installpriv :: Property (HasInfo + UnixLike)
 	installpriv = withPrivData (keysrc "" (SshPrivKey keytype "")) context $ \getkey ->
 		property' desc $ \w -> getkey $
-			install w File.hasContentProtected False . privDataLines
-
+			ensureProperty w
+				. keywriter File.hasContentProtected False
+				. privDataLines
+	keywriter p ispub keylines = do
+		let f = keyFile keytype ispub
+		p f (keyFileContent keylines)
 
 -- Make sure that there is a newline at the end;
 -- ssh requires this for some types of private keys.
@@ -207,7 +213,7 @@ keyFile keytype ispub = "/etc/ssh/ssh_host_" ++ fromKeyType keytype ++ "_key" ++
 -- | Indicates the host key that is used by a Host, but does not actually
 -- configure the host to use it. Normally this does not need to be used;
 -- use 'hostKey' instead.
-hostPubKey :: SshKeyType -> PubKeyText -> Property (HasInfo + DebianLike)
+hostPubKey :: SshKeyType -> PubKeyText -> Property (HasInfo + UnixLike)
 hostPubKey t = pureInfoProperty "ssh pubkey known" . HostKeyInfo . M.singleton t
 
 getHostPubKey :: Propellor (M.Map SshKeyType PubKeyText)
@@ -279,13 +285,18 @@ userKeyAt dest user@(User u) context (keytype, pubkeytext) =
 		, dest
 		, Just $ "(" ++ fromKeyType keytype ++ ")"
 		]
-	pubkey = property' desc $ \w -> install w File.hasContent ".pub" [pubkeytext]
-	privkey = withPrivData (SshPrivKey keytype u) context $ \getkey ->
-		property' desc $ \w -> getkey $
-			install w File.hasContentProtected "" . privDataLines
-	install w writer ext key = do
+	pubkey :: Property UnixLike
+	pubkey = property' desc $ \w -> 
+		ensureProperty w =<< installprop File.hasContent ".pub" [pubkeytext]
+	privkey :: Property (HasInfo + UnixLike)
+	privkey = withPrivData (SshPrivKey keytype u) context privkey'
+	privkey' :: ((PrivData -> Propellor Result) -> Propellor Result) -> Property (HasInfo + UnixLike)
+	privkey' getkey = property' desc $ \w -> getkey $ \k ->
+		ensureProperty w
+			=<< installprop File.hasContentProtected "" (privDataLines k)
+	installprop writer ext key = do
 		f <- liftIO $ keyfile ext
-		ensureProperty w $ combineProperties desc $ props
+		return $ combineProperties desc $ props
 			& writer f (keyFileContent key)
 			& File.ownerGroup f user (userGroup user)
 			& File.ownerGroup (takeDirectory f) user (userGroup user)
@@ -325,7 +336,7 @@ unknownHost hosts hn user@(User u) = property' desc $ \w ->
   where
 	desc = u ++ " does not know ssh key for " ++ hn
 
-	go w [] = return NoChange
+	go _ [] = return NoChange
 	go w ls = do
 		f <- liftIO $ dotFile "known_hosts" user
 		ifM (liftIO $ doesFileExist f)
