@@ -2,7 +2,6 @@ module Propellor.Property.Network where
 
 import Propellor.Base
 import Propellor.Property.File
-import Propellor.Types.MetaTypes
 
 import Data.Char
 

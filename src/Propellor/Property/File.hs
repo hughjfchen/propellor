@@ -25,25 +25,25 @@ f `hasContentProtected` newcontent = fileProperty' writeFileProtected
 --
 -- The file's permissions are preserved if the file already existed.
 -- Otherwise, they're set to 600.
-hasPrivContent :: IsContext c => FilePath -> c -> Property HasInfo
+hasPrivContent :: IsContext c => FilePath -> c -> Property (HasInfo + UnixLike)
 hasPrivContent f = hasPrivContentFrom (PrivDataSourceFile (PrivFile f) f) f
 
 -- | Like hasPrivContent, but allows specifying a source
 -- for PrivData, rather than using PrivDataSourceFile .
-hasPrivContentFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property HasInfo
+hasPrivContentFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property (HasInfo + UnixLike)
 hasPrivContentFrom = hasPrivContent' writeFileProtected
 
 -- | Leaves the file at its default or current mode,
 -- allowing "private" data to be read.
 --
 -- Use with caution!
-hasPrivContentExposed :: IsContext c => FilePath -> c -> Property HasInfo
+hasPrivContentExposed :: IsContext c => FilePath -> c -> Property (HasInfo + UnixLike)
 hasPrivContentExposed f = hasPrivContentExposedFrom (PrivDataSourceFile (PrivFile f) f) f
 
-hasPrivContentExposedFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property HasInfo
+hasPrivContentExposedFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property (HasInfo + UnixLike)
 hasPrivContentExposedFrom = hasPrivContent' writeFile
 
-hasPrivContent' :: (IsContext c, IsPrivDataSource s) => (FilePath -> String -> IO ()) -> s -> FilePath -> c -> Property HasInfo
+hasPrivContent' :: (IsContext c, IsPrivDataSource s) => (FilePath -> String -> IO ()) -> s -> FilePath -> c -> Property (HasInfo + UnixLike)
 hasPrivContent' writer source f context = 
 	withPrivData source context $ \getcontent -> 
 		property' desc $ \o -> getcontent $ \privcontent -> 

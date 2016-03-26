@@ -60,7 +60,7 @@ import Data.List
 --
 -- In either case, the secondary dns server Host should have an ipv4 and/or
 -- ipv6 property defined.
-primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty HasInfo
+primary :: [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty (HasInfo + DebianLike) DebianLike
 primary hosts domain soa rs = setup <!> cleanup
   where
 	setup = setupPrimary zonefile id hosts domain soa rs
@@ -70,7 +70,7 @@ primary hosts domain soa rs = setup <!> cleanup
 
 	zonefile = "/etc/bind/propellor/db." ++ domain
 
-setupPrimary :: FilePath -> (FilePath -> FilePath) -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property HasInfo
+setupPrimary :: FilePath -> (FilePath -> FilePath) -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> Property (HasInfo + DebianLike)
 setupPrimary zonefile mknamedconffile hosts domain soa rs =
 	withwarnings baseprop
 		`requires` servingZones
@@ -80,9 +80,10 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 	indomain = M.elems $ M.filterWithKey (\hn _ -> inDomain domain $ AbsDomain $ hn) hostmap
 
 	(partialzone, zonewarnings) = genZone indomain hostmap domain soa
-	baseprop = infoProperty ("dns primary for " ++ domain) satisfy
-		(mempty `addInfo` addNamedConf conf) []
-	satisfy = do
+	baseprop = primaryprop
+		`addInfoProperty` (toInfo (addNamedConf conf))
+	primaryprop :: Property DebianLike
+	primaryprop = property ("dns primary for " ++ domain) $ do
 		sshfps <- concat <$> mapM (genSSHFP domain) (M.elems hostmap)
 		let zone = partialzone
 			{ zHosts = zHosts partialzone ++ rs ++ sshfps }
@@ -120,11 +121,13 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 				in z /= oldzone || oldserial < sSerial (zSOA zone)
 
 
-cleanupPrimary :: FilePath -> Domain -> Property NoInfo
+cleanupPrimary :: FilePath -> Domain -> Property DebianLike
 cleanupPrimary zonefile domain = check (doesFileExist zonefile) $
-	property ("removed dns primary for " ++ domain)
-		(makeChange $ removeZoneFile zonefile)
-		`requires` namedConfWritten
+	go `requires` namedConfWritten
+  where
+	desc = "removed dns primary for " ++ domain
+	go :: Property DebianLike
+	go = property desc (makeChange $ removeZoneFile zonefile)
 
 -- | Primary dns server for a domain, secured with DNSSEC.
 --
@@ -152,7 +155,7 @@ cleanupPrimary zonefile domain = check (doesFileExist zonefile) $
 -- This is different from the serial number used by 'primary', so if you
 -- want to later disable DNSSEC you will need to adjust the serial number
 -- passed to mkSOA to ensure it is larger.
-signedPrimary :: Recurrance -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty HasInfo
+signedPrimary :: Recurrance -> [Host] -> Domain -> SOA -> [(BindDomain, Record)] -> RevertableProperty (HasInfo + DebianLike) DebianLike
 signedPrimary recurrance hosts domain soa rs = setup <!> cleanup
   where
 	setup = combineProperties ("dns primary for " ++ domain ++ " (signed)")
@@ -184,12 +187,12 @@ signedPrimary recurrance hosts domain soa rs = setup <!> cleanup
 --
 -- Note that if a host is declared to be a primary and a secondary dns
 -- server for the same domain, the primary server config always wins.
-secondary :: [Host] -> Domain -> RevertableProperty HasInfo
+secondary :: [Host] -> Domain -> RevertableProperty (HasInfo + DebianLike) DebianLike
 secondary hosts domain = secondaryFor (otherServers Master hosts domain) hosts domain
 
 -- | This variant is useful if the primary server does not have its DNS
 -- configured via propellor.
-secondaryFor :: [HostName] -> [Host] -> Domain -> RevertableProperty HasInfo
+secondaryFor :: [HostName] -> [Host] -> Domain -> RevertableProperty (HasInfo + DebianLike) DebianLike
 secondaryFor masters hosts domain = setup <!> cleanup
   where
 	setup = pureInfoProperty desc (addNamedConf conf)
@@ -218,15 +221,15 @@ otherServers wantedtype hosts domain =
 -- | Rewrites the whole named.conf.local file to serve the zones
 -- configured by `primary` and `secondary`, and ensures that bind9 is
 -- running.
-servingZones :: Property NoInfo
+servingZones :: Property DebianLike
 servingZones = namedConfWritten
 	`onChange` Service.reloaded "bind9"
 	`requires` Apt.serviceInstalledRunning "bind9"
 
-namedConfWritten :: Property NoInfo
-namedConfWritten = property "named.conf configured" $ do
+namedConfWritten :: Property DebianLike
+namedConfWritten = property' "named.conf configured" $ \w -> do
 	zs <- getNamedConf
-	ensureProperty $
+	ensureProperty w $
 		hasContent namedConfFile $
 			concatMap confStanza $ M.elems zs
 
