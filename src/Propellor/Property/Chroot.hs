@@ -19,6 +19,7 @@ module Propellor.Property.Chroot (
 ) where
 
 import Propellor.Base
+import Propellor.Container
 import Propellor.Types.CmdLine
 import Propellor.Types.Chroot
 import Propellor.Types.Info
@@ -40,8 +41,12 @@ import System.Console.Concurrent
 data Chroot where
 	Chroot :: ChrootBootstrapper b => FilePath -> b -> Host -> Chroot
 
+instance Container Chroot where
+	containerProperties (Chroot _ _ h) = containerProperties h
+	containerInfo (Chroot _ _ h) = containerInfo h
+
 chrootSystem :: Chroot -> Maybe System
-chrootSystem (Chroot _ _ h) = fromInfoVal (fromInfo (hostInfo h))
+chrootSystem = fromInfoVal . fromInfo . containerInfo
 
 instance Show Chroot where
 	show c@(Chroot loc _ _) = "Chroot " ++ loc ++ " " ++ show (chrootSystem c)
@@ -52,7 +57,7 @@ class ChrootBootstrapper b where
 	-- | Do initial bootstrapping of an operating system in a chroot.
 	-- If the operating System is not supported, return
 	-- Left error message.
-	buildchroot :: b -> Maybe System -> FilePath -> Either String (Property (HasInfo + UnixLike))
+	buildchroot :: b -> Maybe System -> FilePath -> Either String (Property Linux)
 
 -- | Use this to bootstrap a chroot by extracting a tarball.
 --
@@ -63,7 +68,8 @@ class ChrootBootstrapper b where
 data ChrootTarball = ChrootTarball FilePath
 
 instance ChrootBootstrapper ChrootTarball where
-	buildchroot (ChrootTarball tb) _ loc = Right $ extractTarball loc tb
+	buildchroot (ChrootTarball tb) _ loc = Right $
+		tightenTargets $ extractTarball loc tb
 
 extractTarball :: FilePath -> FilePath -> Property UnixLike
 extractTarball target src = check (unpopulated target) $
@@ -116,15 +122,20 @@ bootstrapped bootstrapper location = Chroot location bootstrapper h
 -- Reverting this property removes the chroot. Anything mounted inside it
 -- is first unmounted. Note that it does not ensure that any processes
 -- that might be running inside the chroot are stopped.
-provisioned :: Chroot -> RevertableProperty HasInfo
+provisioned :: Chroot -> RevertableProperty (HasInfo + Linux) Linux
 provisioned c = provisioned' (propagateChrootInfo c) c False
 
-provisioned' :: (Property HasInfo -> Property HasInfo) -> Chroot -> Bool -> RevertableProperty HasInfo
+provisioned'
+	:: (Property Linux -> Property (HasInfo + Linux))
+	-> Chroot
+	-> Bool
+	-> RevertableProperty (HasInfo + Linux) Linux
 provisioned' propigator c@(Chroot loc bootstrapper _) systemdonly =
-	(propigator $ propertyList (chrootDesc c "exists") [setup])
+	(propigator $ setup `describe` chrootDesc c "exists")
 		<!>
-	(propertyList (chrootDesc c "removed") [teardown])
+	(teardown `describe` chrootDesc c "removed")
   where
+	setup :: Property Linux
 	setup = propellChroot c (inChrootProcess (not systemdonly) c) systemdonly
 		`requires` built
 
@@ -134,18 +145,14 @@ provisioned' propigator c@(Chroot loc bootstrapper _) systemdonly =
 
 	cantbuild e = property (chrootDesc c "built") (error e)
 
+	teardown :: Property Linux
 	teardown = check (not <$> unpopulated loc) $
 		property ("removed " ++ loc) $
 			makeChange (removeChroot loc)
 
-propagateChrootInfo :: (IsProp (Property i)) => Chroot -> Property i -> Property (HasInfo + UnixLike)
-propagateChrootInfo c@(Chroot location _ _) p = propagateContainer location c p'
-  where
-	p' = infoProperty
-		(getDesc p)
-		(getSatisfy p)
-		(getInfo p <> chrootInfo c)
-		(propertyChildren p)
+propagateChrootInfo :: Chroot -> Property Linux -> Property (HasInfo + Linux)
+propagateChrootInfo c@(Chroot location _ _) p = propagateContainer location c $
+	p `addInfoProperty` chrootInfo c
 
 chrootInfo :: Chroot -> Info
 chrootInfo (Chroot loc _ h) = mempty `addInfo`
@@ -253,11 +260,11 @@ chrootDesc (Chroot loc _ _) desc = "chroot " ++ loc ++ " " ++ desc
 -- that does not let any daemons be started by packages that use
 -- invoke-rc.d. Reverting the property removes the script.
 noServices :: RevertableProperty DebianLike DebianLike
-noServices = setup <!> teardown
+noServices = tightenTargets setup <!> tightenTargets teardown
   where
 	f = "/usr/sbin/policy-rc.d"
 	script = [ "#!/bin/sh", "exit 101" ]
-	setup = combineProperties "no services started"
+	setup = combineProperties "no services started" $ toProps
 		[ File.hasContent f script
 		, File.mode f (combineModes (readModes ++ executeModes))
 		]
