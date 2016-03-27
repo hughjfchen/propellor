@@ -25,6 +25,7 @@ module Propellor.Types.MetaTypes (
 	EqT,
 ) where
 
+import Propellor.Types.Singletons
 import Propellor.Types.OS
 
 data MetaType
@@ -49,13 +50,6 @@ type instance IncludesInfo (MetaTypes l) = Elem 'WithInfo l
 
 type MetaTypes = Sing
 
--- | The data family of singleton types.
-data family Sing (x :: k)
-
--- | A class used to pass singleton values implicitly.
-class SingI t where
-	sing :: Sing t
-
 -- This boilerplatw would not be needed if the singletons library were
 -- used. However, we're targeting too old a version of ghc to use it yet.
 data instance Sing (x :: MetaType) where
@@ -67,12 +61,6 @@ instance SingI ('Targeting 'OSDebian) where sing = OSDebianS
 instance SingI ('Targeting 'OSBuntish) where sing = OSBuntishS
 instance SingI ('Targeting 'OSFreeBSD) where sing = OSFreeBSDS
 instance SingI 'WithInfo where sing = WithInfoS
-
-data instance Sing (x :: [k]) where
-	Nil :: Sing '[]
-	Cons :: Sing x -> Sing xs -> Sing (x ': xs)
-instance (SingI x, SingI xs) => SingI (x ': xs) where sing = Cons sing sing
-instance SingI '[] where sing = Nil
 
 -- | Convenience type operator to combine two `MetaTypes` lists.
 --

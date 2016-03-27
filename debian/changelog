@@ -39,10 +39,10 @@ propellor (3.0.0) UNRELEASED; urgency=medium
 		go = property "foo" (return NoChange)
       To fix, specify the type of go:
 	  	go :: Property UnixLike
-    - `ensureProperty` now needs to be passed information about the
+    - `ensureProperty` now needs to be passed a witness to the type of the 
       property it's used in.
       change this:  foo = property desc $ ... ensureProperty bar
-      to this:      foo = property' desc $ \o -> ... ensureProperty o bar
+      to this:      foo = property' desc $ \w -> ... ensureProperty w bar
     - General purpose properties like cmdProperty have type "Property UnixLike".
       When using that to run a command only available on Debian, you can
       tighten the type to only the OS that your more specific property works on.

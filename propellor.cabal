@@ -162,6 +162,7 @@ Library
     Propellor.Types.PrivData
     Propellor.Types.Result
     Propellor.Types.ResultCheck
+    Propellor.Types.Singletons
     Propellor.Types.ZFS
   Other-Modules:
     Propellor.Bootstrap
