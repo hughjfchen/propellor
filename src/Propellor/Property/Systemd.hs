@@ -188,19 +188,18 @@ machined = withOS "machined installed" $ \w o ->
 -- add a property such as `osDebian` to specify the operating system
 -- to bootstrap.
 --
--- > container "webserver" (Chroot.debootstrapped mempty)
+-- > container "webserver" $ \d -> Chroot.debootstrapped mempty d $ props
 -- >	& osDebian Unstable "amd64"
 -- >    & Apt.installedRunning "apache2"
 -- >    & ...
 container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
 container name mkchroot = 
-	let c = Container name chroot h
+	let c = Container name chroot (host name (containerProps chroot))
 	in setContainerProps c $ containerProps c
 		&^ resolvConfed
 		&^ linkJournal
   where
 	chroot = mkchroot (containerDir name)
-	h = Host name [] mempty
 
 -- | Runs a container using systemd-nspawn.
 --

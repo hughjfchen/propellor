@@ -103,19 +103,17 @@ instance ChrootBootstrapper Debootstrapped where
 -- add a property such as `osDebian` to specify the operating system
 -- to bootstrap.
 --
--- > debootstrapped Debootstrap.BuildD "/srv/chroot/ghc-dev"
+-- > debootstrapped Debootstrap.BuildD "/srv/chroot/ghc-dev" $ props
 -- >	& osDebian Unstable "amd64"
 -- >	& Apt.installed ["ghc", "haskell-platform"]
 -- >	& ...
-debootstrapped :: Debootstrap.DebootstrapConfig -> FilePath -> Chroot
+debootstrapped :: Debootstrap.DebootstrapConfig -> FilePath -> Props metatypes -> Chroot
 debootstrapped conf = bootstrapped (Debootstrapped conf)
 
 -- | Defines a Chroot at the given location, bootstrapped with the
 -- specified ChrootBootstrapper.
-bootstrapped :: ChrootBootstrapper b => b -> FilePath -> Chroot
-bootstrapped bootstrapper location = Chroot location bootstrapper h
-  where
-	h = Host location [] mempty
+bootstrapped :: ChrootBootstrapper b => b -> FilePath -> Props metatypes -> Chroot
+bootstrapped bootstrapper location ps = Chroot location bootstrapper (host location ps)
 
 -- | Ensures that the chroot exists and is provisioned according to its
 -- properties.

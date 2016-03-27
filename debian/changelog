@@ -8,8 +8,8 @@ propellor (3.0.0) UNRELEASED; urgency=medium
     - Similarly, `propertyList` and `combineProperties` need `props`
       to be used to combine together properties; they no longer accept
       lists of properties. (If you have such a list, use `toProps`.)
-    - And similarly, Chroot and Docker need `props` to be used to combine
-      together the properies used inside them.
+    - And similarly, Chroot, Docker, and Systemd container need `props`
+      to be used to combine together the properies used inside them.
     - The `os` property is removed. Instead use `osDebian`, `osBuntish`,
       or `osFreeBSD`. These tell the type checker the target OS of a host.
     - Change "Property NoInfo" to "Property UnixLike"
