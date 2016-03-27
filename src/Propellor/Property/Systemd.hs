@@ -70,13 +70,13 @@ instance PropAccum Container where
 --
 -- Note that this does not configure systemd to start the service on boot,
 -- it only ensures that the service is currently running.
-started :: ServiceName -> Property NoInfo
+started :: ServiceName -> Property Linux
 started n = cmdProperty "systemctl" ["start", n]
 	`assume` NoChange
 	`describe` ("service " ++ n ++ " started")
 
 -- | Stops a systemd service.
-stopped :: ServiceName -> Property NoInfo
+stopped :: ServiceName -> Property Linux
 stopped n = cmdProperty "systemctl" ["stop", n]
 	`assume` NoChange
 	`describe` ("service " ++ n ++ " stopped")
@@ -85,19 +85,19 @@ stopped n = cmdProperty "systemctl" ["stop", n]
 --
 -- This does not ensure the service is started, it only configures systemd
 -- to start it on boot.
-enabled :: ServiceName -> Property NoInfo
+enabled :: ServiceName -> Property Linux
 enabled n = cmdProperty "systemctl" ["enable", n]
 	`assume` NoChange
 	`describe` ("service " ++ n ++ " enabled")
 
 -- | Disables a systemd service.
-disabled :: ServiceName -> Property NoInfo
+disabled :: ServiceName -> Property Linux
 disabled n = cmdProperty "systemctl" ["disable", n]
 	`assume` NoChange
 	`describe` ("service " ++ n ++ " disabled")
 
 -- | Masks a systemd service.
-masked :: ServiceName -> RevertableProperty NoInfo
+masked :: ServiceName -> RevertableProperty Linux
 masked n = systemdMask <!> systemdUnmask
   where
 	systemdMask = cmdProperty "systemctl" ["mask", n]
@@ -108,11 +108,11 @@ masked n = systemdMask <!> systemdUnmask
 		`describe` ("service " ++ n ++ " unmasked")
 
 -- | Ensures that a service is both enabled and started
-running :: ServiceName -> Property NoInfo
+running :: ServiceName -> Property Linux
 running n = started n `requires` enabled n
 
 -- | Restarts a systemd service.
-restarted :: ServiceName -> Property NoInfo
+restarted :: ServiceName -> Property Linux
 restarted n = cmdProperty "systemctl" ["restart", n]
 	`assume` NoChange
 	`describe` ("service " ++ n ++ " restarted")
@@ -126,7 +126,7 @@ journald :: ServiceName
 journald = "systemd-journald"
 
 -- | Enables persistent storage of the journal.
-persistentJournal :: Property NoInfo
+persistentJournal :: Property DebianLike
 persistentJournal = check (not <$> doesDirectoryExist dir) $
 	combineProperties "persistent systemd journal"
 		[ cmdProperty "install" ["-d", "-g", "systemd-journal", dir]
@@ -148,7 +148,7 @@ type Option = String
 -- currently the case for files like journald.conf and system.conf.
 -- And it assumes the file already exists with
 -- the right [Header], so new lines can just be appended to the end.
-configured :: FilePath -> Option -> String -> Property NoInfo
+configured :: FilePath -> Option -> String -> Property Linux
 configured cfgfile option value = combineProperties desc
 	[ File.fileProperty desc (mapMaybe removeother) cfgfile
 	, File.containsLine cfgfile line
@@ -162,18 +162,18 @@ configured cfgfile option value = combineProperties desc
 		| otherwise = Just l
 
 -- | Causes systemd to reload its configuration files.
-daemonReloaded :: Property NoInfo
+daemonReloaded :: Property Linux
 daemonReloaded = cmdProperty "systemctl" ["daemon-reload"]
 	`assume` NoChange
 
 -- | Configures journald, restarting it so the changes take effect.
-journaldConfigured :: Option -> String -> Property NoInfo
+journaldConfigured :: Option -> String -> Property Linux
 journaldConfigured option value =
 	configured "/etc/systemd/journald.conf" option value
 		`onChange` restarted journald
 
 -- | Ensures machined and machinectl are installed
-machined :: Property NoInfo
+machined :: Property Linux
 machined = withOS "machined installed" $ \o ->
 	case o of
 		-- Split into separate debian package since systemd 225.
@@ -239,7 +239,7 @@ nspawned c@(Container name (Chroot.Chroot loc builder _) h) =
 
 -- | Sets up the service file for the container, and then starts
 -- it running.
-nspawnService :: Container -> ChrootCfg -> RevertableProperty NoInfo
+nspawnService :: Container -> ChrootCfg -> RevertableProperty Linux
 nspawnService (Container name _ _) cfg = setup <!> teardown
   where
 	service = nspawnServiceName name
@@ -290,7 +290,7 @@ nspawnServiceParams (SystemdNspawnCfg ps) =
 --
 -- This uses nsenter to enter the container, by looking up the pid of the
 -- container's init process and using its namespace.
-enterScript :: Container -> RevertableProperty NoInfo
+enterScript :: Container -> RevertableProperty Linux
 enterScript c@(Container name _ _) = setup <!> teardown
   where
 	setup = combineProperties ("generated " ++ enterScriptFile c)
