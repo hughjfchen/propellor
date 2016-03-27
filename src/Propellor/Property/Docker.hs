@@ -196,7 +196,7 @@ mkContainerInfo cid@(ContainerId hn _cn) (Container img h) =
 	runparams = map (\(DockerRunParam mkparam) -> mkparam hn)
 		(_dockerRunParams info)
 	info = fromInfo $ hostInfo h'
-	h' = modifyHostProps h $ hostProps h
+	h' = setContainerProps h $ containerProps h
 		-- Restart by default so container comes up on
 		-- boot or when docker is upgraded.
 		&^ restartAlways
