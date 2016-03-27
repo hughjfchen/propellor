@@ -3,6 +3,7 @@
 module Propellor.Types.OS (
 	System(..),
 	Distribution(..),
+	TargetOS(..),
 	DebianSuite(..),
 	FreeBSDRelease(..),
 	FBSDVersion(..),
@@ -32,6 +33,14 @@ data Distribution
 	| FreeBSD FreeBSDRelease
 	deriving (Show, Eq)
 
+-- | Properties can target one or more OS's; the targets are part
+-- of the type of the property, so need to be kept fairly simple.
+data TargetOS
+	= OSDebian
+	| OSBuntish
+	| OSFreeBSD
+	deriving (Show, Eq)
+
 -- | Debian has several rolling suites, and a number of stable releases,
 -- such as Stable "jessie".
 data DebianSuite = Experimental | Unstable | Testing | Stable Release
@@ -39,10 +48,10 @@ data DebianSuite = Experimental | Unstable | Testing | Stable Release
 
 -- | FreeBSD breaks their releases into "Production" and "Legacy".
 data FreeBSDRelease = FBSDProduction FBSDVersion | FBSDLegacy FBSDVersion
-  deriving (Show, Eq)
+	deriving (Show, Eq)
 
 data FBSDVersion = FBSD101 | FBSD102 | FBSD093
-  deriving (Eq)
+	deriving (Eq)
 
 instance IsString FBSDVersion where
 	fromString "10.1-RELEASE" = FBSD101

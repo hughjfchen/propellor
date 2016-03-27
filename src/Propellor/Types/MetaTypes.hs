@@ -2,7 +2,6 @@
 
 module Propellor.Types.MetaTypes (
 	MetaType(..),
-	OS(..),
 	UnixLike,
 	Linux,
 	DebianLike,
@@ -26,15 +25,11 @@ module Propellor.Types.MetaTypes (
 	EqT,
 ) where
 
-data MetaType
-	= Targeting OS -- ^ A target OS of a Property
-	| WithInfo     -- ^ Indicates that a Property has associated Info
+import Propellor.Types.OS
 
-data OS
-	= OSDebian
-	| OSBuntish -- ^ A well-known Debian derivative founded by a space tourist. The actual name of this distribution is not used in Propellor per <http://joeyh.name/blog/entry/trademark_nonsense/>
-	| OSFreeBSD
-	deriving (Show, Eq)
+data MetaType
+	= Targeting TargetOS -- ^ A target OS of a Property
+	| WithInfo           -- ^ Indicates that a Property has associated Info
 
 -- | Any unix-like system
 type UnixLike = MetaTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish, 'Targeting 'OSFreeBSD ]
