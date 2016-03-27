@@ -93,6 +93,7 @@ data Container = Container Image Host
 instance IsContainer Container where
 	containerProperties (Container _ h) = containerProperties h
 	containerInfo (Container _ h) = containerInfo h
+	setContainerProperties (Container i h) ps = Container i (setContainerProperties h ps)
 
 class HasImage a where
 	getImageName :: a -> Image
