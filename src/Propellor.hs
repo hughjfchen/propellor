@@ -14,13 +14,14 @@
 -- > main = defaultMain hosts
 -- > 
 -- > hosts :: [Host]
--- > hosts =
--- >   [ host "example.com"
+-- > hosts = [example]
+-- > 
+-- > example :: Host
+-- > example = host "example.com" $ props
 -- >     & Apt.installed ["mydaemon"]
 -- >     & "/etc/mydaemon.conf" `File.containsLine` "secure=1"
 -- >       `onChange` cmdProperty "service" ["mydaemon", "restart"]
 -- >     ! Apt.installed ["unwantedpackage"]
--- >   ]
 --
 -- See config.hs for a more complete example, and clone Propellor's
 -- git repository for a deployable system using Propellor:
