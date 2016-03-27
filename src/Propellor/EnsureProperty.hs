@@ -14,6 +14,9 @@ import Propellor.Types
 import Propellor.Types.MetaTypes
 import Propellor.Exception
 
+import Data.Monoid
+import Prelude
+
 -- | For when code running in the Propellor monad needs to ensure a
 -- Property.
 --
