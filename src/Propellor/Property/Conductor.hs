@@ -83,7 +83,7 @@ import qualified Data.Set as S
 
 -- | Class of things that can be conducted.
 class Conductable c where
-	conducts :: c -> RevertableProperty (HasInfo + DebianLike) (HasInfo + UnixLike)
+	conducts :: c -> RevertableProperty (HasInfo + UnixLike) (HasInfo + UnixLike)
 
 instance Conductable Host where
 	-- | Conduct the specified host.
@@ -219,8 +219,8 @@ orchestrate hs = map go hs
 	os = extractOrchestras hs
 
 	removeold h = foldl removeold' h (oldconductorsof h)
-	removeold' h oldconductor = addPropHost h $
-		undoRevertableProperty $ conductedBy oldconductor
+	removeold' h oldconductor = modifyHostProps h $ hostProps h
+		! conductedBy oldconductor
 
 	oldconductors = zip hs (map (fromInfo . hostInfo) hs)
 	oldconductorsof h = flip mapMaybe oldconductors $ 
@@ -233,22 +233,17 @@ orchestrate' :: Host -> Orchestra -> Host
 orchestrate' h (Conducted _) = h
 orchestrate' h (Conductor c l)
 	| sameHost h c = cont $ addConductorPrivData h (concatMap allHosts l)
-	| any (sameHost h) (map topHost l) = cont $ addPropHost h $
-		setupRevertableProperty $ conductedBy c
+	| any (sameHost h) (map topHost l) = cont $
+		modifyHostProps h $ hostProps h
+			& conductedBy c
 	| otherwise = cont h
   where
 	cont h' = foldl orchestrate' h' l
 
-addPropHost :: Host -> Property i -> Host
-addPropHost (Host hn ps i) p = Host hn ps' i'
-  where
-	ps' = ps ++ [toChildProperty p]
-	i' = i <> getInfoRecursive p
-
 -- The host this property is added to becomes the conductor for the
 -- specified Host. Note that `orchestrate` must be used for this property
 -- to have any effect.
-conductorFor :: Host -> Property (HasInfo + DebianLike)
+conductorFor :: Host -> Property (HasInfo + UnixLike)
 conductorFor h = go
 	`addInfoProperty` (toInfo (ConductorFor [h]))
 	`requires` setupRevertableProperty (conductorKnownHost h)
@@ -302,7 +297,7 @@ addConductorPrivData h hs = h { hostInfo = hostInfo h <> i }
 	privinfo h' = forceHostContext (hostName h') $ fromInfo (hostInfo h')
 
 -- Use this property to let the specified conductor ssh in and run propellor.
-conductedBy :: Host -> RevertableProperty DebianLike UnixLike
+conductedBy :: Host -> RevertableProperty UnixLike UnixLike
 conductedBy h = (setup <!> teardown)
 	`describe` ("conducted by " ++ hostName h)
   where

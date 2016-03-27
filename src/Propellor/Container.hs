@@ -7,11 +7,11 @@ import Propellor.Types.MetaTypes
 import Propellor.Types.Info
 import Propellor.PrivData
 
-class Container c where
+class IsContainer c where
 	containerProperties :: c -> [ChildProperty]
 	containerInfo :: c -> Info
 
-instance Container Host where
+instance IsContainer Host where
 	 containerProperties = hostProperties
 	 containerInfo = hostInfo
 
@@ -28,7 +28,7 @@ propagateContainer
 		-- Since the children being added probably have info,
 		-- require the Property's metatypes to have info.
 		( IncludesInfo metatypes ~ 'True
-		, Container c
+		, IsContainer c
 		)
 	=> String
 	-> c

@@ -47,8 +47,13 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.List
 
-installed :: Property DebianLike
-installed = Apt.installed ["ssh"]
+installed :: Property UnixLike
+installed = withOS "ssh installed" $ \w o -> 
+	let aptinstall = ensureProperty w $ Apt.installed ["ssh"]
+	in case o of
+		(Just (System (Debian _) _)) -> aptinstall
+		(Just (System (Buntish _) _)) -> aptinstall
+		_ -> unsupportedOS
 
 restarted :: Property DebianLike
 restarted = Service.restarted "ssh"

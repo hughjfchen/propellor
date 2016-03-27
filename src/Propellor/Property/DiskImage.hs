@@ -76,16 +76,16 @@ type DiskImage = FilePath
 -- chroot while the disk image is being built, which should prevent any
 -- daemons that are included from being started on the system that is
 -- building the disk image.
-imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty HasInfo
+imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty (HasInfo + Linux) Linux
 imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty HasInfo
+imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty (HasInfo + Linux) Linux
 imageRebuilt = imageBuilt' True
 
-imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty HasInfo
+imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty (HasInfo + Linux) Linux
 imageBuilt' rebuild img mkchroot tabletype final partspec = 
 	imageBuiltFrom img chrootdir tabletype final partspec
 		`requires` Chroot.provisioned chroot
@@ -109,7 +109,7 @@ imageBuilt' rebuild img mkchroot tabletype final partspec =
 		& Apt.cacheCleaned
 
 -- | Builds a disk image from the contents of a chroot.
-imageBuiltFrom :: DiskImage -> FilePath -> TableType -> Finalization -> [PartSpec] -> RevertableProperty NoInfo
+imageBuiltFrom :: DiskImage -> FilePath -> TableType -> Finalization -> [PartSpec] -> RevertableProperty Linux Linux
 imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
   where
 	desc = img ++ " built from " ++ chrootdir
@@ -135,7 +135,7 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 		imageFinalized final mnts mntopts devs parttable
 	rmimg = File.notPresent img
 
-partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> Property NoInfo
+partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> Property Linux
 partitionsPopulated chrootdir mnts mntopts devs = property desc $ mconcat $ zipWith3 go mnts mntopts devs
   where
 	desc = "partitions populated from " ++ chrootdir
@@ -203,7 +203,7 @@ getMountSz szm l (Just mntpt) =
 -- If the file doesn't exist, or is too small, creates a new one, full of 0's.
 --
 -- If the file is too large, truncates it down to the specified size.
-imageExists :: FilePath -> ByteSize -> Property NoInfo
+imageExists :: FilePath -> ByteSize -> Property Linux
 imageExists img sz = property ("disk image exists" ++ img) $ liftIO $ do
 	ms <- catchMaybeIO $ getFileStatus img
 	case ms of
@@ -226,9 +226,9 @@ imageExists img sz = property ("disk image exists" ++ img) $ liftIO $ do
 -- 
 -- It's ok if the second property leaves additional things mounted
 -- in the partition tree.
-type Finalization = (Property NoInfo, (FilePath -> [LoopDev] -> Property NoInfo))
+type Finalization = (Property Linux, (FilePath -> [LoopDev] -> Property Linux))
 
-imageFinalized :: Finalization -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> PartTable -> Property NoInfo
+imageFinalized :: Finalization -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> PartTable -> Property Linux
 imageFinalized (_, final) mnts mntopts devs (PartTable _ parts) = 
 	property "disk image finalized" $ 
 		withTmpDir "mnt" $ \top -> 

@@ -41,7 +41,7 @@ import System.Console.Concurrent
 data Chroot where
 	Chroot :: ChrootBootstrapper b => FilePath -> b -> Host -> Chroot
 
-instance Container Chroot where
+instance IsContainer Chroot where
 	containerProperties (Chroot _ _ h) = containerProperties h
 	containerInfo (Chroot _ _ h) = containerInfo h
 

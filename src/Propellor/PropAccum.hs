@@ -12,6 +12,8 @@ module Propellor.PropAccum
 	, (&)
 	, (&^)
 	, (!)
+	, hostProps
+	, modifyHostProps
 	) where
 
 import Propellor.Types
@@ -29,6 +31,16 @@ import Prelude
 -- > 	& otherproperty
 host :: HostName -> Props metatypes -> Host
 host hn (Props ps) = Host hn ps (mconcat (map getInfoRecursive ps))
+
+-- | Note that the metatype of a Host's properties is not retained,
+-- so this defaults to UnixLike. So, using this with modifyHostProps can
+-- add properties to a Host that conflict with properties already in it.
+-- Use caution when using this.
+hostProps :: Host -> Props UnixLike
+hostProps = Props . hostProperties
+
+modifyHostProps :: Host -> Props metatypes -> Host
+modifyHostProps h ps = host (hostName h) ps
 
 -- | Props is a combination of a list of properties, with their combined 
 -- metatypes.
@@ -81,3 +93,9 @@ Props c &^ p = Props (toChildProperty p : c)
 	-> RevertableProperty (MetaTypes y) (MetaTypes z)
 	-> Props (MetaTypes (Combine x z))
 Props c ! p = Props (c ++ [toChildProperty (revert p)])
+
+-- addPropsHost :: Host -> [Prop] -> Host
+-- addPropsHost (Host hn ps i) p = Host hn ps' i'
+--   where
+-- 	ps' = ps ++ [toChildProperty p]
+-- 	i' = i <> getInfoRecursive p
