@@ -74,6 +74,7 @@ module Propellor.Property.Conductor (
 ) where
 
 import Propellor.Base
+import Propellor.Container
 import Propellor.Spin (spin')
 import Propellor.PrivData.Paths
 import Propellor.Types.Info
@@ -219,7 +220,7 @@ orchestrate hs = map go hs
 	os = extractOrchestras hs
 
 	removeold h = foldl removeold' h (oldconductorsof h)
-	removeold' h oldconductor = modifyHostProps h $ hostProps h
+	removeold' h oldconductor = setContainerProps h $ containerProps h
 		! conductedBy oldconductor
 
 	oldconductors = zip hs (map (fromInfo . hostInfo) hs)
@@ -234,7 +235,7 @@ orchestrate' h (Conducted _) = h
 orchestrate' h (Conductor c l)
 	| sameHost h c = cont $ addConductorPrivData h (concatMap allHosts l)
 	| any (sameHost h) (map topHost l) = cont $
-		modifyHostProps h $ hostProps h
+		setContainerProps h $ containerProps h
 			& conductedBy c
 	| otherwise = cont h
   where
@@ -268,7 +269,7 @@ conductorFor h = go
 
 -- Reverts conductorFor.
 notConductorFor :: Host -> Property (HasInfo + UnixLike)
-notConductorFor h = doNothing
+notConductorFor h = (doNothing :: Property UnixLike)
 	`addInfoProperty` (toInfo (NotConductorFor [h]))
 	`describe` desc
 	`requires` undoRevertableProperty (conductorKnownHost h)

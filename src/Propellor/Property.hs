@@ -308,7 +308,7 @@ makeChange a = liftIO a >> return MadeChange
 noChange :: Propellor Result
 noChange = return NoChange
 
-doNothing :: Property UnixLike
+doNothing :: SingI t => Property (MetaTypes t)
 doNothing = property "noop property" noChange
 
 -- | Registers an action that should be run at the very end, after

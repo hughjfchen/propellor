@@ -173,7 +173,7 @@ hostKeys ctx l = go `before` cleanup
 	removestale b = map (tightenTargets . File.notPresent . flip keyFile b) staletypes
 	cleanup :: Property DebianLike
 	cleanup
-		| null staletypes || null l = tightenTargets doNothing
+		| null staletypes || null l = doNothing
 		| otherwise =
 			combineProperties ("any other ssh host keys removed " ++ typelist staletypes)
 				(toProps $ removestale True ++ removestale False)

@@ -44,6 +44,7 @@ data Chroot where
 instance IsContainer Chroot where
 	containerProperties (Chroot _ _ h) = containerProperties h
 	containerInfo (Chroot _ _ h) = containerInfo h
+	setContainerProperties (Chroot loc b h) ps = Chroot loc b (setContainerProperties h ps)
 
 chrootSystem :: Chroot -> Maybe System
 chrootSystem = fromInfoVal . fromInfo . containerInfo
@@ -256,11 +257,13 @@ chrootDesc (Chroot loc _ _) desc = "chroot " ++ loc ++ " " ++ desc
 -- from being started, which is often something you want to prevent when
 -- building a chroot.
 --
--- This is accomplished by installing a </usr/sbin/policy-rc.d> script
--- that does not let any daemons be started by packages that use
+-- On Debian, this is accomplished by installing a </usr/sbin/policy-rc.d>
+-- script that does not let any daemons be started by packages that use
 -- invoke-rc.d. Reverting the property removes the script.
-noServices :: RevertableProperty DebianLike DebianLike
-noServices = tightenTargets setup <!> tightenTargets teardown
+--
+-- This property has no effect on non-Debian systems.
+noServices :: RevertableProperty UnixLike UnixLike
+noServices = setup <!> teardown
   where
 	f = "/usr/sbin/policy-rc.d"
 	script = [ "#!/bin/sh", "exit 101" ]

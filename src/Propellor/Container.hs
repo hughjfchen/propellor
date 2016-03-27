@@ -6,14 +6,28 @@ import Propellor.Types
 import Propellor.Types.MetaTypes
 import Propellor.Types.Info
 import Propellor.PrivData
+import Propellor.PropAccum
 
 class IsContainer c where
 	containerProperties :: c -> [ChildProperty]
 	containerInfo :: c -> Info
+	setContainerProperties :: c -> [ChildProperty] -> c
 
 instance IsContainer Host where
-	 containerProperties = hostProperties
-	 containerInfo = hostInfo
+	containerProperties = hostProperties
+	containerInfo = hostInfo
+	setContainerProperties h ps = host (hostName h) (Props ps)
+
+-- | Note that the metatype of a container's properties is not retained,
+-- so this defaults to UnixLike. So, using this with setContainerProps can
+-- add properties to a container that conflict with properties already in it.
+-- Use caution when using this; only add properties that do not have
+-- restricted targets.
+containerProps :: IsContainer c => c -> Props UnixLike
+containerProps = Props . containerProperties
+
+setContainerProps :: IsContainer c => c -> Props metatypes -> c
+setContainerProps c (Props ps) = setContainerProperties c ps
 
 -- | Adjust the provided Property, adding to its
 -- propertyChidren the properties of the provided container.

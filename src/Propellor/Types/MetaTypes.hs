@@ -36,7 +36,7 @@ type UnixLike = MetaTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish, 'Targe
 -- | Any linux system
 type Linux = MetaTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish ]
 -- | Debian and derivatives.
-type DebianLike = Debian + Buntish
+type DebianLike = MetaTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish ]
 type Debian = MetaTypes '[ 'Targeting 'OSDebian ]
 type Buntish = MetaTypes '[ 'Targeting 'OSBuntish ]
 type FreeBSD = MetaTypes '[ 'Targeting 'OSFreeBSD ]
