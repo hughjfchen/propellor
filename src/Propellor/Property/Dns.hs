@@ -81,7 +81,7 @@ setupPrimary zonefile mknamedconffile hosts domain soa rs =
 
 	(partialzone, zonewarnings) = genZone indomain hostmap domain soa
 	baseprop = primaryprop
-		`addInfoProperty` (toInfo (addNamedConf conf))
+		`setInfoProperty` (toInfo (addNamedConf conf))
 	primaryprop :: Property DebianLike
 	primaryprop = property ("dns primary for " ++ domain) $ do
 		sshfps <- concat <$> mapM (genSSHFP domain) (M.elems hostmap)

@@ -3,6 +3,7 @@
 module Propellor.Property.Partition where
 
 import Propellor.Base
+import Propellor.Types.Core
 import qualified Propellor.Property.Apt as Apt
 import Utility.Applicative
 

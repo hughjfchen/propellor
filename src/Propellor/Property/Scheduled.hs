@@ -10,6 +10,7 @@ module Propellor.Property.Scheduled
 	) where
 
 import Propellor.Base
+import Propellor.Types.Core
 import Utility.Scheduled
 
 import Data.Time.Clock

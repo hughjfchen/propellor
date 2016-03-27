@@ -19,6 +19,9 @@ import Data.Monoid
 import Prelude
 
 -- | Information about a Host, which can be provided by its properties.
+--
+-- Many different types of data can be contained in the same Info value
+-- at the same time. See `toInfo` and `fromInfo`.
 newtype Info = Info [InfoEntry]
 	deriving (Monoid, Show)
 
@@ -47,6 +50,8 @@ class (Typeable v, Monoid v, Show v) => IsInfo v where
 addInfo :: IsInfo v => Info -> v -> Info
 addInfo (Info l) v = Info (InfoEntry v:l)
 
+-- | Converts any value in the `IsInfo` type class into an Info,
+-- which is otherwise empty.
 toInfo :: IsInfo v => v -> Info
 toInfo = addInfo mempty
 

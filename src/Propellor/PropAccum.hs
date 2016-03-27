@@ -16,6 +16,7 @@ module Propellor.PropAccum
 
 import Propellor.Types
 import Propellor.Types.MetaTypes
+import Propellor.Types.Core
 import Propellor.Property
 
 import Data.Monoid
@@ -29,10 +30,6 @@ import Prelude
 -- > 	& otherproperty
 host :: HostName -> Props metatypes -> Host
 host hn (Props ps) = Host hn ps (mconcat (map getInfoRecursive ps))
-
--- | Props is a combination of a list of properties, with their combined 
--- metatypes.
-data Props metatypes = Props [ChildProperty]
 
 -- | Start accumulating a list of properties.
 --

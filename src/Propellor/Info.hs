@@ -1,9 +1,11 @@
-{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE PackageImports, TypeFamilies, DataKinds, PolyKinds #-}
 
 module Propellor.Info (
 	osDebian,
 	osBuntish,
 	osFreeBSD,
+	setInfoProperty,
+	addInfoProperty,
 	pureInfoProperty,
 	pureInfoProperty',
 	askInfo,
@@ -22,6 +24,7 @@ module Propellor.Info (
 
 import Propellor.Types
 import Propellor.Types.Info
+import Propellor.Types.MetaTypes
 
 import "mtl" Control.Monad.Reader
 import qualified Data.Set as S
@@ -31,11 +34,32 @@ import Data.Monoid
 import Control.Applicative
 import Prelude
 
+-- | Adds info to a Property.
+--
+-- The new Property will include HasInfo in its metatypes.
+setInfoProperty
+	:: (MetaTypes metatypes' ~ (+) HasInfo metatypes, SingI metatypes')
+	=> Property metatypes
+	-> Info
+	-> Property (MetaTypes metatypes')
+setInfoProperty (Property _ d a oldi c) newi =
+	Property sing d a (oldi <> newi) c
+
+-- | Adds more info to a Property that already HasInfo.
+addInfoProperty
+	:: (IncludesInfo metatypes ~ 'True)
+	=> Property metatypes
+	-> Info
+	-> Property metatypes
+addInfoProperty (Property t d a oldi c) newi =
+	Property t d a (oldi <> newi) c
+
+-- | Makes a property that does nothing but set some `Info`.
 pureInfoProperty :: (IsInfo v) => Desc -> v -> Property (HasInfo + UnixLike)
 pureInfoProperty desc v = pureInfoProperty' desc (toInfo v)
 
 pureInfoProperty' :: Desc -> Info -> Property (HasInfo + UnixLike)
-pureInfoProperty' desc i = addInfoProperty p i
+pureInfoProperty' desc i = setInfoProperty p i
   where
 	p :: Property UnixLike
 	p = property ("has " ++ desc) (return NoChange)

@@ -150,6 +150,7 @@ Library
     Propellor.EnsureProperty
     Propellor.Exception
     Propellor.Types
+    Propellor.Types.Core
     Propellor.Types.Chroot
     Propellor.Types.CmdLine
     Propellor.Types.Container

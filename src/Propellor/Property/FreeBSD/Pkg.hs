@@ -51,7 +51,7 @@ update =
 		go = ifM (pkgUpdated <$> askInfo) ((noChange), (liftIO upd >> return MadeChange))
 	in
 		(property "pkg update has run" go :: Property FreeBSD)
-			`addInfoProperty` (toInfo (PkgUpdate ""))
+			`setInfoProperty` (toInfo (PkgUpdate ""))
 
 newtype PkgUpgrade = PkgUpgrade String
 	deriving (Typeable, Monoid, Show)
@@ -68,7 +68,7 @@ upgrade =
 		go = ifM (pkgUpgraded <$> askInfo) ((noChange), (liftIO upd >> return MadeChange))
 	in
 		(property "pkg upgrade has run" go :: Property FreeBSD)
-			`addInfoProperty` (toInfo (PkgUpdate ""))
+			`setInfoProperty` (toInfo (PkgUpdate ""))
 			`requires` update
 
 type Package = String

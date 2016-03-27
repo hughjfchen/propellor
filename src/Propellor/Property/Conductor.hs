@@ -83,16 +83,17 @@ import qualified Propellor.Property.Ssh as Ssh
 import qualified Data.Set as S
 
 -- | Class of things that can be conducted.
+--
+-- There are instances for single hosts, and for lists of hosts.
+-- With a list, each listed host will be conducted in turn. Failure to conduct
+-- one host does not prevent conducting subsequent hosts in the list, but
+-- will be propagated as an overall failure of the property.
 class Conductable c where
 	conducts :: c -> RevertableProperty (HasInfo + UnixLike) (HasInfo + UnixLike)
 
 instance Conductable Host where
-	-- | Conduct the specified host.
 	conducts h = conductorFor h <!> notConductorFor h
 
--- | Each host in the list will be conducted in turn. Failure to conduct
--- one host does not prevent conducting subsequent hosts in the list, but
--- will be propagated as an overall failure of the property.
 instance Conductable [Host] where
 	conducts hs = 
 		propertyList desc (toProps $ map (setupRevertableProperty . conducts) hs)
@@ -246,7 +247,7 @@ orchestrate' h (Conductor c l)
 -- to have any effect.
 conductorFor :: Host -> Property (HasInfo + UnixLike)
 conductorFor h = go
-	`addInfoProperty` (toInfo (ConductorFor [h]))
+	`setInfoProperty` (toInfo (ConductorFor [h]))
 	`requires` setupRevertableProperty (conductorKnownHost h)
 	`requires` Ssh.installed
   where
@@ -270,7 +271,7 @@ conductorFor h = go
 -- Reverts conductorFor.
 notConductorFor :: Host -> Property (HasInfo + UnixLike)
 notConductorFor h = (doNothing :: Property UnixLike)
-	`addInfoProperty` (toInfo (NotConductorFor [h]))
+	`setInfoProperty` (toInfo (NotConductorFor [h]))
 	`describe` desc
 	`requires` undoRevertableProperty (conductorKnownHost h)
   where

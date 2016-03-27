@@ -37,6 +37,8 @@ module Propellor.Property.Concurrent (
 ) where
 
 import Propellor.Base
+import Propellor.Types.Core
+import Propellor.Types.MetaTypes
 
 import Control.Concurrent
 import qualified Control.Concurrent.Async as A

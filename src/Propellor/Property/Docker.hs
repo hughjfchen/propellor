@@ -48,6 +48,7 @@ module Propellor.Property.Docker (
 import Propellor.Base hiding (init)
 import Propellor.Types.Docker
 import Propellor.Types.Container
+import Propellor.Types.Core
 import Propellor.Types.CmdLine
 import Propellor.Types.Info
 import Propellor.Container
@@ -183,7 +184,7 @@ imagePulled ctr = pulled `describe` msg
 
 propagateContainerInfo :: Container -> Property (HasInfo + Linux) -> Property (HasInfo + Linux)
 propagateContainerInfo ctr@(Container _ h) p = propagateContainer cn ctr $
-	p `addInfoProperty'` dockerinfo
+	p `addInfoProperty` dockerinfo
   where
 	dockerinfo = dockerInfo $
 		mempty { _dockerContainers = M.singleton cn h }

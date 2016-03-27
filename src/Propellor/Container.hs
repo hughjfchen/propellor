@@ -3,8 +3,10 @@
 module Propellor.Container where
 
 import Propellor.Types
+import Propellor.Types.Core
 import Propellor.Types.MetaTypes
 import Propellor.Types.Info
+import Propellor.Info
 import Propellor.PrivData
 import Propellor.PropAccum
 
@@ -54,7 +56,7 @@ propagateContainer containername c prop = prop
 	convert p = 
 		let n = property (getDesc p) (getSatisfy p) :: Property UnixLike
 		    n' = n
-		    	`addInfoProperty` mapInfo (forceHostContext containername)
+		    	`setInfoProperty` mapInfo (forceHostContext containername)
 				(propagatableInfo (getInfo p))
 		   	`addChildren` map convert (getChildren p)
 		in toChildProperty n'

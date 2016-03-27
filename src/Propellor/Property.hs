@@ -53,6 +53,7 @@ import Control.Applicative
 import Prelude
 
 import Propellor.Types
+import Propellor.Types.Core
 import Propellor.Types.ResultCheck
 import Propellor.Types.MetaTypes
 import Propellor.Info

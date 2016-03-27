@@ -11,6 +11,7 @@ module Propellor.EnsureProperty
 	) where
 
 import Propellor.Types
+import Propellor.Types.Core
 import Propellor.Types.MetaTypes
 import Propellor.Exception
 

@@ -1,4 +1,3 @@
-{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -8,15 +7,18 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Propellor.Types
-	( Host(..)
+module Propellor.Types (
+	-- * Core data types
+	  Host(..)
 	, Property(..)
 	, property
-	, Info
 	, Desc
-	, MetaType(..)
-	, MetaTypes
-	, TargetOS(..)
+	, RevertableProperty(..)
+	, (<!>)
+	, Propellor(..)
+	, LiftPropellor(..)
+	, Info
+	-- * Types of properties
 	, UnixLike
 	, Linux
 	, DebianLike
@@ -25,34 +27,22 @@ module Propellor.Types
 	, FreeBSD
 	, HasInfo
 	, type (+)
-	, addInfoProperty
-	, addInfoProperty'
-	, adjustPropertySatisfy
-	, RevertableProperty(..)
-	, (<!>)
-	, ChildProperty
-	, IsProp(..)
+	, TightenTargets(..)
+	-- * Combining and modifying properties
 	, Combines(..)
 	, CombinedType
 	, ResultCombiner
-	, Propellor(..)
-	, LiftPropellor(..)
-	, EndAction(..)
+	, adjustPropertySatisfy
+	-- * Other included types
 	, module Propellor.Types.OS
 	, module Propellor.Types.Dns
 	, module Propellor.Types.Result
 	, module Propellor.Types.ZFS
-	, TightenTargets(..)
-	, SingI
 	) where
 
 import Data.Monoid
-import "mtl" Control.Monad.RWS.Strict
-import Control.Monad.Catch
-import Data.Typeable
-import Control.Applicative
-import Prelude
 
+import Propellor.Types.Core
 import Propellor.Types.Info
 import Propellor.Types.OS
 import Propellor.Types.Dns
@@ -60,115 +50,44 @@ import Propellor.Types.Result
 import Propellor.Types.MetaTypes
 import Propellor.Types.ZFS
 
--- | Everything Propellor knows about a system: Its hostname,
--- properties and their collected info.
-data Host = Host
-	{ hostName :: HostName
-	, hostProperties :: [ChildProperty]
-	, hostInfo :: Info
-	}
-	deriving (Show, Typeable)
-
--- | Propellor's monad provides read-only access to info about the host
--- it's running on, and a writer to accumulate EndActions.
-newtype Propellor p = Propellor { runWithHost :: RWST Host [EndAction] () IO p }
-	deriving
-		( Monad
-		, Functor
-		, Applicative
-		, MonadReader Host
-		, MonadWriter [EndAction]
-		, MonadIO
-		, MonadCatch
-		, MonadThrow
-		, MonadMask
-		)
-
-class LiftPropellor m where
-	liftPropellor :: m a -> Propellor a
-
-instance LiftPropellor Propellor where
-	liftPropellor = id
-
-instance LiftPropellor IO where
-	liftPropellor = liftIO
-
-instance Monoid (Propellor Result) where
-	mempty = return NoChange
-	-- | The second action is only run if the first action does not fail.
-	mappend x y = do
-		rx <- x
-		case rx of
-			FailedChange -> return FailedChange
-			_ -> do
-				ry <- y
-				return (rx <> ry)
-
--- | An action that Propellor runs at the end, after trying to satisfy all
--- properties. It's passed the combined Result of the entire Propellor run.
-data EndAction = EndAction Desc (Result -> Propellor Result)
-
-type Desc = String
-
 -- | The core data type of Propellor, this represents a property
--- that the system should have, with a descrition, an action to ensure
--- it has the property, and perhaps some Info that can be added to Hosts
+-- that the system should have, with a descrition, and an action to ensure
+-- it has the property.
 -- that have the property.
 --
--- A property has a list of `[MetaType]`, which is part of its type.
+-- There are different types of properties that target different OS's,
+-- and so have different metatypes. 
+-- For example: "Property DebianLike" and "Property FreeBSD".
 --
--- There are many instances and type families, which are mostly used
+-- Also, some properties have associated `Info`, which is indicated in
+-- their type: "Property (HasInfo + DebianLike)"
+--
+-- There are many associated type families, which are mostly used
 -- internally, so you needn't worry about them.
 data Property metatypes = Property metatypes Desc (Propellor Result) Info [ChildProperty]
 
 instance Show (Property metatypes) where
 	show p = "property " ++ show (getDesc p)
 
--- | Since there are many different types of Properties, they cannot be put
--- into a list. The simplified ChildProperty can be put into a list.
-data ChildProperty = ChildProperty Desc (Propellor Result) Info [ChildProperty]
-
-instance Show ChildProperty where
-	show = getDesc
-
 -- | Constructs a Property, from a description and an action to run to
 -- ensure the Property is met.
 --
--- You can specify any metatypes that make sense to indicate what OS
--- the property targets, etc.
+-- Due to the polymorphic return type of this function, most uses will need
+-- to specify a type signature. This lets you specify what OS the property
+-- targets, etc.
 --
 -- For example:
 --
 -- > foo :: Property Debian
--- > foo = mkProperty "foo" (...)
---
--- Note that using this needs LANGUAGE PolyKinds.
+-- > foo = property "foo" $ do
+-- >	...
+-- > 	return MadeChange
 property
 	:: SingI metatypes
 	=> Desc
 	-> Propellor Result
 	-> Property (MetaTypes metatypes)
 property d a = Property sing d a mempty mempty
-
--- | Adds info to a Property.
---
--- The new Property will include HasInfo in its metatypes.
-addInfoProperty
-	:: (MetaTypes metatypes' ~ (+) HasInfo metatypes, SingI metatypes')
-	=> Property metatypes
-	-> Info
-	-> Property (MetaTypes metatypes')
-addInfoProperty (Property _ d a oldi c) newi =
-	Property sing d a (oldi <> newi) c
-
--- | Adds more info to a Property that already HasInfo.
-addInfoProperty'
-	:: (IncludesInfo metatypes ~ 'True)
-	=> Property metatypes
-	-> Info
-	-> Property metatypes
-addInfoProperty' (Property t d a oldi c) newi =
-	Property t d a (oldi <> newi) c
 
 -- | Changes the action that is performed to satisfy a property.
 adjustPropertySatisfy :: Property metatypes -> (Propellor Result -> Propellor Result) -> Property metatypes
@@ -191,24 +110,6 @@ instance Show (RevertableProperty setupmetatypes undometatypes) where
 	-> RevertableProperty setupmetatypes undometatypes
 setup <!> undo = RevertableProperty setup undo
 
-class IsProp p where
-	setDesc :: p -> Desc -> p
-	getDesc :: p -> Desc
-	getChildren :: p -> [ChildProperty]
-	addChildren :: p -> [ChildProperty] -> p
-	-- | Gets the info of the property, combined with all info
-	-- of all children properties.
-	getInfoRecursive :: p -> Info
-	-- | Info, not including info from children.
-	getInfo :: p -> Info
-	-- | Gets a ChildProperty representing the Property.
-	-- You should not normally need to use this.
-	toChildProperty :: p -> ChildProperty
-	-- | Gets the action that can be run to satisfy a Property.
-	-- You should never run this action directly. Use
-	-- 'Propellor.EnsureProperty.ensureProperty` instead.
-	getSatisfy :: p -> Propellor Result
-
 instance IsProp (Property metatypes) where
 	setDesc (Property t _ a i c) d = Property t d a i c
 	getDesc (Property _ d _ _ _) = d
@@ -219,17 +120,6 @@ instance IsProp (Property metatypes) where
 	getInfo (Property _ _ _ i _) = i
 	toChildProperty (Property _ d a i c) = ChildProperty d a i c
 	getSatisfy (Property _ _ a _ _) = a
-
-instance IsProp ChildProperty where
-	setDesc (ChildProperty _ a i c) d = ChildProperty d a i c
-	getDesc (ChildProperty d _ _ _) = d
-	getChildren (ChildProperty _ _ _ c) = c
-	addChildren (ChildProperty d a i c) c' = ChildProperty d a i (c ++ c')
-	getInfoRecursive (ChildProperty _ _ i c) =
-		i <> mconcat (map getInfoRecursive c)
-	getInfo (ChildProperty _ _ i _) = i
-	toChildProperty = id
-	getSatisfy (ChildProperty _ a _ _) = a
 
 instance IsProp (RevertableProperty setupmetatypes undometatypes) where
 	-- | Sets the description of both sides.
