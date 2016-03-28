@@ -8,3 +8,6 @@ Once this is done, can switch GHC-Options back to -O0 from -O.
 -O0 is better because ghc takes less memory to build propellor.
 
 [[!tag user/joey]]
+
+> [[done]]. Didn't wait for it to hit stable; cabal will be used to install
+> it.

@@ -46,7 +46,7 @@ import Control.Exception (throw)
 -- install succeeds, to bootstrap from the cleanly installed system to
 -- a fully working system. For example:
 --
--- > & os (System (Debian Unstable) "amd64")
+-- > & osDebian Unstable "amd64"
 -- > & cleanInstallOnce (Confirmed "foo.example.com")
 -- >    `onChange` propertyList "fixing up after clean install"
 -- >        [ preserveNetwork
@@ -64,7 +64,7 @@ import Control.Exception (throw)
 -- > & User.accountFor "joey"
 -- > & User.hasSomePassword "joey"
 -- > -- rest of system properties here
-cleanInstallOnce :: Confirmation -> Property NoInfo
+cleanInstallOnce :: Confirmation -> Property Linux
 cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	go `requires` confirmed "clean install confirmed" confirmation
   where
@@ -83,14 +83,18 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 			`requires`
 		osbootstrapped
 
-	osbootstrapped = withOS (newOSDir ++ " bootstrapped") $ \o -> case o of
-		(Just d@(System (Debian _) _)) -> debootstrap d
-		(Just u@(System (Buntish _) _)) -> debootstrap u
-		_ -> unsupportedOS
+	osbootstrapped :: Property Linux
+	osbootstrapped = withOS (newOSDir ++ " bootstrapped") $ \w o -> case o of
+		(Just d@(System (Debian _) _)) -> ensureProperty w $
+			debootstrap d
+		(Just u@(System (Buntish _) _)) -> ensureProperty w $
+			debootstrap u
+		_ -> unsupportedOS'
 	
-	debootstrap targetos = ensureProperty $
-		-- Ignore the os setting, and install debootstrap from
-		-- source, since we don't know what OS we're running in yet.
+	debootstrap :: System -> Property Linux
+	debootstrap targetos =
+		-- Install debootstrap from source, since we don't know
+		-- what OS we're currently running in.
 		Debootstrap.built' Debootstrap.sourceInstall
 			newOSDir targetos Debootstrap.DefaultConfig
 		-- debootstrap, I wish it was faster.. 
@@ -100,6 +104,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		-- sync instead?
 
 	-- This is the fun bit.
+	flipped :: Property Linux
 	flipped = property (newOSDir ++ " moved into place") $ liftIO $ do
 		-- First, unmount most mount points, lazily, so
 		-- they don't interfere with moving things around.
@@ -137,6 +142,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 
 		return MadeChange
 
+	propellorbootstrapped :: Property UnixLike
 	propellorbootstrapped = property "propellor re-debootstrapped in new os" $
 		return NoChange
 		-- re-bootstrap propellor in /usr/local/propellor,
@@ -145,6 +151,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		--   be present in /old-os's /usr/local/propellor)
 		-- TODO
 	
+	finalized :: Property UnixLike
 	finalized = property "clean OS installed" $ do
 		liftIO $ writeFile flagfile ""
 		return MadeChange
@@ -179,7 +186,7 @@ massRename = go []
 
 data Confirmation = Confirmed HostName
 
-confirmed :: Desc -> Confirmation -> Property NoInfo
+confirmed :: Desc -> Confirmation -> Property UnixLike
 confirmed desc (Confirmed c) = property desc $ do
 	hostname <- asks hostName
 	if hostname /= c
@@ -191,25 +198,26 @@ confirmed desc (Confirmed c) = property desc $ do
 -- | </etc/network/interfaces> is configured to bring up the network 
 -- interface that currently has a default route configured, using
 -- the same (static) IP address.
-preserveNetwork :: Property NoInfo
+preserveNetwork :: Property DebianLike
 preserveNetwork = go `requires` Network.cleanInterfacesFile
   where
-	go = property "preserve network configuration" $ do
+	go :: Property DebianLike
+	go = property' "preserve network configuration" $ \w -> do
 		ls <- liftIO $ lines <$> readProcess "ip"
 			["route", "list", "scope", "global"]
 		case words <$> headMaybe ls of
 			Just ("default":"via":_:"dev":iface:_) ->
-				ensureProperty $ Network.static iface
+				ensureProperty w $ Network.static iface
 			_ -> do
 				warningMessage "did not find any default ipv4 route"
 				return FailedChange 
 
 -- | </etc/resolv.conf> is copied from the old OS
-preserveResolvConf :: Property NoInfo
+preserveResolvConf :: Property Linux
 preserveResolvConf = check (fileExist oldloc) $
-	property (newloc ++ " copied from old OS") $ do
+	property' (newloc ++ " copied from old OS") $ \w -> do
 		ls <- liftIO $ lines <$> readFile oldloc
-		ensureProperty $ newloc `File.hasContent` ls
+		ensureProperty w $ newloc `File.hasContent` ls
   where
 	newloc = "/etc/resolv.conf"
 	oldloc = oldOSDir ++ newloc
@@ -217,20 +225,23 @@ preserveResolvConf = check (fileExist oldloc) $
 -- | </root/.ssh/authorized_keys> has added to it any ssh keys that
 -- were authorized in the old OS. Any other contents of the file are
 -- retained.
-preserveRootSshAuthorized :: Property NoInfo
+preserveRootSshAuthorized :: Property UnixLike
 preserveRootSshAuthorized = check (fileExist oldloc) $
-	property (newloc ++ " copied from old OS") $ do
+	property' desc $ \w -> do
 		ks <- liftIO $ lines <$> readFile oldloc
-		ensureProperties (map (setupRevertableProperty . Ssh.authorizedKey (User "root")) ks)
+		ensureProperty w $ combineProperties desc $
+			toProps $ map (setupRevertableProperty . Ssh.authorizedKey (User "root")) ks
   where
+	desc = newloc ++ " copied from old OS"
 	newloc = "/root/.ssh/authorized_keys"
 	oldloc = oldOSDir ++ newloc
 
 -- Removes the old OS's backup from </old-os>
-oldOSRemoved :: Confirmation -> Property NoInfo
+oldOSRemoved :: Confirmation -> Property UnixLike
 oldOSRemoved confirmation = check (doesDirectoryExist oldOSDir) $
 	go `requires` confirmed "old OS backup removal confirmed" confirmation
   where
+	go :: Property UnixLike
 	go = property "old OS backup removed" $ do
 		liftIO $ removeDirectoryRecursive oldOSDir
 		return MadeChange

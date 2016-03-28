@@ -27,8 +27,8 @@ hosts =
 
 -- An example freebsd host.
 freebsdbox :: Host
-freebsdbox = host "freebsdbox.example.com"
-	& os (System (FreeBSD (FBSDProduction FBSD102)) "amd64")
+freebsdbox = host "freebsdbox.example.com" $ props
+	& osFreeBSD (FBSDProduction FBSD102) "amd64"
 	& Pkg.update
 	& Pkg.upgrade
 	& Poudriere.poudriere poudriereZFS
@@ -43,8 +43,8 @@ poudriereZFS = Poudriere.defaultConfig
 
 -- An example linux host.
 linuxbox :: Host
-linuxbox = host "linuxbox.example.com"
-	& os (System (Debian Unstable) "amd64")
+linuxbox = host "linuxbox.example.com" $ props
+	& osDebian Unstable "amd64"
 	& Apt.stdSourcesList
 	& Apt.unattendedUpgrades
 	& Apt.installed ["etckeeper"]
@@ -58,10 +58,9 @@ linuxbox = host "linuxbox.example.com"
 
 -- A generic webserver in a Docker container.
 webserverContainer :: Docker.Container
-webserverContainer = Docker.container "webserver" (Docker.latestImage "debian")
-	& os (System (Debian (Stable "jessie")) "amd64")
+webserverContainer = Docker.container "webserver" (Docker.latestImage "debian") $ props
+	& osDebian (Stable "jessie") "amd64"
 	& Apt.stdSourcesList
 	& Docker.publish "80:80"
 	& Docker.volume "/var/www:/var/www"
 	& Apt.serviceInstalledRunning "apache2"
-

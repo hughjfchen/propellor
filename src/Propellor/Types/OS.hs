@@ -3,6 +3,7 @@
 module Propellor.Types.OS (
 	System(..),
 	Distribution(..),
+	TargetOS(..),
 	DebianSuite(..),
 	FreeBSDRelease(..),
 	FBSDVersion(..),
@@ -16,6 +17,7 @@ module Propellor.Types.OS (
 	userGroup,
 	Port(..),
 	fromPort,
+	systemToTargetOS,
 ) where
 
 import Network.BSD (HostName)
@@ -28,9 +30,22 @@ data System = System Distribution Architecture
 
 data Distribution
 	= Debian DebianSuite
-	| Buntish Release -- ^ A well-known Debian derivative founded by a space tourist. The actual name of this distribution is not used in Propellor per <http://joeyh.name/blog/entry/trademark_nonsense/>)
+	| Buntish Release -- ^ A well-known Debian derivative founded by a space tourist. The actual name of this distribution is not used in Propellor per <http://joeyh.name/blog/entry/trademark_nonsense/>
 	| FreeBSD FreeBSDRelease
 	deriving (Show, Eq)
+
+-- | Properties can target one or more OS's; the targets are part
+-- of the type of the property, so need to be kept fairly simple.
+data TargetOS
+	= OSDebian
+	| OSBuntish
+	| OSFreeBSD
+	deriving (Show, Eq, Ord)
+
+systemToTargetOS :: System -> TargetOS
+systemToTargetOS (System (Debian _) _) = OSDebian
+systemToTargetOS (System (Buntish _) _) = OSBuntish
+systemToTargetOS (System (FreeBSD _) _) = OSFreeBSD
 
 -- | Debian has several rolling suites, and a number of stable releases,
 -- such as Stable "jessie".
@@ -39,10 +54,10 @@ data DebianSuite = Experimental | Unstable | Testing | Stable Release
 
 -- | FreeBSD breaks their releases into "Production" and "Legacy".
 data FreeBSDRelease = FBSDProduction FBSDVersion | FBSDLegacy FBSDVersion
-  deriving (Show, Eq)
+	deriving (Show, Eq)
 
 data FBSDVersion = FBSD101 | FBSD102 | FBSD093
-  deriving (Eq)
+	deriving (Eq)
 
 instance IsString FBSDVersion where
 	fromString "10.1-RELEASE" = FBSD101
