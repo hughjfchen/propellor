@@ -93,8 +93,8 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	
 	debootstrap :: System -> Property Linux
 	debootstrap targetos =
-		-- Ignore the os setting, and install debootstrap from
-		-- source, since we don't know what OS we're running in yet.
+		-- Install debootstrap from source, since we don't know
+		-- what OS we're currently running in.
 		Debootstrap.built' Debootstrap.sourceInstall
 			newOSDir targetos Debootstrap.DefaultConfig
 		-- debootstrap, I wish it was faster.. 

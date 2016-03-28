@@ -118,12 +118,9 @@ imageBuilt' rebuild img mkchroot tabletype final partspec =
 -- disk image. It cleans any caches of information that can be omitted;
 -- eg the apt cache on Debian.
 cachesCleaned :: Property UnixLike
-cachesCleaned = withOS "cache cleaned" $ \w o -> 
-	let aptclean = ensureProperty w Apt.cacheCleaned
-	in case o of
-		(Just (System (Debian _) _)) -> aptclean
-		(Just (System (Buntish _) _)) -> aptclean
-		_ -> noChange
+cachesCleaned = "cache cleaned" ==> (Apt.cacheCleaned `pickOS` skipit)
+  where
+	skipit = doNothing :: Property UnixLike
 
 -- | Builds a disk image from the contents of a chroot.
 imageBuiltFrom :: DiskImage -> FilePath -> TableType -> Finalization -> [PartSpec] -> RevertableProperty (HasInfo + Linux) UnixLike
