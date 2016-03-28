@@ -36,34 +36,39 @@ Description:
 
 Executable propellor
   Main-Is: wrapper.hs
-  GHC-Options: -threaded -Wall -fno-warn-tabs
+  GHC-Options: -threaded -Wall -fno-warn-tabs -O0
   Extensions: TypeOperators
   Hs-Source-Dirs: src
-  Build-Depends: 
+  Build-Depends:
     -- propellor needs to support the ghc shipped in Debian stable
     base >= 4.5, base < 5,
     MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text
+    time, mtl, transformers, exceptions (>= 0.6), stm, text,
+    concurrent-output
 
 Executable propellor-config
   Main-Is: config.hs
-  GHC-Options: -threaded -Wall -fno-warn-tabs
+  GHC-Options: -threaded -Wall -fno-warn-tabs -O0
   Extensions: TypeOperators
   Hs-Source-Dirs: src
-  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
-   IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers (>= 0.5), network, async, time, mtl, transformers,
-   exceptions (>= 0.6), stm, text, unix
+  Build-Depends: 
+    base >= 4.5, base < 5,
+    MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
+    unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
+    time, mtl, transformers, exceptions (>= 0.6), stm, text,
+    concurrent-output
 
 Library
-  GHC-Options: -Wall -fno-warn-tabs
+  GHC-Options: -Wall -fno-warn-tabs -O0
   Extensions: TypeOperators
   Hs-Source-Dirs: src
-  Build-Depends: MissingH, directory, filepath, base >= 4.5, base < 5,
-   IfElse, process, bytestring, hslogger, unix-compat, ansi-terminal,
-   containers (>= 0.5), network, async, time, mtl, transformers,
-   exceptions (>= 0.6), stm, text, unix
+  Build-Depends: 
+    base >= 4.5, base < 5,
+    MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
+    unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
+    time, mtl, transformers, exceptions (>= 0.6), stm, text,
+    concurrent-output
 
   Exposed-Modules:
     Propellor
@@ -201,9 +206,6 @@ Library
     Utility.ThreadScheduler
     Utility.Tmp
     Utility.UserInfo
-    System.Console.Concurrent
-    System.Console.Concurrent.Internal
-    System.Process.Concurrent
 
 source-repository head
   type: git
