@@ -56,7 +56,7 @@ propellor (3.0.0) UNRELEASED; urgency=medium
       propertyChildren to getChildren
   * The new `pickOS` property combinator can be used to combine different
     properties, supporting different OS's, into one Property that chooses
-    what to do based on the Host's OS.
+    which to use based on the Host's OS.
   * Re-enabled -O0 in propellor.cabal to reign in ghc's memory use handling
     these complex new types.
   * Added dependency on concurrent-output; removed embedded copy.

@@ -157,7 +157,7 @@ installed' params ps = robustly $ check (isInstallable ps) go
   where
 	go = runApt (params ++ ["install"] ++ ps)
 
-installedBackport :: [Package] -> Property DebianLike
+installedBackport :: [Package] -> Property Debian
 installedBackport ps = withOS desc $ \w o -> case o of
 	(Just (System (Debian suite) _)) -> case backportSuite suite of
 		Nothing -> unsupportedOS
