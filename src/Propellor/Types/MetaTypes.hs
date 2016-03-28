@@ -23,6 +23,7 @@ module Propellor.Types.MetaTypes (
 	type (&&),
 	Not,
 	EqT,
+	Union,
 ) where
 
 import Propellor.Types.Singletons
@@ -31,6 +32,7 @@ import Propellor.Types.OS
 data MetaType
 	= Targeting TargetOS -- ^ A target OS of a Property
 	| WithInfo           -- ^ Indicates that a Property has associated Info
+	deriving (Show, Eq, Ord)
 
 -- | Any unix-like system
 type UnixLike = MetaTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish, 'Targeting 'OSFreeBSD ]
@@ -50,7 +52,7 @@ type instance IncludesInfo (MetaTypes l) = Elem 'WithInfo l
 
 type MetaTypes = Sing
 
--- This boilerplatw would not be needed if the singletons library were
+-- This boilerplate would not be needed if the singletons library were
 -- used. However, we're targeting too old a version of ghc to use it yet.
 data instance Sing (x :: MetaType) where
 	OSDebianS :: Sing ('Targeting 'OSDebian)
@@ -61,6 +63,12 @@ instance SingI ('Targeting 'OSDebian) where sing = OSDebianS
 instance SingI ('Targeting 'OSBuntish) where sing = OSBuntishS
 instance SingI ('Targeting 'OSFreeBSD) where sing = OSFreeBSDS
 instance SingI 'WithInfo where sing = WithInfoS
+instance SingKind ('KProxy :: KProxy MetaType) where
+	type DemoteRep ('KProxy :: KProxy MetaType) = MetaType
+	fromSing OSDebianS = Targeting OSDebian
+	fromSing OSBuntishS = Targeting OSBuntish
+	fromSing OSFreeBSDS = Targeting OSFreeBSD
+	fromSing WithInfoS = WithInfo
 
 -- | Convenience type operator to combine two `MetaTypes` lists.
 --

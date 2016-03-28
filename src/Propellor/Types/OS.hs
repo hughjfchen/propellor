@@ -17,6 +17,7 @@ module Propellor.Types.OS (
 	userGroup,
 	Port(..),
 	fromPort,
+	systemToTargetOS,
 ) where
 
 import Network.BSD (HostName)
@@ -39,7 +40,12 @@ data TargetOS
 	= OSDebian
 	| OSBuntish
 	| OSFreeBSD
-	deriving (Show, Eq)
+	deriving (Show, Eq, Ord)
+
+systemToTargetOS :: System -> TargetOS
+systemToTargetOS (System (Debian _) _) = OSDebian
+systemToTargetOS (System (Buntish _) _) = OSBuntish
+systemToTargetOS (System (FreeBSD _) _) = OSFreeBSD
 
 -- | Debian has several rolling suites, and a number of stable releases,
 -- such as Stable "jessie".

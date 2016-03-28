@@ -1,8 +1,11 @@
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE PolyKinds #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
 module Propellor.Property (
 	-- * Property combinators
@@ -24,6 +27,7 @@ module Propellor.Property (
 	, property'
 	, OuterMetaTypesWitness
 	, ensureProperty
+	, pickOS
 	, withOS
 	, unsupportedOS
 	, makeChange
@@ -49,6 +53,7 @@ import Control.Monad.IfElse
 import "mtl" Control.Monad.RWS.Strict
 import System.Posix.Files
 import qualified Data.Hash.MD5 as MD5
+import Data.List
 import Control.Applicative
 import Prelude
 
@@ -56,6 +61,7 @@ import Propellor.Types
 import Propellor.Types.Core
 import Propellor.Types.ResultCheck
 import Propellor.Types.MetaTypes
+import Propellor.Types.Singletons
 import Propellor.Info
 import Propellor.EnsureProperty
 import Utility.Exception
@@ -244,28 +250,60 @@ isNewerThan x y = do
   where
 	mtime f = catchMaybeIO $ modificationTimeHiRes <$> getFileStatus f
 
-{-
-
 -- | Picks one of the two input properties to use,
 -- depending on the targeted OS.
 --
 -- If both input properties support the targeted OS, then the
 -- first will be used.
+--
+-- The resulting property will use the description of the first property
+-- no matter which property is used in the end. So, it's often a good
+-- idea to change the description to something clearer.
+--
+-- For example:
+--
+-- > upgraded :: UnixLike
+-- > upgraded = (Apt.upgraded `pickOS` Pkg.upgraded)
+-- > 	`describe` "OS upgraded"
+--
+-- If neither input property supports the targeted OS, calls
+-- `unsupportedOS`. Using the example above on a Fedora system would
+-- fail that way.
+--
+-- (It would be better if this constrained its return type to the Union
+-- of the targets of the inputs, but that does not seems to currently
+-- be possible with ghc.)
+{- For some reason, ghc does not like this type signature, or indeed the
+ - version of this that it emits. But this does compile! Until a type
+ - signature can be written down, cannot add the Union constraint.
+ - http://stackoverflow.com/questions/36256557/what-is-the-type-of-matches-m-s-m-fromsing-s
 pickOS
 	::
-		( combined ~ Union a b
-		, SingI combined
+		( Union a b ~ c
+		, SingI c
+		, DemoteRep 'KProxy ~ [MetaType]
 		)
 	=> Property (MetaTypes a)
 	-> Property (MetaTypes b)
-	-> Property (MetaTypes combined)
-pickOS a@(Property ta ioa) b@(Property tb iob) = Property sing io
-  where
-	-- TODO pick with of ioa or iob to use based on final OS of
-	-- system being run on.
-	io = undefined
-
+	-> Property (MetaTypes c)
 -}
+pickOS a b = c `addChildren` [toChildProperty a, toChildProperty b]
+  where
+	-- This use of getSatisfy is safe, because both a and b
+	-- are added as children, so their info will propigate.
+	--c :: (SingI c, Union a b ~ c) => Property (MetaTypes a) -> Property (MetaTypes b) -> Property (MetaTypes c)
+	c = withOS (getDesc a) $ \_ o ->
+		if matching o a
+			then getSatisfy a
+			else if matching o b
+				then getSatisfy b
+				else unsupportedOS
+	matching Nothing _ = False
+	matching (Just o) p = 
+		Targeting (systemToTargetOS o)
+			`elem`
+		fromSing (proptype p)
+	proptype (Property t _ _ _ _) = t
 
 -- | Makes a property that is satisfied differently depending on specifics
 -- of the host's operating system.
@@ -291,13 +329,20 @@ withOS desc a = property desc $ a dummyoutermetatypes =<< getOS
 	dummyoutermetatypes :: OuterMetaTypesWitness ('[])
 	dummyoutermetatypes = OuterMetaTypesWitness sing
 
+class UnsupportedOS a where
+	unsupportedOS :: a
+
 -- | Throws an error, for use in `withOS` when a property is lacking
 -- support for an OS.
-unsupportedOS :: Propellor a
-unsupportedOS = go =<< getOS
-  where
-	go Nothing = error "Unknown host OS is not supported by this property."
-	go (Just o) = error $ "This property is not implemented for " ++ show o
+instance UnsupportedOS (Propellor a) where
+	unsupportedOS = go =<< getOS
+	  where
+		go Nothing = error "Unknown host OS is not supported by this property."
+		go (Just o) = error $ "This property is not implemented for " ++ show o
+
+-- | A property that always fails with an unsupported OS error.
+instance UnsupportedOS (Property UnixLike) where
+	unsupportedOS = property "unsupportedOS" unsupportedOS
 
 -- | Undoes the effect of a RevertableProperty.
 revert :: RevertableProperty setup undo -> RevertableProperty undo setup
