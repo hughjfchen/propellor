@@ -1,4 +1,4 @@
-propellor (2.17.1) UNRELEASED; urgency=medium
+propellor (2.17.1) unstable; urgency=medium
 
   * Avoid generating excessively long paths to the unix socket file
     used for ssh connection caching. Mostly. Can still generate a too long
@@ -7,7 +7,7 @@ propellor (2.17.1) UNRELEASED; urgency=medium
     Files without extensions were ignored by uwsgi.
     Thanks, Félix Sipma.
 
- -- Joey Hess <id@joeyh.name>  Fri, 25 Mar 2016 17:23:25 -0400
+ -- Joey Hess <id@joeyh.name>  Mon, 28 Mar 2016 11:06:34 -0400
 
 propellor (2.17.0) unstable; urgency=medium
 
