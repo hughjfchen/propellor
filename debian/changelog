@@ -63,6 +63,17 @@ propellor (3.0.0) UNRELEASED; urgency=medium
 
  -- Joey Hess <id@joeyh.name>  Thu, 24 Mar 2016 15:02:33 -0400
 
+propellor (2.17.1) UNRELEASED; urgency=medium
+
+  * Avoid generating excessively long paths to the unix socket file
+    used for ssh connection caching. Mostly. Can still generate a too long
+    one if $HOME is longer than 60 bytes.
+  * Uwsgi: add ".ini" extension to app config files. 
+    Files without extensions were ignored by uwsgi.
+    Thanks, Félix Sipma.
+
+ -- Joey Hess <id@joeyh.name>  Fri, 25 Mar 2016 17:23:25 -0400
+
 propellor (2.17.0) unstable; urgency=medium
 
   * Added initial support for FreeBSD.
