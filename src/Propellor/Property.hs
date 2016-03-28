@@ -28,6 +28,7 @@ module Propellor.Property (
 	, pickOS
 	, withOS
 	, unsupportedOS
+	, unsupportedOS'
 	, makeChange
 	, noChange
 	, doNothing
@@ -292,7 +293,7 @@ pickOS a b = c `addChildren` [toChildProperty a, toChildProperty b]
 			then getSatisfy a
 			else if matching o b
 				then getSatisfy b
-				else unsupportedOS
+				else unsupportedOS'
 	matching Nothing _ = False
 	matching (Just o) p = 
 		Targeting (systemToTargetOS o)
@@ -307,7 +308,7 @@ pickOS a b = c `addChildren` [toChildProperty a, toChildProperty b]
 -- > myproperty = withOS "foo installed" $ \w o -> case o of
 -- > 	(Just (System (Debian (Stable release)) arch)) -> ensureProperty w ...
 -- > 	(Just (System (Debian suite) arch)) -> ensureProperty w ...
--- >	_ -> unsupportedOS
+-- >	_ -> unsupportedOS'
 --
 -- Note that the operating system specifics may not be declared for all hosts,
 -- which is where Nothing comes in.
@@ -324,20 +325,17 @@ withOS desc a = property desc $ a dummyoutermetatypes =<< getOS
 	dummyoutermetatypes :: OuterMetaTypesWitness ('[])
 	dummyoutermetatypes = OuterMetaTypesWitness sing
 
-class UnsupportedOS a where
-	unsupportedOS :: a
+-- | A property that always fails with an unsupported OS error.
+unsupportedOS :: Property UnixLike
+unsupportedOS = property "unsupportedOS" unsupportedOS'
 
 -- | Throws an error, for use in `withOS` when a property is lacking
 -- support for an OS.
-instance UnsupportedOS (Propellor a) where
-	unsupportedOS = go =<< getOS
+unsupportedOS' :: Propellor Result
+unsupportedOS' = go =<< getOS
 	  where
 		go Nothing = error "Unknown host OS is not supported by this property."
 		go (Just o) = error $ "This property is not implemented for " ++ show o
-
--- | A property that always fails with an unsupported OS error.
-instance UnsupportedOS (Property UnixLike) where
-	unsupportedOS = property "unsupportedOS" unsupportedOS
 
 -- | Undoes the effect of a RevertableProperty.
 revert :: RevertableProperty setup undo -> RevertableProperty undo setup

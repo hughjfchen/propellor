@@ -89,7 +89,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 			debootstrap d
 		(Just u@(System (Buntish _) _)) -> ensureProperty w $
 			debootstrap u
-		_ -> unsupportedOS
+		_ -> unsupportedOS'
 	
 	debootstrap :: System -> Property Linux
 	debootstrap targetos =

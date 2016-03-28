@@ -84,7 +84,7 @@ stdSourcesList :: Property Debian
 stdSourcesList = withOS "standard sources.list" $ \w o -> case o of
 	(Just (System (Debian suite) _)) ->
 		ensureProperty w $ stdSourcesListFor suite
-	_ -> unsupportedOS
+	_ -> unsupportedOS'
 
 stdSourcesListFor :: DebianSuite -> Property Debian
 stdSourcesListFor suite = stdSourcesList' suite []
@@ -160,11 +160,11 @@ installed' params ps = robustly $ check (isInstallable ps) go
 installedBackport :: [Package] -> Property Debian
 installedBackport ps = withOS desc $ \w o -> case o of
 	(Just (System (Debian suite) _)) -> case backportSuite suite of
-		Nothing -> unsupportedOS
+		Nothing -> unsupportedOS'
 		Just bs -> ensureProperty w $
 			runApt (["install", "-t", bs, "-y"] ++ ps)
 				`changesFile` dpkgStatus
-	_ -> unsupportedOS
+	_ -> unsupportedOS'
   where
 	desc = unwords ("apt installed backport":ps)
 

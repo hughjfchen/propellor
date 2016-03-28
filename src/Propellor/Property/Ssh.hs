@@ -53,7 +53,7 @@ installed = withOS "ssh installed" $ \w o ->
 	in case o of
 		(Just (System (Debian _) _)) -> aptinstall
 		(Just (System (Buntish _) _)) -> aptinstall
-		_ -> unsupportedOS
+		_ -> unsupportedOS'
 
 restarted :: Property DebianLike
 restarted = Service.restarted "ssh"

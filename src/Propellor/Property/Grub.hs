@@ -30,7 +30,7 @@ mkConfig = tightenTargets $ cmdProperty "update-grub" []
 
 -- | Installs grub; does not run update-grub.
 installed' :: BIOS -> Property Linux
-installed' bios = (aptinstall `pickOS` aptinstall)
+installed' bios = (aptinstall `pickOS` unsupportedOS)
 	`describe` "grub package installed"
   where
 	aptinstall :: Property DebianLike
