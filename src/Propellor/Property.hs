@@ -269,13 +269,9 @@ isNewerThan x y = do
 -- If neither input property supports the targeted OS, calls
 -- `unsupportedOS`. Using the example above on a Fedora system would
 -- fail that way.
---
--- (It would be better if this constrained its return type to the Union
--- of the targets of the inputs, but that does not seems to currently
--- be possible with ghc.)
-{- For some reason, ghc does not like this type signature, or indeed the
- - version of this that it emits. But this does compile! Until a type
- - signature can be written down, cannot add the Union constraint.
+{- I have not yet managed to write down a type signature for this
+ - that ghc will accept. Until a type signature can be written down,
+ - cannot add the Union constraint.
  - http://stackoverflow.com/questions/36256557/what-is-the-type-of-matches-m-s-m-fromsing-s
 pickOS
 	::

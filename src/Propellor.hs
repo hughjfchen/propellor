@@ -39,7 +39,6 @@ module Propellor (
 	, (&)
 	, (!)
 	-- * Propertries
-	, describe
 	-- | Properties are often combined together in your propellor
 	-- configuration. For example:
 	--
@@ -48,6 +47,7 @@ module Propellor (
 	, requires
 	, before
 	, onChange
+	, describe
 	, module Propellor.Property
 	-- | Everything you need to build your own properties,
 	-- and useful property combinators
