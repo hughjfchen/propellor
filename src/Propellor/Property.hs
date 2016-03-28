@@ -1,11 +1,9 @@
 {-# LANGUAGE PackageImports #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE PolyKinds #-}
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
 module Propellor.Property (
 	-- * Property combinators
@@ -269,25 +267,26 @@ isNewerThan x y = do
 -- If neither input property supports the targeted OS, calls
 -- `unsupportedOS`. Using the example above on a Fedora system would
 -- fail that way.
-{- I have not yet managed to write down a type signature for this
- - that ghc will accept. Until a type signature can be written down,
- - cannot add the Union constraint.
- - http://stackoverflow.com/questions/36256557/what-is-the-type-of-matches-m-s-m-fromsing-s
 pickOS
 	::
-		( Union a b ~ c
+		( SingKind ('KProxy :: KProxy ka)
+		, SingKind ('KProxy :: KProxy kb)
+		, DemoteRep ('KProxy :: KProxy ka) ~ [MetaType]
+		, DemoteRep ('KProxy :: KProxy kb) ~ [MetaType]
 		, SingI c
-		, DemoteRep 'KProxy ~ [MetaType]
+		-- Would be nice to have this constraint, but
+		-- union will not generate metatypes lists with the same
+		-- order of OS's as is used everywhere else. So, 
+		-- would need a type-level sort.
+		--, Union a b ~ c
 		)
-	=> Property (MetaTypes a)
-	-> Property (MetaTypes b)
+	=> Property (MetaTypes (a :: ka))
+	-> Property (MetaTypes (b :: kb))
 	-> Property (MetaTypes c)
--}
 pickOS a b = c `addChildren` [toChildProperty a, toChildProperty b]
   where
 	-- This use of getSatisfy is safe, because both a and b
 	-- are added as children, so their info will propigate.
-	--c :: (SingI c, Union a b ~ c) => Property (MetaTypes a) -> Property (MetaTypes b) -> Property (MetaTypes c)
 	c = withOS (getDesc a) $ \_ o ->
 		if matching o a
 			then getSatisfy a
