@@ -78,6 +78,7 @@ Library
     Propellor.Property.Aiccu
     Propellor.Property.Apache
     Propellor.Property.Apt
+    Propellor.Property.Apt.PPA
     Propellor.Property.Cmd
     Propellor.Property.Concurrent
     Propellor.Property.Conductor
