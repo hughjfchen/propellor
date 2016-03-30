@@ -63,6 +63,9 @@ propellor (3.0.0) UNRELEASED; urgency=medium
   * Re-enabled -O0 in propellor.cabal to reign in ghc's memory use handling
     these complex new types.
   * Added dependency on concurrent-output; removed embedded copy.
+  * Apt.PPA: New module, contributed by Evan Cofsky.
+
+ -- Joey Hess <id@joeyh.name>  Wed, 30 Mar 2016 15:45:08 -0400
 
 propellor (2.17.2) unstable; urgency=medium
 
