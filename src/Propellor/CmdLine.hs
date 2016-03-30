@@ -149,6 +149,9 @@ unknownhost h hosts = errorMessage $ unlines
 -- Builds propellor (when allowed) and if it looks like a new binary,
 -- re-execs it to continue.
 -- Otherwise, runs the IO action to continue.
+--
+-- The Host should only be provided when dependencies should be installed
+-- as needed to build propellor.
 buildFirst :: Maybe Host -> CanRebuild -> CmdLine -> IO () -> IO ()
 buildFirst h CanRebuild cmdline next = do
 	oldtime <- getmtime
