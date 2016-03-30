@@ -74,7 +74,7 @@ data Props metatypes = Props [ChildProperty]
 data ChildProperty = ChildProperty Desc (Propellor Result) Info [ChildProperty]
   
 instance Show ChildProperty where
-	show = getDesc
+	show p = "property " ++ show (getDesc p)
 
 class IsProp p where
 	setDesc :: p -> Desc -> p
