@@ -66,11 +66,11 @@ socketFile home hn = selectSocketFile
 	md5 = take 9 $ MD5.md5s $ MD5.Str hn
 
 selectSocketFile :: [FilePath] -> FilePath -> FilePath
-selectSocketFile [] fallback = fallback
+selectSocketFile [] d = d
 selectSocketFile [f] _ = f
-selectSocketFile (f:fs) fallback
+selectSocketFile (f:fs) d
 	| valid_unix_socket_path f = f
-	| otherwise = selectSocketFile fs fallback
+	| otherwise = selectSocketFile fs d
 
 valid_unix_socket_path :: FilePath -> Bool
 valid_unix_socket_path f = length (decodeW8 f) < 100 - reservedbyssh
