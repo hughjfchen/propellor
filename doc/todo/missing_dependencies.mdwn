@@ -37,3 +37,5 @@ After upgrading to 2.4.0, I get this error:
     propellor: remote propellor failed
 
 As in https://propellor.branchable.com/todo/issue_after_upgrading_shared_library/, manually running "make clean" on the server fixed the issue
+
+> Ok, this is the same as [[problem_with_spin_after_new_dependencies_added]]. Closing this issue as I'm dealing with it in the other one. [[done]] --[[Joey]]
