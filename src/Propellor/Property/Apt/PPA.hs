@@ -20,60 +20,58 @@ installed = Apt.installed ["software-properties-common"]
 -- representing them, and this type represents that. It's also an instance
 -- of 'Show' and 'IsString' so it can work with 'OverloadedStrings'. 
 -- More on PPAs can be found at <https://help.launchpad.net/Packaging/PPA>
-data PPA = PPA {
-        -- | The Launchpad account hosting this archive.
-        ppaAccount :: String,
-        -- | The name of the archive.
-        ppaArchive :: String
-} deriving (Eq, Ord)
+data PPA = PPA
+	{ ppaAccount :: String -- ^ The Launchpad account hosting this archive.
+	, ppaArchive :: String -- ^ The name of the archive.
+	} deriving (Eq, Ord)
 
 instance Show PPA where
-        show p = concat ["ppa:", ppaAccount p, "/", ppaArchive p]
+	show p = concat ["ppa:", ppaAccount p, "/", ppaArchive p]
 
 instance IsString PPA where
-        -- | Parse strings like "ppa:zfs-native/stable" into a PPA.
-        fromString s =
-                let
-                        [_, ppa] = split "ppa:" s
-                        [acct, arch] = split "/" ppa
-                in
-                        PPA acct arch
+	-- | Parse strings like "ppa:zfs-native/stable" into a PPA.
+	fromString s =
+		let
+			[_, ppa] = split "ppa:" s
+			[acct, arch] = split "/" ppa
+		in
+			PPA acct arch
 
 -- | Adds a PPA to the local system repositories.
 addPpa :: PPA -> Property DebianLike
 addPpa p =
-        cmdPropertyEnv "apt-add-repository" ["--yes", show p] Apt.noninteractiveEnv
-        `assume` MadeChange
-        `describe` ("Added PPA " ++ (show p))
-        `requires` installed
+	cmdPropertyEnv "apt-add-repository" ["--yes", show p] Apt.noninteractiveEnv
+	`assume` MadeChange
+	`describe` ("Added PPA " ++ (show p))
+	`requires` installed
 
 -- | A repository key ID to be downloaded with apt-key.
-data AptKeyId = AptKeyId {
-        akiName :: String,
-        akiId :: String,
-        akiServer :: String
-        } deriving (Eq, Ord)
+data AptKeyId = AptKeyId
+	{ akiName :: String
+	, akiId :: String
+	, akiServer :: String
+	} deriving (Eq, Ord)
 
 instance Show AptKeyId where
-        show k = unwords ["Apt Key", akiName k, akiId k, "from", akiServer k]
+	show k = unwords ["Apt Key", akiName k, akiId k, "from", akiServer k]
 
 -- | Adds an 'AptKeyId' from the specified GPG server.
 addKeyId :: AptKeyId -> Property DebianLike
 addKeyId keyId =
-        check keyTrusted akcmd
-        `describe` (unwords ["Add third-party Apt key", show keyId])
+	check keyTrusted akcmd
+	`describe` (unwords ["Add third-party Apt key", show keyId])
   where
-        akcmd =
-                tightenTargets $ cmdProperty "apt-key" ["adv", "--keyserver", akiServer keyId, "--recv-keys", akiId keyId]
-        keyTrusted =
-                let
-                        pks ls = concatMap (drop 1 . split "/")
-                                $ concatMap (take 1 . drop 1 . words)
-                                $ filter (\l -> "pub" `isPrefixOf` l)
-                                        $ lines ls
-                        nkid = take 8 (akiId keyId)
-                in
-                        (isInfixOf [nkid] . pks) <$> readProcess "apt-key" ["list"]
+	akcmd =
+		tightenTargets $ cmdProperty "apt-key" ["adv", "--keyserver", akiServer keyId, "--recv-keys", akiId keyId]
+	keyTrusted =
+		let
+			pks ls = concatMap (drop 1 . split "/")
+				$ concatMap (take 1 . drop 1 . words)
+				$ filter (\l -> "pub" `isPrefixOf` l)
+					$ lines ls
+			nkid = take 8 (akiId keyId)
+		in
+			(isInfixOf [nkid] . pks) <$> readProcess "apt-key" ["list"]
 
 -- | An Apt source line that apt-add-repository will just add to
 -- sources.list. It's also an instance of both 'Show' and 'IsString' to make
@@ -81,26 +79,21 @@ addKeyId keyId =
 --
 -- | FIXME there's apparently an optional "options" fragment that I've
 -- definitely not parsed here.
-data AptSource = AptSource {
-        -- | The URL hosting the repository
-        asURL :: Apt.Url,
-
-        -- | The operating system suite
-        asSuite :: String,
-
-        -- | The list of components to install from this repository.
-        asComponents :: [String]
-        } deriving (Eq, Ord)
+data AptSource = AptSource
+	{ asURL :: Apt.Url -- ^ The URL hosting the repository
+	, asSuite :: String  -- ^ The operating system suite
+	, asComponents :: [String] -- ^ The list of components to install from this repository.
+	} deriving (Eq, Ord)
 
 instance Show AptSource where
-        show asrc = unwords ["deb", asURL asrc, asSuite asrc, unwords . asComponents $ asrc]
+	show asrc = unwords ["deb", asURL asrc, asSuite asrc, unwords . asComponents $ asrc]
 
 instance IsString AptSource where
-        fromString s =
-                let
-                        url:suite:comps = drop 1 . words $ s
-                in
-                        AptSource url suite comps
+	fromString s =
+		let
+			url:suite:comps = drop 1 . words $ s
+		in
+			AptSource url suite comps
 
 -- | A repository for apt-add-source, either a PPA or a regular repository line.
 data AptRepository = AptRepositoryPPA PPA | AptRepositorySource AptSource
@@ -109,14 +102,14 @@ data AptRepository = AptRepositoryPPA PPA | AptRepositorySource AptSource
 addRepository :: AptRepository -> Property DebianLike
 addRepository (AptRepositoryPPA p) = addPpa p
 addRepository (AptRepositorySource src) =
-        check repoExists addSrc
-        `describe` unwords ["Adding APT repository", show src]
-        `requires` installed
+	check repoExists addSrc
+	`describe` unwords ["Adding APT repository", show src]
+	`requires` installed
   where
-        allSourceLines =
-                readProcess "/bin/sh" ["-c", "cat /etc/apt/sources.list /etc/apt/sources.list.d/*"]
-        activeSources = map (\s -> fromString s :: AptSource )
-                . filter (not . isPrefixOf "#")
-                . filter (/= "") . lines <$> allSourceLines
-        repoExists = isInfixOf [src] <$> activeSources
-        addSrc = cmdProperty "apt-add-source" [show src]
+	allSourceLines =
+		readProcess "/bin/sh" ["-c", "cat /etc/apt/sources.list /etc/apt/sources.list.d/*"]
+	activeSources = map (\s -> fromString s :: AptSource )
+		. filter (not . isPrefixOf "#")
+		. filter (/= "") . lines <$> allSourceLines
+	repoExists = isInfixOf [src] <$> activeSources
+	addSrc = cmdProperty "apt-add-source" [show src]
