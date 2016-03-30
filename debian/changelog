@@ -3,6 +3,9 @@ propellor (3.0.0) UNRELEASED; urgency=medium
   * Property types have been improved to indicate what systems they target.
     This prevents using eg, Property FreeBSD on a Debian system.
     Transition guide for this sweeping API change:
+    - First, upgrade to propellor 2.17.2 and deploy that to all your hosts.
+      Otherwise, propellor --spin will fail when you upgrade to
+      propellor 3.0.0.
     - Change "host name & foo & bar"
       to     "host name $ props & foo & bar"
     - Similarly, `propertyList` and `combineProperties` need `props`
@@ -60,12 +63,17 @@ propellor (3.0.0) UNRELEASED; urgency=medium
   * Re-enabled -O0 in propellor.cabal to reign in ghc's memory use handling
     these complex new types.
   * Added dependency on concurrent-output; removed embedded copy.
+
+propellor (2.17.2) unstable; urgency=medium
+
   * When new dependencies are added to propellor or the propellor config,
     try harder to get them installed. In particular, this makes 
     propellor --spin work when the remote host needs to get dependencies
     installed in order to build the updated config.
+  * Apt.update: Also run dpkg --configure -a here as apt for some reason
+    won't even update if dpkg was interrupted.
 
- -- Joey Hess <id@joeyh.name>  Thu, 24 Mar 2016 15:02:33 -0400
+ -- Joey Hess <id@joeyh.name>  Mon, 28 Mar 2016 11:06:34 -0400
 
 propellor (2.17.1) unstable; urgency=medium
 
@@ -75,8 +83,6 @@ propellor (2.17.1) unstable; urgency=medium
   * Uwsgi: add ".ini" extension to app config files. 
     Files without extensions were ignored by uwsgi.
     Thanks, Félix Sipma.
-  * Apt.update: Also run dpkg --configure -a here as apt for some reason
-    won't even update if dpkg was interrupted.
 
  -- Joey Hess <id@joeyh.name>  Mon, 28 Mar 2016 11:06:34 -0400
 
