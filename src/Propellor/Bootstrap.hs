@@ -109,6 +109,7 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "hs-exceptions"
 		, "hs-stm"
 		, "hs-text"
+		, "hs-concurrent-output"
 		, "gmake"
 		]
 
