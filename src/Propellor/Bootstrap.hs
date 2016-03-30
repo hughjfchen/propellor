@@ -71,7 +71,7 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "cabal install --only-dependencies"
 		]
 
-	aptinstall p = "DEBIAN_FRONTEND=noninteractive apt-get --no-upgrade --no-install-recommends -y install " ++ p
+	aptinstall p = "DEBIAN_FRONTEND=noninteractive apt-get -qq --no-upgrade --no-install-recommends -y install " ++ p
 	pkginstall p = "ASSUME_ALWAYS_YES=yes pkg install " ++ p
 
 	-- This is the same deps listed in debian/control.
@@ -128,7 +128,7 @@ installGitCommand msys = case msys of
 	use cmds = "if ! git --version >/dev/null; then " ++ intercalate " && " cmds ++ "; fi"
 	apt = 
 		[ "apt-get update"
-		, "DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --no-upgrade -y install git"
+		, "DEBIAN_FRONTEND=noninteractive apt-get -qq --no-install-recommends --no-upgrade -y install git"
 		]
 
 buildPropellor :: Maybe Host -> IO ()
