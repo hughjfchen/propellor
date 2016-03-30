@@ -6,6 +6,7 @@ module Propellor.Bootstrap (
 ) where
 
 import Propellor.Base
+import Propellor.Types.Info
 
 import System.Posix.Files
 import Data.List
@@ -128,22 +129,27 @@ installGitCommand msys = case msys of
 		, "DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --no-upgrade -y install git"
 		]
 
-buildPropellor :: IO ()
-buildPropellor = unlessM (actionMessage "Propellor build" build) $
+buildPropellor :: Maybe Host -> IO ()
+buildPropellor mh = unlessM (actionMessage "Propellor build" (build msys)) $
 	errorMessage "Propellor build failed!"
+  where
+	msys = case fmap (getInfo . hostInfo) mh of
+		Just (InfoVal sys) -> Just sys
+		_ -> Nothing
 
 -- Build propellor using cabal, and symlink propellor to where cabal
 -- leaves the built binary.
 --
 -- For speed, only runs cabal configure when it's not been run before.
 -- If the build fails cabal may need to have configure re-run.
-build :: IO Bool
-build = catchBoolIO $ do
-	make "dist/setup-config" ["propellor.cabal"] $
-		cabal ["configure"]
-	unlessM (cabal ["build", "propellor-config"]) $ do
-		void $ cabal ["configure"]
-		unlessM (cabal ["build"]) $
+--
+-- If the cabal configure fails, and a System is provided, installs
+-- dependencies and retries.
+build :: Maybe System -> IO Bool
+build msys = catchBoolIO $ do
+	make "dist/setup-config" ["propellor.cabal"] cabal_configure
+	unlessM cabal_build $
+		unlessM (cabal_configure <&&> cabal_build) $
 			error "cabal build failed"
 	-- For safety against eg power loss in the middle of the build,
 	-- make a copy of the binary, and move it into place atomically.
@@ -163,6 +169,15 @@ build = catchBoolIO $ do
 	cabalbuiltbin = "dist/build/propellor-config/propellor-config"
 	safetycopy = cabalbuiltbin ++ ".built"
 	tmpfor f = f ++ ".propellortmp"
+	cabal_configure = ifM (cabal ["configure"])
+		( return True
+		, case msys of
+			Nothing -> return False
+			Just sys -> 
+				boolSystem "sh" [Param "-c", Param (depsCommand (Just sys))]
+					<&&> cabal ["configure"]
+		)
+	cabal_build = cabal ["build", "propellor-config"]
 
 make :: FilePath -> [FilePath] -> IO Bool -> IO ()
 make dest srcs builder = do
