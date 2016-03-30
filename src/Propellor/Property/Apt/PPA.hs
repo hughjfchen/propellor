@@ -1,4 +1,6 @@
--- | This module provides properties software-properties-common.
+-- | Maintainer: 2016 Evan Cofsky <evan@theunixman.com>
+--
+-- Personal Package Archives
 module Propellor.Property.Apt.PPA where
 
 import Data.List
@@ -9,20 +11,19 @@ import Data.String (IsString(..))
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 
--- | Ensure it's installed in case it's not. It's part of Buntish's defaults so
--- one might assume...
+-- | Ensure software-properties-common is installed.
 installed :: Property DebianLike
 installed = Apt.installed ["software-properties-common"]
 
--- | Personal Package Archives are people's individual package contributions to
--- Ubuntu. There's a well-known format for adding them, and this type represents
--- that. It's also an instance of 'Show' and 'IsString' so it can work with
--- 'OverloadedStrings'. More on PPAs can be found at
--- <https://help.launchpad.net/Packaging/PPA>
+-- | Personal Package Archives are people's individual package
+-- contributions to the Buntish distro. There's a well-known format for
+-- representing them, and this type represents that. It's also an instance
+-- of 'Show' and 'IsString' so it can work with 'OverloadedStrings'. 
+-- More on PPAs can be found at <https://help.launchpad.net/Packaging/PPA>
 data PPA = PPA {
         -- | The Launchpad account hosting this archive.
         ppaAccount :: String,
-        -- | The
+        -- | The name of the archive.
         ppaArchive :: String
 } deriving (Eq, Ord)
 
