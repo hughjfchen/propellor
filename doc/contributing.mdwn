@@ -17,3 +17,7 @@ Propellor has its own [[coding_style]], which you are encouraged to follow
 -- at least when you want to get a patch merged into propellor. 
 When writing code for your own internal use, feel free to ignore all the
 rules, except the ones about avoiding partial functions.
+
+Also, mainline Propellor aims to be buildable with the version of ghc
+shipped in Debian stable. And, additional weighty dependencies are best
+avoided.

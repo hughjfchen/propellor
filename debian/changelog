@@ -71,6 +71,8 @@ propellor (2.17.1) unstable; urgency=medium
   * Uwsgi: add ".ini" extension to app config files. 
     Files without extensions were ignored by uwsgi.
     Thanks, Félix Sipma.
+  * Apt.update: Also run dpkg --configure -a here as apt for some reason
+    won't even update if dpkg was interrupted.
 
  -- Joey Hess <id@joeyh.name>  Mon, 28 Mar 2016 11:06:34 -0400
 

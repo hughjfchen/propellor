@@ -118,9 +118,10 @@ noninteractiveEnv =
 		]
 
 update :: Property DebianLike
-update = runApt ["update"]
-	`assume` MadeChange
-	`describe` "apt update"
+update = combineProperties ("apt update") $ props
+	& pendingConfigured
+	& runApt ["update"]
+		`assume` MadeChange
 
 -- | Have apt upgrade packages, adding new packages and removing old as
 -- necessary.
