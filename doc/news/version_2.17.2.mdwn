@@ -1,0 +1,8 @@
+propellor 2.17.2 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * When new dependencies are added to propellor or the propellor config,
+     try harder to get them installed. In particular, this makes
+     propellor --spin work when the remote host needs to get dependencies
+     installed in order to build the updated config.
+   * Apt.update: Also run dpkg --configure -a here as apt for some reason
+     won't even update if dpkg was interrupted."""]]

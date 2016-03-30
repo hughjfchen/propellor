@@ -73,7 +73,7 @@ propellor (2.17.2) unstable; urgency=medium
   * Apt.update: Also run dpkg --configure -a here as apt for some reason
     won't even update if dpkg was interrupted.
 
- -- Joey Hess <id@joeyh.name>  Mon, 28 Mar 2016 11:06:34 -0400
+ -- Joey Hess <id@joeyh.name>  Wed, 30 Mar 2016 15:45:08 -0400
 
 propellor (2.17.1) unstable; urgency=medium
 
