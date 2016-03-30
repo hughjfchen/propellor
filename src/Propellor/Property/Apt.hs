@@ -119,9 +119,11 @@ noninteractiveEnv =
 		]
 
 update :: Property NoInfo
-update = runApt ["update"]
-	`assume` MadeChange
-	`describe` "apt update"
+update = combineProperties ("apt update")
+	[ pendingConfigured
+	, runApt ["update"]
+		`assume` MadeChange
+	]
 
 -- | Have apt upgrade packages, adding new packages and removing old as
 -- necessary.
