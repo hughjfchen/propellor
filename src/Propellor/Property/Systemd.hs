@@ -195,12 +195,13 @@ machined = withOS "machined installed" $ \w o ->
 -- >    & ...
 container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
 container name mkchroot = 
-	let c = Container name chroot (host name (containerProps chroot))
+	let c = Container name chroot h
 	in setContainerProps c $ containerProps c
 		&^ resolvConfed
 		&^ linkJournal
   where
 	chroot = mkchroot (containerDir name)
+	h = host name (containerProps chroot)
 
 -- | Defines a container with a given machine name, with the chroot
 -- created using debootstrap.
