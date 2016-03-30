@@ -201,7 +201,7 @@ container name mkchroot =
 		&^ linkJournal
   where
 	chroot = mkchroot (containerDir name)
-	h = host name (containerProps chroot)
+	h = Host name (containerProperties chroot) (containerInfo chroot)
 
 -- | Defines a container with a given machine name, with the chroot
 -- created using debootstrap.
