@@ -60,6 +60,10 @@ propellor (3.0.0) UNRELEASED; urgency=medium
   * Re-enabled -O0 in propellor.cabal to reign in ghc's memory use handling
     these complex new types.
   * Added dependency on concurrent-output; removed embedded copy.
+  * When new dependencies are added to propellor or the propellor config,
+    try harder to get them installed. In particular, this makes 
+    propellor --spin work when the remote host needs to get dependencies
+    installed in order to build the updated config.
 
  -- Joey Hess <id@joeyh.name>  Thu, 24 Mar 2016 15:02:33 -0400
 

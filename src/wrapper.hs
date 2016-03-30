@@ -99,7 +99,7 @@ wrapper args propellordir propellorbin = do
 					warnoutofdate propellordir True
 	buildruncfg = do
 		changeWorkingDirectory propellordir
-		buildPropellor
+		buildPropellor Nothing
 		putStrLn ""
 		putStrLn ""
 		chain

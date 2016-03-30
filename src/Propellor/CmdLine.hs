@@ -114,20 +114,20 @@ defaultMain hostlist = withConcurrentOutput $ do
 	go _ (DockerInit hn) = Docker.init hn
 	go _ (GitPush fin fout) = gitPushHelper fin fout
 	go cr (Relay h) = forceConsole >>
-		updateFirst cr (Update (Just h)) (update (Just h))
+		updateFirst Nothing cr (Update (Just h)) (update (Just h))
 	go _ (Update Nothing) = forceConsole >>
 		fetchFirst (onlyprocess (update Nothing))
 	go _ (Update (Just h)) = update (Just h)
 	go _ Merge = mergeSpin
-	go cr cmdline@(Spin hs mrelay) = buildFirst cr cmdline $ do
+	go cr cmdline@(Spin hs mrelay) = buildFirst Nothing cr cmdline $ do
 		unless (isJust mrelay) commitSpin
 		forM_ hs $ \hn -> withhost hn $ spin mrelay hn
 	go cr cmdline@(Run hn) = ifM ((==) 0 <$> getRealUserID)
-		( updateFirst cr cmdline $ runhost hn
+		( updateFirst (findHost hostlist hn) cr cmdline $ runhost hn
 		, fetchFirst $ go cr (Spin [hn] Nothing)
 		)
 	go cr cmdline@(SimpleRun hn) = forceConsole >>
-		fetchFirst (buildFirst cr cmdline (runhost hn))
+		fetchFirst (buildFirst (findHost hostlist hn) cr cmdline (runhost hn))
 	-- When continuing after a rebuild, don't want to rebuild again.
 	go _ (Continue cmdline) = go NoRebuild cmdline
 
@@ -149,17 +149,17 @@ unknownhost h hosts = errorMessage $ unlines
 -- Builds propellor (when allowed) and if it looks like a new binary,
 -- re-execs it to continue.
 -- Otherwise, runs the IO action to continue.
-buildFirst :: CanRebuild -> CmdLine -> IO () -> IO ()
-buildFirst CanRebuild cmdline next = do
+buildFirst :: Maybe Host -> CanRebuild -> CmdLine -> IO () -> IO ()
+buildFirst h CanRebuild cmdline next = do
 	oldtime <- getmtime
-	buildPropellor
+	buildPropellor h
 	newtime <- getmtime
 	if newtime == oldtime
 		then next
 		else continueAfterBuild cmdline
   where
 	getmtime = catchMaybeIO $ getModificationTime "propellor"
-buildFirst NoRebuild _ next = next
+buildFirst _ NoRebuild _ next = next
 
 continueAfterBuild :: CmdLine -> IO a
 continueAfterBuild cmdline = go =<< boolSystem "./propellor"
@@ -176,23 +176,23 @@ fetchFirst next = do
 		void fetchOrigin
 	next
 
-updateFirst :: CanRebuild -> CmdLine -> IO () -> IO ()
-updateFirst canrebuild cmdline next = ifM hasOrigin
-	( updateFirst' canrebuild cmdline next
+updateFirst :: Maybe Host -> CanRebuild -> CmdLine -> IO () -> IO ()
+updateFirst h canrebuild cmdline next = ifM hasOrigin
+	( updateFirst' h canrebuild cmdline next
 	, next
 	)
 
 -- If changes can be fetched from origin,  Builds propellor (when allowed)
 -- and re-execs the updated propellor binary to continue.
 -- Otherwise, runs the IO action to continue.
-updateFirst' :: CanRebuild -> CmdLine -> IO () -> IO ()
-updateFirst' CanRebuild cmdline next = ifM fetchOrigin
+updateFirst' :: Maybe Host -> CanRebuild -> CmdLine -> IO () -> IO ()
+updateFirst' h CanRebuild cmdline next = ifM fetchOrigin
 	( do
-		buildPropellor
+		buildPropellor h
 		continueAfterBuild cmdline
 	, next
 	)
-updateFirst' NoRebuild _ next = next
+updateFirst' _ NoRebuild _ next = next
 
 -- Gets the fully qualified domain name, given a string that might be
 -- a short name to look up in the DNS.
