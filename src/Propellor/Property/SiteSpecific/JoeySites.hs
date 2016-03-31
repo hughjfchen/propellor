@@ -253,14 +253,14 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 	& Apache.modEnabled "cgi"
   where
 	sshkey = "/root/.ssh/git.kitenet.net.key"
-	website hn = apacheSite hn True
-		[ "  DocumentRoot /srv/web/git.kitenet.net/"
+	website hn = Apache.httpsVirtualHost' hn "/srv/web/git.kitenet.net/" letos
+		[ Apache.iconDir
 		, "  <Directory /srv/web/git.kitenet.net/>"
 		, "    Options Indexes ExecCGI FollowSymlinks"
 		, "    AllowOverride None"
 		, "    AddHandler cgi-script .cgi"
 		, "    DirectoryIndex index.cgi"
-		, Apache.allowAll
+		,      Apache.allowAll
 		, "  </Directory>"
 		, ""
 		, "  ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/"
