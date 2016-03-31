@@ -297,7 +297,6 @@ kite = host "kite.kitenet.net" $ props
 	& alias "mail.kitenet.net"
 	& JoeySites.kiteMailServer
 
-	& JoeySites.kitenetHttps
 	& JoeySites.legacyWebSites
 	& File.ownerGroup "/srv/web" (User "joey") (Group "joey")
 	& Apt.installed ["analog"]
