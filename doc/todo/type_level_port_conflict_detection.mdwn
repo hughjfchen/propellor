@@ -8,3 +8,28 @@ I have a `resourceconflict` branch that adds this in Propellor.Resources,
 but it is not yet integrated into the Property types. --[[Joey]]
 
 [[!tag user/joey]]
+
+> On `typed-os-requirements` branch, I have the UsingPort 80 singleton
+> implemented. As soon as I tried to apply it to some apache properties
+> though, I realized a problem -- If multiple apache vhosts are defined
+> each as its own property, then each of those properties can't have
+> UsingPort 80. Because the idea is to not allow combining 2 properties
+> that use the same pprt.
+> 
+> Similarly, Apache.installed can't have UsingPort 80, because each of the
+> vhost properties requires that, and would inherit it.
+> 
+> So, this could be used for non-vhost stuff, like simple web servers, tor
+> nodes, etc. But how to handle vhosts?
+> 
+> Of course, there could be a single property that defines all of a host's
+> apache vhosts, and it could then have UsingPort 80. But that loses the
+> flexible composition of properties.
+> 
+> I suppose we could include the server: `UsingPort 80 Apache`
+> (or `UsingPort 80 "apache"` to avoid needing a data type with all the
+> servers. Or even write it `"apache" '> 80`)  
+> And allow combining properties that have the same server on the same
+> port. Don't allow combining `UsingPort 80 Apache` with `UsingPort 80 Ngnix`
+> 
+> --[[Joey]] 
