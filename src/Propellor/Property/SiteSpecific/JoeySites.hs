@@ -558,7 +558,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 
 	& "/etc/aliases" `File.hasPrivContentExposed` ctx
 		`onChange` Postfix.newaliases
-	& hasStartSslCAChain
+	& hasJoeyCAChain
 	& hasPostfixCert ctx
 
 	& "/etc/postfix/mydomain" `File.containsLines`
@@ -622,7 +622,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "milter_default_action = accept"
 
 		, "# TLS setup -- server"
-		, "smtpd_tls_CAfile = /etc/ssl/certs/startssl.pem"
+		, "smtpd_tls_CAfile = /etc/ssl/certs/joeyca.pem"
 		, "smtpd_tls_cert_file = /etc/ssl/certs/postfix.pem"
 		, "smtpd_tls_key_file = /etc/ssl/private/postfix.pem"
 		, "smtpd_tls_loglevel = 1"
@@ -632,7 +632,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "smtpd_tls_session_cache_database = sdbm:/etc/postfix/smtpd_scache"
 
 		, "# TLS setup -- client"
-		, "smtp_tls_CAfile = /etc/ssl/certs/startssl.pem"
+		, "smtp_tls_CAfile = /etc/ssl/certs/joeyca.pem"
 		, "smtp_tls_cert_file = /etc/ssl/certs/postfix.pem"
 		, "smtp_tls_key_file = /etc/ssl/private/postfix.pem"
 		, "smtp_tls_loglevel = 1"
@@ -750,10 +750,6 @@ domainKey = (RelDomain "mail._domainkey", TXT "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb
 hasJoeyCAChain :: Property (HasInfo + UnixLike)
 hasJoeyCAChain = "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed`
 	Context "joeyca.pem"
-
-hasStartSslCAChain :: Property (HasInfo + UnixLike)
-hasStartSslCAChain = "/etc/ssl/certs/startssl.pem" `File.hasPrivContentExposed`
-	Context "startssl.pem"
 
 hasPostfixCert :: Context -> Property (HasInfo + UnixLike)
 hasPostfixCert ctx = combineProperties "postfix tls cert installed" $ props
