@@ -12,6 +12,7 @@ module Main where
 
 import Propellor.Message
 import Propellor.Bootstrap
+import Propellor.Git
 import Utility.UserInfo
 import Utility.Monad
 import Utility.Process
@@ -225,10 +226,12 @@ checkRepoUpToDate dotpropellor = whenM (gitbundleavail <&&> dotpropellorpopulate
 	if (headknown == Nothing)
 		then setupUpstreamMaster headrev dotpropellor
 		else do
-			merged <- not . null <$>
-				readProcess "git" ["log", headrev ++ "..HEAD", "--ancestry-path"]
-			unless merged $
-				warnoutofdate dotpropellor True
+			theirhead <- getCurrentGitSha1 =<< getCurrentBranchRef
+			when (theirhead /= headrev) $ do
+				merged <- not . null <$>
+					readProcess "git" ["log", headrev ++ "..HEAD", "--ancestry-path"]
+				unless merged $
+					warnoutofdate dotpropellor True
   where
 	gitbundleavail = doesFileExist disthead
 	dotpropellorpopulated = doesFileExist (dotpropellor </> "propellor.cabal")
