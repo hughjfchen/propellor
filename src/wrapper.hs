@@ -3,8 +3,7 @@
 -- Distributions should install this program into PATH.
 -- (Cabal builds it as dist/build/propellor/propellor).
 --
--- This is not the propellor main program (that's config.hs)
---
+-- This is not the propellor main program (that's config.hs).
 -- This bootstraps ~/.propellor/config.hs, builds it if
 -- it's not already built, and runs it.
 
@@ -13,13 +12,16 @@ module Main where
 import Propellor.Message
 import Propellor.Bootstrap
 import Propellor.Git
+import Propellor.Gpg
 import Utility.UserInfo
 import Utility.Monad
 import Utility.Process
 import Utility.SafeCommand
 import Utility.Exception
+import Utility.Path
 
 import Data.Char
+import Data.List
 import Control.Monad
 import Control.Monad.IfElse
 import System.Directory
@@ -97,14 +99,14 @@ welcomeBanner = putStr $ unlines $ map prettify
 		| c == x = y
 		| otherwise = c
 
-prompt :: String -> [(Char, IO ())] -> IO ()
+prompt :: String -> [(String, IO ())] -> IO ()
 prompt p cs = do
-	putStr (p ++ " [" ++ map fst cs ++ "] ")
+	putStr (p ++ " [" ++ intercalate "|" (map fst cs) ++ "] ")
 	hFlush stdout
 	r <- map toLower <$> getLine
-	if r == "\n"
+	if null r
 		then snd (head cs) -- default to first choice on return
-		else case filter (\(c, a) -> [toLower c] == r) cs of
+		else case filter (\(s, _) -> map toLower s == r) cs of
 			[(_, a)] -> a
 			_ -> do
 				putStrLn "Not a valid choice, try again.. (Or ctrl-c to quit)"
@@ -125,22 +127,88 @@ setup dotpropellor = do
 	putStrLn "   A: A clone of propellor's git repository    (most flexible)"
 	putStrLn "   B: The bare minimum files to use propellor  (most simple)"
 	prompt "Which would you prefer?"
-		[ ('A', fullClone dotpropellor),
-		 ('B', minimalConfig dotpropellor)
+		[ ("A", fullClone dotpropellor)
+		, ("B", minimalConfig dotpropellor)
 		]
 	putStrLn "Ok, ~/.propellor/config.hs is set up!"
-	
+	changeWorkingDirectory dotpropellor
+
 	section
 	putStrLn "Let's try building the propellor configuration, to make sure it will work..."
 	buildPropellor Nothing
-	putStrLn "Great! Propellor is set up and ready to use."
+	putStrLn "Great! Propellor is bootstrapped."
+	
+	section
+	putStrLn "Propellor uses gpg to encrypt private data about the systems it manages,"
+	putStrLn "and to sign git commits."
+	gpg <- getGpgBin
+	ifM (inPath gpg)
+		( setupGpgKey dotpropellor
+		, do
+			putStrLn "You don't seem to have gpg installed, so skipping setting it up."
+			explainManualSetupGpgKey
+		)
 
 	section
+	putStrLn "Everything is set up ..."
 	putStrLn "Your next step is to edit ~/.propellor/config.hs,"
 	putStrLn "and run propellor again to try it out."
 	putStrLn ""
 	putStrLn "For docs, see https://propellor.branchable.com/"
 	putStrLn "Enjoy propellor!"
+
+explainManualSetupGpgKey :: IO ()
+explainManualSetupGpgKey = do
+	putStrLn "Propellor can still be used without gpg, but it won't be able to"
+	putStrLn "manage private data. You can set this up later:"
+	putStrLn " 1. gpg --gen-key"
+	putStrLn " 2. propellor --add-key (pass it the key ID generated in step 1)"
+
+setupGpgKey :: FilePath -> IO ()
+setupGpgKey dotpropellor = do
+	ks <- listSecretKeys
+	putStrLn ""
+	case ks of
+		[] -> makeGpgKey dotpropellor
+		[(k, _)] -> propellorAddKey dotpropellor k
+		_ -> do
+			let nks = zip ks (map show ([1..] :: [Integer]))
+			putStrLn "I see you have several gpg keys:"
+			forM_ nks $ \((k, d), n) ->
+				putStrLn $ "   " ++ n ++ "   " ++ d ++ "  (keyid " ++ k ++ ")"
+			prompt "Which of your gpg keys should propellor use?"
+				(map (\((k, _), n) -> (n, propellorAddKey dotpropellor k)) nks)
+
+makeGpgKey :: FilePath -> IO ()
+makeGpgKey dotpropellor = do
+	putStrLn "You seem to not have any gpg secret keys."
+	prompt "Would you like to create one now?"
+		[("Y", rungpg), ("N", nope)]
+  where
+	nope = do
+		putStrLn "No problem."
+		explainManualSetupGpgKey
+	rungpg = do
+		putStrLn "Running gpg --gen-key ..."
+		gpg <- getGpgBin
+		void $ boolSystem gpg [Param "--gen-key"]
+		ks <- listSecretKeys
+		case ks of
+			[] -> do
+				putStrLn "Hmm, gpg seemed to not set up a secret key."
+				prompt "Want to try running gpg again?"
+					[("Y", rungpg), ("N", nope)]
+			((k, _):_) -> propellorAddKey dotpropellor k
+
+propellorAddKey :: FilePath -> String -> IO ()
+propellorAddKey dotpropellor keyid = do
+	putStrLn ""
+	putStrLn $ "Telling propellor to use your gpg key by running: propellor --add-key " ++ keyid
+	unlessM (boolSystem propellorbin [Param "--add-key", Param keyid]) $ do
+		putStrLn "Oops, that didn't work! You can retry the same command later."
+		putStrLn "Continuing onward ..."
+  where
+	propellorbin = dotpropellor </> "propellor"
 
 minimalConfig :: FilePath -> IO ()
 minimalConfig dotpropellor = do
