@@ -16,7 +16,7 @@ repoExists repo = boolSystem "attic" [Param "list", File repo]
 backup :: [FilePath] -> FilePath -> Cron.Times -> [String] -> Property NoInfo
 backup dirs backupdir crontimes extraargs = propertyList (backupdir ++ " attic backup")
 	[ installed
-	, check (not <$> repoExists backupdir) $ cmdProperty "/usr/bin/attic" initargs
+	, check (not <$> repoExists backupdir) $ cmdProperty "attic" initargs
 	, Cron.niceJob ("attic_backup" ++ backupdir) crontimes (User "root") "/" backupcmd
 	]
   where
@@ -29,7 +29,7 @@ backup dirs backupdir crontimes extraargs = propertyList (backupdir ++ " attic b
 		, pruneCommand
 		]
 	createCommand = unwords $
-		[ "/usr/bin/attic"
+		[ "attic"
 		, "create"
 		, "--stats"
 		]
@@ -38,7 +38,7 @@ backup dirs backupdir crontimes extraargs = propertyList (backupdir ++ " attic b
 		, unwords dirs
 		]
 	pruneCommand = unwords
-		[ "/usr/bin/attic"
+		[ "attic"
 		, "prune"
 		, backupdir
 		, "--keep-daily=7"
