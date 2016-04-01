@@ -53,7 +53,7 @@ Executable propellor-config
   GHC-Options: -threaded -Wall -fno-warn-tabs -O0
   Extensions: TypeOperators
   Hs-Source-Dirs: src
-  Build-Depends: 
+  Build-Depends:
     base >= 4.5, base < 5,
     MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
@@ -63,7 +63,7 @@ Library
   GHC-Options: -Wall -fno-warn-tabs -O0
   Extensions: TypeOperators
   Hs-Source-Dirs: src
-  Build-Depends: 
+  Build-Depends:
     base >= 4.5, base < 5,
     MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
@@ -78,6 +78,7 @@ Library
     Propellor.Property.Apache
     Propellor.Property.Apt
     Propellor.Property.Apt.PPA
+    Propellor.Property.Attic
     Propellor.Property.Cmd
     Propellor.Property.Concurrent
     Propellor.Property.Conductor
