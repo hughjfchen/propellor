@@ -26,20 +26,23 @@ instance IsInfo PoudriereConfigured where
 poudriereConfigured :: PoudriereConfigured -> Bool
 poudriereConfigured (PoudriereConfigured _) = True
 
-setConfigured :: Property HasInfo
-setConfigured = pureInfoProperty "Poudriere Configured" (PoudriereConfigured "")
+setConfigured :: Property (HasInfo + FreeBSD)
+setConfigured = tightenTargets $ 
+	pureInfoProperty "Poudriere Configured" (PoudriereConfigured "")
 
-poudriere :: Poudriere -> Property HasInfo
+poudriere :: Poudriere -> Property (HasInfo + FreeBSD)
 poudriere conf@(Poudriere _ _ _ _ _ _ zfs) = prop
 	`requires` Pkg.installed "poudriere"
 	`before` setConfigured
   where
-	confProp = File.containsLines poudriereConfigPath (toLines conf)
+	confProp :: Property FreeBSD
+	confProp = tightenTargets $
+		File.containsLines poudriereConfigPath (toLines conf)
 	setZfs (PoudriereZFS z p) = ZFS.zfsSetProperties z p `describe` "Configuring Poudriere with ZFS"
-	prop :: CombinedType (Property NoInfo) (Property NoInfo)
+	prop :: Property FreeBSD
 	prop
 		| isJust zfs = ((setZfs $ fromJust zfs) `before` confProp)
-		| otherwise = propertyList "Configuring Poudriere without ZFS" [confProp]
+		| otherwise = confProp `describe` "Configuring Poudriere without ZFS"
 
 poudriereCommand :: String -> [String] -> (String, [String])
 poudriereCommand cmd args = ("poudriere", cmd:args)
@@ -58,8 +61,8 @@ listJails = mapMaybe (headMaybe . take 1 . words)
 jailExists :: Jail -> IO Bool
 jailExists (Jail name _ _) = isInfixOf [name] <$> listJails
 
-jail :: Jail -> Property NoInfo
-jail j@(Jail name version arch) =
+jail :: Jail -> Property FreeBSD
+jail j@(Jail name version arch) = tightenTargets $
 	let
 		chk = do
 			c <- poudriereConfigured <$> askInfo
@@ -70,7 +73,7 @@ jail j@(Jail name version arch) =
 		createJail = cmdProperty cmd args
 	in
 		check chk createJail
-		`describe` unwords ["Create poudriere jail", name]
+			`describe` unwords ["Create poudriere jail", name]
 
 data JailInfo = JailInfo String
 

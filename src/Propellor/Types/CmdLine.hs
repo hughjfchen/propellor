@@ -28,4 +28,5 @@ data CmdLine
 	| ChrootChain HostName FilePath Bool Bool
 	| GitPush Fd Fd
 	| Check
+	| Init
 	deriving (Read, Show, Eq)

@@ -37,7 +37,7 @@ adjustSection
 	-> AdjustSection
 	-> InsertSection
 	-> FilePath
-	-> Property NoInfo
+	-> Property UnixLike
 adjustSection desc start past adjust insert = fileProperty desc go
   where
 	go ls = let (pre, wanted, post) = foldl' find ([], [], []) ls
@@ -68,7 +68,7 @@ adjustIniSection
 	-> AdjustSection
 	-> InsertSection
 	-> FilePath
-	-> Property NoInfo
+	-> Property UnixLike
 adjustIniSection desc header =
 	adjustSection
 	desc
@@ -77,7 +77,7 @@ adjustIniSection desc header =
 
 -- | Ensures that a .ini file exists and contains a section
 -- with a key=value setting.
-containsIniSetting :: FilePath -> (IniSection, IniKey, String) -> Property NoInfo
+containsIniSetting :: FilePath -> (IniSection, IniKey, String) -> Property UnixLike
 containsIniSetting f (header, key, value) =
 	adjustIniSection
 	(f ++ " section [" ++ header ++ "] contains " ++ key ++ "=" ++ value)
@@ -93,7 +93,7 @@ containsIniSetting f (header, key, value) =
 	isKeyVal x = (filter (/= ' ') . takeWhile (/= '=')) x `elem` [key, '#':key]
 
 -- | Ensures that a .ini file does not contain the specified section.
-lacksIniSection :: FilePath -> IniSection -> Property NoInfo
+lacksIniSection :: FilePath -> IniSection -> Property UnixLike
 lacksIniSection f header =
 	adjustIniSection
 	(f ++ " lacks section [" ++ header ++ "]")
