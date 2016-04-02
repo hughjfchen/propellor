@@ -1,4 +1,4 @@
-propellor (3.0.0) UNRELEASED; urgency=medium
+propellor (3.0.0) unstable; urgency=medium
 
   * Property types have been improved to indicate what systems they target.
     This prevents using eg, Property FreeBSD on a Debian system.
@@ -73,7 +73,7 @@ propellor (3.0.0) UNRELEASED; urgency=medium
   * When propellor is installed using stack, propellor --init will
     automatically set propellor.buildsystem=stack.
 
- -- Joey Hess <id@joeyh.name>  Wed, 30 Mar 2016 15:45:08 -0400
+ -- Joey Hess <id@joeyh.name>  Sat, 02 Apr 2016 15:33:26 -0400
 
 propellor (2.17.2) unstable; urgency=medium
 
