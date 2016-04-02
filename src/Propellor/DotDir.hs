@@ -1,4 +1,9 @@
-module Propellor.DotDir where
+module Propellor.DotDir
+	( distrepo
+	, dotPropellor
+	, interactiveInit
+	, checkRepoUpToDate
+	) where
 
 import Propellor.Message
 import Propellor.Bootstrap
