@@ -18,15 +18,16 @@ Now, the transition guide as far as your config.hs goes:
 
 * Add `props` to host definitions.
 
-	host name
-		& foo
-		& bar
+		host name
+			& foo
+			& bar
 
   Becomes
 
-  	host name $ props
-		& foo
-		& bar
+  		host name $ props
+			& foo
+			& bar
+
 * Similarly, `propertyList` and `combineProperties` need `props`
   to be used to combine together properties; they no longer accept
   lists of properties. (If you have such a list, use `toProps`.)
