@@ -109,7 +109,7 @@ section = do
 	putStrLn ""
 
 setup :: IO ()
-setup initcfg = do
+setup = do
 	putStrLn "Propellor's configuration file is ~/.propellor/config.hs"
 	putStrLn ""
 	putStrLn "Lets get you started with a simple config that you can adapt"
