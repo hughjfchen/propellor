@@ -64,7 +64,7 @@ welcomeBanner = putStr $ unlines $ map prettify
 	, "  - Welcome to              -- ~          / | /    )          _.-'-._"
 	, "  -            Propellor!   --  `/-==__ _/__|/__=-|          (       ~_"
 	, " `---------------------------   *             ~ | |           '--------'"
-	, "                                           (o)  `"
+	, "                                            (o)  `"
 	, ""
 	, ""
 	]
@@ -90,7 +90,7 @@ prompt p cs = do
 section :: IO ()
 section = do
 	putStrLn ""
-	putStrLn "---------------------------------------------------------------------------------"
+	putStrLn "------------------------------------------------------------------------------"
 	putStrLn ""
 
 setup :: IO ()
@@ -111,11 +111,13 @@ setup = do
 
 	section
 	putStrLn "Let's try building the propellor configuration, to make sure it will work..."
+	putStrLn ""
 	buildPropellor Nothing
+	putStrLn ""
 	putStrLn "Great! Propellor is bootstrapped."
 	
 	section
-	putStrLn "Propellor uses gpg to encrypt private data about the systems it manages,"
+	putStrLn "Propellor can use gpg to encrypt private data about the systems it manages,"
 	putStrLn "and to sign git commits."
 	gpg <- getGpgBin
 	ifM (inPath gpg)
@@ -146,14 +148,21 @@ setupGpgKey = do
 	putStrLn ""
 	case ks of
 		[] -> makeGpgKey
-		[(k, _)] -> propellorAddKey k
+		[(k, d)] -> do
+			putStrLn $ "You have one gpg key: " ++ desckey k d
+			prompt "Should propellor use that key?" 
+				[ ("Y", propellorAddKey k)
+				, ("N", putStrLn $ "Skipping gpg setup. If you change your mind, run: propellor --add-key " ++ k)
+				]
 		_ -> do
 			let nks = zip ks (map show ([1..] :: [Integer]))
 			putStrLn "I see you have several gpg keys:"
 			forM_ nks $ \((k, d), n) ->
-				putStrLn $ "   " ++ n ++ "   " ++ d ++ "  (keyid " ++ k ++ ")"
+				putStrLn $ "   " ++ n ++ "   " ++ desckey k d
 			prompt "Which of your gpg keys should propellor use?"
 				(map (\((k, _), n) -> (n, propellorAddKey k)) nks)
+  where
+	desckey k d = d ++ "  (keyid " ++ k ++ ")"
 
 makeGpgKey :: IO ()
 makeGpgKey = do
@@ -199,6 +208,7 @@ minimalConfig = do
   where
 	cabalcontent =
 		[ "-- This is a cabal file to use to build your propellor configuration."
+		, "-- https://propellor.branchable.com/"
 		, ""
 		, "Name: config"
 		, "Cabal-Version: >= 1.6"
