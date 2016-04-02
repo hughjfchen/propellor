@@ -1,0 +1,6 @@
+resolver: lts-5.10
+packages:
+- '.'
+flags:
+  propellor:
+    usestack: true

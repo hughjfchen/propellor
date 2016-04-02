@@ -68,6 +68,10 @@ propellor (3.0.0) UNRELEASED; urgency=medium
     walk the user through setting up ~/.propellor, with a choice between
     a clone of propellor's git repository, or a minimal config, and will
     configure propellor to use a gpg key.
+  * Stack support. "git config propellor.buildsystem stack" will make
+    propellor build its config using stack.
+  * When propellor is installed using stack, propellor --init will
+    automatically set propellor.buildsystem=stack.
 
  -- Joey Hess <id@joeyh.name>  Wed, 30 Mar 2016 15:45:08 -0400
 
