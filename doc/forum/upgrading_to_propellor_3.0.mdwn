@@ -26,7 +26,7 @@ Now, the transition guide as far as your config.hs goes:
 
   	host name $ props
 		& foo
-		& bar"
+		& bar
 * Similarly, `propertyList` and `combineProperties` need `props`
   to be used to combine together properties; they no longer accept
   lists of properties. (If you have such a list, use `toProps`.)
@@ -41,23 +41,23 @@ Now, the transition guide as far as your config.hs goes:
 
 Additional things you need to do if you've written your own properties:
 
-* Change "Property NoInfo" to "Property UnixLike"
-* Change "Property HasInfo" to "Property (HasInfo + UnixLike)"
-* Change "RevertableProperty NoInfo" to  
-  "RevertableProperty UnixLike UnixLike"
-* Change "RevertableProperty HasInfo" to  
-  "RevertableProperty (HasInfo + UnixLike) UnixLike"
-* If you know a property only works on a particular OS, like Debian
-  or FreeBSD, use that instead of "UnixLike". For example:
-  "Property Debian"
+* Change `Property NoInfo` to `Property UnixLike`
+* Change `Property HasInfo` to `Property (HasInfo + UnixLike)`
+* Change `RevertableProperty NoInfo` to  
+  `RevertableProperty UnixLike UnixLike`
+* Change `RevertableProperty HasInfo` to  
+  `RevertableProperty (HasInfo + UnixLike) UnixLike`
+* If you know a property only works on a particular OS, like `Debian`
+  or `FreeBSD`, use that instead of `UnixLike`. For example:
+  `Property Debian`
 * It's also possible make a property support a set of OS's, for example:
-  "Property (Debian + FreeBSD)"
+  `Property (Debian + FreeBSD)`
 * Removed `infoProperty` and `simpleProperty` constructors, instead use
   `property` to construct a Property.
 * Due to the polymorphic type returned by `property`, additional type
   signatures tend to be needed when using it. For example, this will
   fail to type check, because the type checker cannot guess what type
-  you intend the intermediate property "go" to have:
+  you intend the intermediate property `go` to have:
 
 	foo :: Property UnixLike
 	foo = go `requires` bar
@@ -72,7 +72,7 @@ Additional things you need to do if you've written your own properties:
   property it's used in.
   change this:  foo = property desc $ ... ensureProperty bar
   to this:      foo = property' desc $ \w -> ... ensureProperty w bar
-* General purpose properties like cmdProperty have type "Property UnixLike".
+* General purpose properties like cmdProperty have type `Property UnixLike`.
   When using that to run a command only available on Debian, you can
   tighten the type to only the OS that your more specific property works on.
   For example:
