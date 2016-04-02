@@ -42,7 +42,7 @@ see [configuration for the Haskell newbie](https://propellor.branchable.com/hask
      `cabal install propellor`
           or
      `apt-get install propellor`
-2. Run `propellor` for the first time. It will set up a `~/.propellor/` git
+2. Run `propellor --init` ; this will set up a `~/.propellor/` git
    repository for you.
 3. Edit `~/.propellor/config.hs`, and add a host you want to manage.
    You can start by not adding any properties, or only a few.

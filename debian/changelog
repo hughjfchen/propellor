@@ -64,8 +64,8 @@ propellor (3.0.0) UNRELEASED; urgency=medium
     these complex new types.
   * Added dependency on concurrent-output; removed embedded copy.
   * Apt.PPA: New module, contributed by Evan Cofsky.
-  * Improved propellor's first run experience; the wrapper program will
-    now walk the user through setting up ~/.propellor, with a choice between
+  * Improved propellor's first run experience; propellor --init will
+    walk the user through setting up ~/.propellor, with a choice between
     a clone of propellor's git repository, or a minimal config, and will
     configure propellor to use a gpg key.
 
