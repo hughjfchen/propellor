@@ -59,26 +59,31 @@ Additional things you need to do if you've written your own properties:
   fail to type check, because the type checker cannot guess what type
   you intend the intermediate property `go` to have:
 
-	foo :: Property UnixLike
-	foo = go `requires` bar
-	  where
-		go = property "foo" (return NoChange)
+		foo :: Property UnixLike
+		foo = go `requires` bar
+		  where
+			go = property "foo" (return NoChange)
 
   To fix, specify the type of go:
 
-		go :: Property UnixLike
+			go :: Property UnixLike
 
 * `ensureProperty` now needs to be passed a witness to the type of the 
   property it's used in.
-  change this:  foo = property desc $ ... ensureProperty bar
-  to this:      foo = property' desc $ \w -> ... ensureProperty w bar
+
+  		foo = property desc $ ... ensureProperty bar
+
+  Becomes
+
+		foo = property' desc $ \w -> ... ensureProperty w bar
+
 * General purpose properties like cmdProperty have type `Property UnixLike`.
   When using that to run a command only available on Debian, you can
   tighten the type to only the OS that your more specific property works on.
   For example:
 
-	upgraded :: Property Debian
-	upgraded = tightenTargets (cmdProperty "apt-get" ["upgrade"])
+		upgraded :: Property Debian
+		upgraded = tightenTargets (cmdProperty "apt-get" ["upgrade"])
 
 * Several utility functions have been renamed:  
   getInfo to fromInfo  
