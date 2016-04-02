@@ -34,8 +34,9 @@ main = withConcurrentOutput $ go =<< getArgs
 buildRunConfig :: [String] -> IO ()
 buildRunConfig args = do
 	changeWorkingDirectory =<< dotPropellor
-	buildPropellor Nothing
-	putStrLn ""
-	putStrLn ""
+	unlessM (doesFileExist "propellor") $ do
+		buildPropellor Nothing
+		putStrLn ""
+		putStrLn ""
 	(_, _, _, pid) <- createProcess (proc "./propellor" args) 
 	exitWith =<< waitForProcess pid
