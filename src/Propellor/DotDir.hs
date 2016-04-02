@@ -4,6 +4,7 @@ import Propellor.Message
 import Propellor.Bootstrap
 import Propellor.Git
 import Propellor.Gpg
+import Propellor.Types.Result
 import Utility.UserInfo
 import Utility.Monad
 import Utility.Process
@@ -95,7 +96,6 @@ section = do
 
 setup :: IO ()
 setup = do
-	dotpropellor <- dotPropellor
 	putStrLn "Propellor's configuration file is ~/.propellor/config.hs"
 	putStrLn ""
 	putStrLn "Lets get you started with a simple config that you can adapt"
@@ -103,11 +103,10 @@ setup = do
 	putStrLn "   A: A clone of propellor's git repository    (most flexible)"
 	putStrLn "   B: The bare minimum files to use propellor  (most simple)"
 	prompt "Which would you prefer?"
-		[ ("A", fullClone)
-		, ("B", minimalConfig)
+		[ ("A", actionMessage "Cloning propellor's git repository" fullClone >> return ())
+		, ("B", actionMessage "Creating minimal config" minimalConfig >> return ())
 		]
-	putStrLn "Ok, ~/.propellor/config.hs is set up!"
-	changeWorkingDirectory dotpropellor
+	changeWorkingDirectory =<< dotPropellor
 
 	section
 	putStrLn "Let's try building the propellor configuration, to make sure it will work..."
@@ -129,7 +128,7 @@ setup = do
 
 	section
 	putStrLn "Everything is set up ..."
-	putStrLn "Your next step is to edit ~/.propellor/config.hs,"
+	putStrLn "Your next step is to edit ~/.propellor/config.hs"
 	putStrLn "and run propellor again to try it out."
 	putStrLn ""
 	putStrLn "For docs, see https://propellor.branchable.com/"
@@ -150,7 +149,7 @@ setupGpgKey = do
 		[] -> makeGpgKey
 		[(k, d)] -> do
 			putStrLn $ "You have one gpg key: " ++ desckey k d
-			prompt "Should propellor use that key?" 
+			prompt "Should propellor use that key?"
 				[ ("Y", propellorAddKey k)
 				, ("N", putStrLn $ "Skipping gpg setup. If you change your mind, run: propellor --add-key " ++ k)
 				]
@@ -194,7 +193,7 @@ propellorAddKey keyid = do
 		putStrLn "Oops, that didn't work! You can retry the same command later."
 		putStrLn "Continuing onward ..."
 
-minimalConfig :: IO ()
+minimalConfig :: IO Result
 minimalConfig = do
 	d <- dotPropellor
 	createDirectoryIfMissing True d
@@ -205,10 +204,10 @@ minimalConfig = do
 	changeWorkingDirectory d
 	void $ boolSystem "git" [Param "init"]
 	void $ boolSystem "git" [Param "add" , File cabalfile, File configfile]
+	return MadeChange
   where
 	cabalcontent =
 		[ "-- This is a cabal file to use to build your propellor configuration."
-		, "-- https://propellor.branchable.com/"
 		, ""
 		, "Name: config"
 		, "Cabal-Version: >= 1.6"
@@ -223,7 +222,7 @@ minimalConfig = do
 		]
 	configcontent = 
 		[ "-- This is the main configuration file for Propellor, and is used to build"
-		, "-- the propellor program."
+		, "-- the propellor program.    https://propellor.branchable.com/"
 		, ""
 		, "import Propellor"
 		, "import qualified Propellor.Property.File as File"
@@ -254,28 +253,32 @@ minimalConfig = do
 		, ""
 		]
 
-fullClone :: IO ()
+fullClone :: IO Result
 fullClone = do
 	d <- dotPropellor
-	ifM (doesFileExist distrepo <||> doesDirectoryExist distrepo)
-		( do			
-			void $ boolSystem "git" [Param "clone", File distrepo, File d]
-			fetchUpstreamBranch distrepo
-			changeWorkingDirectory d
-			void $ boolSystem "git" [Param "remote", Param "rm", Param "origin"]
-		, do
-			void $ boolSystem "git" [Param "clone", Param netrepo, File d]
-			changeWorkingDirectory d
+	let enterdotpropellor = changeWorkingDirectory d >> return True
+	ok <- ifM (doesFileExist distrepo <||> doesDirectoryExist distrepo)
+		( allM id
+			[ boolSystem "git" [Param "clone", File distrepo, File d]
+			, fetchUpstreamBranch distrepo
+			, enterdotpropellor
+			, boolSystem "git" [Param "remote", Param "rm", Param "origin"]
+			]
+		, allM id
+			[ boolSystem "git" [Param "clone", Param netrepo, File d]
+			, enterdotpropellor
 			-- Rename origin to upstream and avoid
 			-- git push to that read-only repo.
-			void $ boolSystem "git" [Param "remote", Param "rename", Param "origin", Param "upstream"]
-			void $ boolSystem "git" [Param "config", Param "--unset", Param "branch.master.remote", Param "upstream"]
+			, boolSystem "git" [Param "remote", Param "rename", Param "origin", Param "upstream"]
+			, boolSystem "git" [Param "config", Param "--unset", Param "branch.master.remote", Param "upstream"]
+			]
 		)
+	return (toResult ok)
 
-fetchUpstreamBranch :: FilePath -> IO ()
+fetchUpstreamBranch :: FilePath -> IO Bool
 fetchUpstreamBranch repo = do
 	changeWorkingDirectory =<< dotPropellor
-	void $ boolSystem "git"
+	boolSystem "git"
 		[ Param "fetch"
 		, File repo
 		, Param ("+refs/heads/master:refs/remotes/" ++ upstreambranch)
@@ -304,8 +307,7 @@ checkRepoUpToDate = whenM (gitbundleavail <&&> dotpropellorpopulated) $ do
 		d <- dotPropellor
 		doesFileExist (d </> "propellor.cabal")
 
--- Passed the user's dotpropellor repository, makes upstream/master
--- be a usefully mergeable branch.
+-- Makes upstream/master in dotPropellor be a usefully mergeable branch.
 --
 -- We cannot just use origin/master, because in the case of a distrepo,
 -- it only contains 1 commit. So, trying to merge with it will result
@@ -336,7 +338,7 @@ setupUpstreamMaster newref = do
 		git ["reset", "--hard", oldref, "--quiet"]
 		git ["merge", newref, "-s", "recursive", "-Xtheirs", "--quiet", "-m", "merging upstream version"]
 	
-		fetchUpstreamBranch tmprepo
+		void $ fetchUpstreamBranch tmprepo
 		cleantmprepo
 		warnoutofdate True
 
