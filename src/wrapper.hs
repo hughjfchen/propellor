@@ -14,6 +14,7 @@ import Propellor.Message
 import Propellor.Bootstrap
 import Utility.Monad
 import Utility.Process
+import Utility.Process.NonConcurrent
 
 import System.Directory
 import System.Environment (getArgs)
@@ -39,5 +40,5 @@ buildRunConfig args = do
 		buildPropellor Nothing
 		putStrLn ""
 		putStrLn ""
-	(_, _, _, pid) <- createProcess (proc "./propellor" args) 
-	exitWith =<< waitForProcess pid
+	(_, _, _, pid) <- createProcessNonConcurrent (proc "./propellor" args) 
+	exitWith =<< waitForProcessNonConcurrent pid
