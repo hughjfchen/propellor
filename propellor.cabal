@@ -34,10 +34,6 @@ Description:
  .
  It is configured using haskell.
 
-Flag UseStack
-  Description: Have propellor rebuild itself using Stack (default is Cabal)
-  Default: False
-
 Executable propellor
   Main-Is: wrapper.hs
   GHC-Options: -threaded -Wall -fno-warn-tabs -O0
@@ -50,8 +46,6 @@ Executable propellor
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
     time, mtl, transformers, exceptions (>= 0.6), stm, text,
     concurrent-output
-  if flag(UseStack)
-    CPP-Options: -DUSE_STACK
 
 Executable propellor-config
   Main-Is: config.hs

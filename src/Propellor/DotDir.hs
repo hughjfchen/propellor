@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 module Propellor.DotDir where
 
 import Propellor.Message
@@ -53,14 +51,11 @@ dotPropellor = do
 	home <- myHomeDir
 	return (home </> ".propellor")
 
-data InitCfg = UseCabal | UseStack
-
-initCfg :: InitCfg
-#ifdef USE_STACK
-initCfg = UseStack
-#else
-initCfg = UseCabal
-#endif
+-- Detect if propellor was built using stack. This is somewhat of a hack.
+buildSystem :: IO String
+buildSystem = do
+	d <- Package.getLibDir
+	return $ if "stack-work" `isInfixOf` d then "stack" else "cabal"
 
 interactiveInit :: IO ()
 interactiveInit = ifM (doesDirectoryExist =<< dotPropellor)
@@ -125,12 +120,11 @@ setup = do
 	section
 	putStrLn "Let's try building the propellor configuration, to make sure it will work..."
 	putStrLn ""
+	b <- buildSystem
 	void $ boolSystem "git"
 		[ Param "config"
 		, Param "propellor.buildsystem"
-		, Param $ case initCfg of
-			UseCabal -> "cabal"
-			UseStack -> "stack"
+		, Param b
 		]
 	buildPropellor Nothing
 	putStrLn ""
