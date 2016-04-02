@@ -19,6 +19,7 @@ import System.Directory
 import System.Environment (getArgs)
 import System.Exit
 import System.Posix.Directory
+import Control.Monad.IfElse
 
 main :: IO ()
 main = withConcurrentOutput $ go =<< getArgs
