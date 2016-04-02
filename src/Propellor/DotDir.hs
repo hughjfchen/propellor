@@ -94,6 +94,7 @@ welcomeBanner = say $ unlines $ map prettify
 prompt :: String -> [(String, IO ())] -> IO ()
 prompt p cs = do
 	say (p ++ " [" ++ intercalate "|" (map fst cs) ++ "] ")
+	flushConcurrentOutput
 	hFlush stdout
 	r <- map toLower <$> getLine
 	if null r
