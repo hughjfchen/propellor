@@ -115,7 +115,7 @@ setup :: IO ()
 setup = do
 	sayLn "Propellor's configuration file is ~/.propellor/config.hs"
 	sayLn ""
-	sayLn "Lets get you started with a simple config that you can adapt"
+	sayLn "Let's get you started with a simple config that you can adapt"
 	sayLn "to your needs. You can start with:"
 	sayLn "   A: A clone of propellor's git repository    (most flexible)"
 	sayLn "   B: The bare minimum files to use propellor  (most simple)"
