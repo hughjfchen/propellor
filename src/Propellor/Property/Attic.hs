@@ -7,23 +7,39 @@ import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
 import Data.List (intercalate)
 
-installed :: Property NoInfo
+installed :: Property DebianLike
 installed = Apt.installed ["attic"]
 
 repoExists :: FilePath -> IO Bool
 repoExists repo = boolSystem "attic" [Param "list", File repo]
 
-backup :: [FilePath] -> FilePath -> Cron.Times -> [String] -> Property NoInfo
-backup dirs backupdir crontimes extraargs = propertyList (backupdir ++ " attic backup")
-	[ installed
-	, check (not <$> repoExists backupdir) $ cmdProperty "attic" initargs
-	, Cron.niceJob ("attic_backup" ++ backupdir) crontimes (User "root") "/" backupcmd
-	]
+init :: FilePath -> Property DebianLike
+init backupdir = check (not <$> repoExists backupdir) (cmdProperty "attic" initargs)
+	`requires` installed
   where
 	initargs =
 		[ "init"
 		, backupdir
 		]
+
+restored :: [FilePath] -> FilePath -> Property DebianLike
+restored dirs backupdir = cmdProperty "attic" restoreargs
+	`assume` MadeChange
+	`describe` ("attic restore from " ++ backupdir)
+	`requires` installed
+  where
+	restoreargs =
+		[ "extract"
+		, backupdir
+		]
+		++ dirs
+
+backup :: [FilePath] -> FilePath -> Cron.Times -> [String] -> Property DebianLike
+backup dirs backupdir crontimes extraargs = propertyList (backupdir ++ " attic backup") $ props
+	& check (not <$> repoExists backupdir) (restored dirs backupdir)
+	& Cron.niceJob ("attic_backup" ++ backupdir) crontimes (User "root") "/" backupcmd
+	`requires` installed
+  where
 	backupcmd = intercalate ";"
 		[ createCommand
 		, pruneCommand
