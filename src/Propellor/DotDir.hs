@@ -66,6 +66,21 @@ interactiveInit = ifM (doesDirectoryExist =<< dotPropellor)
 		setup
 	)
 
+-- | Determine whether we need to create a cabal sandbox in ~/.propellor/,
+-- which we do if the user has configured cabal to require a sandbox, and the
+-- build system is cabal.
+cabalSandboxRequired :: IO Bool
+cabalSandboxRequired = ifM cabal
+	( do
+		home <- myHomeDir
+		ls <- lines <$> readFile (home </> ".cabal" </> "config")
+		-- For simplicity, we assume a sane ~/.cabal/config here:
+		return $ "require-sandbox: True" `elem` ls
+	, return False
+	)
+  where
+	cabal = buildSystem >>= \bSystem -> return (bSystem == "cabal")
+
 say :: String -> IO ()
 say = outputConcurrent
 
@@ -134,6 +149,13 @@ setup = do
 		, Param "propellor.buildsystem"
 		, Param b
 		]
+	ifM cabalSandboxRequired
+		( void $ boolSystem "cabal"
+			[ Param "sandbox"
+			, Param "init"
+			]
+		, return ()
+		)
 	buildPropellor Nothing
 	sayLn ""
 	sayLn "Great! Propellor is bootstrapped."
