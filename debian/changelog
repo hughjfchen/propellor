@@ -1,3 +1,10 @@
+propellor (3.0.2) UNRELEASED; urgency=medium
+
+  * Added Apt.periodicUpdates.
+    Thanks, Félix Sipma.
+
+ -- Joey Hess <id@joeyh.name>  Tue, 05 Apr 2016 13:48:47 -0400
+
 propellor (3.0.1) unstable; urgency=medium
 
   * propellor --init now runs cabal sandbox init if cabal has been
