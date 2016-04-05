@@ -1,3 +1,11 @@
+propellor (3.0.1) UNRELEASED; urgency=medium
+
+  * propellor --init now runs cabal sandbox init if cabal has been
+    configured with require-sandbox: True.
+    Thanks, Sean Whitton
+
+ -- Joey Hess <id@joeyh.name>  Tue, 05 Apr 2016 11:39:48 -0400
+
 propellor (3.0.0) unstable; urgency=medium
 
   * Property types have been improved to indicate what systems they target.
