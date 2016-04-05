@@ -1,4 +1,4 @@
-propellor (3.0.1) UNRELEASED; urgency=medium
+propellor (3.0.1) unstable; urgency=medium
 
   * propellor --init now runs cabal sandbox init if cabal has been
     configured with require-sandbox: True.
@@ -6,7 +6,7 @@ propellor (3.0.1) UNRELEASED; urgency=medium
   * Re-bundled concurrent-output so propellor can be deployed to Debian
     stable systems without installing it (insecurely) from hackage.
 
- -- Joey Hess <id@joeyh.name>  Tue, 05 Apr 2016 11:39:48 -0400
+ -- Joey Hess <id@joeyh.name>  Tue, 05 Apr 2016 13:35:54 -0400
 
 propellor (3.0.0) unstable; urgency=medium
 
