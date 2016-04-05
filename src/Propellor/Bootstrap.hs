@@ -92,7 +92,6 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "libghc-exceptions-dev"
 		, "libghc-stm-dev"
 		, "libghc-text-dev"
-		, "libghc-concurrent-output-dev"
 		, "make"
 		]
 	fbsddeps =
@@ -111,7 +110,6 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "hs-exceptions"
 		, "hs-stm"
 		, "hs-text"
-		, "hs-concurrent-output"
 		, "gmake"
 		]
 

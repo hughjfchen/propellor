@@ -41,12 +41,12 @@ Executable propellor
   Extensions: TypeOperators
   Hs-Source-Dirs: src
   Build-Depends:
-    -- propellor needs to support the ghc shipped in Debian stable
+    -- propellor needs to support the ghc shipped in Debian stable,
+    -- and also only depends on packages in Debian stable.
     base >= 4.5, base < 5,
     MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text,
-    concurrent-output
+    time, mtl, transformers, exceptions (>= 0.6), stm, text
 
 Executable propellor-config
   Main-Is: config.hs
@@ -57,8 +57,7 @@ Executable propellor-config
     base >= 4.5, base < 5,
     MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text,
-    concurrent-output
+    time, mtl, transformers, exceptions (>= 0.6), stm, text
 
 Library
   GHC-Options: -Wall -fno-warn-tabs -O0
@@ -68,8 +67,7 @@ Library
     base >= 4.5, base < 5,
     MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text,
-    concurrent-output
+    time, mtl, transformers, exceptions (>= 0.6), stm, text
 
   Exposed-Modules:
     Propellor
@@ -209,6 +207,9 @@ Library
     Utility.ThreadScheduler
     Utility.Tmp
     Utility.UserInfo
+    System.Console.Concurrent
+    System.Console.Concurrent.Internal
+    System.Process.Concurrent
 
 source-repository head
   type: git
