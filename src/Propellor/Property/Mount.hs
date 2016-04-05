@@ -19,7 +19,7 @@ type Source = String
 -- | A mount point for a filesystem.
 type MountPoint = FilePath
 
--- | Filesystem mount options. Eg, "errors=remount-ro"
+-- | Filesystem mount options. Eg, MountOpts ["errors=remount-ro"]
 newtype MountOpts = MountOpts [String]
 	deriving Monoid
 
