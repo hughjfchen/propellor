@@ -249,15 +249,21 @@ unattendedUpgrades = enable <!> disable
 			| otherwise = "false"
 
 	configure :: Property DebianLike
-	configure = withOS "unattended upgrades configured" $ \w o ->
-		case o of
-			-- the package defaults to only upgrading stable
-			(Just (System (Debian suite) _))
-				| not (isStable suite) -> ensureProperty w $
-					"/etc/apt/apt.conf.d/50unattended-upgrades"
-						`File.containsLine`
-					("Unattended-Upgrade::Origins-Pattern { \"o=Debian,a="++showSuite suite++"\"; };")
-			_ -> noChange
+	configure = propertyList "unattended upgrades configured" $ props
+		& enableupgrading
+		& unattendedconfig `File.containsLine` "Unattended-Upgrade::Mail \"root\";"
+	  where
+		enableupgrading :: Property DebianLike
+		enableupgrading = withOS "unattended upgrades configured" $ \w o ->
+			case o of
+				-- the package defaults to only upgrading stable
+				(Just (System (Debian suite) _))
+					| not (isStable suite) -> ensureProperty w $
+						unattendedconfig
+							`File.containsLine`
+						("Unattended-Upgrade::Origins-Pattern { \"o=Debian,a="++showSuite suite++"\"; };")
+				_ -> noChange
+		unattendedconfig = "/etc/apt/apt.conf.d/50unattended-upgrades"
 
 -- | Enable periodic updates (but not upgrades), including download
 -- of packages.
