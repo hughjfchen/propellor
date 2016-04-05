@@ -12,7 +12,7 @@ I tried putting
 in config.hs, but that results in 
 
     Couldn't match expected type ‘Mount.MountOpts’
-                    with actual type ‘[[Char]]’
+                    with actual type ‘\[[Char]]’
         In the fourth argument of ‘Mount.mounted’, namely ‘["defaults"]’
         In the second argument of ‘(&)’, namely
           ‘Mount.mounted
