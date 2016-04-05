@@ -6,14 +6,6 @@ This prevents using eg, Property FreeBSD on a Debian system.
 This forum topic is to help users with the upgrade. Post comments
 if you're having trouble and [[Joey]] will get back to you. ;)
 
-First things first: In order to upgrade to propellor 3.0, you **must first
-upgrade to propellor 2.17.2**, and deploy that to all your hosts. If you
-skip this step, propellor --spin will fail when you upgrade to propellor
-3.0.0.  
-(Workaround: ssh to host, cd /usr/local/propellor && make clean,
-then you can re-run propellor --spin.)  
-[[details_of_why_this_two_step_upgrade_is_needed|todo/problem_with_spin_after_new_dependencies_added]]
-
 Now, the transition guide as far as your config.hs goes:
 
 * Add `props` to host definitions.
