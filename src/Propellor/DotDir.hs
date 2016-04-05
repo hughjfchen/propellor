@@ -78,9 +78,11 @@ cabalSandboxRequired :: IO Bool
 cabalSandboxRequired = ifM cabal
 	( do
 		home <- myHomeDir
-		ls <- lines <$> readFile (home </> ".cabal" </> "config")
+		ls <- lines <$> catchDefaultIO []
+			(readFile (home </> ".cabal" </> "config"))
 		-- For simplicity, we assume a sane ~/.cabal/config here:
-		return $ "require-sandbox: True" `elem` ls
+		return $ any ("True" `isInfixOf`) $
+			filter ("require-sandbox:" `isPrefixOf`) ls
 	, return False
 	)
   where
