@@ -98,6 +98,7 @@ Library
     Propellor.Property.FreeBSD
     Propellor.Property.FreeBSD.Pkg
     Propellor.Property.FreeBSD.Poudriere
+    Propellor.Property.Fstab
     Propellor.Property.Git
     Propellor.Property.Gpg
     Propellor.Property.Group

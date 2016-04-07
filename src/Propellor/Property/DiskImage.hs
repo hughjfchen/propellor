@@ -30,6 +30,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Parted
 import Propellor.Property.Mount
+import Propellor.Property.Fstab (SwapPartition(..), genFstab)
 import Propellor.Property.Partition
 import Propellor.Property.Rsync
 import Propellor.Container

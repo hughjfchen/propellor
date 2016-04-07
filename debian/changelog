@@ -4,6 +4,7 @@ propellor (3.0.2) UNRELEASED; urgency=medium
     Thanks, Félix Sipma.
   * Apt.unattendedUpgrades: Enable mailing problems reports to root.
     Thanks, Félix Sipma.
+  * Added Propellor.Property.Fstab, and moved the fstabbed property to there.
 
  -- Joey Hess <id@joeyh.name>  Tue, 05 Apr 2016 13:48:47 -0400
 
