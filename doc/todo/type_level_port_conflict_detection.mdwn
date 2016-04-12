@@ -33,3 +33,34 @@ but it is not yet integrated into the Property types. --[[Joey]]
 > port. Don't allow combining `UsingPort 80 Apache` with `UsingPort 80 Ngnix`
 > 
 > --[[Joey]] 
+
+> > Also, it's not clear how to parameterize properties that support
+> > running a service on different ports. One way might be to 
+> > declare the ports in the type signatures; the property code
+> > can then use `usedPorts (getMetaTypes self)` to get a port list.
+> > 
+> > So, we'd start with a property definition that does not use any ports:
+> > 
+> > 	virtualHost :: Domain -> WebRoot -> RevertableProperty DebianLike DebianLike
+> >	virtualHost domain docroot = 
+> >		let self = property "vhost" (go (usedPorts (getMetaTypes self)))
+> >		in self
+> >	where
+> > 	  go [] = error "No ports specified"
+> > 	  go ports = ...
+> >
+> > And then to use it:
+> > 
+> > 	& virtualHost "example.com" "/var/www" :: RevertableProperty (UsingPort 80 + DebianLike) DebianLike
+> >
+> > But, this seems like a mouthful to write!
+> > 
+> > Maybe make a `using` that changes the metatypes of a property,
+> > adding a resource. That shortens what needs to be written some:
+> >
+> > 	& virtualHost "example.com" "/var/www" `using` (port :: Port 80)
+> >
+> > (`port` here is just an alias for `sing`, possibly constrained to only
+> > construct port singletons.)
+> > 
+> > --[[Joey]]
