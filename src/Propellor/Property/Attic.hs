@@ -1,11 +1,21 @@
 -- | Maintainer: Félix Sipma <felix+propellor@gueux.org>
 
-module Propellor.Property.Attic where
+module Propellor.Property.Attic
+	( installed
+	, repoExists
+	, init
+	, restored
+	, backup
+	, KeepPolicy (..)
+	) where
 
-import Propellor.Base
+import Propellor.Base hiding (init)
+import Prelude hiding (init)
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
 import Data.List (intercalate)
+
+type AtticParam = String
 
 installed :: Property DebianLike
 installed = Apt.installed ["attic"]
@@ -34,8 +44,8 @@ restored dirs backupdir = cmdProperty "attic" restoreargs
 		]
 		++ dirs
 
-backup :: [FilePath] -> FilePath -> Cron.Times -> [String] -> Property DebianLike
-backup dirs backupdir crontimes extraargs = propertyList (backupdir ++ " attic backup") $ props
+backup :: [FilePath] -> FilePath -> Cron.Times -> [AtticParam] -> [KeepPolicy] -> Property DebianLike
+backup dirs backupdir crontimes extraargs kp = propertyList (backupdir ++ " attic backup") $ props
 	& check (not <$> repoExists backupdir) (restored dirs backupdir)
 	& Cron.niceJob ("attic_backup" ++ backupdir) crontimes (User "root") "/" backupcmd
 	`requires` installed
@@ -53,12 +63,24 @@ backup dirs backupdir crontimes extraargs = propertyList (backupdir ++ " attic b
 		[ backupdir ++ "::" ++ "$(date --iso-8601=ns --utc)"
 		, unwords dirs
 		]
-	pruneCommand = unwords
+	pruneCommand = unwords $
 		[ "attic"
 		, "prune"
 		, backupdir
-		, "--keep-daily=7"
-		, "--keep-weekly=4"
-		, "--keep-monthly=6"
-		, "--keep-yearly=1"
 		]
+		++
+		map keepParam kp
+
+keepParam :: KeepPolicy -> AtticParam
+keepParam (KeepHours n) = "--keep-hourly=" ++ show n
+keepParam (KeepDays n) = "--keep-daily=" ++ show n
+keepParam (KeepWeeks n) = "--keep-daily=" ++ show n
+keepParam (KeepMonths n) = "--keep-monthly=" ++ show n
+keepParam (KeepYears n) = "--keep-yearly=" ++ show n
+
+data KeepPolicy
+	= KeepHours Int
+	| KeepDays Int
+	| KeepWeeks Int
+	| KeepMonths Int
+	| KeepYears Int
