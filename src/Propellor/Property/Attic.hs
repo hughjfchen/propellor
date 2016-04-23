@@ -17,13 +17,15 @@ import Data.List (intercalate)
 
 type AtticParam = String
 
+type AtticRepo = FilePath
+
 installed :: Property DebianLike
 installed = Apt.installed ["attic"]
 
-repoExists :: FilePath -> IO Bool
+repoExists :: AtticRepo -> IO Bool
 repoExists repo = boolSystem "attic" [Param "list", File repo]
 
-init :: FilePath -> Property DebianLike
+init :: AtticRepo -> Property DebianLike
 init backupdir = check (not <$> repoExists backupdir) (cmdProperty "attic" initargs)
 	`requires` installed
   where
@@ -32,7 +34,7 @@ init backupdir = check (not <$> repoExists backupdir) (cmdProperty "attic" inita
 		, backupdir
 		]
 
-restored :: [FilePath] -> FilePath -> Property DebianLike
+restored :: [FilePath] -> AtticRepo -> Property DebianLike
 restored dirs backupdir = cmdProperty "attic" restoreargs
 	`assume` MadeChange
 	`describe` ("attic restore from " ++ backupdir)
@@ -44,7 +46,7 @@ restored dirs backupdir = cmdProperty "attic" restoreargs
 		]
 		++ dirs
 
-backup :: [FilePath] -> FilePath -> Cron.Times -> [AtticParam] -> [KeepPolicy] -> Property DebianLike
+backup :: [FilePath] -> AtticRepo -> Cron.Times -> [AtticParam] -> [KeepPolicy] -> Property DebianLike
 backup dirs backupdir crontimes extraargs kp = propertyList (backupdir ++ " attic backup") $ props
 	& check (not <$> repoExists backupdir) (restored dirs backupdir)
 	& Cron.niceJob ("attic_backup" ++ backupdir) crontimes (User "root") "/" backupcmd
