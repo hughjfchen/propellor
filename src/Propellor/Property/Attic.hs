@@ -52,10 +52,9 @@ backup dirs backupdir crontimes extraargs kp = propertyList (backupdir ++ " atti
 	& Cron.niceJob ("attic_backup" ++ backupdir) crontimes (User "root") "/" backupcmd
 	`requires` installed
   where
-	backupcmd = intercalate ";"
-		[ createCommand
-		, pruneCommand
-		]
+	backupcmd = intercalate ";" $
+		createCommand
+		: if null kp then [] else [pruneCommand]
 	createCommand = unwords $
 		[ "attic"
 		, "create"
