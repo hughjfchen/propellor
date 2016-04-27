@@ -58,7 +58,7 @@ but it is not yet integrated into the Property types. --[[Joey]]
 > > Maybe make a `using` that changes the metatypes of a property,
 > > adding a resource. That shortens what needs to be written some:
 > >
-> > 	& virtualHost "example.com" "/var/www" `using` (port :: Port 80)
+> > 	& virtualHost "example.com" "/var/www" `using` (port :: UsingPort 80)
 > >
 > > (`port` here is just an alias for `sing`, possibly constrained to only
 > > construct port singletons.)
@@ -70,21 +70,20 @@ but it is not yet integrated into the Property types. --[[Joey]]
 > > > it to get a usable property. So in a way, by adding this advanced
 > > > type safety, we've lost the most fundamental type safety of all:
 > > > Functions must have the right parameters applied!
+> > >
+> > > Well then, let's require a parameter.
 > > > 
-> > > So, it would perhaps be better to have
+> > > 	virtualHost :: Domain -> WebRoot -> Resource port -> RevertableProperty DebianLike DebianLike
 > > > 
-> > >	virtualHost :: Domain -> WebRoot -> RevertableProperty (UsingPort 80 + DebianLike) DebianLike
+> > > Make `Resource` only able to be constructed by `using`,
+> > > so the user must say:
 > > > 
-> > > And then to make it use a different port, use `using`.
-> > > 
-> > > This too has a problem; if the property is hard-coded to use port 80,
-> > > then `using` won't change it, and again the type signature doesn't
-> > > tell. Perhaps the thing to do is to indicate in the type when a port
-> > > can be changed:
-> > > 
-> > >	virtualHost :: Domain -> WebRoot -> RevertableProperty (Changable (UsingPort 80) + DebianLike) DebianLike
-> > > 
-> > > And then `using` would need to only be able to be applied when it
-> > > changed a resource that is marked `Changable`.
+> > > 	& virtualHost "example.com" "/var/www" `using` (port :: UsingPort 80)
+> > >
+> > > So the type of `using` would be something like:
+> > >
+> > > 	using :: (Resource r -> Property proptype) -> r -> Property (r + proptype)
+> > >
+> > > (Complicated some as it needs to also support RevertableProperty.)
 > > > 
 > > > --[[Joey]]
