@@ -64,26 +64,26 @@ but it is not yet integrated into the Property types. --[[Joey]]
 > > construct port singletons.)
 > > 
 > > --[[Joey]]
-
-> > > A further problem with this is that it's not clear from the
-> > > `virtualHost` type signature that it needs to have a port applied to
-> > > it to get a usable property. So in a way, by adding this advanced
-> > > type safety, we've lost the most fundamental type safety of all:
-> > > Functions must have the right parameters applied!
-> > >
-> > > Well then, let's require a parameter.
-> > > 
-> > > 	virtualHost :: Domain -> WebRoot -> Resource port -> RevertableProperty DebianLike DebianLike
-> > > 
-> > > Make `Resource` only able to be constructed by `using`,
-> > > so the user must say:
-> > > 
-> > > 	& virtualHost "example.com" "/var/www" `using` (port :: UsingPort 80)
-> > >
-> > > So the type of `using` would be something like:
-> > >
-> > > 	using :: (Resource r -> Property proptype) -> r -> Property (r + proptype)
-> > >
-> > > (Complicated some as it needs to also support RevertableProperty.)
-> > > 
-> > > --[[Joey]]
+> > 
+> > A further problem with this is that it's not clear from the
+> > `virtualHost` type signature that it needs to have a port applied to
+> > it to get a usable property. So in a way, by adding this advanced
+> > type safety, we've lost the most fundamental type safety of all:
+> > Functions must have the right parameters applied!
+> >
+> > Well then, let's require a parameter.
+> > 
+> > 	virtualHost :: Domain -> WebRoot -> Resource port -> RevertableProperty DebianLike DebianLike
+> > 
+> > Make `Resource` only able to be constructed by `using`,
+> > so the user must say:
+> > 
+> > 	& virtualHost "example.com" "/var/www" `using` (port :: UsingPort 80)
+> >
+> > So the type of `using` would be something like:
+> >
+> > 	using :: (Resource r -> Property proptype) -> r -> Property (r + proptype)
+> >
+> > (Complicated some as it needs to also support RevertableProperty.)
+> > 
+> > --[[Joey]]
