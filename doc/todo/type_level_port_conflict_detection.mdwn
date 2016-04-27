@@ -9,7 +9,7 @@ but it is not yet integrated into the Property types. --[[Joey]]
 
 [[!tag user/joey]]
 
-> On `typed-os-requirements` branch, I have the UsingPort 80 singleton
+> On the `typed-os-requirements` branch, I have the UsingPort 80 singleton
 > implemented. As soon as I tried to apply it to some apache properties
 > though, I realized a problem -- If multiple apache vhosts are defined
 > each as its own property, then each of those properties can't have
@@ -42,10 +42,10 @@ but it is not yet integrated into the Property types. --[[Joey]]
 > > So, we'd start with a property definition that does not use any ports:
 > > 
 > > 	virtualHost :: Domain -> WebRoot -> RevertableProperty DebianLike DebianLike
-> >	virtualHost domain docroot = 
-> >		let self = property "vhost" (go (usedPorts (getMetaTypes self)))
-> >		in self
-> >	where
+> > 	virtualHost domain docroot = 
+> > 		let self = property "vhost" (go (usedPorts (getMetaTypes self)))
+> > 		in self
+> > 	where
 > > 	  go [] = error "No ports specified"
 > > 	  go ports = ...
 > >
