@@ -34,8 +34,9 @@ init backupdir = check (not <$> repoExists backupdir) (cmdProperty "attic" inita
 		, backupdir
 		]
 
-restored :: [FilePath] -> AtticRepo -> Property DebianLike
-restored dirs backupdir = cmdProperty "attic" restoreargs
+-- TODO: use restored from Obnam
+restored :: FilePath -> AtticRepo -> Property DebianLike
+restored dir backupdir = cmdProperty "attic" restoreargs
 	`assume` MadeChange
 	`describe` ("attic restore from " ++ backupdir)
 	`requires` installed
@@ -43,15 +44,22 @@ restored dirs backupdir = cmdProperty "attic" restoreargs
 	restoreargs =
 		[ "extract"
 		, backupdir
+		, dir
 		]
-		++ dirs
 
-backup :: [FilePath] -> AtticRepo -> Cron.Times -> [AtticParam] -> [KeepPolicy] -> Property DebianLike
-backup dirs backupdir crontimes extraargs kp = propertyList (backupdir ++ " attic backup") $ props
-	& check (not <$> repoExists backupdir) (restored dirs backupdir)
-	& Cron.niceJob ("attic_backup" ++ backupdir) crontimes (User "root") "/" backupcmd
+backup :: FilePath -> AtticRepo -> Cron.Times -> [AtticParam] -> [KeepPolicy] -> Property DebianLike
+backup dir backupdir crontimes extraargs kp = backup' dir backupdir crontimes extraargs kp
+	`requires` restored dir backupdir
+
+backup' :: FilePath -> AtticRepo -> Cron.Times -> [AtticParam] -> [KeepPolicy] -> Property DebianLike
+backup' dir backupdir crontimes extraargs kp = cronjob
+	`describe` desc
 	`requires` installed
   where
+	desc = backupdir ++ " attic backup"
+	cronjob = Cron.niceJob ("attic_backup" ++ dir) crontimes (User "root") "/" $
+		"flock " ++ shellEscape lockfile ++ " sh -c " ++ backupcmd
+	lockfile = "/var/lock/propellor-attic.lock"
 	backupcmd = intercalate ";" $
 		createCommand
 		: if null kp then [] else [pruneCommand]
@@ -60,14 +68,14 @@ backup dirs backupdir crontimes extraargs kp = propertyList (backupdir ++ " atti
 		, "create"
 		, "--stats"
 		]
-		++ extraargs ++
-		[ backupdir ++ "::" ++ "$(date --iso-8601=ns --utc)"
-		, unwords dirs
+		++ map shellEscape extraargs ++
+		[ shellEscape backupdir ++ "::" ++ "$(date --iso-8601=ns --utc)"
+		, shellEscape dir
 		]
 	pruneCommand = unwords $
 		[ "attic"
 		, "prune"
-		, backupdir
+		, shellEscape backupdir
 		]
 		++
 		map keepParam kp
