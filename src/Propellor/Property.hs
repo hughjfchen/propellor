@@ -44,7 +44,6 @@ module Propellor.Property (
 	, assume
 ) where
 
-import System.Directory
 import System.FilePath
 import Control.Monad
 import Data.Monoid
@@ -66,6 +65,7 @@ import Propellor.EnsureProperty
 import Utility.Exception
 import Utility.Monad
 import Utility.Misc
+import Utility.Directory
 
 -- | Makes a perhaps non-idempotent Property be idempotent by using a flag
 -- file to indicate whether it has run before.

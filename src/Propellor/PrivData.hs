@@ -26,7 +26,6 @@ module Propellor.PrivData (
 ) where
 
 import System.IO
-import System.Directory
 import Data.Maybe
 import Data.List
 import Data.Typeable
@@ -59,6 +58,7 @@ import Utility.FileMode
 import Utility.Env
 import Utility.Table
 import Utility.FileSystemEncoding
+import Utility.Directory
 
 -- | Allows a Property to access the value of a specific PrivDataField,
 -- for use in a specific Context or HostContext.

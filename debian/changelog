@@ -7,6 +7,7 @@ propellor (3.0.2) UNRELEASED; urgency=medium
   * Added Propellor.Property.Fstab, and moved the fstabbed property to there.
   * Attic module added for the backup system.
     Thanks, Félix Sipma.
+  * Fix build with directory-1.2.6.2.
 
  -- Joey Hess <id@joeyh.name>  Tue, 05 Apr 2016 13:48:47 -0400
 
