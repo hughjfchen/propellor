@@ -34,18 +34,33 @@ init backupdir = check (not <$> repoExists backupdir) (cmdProperty "attic" inita
 		, backupdir
 		]
 
--- TODO: use restored from Obnam
 restored :: FilePath -> AtticRepo -> Property DebianLike
-restored dir backupdir = cmdProperty "attic" restoreargs
-	`assume` MadeChange
-	`describe` ("attic restore from " ++ backupdir)
-	`requires` installed
+restored dir backupdir = go `requires` installed
   where
-	restoreargs =
-		[ "extract"
-		, backupdir
-		, dir
-		]
+	go :: Property DebianLike
+	go = property (dir ++ " restored by attic") $ ifM (liftIO needsRestore)
+		( do
+			warningMessage $ dir ++ " is empty/missing; restoring from backup ..."
+			liftIO restore
+		, noChange
+		)
+
+	needsRestore = null <$> catchDefaultIO [] (dirContents dir)
+
+	restore = withTmpDirIn (takeDirectory dir) "attic-restore" $ \tmpdir -> do
+		ok <- boolSystem "attic" $
+			[ Param "extract"
+			, Param backupdir
+			, Param tmpdir
+			]
+		let restoreddir = tmpdir ++ "/" ++ dir
+		ifM (pure ok <&&> doesDirectoryExist restoreddir)
+			( do
+				void $ tryIO $ removeDirectory dir
+				renameDirectory restoreddir dir
+				return MadeChange
+			, return FailedChange
+			)
 
 backup :: FilePath -> AtticRepo -> Cron.Times -> [AtticParam] -> [KeepPolicy] -> Property DebianLike
 backup dir backupdir crontimes extraargs kp = backup' dir backupdir crontimes extraargs kp
