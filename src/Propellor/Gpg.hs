@@ -1,7 +1,6 @@
 module Propellor.Gpg where
 
 import System.IO
-import System.Directory
 import Data.Maybe
 import Data.List.Utils
 import Control.Monad
@@ -19,6 +18,7 @@ import Utility.Misc
 import Utility.Tmp
 import Utility.FileSystemEncoding
 import Utility.Env
+import Utility.Directory
 
 type KeyId = String
 

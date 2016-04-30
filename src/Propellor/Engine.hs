@@ -17,7 +17,6 @@ import "mtl" Control.Monad.RWS.Strict
 import System.PosixCompat
 import System.Posix.IO
 import System.FilePath
-import System.Directory
 import Control.Applicative
 import Prelude
 
@@ -28,6 +27,7 @@ import Propellor.Message
 import Propellor.Exception
 import Propellor.Info
 import Utility.Exception
+import Utility.Directory
 
 -- | Gets the Properties of a Host, and ensures them all,
 -- with nice display of what's being done.
