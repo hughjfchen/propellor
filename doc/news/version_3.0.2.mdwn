@@ -1,0 +1,10 @@
+propellor 3.0.2 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Added Apt.periodicUpdates.
+     Thanks, Félix Sipma.
+   * Apt.unattendedUpgrades: Enable mailing problem reports to root.
+     Thanks, Félix Sipma.
+   * Added Propellor.Property.Fstab, and moved the fstabbed property to there.
+   * Attic module added for the backup system.
+     Thanks, Félix Sipma.
+   * Fix build with directory-1.2.6.2."""]]

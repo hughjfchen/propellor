@@ -1,7 +1,0 @@
-propellor 3.0.1 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * propellor --init now runs cabal sandbox init if cabal has been
-     configured with require-sandbox: True.
-     Thanks, Sean Whitton
-   * Re-bundled concurrent-output so propellor can be deployed to Debian
-     stable systems without installing it (insecurely) from hackage."""]]
