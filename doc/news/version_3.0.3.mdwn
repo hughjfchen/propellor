@@ -1,0 +1,6 @@
+propellor 3.0.3 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Remove Propellor.DotDir from the propellor library, as its use of
+     Paths\_propellor prevents use of the module out of propellor's tree.
+     This module is only needed for the wrapper program anyway, which
+     handles --init."""]]
