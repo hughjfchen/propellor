@@ -47,6 +47,8 @@ Executable propellor
     MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
     time, mtl, transformers, exceptions (>= 0.6), stm, text
+  Other-Modules:
+    Propellor.DotDir
 
 Executable propellor-config
   Main-Is: config.hs
@@ -152,7 +154,6 @@ Library
     Propellor.Info
     Propellor.Message
     Propellor.Debug
-    Propellor.DotDir
     Propellor.PrivData
     Propellor.Engine
     Propellor.EnsureProperty

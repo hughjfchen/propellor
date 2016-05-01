@@ -16,7 +16,6 @@ import Propellor.Git.VerifiedBranch
 import Propellor.Bootstrap
 import Propellor.Spin
 import Propellor.Types.CmdLine
-import Propellor.DotDir (interactiveInit)
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Shim as Shim
@@ -71,7 +70,6 @@ processCmdLine = go =<< getArgs
 	go ("--serialized":s:[]) = serialized Serialized s
 	go ("--continue":s:[]) = serialized Continue s
 	go ("--gitpush":fin:fout:_) = return $ GitPush (Prelude.read fin) (Prelude.read fout)
-	go ("--init":_) = return Init
 	go ("--run":h:[]) = go [h]
 	go (h:[])
 		| "--" `isPrefixOf` h = usageError [h]
@@ -133,7 +131,6 @@ defaultMain hostlist = withConcurrentOutput $ do
 		fetchFirst (buildFirst (findHost hostlist hn) cr cmdline (runhost hn))
 	-- When continuing after a rebuild, don't want to rebuild again.
 	go _ (Continue cmdline) = go NoRebuild cmdline
-	go _ Init = interactiveInit
 
 	withhost :: HostName -> (Host -> IO ()) -> IO ()
 	withhost hn a = maybe (unknownhost hn hostlist) a (findHost hostlist hn)

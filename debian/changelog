@@ -1,3 +1,12 @@
+propellor (3.0.3) UNRELEASED; urgency=medium
+
+  * Remove Propellor.DotDir from the propellor library, as its use of
+    Paths_propellor prevents use of the module out of propellor's tree.
+    This module is only needed for the wrapper program anyway, which
+    handles --init.
+
+ -- Joey Hess <id@joeyh.name>  Sun, 01 May 2016 17:49:10 -0400
+
 propellor (3.0.2) unstable; urgency=medium
 
   * Added Apt.periodicUpdates.
