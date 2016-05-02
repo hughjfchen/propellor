@@ -11,6 +11,6 @@ where it's cloned from the git archive in the package.
 Any other installation method than the debian package that I know of
 installs both the propellor command and the propellor haskell library.
 
-(Note that propellor 3.0.1 fixes an unrelated bug that prevented option B
+(Note that propellor 3.0.1^W3.0.3 fixes an unrelated bug that prevented option B
 from working.)
 """]]
