@@ -33,3 +33,5 @@ With any of the released 3.0.* versions:
     cabal: At least the following dependencies are missing:
     propellor >=3.0
     propellor: failed to make dist/setup-config
+
+(propellor installed from Debian)
