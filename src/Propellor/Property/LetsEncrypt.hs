@@ -74,6 +74,7 @@ letsEncrypt' (AgreeTOS memail) domain domains webroot =
 		, "--webroot"
 		, "--webroot-path", webroot
 		, "--text"
+		, "--noninteractive"
 		, "--keep-until-expiring"
 		] ++ map (\d -> "--domain="++d) alldomains
 

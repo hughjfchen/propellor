@@ -135,6 +135,8 @@ stackAutoBuilder suite arch flavor =
 		& User.accountFor (User builduser)
 		& tree arch flavor
 		& stackInstalled
+		-- Workaround https://github.com/commercialhaskell/stack/issues/2093
+		& Apt.installed ["libtinfo-dev"]
 
 stackInstalled :: Property Linux
 stackInstalled = withOS "stack installed" $ \w o ->

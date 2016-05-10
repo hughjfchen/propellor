@@ -1,3 +1,11 @@
+propellor (3.0.4) UNRELEASED; urgency=medium
+
+  * Run letsencrypt with --noninteractive.
+  * Fix build with ghc 8.0.1-rc4.
+    Thanks, davean.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 05 May 2016 10:37:43 -0400
+
 propellor (3.0.3) unstable; urgency=medium
 
   * Remove Propellor.DotDir from the propellor library, as its use of
