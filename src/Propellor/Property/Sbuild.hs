@@ -94,7 +94,12 @@ stdMirror (System (Buntish r) _) = "TODO"
 
 -- | Update a schroot's installed packages and apt indexes.
 updated :: System -> Property DebianLike
-updated = undefined
+updated system@(System distro arch) = go `requires` installed
+	where
+		go :: Property DebianLike
+		go = tightenTargets $ cmdProperty
+ 			"sbuild-update" ["-udr", suite ++ "-" ++ "arch"]
+		suite = fromJust $ extractSuite system
 -- TODO autoclean/clean only if shareAptCache property not present
 
 -- | Bind-mount @/var/cache/apt/archives@ in all sbuild chroots so that the host
