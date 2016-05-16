@@ -53,7 +53,10 @@ schrootChrootD = "/etc/schroot/chroot.d"
 -- | Build and configure a schroot for use with sbuild
 built :: System -> Property DebianLike
 built system@(System distro arch) =
-	property' ("built chroot for " ++ show system) $ liftIO $ do
+	property' ("built chroot for " ++ show system) (liftIO go)
+	`requires` keypairGenerated
+  where
+	go = do
 		suite <- case extractSuite system of
 			Just s  -> return s
 			Nothing -> errorMessage $
