@@ -5,8 +5,8 @@ Build and maintain schroots for use with sbuild.
 
 Suggested usage in @config.hs@:
 
->  & Sbuild.built (Debian Unstable) "i386"
->  & Sbuild.updated (Debian Unstable) "i386" `period` Weekly
+>  & Sbuild.built ((Debian Unstable) "i386")
+>  & Sbuild.updated ((Debian Unstable) "i386") `period` Weekly
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Sbuild.shareAptCache
 >  & Schroot.overlaysInTmpfs
@@ -29,9 +29,13 @@ In @~/.sbuildrc@:
 
 We use @sbuild-createchroot(1)@ to create a chroot to the specification of
 @sbuild-setup(7)@.  This differs from the approach taken by picca's Sbuild.hs,
-which uses 'Propellor.Property.Debootstrap' to construct the chroot.  This is to
-ensure that the clean package build environment is standardised.
+which uses 'Propellor.Property.Debootstrap' to construct the chroot.  This is
+because we don't want to run propellor inside the chroot in order to keep the
+sbuild environment as standardised as possible.
 -}
+
+-- If you wanted to do it with Propellor.Property.Debootstrap, note that
+-- sbuild-createchroot has a relevant option: --setup-only
 
 module Propellor.Property.Sbuild where
 
