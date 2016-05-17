@@ -92,64 +92,59 @@ updatedFor system = case schrootFromSystem system of
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 updated :: SbuildSchroot -> Property DebianLike
 
-built :: System -> Property DebianLike
-built system@(System _ arch) = case extractSuite system of
-	Just s  -> check (not <$> doesDirectoryExist (schrootLoc s arch)) (built' system)
-	Nothing -> errorMessage "don't know how to debootstrap " ++ show system
+-- built' :: System -> Property DebianLike
+-- built' system@(System distro arch) =
+-- 	property' ("built chroot for " ++ show system) (liftIO go)
+-- 	`requires` keypairGenerated
+--   where
+-- 	go = do
+-- 		suite <- case extractSuite system of
+-- 			Just s  -> return s
+-- 			Nothing -> errorMessage $
+-- 				"don't know how to debootstrap " ++ show system
+-- 		de <- standardPathEnv
+-- 		let params = Param <$>
+-- 			[ "--arch=" ++ arch
+-- 			-- We pass --chroot-suffix in order that we can find the
+-- 			-- config file despite the random suffix that
+-- 			-- sbuild-createchroot gives it.  We'll change this back
+-- 			-- to 'sbuild' once debootstrap has finished.
+-- 			, "--chroot-suffix=propellor"
+-- 			, "--include=eatmydata,ccache"
+-- 			, schrootLocation suite arch
+-- 			, stdMirror distro
+-- 			]
+-- 		ifM (boolSystemEnv "sbuild-createchroot" params (Just de))
+-- 			( do
+-- 				fixConfFile suite arch
+-- 				return MadeChange
+-- 			, return FailedChange
+-- 			)
 
-built' :: System -> Property DebianLike
-built' system@(System distro arch) =
-	property' ("built chroot for " ++ show system) (liftIO go)
-	`requires` keypairGenerated
-  where
-	go = do
-		suite <- case extractSuite system of
-			Just s  -> return s
-			Nothing -> errorMessage $
-				"don't know how to debootstrap " ++ show system
-		de <- standardPathEnv
-		let params = Param <$>
-			[ "--arch=" ++ arch
-			-- We pass --chroot-suffix in order that we can find the
-			-- config file despite the random suffix that
-			-- sbuild-createchroot gives it.  We'll change this back
-			-- to 'sbuild' once debootstrap has finished.
-			, "--chroot-suffix=propellor"
-			, "--include=eatmydata,ccache"
-			, schrootLocation suite arch
-			, stdMirror distro
-			]
-		ifM (boolSystemEnv "sbuild-createchroot" params (Just de))
-			( do
-				fixConfFile suite arch
-				return MadeChange
-			, return FailedChange
-			)
+-- -- Here we undo our --chroot-suffix=propellor by editing and renaming the config
+-- -- file so that it is as if we had passed --chroot-suffix=sbuild (the default).
+-- -- We replace the random suffix with 'propellor'.  The properties in this module
+-- -- only permit the creation of one chroot for a given suite and architecture, so
+-- -- we don't need the random suffix.
+-- fixConfFile :: String -> Architecture -> IO ()
+-- fixConfFile suite arch = do
+-- 	confs <- dirContents schrootChrootD
+-- 	let conf = filter (schrootChrootD
+-- 		</> suite ++ "-" ++ arch ++ "-propellor-" `isPrefixOf`)
+-- 		confs
+-- 	ensureProperty $ File.fileProperty "replace dummy suffix" (map munge) conf
+-- 	moveFile conf (schrootConfLoc suite arch)
+--   where
+-- 	munge = replace "-propellor]" "-sbuild]"
 
--- Here we undo our --chroot-suffix=propellor by editing and renaming the config
--- file so that it is as if we had passed --chroot-suffix=sbuild (the default).
--- We replace the random suffix with 'propellor'.  The properties in this module
--- only permit the creation of one chroot for a given suite and architecture, so
--- we don't need the random suffix.
-fixConfFile :: String -> Architecture -> IO ()
-fixConfFile suite arch = do
-	confs <- dirContents schrootChrootD
-	let conf = filter (schrootChrootD
-		</> suite ++ "-" ++ arch ++ "-propellor-" `isPrefixOf`)
-		confs
-	ensureProperty $ File.fileProperty "replace dummy suffix" (map munge) conf
-	moveFile conf (schrootConfLoc suite arch)
-  where
-	munge = replace "-propellor]" "-sbuild]"
-
--- | Update a schroot's installed packages and apt indexes.
-updated :: System -> Property DebianLike
-updated system@(System distro arch) = go `requires` installed
-	where
-		go :: Property DebianLike
-		go = tightenTargets $ cmdProperty
- 			"sbuild-update" ["-udr", suite ++ "-" ++ arch]
-		suite = fromJust $ extractSuite system
+-- -- | Update a schroot's installed packages and apt indexes.
+-- updated :: System -> Property DebianLike
+-- updated system@(System distro arch) = go `requires` installed
+-- 	where
+-- 		go :: Property DebianLike
+-- 		go = tightenTargets $ cmdProperty
+-- 			"sbuild-update" ["-udr", suite ++ "-" ++ arch]
+-- 		suite = fromJust $ extractSuite system
 
 -- | Bind-mount @/var/cache/apt/archives@ in all sbuild chroots so that the host
 -- system and the chroot share the apt cache
