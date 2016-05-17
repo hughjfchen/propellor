@@ -59,6 +59,7 @@ import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
 
 import System.Directory
+import System.FilePath (takeDirectory)
 
 -- | An sbuild schroot, such as would be listed by @schroot -l@
 --
@@ -110,10 +111,6 @@ updated s = check (doesDirectoryExist (schrootRoot s)) go
 -- 		de <- standardPathEnv
 -- 		let params = Param <$>
 -- 			[ "--arch=" ++ arch
--- 			-- We pass --chroot-suffix in order that we can find the
--- 			-- config file despite the random suffix that
--- 			-- sbuild-createchroot gives it.  We'll change this back
--- 			-- to 'sbuild' once debootstrap has finished.
 -- 			, "--chroot-suffix=propellor"
 -- 			, "--include=eatmydata,ccache"
 -- 			, schrootLocation suite arch
@@ -126,21 +123,27 @@ updated s = check (doesDirectoryExist (schrootRoot s)) go
 -- 			, return FailedChange
 -- 			)
 
--- -- Here we undo our --chroot-suffix=propellor by editing and renaming the config
--- -- file so that it is as if we had passed --chroot-suffix=sbuild (the default).
--- -- We replace the random suffix with 'propellor'.  The properties in this module
--- -- only permit the creation of one chroot for a given suite and architecture, so
--- -- we don't need the random suffix.
--- fixConfFile :: String -> Architecture -> IO ()
--- fixConfFile suite arch = do
--- 	confs <- dirContents schrootChrootD
--- 	let conf = filter (schrootChrootD
--- 		</> suite ++ "-" ++ arch ++ "-propellor-" `isPrefixOf`)
--- 		confs
--- 	ensureProperty $ File.fileProperty "replace dummy suffix" (map munge) conf
--- 	moveFile conf (schrootConfLoc suite arch)
---   where
--- 	munge = replace "-propellor]" "-sbuild]"
+
+-- Find the conf file that sbuild-createchroot(1) made when we passed it
+-- --chroot-suffix=propellor, and edit and rename such that it is as if we
+-- passed --chroot-suffix=sbuild (the default).  Replace the random suffix with
+-- 'propellor'.
+--
+-- We had to pass --chroot-suffix=propellor in order that we can find a unique
+-- config file for the schroot we just built, despite the random suffix.
+--
+-- The properties in this module only permit the creation of one chroot for a
+-- given suite and architecture, so we don't need the suffix to be random.
+fixConfFile :: SbuildSchroot -> IO ()
+fixConfFile s@(SbuildSchroot suite arch) = do
+	old <- take 1 . filter (tempPrefix `isPrefixOf`) <$> dirContents dir
+	ensureProperty $ File.fileProperty "replace dummy suffix" (map munge) old
+	moveFile old new
+  where
+	new = schrootConf s
+	dir = takeDirectory new
+	tempPrefix = dir </> suite ++ "-" ++ arch ++ "-propellor-"
+	munge = replace "-propellor]" "-sbuild]"
 
 -- -- | Update a schroot's installed packages and apt indexes.
 -- updated :: System -> Property DebianLike
