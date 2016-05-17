@@ -69,6 +69,7 @@ built system@(System distro arch) =
 			-- sbuild-createchroot gives it.  We'll change this back
 			-- to 'sbuild' once debootstrap has finished.
 			, "--chroot-suffix=propellor"
+			, "--include=eatmydata,ccache"
 			, "/srv/chroot/" ++ suite ++ "-" ++ arch
 			, stdMirror distro
 			]
