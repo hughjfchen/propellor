@@ -33,7 +33,7 @@ We use @sbuild-createchroot(1)@ to create a chroot to the specification of
 @sbuild-setup(7)@.  This differs from the approach taken by picca's Sbuild.hs,
 which uses 'Propellor.Property.Debootstrap' to construct the chroot.  This is
 because we don't want to run propellor inside the chroot in order to keep the
-sbuild environment as standardised as possible.
+sbuild environment as standard as possible.
 -}
 
 -- If you wanted to do it with Propellor.Property.Debootstrap, note that
