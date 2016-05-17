@@ -77,12 +77,30 @@ builtFor system = case schrootFromSystem system of
 	Just s  -> built s (stdMirror system)
 	Nothing -> errorMessage "don't know how to debootstrap " ++ show system
 
+-- TODO should be revertable (and that should carry through to builtFor)
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> Property DebianLike
 built s mirror = check (not <$> doesDirectoryExist (schrootRoot s)) $
 	property ("built schroot for " ++ show s) go
 	`requires` keypairGenerated
 	`requires` installed
+  where
+	go :: Property DebianLike
+	go = do
+		de <- standardPathEnv
+		let params = Param <$>
+			[ "--arch=" ++ arch
+			, "--chroot-suffix=propellor"
+			, "--include=eatmydata,ccache"
+			, schrootRoot s
+			, mirror
+			]
+		ifM (boolSystemEnv "sbuild-createchroot" params (Just de))
+			( do
+				fixConfFile s
+				return MadeChange
+			, return FailedChange
+			)
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
@@ -104,27 +122,6 @@ updated s@(SbuildSchroot suite arch) =
 	go :: Property DebianLike
 	go = tightenTargets $ cmdProperty
 		"sbuild-update" ["-udr", suite ++ "-" ++ arch]
-
--- 	go = do
--- 		suite <- case extractSuite system of
--- 			Just s  -> return s
--- 			Nothing -> errorMessage $
--- 				"don't know how to debootstrap " ++ show system
--- 		de <- standardPathEnv
--- 		let params = Param <$>
--- 			[ "--arch=" ++ arch
--- 			, "--chroot-suffix=propellor"
--- 			, "--include=eatmydata,ccache"
--- 			, schrootLocation suite arch
--- 			, stdMirror distro
--- 			]
--- 		ifM (boolSystemEnv "sbuild-createchroot" params (Just de))
--- 			( do
--- 				fixConfFile suite arch
--- 				return MadeChange
--- 			, return FailedChange
--- 			)
-
 
 -- Find the conf file that sbuild-createchroot(1) made when we passed it
 -- --chroot-suffix=propellor, and edit and rename such that it is as if we
