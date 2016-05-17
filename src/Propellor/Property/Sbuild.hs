@@ -1,3 +1,5 @@
+{-# OPTIONS_HADDOCK prune #-}
+
 {-|
 Maintainer: Sean Whitton <spwhitton@spwhitton.name>
 
@@ -59,7 +61,7 @@ import System.Directory
 -- | An sbuild schroot, such as would be listed by @schroot -l@
 --
 -- Parts of the sbuild toolchain cannot distinguish between schroots with both
--- the same suite and the same architecture, so neither do we.
+-- the same suite and the same architecture, so neither do we
 data SbuildSchroot = SbuildSchroot Suite Architecture
 
 -- | Build and configure a schroot for use with sbuild using a distribution's
