@@ -72,6 +72,10 @@ data SbuildSchroot = SbuildSchroot Suite Architecture
 -- This function is a convenience wrapper around 'Sbuild.builtFor', allowing the
 -- user to identify the schroot and distribution using the 'System' type
 builtFor :: System -> Property DebianLike
+builtFor system = case schrootFromSystem system of
+	Just s -> check (not <$> doesDirectoryExist (schrootRoot s)) $
+		built s (stdMirror system)
+	Nothing -> errorMessage "don't know how to debootstrap " ++ show system
 
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> Property DebianLike
@@ -81,6 +85,9 @@ built :: SbuildSchroot -> Apt.Url -> Property DebianLike
 -- This function is a convenience wrapper around 'Sbuild.updated', allowing the
 -- user to identify the schroot using the 'System' type
 updatedFor :: System -> Property DebianLike
+updatedFor system = case schrootFromSystem system of
+	Just s -> updated s (stdMirror system)
+	Nothing -> errorMessage "don't know how to debootstrap " ++ show system
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 updated :: SbuildSchroot -> Property DebianLike
@@ -164,16 +171,16 @@ usableBy u = User.hasGroup u (Group "sbuild") `requires` installed
 
 -- | Generate the apt keys needed by sbuild
 keypairGenerated :: Property DebianLike
-keypairGenerated =
-	check (not <$> doesFileExist secKeyFile) $ go
+keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 	`requires` installed
   where
 	go :: Property DebianLike
 	go = tightenTargets $
-		cmdProperty "sbuild-update" ["--keygen"] `assume` MadeChange
+		cmdProperty "sbuild-update" ["--keygen"]
+		`assume` MadeChange
 	secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
 
--- ==== utility function ====
+-- ==== utility functions ====
 
 schrootFromSystem :: System -> Maybe SbuildSchroot
 schrootFromSystem system@(System _ arch) =
