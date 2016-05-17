@@ -188,8 +188,8 @@ schrootFromSystem system@(System _ arch) =
 	>>= \suite -> return $ SbuildSchroot suite arch
 
 stdMirror :: System -> Apt.Url
-stdMirror (System (Debian s) _) = "http://httpredir.debian.org/debian"
-stdMirror (System (Buntish r) _) = "TODO"
+stdMirror (System (Debian _) _) = "http://httpredir.debian.org/debian"
+stdMirror (System (Buntish _) _) = "TODO"
 
 schrootRoot :: SbuildSchroot -> FilePath
 schrootRoot (SbuildSchroot s a) = "/srv/chroot" </> s ++ "-" ++ a
