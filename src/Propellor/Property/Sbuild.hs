@@ -73,12 +73,14 @@ data SbuildSchroot = SbuildSchroot Suite Architecture
 -- user to identify the schroot and distribution using the 'System' type
 builtFor :: System -> Property DebianLike
 builtFor system = case schrootFromSystem system of
-	Just s -> check (not <$> doesDirectoryExist (schrootRoot s)) $
-		built s (stdMirror system)
+	Just s  -> built s (stdMirror system)
 	Nothing -> errorMessage "don't know how to debootstrap " ++ show system
 
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> Property DebianLike
+built s mirror = check (not <$> doesDirectoryExist (schrootRoot s)) go
+	`requires` keypairGenerated
+	`requires` installed
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
@@ -86,11 +88,14 @@ built :: SbuildSchroot -> Apt.Url -> Property DebianLike
 -- user to identify the schroot using the 'System' type
 updatedFor :: System -> Property DebianLike
 updatedFor system = case schrootFromSystem system of
-	Just s -> updated s (stdMirror system)
+	Just s  -> updated s
 	Nothing -> errorMessage "don't know how to debootstrap " ++ show system
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 updated :: SbuildSchroot -> Property DebianLike
+updated s = check (doesDirectoryExist (schrootRoot s)) go
+	`requires` keypairGenerated
+	`requires` installed
 
 -- built' :: System -> Property DebianLike
 -- built' system@(System distro arch) =
