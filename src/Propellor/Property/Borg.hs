@@ -1,4 +1,6 @@
 -- | Maintainer: Félix Sipma <felix+propellor@gueux.org>
+--
+-- Support for the Borg backup tool <https://github.com/borgbackup>
 
 module Propellor.Property.Borg
 	( installed

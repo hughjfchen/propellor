@@ -1,3 +1,5 @@
+-- | Support for the Obnam backup tool <http://obnam.org/>
+
 module Propellor.Property.Obnam where
 
 import Propellor.Base

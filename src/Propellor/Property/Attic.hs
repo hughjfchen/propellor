@@ -1,4 +1,6 @@
 -- | Maintainer: Félix Sipma <felix+propellor@gueux.org>
+--
+-- Support for the Attic backup tool <https://attic-backup.org/>
 
 module Propellor.Property.Attic
 	( installed
