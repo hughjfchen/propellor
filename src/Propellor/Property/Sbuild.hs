@@ -37,8 +37,17 @@ sbuild environment as standardised as possible.
 -- If you wanted to do it with Propellor.Property.Debootstrap, note that
 -- sbuild-createchroot has a --setup-only option
 
--- TODO export useful properties only
-module Propellor.Property.Sbuild where
+module Propellor.Property.Sbuild (
+	-- * Creating and updating sbuild schroots
+	SbuildSchroot(..),
+	builtFor,
+	built,
+	updated,
+	updatedFor,
+	-- * Global sbuild configuration
+	shareAptCache,
+	usableBy,
+) where
 
 import Propellor.Base
 import Debootstrap (extractSuite)
