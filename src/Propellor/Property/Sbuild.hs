@@ -47,6 +47,8 @@ module Propellor.Property.Sbuild (
 	updated,
 	updatedFor,
 	-- * Global sbuild configuration
+	installed,
+	keypairGenerated,
 	shareAptCache,
 	usableBy,
 ) where
@@ -171,13 +173,20 @@ keypairGenerated =
 		cmdProperty "sbuild-update" ["--keygen"] `assume` MadeChange
 	secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
 
+-- ==== utility function ====
 
-schrootLoc :: Suite -> Architecture -> FilePath
-schrootLoc s a = "/srv/chroot" </> s ++ "-" ++ a
-
-schrootConfLoc :: Suite -> Architecture -> FilePath
-schrootConfLoc s a = "/etc/schroot/chroot.d" </> s ++ "-" ++ a ++ "-sbuild-propellor"
+schrootFromSystem :: System -> Maybe SbuildSchroot
+schrootFromSystem system@(System _ arch) =
+	extractSuite system
+	>>= \suite -> return $ SbuildSchroot suite arch
 
 stdMirror :: System -> Apt.Url
 stdMirror (System (Debian s) _) = "http://httpredir.debian.org/debian"
 stdMirror (System (Buntish r) _) = "TODO"
+
+schrootRoot :: SbuildSchroot -> FilePath
+schrootRoot (SbuildSchroot s a) = "/srv/chroot" </> s ++ "-" ++ a
+
+schrootConf :: SbuildSchroot -> FilePath
+schrootConf (SbuildSchroot s a) =
+	"/etc/schroot/chroot.d" </> s ++ "-" ++ a ++ "-sbuild-propellor"
