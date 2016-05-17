@@ -79,7 +79,8 @@ builtFor system = case schrootFromSystem system of
 
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> Property DebianLike
-built s mirror = check (not <$> doesDirectoryExist (schrootRoot s)) go
+built s mirror = check (not <$> doesDirectoryExist (schrootRoot s)) $
+	property ("built schroot for " ++ show s) go
 	`requires` keypairGenerated
 	`requires` installed
 
@@ -94,15 +95,16 @@ updatedFor system = case schrootFromSystem system of
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 updated :: SbuildSchroot -> Property DebianLike
-updated s = check (doesDirectoryExist (schrootRoot s)) go
+updated s@(SbuildSchroot suite arch) =
+	check (doesDirectoryExist (schrootRoot s)) $
+	property ("updated schroot for " ++ show s) go
 	`requires` keypairGenerated
 	`requires` installed
+  where
+	go :: Property DebianLike
+	go = tightenTargets $ cmdProperty
+		"sbuild-update" ["-udr", suite ++ "-" ++ arch]
 
--- built' :: System -> Property DebianLike
--- built' system@(System distro arch) =
--- 	property' ("built chroot for " ++ show system) (liftIO go)
--- 	`requires` keypairGenerated
---   where
 -- 	go = do
 -- 		suite <- case extractSuite system of
 -- 			Just s  -> return s
@@ -144,15 +146,6 @@ fixConfFile s@(SbuildSchroot suite arch) = do
 	dir = takeDirectory new
 	tempPrefix = dir </> suite ++ "-" ++ arch ++ "-propellor-"
 	munge = replace "-propellor]" "-sbuild]"
-
--- -- | Update a schroot's installed packages and apt indexes.
--- updated :: System -> Property DebianLike
--- updated system@(System distro arch) = go `requires` installed
--- 	where
--- 		go :: Property DebianLike
--- 		go = tightenTargets $ cmdProperty
--- 			"sbuild-update" ["-udr", suite ++ "-" ++ arch]
--- 		suite = fromJust $ extractSuite system
 
 -- | Bind-mount @/var/cache/apt/archives@ in all sbuild chroots so that the host
 -- system and the chroot share the apt cache
