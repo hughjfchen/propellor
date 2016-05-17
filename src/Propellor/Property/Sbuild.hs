@@ -5,8 +5,8 @@ Build and maintain schroots for use with sbuild.
 
 Suggested usage in @config.hs@:
 
->  & Sbuild.built ((Debian Unstable) "i386")
->  & Sbuild.updated ((Debian Unstable) "i386") `period` Weekly
+>  & Sbuild.builtFor ((Debian Unstable) "i386")
+>  & Sbuild.updatedFor ((Debian Unstable) "i386") `period` Weekly
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Sbuild.shareAptCache
 >  & Schroot.overlaysInTmpfs
@@ -56,7 +56,31 @@ import qualified Propellor.Property.File as File
 
 import System.Directory
 
+-- | An sbuild schroot, such as would be listed by @schroot -l@
+--
+-- Parts of the sbuild toolchain cannot distinguish between schroots with both
+-- the same suite and the same architecture, so neither do we.
+data SbuildSchroot = SbuildSchroot Suite Architecture
+
+-- | Build and configure a schroot for use with sbuild using a distribution's
+-- standard mirror
+--
+-- This function is a convenience wrapper around 'Sbuild.builtFor', allowing the
+-- user to identify the schroot and distribution using the 'System' type
+builtFor :: System -> Property DebianLike
+
 -- | Build and configure a schroot for use with sbuild
+built :: SbuildSchroot -> Apt.Url -> Property DebianLike
+
+-- | Ensure that an sbuild schroot's packages and apt indexes are updated
+--
+-- This function is a convenience wrapper around 'Sbuild.updated', allowing the
+-- user to identify the schroot using the 'System' type
+updatedFor :: System -> Property DebianLike
+
+-- | Ensure that an sbuild schroot's packages and apt indexes are updated
+updated :: SbuildSchroot -> Property DebianLike
+
 built :: System -> Property DebianLike
 built system@(System _ arch) = case extractSuite system of
 	Just s  -> check (not <$> doesDirectoryExist (schrootLoc s arch)) (built' system)
