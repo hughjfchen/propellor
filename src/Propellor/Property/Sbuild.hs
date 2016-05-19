@@ -80,7 +80,7 @@ builtFor system = case schrootFromSystem system of
 -- TODO should be revertable (and that should carry through to builtFor)
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> Property DebianLike
-built s mirror = check (not <$> doesDirectoryExist (schrootRoot s)) $
+built s@(SbuildSchroot suite arch) mirror = check (not <$> doesDirectoryExist (schrootRoot s)) $
 	property ("built schroot for " ++ show s) go
 	`requires` keypairGenerated
 	`requires` installed
@@ -98,6 +98,13 @@ built s mirror = check (not <$> doesDirectoryExist (schrootRoot s)) $
 		ifM (boolSystemEnv "sbuild-createchroot" params (Just de))
 			( do
 				fixConfFile s
+				-- if we just built a sid chroot, add useful aliases
+				when (suite == "unstable") $ ensureProperty $
+					File.containsLine (schrootConf s)
+					"aliases=UNRELEASED,sid,rc-buggy,experimental"
+				-- enable ccache and eatmydata for speed
+				ensureProperty $ File.containsLine (schrootConf s)
+					"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
 				return MadeChange
 			, return FailedChange
 			)
