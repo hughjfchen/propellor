@@ -49,6 +49,7 @@ module Propellor.Property.Sbuild (
 	updated,
 	updatedFor,
 	-- * Global sbuild configuration
+	blockNetwork,
 	installed,
 	keypairGenerated,
 	shareAptCache,
