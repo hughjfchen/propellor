@@ -195,6 +195,7 @@ ccachePrepared = propertyList "sbuild group ccache configured" $ props
 		"/var/cache/ccache-sbuild /var/cache/ccache-sbuild rw,bind 0 0"
 	& "/var/cache/ccache-sbuild/sbuild-setup" `File.hasContent`
 		[ "#!/bin/sh"
+		, ""
 		, "export CCACHE_DIR=/var/cache/ccache-sbuild"
 		, "export CCACHE_UMASK=002"
 		, "export CCACHE_COMPRESS=1"
