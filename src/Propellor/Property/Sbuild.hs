@@ -85,7 +85,7 @@ data SbuildSchroot = SbuildSchroot Suite Architecture
 builtFor :: System -> RevertableProperty DebianLike UnixLike
 builtFor system = case schrootFromSystem system of
 	Just s  -> built s (stdMirror system)
-	Nothing -> errorMessage "don't know how to debootstrap " ++ show system
+	Nothing -> errorMessage ("don't know how to debootstrap " ++ show system)
 
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
@@ -130,19 +130,20 @@ built s@(SbuildSchroot suite arch) mirror = built <!> deleted
 updatedFor :: System -> Property DebianLike
 updatedFor system = case schrootFromSystem system of
 	Just s  -> updated s
-	Nothing -> errorMessage "don't know how to debootstrap " ++ show system
+	Nothing -> errorMessage ("don't know how to debootstrap " ++ show system)
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 updated :: SbuildSchroot -> Property DebianLike
 updated s@(SbuildSchroot suite arch) =
-	check (doesDirectoryExist (schrootRoot s)) $
-	property ("updated schroot for " ++ show s) go
+	check (doesDirectoryExist (schrootRoot s)) $ go
+	`describe` ("updated schroot for " ++ show s)
 	`requires` keypairGenerated
 	`requires` installed
   where
 	go :: Property DebianLike
 	go = tightenTargets $ cmdProperty
 		"sbuild-update" ["-udr", suite ++ "-" ++ arch]
+		`assume` MadeChange
 
 -- Find the conf file that sbuild-createchroot(1) made when we passed it
 -- --chroot-suffix=propellor, and edit and rename such that it is as if we
@@ -156,7 +157,7 @@ updated s@(SbuildSchroot suite arch) =
 -- given suite and architecture, so we don't need the suffix to be random.
 fixConfFile :: SbuildSchroot -> IO ()
 fixConfFile s@(SbuildSchroot suite arch) = do
-	old <- take 1 . filter (tempPrefix `isPrefixOf`) <$> dirContents dir
+	old <- concat . filter (tempPrefix `isPrefixOf`) <$> dirContents dir
 	ensureProperty $ File.fileProperty "replace dummy suffix" (map munge) old
 	moveFile old new
   where
