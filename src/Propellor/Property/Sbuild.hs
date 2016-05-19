@@ -65,8 +65,6 @@ import qualified Propellor.Property.Firewall as Firewall
 import qualified Propellor.Property.User as User
 
 import Utility.FileMode
-import System.Directory
-import System.FilePath (takeDirectory)
 import Data.List
 import Data.List.Utils
 
@@ -91,23 +89,30 @@ builtFor system = go <!> deleted
   where
 	go = property' ("sbuild schroot for " ++ show system) $
 		\w -> case schrootFromSystem system of
-			Just s  -> ensureProperty w $ setupRevertableProperty (built s (stdMirror system))
-			Nothing -> errorMessage ("don't know how to debootstrap " ++ show system)
+			Just s  -> ensureProperty w $
+				setupRevertableProperty $
+				built s (stdMirror system)
+			Nothing -> errorMessage
+				("don't know how to debootstrap " ++ show system)
 	deleted = property' ("no sbuild schroot for " ++ show system) $
 		\w -> case schrootFromSystem system of
-			Just s  -> ensureProperty w $ undoRevertableProperty $ built s "dummy"
+			Just s  -> ensureProperty w $
+				undoRevertableProperty $ built s "dummy"
 			Nothing -> noChange
 
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
 built s@(SbuildSchroot suite arch) mirror =
-	(built `requires` keypairGenerated `requires` ccachePrepared `requires` installed)
+	(go
+ 	`requires` keypairGenerated
+ 	`requires` ccachePrepared
+	`requires` installed)
 	<!> deleted
   where
-	built :: Property DebianLike
-	built = check (not <$> doesDirectoryExist (schrootRoot s)) $
-		property' ("built sbuild schroot for " ++ show s) go
-	go w = do
+	go :: Property DebianLike
+	go = check (not <$> doesDirectoryExist (schrootRoot s)) $
+		property' ("built sbuild schroot for " ++ show s) make
+	make w = do
 		de <- liftIO standardPathEnv
 		let params = Param <$>
 			[ "--arch=" ++ arch
@@ -121,13 +126,10 @@ built s@(SbuildSchroot suite arch) mirror =
 				ensureProperty w $ fixConfFile s
 				-- if we just built a sid chroot, add useful aliases
 				if suite == "unstable"
-					then ensureProperty w $
-						File.containsLine (schrootConf s)
-						"aliases=UNRELEASED,sid,rc-buggy,experimental"
+					then ensureProperty w aliasesLine
 					else noChange
 				-- enable ccache and eatmydata for speed
-				ensureProperty w $ File.containsLine (schrootConf s)
-					"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
+				ensureProperty w commandPrefix
 				return MadeChange
 			, return FailedChange
 			)
@@ -135,6 +137,11 @@ built s@(SbuildSchroot suite arch) mirror =
 		property' ("no sbuild schroot for " ++ show s) $ \w -> do
 			ensureProperty w $ File.notPresent (schrootConf s)
 			makeChange (removeChroot $ schrootRoot s)
+
+	aliasesLine = File.containsLine (schrootConf s)
+		"aliases=UNRELEASED,sid,rc-buggy,experimental"
+	commandPrefix = File.containsLine (schrootConf s)
+		"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
