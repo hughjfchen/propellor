@@ -1,4 +1,5 @@
 {-# OPTIONS_HADDOCK prune #-}
+{-# LANGUAGE TypeFamilies #-}
 
 {-|
 Maintainer: Sean Whitton <spwhitton@spwhitton.name>
@@ -99,16 +100,15 @@ builtFor system = go <!> deleted
 
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
-built s@(SbuildSchroot suite arch) mirror = built <!> deleted
+built s@(SbuildSchroot suite arch) mirror =
+	(built `requires` keypairGenerated `requires` ccachePrepared `requires` installed)
+	<!> deleted
   where
+	built :: Property DebianLike
 	built = check (not <$> doesDirectoryExist (schrootRoot s)) $
-		property ("built sbuild schroot for " ++ show s) go
-		`requires` keypairGenerated
-		`requires` ccachePrepared
-		`requires` installed
-	go :: Property DebianLike
-	go = do
-		de <- standardPathEnv
+		property' ("built sbuild schroot for " ++ show s) go
+	go w = do
+		de <- liftIO standardPathEnv
 		let params = Param <$>
 			[ "--arch=" ++ arch
 			, "--chroot-suffix=propellor"
@@ -116,15 +116,17 @@ built s@(SbuildSchroot suite arch) mirror = built <!> deleted
 			, schrootRoot s
 			, mirror
 			]
-		ifM (boolSystemEnv "sbuild-createchroot" params (Just de))
+		ifM (liftIO $ boolSystemEnv "sbuild-createchroot" params (Just de))
 			( do
-				fixConfFile s
+				ensureProperty w $ fixConfFile s
 				-- if we just built a sid chroot, add useful aliases
-				when (suite == "unstable") $ ensureProperty $
-					File.containsLine (schrootConf s)
-					"aliases=UNRELEASED,sid,rc-buggy,experimental"
+				if suite == "unstable"
+					then ensureProperty w $
+						File.containsLine (schrootConf s)
+						"aliases=UNRELEASED,sid,rc-buggy,experimental"
+					else noChange
 				-- enable ccache and eatmydata for speed
-				ensureProperty $ File.containsLine (schrootConf s)
+				ensureProperty w $ File.containsLine (schrootConf s)
 					"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
 				return MadeChange
 			, return FailedChange
