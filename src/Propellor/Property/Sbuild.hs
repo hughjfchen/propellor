@@ -200,6 +200,8 @@ ccachePrepared = propertyList "sbuild group ccache configured" $ props
 		, ""
 		, "exec \"$@\""
 		]
+	& File.mode "/var/cache/ccache-sbuild/sbuild-setup"
+		(combineModes (readModes ++ executeModes))
 
 -- | Block network access during builds
 --
