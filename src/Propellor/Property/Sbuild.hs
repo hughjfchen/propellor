@@ -77,6 +77,9 @@ type Suite = String
 -- the same suite and the same architecture, so neither do we
 data SbuildSchroot = SbuildSchroot Suite Architecture
 
+instance Show SbuildSchroot where
+	show (SbuildSchroot suite arch) = suite ++ "-" ++ arch
+
 -- | Build and configure a schroot for use with sbuild using a distribution's
 -- standard mirror
 --
