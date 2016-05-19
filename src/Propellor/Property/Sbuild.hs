@@ -89,11 +89,10 @@ builtFor :: System -> RevertableProperty DebianLike UnixLike
 builtFor system = go <!> deleted
   where
 	go = property' ("sbuild schroot for " ++ show system) $
-		\w -> case schrootFromSystem system of
-			Just s  -> ensureProperty w $
-				setupRevertableProperty $
-				built s (stdMirror system)
-			Nothing -> errorMessage
+		\w -> case (schrootFromSystem system, stdMirror system) of
+			(Just s, Just u)  -> ensureProperty w $
+				setupRevertableProperty $ built s u
+			_ -> errorMessage
 				("don't know how to debootstrap " ++ show system)
 	deleted = property' ("no sbuild schroot for " ++ show system) $
 		\w -> case schrootFromSystem system of
@@ -258,9 +257,10 @@ schrootFromSystem system@(System _ arch) =
 	extractSuite system
 	>>= \suite -> return $ SbuildSchroot suite arch
 
-stdMirror :: System -> Apt.Url
-stdMirror (System (Debian _) _) = "http://httpredir.debian.org/debian"
-stdMirror (System (Buntish _) _) = "mirror://mirrors.ubuntu.com/"
+stdMirror :: System -> Maybe Apt.Url
+stdMirror (System (Debian _) _) = Just "http://httpredir.debian.org/debian"
+stdMirror (System (Buntish _) _) = Just "mirror://mirrors.ubuntu.com/"
+stdMirror _ = Nothing
 
 schrootRoot :: SbuildSchroot -> FilePath
 schrootRoot (SbuildSchroot s a) = "/srv/chroot" </> s ++ "-" ++ a
