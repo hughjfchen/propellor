@@ -75,20 +75,20 @@ data SbuildSchroot = SbuildSchroot Suite Architecture
 --
 -- This function is a convenience wrapper around 'Sbuild.builtFor', allowing the
 -- user to identify the schroot and distribution using the 'System' type
-builtFor :: System -> Property DebianLike
+builtFor :: System -> RevertableProperty DebianLike UnixLike
 builtFor system = case schrootFromSystem system of
 	Just s  -> built s (stdMirror system)
 	Nothing -> errorMessage "don't know how to debootstrap " ++ show system
 
--- TODO should be revertable (and that should carry through to builtFor)
 -- | Build and configure a schroot for use with sbuild
-built :: SbuildSchroot -> Apt.Url -> Property DebianLike
-built s@(SbuildSchroot suite arch) mirror = check (not <$> doesDirectoryExist (schrootRoot s)) $
-	property ("built schroot for " ++ show s) go
-	`requires` keypairGenerated
-	`requires` ccachePrepared
-	`requires` installed
+built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
+built s@(SbuildSchroot suite arch) mirror = built <!> deleted
   where
+	built = check (not <$> doesDirectoryExist (schrootRoot s)) $
+		property ("built sbuild schroot for " ++ show s) go
+		`requires` keypairGenerated
+		`requires` ccachePrepared
+		`requires` installed
 	go :: Property DebianLike
 	go = do
 		de <- standardPathEnv
@@ -112,6 +112,9 @@ built s@(SbuildSchroot suite arch) mirror = check (not <$> doesDirectoryExist (s
 				return MadeChange
 			, return FailedChange
 			)
+	deleted = check (doesDirectoryExist (schrootRoot s)) $
+		cmdProperty "rm" ["-r", schrootRoot s] `assume` MadeChange
+		`describe` ("sbuild schroot for " ++ show s ++ " does not exist")
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
