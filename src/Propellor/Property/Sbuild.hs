@@ -8,8 +8,8 @@ Build and maintain schroots for use with sbuild.
 
 Suggested usage in @config.hs@:
 
->  & Sbuild.builtFor ((Debian Unstable) "i386")
->  & Sbuild.updatedFor ((Debian Unstable) "i386") `period` Weekly
+>  & Sbuild.builtFor (System (Debian Unstable) "i386")
+>  & Sbuild.updatedFor (System (Debian Unstable) "i386") `period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Sbuild.shareAptCache
 >  & Sbuild.blockNetwork
