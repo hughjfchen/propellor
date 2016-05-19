@@ -158,11 +158,15 @@ updated s@(SbuildSchroot suite arch) =
 --
 -- The properties in this module only permit the creation of one chroot for a
 -- given suite and architecture, so we don't need the suffix to be random.
-fixConfFile :: SbuildSchroot -> IO ()
-fixConfFile s@(SbuildSchroot suite arch) = do
-	old <- concat . filter (tempPrefix `isPrefixOf`) <$> dirContents dir
-	ensureProperty $ File.fileProperty "replace dummy suffix" (map munge) old
-	moveFile old new
+fixConfFile :: SbuildSchroot -> Property UnixLike
+fixConfFile s@(SbuildSchroot suite arch) =
+	property' ("schroot for " ++ show s ++ " config file fixed") $ \w -> do
+		confs <- liftIO $ dirContents dir
+		let old = concat $ filter (tempPrefix `isPrefixOf`) confs
+		ensureProperty w $
+			File.fileProperty "replace dummy suffix" (map munge) old
+		liftIO $ moveFile old new
+		return MadeChange
   where
 	new = schrootConf s
 	dir = takeDirectory new
