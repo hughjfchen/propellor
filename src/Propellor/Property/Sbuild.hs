@@ -86,9 +86,16 @@ instance Show SbuildSchroot where
 -- This function is a convenience wrapper around 'Sbuild.builtFor', allowing the
 -- user to identify the schroot and distribution using the 'System' type
 builtFor :: System -> RevertableProperty DebianLike UnixLike
-builtFor system = case schrootFromSystem system of
-	Just s  -> built s (stdMirror system)
-	Nothing -> errorMessage ("don't know how to debootstrap " ++ show system)
+builtFor system = go <!> deleted
+  where
+	go = property' ("sbuild schroot for " ++ show system) $
+		\w -> case schrootFromSystem system of
+			Just s  -> ensureProperty w $ setupRevertableProperty (built s (stdMirror system))
+			Nothing -> errorMessage ("don't know how to debootstrap " ++ show system)
+	deleted = property' ("no sbuild schroot for " ++ show system) $
+		\w -> case schrootFromSystem system of
+			Just s  -> ensureProperty w $ undoRevertableProperty $ built s "dummy"
+			Nothing -> return NoChange
 
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
@@ -131,9 +138,10 @@ built s@(SbuildSchroot suite arch) mirror = built <!> deleted
 -- This function is a convenience wrapper around 'Sbuild.updated', allowing the
 -- user to identify the schroot using the 'System' type
 updatedFor :: System -> Property DebianLike
-updatedFor system = case schrootFromSystem system of
-	Just s  -> updated s
-	Nothing -> errorMessage ("don't know how to debootstrap " ++ show system)
+updatedFor system = property' ("updated sbuild schroot for " ++ show system) $
+	\w -> case schrootFromSystem system of
+		Just s  -> ensureProperty w $ updated s
+		Nothing -> errorMessage ("don't know how to debootstrap " ++ show system)
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 updated :: SbuildSchroot -> Property DebianLike
