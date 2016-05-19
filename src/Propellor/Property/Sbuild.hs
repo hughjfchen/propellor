@@ -95,7 +95,7 @@ builtFor system = go <!> deleted
 	deleted = property' ("no sbuild schroot for " ++ show system) $
 		\w -> case schrootFromSystem system of
 			Just s  -> ensureProperty w $ undoRevertableProperty $ built s "dummy"
-			Nothing -> return NoChange
+			Nothing -> noChange
 
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
@@ -130,8 +130,9 @@ built s@(SbuildSchroot suite arch) mirror = built <!> deleted
 			, return FailedChange
 			)
 	deleted = check (doesDirectoryExist (schrootRoot s)) $
-		cmdProperty "rm" ["-r", schrootRoot s] `assume` MadeChange
-		`describe` ("sbuild schroot for " ++ show s ++ " does not exist")
+		property' ("no sbuild schroot for " ++ show s) $ \w -> do
+			ensureProperty w $ File.notPresent (schrootConf s)
+			makeChange (removeChroot $ schrootRoot s)
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
