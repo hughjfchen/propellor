@@ -104,8 +104,8 @@ builtFor system = go <!> deleted
 built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
 built s@(SbuildSchroot suite arch) mirror =
 	(go
- 	`requires` keypairGenerated
- 	`requires` ccachePrepared
+	`requires` keypairGenerated
+	`requires` ccachePrepared
 	`requires` installed)
 	<!> deleted
   where
@@ -122,24 +122,24 @@ built s@(SbuildSchroot suite arch) mirror =
 			, mirror
 			]
 		ifM (liftIO $ boolSystemEnv "sbuild-createchroot" params (Just de))
-			( do
-				ensureProperty w $ fixConfFile s
-				-- if we just built a sid chroot, add useful aliases
-				if suite == "unstable"
-					then ensureProperty w aliasesLine
-					else noChange
-				-- enable ccache and eatmydata for speed
-				ensureProperty w commandPrefix
-				return MadeChange
+			( ensureProperty w $
+				fixConfFile s
+				`before` aliasesLine
+				`before` commandPrefix
 			, return FailedChange
 			)
 	deleted = check (doesDirectoryExist (schrootRoot s)) $
-		property' ("no sbuild schroot for " ++ show s) $ \w -> do
-			ensureProperty w $ File.notPresent (schrootConf s)
-			makeChange (removeChroot $ schrootRoot s)
+		property ("no sbuild schroot for " ++ show s) $ do
+			liftIO $ removeChroot $ schrootRoot s
+			makeChange $ nukeFile (schrootConf s)
 
-	aliasesLine = File.containsLine (schrootConf s)
-		"aliases=UNRELEASED,sid,rc-buggy,experimental"
+	-- if we're building a sid chroot, add useful aliases
+	aliasesLine :: Property UnixLike
+	aliasesLine = if suite == "unstable"
+		then File.containsLine (schrootConf s)
+			"aliases=UNRELEASED,sid,rc-buggy,experimental"
+		else doNothing
+	-- enable ccache and eatmydata for speed
 	commandPrefix = File.containsLine (schrootConf s)
 		"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
 
@@ -181,10 +181,9 @@ fixConfFile s@(SbuildSchroot suite arch) =
 	property' ("schroot for " ++ show s ++ " config file fixed") $ \w -> do
 		confs <- liftIO $ dirContents dir
 		let old = concat $ filter (tempPrefix `isPrefixOf`) confs
-		ensureProperty w $
-			File.fileProperty "replace dummy suffix" (map munge) old
 		liftIO $ moveFile old new
-		return MadeChange
+		ensureProperty w $
+			File.fileProperty "replace dummy suffix" (map munge) new
   where
 	new = schrootConf s
 	dir = takeDirectory new
