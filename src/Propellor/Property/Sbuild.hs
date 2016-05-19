@@ -55,14 +55,21 @@ module Propellor.Property.Sbuild (
 ) where
 
 import Propellor.Base
-import Debootstrap (extractSuite)
+import Propellor.Property.Debootstrap (extractSuite)
+import Propellor.Property.Chroot.Util
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Ccache as Ccache
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Firewall as Firewall
+import qualified Propellor.Property.User as User
 
+import Utility.FileMode
 import System.Directory
 import System.FilePath (takeDirectory)
+import Data.List
+import Data.List.Utils
+
+type Suite = String
 
 -- | An sbuild schroot, such as would be listed by @schroot -l@
 --
