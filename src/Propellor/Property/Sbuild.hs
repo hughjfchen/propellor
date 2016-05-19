@@ -184,6 +184,7 @@ keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 		`assume` MadeChange
 	secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
 
+-- another script from wiki.d.o/sbuild
 ccachePrepared :: Property DebianLike
 ccachePrepared = propertyList "sbuild group ccache configured" $ props
 	& (Group "sbuild") `Ccache.hasGroupCache` "2G"
