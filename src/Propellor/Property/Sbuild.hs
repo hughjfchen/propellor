@@ -134,8 +134,16 @@ updated s@(SbuildSchroot suite arch) =
 	`requires` installed
   where
 	go :: Property DebianLike
-	go = tightenTargets $ cmdProperty
-		"sbuild-update" ["-udr", suite ++ "-" ++ arch]
+	go = do
+		fstab <- lines <$> liftIO $ readFile "/etc/schroot/sbuild/fstab"
+		-- If this schroot shares its apt archives with the host
+		-- machine, don't run apt-get clean/autoclean
+		let args = if cacheLine `elem` fstab
+			then "-udr"
+			else "-udcar"
+		tightenTargets $ cmdProperty
+			"sbuild-update" [args, suite ++ "-" ++ arch]
+	cacheLine = "/var/cache/apt/archives /var/cache/apt/archives none rw,bind 0 0"
 
 -- Find the conf file that sbuild-createchroot(1) made when we passed it
 -- --chroot-suffix=propellor, and edit and rename such that it is as if we
