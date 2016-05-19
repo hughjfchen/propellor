@@ -110,7 +110,7 @@ built s@(SbuildSchroot suite arch) mirror =
 	<!> deleted
   where
 	go :: Property DebianLike
-	go = check (not <$> doesDirectoryExist (schrootRoot s)) $
+	go = check (unpopulated (schrootRoot s) <||> ispartial) $
 		property' ("built sbuild schroot for " ++ show s) make
 	make w = do
 		de <- liftIO standardPathEnv
@@ -128,7 +128,7 @@ built s@(SbuildSchroot suite arch) mirror =
 				`before` commandPrefix
 			, return FailedChange
 			)
-	deleted = check (doesDirectoryExist (schrootRoot s)) $
+	deleted = check (not <$> unpopulated (schrootRoot s)) $
 		property ("no sbuild schroot for " ++ show s) $ do
 			liftIO $ removeChroot $ schrootRoot s
 			makeChange $ nukeFile (schrootConf s)
@@ -142,6 +142,15 @@ built s@(SbuildSchroot suite arch) mirror =
 	-- enable ccache and eatmydata for speed
 	commandPrefix = File.containsLine (schrootConf s)
 		"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
+
+	-- A failed debootstrap run will leave a debootstrap directory;
+	-- recover by deleting it and trying again.
+	ispartial = ifM (doesDirectoryExist (schrootRoot s </> "debootstrap"))
+		( do
+			removeChroot $ schrootRoot s
+			return True
+		, return False
+		)
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
