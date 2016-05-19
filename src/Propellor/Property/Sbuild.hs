@@ -11,6 +11,7 @@ Suggested usage in @config.hs@:
 >  & Sbuild.updatedFor ((Debian Unstable) "i386") `period` Weekly
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Sbuild.shareAptCache
+>  & Sbuild.blockNetwork
 >  & Schroot.overlaysInTmpfs
 
 In @~/.sbuildrc@:
@@ -57,6 +58,7 @@ import Propellor.Base
 import Debootstrap (extractSuite)
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Firewall as Firewall
 
 import System.Directory
 import System.FilePath (takeDirectory)
@@ -179,6 +181,16 @@ keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 		cmdProperty "sbuild-update" ["--keygen"]
 		`assume` MadeChange
 	secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
+
+-- | Block network access during builds
+--
+-- This is a hack from <https://wiki.debian.org/sbuild> until #802850 and
+-- #802849 are resolved.
+blockNetwork :: Property Linux
+blockNetwork = Firewall.rule OUTPUT Filter DROP
+	(  GroupOwner (Group "sbuild")
+	++ NotDestination [IPWithNumMask "127.0.0.1" "8"]
+	)
 
 -- ==== utility functions ====
 
