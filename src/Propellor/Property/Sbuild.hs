@@ -57,6 +57,7 @@ module Propellor.Property.Sbuild (
 import Propellor.Base
 import Debootstrap (extractSuite)
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Ccache as Ccache
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Firewall as Firewall
 
@@ -85,6 +86,7 @@ built :: SbuildSchroot -> Apt.Url -> Property DebianLike
 built s@(SbuildSchroot suite arch) mirror = check (not <$> doesDirectoryExist (schrootRoot s)) $
 	property ("built schroot for " ++ show s) go
 	`requires` keypairGenerated
+	`requires` ccachePrepared
 	`requires` installed
   where
 	go :: Property DebianLike
@@ -181,6 +183,22 @@ keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 		cmdProperty "sbuild-update" ["--keygen"]
 		`assume` MadeChange
 	secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
+
+ccachePrepared :: Property DebianLike
+ccachePrepared = propertyList "sbuild group ccache configured" $ props
+	& (Group "sbuild") `Ccache.hasGroupCache` "2G"
+	& "/etc/schroot/sbuild/fstab" `File.containsLine`
+		"/var/cache/ccache-sbuild /var/cache/ccache-sbuild rw,bind 0 0"
+	& "/var/cache/ccache-sbuild/sbuild-setup" `File.hasContent`
+		[ "#!/bin/sh"
+		, "export CCACHE_DIR=/var/cache/ccache-sbuild"
+		, "export CCACHE_UMASK=002"
+		, "export CCACHE_COMPRESS=1"
+		, "unset CCACHE_HARDLINK"
+		, "export PATH=\"/usr/lib/ccache:$PATH\""
+		, ""
+		, "exec \"$@\""
+		]
 
 -- | Block network access during builds
 --
