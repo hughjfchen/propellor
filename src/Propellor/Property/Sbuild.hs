@@ -225,7 +225,7 @@ schrootFromSystem system@(System _ arch) =
 
 stdMirror :: System -> Apt.Url
 stdMirror (System (Debian _) _) = "http://httpredir.debian.org/debian"
-stdMirror (System (Buntish _) _) = "TODO"
+stdMirror (System (Buntish _) _) = "mirror://mirrors.ubuntu.com/"
 
 schrootRoot :: SbuildSchroot -> FilePath
 schrootRoot (SbuildSchroot s a) = "/srv/chroot" </> s ++ "-" ++ a
