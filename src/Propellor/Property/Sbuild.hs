@@ -119,6 +119,7 @@ built s@(SbuildSchroot suite arch) mirror =
 			[ "--arch=" ++ arch
 			, "--chroot-suffix=propellor"
 			, "--include=eatmydata,ccache"
+			, suite
 			, schrootRoot s
 			, mirror
 			]
