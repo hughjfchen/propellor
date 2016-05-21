@@ -87,16 +87,16 @@ instance Show SbuildSchroot where
 -- This function is a convenience wrapper around 'Sbuild.builtFor', allowing the
 -- user to identify the schroot and distribution using the 'System' type
 builtFor :: System -> RevertableProperty DebianLike UnixLike
-builtFor system = go <!> deleted
+builtFor sys = go <!> deleted
   where
-	go = property' ("sbuild schroot for " ++ show system) $
-		\w -> case (schrootFromSystem system, stdMirror system) of
+	go = property' ("sbuild schroot for " ++ show sys) $
+		\w -> case (schrootFromSystem sys, stdMirror sys) of
 			(Just s, Just u)  -> ensureProperty w $
 				setupRevertableProperty $ built s u
 			_ -> errorMessage
-				("don't know how to debootstrap " ++ show system)
-	deleted = property' ("no sbuild schroot for " ++ show system) $
-		\w -> case schrootFromSystem system of
+				("don't know how to debootstrap " ++ show sys)
+	deleted = property' ("no sbuild schroot for " ++ show sys) $
+		\w -> case schrootFromSystem sys of
 			Just s  -> ensureProperty w $
 				undoRevertableProperty $ built s "dummy"
 			Nothing -> noChange
@@ -237,7 +237,7 @@ ccachePrepared :: Property DebianLike
 ccachePrepared = propertyList "sbuild group ccache configured" $ props
 	& Group "sbuild" `Ccache.hasGroupCache` "2G"
 	& "/etc/schroot/sbuild/fstab" `File.containsLine`
-		"/var/cache/ccache-sbuild /var/cache/ccache-sbuild rw,bind 0 0"
+	"/var/cache/ccache-sbuild /var/cache/ccache-sbuild none rw,bind 0 0"
 	& "/var/cache/ccache-sbuild/sbuild-setup" `File.hasContent`
 		[ "#!/bin/sh"
 		, ""
