@@ -134,6 +134,8 @@ built s@(SbuildSchroot suite arch) mirror =
 	deleted = check (not <$> unpopulated (schrootRoot s)) $
 		property ("no sbuild schroot for " ++ show s) $ do
 			liftIO $ removeChroot $ schrootRoot s
+			liftIO $ nukeFile
+				("/etc/sbuild/chroot" </> show s ++ "-sbuild")
 			makeChange $ nukeFile (schrootConf s)
 
 	-- if we're building a sid chroot, add useful aliases
