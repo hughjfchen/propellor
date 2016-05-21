@@ -8,6 +8,7 @@ Build and maintain schroots for use with sbuild.
 
 Suggested usage in @config.hs@:
 
+>  & Apt.installed ["piuparts"]
 >  & Sbuild.builtFor (System (Debian Unstable) "i386")
 >  & Sbuild.updatedFor (System (Debian Unstable) "i386") `period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
@@ -255,8 +256,9 @@ ccachePrepared = propertyList "sbuild group ccache configured" $ props
 blockNetwork :: Property Linux
 blockNetwork = Firewall.rule Firewall.OUTPUT Firewall.Filter Firewall.DROP $
 	Firewall.GroupOwner (Group "sbuild")
-	`mappend` Firewall.NotDestination
+	<> Firewall.NotDestination
 		[Firewall.IPWithNumMask (IPv4 "127.0.0.1") 8]
+	`requires` installed 	-- sbuild group must exist
 
 -- ==== utility functions ====
 
