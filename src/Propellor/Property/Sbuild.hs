@@ -288,6 +288,7 @@ piupartsConf s u = go
 shareAptCache :: Property DebianLike
 shareAptCache = File.containsLine "/etc/schroot/sbuild/fstab" aptCacheLine
 	`requires` installed
+	`describe` "sbuild schroots share host apt cache"
 
 aptCacheLine :: String
 aptCacheLine = "/var/cache/apt/archives /var/cache/apt/archives none rw,bind 0 0"
