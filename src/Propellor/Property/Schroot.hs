@@ -36,6 +36,7 @@ overlaysInTmpfs = go `requires` installed
 		, "fi"
 		]
 		`onChange` (f `File.mode` (combineModes (readModes ++ executeModes)))
+		`describe` "schroot overlays in tmpfs"
 
 installed :: Property DebianLike
 installed = Apt.installed ["schroot"]
