@@ -117,7 +117,7 @@ built s@(SbuildSchroot suite arch) mirror =
 		de <- liftIO standardPathEnv
 		let params = Param <$>
 			[ "--arch=" ++ arch
-			, "--chroot-suffix=propellor"
+			, "--chroot-suffix=-propellor"
 			, "--include=eatmydata,ccache"
 			, suite
 			, schrootRoot s
