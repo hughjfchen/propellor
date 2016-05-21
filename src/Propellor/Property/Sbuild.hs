@@ -123,7 +123,8 @@ built s@(SbuildSchroot suite arch) mirror =
 			, schrootRoot s
 			, mirror
 			]
-		ifM (liftIO $ boolSystemEnv "sbuild-createchroot" params (Just de))
+		ifM (liftIO $
+			boolSystemEnv "sbuild-createchroot" params (Just de))
 			( ensureProperty w $
 				fixConfFile s
 				`before` aliasesLine
@@ -162,7 +163,8 @@ updatedFor :: System -> Property DebianLike
 updatedFor system = property' ("updated sbuild schroot for " ++ show system) $
 	\w -> case schrootFromSystem system of
 		Just s  -> ensureProperty w $ updated s
-		Nothing -> errorMessage ("don't know how to debootstrap " ++ show system)
+		Nothing -> errorMessage
+			("don't know how to debootstrap " ++ show system)
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 updated :: SbuildSchroot -> Property DebianLike
