@@ -195,6 +195,9 @@ fixConfFile s@(SbuildSchroot suite arch) =
 		confs <- liftIO $ dirContents dir
 		let old = concat $ filter (tempPrefix `isPrefixOf`) confs
 		liftIO $ moveFile old new
+		liftIO $ moveFile
+			("/etc/sbuild/chroot" </> show s ++ "-propellor")
+			("/etc/sbuild/chroot" </> show s ++ "-sbuild")
 		ensureProperty w $
 			File.fileProperty "replace dummy suffix" (map munge) new
   where
