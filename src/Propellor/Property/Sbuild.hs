@@ -255,10 +255,10 @@ ccachePrepared = propertyList "sbuild group ccache configured" $ props
 -- This is a hack from <https://wiki.debian.org/sbuild> until #802850 and
 -- #802849 are resolved.
 blockNetwork :: Property Linux
-blockNetwork = Firewall.rule Firewall.OUTPUT Firewall.Filter Firewall.DROP $
-	Firewall.GroupOwner (Group "sbuild")
+blockNetwork = Firewall.rule Firewall.OUTPUT Firewall.Filter Firewall.DROP
+	(Firewall.GroupOwner (Group "sbuild")
 	<> Firewall.NotDestination
-		[Firewall.IPWithNumMask (IPv4 "127.0.0.1") 8]
+		[Firewall.IPWithNumMask (IPv4 "127.0.0.1") 8])
 	`requires` installed 	-- sbuild group must exist
 
 -- ==== utility functions ====
