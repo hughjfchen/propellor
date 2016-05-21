@@ -10,7 +10,7 @@ import Utility.FileMode
 import System.Posix.Files
 
 -- | Limits on the size of a ccache
-data CcacheLimit
+data Limit
 	-- | The maximum size of the cache, as a string such as "4G"
 	--
 	-- See ccache(1) for more on the size specification.
@@ -33,7 +33,7 @@ data CcacheLimit
 -- wish to limit both the maximum size of the cache and the maximum number of
 -- files in the cache.  However, setting only one of these two limits is
 -- generally sufficient.
-hasGroupCache :: Group -> CcacheLimit -> RevertableProperty DebianLike UnixLike
+hasGroupCache :: Group -> Limit -> RevertableProperty DebianLike UnixLike
 group@(Group g) `hasGroupCache` limit = (make `requires` installed) <!> delete
   where
 	make = propertyList ("ccache for " ++ g ++ " exists") $ props
