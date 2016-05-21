@@ -36,7 +36,7 @@ data Limit
 hasGroupCache :: Group -> Limit -> RevertableProperty DebianLike UnixLike
 group@(Group g) `hasGroupCache` limit = (make `requires` installed) <!> delete
   where
-	make = propertyList ("ccache for " ++ g ++ " exists") $ props
+	make = propertyList ("ccache for " ++ g ++ " group exists") $ props
 			& File.dirExists path
 			& File.ownerGroup path (User "root") group
 			& File.mode path (combineModes $

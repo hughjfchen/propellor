@@ -318,6 +318,7 @@ ccachePrepared = propertyList "sbuild group ccache configured" $ props
 	& Group "sbuild" `Ccache.hasGroupCache` (Ccache.MaxSize "2G")
 	& "/etc/schroot/sbuild/fstab" `File.containsLine`
 	"/var/cache/ccache-sbuild /var/cache/ccache-sbuild none rw,bind 0 0"
+		`describe` "ccache mounted in sbuild schroots"
 	& "/var/cache/ccache-sbuild/sbuild-setup" `File.hasContent`
 		[ "#!/bin/sh"
 		, ""
