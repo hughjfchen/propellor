@@ -78,9 +78,3 @@ Props c &^ p = Props (toChildProperty p : c)
 	-> RevertableProperty (MetaTypes y) (MetaTypes z)
 	-> Props (MetaTypes (Combine x z))
 Props c ! p = Props (c ++ [toChildProperty (revert p)])
-
--- addPropsHost :: Host -> [Prop] -> Host
--- addPropsHost (Host hn ps i) p = Host hn ps' i'
---   where
--- 	ps' = ps ++ [toChildProperty p]
--- 	i' = i <> getInfoRecursive p
