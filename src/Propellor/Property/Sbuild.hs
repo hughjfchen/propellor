@@ -10,6 +10,7 @@ Suggested usage in @config.hs@:
 
 >  & Apt.installed ["piuparts"]
 >  & Sbuild.builtFor (System (Debian Unstable) "i386")
+>  & Sbuild.piupartsConfFor (System (Debian Unstable) "i386")
 >  & Sbuild.updatedFor (System (Debian Unstable) "i386") `period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Sbuild.shareAptCache
@@ -18,7 +19,12 @@ Suggested usage in @config.hs@:
 In @~/.sbuildrc@:
 
 >  $run_piuparts = 1;
->  $piuparts_opts = ['--schroot=unstable-i386-sbuild'];
+>  $piuparts_opts = [
+>      '--schroot',
+>      'unstable-i386-piuparts',
+>      '--fail-if-inadequate',
+>      '--fail-on-broken-symlinks',
+>      ];
 >
 >  $external_commands = {
 >    'post-build-commands' => [
@@ -26,7 +32,13 @@ In @~/.sbuildrc@:
 >        'adt-run',
 >        '--changes', '%c',
 >        '---',
->        'schroot', 'unstable-i386-sbuild',
+>        'schroot', 'unstable-i386-sbuild;',
+>
+>        # if adt-run's exit code is 8 then the package had no tests but
+>        # this isn't a failure, so catch it
+>        'adtexit=$?;',
+>        'if', 'test', '$adtexit', '=', '8;', 'then',
+>        'exit', '0;', 'else', 'exit', '$adtexit;', 'fi'
 >      ],
 >    ],
 >  };
@@ -48,6 +60,8 @@ module Propellor.Property.Sbuild (
 	built,
 	updated,
 	updatedFor,
+	piupartsConfFor,
+	piupartsConf,
 	-- * Global sbuild configuration
 	-- blockNetwork,
 	installed,
@@ -61,8 +75,9 @@ import Propellor.Property.Debootstrap (extractSuite)
 import Propellor.Property.Chroot.Util
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Ccache as Ccache
+import qualified Propellor.Property.ConfFile as ConfFile
 import qualified Propellor.Property.File as File
-import qualified Propellor.Property.Firewall as Firewall
+-- import qualified Propellor.Property.Firewall as Firewall
 import qualified Propellor.Property.User as User
 
 import Utility.FileMode
@@ -207,15 +222,75 @@ fixConfFile s@(SbuildSchroot suite arch) =
 	tempPrefix = dir </> suite ++ "-" ++ arch ++ "-propellor-"
 	munge = replace "-propellor]" "-sbuild]"
 
+-- | Create a corresponding schroot config file for use with piuparts
+--
+-- This function is a convenience wrapper around 'Sbuild.piupartsConf', allowing
+-- the user to identify the schroot using the 'System' type.  See that
+-- function's documentation for why you might want to use this property
+piupartsConfFor :: System -> Property DebianLike
+piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
+	\w -> case (schrootFromSystem sys, stdMirror sys) of
+			(Just s, Just u)  -> ensureProperty w $
+				piupartsConf s u
+			_ -> errorMessage
+				("don't know how to debootstrap " ++ show sys)
+
+-- | Create a corresponding schroot config file for use with piuparts
+--
+-- This is useful because:
+--
+-- - piuparts will clear out the apt cache which makes 'Sbuild.shareAptCache' much
+--   less useful
+--
+-- - piuparts itself invokes eatmydata, so the command-prefix setting in our
+--   regular schroot config would force the user to pass --no-eatmydata to
+--   piuparts in their @~/.sbuildrc@, which is inconvenient.p
+piupartsConf :: SbuildSchroot -> Apt.Url -> Property DebianLike
+piupartsConf s u = go
+	`requires` (setupRevertableProperty $ built s u)
+	`describe` ("piuparts schroot conf for " ++ show s)
+  where
+	go :: Property DebianLike
+	go = tightenTargets $
+		check (not <$> doesFileExist f) create
+		`before`
+		ConfFile.containsIniSetting f (sec, "profile", "piuparts")
+		`before`
+		ConfFile.containsIniSetting f (sec, "aliases", "")
+		`before`
+		ConfFile.containsIniSetting f (sec, "command-prefix", "")
+		`before`
+		File.dirExists dir
+		`before`
+		File.isSymlinkedTo (dir </> "copyfiles")
+			(File.LinkTarget $ orig </> "copyfiles")
+		`before`
+		File.isSymlinkedTo (dir </> "nssdatabases")
+			(File.LinkTarget $ orig </> "nssdatabases")
+		`before`
+		File.basedOn (dir </> "fstab")
+			(orig </> "fstab", filter (/= aptCacheLine))
+
+	create = File.isCopyOf f (schrootConf s)
+		`before` File.fileProperty "replace suffix" (map munge) f
+
+	orig = "/etc/schroot/chroot.d/sbuild"
+	dir = "/etc/schroot/chroot.d/piuparts"
+	sec = show s ++ "-piuparts"
+	f = schrootPiupartsConf s
+	munge = replace "-sbuild]" "-piuparts]"
+
 -- | Bind-mount @/var/cache/apt/archives@ in all sbuild chroots so that the host
 -- system and the chroot share the apt cache
 --
 -- This speeds up builds by avoiding unnecessary downloads of build
 -- dependencies.
 shareAptCache :: Property DebianLike
-shareAptCache = File.containsLine "/etc/schroot/sbuild/fstab"
-	"/var/cache/apt/archives /var/cache/apt/archives none rw,bind 0 0"
+shareAptCache = File.containsLine "/etc/schroot/sbuild/fstab" aptCacheLine
 	`requires` installed
+
+aptCacheLine :: String
+aptCacheLine = "/var/cache/apt/archives /var/cache/apt/archives none rw,bind 0 0"
 
 -- | Ensure that sbuild is installed
 installed :: Property DebianLike
@@ -286,3 +361,7 @@ schrootRoot (SbuildSchroot s a) = "/srv/chroot" </> s ++ "-" ++ a
 schrootConf :: SbuildSchroot -> FilePath
 schrootConf (SbuildSchroot s a) =
 	"/etc/schroot/chroot.d" </> s ++ "-" ++ a ++ "-sbuild-propellor"
+
+schrootPiupartsConf :: SbuildSchroot -> FilePath
+schrootPiupartsConf (SbuildSchroot s a) =
+	"/etc/schroot/chroot.d" </> s ++ "-" ++ a ++ "-piuparts-propellor"
