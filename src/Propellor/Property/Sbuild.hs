@@ -272,8 +272,8 @@ piupartsConf s u = go
 		File.basedOn (dir </> "fstab")
 			(orig </> "fstab", filter (/= aptCacheLine))
 
-	orig = "/etc/schroot/chroot.d/sbuild"
-	dir = "/etc/schroot/chroot.d/piuparts"
+	orig = "/etc/schroot/sbuild"
+	dir = "/etc/schroot/piuparts"
 	sec = show s ++ "-piuparts"
 	f = schrootPiupartsConf s
 	munge = replace "-sbuild]" "-piuparts]"
