@@ -33,8 +33,8 @@ data Limit
 -- wish to limit both the maximum size of the cache and the maximum number of
 -- files in the cache.  However, setting only one of these two limits is
 -- generally sufficient.
-hasGroupCache :: Group -> Limit -> RevertableProperty DebianLike UnixLike
-group@(Group g) `hasGroupCache` limit = (make `requires` installed) <!> delete
+hasCache :: Group -> Limit -> RevertableProperty DebianLike UnixLike
+group@(Group g) `hasCache` limit = (make `requires` installed) <!> delete
   where
 	make = propertyList ("ccache for " ++ g ++ " group exists") $ props
 			& File.dirExists path

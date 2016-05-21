@@ -313,7 +313,7 @@ keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 -- another script from wiki.d.o/sbuild
 ccachePrepared :: Property DebianLike
 ccachePrepared = propertyList "sbuild group ccache configured" $ props
-	& Group "sbuild" `Ccache.hasGroupCache` (Ccache.MaxSize "2G")
+	& Group "sbuild" `Ccache.hasCache` (Ccache.MaxSize "2G")
 	& "/etc/schroot/sbuild/fstab" `File.containsLine`
 	"/var/cache/ccache-sbuild /var/cache/ccache-sbuild none rw,bind 0 0"
 		`describe` "ccache mounted in sbuild schroots"
