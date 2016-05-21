@@ -252,7 +252,8 @@ piupartsConf s u = go
   where
 	go :: Property DebianLike
 	go = tightenTargets $
-		check (not <$> doesFileExist f) create
+		check (not <$> doesFileExist f)
+			(File.basedOn f (schrootConf s, map munge))
 		`before`
 		ConfFile.containsIniSetting f (sec, "profile", "piuparts")
 		`before`
@@ -270,9 +271,6 @@ piupartsConf s u = go
 		`before`
 		File.basedOn (dir </> "fstab")
 			(orig </> "fstab", filter (/= aptCacheLine))
-
-	create = cmdProperty "cp" [schrootConf s, f] `assume` MadeChange
-		`before` File.fileProperty "replace suffix" (map munge) f
 
 	orig = "/etc/schroot/chroot.d/sbuild"
 	dir = "/etc/schroot/chroot.d/piuparts"
