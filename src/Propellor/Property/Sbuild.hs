@@ -271,7 +271,7 @@ piupartsConf s u = go
 		File.basedOn (dir </> "fstab")
 			(orig </> "fstab", filter (/= aptCacheLine))
 
-	create = cmdProperty "cp" [f, schrootConf s] `assume` MadeChange
+	create = cmdProperty "cp" [schrootConf s, f] `assume` MadeChange
 		`before` File.fileProperty "replace suffix" (map munge) f
 
 	orig = "/etc/schroot/chroot.d/sbuild"
