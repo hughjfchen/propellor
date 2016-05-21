@@ -244,7 +244,7 @@ piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 --
 -- - piuparts itself invokes eatmydata, so the command-prefix setting in our
 --   regular schroot config would force the user to pass --no-eatmydata to
---   piuparts in their @~/.sbuildrc@, which is inconvenient.p
+--   piuparts in their @~/.sbuildrc@, which is inconvenient.
 piupartsConf :: SbuildSchroot -> Apt.Url -> Property DebianLike
 piupartsConf s u = go
 	`requires` (setupRevertableProperty $ built s u)
