@@ -5,6 +5,7 @@ propellor (3.0.4) UNRELEASED; urgency=medium
     Thanks, davean.
   * Module added for the Borg backup system.
     Thanks, Félix Sipma.
+  * Fix build with directory-1.2.6.2.
 
  -- Joey Hess <id@joeyh.name>  Thu, 05 May 2016 10:37:43 -0400
 
