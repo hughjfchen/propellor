@@ -226,7 +226,8 @@ fixConfFile s@(SbuildSchroot suite arch) =
 --
 -- This function is a convenience wrapper around 'Sbuild.piupartsConf', allowing
 -- the user to identify the schroot using the 'System' type.  See that
--- function's documentation for why you might want to use this property
+-- function's documentation for why you might want to use this property, and
+-- sample config.
 piupartsConfFor :: System -> Property DebianLike
 piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 	\w -> case (schrootFromSystem sys, stdMirror sys) of
@@ -239,12 +240,23 @@ piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 --
 -- This is useful because:
 --
--- - piuparts will clear out the apt cache which makes 'Sbuild.shareAptCache' much
---   less useful
+-- - piuparts will clear out the apt cache which makes 'Sbuild.shareAptCache'
+--   much less useful
 --
 -- - piuparts itself invokes eatmydata, so the command-prefix setting in our
 --   regular schroot config would force the user to pass --no-eatmydata to
 --   piuparts in their @~/.sbuildrc@, which is inconvenient.
+--
+-- To make use of this new schroot config, you can put something like this in
+-- your ~/.sbuildrc:
+--
+--  >  $run_piuparts = 1;
+--  >  $piuparts_opts = [
+--  >      '--schroot',
+--  >      'unstable-i386-piuparts',
+--  >      '--fail-if-inadequate',
+--  >      '--fail-on-broken-symlinks',
+--  >      ];
 piupartsConf :: SbuildSchroot -> Apt.Url -> Property DebianLike
 piupartsConf s u = go
 	`requires` (setupRevertableProperty $ built s u)
