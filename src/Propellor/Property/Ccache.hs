@@ -65,7 +65,6 @@ path `hasLimits` limit = go `requires` installed
 		| null errors =
 			cmdPropertyEnv "ccache" params' [("CCACHE_DIR", path)]
 			`changesFile` (path </> "ccache.conf")
-			`describe` "h"
 		| otherwise = property "couldn't parse ccache limits" $
 			sequence_ (errorMessage <$> errors)
 			>> return FailedChange
