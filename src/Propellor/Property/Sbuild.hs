@@ -313,7 +313,11 @@ keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 -- another script from wiki.d.o/sbuild
 ccachePrepared :: Property DebianLike
 ccachePrepared = propertyList "sbuild group ccache configured" $ props
-	& Group "sbuild" `Ccache.hasCache` (Ccache.MaxSize "2G")
+	-- We only set a limit on the cache if it doesn't already exist, so the
+	-- user can override our default limit
+	& check (not <$> doesDirectoryExist "/var/cache/ccache-sbuild")
+		(Ccache.hasLimits "/var/cache/ccache-sbuild" (Ccache.MaxSize "2G"))
+	`before` Ccache.hasCache (Group "sbuild") Ccache.NoLimit
 	& "/etc/schroot/sbuild/fstab" `File.containsLine`
 	"/var/cache/ccache-sbuild /var/cache/ccache-sbuild none rw,bind 0 0"
 		`describe` "ccache mounted in sbuild schroots"
