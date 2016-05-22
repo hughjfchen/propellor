@@ -54,7 +54,7 @@ ccacheSizeUnits sz = filter (/= ' ') (roughSize cfgfileunits True sz)
 	p :: Integer -> Integer
 	p n = 1024^n
 
--- | Set limits on a given ccache.
+-- | Set limits on a given ccache
 hasLimits :: FilePath -> Limit -> Property UnixLike
 path `hasLimits` limit = property' ("limits set on ccache " ++ path) $
 	\w -> if null errors
