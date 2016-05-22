@@ -14,7 +14,6 @@ import qualified Propellor.Property.Apt as Apt
 import Utility.FileMode
 import Utility.DataUnits
 import System.Posix.Files
-import Data.Either
 
 -- | Limits on the size of a ccache
 data Limit
@@ -58,16 +57,17 @@ ccacheSizeUnits sz = filter (/= ' ') (roughSize cfgfileunits True sz)
 hasLimits :: FilePath -> Limit -> Property DebianLike
 path `hasLimits` limit = go `requires` installed
   where
-	go :: Property DebianLike
-	go = property' ("limits set on ccache " ++ path) $
-		\w -> if null errors
+	go
+		| null params' = doNothing
 		-- We invoke ccache itself to set the limits, so that it can
 		-- handle replacing old limits in the config file, duplicates
 		-- etc.
-		then ensureProperty w $
+		| null errors =
 			cmdPropertyEnv "ccache" params' [("CCACHE_DIR", path)]
 			`changesFile` (path </> "ccache.conf")
-		else sequence_ (errorMessage <$> errors)
+			`describe` "h"
+		| otherwise = property "couldn't parse ccache limits" $
+			sequence_ (errorMessage <$> errors)
 			>> return FailedChange
 
 	params = limitToParams limit
