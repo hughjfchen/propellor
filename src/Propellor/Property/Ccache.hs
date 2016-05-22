@@ -14,6 +14,7 @@ import qualified Propellor.Property.Apt as Apt
 import Utility.FileMode
 import Utility.DataUnits
 import System.Posix.Files
+import Data.Either
 
 -- | Limits on the size of a ccache
 data Limit
@@ -55,20 +56,33 @@ ccacheSizeUnits sz = filter (/= ' ') (roughSize cfgfileunits True sz)
 
 -- | Set limits on a given ccache.
 hasLimits :: FilePath -> Limit -> Property UnixLike
-hasLimits = undefined
+path `hasLimits` limit = property' ("limits set on ccache " ++ path) $
+	\w -> if null errors
+	-- We invoke ccache itself to set the limits, so that it can handle
+	-- replacing old limits in the config file, duplicates etc.
+	then ensureProperty w $
+		cmdPropertyEnv "ccache" params' [("CCACHE_DIR", path)]
+		`changesFile` (path </> "ccache.conf")
+	else sequence_ (errorMessage <$> errors)
+		>> return FailedChange
+  where
+	params = limitToParams limit
+	(errors, params') = partitionEithers params
 
--- limitToParams :: Limit -> [String]
--- limitToParams NoLimit = []
--- limitToParams (MaxSize s) =
--- limitToParams (MaxFiles f) =
--- limitToParams (l1 :+ l2) = limitToParams l1 <> limitToParams l2
+limitToParams :: Limit -> [Either String String]
+limitToParams NoLimit = []
+limitToParams (MaxSize s) = case maxSizeParam s of
+	Just param -> [Right param]
+	Nothing -> [Left $ "unable to parse data size " ++ s]
+limitToParams (MaxFiles f) = [Right $ "--max-files=" ++ show f]
+limitToParams (l1 :+ l2) = limitToParams l1 <> limitToParams l2
 
 -- | Configures a ccache in /var/cache for a group
 --
 -- If you say
 --
 --  >  & (Group "foo") `Ccache.hasGroupCache` (Ccache.MaxSize "4G"
---                                          <> Ccache.MaxFiles 10000)
+--  >                                       <> Ccache.MaxFiles 10000)
 --
 -- you instruct propellor to create a ccache in /var/cache/ccache-foo owned and
 -- writeable by the foo group, with a maximum cache size of 4GB or 10000 files.
