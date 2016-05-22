@@ -55,17 +55,21 @@ ccacheSizeUnits sz = filter (/= ' ') (roughSize cfgfileunits True sz)
 	p n = 1024^n
 
 -- | Set limits on a given ccache
-hasLimits :: FilePath -> Limit -> Property UnixLike
-path `hasLimits` limit = property' ("limits set on ccache " ++ path) $
-	\w -> if null errors
-	-- We invoke ccache itself to set the limits, so that it can handle
-	-- replacing old limits in the config file, duplicates etc.
-	then ensureProperty w $
-		cmdPropertyEnv "ccache" params' [("CCACHE_DIR", path)]
-		`changesFile` (path </> "ccache.conf")
-	else sequence_ (errorMessage <$> errors)
-		>> return FailedChange
+hasLimits :: FilePath -> Limit -> Property DebianLike
+path `hasLimits` limit = go `requires` installed
   where
+	go :: Property DebianLike
+	go = property' ("limits set on ccache " ++ path) $
+		\w -> if null errors
+		-- We invoke ccache itself to set the limits, so that it can
+		-- handle replacing old limits in the config file, duplicates
+		-- etc.
+		then ensureProperty w $
+			cmdPropertyEnv "ccache" params' [("CCACHE_DIR", path)]
+			`changesFile` (path </> "ccache.conf")
+		else sequence_ (errorMessage <$> errors)
+			>> return FailedChange
+
 	params = limitToParams limit
 	(errors, params') = partitionEithers params
 
