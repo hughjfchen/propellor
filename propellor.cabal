@@ -207,6 +207,7 @@ Library
     Utility.Process.NonConcurrent
     Utility.SafeCommand
     Utility.Scheduled
+    Utility.SystemDirectory
     Utility.Table
     Utility.ThreadScheduler
     Utility.Tmp
