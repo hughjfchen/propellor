@@ -1,5 +1,5 @@
 Name: propellor
-Version: 3.0.3
+Version: 3.0.4
 Cabal-Version: >= 1.8
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
@@ -207,6 +207,7 @@ Library
     Utility.Process.NonConcurrent
     Utility.SafeCommand
     Utility.Scheduled
+    Utility.SystemDirectory
     Utility.Table
     Utility.ThreadScheduler
     Utility.Tmp
