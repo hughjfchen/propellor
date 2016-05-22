@@ -20,7 +20,7 @@ Build-Depends:
 	libghc-text-dev,
 	libghc-concurrent-output-dev,
 Maintainer: Joey Hess <id@joeyh.name>
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Vcs-Git: git://git.joeyh.name/propellor
 Homepage: http://propellor.branchable.com/
 
