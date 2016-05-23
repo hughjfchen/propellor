@@ -1,0 +1,8 @@
+propellor 3.0.4 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Run letsencrypt with --noninteractive.
+   * Fix build with ghc 8.0.1.
+     Thanks, davean.
+   * Module added for the Borg backup system.
+     Thanks, Félix Sipma.
+   * Fix build with directory-1.2.6.2."""]]

@@ -1,3 +1,10 @@
+propellor (3.0.5) UNRELEASED; urgency=medium
+
+  * Modules added for Sbuild and Ccache.
+    Thanks, Sean Whitton
+
+ -- Joey Hess <id@joeyh.name>  Mon, 23 May 2016 11:19:28 -0400
+
 propellor (3.0.4) unstable; urgency=medium
 
   * Run letsencrypt with --noninteractive.
