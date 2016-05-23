@@ -79,12 +79,23 @@ toIpTableArg (TCPFlags m c) =
 	, intercalate "," (map show c)
 	]
 toIpTableArg TCPSyn = ["--syn"]
+toIpTableArg (GroupOwner (Group g)) =
+	[ "-m"
+	, "owner"
+	, "--gid-owner"
+	, g
+	]
 toIpTableArg (Source ipwm) =
 	[ "-s"
 	, intercalate "," (map fromIPWithMask ipwm)
 	]
 toIpTableArg (Destination ipwm) =
 	[ "-d"
+	, intercalate "," (map fromIPWithMask ipwm)
+	]
+toIpTableArg (NotDestination ipwm) =
+	[ "!"
+	, "-d"
 	, intercalate "," (map fromIPWithMask ipwm)
 	]
 toIpTableArg (NatDestination ip mport) =
@@ -179,8 +190,10 @@ data Rules
 	| RateLimit Frequency
 	| TCPFlags TCPFlagMask TCPFlagComp
 	| TCPSyn
+	| GroupOwner Group
 	| Source [ IPWithMask ]
 	| Destination [ IPWithMask ]
+	| NotDestination [ IPWithMask ]
 	| NatDestination IPAddr (Maybe Port)
 	| Rules :- Rules   -- ^Combine two rules
 	deriving (Eq, Show)

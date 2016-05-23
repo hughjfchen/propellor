@@ -3,6 +3,7 @@ module Propellor.Property.Debootstrap (
 	DebootstrapConfig(..),
 	built,
 	built',
+	extractSuite,
 	installed,
 	sourceInstall,
 	programPath,
