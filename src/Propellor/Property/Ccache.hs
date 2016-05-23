@@ -84,8 +84,8 @@ limitToParams (l1 :+ l2) = limitToParams l1 <> limitToParams l2
 --
 -- If you say
 --
---  >  & (Group "foo") `Ccache.hasGroupCache` (Ccache.MaxSize "4G"
---  >                                       <> Ccache.MaxFiles 10000)
+-- > & (Group "foo") `Ccache.hasGroupCache`
+-- > 	(Ccache.MaxSize "4G" <> Ccache.MaxFiles 10000)
 --
 -- you instruct propellor to create a ccache in /var/cache/ccache-foo owned and
 -- writeable by the foo group, with a maximum cache size of 4GB or 10000 files.
