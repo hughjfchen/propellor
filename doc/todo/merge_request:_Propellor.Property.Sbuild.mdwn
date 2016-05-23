@@ -16,3 +16,5 @@ I get the following strange warning from GHC thanks to my new export from `Prope
         `extractSuite' is exported by `extractSuite' and `extractSuite'
 
 --spwhitton
+
+> [[merged|done]]; thank you! --[[Joey]]
