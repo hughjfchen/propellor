@@ -217,11 +217,11 @@ machined = withOS "machined installed" $ \w o ->
 -- to bootstrap.
 --
 -- > container "webserver" $ \d -> Chroot.debootstrapped mempty d $ props
--- >	& osDebian Unstable "amd64"
+-- >	& osDebian Unstable X86_64
 -- >    & Apt.installedRunning "apache2"
 -- >    & ...
 container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
-container name mkchroot = 
+container name mkchroot =
 	let c = Container name chroot h
 	in setContainerProps c $ containerProps c
 		&^ resolvConfed
@@ -238,7 +238,7 @@ container name mkchroot =
 -- to bootstrap.
 --
 -- > debContainer "webserver" $ props
--- >	& osDebian Unstable "amd64"
+-- >	& osDebian Unstable X86_64
 -- >    & Apt.installedRunning "apache2"
 -- >    & ...
 debContainer :: MachineName -> Props metatypes -> Container
@@ -447,7 +447,7 @@ instance Publishable (Proto, Bound Port) where
 -- >
 -- > webserver :: Systemd.container
 -- > webserver = Systemd.container "webserver" (Chroot.debootstrapped mempty)
--- >	& os (System (Debian Testing) "amd64")
+-- >	& os (System (Debian Testing) X86_64)
 -- >	& Systemd.privateNetwork
 -- >	& Systemd.running Systemd.networkd
 -- >	& Systemd.publish (Port 80 ->- Port 8080)

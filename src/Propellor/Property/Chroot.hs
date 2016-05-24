@@ -105,7 +105,7 @@ instance ChrootBootstrapper Debootstrapped where
 -- to bootstrap.
 --
 -- > debootstrapped Debootstrap.BuildD "/srv/chroot/ghc-dev" $ props
--- >	& osDebian Unstable "amd64"
+-- >	& osDebian Unstable X86_64
 -- >	& Apt.installed ["ghc", "haskell-platform"]
 -- >	& ...
 debootstrapped :: Debootstrap.DebootstrapConfig -> FilePath -> Props metatypes -> Chroot

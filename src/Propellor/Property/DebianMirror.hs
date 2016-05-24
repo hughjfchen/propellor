@@ -141,7 +141,7 @@ mirror mirror' = propertyList ("Debian mirror " ++ dir) $ props
 	rsyncextraarg res = intercalate "," $ map showRsyncExtra res
 	args =
 		[ "--dist" , suitearg
-		, "--arch", architecturearg $ _debianMirrorArchitectures mirror'
+		, "--arch", architecturearg $ map architectureToDebianArchString (_debianMirrorArchitectures mirror')
 		, "--section", intercalate "," $ _debianMirrorSections mirror'
 		, "--limit-priority", "\"" ++ priorityRegex (_debianMirrorPriorities mirror') ++ "\""
 		]

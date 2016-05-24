@@ -22,7 +22,7 @@ import Control.Exception (throw)
 
 -- | Replaces whatever OS was installed before with a clean installation
 -- of the OS that the Host is configured to have.
--- 
+--
 -- This is experimental; use with caution!
 --
 -- This can replace one Linux distribution with different one.
@@ -35,7 +35,7 @@ import Control.Exception (throw)
 -- This property only runs once. The cleanly installed system will have
 -- a file </etc/propellor-cleaninstall>, which indicates it was cleanly
 -- installed.
--- 
+--
 -- The files from the old os will be left in </old-os>
 --
 -- After the OS is installed, and if all properties of the host have
@@ -46,7 +46,7 @@ import Control.Exception (throw)
 -- install succeeds, to bootstrap from the cleanly installed system to
 -- a fully working system. For example:
 --
--- > & osDebian Unstable "amd64"
+-- > & osDebian Unstable X86_64
 -- > & cleanInstallOnce (Confirmed "foo.example.com")
 -- >    `onChange` propertyList "fixing up after clean install"
 -- >        [ preserveNetwork
@@ -68,7 +68,7 @@ cleanInstallOnce :: Confirmation -> Property Linux
 cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 	go `requires` confirmed "clean install confirmed" confirmation
   where
-	go = 
+	go =
 		finalized
 			`requires`
 		-- easy to forget and system may not boot without shadow pw!
@@ -90,14 +90,14 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		(Just u@(System (Buntish _) _)) -> ensureProperty w $
 			debootstrap u
 		_ -> unsupportedOS'
-	
+
 	debootstrap :: System -> Property Linux
 	debootstrap targetos =
 		-- Install debootstrap from source, since we don't know
 		-- what OS we're currently running in.
 		Debootstrap.built' Debootstrap.sourceInstall
 			newOSDir targetos Debootstrap.DefaultConfig
-		-- debootstrap, I wish it was faster.. 
+		-- debootstrap, I wish it was faster..
 		-- TODO eatmydata to speed it up
 		-- Problem: Installing eatmydata on some random OS like
 		-- Fedora may be difficult. Maybe configure dpkg to not
@@ -120,7 +120,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		createDirectoryIfMissing True oldOSDir
 		massRename (renamesout ++ renamesin)
 		removeDirectoryRecursive newOSDir
-		
+
 		-- Prepare environment for running additional properties,
 		-- overriding old OS's environment.
 		void $ setEnv "PATH" stdPATH True
@@ -150,15 +150,15 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 		--   git repo url, which all need to be arranged to
 		--   be present in /old-os's /usr/local/propellor)
 		-- TODO
-	
+
 	finalized :: Property UnixLike
 	finalized = property "clean OS installed" $ do
 		liftIO $ writeFile flagfile ""
 		return MadeChange
 
 	flagfile = "/etc/propellor-cleaninstall"
-	
-	trickydirs = 
+
+	trickydirs =
 		-- /tmp can contain X's sockets, which prevent moving it
 		-- so it's left as-is.
 		[ "/tmp"
@@ -195,7 +195,7 @@ confirmed desc (Confirmed c) = property desc $ do
 			return FailedChange
 		else return NoChange
 
--- | </etc/network/interfaces> is configured to bring up the network 
+-- | </etc/network/interfaces> is configured to bring up the network
 -- interface that currently has a default route configured, using
 -- the same (static) IP address.
 preserveNetwork :: Property DebianLike
@@ -210,7 +210,7 @@ preserveNetwork = go `requires` Network.cleanInterfacesFile
 				ensureProperty w $ Network.static iface
 			_ -> do
 				warningMessage "did not find any default ipv4 route"
-				return FailedChange 
+				return FailedChange
 
 -- | </etc/resolv.conf> is copied from the old OS
 preserveResolvConf :: Property Linux

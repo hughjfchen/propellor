@@ -67,7 +67,7 @@ built' installprop target system@(System _ arch) config =
 			Nothing -> errorMessage $ "don't know how to debootstrap " ++ show system
 			Just s -> pure s
 		let params = toParams config ++
-			[ Param $ "--arch=" ++ arch
+			[ Param $ "--arch=" ++ architectureToDebianArchString arch
 			, Param suite
 			, Param target
 			]

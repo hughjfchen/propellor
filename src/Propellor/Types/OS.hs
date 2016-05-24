@@ -9,7 +9,8 @@ module Propellor.Types.OS (
 	FBSDVersion(..),
 	isStable,
 	Release,
-	Architecture,
+	Architecture(..),
+	architectureToDebianArchString,
 	HostName,
 	UserName,
 	User(..),
@@ -75,7 +76,19 @@ isStable (Stable _) = True
 isStable _ = False
 
 type Release = String
-type Architecture = String
+data Architecture = X86_64 | X86_32 | ARMHF | ARMEL | ANDROID
+	deriving (Show, Eq)
+-- TODO: remove ANDROID (used in GitAnnexBuilder)
+-- TODO: add other architectures
+-- TODO: rename ARMHF
+-- TODO: rename ARMEL
+
+architectureToDebianArchString :: Architecture -> String
+architectureToDebianArchString X86_64 = "amd64"
+architectureToDebianArchString X86_32 = "i386"
+architectureToDebianArchString ARMHF = "armhf"
+architectureToDebianArchString ARMEL = "armel"
+architectureToDebianArchString ANDROID = "android"
 
 type UserName = String
 

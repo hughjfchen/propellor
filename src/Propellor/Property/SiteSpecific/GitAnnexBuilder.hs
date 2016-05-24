@@ -32,7 +32,7 @@ autobuilder arch crontimes timeout = combineProperties "gitannexbuilder" $ props
 		("git pull ; timeout " ++ timeout ++ " ./autobuild")
 	& rsyncpassword
   where
-	context = Context ("gitannexbuilder " ++ arch)
+	context = Context ("gitannexbuilder " ++ architectureToDebianArchString arch)
 	pwfile = homedir </> "rsyncpassword"
 	-- The builduser account does not have a password set,
 	-- instead use the password privdata to hold the rsync server
@@ -55,11 +55,11 @@ tree buildarch flavor = combineProperties "gitannexbuilder tree" $ props
 	& gitannexbuildercloned
 	& builddircloned
   where
-	gitannexbuildercloned = check (not <$> (doesDirectoryExist (gitbuilderdir </> ".git"))) $ 
+	gitannexbuildercloned = check (not <$> (doesDirectoryExist (gitbuilderdir </> ".git"))) $
 		userScriptProperty (User builduser)
 			[ "git clone git://git.kitenet.net/gitannexbuilder " ++ gitbuilderdir
 			, "cd " ++ gitbuilderdir
-			, "git checkout " ++ buildarch ++ fromMaybe "" flavor
+			, "git checkout " ++ architectureToDebianArchString buildarch ++ fromMaybe "" flavor
 			]
 			`assume` MadeChange
 			`describe` "gitbuilder setup"
@@ -85,7 +85,7 @@ buildDepsNoHaskellLibs = Apt.installed
 	]
 
 haskellPkgsInstalled :: String -> Property DebianLike
-haskellPkgsInstalled dir = tightenTargets $ 
+haskellPkgsInstalled dir = tightenTargets $
 	flagFile go ("/haskellpkgsinstalled")
   where
 	go = userScriptProperty (User builduser)
@@ -109,7 +109,7 @@ autoBuilderContainer mkprop suite arch flavor crontime timeout =
 		& mkprop suite arch flavor
 		& autobuilder arch crontime timeout
   where
-	name = arch ++ fromMaybe "" flavor ++ "-git-annex-builder"
+	name = architectureToDebianArchString arch ++ fromMaybe "" flavor ++ "-git-annex-builder"
 
 type Flavor = Maybe String
 
@@ -141,15 +141,15 @@ stackAutoBuilder suite arch flavor =
 stackInstalled :: Property Linux
 stackInstalled = withOS "stack installed" $ \w o ->
 	case o of
-		(Just (System (Debian (Stable "jessie")) "i386")) ->
-			ensureProperty w $ manualinstall "i386"
+		(Just (System (Debian (Stable "jessie")) X86_32)) ->
+			ensureProperty w $ manualinstall X86_32
 		_ -> ensureProperty w $ Apt.installed ["haskell-stack"]
   where
 	-- Warning: Using a binary downloaded w/o validation.
 	manualinstall :: Architecture -> Property Linux
 	manualinstall arch = tightenTargets $ check (not <$> doesFileExist binstack) $
 		propertyList "stack installed from upstream tarball" $ props
-			& cmdProperty "wget" ["https://www.stackage.org/stack/linux-" ++ arch, "-O", tmptar]
+			& cmdProperty "wget" ["https://www.stackage.org/stack/linux-" ++ architectureToDebianArchString arch, "-O", tmptar]
 				`assume` MadeChange
 			& File.dirExists tmpdir
 			& cmdProperty "tar" ["xf", tmptar, "-C", tmpdir, "--strip-components=1"]
@@ -163,7 +163,7 @@ stackInstalled = withOS "stack installed" $ \w o ->
 	tmpdir = "/root/stack"
 
 armAutoBuilder :: DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)
-armAutoBuilder suite arch flavor = 
+armAutoBuilder suite arch flavor =
 	propertyList "arm git-annex autobuilder" $ props
 		& standardAutoBuilder suite arch flavor
 		& buildDepsNoHaskellLibs
@@ -177,7 +177,7 @@ armAutoBuilder suite arch flavor =
 androidAutoBuilderContainer :: Times -> TimeOut -> Systemd.Container
 androidAutoBuilderContainer crontimes timeout =
 	androidAutoBuilderContainer' "android-git-annex-builder"
-		(tree "android" Nothing) builddir crontimes timeout
+		(tree ANDROID Nothing) builddir crontimes timeout
 
 -- Android is cross-built in a Debian i386 container, using the Android NDK.
 androidAutoBuilderContainer'
@@ -187,9 +187,9 @@ androidAutoBuilderContainer'
 	-> Times
 	-> TimeOut
 	-> Systemd.Container
-androidAutoBuilderContainer' name setupgitannexdir gitannexdir crontimes timeout = 
+androidAutoBuilderContainer' name setupgitannexdir gitannexdir crontimes timeout =
 	Systemd.container name $ \d -> bootstrap d $ props
-		& osDebian (Stable "jessie") "i386"
+		& osDebian (Stable "jessie") X86_32
 		& Apt.stdSourcesList
 		& User.accountFor (User builduser)
 		& File.dirExists gitbuilderdir
@@ -199,7 +199,7 @@ androidAutoBuilderContainer' name setupgitannexdir gitannexdir crontimes timeout
 		& haskellPkgsInstalled "android"
 		& Apt.unattendedUpgrades
 		& buildDepsNoHaskellLibs
-		& autobuilder "android" crontimes timeout
+		& autobuilder ANDROID crontimes timeout
   where
 	-- Use git-annex's android chroot setup script, which will install
 	-- ghc-android and the NDK, all build deps, etc, in the home

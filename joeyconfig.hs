@@ -45,7 +45,7 @@ main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
 hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                 --                  (o)  `
 	[ darkstar
-	, gnu 
+	, gnu
 	, clam
 	, mayfly
 	, oyster
@@ -60,7 +60,7 @@ hosts =                 --                  (o)  `
 
 testvm :: Host
 testvm = host "testvm.kitenet.net" $ props
-	& osDebian Unstable "amd64"
+	& osDebian Unstable X86_64
 	& OS.cleanInstallOnce (OS.Confirmed "testvm.kitenet.net")
 	 	`onChange` postinstall
 	& Hostname.sane
@@ -98,7 +98,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 		]
   where
 	c d = Chroot.debootstrapped mempty d $ props
-		& osDebian Unstable "amd64"
+		& osDebian Unstable X86_64
 		& Hostname.setTo "demo"
 		& Apt.installed ["linux-image-amd64"]
 		& User "root" `User.hasInsecurePassword` "root"
@@ -112,7 +112,7 @@ gnu = host "gnu.kitenet.net" $ props
 
 clam :: Host
 clam = host "clam.kitenet.net" $ props
-	& standardSystem Unstable "amd64" 
+	& standardSystem Unstable X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
 	& ipv4 "167.88.41.194"
 
@@ -145,7 +145,7 @@ clam = host "clam.kitenet.net" $ props
 
 mayfly :: Host
 mayfly = host "mayfly.kitenet.net" $ props
-	& standardSystem (Stable "jessie") "amd64"
+	& standardSystem (Stable "jessie") X86_64
 		[ "Scratch VM. Contents can change at any time!" ]
 	& ipv4 "167.88.36.193"
 
@@ -161,7 +161,7 @@ mayfly = host "mayfly.kitenet.net" $ props
 
 oyster :: Host
 oyster = host "oyster.kitenet.net" $ props
-	& standardSystem Unstable "amd64"
+	& standardSystem Unstable X86_64
 		[ "Unreliable server. Anything here may be lost at any time!" ]
 	& ipv4 "104.167.117.109"
 
@@ -185,7 +185,7 @@ oyster = host "oyster.kitenet.net" $ props
 
 orca :: Host
 orca = host "orca.kitenet.net" $ props
-	& standardSystem Unstable "amd64" [ "Main git-annex build box." ]
+	& standardSystem Unstable X86_64 [ "Main git-annex build box." ]
 	& ipv4 "138.38.108.179"
 
 	& Apt.unattendedUpgrades
@@ -195,19 +195,19 @@ orca = host "orca.kitenet.net" $ props
 
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.standardAutoBuilder
-		Unstable "amd64" Nothing (Cron.Times "15 * * * *") "2h")
+		Unstable X86_64 Nothing (Cron.Times "15 * * * *") "2h")
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.standardAutoBuilder
-		Unstable "i386" Nothing (Cron.Times "30 * * * *") "2h")
+		Unstable X86_32 Nothing (Cron.Times "30 * * * *") "2h")
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.stackAutoBuilder
-		(Stable "jessie") "i386" (Just "ancient") (Cron.Times "45 * * * *") "2h")
+		(Stable "jessie") X86_32 (Just "ancient") (Cron.Times "45 * * * *") "2h")
 	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer
 		(Cron.Times "1 1 * * *") "3h")
 
 honeybee :: Host
 honeybee = host "honeybee.kitenet.net" $ props
-	& standardSystem Testing "armhf" [ "Arm git-annex build box." ]
+	& standardSystem Testing ARMHF [ "Arm git-annex build box." ]
 
 	-- I have to travel to get console access, so no automatic
 	-- upgrades, and try to be robust.
@@ -234,14 +234,14 @@ honeybee = host "honeybee.kitenet.net" $ props
 
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.armAutoBuilder
-			Unstable "armel" Nothing Cron.Daily "22h")
+			Unstable ARMEL Nothing Cron.Daily "22h")
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
 -- with propellor.
 kite :: Host
 kite = host "kite.kitenet.net" $ props
-	& standardSystemUnhardened Testing "amd64" [ "Welcome to kite!" ]
+	& standardSystemUnhardened Testing X86_64 [ "Welcome to kite!" ]
 	& ipv4 "66.228.36.95"
 	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 	& alias "kitenet.net"
@@ -356,7 +356,7 @@ kite = host "kite.kitenet.net" $ props
 
 elephant :: Host
 elephant = host "elephant.kitenet.net" $ props
-	& standardSystem Unstable "amd64"
+	& standardSystem Unstable X86_64
 		[ "Storage, big data, and backups, omnomnom!"
 		, "(Encrypt all data stored here.)"
 		]
@@ -457,7 +457,7 @@ iabak :: Host
 iabak = host "iabak.archiveteam.org" $ props
 	& ipv4 "124.6.40.227"
 	& Hostname.sane
-	& osDebian Testing "amd64"
+	& osDebian Testing X86_64
 	& Systemd.persistentJournal
 	& Cron.runPropellor (Cron.Times "30 * * * *")
 	& Apt.stdSourcesList `onChange` Apt.upgrade
@@ -539,7 +539,7 @@ type Motd = [String]
 
 -- This is my standard system setup.
 standardSystem :: DebianSuite -> Architecture -> Motd -> Property (HasInfo + Debian)
-standardSystem suite arch motd = 
+standardSystem suite arch motd =
 	standardSystemUnhardened suite arch motd
 		`before` Ssh.noPasswords
 
@@ -571,7 +571,7 @@ standardSystemUnhardened suite arch motd = propertyList "standard system" $ prop
 -- This is my standard container setup, Featuring automatic upgrades.
 standardContainer :: DebianSuite -> Property (HasInfo + Debian)
 standardContainer suite = propertyList "standard container" $ props
-	& osDebian suite "amd64"
+	& osDebian suite X86_64
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.unattendedUpgrades
 	& Apt.cacheCleaned

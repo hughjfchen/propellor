@@ -166,7 +166,7 @@ setup = do
 	buildPropellor Nothing
 	sayLn ""
 	sayLn "Great! Propellor is bootstrapped."
-	
+
 	section
 	sayLn "Propellor can use gpg to encrypt private data about the systems it manages,"
 	sayLn "and to sign git commits."
@@ -273,7 +273,7 @@ minimalConfig = do
 		, "  Extensions: TypeOperators"
 		, "  Build-Depends: propellor >= 3.0, base >= 3"
 		]
-	configcontent = 
+	configcontent =
 		[ "-- This is the main configuration file for Propellor, and is used to build"
 		, "-- the propellor program.    https://propellor.branchable.com/"
 		, ""
@@ -295,7 +295,7 @@ minimalConfig = do
 		, "-- An example host."
 		, "mybox :: Host"
 		, "mybox = host \"mybox.example.com\" $ props"
-		, "        & osDebian Unstable \"amd64\""
+		, "        & osDebian Unstable X86_64"
 		, "        & Apt.stdSourcesList"
 		, "        & Apt.unattendedUpgrades"
 		, "        & Apt.installed [\"etckeeper\"]"
@@ -354,7 +354,7 @@ checkRepoUpToDate :: IO ()
 checkRepoUpToDate = whenM (gitbundleavail <&&> dotpropellorpopulated) $ do
 	headrev <- takeWhile (/= '\n') <$> readFile disthead
 	changeWorkingDirectory =<< dotPropellor
-	headknown <- catchMaybeIO $ 
+	headknown <- catchMaybeIO $
 		withQuietOutput createProcessSuccess $
 			proc "git" ["log", headrev]
 	if (headknown == Nothing)
@@ -397,19 +397,19 @@ setupUpstreamMaster newref = do
 		let cleantmprepo = void $ catchMaybeIO $ removeDirectoryRecursive tmprepo
 		cleantmprepo
 		git ["clone", "--quiet", ".", tmprepo]
-	
+
 		changeWorkingDirectory tmprepo
 		git ["fetch", distrepo, "--quiet"]
 		git ["reset", "--hard", oldref, "--quiet"]
 		git ["merge", newref, "-s", "recursive", "-Xtheirs", "--quiet", "-m", "merging upstream version"]
-	
+
 		void $ fetchUpstreamBranch tmprepo
 		cleantmprepo
 		warnoutofdate True
 
 	getoldrev = takeWhile (/= '\n')
 		<$> readProcess "git" ["show-ref", upstreambranch, "--hash"]
-	
+
 	git = run "git"
 	run cmd ps = unlessM (boolSystem cmd (map Param ps)) $
 		error $ "Failed to run " ++ cmd ++ " " ++ show ps

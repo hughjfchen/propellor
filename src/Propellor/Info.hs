@@ -77,7 +77,7 @@ askInfo = asks (fromInfo . hostInfo)
 -- It also lets the type checker know that all the properties of the
 -- host must support Debian.
 --
--- > & osDebian (Stable "jessie") "amd64"
+-- > & osDebian (Stable "jessie") X86_64
 osDebian :: DebianSuite -> Architecture -> Property (HasInfo + Debian)
 osDebian suite arch = tightenTargets $ os (System (Debian suite) arch)
 

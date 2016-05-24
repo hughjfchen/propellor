@@ -9,7 +9,6 @@ module Propellor.Property.FreeBSD.Poudriere where
 import Propellor.Base
 import Propellor.Types.Info
 import Data.List
-import Data.String (IsString(..))
 
 import qualified Propellor.Property.FreeBSD.Pkg as Pkg
 import qualified Propellor.Property.ZFS as ZFS
@@ -27,7 +26,7 @@ poudriereConfigured :: PoudriereConfigured -> Bool
 poudriereConfigured (PoudriereConfigured _) = True
 
 setConfigured :: Property (HasInfo + FreeBSD)
-setConfigured = tightenTargets $ 
+setConfigured = tightenTargets $
 	pureInfoProperty "Poudriere Configured" (PoudriereConfigured "")
 
 poudriere :: Poudriere -> Property (HasInfo + FreeBSD)
@@ -106,10 +105,10 @@ instance Show PoudriereArch where
 	show I386 = "i386"
 	show AMD64 = "amd64"
 
-instance IsString PoudriereArch where
-	fromString "i386" = I386
-	fromString "amd64" = AMD64
-	fromString _ = error "Not a valid Poudriere architecture."
+fromArchitecture :: Architecture -> PoudriereArch
+fromArchitecture X86_64 = AMD64
+fromArchitecture X86_32 = I386
+fromArchitecture _ = error "Not a valid Poudriere architecture."
 
 yesNoProp :: Bool -> String
 yesNoProp b = if b then "yes" else "no"
