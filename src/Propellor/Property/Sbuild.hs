@@ -9,9 +9,9 @@ Build and maintain schroots for use with sbuild.
 Suggested usage in @config.hs@:
 
 >  & Apt.installed ["piuparts"]
->  & Sbuild.builtFor (System (Debian Unstable) "i386")
->  & Sbuild.piupartsConfFor (System (Debian Unstable) "i386")
->  & Sbuild.updatedFor (System (Debian Unstable) "i386") `period` Weekly 1
+>  & Sbuild.builtFor (System (Debian Unstable) X86_32)
+>  & Sbuild.piupartsConfFor (System (Debian Unstable) X86_32)
+>  & Sbuild.updatedFor (System (Debian Unstable) X86_32) `period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Sbuild.shareAptCache
 >  & Schroot.overlaysInTmpfs
@@ -94,7 +94,7 @@ type Suite = String
 data SbuildSchroot = SbuildSchroot Suite Architecture
 
 instance Show SbuildSchroot where
-	show (SbuildSchroot suite arch) = suite ++ "-" ++ arch
+	show (SbuildSchroot suite arch) = suite ++ "-" ++ architectureToDebianArchString arch
 
 -- | Build and configure a schroot for use with sbuild using a distribution's
 -- standard mirror
@@ -131,7 +131,7 @@ built s@(SbuildSchroot suite arch) mirror =
 	make w = do
 		de <- liftIO standardPathEnv
 		let params = Param <$>
-			[ "--arch=" ++ arch
+			[ "--arch=" ++ architectureToDebianArchString arch
 			, "--chroot-suffix=-propellor"
 			, "--include=eatmydata,ccache"
 			, suite
@@ -193,7 +193,7 @@ updated s@(SbuildSchroot suite arch) =
   where
 	go :: Property DebianLike
 	go = tightenTargets $ cmdProperty
-		"sbuild-update" ["-udr", suite ++ "-" ++ arch]
+		"sbuild-update" ["-udr", suite ++ "-" ++ architectureToDebianArchString arch]
 		`assume` MadeChange
 
 -- Find the conf file that sbuild-createchroot(1) made when we passed it
@@ -220,7 +220,7 @@ fixConfFile s@(SbuildSchroot suite arch) =
   where
 	new = schrootConf s
 	dir = takeDirectory new
-	tempPrefix = dir </> suite ++ "-" ++ arch ++ "-propellor-"
+	tempPrefix = dir </> suite ++ "-" ++ architectureToDebianArchString arch ++ "-propellor-"
 	munge = replace "-propellor]" "-sbuild]"
 
 -- | Create a corresponding schroot config file for use with piuparts
@@ -388,12 +388,12 @@ stdMirror (System (Buntish _) _) = Just "mirror://mirrors.ubuntu.com/"
 stdMirror _ = Nothing
 
 schrootRoot :: SbuildSchroot -> FilePath
-schrootRoot (SbuildSchroot s a) = "/srv/chroot" </> s ++ "-" ++ a
+schrootRoot (SbuildSchroot s a) = "/srv/chroot" </> s ++ "-" ++ architectureToDebianArchString a
 
 schrootConf :: SbuildSchroot -> FilePath
 schrootConf (SbuildSchroot s a) =
-	"/etc/schroot/chroot.d" </> s ++ "-" ++ a ++ "-sbuild-propellor"
+	"/etc/schroot/chroot.d" </> s ++ "-" ++ architectureToDebianArchString a ++ "-sbuild-propellor"
 
 schrootPiupartsConf :: SbuildSchroot -> FilePath
 schrootPiupartsConf (SbuildSchroot s a) =
-	"/etc/schroot/chroot.d" </> s ++ "-" ++ a ++ "-piuparts-propellor"
+	"/etc/schroot/chroot.d" </> s ++ "-" ++ architectureToDebianArchString a ++ "-piuparts-propellor"
