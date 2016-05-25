@@ -76,7 +76,28 @@ isStable (Stable _) = True
 isStable _ = False
 
 type Release = String
-data Architecture = X86_64 | X86_32 | ARMHF | ARMEL | ANDROID | PPC | PPC64 | SPARC | SPARC64 | MIPS | MIPSEL | MIPS64EL | SH4 | IA64 | S390 | S390X | ALPHA | HPPA | M68K | ARM64 | X32
+data Architecture
+	= X86_64
+	| X86_32
+	| ARMHF
+	| ARMEL
+	| ANDROID
+	| PPC
+	| PPC64
+	| SPARC
+	| SPARC64
+	| MIPS
+	| MIPSEL
+	| MIPS64EL
+	| SH4
+	| IA64
+	| S390
+	| S390X
+	| ALPHA
+	| HPPA
+	| M68K
+	| ARM64
+	| X32
 	deriving (Show, Eq)
 -- TODO: remove ANDROID (used in GitAnnexBuilder)
 
