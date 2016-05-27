@@ -76,12 +76,14 @@ isStable (Stable _) = True
 isStable _ = False
 
 type Release = String
+
+-- | Many of these architecture names are based on the names used by
+-- Debian, with a few exceptions for clarity.
 data Architecture
-	= X86_64
-	| X86_32
+	= X86_64 -- ^ 64 bit Intel, called "amd64" in Debian
+	| X86_32 -- ^ 32 bit Intel, called "i386" in Debian
 	| ARMHF
 	| ARMEL
-	| ANDROID
 	| PPC
 	| PPC64
 	| SPARC
@@ -90,16 +92,15 @@ data Architecture
 	| MIPSEL
 	| MIPS64EL
 	| SH4
-	| IA64
+	| IA64 -- ^ Itanium
 	| S390
 	| S390X
 	| ALPHA
 	| HPPA
 	| M68K
 	| ARM64
-	| X32
+	| X32 -- ^ New Linux ABI for 64 bit CPUs using 32-bit integers. Not widely used.
 	deriving (Show, Eq)
--- TODO: remove ANDROID (used in GitAnnexBuilder)
 
 architectureToDebianArchString :: Architecture -> String
 architectureToDebianArchString X86_64 = "amd64"

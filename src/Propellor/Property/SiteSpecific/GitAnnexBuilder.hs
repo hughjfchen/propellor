@@ -25,14 +25,16 @@ builddir = gitbuilderdir </> "build"
 
 type TimeOut = String -- eg, 5h
 
-autobuilder :: Architecture -> Times -> TimeOut -> Property (HasInfo + DebianLike)
+type ArchString = String
+
+autobuilder :: ArchString -> Times -> TimeOut -> Property (HasInfo + DebianLike)
 autobuilder arch crontimes timeout = combineProperties "gitannexbuilder" $ props
 	& Apt.serviceInstalledRunning "cron"
 	& Cron.niceJob "gitannexbuilder" crontimes (User builduser) gitbuilderdir
 		("git pull ; timeout " ++ timeout ++ " ./autobuild")
 	& rsyncpassword
   where
-	context = Context ("gitannexbuilder " ++ architectureToDebianArchString arch)
+	context = Context ("gitannexbuilder " ++ arch)
 	pwfile = homedir </> "rsyncpassword"
 	-- The builduser account does not have a password set,
 	-- instead use the password privdata to hold the rsync server
@@ -47,7 +49,7 @@ autobuilder arch crontimes timeout = combineProperties "gitannexbuilder" $ props
 				then makeChange $ writeFile pwfile want
 				else noChange
 
-tree :: Architecture -> Flavor -> Property DebianLike
+tree :: ArchString -> Flavor -> Property DebianLike
 tree buildarch flavor = combineProperties "gitannexbuilder tree" $ props
 	& Apt.installed ["git"]
 	& File.dirExists gitbuilderdir
@@ -59,7 +61,7 @@ tree buildarch flavor = combineProperties "gitannexbuilder tree" $ props
 		userScriptProperty (User builduser)
 			[ "git clone git://git.kitenet.net/gitannexbuilder " ++ gitbuilderdir
 			, "cd " ++ gitbuilderdir
-			, "git checkout " ++ architectureToDebianArchString buildarch ++ fromMaybe "" flavor
+			, "git checkout " ++ buildarch ++ fromMaybe "" flavor
 			]
 			`assume` MadeChange
 			`describe` "gitbuilder setup"
@@ -107,7 +109,7 @@ autoBuilderContainer :: (DebianSuite -> Architecture -> Flavor -> Property (HasI
 autoBuilderContainer mkprop suite arch flavor crontime timeout =
 	Systemd.container name $ \d -> Chroot.debootstrapped mempty d $ props
 		& mkprop suite arch flavor
-		& autobuilder arch crontime timeout
+		& autobuilder (architectureToDebianArchString arch) crontime timeout
   where
 	name = architectureToDebianArchString arch ++ fromMaybe "" flavor ++ "-git-annex-builder"
 
@@ -122,7 +124,7 @@ standardAutoBuilder suite arch flavor =
 		& Apt.unattendedUpgrades
 		& Apt.cacheCleaned
 		& User.accountFor (User builduser)
-		& tree arch flavor
+		& tree (architectureToDebianArchString arch) flavor
 
 stackAutoBuilder :: DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)
 stackAutoBuilder suite arch flavor =
@@ -133,7 +135,7 @@ stackAutoBuilder suite arch flavor =
 		& Apt.unattendedUpgrades
 		& Apt.cacheCleaned
 		& User.accountFor (User builduser)
-		& tree arch flavor
+		& tree (architectureToDebianArchString arch) flavor
 		& stackInstalled
 		-- Workaround https://github.com/commercialhaskell/stack/issues/2093
 		& Apt.installed ["libtinfo-dev"]
@@ -177,7 +179,7 @@ armAutoBuilder suite arch flavor =
 androidAutoBuilderContainer :: Times -> TimeOut -> Systemd.Container
 androidAutoBuilderContainer crontimes timeout =
 	androidAutoBuilderContainer' "android-git-annex-builder"
-		(tree ANDROID Nothing) builddir crontimes timeout
+		(tree "android" Nothing) builddir crontimes timeout
 
 -- Android is cross-built in a Debian i386 container, using the Android NDK.
 androidAutoBuilderContainer'
@@ -199,7 +201,7 @@ androidAutoBuilderContainer' name setupgitannexdir gitannexdir crontimes timeout
 		& haskellPkgsInstalled "android"
 		& Apt.unattendedUpgrades
 		& buildDepsNoHaskellLibs
-		& autobuilder ANDROID crontimes timeout
+		& autobuilder "android" crontimes timeout
   where
 	-- Use git-annex's android chroot setup script, which will install
 	-- ghc-android and the NDK, all build deps, etc, in the home
