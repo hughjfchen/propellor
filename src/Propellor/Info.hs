@@ -77,14 +77,13 @@ askInfo = asks (fromInfo . hostInfo)
 -- It also lets the type checker know that all the properties of the
 -- host must support Debian.
 --
--- > & osDebian (Stable "jessie") X86_64
---
--- osDebian' lets specify a different DebianKernel
---
--- > & osDebian' KFreeBSD (Stable "jessie") X86_64
+-- >	& osDebian (Stable "jessie") X86_64
 osDebian :: DebianSuite -> Architecture -> Property (HasInfo + Debian)
 osDebian = osDebian' Linux
 
+-- Use to specify a different `DebianKernel` than the default `Linux`
+--
+-- >	& osDebian' KFreeBSD (Stable "jessie") X86_64
 osDebian' :: DebianKernel -> DebianSuite -> Architecture -> Property (HasInfo + Debian)
 osDebian' kernel suite arch = tightenTargets $ os (System (Debian kernel suite) arch)
 
