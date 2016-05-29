@@ -2,6 +2,10 @@ propellor (3.0.5) UNRELEASED; urgency=medium
 
   * Modules added for Sbuild and Ccache.
     Thanks, Sean Whitton
+  * Systemd: Added killUserProcesses property, which can be reverted
+    to return systemd to its default behavior before version 230 started
+    killing processes like screen sessions.
+  * Systemd: Added logindConfigured property.
 
  -- Joey Hess <id@joeyh.name>  Mon, 23 May 2016 11:19:28 -0400
 

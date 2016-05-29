@@ -564,6 +564,9 @@ standardSystemUnhardened suite arch motd = propertyList "standard system" $ prop
 	-- I use postfix, or no MTA.
 	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
 		`onChange` Apt.autoRemove
+	-- At least until system integration catches up, revert
+	-- systemd 230's behavior of enabling this property by default.
+	! Systemd.killUserProcesses
 
 -- This is my standard container setup, Featuring automatic upgrades.
 standardContainer :: DebianSuite -> Property (HasInfo + Debian)

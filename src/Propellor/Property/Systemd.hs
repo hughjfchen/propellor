@@ -12,6 +12,7 @@ module Propellor.Property.Systemd (
 	restarted,
 	networkd,
 	journald,
+	logind,
 	-- * Configuration
 	installed,
 	Option,
@@ -20,6 +21,9 @@ module Propellor.Property.Systemd (
 	-- * Journal
 	persistentJournal,
 	journaldConfigured,
+	-- * Logind
+	logindConfigured,
+	killUserProcesses,
 	-- * Containers and machined
 	machined,
 	MachineName,
@@ -127,6 +131,10 @@ networkd = "systemd-networkd"
 journald :: ServiceName
 journald = "systemd-journald"
 
+-- | The systemd-logind service.
+logind :: ServiceName
+logind = "systemd-logind"
+
 -- | Enables persistent storage of the journal.
 persistentJournal :: Property DebianLike
 persistentJournal = check (not <$> doesDirectoryExist dir) $
@@ -171,6 +179,25 @@ journaldConfigured :: Option -> String -> Property Linux
 journaldConfigured option value =
 	configured "/etc/systemd/journald.conf" option value
 		`onChange` restarted journald
+
+-- | Configures logind, restarting it so the changes take effect.
+logindConfigured :: Option -> String -> Property Linux
+logindConfigured option value =
+	configured "/etc/systemd/logind.conf" option value
+		`onChange` restarted logind
+
+-- | Configures whether leftover processes started from the
+-- user's login session are killed after the user logs out.
+--
+-- The default configuration varies depending on the version of systemd.
+--
+-- Revert the property to ensure that screen sessions etc keep running:
+--
+-- >	! killUserProcesses
+killUserProcesses :: RevertableProperty Linux Linux
+killUserProcesses = set "yes" <!> set "no"
+  where
+	set = logindConfigured "KillUserProcesses"
 
 -- | Ensures machined and machinectl are installed
 machined :: Property Linux
