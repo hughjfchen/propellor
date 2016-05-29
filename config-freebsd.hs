@@ -44,7 +44,7 @@ poudriereZFS = Poudriere.defaultConfig
 -- An example linux host.
 linuxbox :: Host
 linuxbox = host "linuxbox.example.com" $ props
-	& osDebian Unstable X86_64
+	& osDebian' KFreeBSD Unstable X86_64
 	& Apt.stdSourcesList
 	& Apt.unattendedUpgrades
 	& Apt.installed ["etckeeper"]
@@ -59,7 +59,7 @@ linuxbox = host "linuxbox.example.com" $ props
 -- A generic webserver in a Docker container.
 webserverContainer :: Docker.Container
 webserverContainer = Docker.container "webserver" (Docker.latestImage "debian") $ props
-	& osDebian (Stable "jessie") X86_64
+	& osDebian' KFreeBSD (Stable "jessie") X86_64
 	& Apt.stdSourcesList
 	& Docker.publish "80:80"
 	& Docker.volume "/var/www:/var/www"

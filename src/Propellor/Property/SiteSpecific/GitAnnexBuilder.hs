@@ -143,7 +143,7 @@ stackAutoBuilder suite arch flavor =
 stackInstalled :: Property Linux
 stackInstalled = withOS "stack installed" $ \w o ->
 	case o of
-		(Just (System (Debian (Stable "jessie")) X86_32)) ->
+		(Just (System (Debian Linux (Stable "jessie")) X86_32)) ->
 			ensureProperty w $ manualinstall X86_32
 		_ -> ensureProperty w $ Apt.installed ["haskell-stack"]
   where

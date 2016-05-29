@@ -91,7 +91,7 @@ data Debootstrapped = Debootstrapped Debootstrap.DebootstrapConfig
 
 instance ChrootBootstrapper Debootstrapped where
 	buildchroot (Debootstrapped cf) system loc = case system of
-		(Just s@(System (Debian _) _)) -> Right $ debootstrap s
+		(Just s@(System (Debian _ _) _)) -> Right $ debootstrap s
 		(Just s@(System (Buntish _) _)) -> Right $ debootstrap s
 		(Just (System (FreeBSD _) _)) -> Left "FreeBSD not supported by debootstrap."
 		Nothing -> Left "Cannot debootstrap; OS not specified"

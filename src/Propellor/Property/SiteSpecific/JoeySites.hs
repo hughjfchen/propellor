@@ -103,7 +103,7 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 	& oldUseNetInstalled "oldusenet-server"
 	& oldUseNetBackup
 	& spoolsymlink
-	& "/etc/news/leafnode/config" `File.hasContent` 
+	& "/etc/news/leafnode/config" `File.hasContent`
 		[ "# olduse.net configuration (deployed by propellor)"
 		, "expire = 1000000" -- no expiry via texpire
 		, "server = " -- no upstream server
@@ -134,7 +134,7 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 		, Apache.allowAll
 		, "  </Directory>"
 		]
-	
+
 	spoolsymlink :: Property UnixLike
 	spoolsymlink = check (not . isSymbolicLink <$> getSymbolicLinkStatus newsspool)
 		(property "olduse.net spool in place" $ makeChange $ do
@@ -177,7 +177,7 @@ oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 			]
 			`assume` MadeChange
 			`describe` "olduse.net built"
- 
+
 kgbServer :: Property (HasInfo + Debian)
 kgbServer = propertyList desc $ props
 	& installed
@@ -187,7 +187,7 @@ kgbServer = propertyList desc $ props
 	desc = "kgb.kitenet.net setup"
 	installed :: Property Debian
 	installed = withOS desc $ \w o -> case o of
-		(Just (System (Debian Unstable) _)) ->
+		(Just (System (Debian _ Unstable) _)) ->
 			ensureProperty w $ propertyList desc $ props
 				& Apt.serviceInstalledRunning "kgb-bot"
 				& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
@@ -289,7 +289,7 @@ annexWebSite origin hn uuid remotes = propertyList (hn ++" website using git-ann
 	postupdatehook = dir </> ".git/hooks/post-update"
 	setup = userScriptProperty (User "joey") setupscript
 		`assume` MadeChange
-	setupscript = 
+	setupscript =
 		[ "cd " ++ shellEscape dir
 		, "git annex reinit " ++ shellEscape uuid
 		] ++ map addremote remotes ++
@@ -316,7 +316,7 @@ apacheSite :: HostName -> Apache.ConfigFile -> RevertableProperty DebianLike Deb
 apacheSite hn middle = Apache.siteEnabled hn $ apachecfg hn middle
 
 apachecfg :: HostName -> Apache.ConfigFile -> Apache.ConfigFile
-apachecfg hn middle = 
+apachecfg hn middle =
 	[ "<VirtualHost *:"++show port++">"
 	, "  ServerAdmin grue@joeyh.name"
 	, "  ServerName "++hn++":"++show port
@@ -333,7 +333,7 @@ apachecfg hn middle =
 	]
 	  where
 		port = 80 :: Int
-		
+
 gitAnnexDistributor :: Property (HasInfo + DebianLike)
 gitAnnexDistributor = combineProperties "git-annex distributor, including rsync server and signer" $ props
 	& Apt.installed ["rsync"]
@@ -360,7 +360,7 @@ downloads hosts = annexWebSite "/srv/git/downloads.git"
 	"840760dc-08f0-11e2-8c61-576b7e66acfd"
 	[("eubackup", "ssh://eubackup.kitenet.net/~/lib/downloads/")]
 	`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "joey")
-	
+
 tmp :: Property (HasInfo + DebianLike)
 tmp = propertyList "tmp.kitenet.net" $ props
 	& annexWebSite "/srv/git/joey/tmp.git"
@@ -384,7 +384,7 @@ twitRss = combineProperties "twitter rss" $ props
 		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
 	compiled = userScriptProperty (User "joey")
 		[ "cd " ++ dir
-		, "ghc --make twitRss" 
+		, "ghc --make twitRss"
 		]
 		`assume` NoChange
 		`requires` Apt.installed
@@ -447,7 +447,7 @@ githubBackup = propertyList "github-backup box" $ props
 	gitriddance (r, msg) = "(cd " ++ r ++ " && gitriddance " ++ shellEscape msg ++ ")"
 
 githubKeys :: Property (HasInfo + UnixLike)
-githubKeys = 
+githubKeys =
 	let f = "/home/joey/.github-keys"
 	in File.hasPrivContent f anyContext
 		`onChange` File.ownerGroup f (User "joey") (Group "joey")
@@ -511,14 +511,14 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		] `onChange` Service.restarted "spamassassin"
 		`describe` "spamd enabled"
 		`requires` Apt.serviceInstalledRunning "cron"
-	
+
 	& Apt.serviceInstalledRunning "spamass-milter"
 	-- Add -m to prevent modifying messages Subject or body.
 	& "/etc/default/spamass-milter" `File.containsLine`
 		"OPTIONS=\"-m -u spamass-milter -i 127.0.0.1\""
 		`onChange` Service.restarted "spamass-milter"
 		`describe` "spamass-milter configured"
-	
+
 	& Apt.serviceInstalledRunning "amavisd-milter"
 	& "/etc/default/amavisd-milter" `File.containsLines`
 		[ "# Propellor deployed"
@@ -642,7 +642,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		`onChange` Postfix.dedupMainCf
 		`onChange` Postfix.reloaded
 		`describe` "postfix configured"
-	
+
 	& Apt.serviceInstalledRunning "dovecot-imapd"
 	& Apt.serviceInstalledRunning "dovecot-pop3d"
 	& "/etc/dovecot/conf.d/10-mail.conf" `File.containsLine`
@@ -679,7 +679,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "inbox-path={localhost/novalidate-cert/NoRsh}inbox"
 		]
 		`describe` "pine configured to use local imap server"
-	
+
 	& Apt.serviceInstalledRunning "mailman"
 
 	& Postfix.service ssmtp
@@ -690,7 +690,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 	pinescript = "/usr/local/bin/pine"
 	dovecotusers = "/etc/dovecot/users"
 
-	ssmtp = Postfix.Service 
+	ssmtp = Postfix.Service
 		(Postfix.InetService Nothing "ssmtp")
 		"smtpd" Postfix.defServiceOpts
 
@@ -827,7 +827,7 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "RewriteRule ^/joey/index.html http://www.kitenet.net/joey/ [R]"
 		, "RewriteRule ^/wifi http://www.kitenet.net/wifi/ [R]"
 		, "RewriteRule ^/wifi/index.html http://www.kitenet.net/wifi/ [R]"
-		
+
 		, "# Old ikiwiki filenames for kitenet.net wiki."
 		, "rewritecond $1 !^/~"
 		, "rewritecond $1 !^/doc/"
@@ -914,7 +914,7 @@ legacyWebSites = propertyList "legacy web sites" $ props
 
 		, "rewritecond $1 !.*/index$"
 		, "rewriterule (.+).rss$ http://joeyh.name/$1/index.rss [l]"
-		
+
 		, "# Redirect all to joeyh.name."
 		, "rewriterule (.*) http://joeyh.name$1 [r]"
 		]

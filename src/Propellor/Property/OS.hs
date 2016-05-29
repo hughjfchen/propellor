@@ -85,7 +85,7 @@ cleanInstallOnce confirmation = check (not <$> doesFileExist flagfile) $
 
 	osbootstrapped :: Property Linux
 	osbootstrapped = withOS (newOSDir ++ " bootstrapped") $ \w o -> case o of
-		(Just d@(System (Debian _) _)) -> ensureProperty w $
+		(Just d@(System (Debian _ _) _)) -> ensureProperty w $
 			debootstrap d
 		(Just u@(System (Buntish _) _)) -> ensureProperty w $
 			debootstrap u

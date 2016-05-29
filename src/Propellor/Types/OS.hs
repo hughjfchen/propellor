@@ -4,6 +4,7 @@ module Propellor.Types.OS (
 	System(..),
 	Distribution(..),
 	TargetOS(..),
+	DebianKernel(..),
 	DebianSuite(..),
 	FreeBSDRelease(..),
 	FBSDVersion(..),
@@ -30,7 +31,7 @@ data System = System Distribution Architecture
 	deriving (Show, Eq, Typeable)
 
 data Distribution
-	= Debian DebianSuite
+	= Debian DebianKernel DebianSuite
 	| Buntish Release -- ^ A well-known Debian derivative founded by a space tourist. The actual name of this distribution is not used in Propellor per <http://joeyh.name/blog/entry/trademark_nonsense/>
 	| FreeBSD FreeBSDRelease
 	deriving (Show, Eq)
@@ -44,9 +45,14 @@ data TargetOS
 	deriving (Show, Eq, Ord)
 
 systemToTargetOS :: System -> TargetOS
-systemToTargetOS (System (Debian _) _) = OSDebian
+systemToTargetOS (System (Debian _ _) _) = OSDebian
 systemToTargetOS (System (Buntish _) _) = OSBuntish
 systemToTargetOS (System (FreeBSD _) _) = OSFreeBSD
+
+-- | Most of Debian ports are based on Linux. There also exist hurd-i386,
+-- kfreebsd-i386, kfreebsd-amd64 ports
+data DebianKernel = Linux | KFreeBSD | Hurd
+	deriving (Show, Eq)
 
 -- | Debian has several rolling suites, and a number of stable releases,
 -- such as Stable "jessie".

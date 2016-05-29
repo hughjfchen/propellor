@@ -78,8 +78,15 @@ askInfo = asks (fromInfo . hostInfo)
 -- host must support Debian.
 --
 -- > & osDebian (Stable "jessie") X86_64
+--
+-- osDebian' lets specify a different DebianKernel
+--
+-- > & osDebian' KFreeBSD (Stable "jessie") X86_64
 osDebian :: DebianSuite -> Architecture -> Property (HasInfo + Debian)
-osDebian suite arch = tightenTargets $ os (System (Debian suite) arch)
+osDebian = osDebian' Linux
+
+osDebian' :: DebianKernel -> DebianSuite -> Architecture -> Property (HasInfo + Debian)
+osDebian' kernel suite arch = tightenTargets $ os (System (Debian kernel suite) arch)
 
 -- | Specifies that a host's operating system is a well-known Debian
 -- derivative founded by a space tourist.

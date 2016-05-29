@@ -82,7 +82,7 @@ securityUpdates suite
 -- kernel.org.
 stdSourcesList :: Property Debian
 stdSourcesList = withOS "standard sources.list" $ \w o -> case o of
-	(Just (System (Debian suite) _)) ->
+	(Just (System (Debian _ suite) _)) ->
 		ensureProperty w $ stdSourcesListFor suite
 	_ -> unsupportedOS'
 
@@ -161,7 +161,7 @@ installed' params ps = robustly $ check (isInstallable ps) go
 
 installedBackport :: [Package] -> Property Debian
 installedBackport ps = withOS desc $ \w o -> case o of
-	(Just (System (Debian suite) _)) -> case backportSuite suite of
+	(Just (System (Debian _ suite) _)) -> case backportSuite suite of
 		Nothing -> unsupportedOS'
 		Just bs -> ensureProperty w $
 			runApt (["install", "-t", bs, "-y"] ++ ps)
@@ -257,7 +257,7 @@ unattendedUpgrades = enable <!> disable
 		enableupgrading = withOS "unattended upgrades configured" $ \w o ->
 			case o of
 				-- the package defaults to only upgrading stable
-				(Just (System (Debian suite) _))
+				(Just (System (Debian _ suite) _))
 					| not (isStable suite) -> ensureProperty w $
 						unattendedconfig
 							`File.containsLine`

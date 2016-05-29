@@ -204,7 +204,7 @@ machined :: Property Linux
 machined = withOS "machined installed" $ \w o ->
 	case o of
 		-- Split into separate debian package since systemd 225.
-		(Just (System (Debian suite) _))
+		(Just (System (Debian _ suite) _))
 			| not (isStable suite) -> ensureProperty w $
 				Apt.installed ["systemd-container"]
 		_ -> noChange

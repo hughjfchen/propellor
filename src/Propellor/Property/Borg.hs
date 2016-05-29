@@ -23,7 +23,7 @@ type BorgRepo = FilePath
 
 installed :: Property DebianLike
 installed = withOS desc $ \w o -> case o of
-	(Just (System (Debian (Stable "jessie")) _)) -> ensureProperty w $
+	(Just (System (Debian _ (Stable "jessie")) _)) -> ensureProperty w $
 		Apt.installedBackport ["borgbackup"]
 	_ -> ensureProperty w $
 		Apt.installed ["borgbackup"]

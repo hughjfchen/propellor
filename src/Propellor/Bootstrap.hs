@@ -60,7 +60,7 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
   where
 	osinstall = case msys of
 		Just (System (FreeBSD _) _) -> map pkginstall fbsddeps
-		Just (System (Debian _) _) -> useapt
+		Just (System (Debian _ _) _) -> useapt
 		Just (System (Buntish _) _) -> useapt
 		-- assume a debian derived system when not specified
 		Nothing -> useapt
@@ -115,7 +115,7 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 
 installGitCommand :: Maybe System -> ShellCommand
 installGitCommand msys = case msys of
-	(Just (System (Debian _) _)) -> use apt
+	(Just (System (Debian _ _) _)) -> use apt
 	(Just (System (Buntish _) _)) -> use apt
 	(Just (System (FreeBSD _) _)) -> use
 		[ "ASSUME_ALWAYS_YES=yes pkg update"
@@ -125,7 +125,7 @@ installGitCommand msys = case msys of
 	Nothing -> use apt
   where
 	use cmds = "if ! git --version >/dev/null; then " ++ intercalate " && " cmds ++ "; fi"
-	apt = 
+	apt =
 		[ "apt-get update"
 		, "DEBIAN_FRONTEND=noninteractive apt-get -qq --no-install-recommends --no-upgrade -y install git"
 		]
@@ -177,7 +177,7 @@ cabalBuild msys = do
 		( return True
 		, case msys of
 			Nothing -> return False
-			Just sys -> 
+			Just sys ->
 				boolSystem "sh" [Param "-c", Param (depsCommand (Just sys))]
 					<&&> cabal ["configure"]
 		)
