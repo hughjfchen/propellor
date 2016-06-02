@@ -27,7 +27,7 @@ is as follows:
 That would have worked before propellor 3.0, but I had to remove support
 for adding additional properties into an existing Host using `&` like this.
 Also, in propellor 3.0, you have to use `props` when building a list
-of properties to assign to a host. See <upgrading_to_propellor_3.0>.
+of properties to assign to a host. See [[upgrading_to_propellor_3.0]].
 
 The way I dealt with it in joeyconfig.hs is to make my standardSystem not
 be a function to generate a Host, but just a Property that combines
