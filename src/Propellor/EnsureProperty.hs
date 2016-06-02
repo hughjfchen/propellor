@@ -24,7 +24,7 @@ import Prelude
 -- Use `property'` to get the `OuterMetaTypesWithness`. For example:
 --
 -- > foo = Property Debian
--- > foo = property' $ \w -> do
+-- > foo = property' "my property" $ \w -> do
 -- > 	ensureProperty w (aptInstall "foo")
 --
 -- The type checker will prevent using ensureProperty with a property
