@@ -308,12 +308,15 @@ minimalConfig = do
 	stackcontent =
 		-- This should be the same resolver version in propellor's
 		-- own stack.yaml
-		[ "resolver: lts-5.10"
+		[ "resolver: " ++ stackResolver
 		, "packages:"
 		, "- '.'"
 		, "extra-deps:"
 		, "- propellor-" ++ showVersion Package.version
 		]
+
+stackResolver :: String
+stackResolver = "lts-5.10"
 
 fullClone :: IO Result
 fullClone = do
