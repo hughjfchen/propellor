@@ -1,4 +1,4 @@
-propellor (3.0.5) UNRELEASED; urgency=medium
+propellor (3.0.5) unstable; urgency=medium
 
   * Modules added for Sbuild and Ccache.
     Thanks, Sean Whitton
@@ -7,7 +7,7 @@ propellor (3.0.5) UNRELEASED; urgency=medium
     killing processes like screen sessions.
   * Systemd: Added logindConfigured property.
 
- -- Joey Hess <id@joeyh.name>  Mon, 23 May 2016 11:19:28 -0400
+ -- Joey Hess <id@joeyh.name>  Mon, 06 Jun 2016 17:13:21 -0400
 
 propellor (3.0.4) unstable; urgency=medium
 
