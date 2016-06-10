@@ -683,6 +683,8 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 	& Apt.serviceInstalledRunning "mailman"
 
 	& Postfix.service ssmtp
+
+	& Apt.installed ["fetchmail"]
   where
 	ctx = Context "kitenet.net"
 	pinescript = "/usr/local/bin/pine"
