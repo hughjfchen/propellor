@@ -1,3 +1,9 @@
+propellor (3.0.6) UNRELEASED; urgency=medium
+
+  * Switch letsencrypt to certbot package name.
+
+ -- Joey Hess <id@joeyh.name>  Fri, 10 Jun 2016 14:59:44 -0400
+
 propellor (3.0.5) unstable; urgency=medium
 
   * Modules added for Sbuild and Ccache.
