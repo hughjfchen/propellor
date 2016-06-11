@@ -66,6 +66,7 @@ module Propellor.Property.Sbuild (
 	-- blockNetwork,
 	installed,
 	keypairGenerated,
+	keypairInsecurelyGenerated,
 	shareAptCache,
 	usableBy,
 ) where
@@ -320,7 +321,21 @@ keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 	go = tightenTargets $
 		cmdProperty "sbuild-update" ["--keygen"]
 		`assume` MadeChange
-	secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
+
+secKeyFile :: FilePath
+secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
+
+-- | Generate the apt keys needed by sbuild using a low-quality source of
+-- randomness
+--
+-- Useful on throwaway build VMs.
+keypairInsecurelyGenerated :: Property DebianLike
+keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) $ go
+	`requires` Apt.installed ["rng-tools"]
+  where
+	go :: Property DebianLike
+	go = (cmdProperty "rngd" ["-r", "/dev/urandom"] `assume` MadeChange)
+		`before` keypairGenerated
 
 -- another script from wiki.d.o/sbuild
 ccachePrepared :: Property DebianLike
