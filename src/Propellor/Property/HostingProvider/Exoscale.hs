@@ -15,9 +15,10 @@ import qualified Propellor.Property.Reboot as Reboot
 -- We reboot after doing this because 'Sbuild.built' will fail to set up an
 -- overlay-type chroot on an old kernel
 distroKernel :: Architecture -> Property DebianLike
-distroKernel arch = Grub.installed' Grub.PC
-	`before` Apt.installed ["linux-image-" ++ arch]
-	`before` Grub.boots "/dev/vda"
-	`before` Grub.mkConfig
-	`before` Reboot.now
-	`flagFile` "/etc/propellor-grub"
+distroKernel arch = combineProperties "boots distro kernel" $ props
+	& Grub.installed' Grub.PC
+	& Apt.installed ["linux-image-" ++ arch]
+	& Grub.boots "/dev/vda"
+	& flagFile
+		(Grub.mkConfig `before` Reboot.now)
+		"/etc/propellor-distro-kernel"
