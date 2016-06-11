@@ -18,7 +18,9 @@ distroKernel :: Architecture -> Property DebianLike
 distroKernel arch = combineProperties "boots distro kernel" $ props
 	& Grub.installed' Grub.PC
 	& Apt.installed ["linux-image-" ++ arch]
-	& Grub.boots "/dev/vda"
+	-- only these ones are not idempotent so need flag file
 	& flagFile
-		(Grub.mkConfig `before` Reboot.now)
+		(Grub.boots "/dev/vda"
+		`before` Grub.mkConfig
+		`before` Reboot.now)
 		"/etc/propellor-distro-kernel"
