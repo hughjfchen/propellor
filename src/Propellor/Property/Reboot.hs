@@ -45,17 +45,19 @@ atEnd force resultok = property "scheduled reboot at end of propellor run" $ do
 --
 -- This will only work if you have taken measures to ensure that the other
 -- kernel won't just get booted again.  See 'Propellor.Property.DigitalOcean'
--- for an example.
+-- for an example of how to do this.
 toDistroKernel :: Property DebianLike
 toDistroKernel = check (not <$> runningInstalledKernel) now
 	`describe` "running installed kernel"
 
 -- | Given a kernel version string @v@, reboots immediately if the running
 -- kernel version is strictly less than @v@ and there is an installed kernel
--- version is greater than or equal to @v@
+-- version is greater than or equal to @v@.  Dies if the requested kernel
+-- version is not installed.
 --
--- This assumes that the installed kernel with the highest version number is the
--- one that will be started if we reboot.
+-- For this to be useful, you need to have ensured that the installed kernel
+-- with the highest version number is the one that will be started after a
+-- reboot.
 --
 -- This is useful when upgrading to a new version of Debian where you need to
 -- ensure that a new enough kernel is running before ensuring other properties.
@@ -69,6 +71,10 @@ toKernelNewerThan ver =
 		if runningV >= wantV then noChange
 			else if installedV >= wantV
 				then ensureProperty w now
+				-- We error out here because other properties
+				-- may be incorrectly ensured on a version
+				-- that's too old.  E.g. Sbuild.built can fail
+				-- to add the config line `union-type=overlay`
 				else errorMessage ("kernel newer than "
 					++ ver
 					++ " not installed")
