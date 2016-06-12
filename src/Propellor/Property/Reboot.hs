@@ -8,6 +8,7 @@ module Propellor.Property.Reboot (
 import Propellor.Base
 
 import Data.List
+import Data.String.Utils (split)
 import Data.Version
 
 type KernelVersion = String
@@ -69,7 +70,8 @@ newerKernelAvailable wantV = do
 	kernelImages <- installedKernelImages
 	when (null kernelImages) $
 		error "failed to find any installed kernel images"
-	let installedV = maximum $ Prelude.read <$> kernelImages
+	let installedV = maximum $
+		Prelude.read . extractKernelVersion <$> kernelImages
 	return $ installedV >= wantV && runningV < wantV
 
 runningInstalledKernel :: IO Bool
@@ -97,3 +99,9 @@ findVersion ver s = (" version " ++ ver ++ " ") `isInfixOf` s
 
 kernelsIn :: FilePath -> IO [FilePath]
 kernelsIn d = filter ("vmlinu" `isInfixOf`) <$> dirContents d
+
+-- TODO this is way too crude
+extractKernelVersion :: String -> KernelVersion
+extractKernelVersion s =
+	concat . reverse . drop 1 . reverse . drop 1 $
+	split "-" s
