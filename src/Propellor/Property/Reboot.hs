@@ -103,5 +103,5 @@ kernelsIn d = filter ("vmlinu" `isInfixOf`) <$> dirContents d
 -- TODO this is way too crude
 extractKernelVersion :: String -> KernelVersion
 extractKernelVersion s =
-	concat . reverse . drop 1 . reverse . drop 1 $
+	concat . filter (/= "") . reverse . drop 1 . reverse . drop 1 $
 	split "-" s
