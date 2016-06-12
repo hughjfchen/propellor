@@ -8,7 +8,6 @@ module Propellor.Property.Reboot (
 import Propellor.Base
 
 import Data.List
-import Data.String.Utils (split)
 import Data.Version
 
 type KernelVersion = String
@@ -64,14 +63,11 @@ toKernelNewerThan ver = property' ("reboot to kernel newer than " ++ ver) $ \w -
 	ifM (liftIO $ newerKernelAvailable (Prelude.read ver))
 	(ensureProperty w now, noChange)
 
+-- TODO avoid Prelude.read
 newerKernelAvailable :: Version -> IO Bool
 newerKernelAvailable wantV = do
 	runningV <- Prelude.read <$> runningKernelVersion
-	kernelImages <- installedKernelImages
-	when (null kernelImages) $
-		error "failed to find any installed kernel images"
-	let installedV = maximum $
-		Prelude.read . extractKernelVersion <$> kernelImages
+	installedV <- maximum . map Prelude.read <$> installedKernelVersions
 	return $ installedV >= wantV && runningV < wantV
 
 runningInstalledKernel :: IO Bool
@@ -94,14 +90,19 @@ installedKernelImages = concat <$> mapM kernelsIn ["/", "/boot/"]
 -- | File output looks something like this, we want to unambiguously
 -- match the running kernel version:
 --   Linux kernel x86 boot executable bzImage, version 3.16-3-amd64 (debian-kernel@lists.debian.org) #1 SMP Debian 3.1, RO-rootFS, swap_dev 0x2, Normal VGA
-findVersion :: KernelVersion -> KernelVersion -> Bool
+findVersion :: KernelVersion -> String -> Bool
 findVersion ver s = (" version " ++ ver ++ " ") `isInfixOf` s
+
+installedKernelVersions :: IO [KernelVersion]
+installedKernelVersions = do
+	kernelimages <- installedKernelImages
+	when (null kernelimages) $
+		error "failed to find any installed kernel images"
+	imageLines <- lines <$> readProcess "file" ("-L" : kernelimages)
+	return $ extractKernelVersion <$> imageLines
 
 kernelsIn :: FilePath -> IO [FilePath]
 kernelsIn d = filter ("vmlinu" `isInfixOf`) <$> dirContents d
 
--- TODO this is way too crude
 extractKernelVersion :: String -> KernelVersion
-extractKernelVersion s =
-	concat . filter (/= "") . reverse . drop 1 . reverse . drop 1 $
-	split "-" s
+extractKernelVersion = unwords . take 1 . dropWhile (/= "version") . words
