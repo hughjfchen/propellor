@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Propellor.Property.Reboot (
 	now,
 	atEnd,
@@ -9,6 +11,7 @@ import Propellor.Base
 
 import Data.List
 import Data.Version
+import Text.ParserCombinators.ReadP
 
 type KernelVersion = String
 
@@ -60,14 +63,13 @@ toDistroKernel = check (not <$> runningInstalledKernel) now
 -- ensure that a new enough kernel is running before ensuring other properties.
 toKernelNewerThan :: KernelVersion -> Property DebianLike
 toKernelNewerThan ver = property' ("reboot to kernel newer than " ++ ver) $ \w ->
-	ifM (liftIO $ newerKernelAvailable (Prelude.read ver))
+	ifM (liftIO $ newerKernelAvailable (readVersion ver))
 	(ensureProperty w now, noChange)
 
--- TODO avoid Prelude.read
 newerKernelAvailable :: Version -> IO Bool
 newerKernelAvailable wantV = do
-	runningV <- Prelude.read <$> runningKernelVersion
-	installedV <- maximum . map Prelude.read <$> installedKernelVersions
+	runningV <- readVersion <$> runningKernelVersion
+	installedV <- maximum . map readVersion <$> installedKernelVersions
 	return $ installedV >= wantV && runningV < wantV
 
 runningInstalledKernel :: IO Bool
@@ -105,4 +107,9 @@ kernelsIn :: FilePath -> IO [FilePath]
 kernelsIn d = filter ("vmlinu" `isInfixOf`) <$> dirContents d
 
 extractKernelVersion :: String -> KernelVersion
-extractKernelVersion = unwords . take 1 . dropWhile (/= "version") . words
+extractKernelVersion =
+	unwords . take 1 . drop 1 . dropWhile (/= "version") . words
+
+-- TODO properly handle error here
+readVersion :: String -> Version
+readVersion s = (fst . Prelude.last) $ readP_to_S parseVersion s
