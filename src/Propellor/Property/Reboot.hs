@@ -8,6 +8,7 @@ module Propellor.Property.Reboot (
 import Propellor.Base
 
 import Data.List
+import Data.Version
 
 type KernelVersion = String
 
@@ -49,13 +50,27 @@ toDistroKernel = check (not <$> runningInstalledKernel) now
 	`describe` "running installed kernel"
 
 -- | Given a kernel version string @v@, reboots immediately if the running
--- kernel version is strictly less than @v@ and the installed kernel version is
--- greater than or equal to @v@
+-- kernel version is strictly less than @v@ and there is an installed kernel
+-- version is greater than or equal to @v@
+--
+-- This assumes that the installed kernel with the highest version number is the
+-- one that will be started if we reboot.
 --
 -- This is useful when upgrading to a new version of Debian where you need to
 -- ensure that a new enough kernel is running before ensuring other properties.
-toKernelNewerThan :: Version -> Property DebianLike
-toKernelNewerThan v = undefined
+toKernelNewerThan :: KernelVersion -> Property DebianLike
+toKernelNewerThan ver = property' ("reboot to kernel newer than " ++ ver) $ \w ->
+	ifM (liftIO $ newerKernelAvailable (Prelude.read ver))
+	(ensureProperty w now, noChange)
+
+newerKernelAvailable :: Version -> IO Bool
+newerKernelAvailable wantV = do
+	runningV <- Prelude.read <$> runningKernelVersion
+	kernelImages <- installedKernelImages
+	when (null kernelImages) $
+		error "failed to find any installed kernel images"
+	let installedV = maximum $ Prelude.read <$> kernelImages
+	return $ installedV >= wantV && runningV < wantV
 
 runningInstalledKernel :: IO Bool
 runningInstalledKernel = do
