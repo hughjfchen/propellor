@@ -9,7 +9,7 @@ import Propellor.Base
 
 import Data.List
 
-data Version = String
+type KernelVersion = String
 
 now :: Property Linux
 now = tightenTargets $ cmdProperty "reboot" []
@@ -59,19 +59,25 @@ toKernelNewerThan v = undefined
 
 runningInstalledKernel :: IO Bool
 runningInstalledKernel = do
-	kernelver <- takeWhile (/= '\n') <$> readProcess "uname" ["-r"]
+	kernelver <- runningKernelVersion
 	when (null kernelver) $
 		error "failed to read uname -r"
-	kernelimages <- concat <$> mapM kernelsIn ["/", "/boot/"]
+	kernelimages <- installedKernelImages
 	when (null kernelimages) $
 		error "failed to find any installed kernel images"
 	findVersion kernelver <$>
 		readProcess "file" ("-L" : kernelimages)
 
+runningKernelVersion :: IO KernelVersion
+runningKernelVersion = takeWhile (/= '\n') <$> readProcess "uname" ["-r"]
+
+installedKernelImages :: IO [String]
+installedKernelImages = concat <$> mapM kernelsIn ["/", "/boot/"]
+
 -- | File output looks something like this, we want to unambiguously
 -- match the running kernel version:
 --   Linux kernel x86 boot executable bzImage, version 3.16-3-amd64 (debian-kernel@lists.debian.org) #1 SMP Debian 3.1, RO-rootFS, swap_dev 0x2, Normal VGA
-findVersion :: String -> String -> Bool
+findVersion :: KernelVersion -> KernelVersion -> Bool
 findVersion ver s = (" version " ++ ver ++ " ") `isInfixOf` s
 
 kernelsIn :: FilePath -> IO [FilePath]
