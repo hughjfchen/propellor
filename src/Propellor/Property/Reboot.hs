@@ -2,11 +2,14 @@ module Propellor.Property.Reboot (
 	now,
 	atEnd,
 	toDistroKernel,
+	toKernelNewerThan,
 ) where
 
 import Propellor.Base
 
 import Data.List
+
+data Version = String
 
 now :: Property Linux
 now = tightenTargets $ cmdProperty "reboot" []
@@ -44,6 +47,15 @@ atEnd force resultok = property "scheduled reboot at end of propellor run" $ do
 toDistroKernel :: Property DebianLike
 toDistroKernel = check (not <$> runningInstalledKernel) now
 	`describe` "running installed kernel"
+
+-- | Given a kernel version string @v@, reboots immediately if the running
+-- kernel version is strictly less than @v@ and the installed kernel version is
+-- greater than or equal to @v@
+--
+-- This is useful when upgrading to a new version of Debian where you need to
+-- ensure that a new enough kernel is running before ensuring other properties.
+toKernelNewerThan :: Version -> Property DebianLike
+toKernelNewerThan v = undefined
 
 runningInstalledKernel :: IO Bool
 runningInstalledKernel = do
