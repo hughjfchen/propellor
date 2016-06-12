@@ -330,12 +330,13 @@ secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
 --
 -- Useful on throwaway build VMs.
 keypairInsecurelyGenerated :: Property DebianLike
-keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) $ go
-	`requires` Apt.installed ["rng-tools"]
+keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) go
   where
 	go :: Property DebianLike
-	go = (cmdProperty "rngd" ["-r", "/dev/urandom"] `assume` MadeChange)
-		`before` keypairGenerated
+	go = combineProperties "sbuild keyring insecurely generated" $ props
+		& Apt.installed ["rng-tools"]
+		& cmdProperty "rngd" ["-r", "/dev/urandom"] `assume` MadeChange
+		& keypairGenerated
 
 -- another script from wiki.d.o/sbuild
 ccachePrepared :: Property DebianLike
