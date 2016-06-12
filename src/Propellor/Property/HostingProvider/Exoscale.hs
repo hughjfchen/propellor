@@ -5,6 +5,7 @@ module Propellor.Property.HostingProvider.Exoscale (
 ) where
 
 import Propellor.Base
+import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Reboot as Reboot
@@ -15,12 +16,13 @@ import qualified Propellor.Property.Reboot as Reboot
 -- We reboot after doing this because 'Sbuild.built' will fail to set up an
 -- overlay-type chroot on an old kernel
 distroKernel :: Architecture -> Property DebianLike
-distroKernel arch = combineProperties "boots distro kernel" $ props
-	& Grub.installed' Grub.PC
-	& Apt.installed ["linux-image-" ++ arch]
-	-- only these ones are not idempotent so need flag file
-	& flagFile
-		(Grub.boots "/dev/vda"
-		`before` Grub.mkConfig
-		`before` Reboot.now)
-		"/etc/propellor-distro-kernel"
+distroKernel arch = go `flagFile` theFlagFile
+  where
+	go = combineProperties "boots distro kernel" $ props
+		& Apt.installed ["grub2", "linux-image-" ++ arch]
+		& Grub.boots "/dev/vda"
+		& Grub.mkConfig
+		-- Since we're rebooting we have to manually create the flagfile
+		& File.hasContent theFlagFile [""]
+		& Reboot.toDistroKernel
+	theFlagFile = "/etc/propellor-distro-kernel"
