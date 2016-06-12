@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Propellor.Property.Reboot (
 	now,
 	atEnd,
@@ -64,15 +62,16 @@ toDistroKernel = check (not <$> runningInstalledKernel) now
 toKernelNewerThan :: KernelVersion -> Property DebianLike
 toKernelNewerThan ver =
 	property' ("reboot to kernel newer than " ++ ver) $ \w -> do
-		let wantV = readVersion ver
-		runningV <- readVersion <$> liftIO runningKernelVersion
-		installedV <- maximum . map readVersion <$>
-			liftIO installedKernelVersions
+		wantV <- tryReadVersion ver
+		runningV <- tryReadVersion =<< liftIO runningKernelVersion
+		installedV <- maximum <$>
+			(mapM tryReadVersion =<< liftIO installedKernelVersions)
 		if runningV >= wantV then noChange
-			else if installedV >= wantV && runningV < wantV
+			else if installedV >= wantV
 				then ensureProperty w now
-				else error "newer kernel not installed"
-					>> return FailedChange
+				else errorMessage ("kernel newer than "
+					++ ver
+					++ " not installed")
 
 runningInstalledKernel :: IO Bool
 runningInstalledKernel = do
@@ -112,6 +111,13 @@ extractKernelVersion :: String -> KernelVersion
 extractKernelVersion =
 	unwords . take 1 . drop 1 . dropWhile (/= "version") . words
 
--- TODO properly handle error here
-readVersion :: String -> Version
-readVersion s = (fst . Prelude.last) $ readP_to_S parseVersion s
+-- adapted from Utility.PartialPrelude.readish
+readVersionMaybe :: KernelVersion -> Maybe Version
+readVersionMaybe ver = case readP_to_S parseVersion ver of
+	((x,_):_) -> Just x
+	_ -> Nothing
+
+tryReadVersion :: KernelVersion -> Propellor Version
+tryReadVersion ver = case readVersionMaybe ver of
+	Just x -> return x
+	Nothing -> errorMessage ("couldn't parse version " ++ ver)
