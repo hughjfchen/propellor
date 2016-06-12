@@ -14,7 +14,6 @@ import Data.Version
 import Text.ParserCombinators.ReadP
 
 type KernelVersion = String
-data KernelAvailable = Running | Installed | Unavailable
 
 now :: Property Linux
 now = tightenTargets $ cmdProperty "reboot" []
@@ -65,21 +64,15 @@ toDistroKernel = check (not <$> runningInstalledKernel) now
 toKernelNewerThan :: KernelVersion -> Property DebianLike
 toKernelNewerThan ver =
 	property' ("reboot to kernel newer than " ++ ver) $ \w -> do
-		available <- liftIO $ newerKernelAvailable (readVersion ver)
-		case available of
-			Running -> noChange
-			Installed -> ensureProperty w now
-			Unavailable -> return FailedChange
-
-newerKernelAvailable :: Version -> IO KernelAvailable
-newerKernelAvailable wantV = do
-	runningV <- readVersion <$> runningKernelVersion
-	installedV <- maximum . map readVersion <$> installedKernelVersions
-	if runningV >= wantV
-		then return Running
-		else if installedV >= wantV && runningV < wantV
-			then return Installed
-			else return Unavailable
+		let wantV = readVersion ver
+		runningV <- readVersion <$> liftIO runningKernelVersion
+		installedV <- maximum . map readVersion <$>
+			liftIO installedKernelVersions
+		if runningV >= wantV then noChange
+			else if installedV >= wantV && runningV < wantV
+				then ensureProperty w now
+				else error "newer kernel not installed"
+					>> return FailedChange
 
 runningInstalledKernel :: IO Bool
 runningInstalledKernel = do
