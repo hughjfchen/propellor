@@ -7,8 +7,6 @@ import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Reboot as Reboot
 
-import Data.List
-
 -- | Digital Ocean does not provide any way to boot
 -- the kernel provided by the distribution, except using kexec.
 -- Without this, some old, and perhaps insecure kernel will be used.
@@ -25,25 +23,4 @@ distroKernel = propertyList "digital ocean distro kernel hack" $ props
 		[ "LOAD_KEXEC=true"
 		, "USE_GRUB_CONFIG=true"
 		] `describe` "kexec configured"
-	& check (not <$> runningInstalledKernel) Reboot.now
-		`describe` "running installed kernel"
-
-runningInstalledKernel :: IO Bool
-runningInstalledKernel = do
-	kernelver <- takeWhile (/= '\n') <$> readProcess "uname" ["-r"]
-	when (null kernelver) $
-		error "failed to read uname -r"
-	kernelimages <- concat <$> mapM kernelsIn ["/", "/boot/"] 
-	when (null kernelimages) $
-		error "failed to find any installed kernel images"
-	findVersion kernelver <$>
-		readProcess "file" ("-L" : kernelimages)
-
--- | File output looks something like this, we want to unambiguously
--- match the running kernel version:
---   Linux kernel x86 boot executable bzImage, version 3.16-3-amd64 (debian-kernel@lists.debian.org) #1 SMP Debian 3.1, RO-rootFS, swap_dev 0x2, Normal VGA
-findVersion :: String -> String -> Bool
-findVersion ver s = (" version " ++ ver ++ " ") `isInfixOf` s
-
-kernelsIn :: FilePath -> IO [FilePath]
-kernelsIn d = filter ("vmlinu" `isInfixOf`) <$> dirContents d
+	& Reboot.toDistroKernel
