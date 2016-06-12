@@ -10,11 +10,15 @@ import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Reboot as Reboot
 
--- | Current Exoshare Debian image doesn't install GRUB, so this property makes
--- sure GRUB is installed and we're running the distro's kernel
+-- | The current Exoshare Debian image doesn't install GRUB, so this property
+-- makes sure GRUB is installed and correctly configured
 --
--- We reboot after doing this because 'Sbuild.built' will fail to set up an
--- overlay-type chroot on an old kernel
+-- In case an old, insecure kernel is running, we check for an old kernel
+-- version and reboot immediately if one is found.
+--
+-- Note that we ignore anything after the first hyphen when considering whether
+-- the running kernel's version is older than the Debian-supplied kernel's
+-- version.
 distroKernel :: Architecture -> Property DebianLike
 distroKernel arch = go `flagFile` theFlagFile
   where
