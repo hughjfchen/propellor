@@ -1,4 +1,4 @@
-propellor (3.0.6) UNRELEASED; urgency=medium
+propellor (3.1.0) UNRELEASED; urgency=medium
 
   * Switch letsencrypt to certbot package name.
   * Sbuild: Add keyringInsecurelyGenerated which is useful on throwaway
@@ -8,6 +8,13 @@ propellor (3.0.6) UNRELEASED; urgency=medium
     Thanks, Sean Whitton
   * Property.Reboot: Added toDistroKernel and toKernelNewerThan.
     Thanks, Sean Whitton
+  * Improve exception handling. A property that threw a non-IOException
+    used to stop the whole propellor run. Now, all non-async exceptions
+    only make the property that threw them fail. (Implicit API change)
+  * Added StopPropellorException which can be used in the unsual case
+    where a failure of one property should stop propellor from trying
+    to ensure any other properties.
+  * tryPropellor returns Either SomeException a now (API change)
 
  -- Joey Hess <id@joeyh.name>  Fri, 10 Jun 2016 14:59:44 -0400
 
