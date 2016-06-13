@@ -145,6 +145,7 @@ Library
     Propellor.Property.ZFS.Properties
     Propellor.Property.HostingProvider.CloudAtCost
     Propellor.Property.HostingProvider.DigitalOcean
+    Propellor.Property.HostingProvider.Exoscale
     Propellor.Property.HostingProvider.Linode
     Propellor.Property.SiteSpecific.GitHome
     Propellor.Property.SiteSpecific.JoeySites
