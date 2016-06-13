@@ -8,10 +8,8 @@ import qualified Propellor.Property.Apt as Apt
 
 import System.Posix.Files
 
--- Not using the certbot name yet, until it reaches jessie-backports and
--- testing.
 installed :: Property DebianLike
-installed = Apt.installed ["letsencrypt"]
+installed = Apt.installed ["certbot"]
 
 -- | Tell the letsencrypt client that you agree with the Let's Encrypt
 -- Subscriber Agreement. Providing an email address is recommended,
