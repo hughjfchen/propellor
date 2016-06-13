@@ -66,8 +66,7 @@ path `hasLimits` limit = go `requires` installed
 			cmdPropertyEnv "ccache" params' [("CCACHE_DIR", path)]
 			`changesFileContent` (path </> "ccache.conf")
 		| otherwise = property "couldn't parse ccache limits" $
-			sequence_ (errorMessage <$> errors)
-			>> return FailedChange
+			errorMessage $ unlines errors
 
 	params = limitToParams limit
 	(errors, params') = partitionEithers params
