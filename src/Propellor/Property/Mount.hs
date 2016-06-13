@@ -118,7 +118,7 @@ blkidTag tag dev = catchDefaultIO Nothing $
 umountLazy :: FilePath -> IO ()
 umountLazy mnt =  
 	unlessM (boolSystem "umount" [ Param "-l", Param mnt ]) $
-		errorMessage $ "failed unmounting " ++ mnt
+		stopPropellorMessage $ "failed unmounting " ++ mnt
 
 -- | Unmounts anything mounted inside the specified directory.
 unmountBelow :: FilePath -> IO ()
