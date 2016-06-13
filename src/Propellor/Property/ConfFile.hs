@@ -24,7 +24,7 @@ type SectionStart  = Line -> Bool
 type SectionPast   = Line -> Bool
 -- | run on all lines in the section, including the SectionStart line;
 -- can add, delete, and modify lines, or even delete entire section
-type AdjustSection = [Line] -> [Line] 
+type AdjustSection = [Line] -> [Line]
 -- | if SectionStart does not find the section in the file, this is used to
 -- insert the section somewhere within it
 type InsertSection = [Line] -> [Line]
@@ -91,6 +91,21 @@ containsIniSetting f (header, key, value) =
 	go []      = [confline]
 	go (l:ls)  = if isKeyVal l then confline : ls else l : (go ls)
 	isKeyVal x = (filter (/= ' ') . takeWhile (/= '=')) x `elem` [key, '#':key]
+
+-- | Ensures that a .ini file exists and contains a section
+-- with a given key=value list of settings.
+hasIniSection :: FilePath -> IniSection -> [(IniKey, String)] -> Property UnixLike
+hasIniSection f header keyvalues =
+	adjustIniSection
+	("set " ++ f ++ " section [" ++ header ++ "]")
+	header
+	go
+	(++ [confheader] ++ conflines) -- add missing section at end
+	f
+  where
+	confheader = iniHeader header
+	conflines  = map (\(key, value) -> key ++ "=" ++ value) keyvalues
+	go _       = conflines
 
 -- | Ensures that a .ini file does not contain the specified section.
 lacksIniSection :: FilePath -> IniSection -> Property UnixLike
