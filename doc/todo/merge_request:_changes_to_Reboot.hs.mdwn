@@ -3,5 +3,3 @@ Please consider merging branch `reboot` of repo `https://git.spwhitton.name/prop
 - Factor out reboot code in `Propellor.Property.SiteSpecific.DigitalOcean` into `Propellor.Property.Reboot`
 - Add `Propellor.Property.Reboot.toKernelNewerThan`.
 - Add `Propellor.Property.SiteSpecific.Exoscale`
-
-> [[merged|done]] --[[Joey]]
