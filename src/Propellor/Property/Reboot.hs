@@ -81,13 +81,15 @@ toKernelNewerThan ver =
 		if runningV >= wantV then noChange
 			else if installedV >= wantV
 				then ensureProperty w now
-				-- We error out here because other properties
-				-- may be incorrectly ensured on a version
-				-- that's too old.  E.g. Sbuild.built can fail
+				-- Stop propellor here because other
+				-- properties may be incorrectly ensured
+				-- under a kernel version that's too old.
+				-- E.g. Sbuild.built can fail
 				-- to add the config line `union-type=overlay`
-				else errorMessage ("kernel newer than "
+				else throwM $ StopPropellorException $ 
+					"kernel newer than "
 					++ ver
-					++ " not installed")
+					++ " not installed"
 
 runningInstalledKernel :: IO Bool
 runningInstalledKernel = do
