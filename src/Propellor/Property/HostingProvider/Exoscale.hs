@@ -1,4 +1,6 @@
 -- | Maintainer: Sean Whitton <spwhitton@spwhitton.name>
+--
+-- Properties for use on <https://www.exoscale.ch/>
 
 module Propellor.Property.HostingProvider.Exoscale (
 	distroKernel,

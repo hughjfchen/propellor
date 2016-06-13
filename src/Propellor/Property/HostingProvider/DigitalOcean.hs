@@ -13,7 +13,7 @@ import qualified Propellor.Property.Reboot as Reboot
 --
 -- This property causes the distro kernel to be loaded on reboot, using kexec.
 --
--- If the power is cycled, the non-distro kernel still boots up.
+-- When the power is cycled, the non-distro kernel still boots up.
 -- So, this property also checks if the running kernel is present in /boot,
 -- and if not, reboots immediately into a distro kernel.
 distroKernel :: Property DebianLike
