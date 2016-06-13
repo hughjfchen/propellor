@@ -4,6 +4,10 @@ propellor (3.0.6) UNRELEASED; urgency=medium
   * Sbuild: Add keyringInsecurelyGenerated which is useful on throwaway
     build VMs.
     Thanks, Sean Whitton
+  * Added Propellor.Property.SiteSpecific.Exoscale.
+    Thanks, Sean Whitton
+  * Property.Reboot: Added toDistroKernel and toKernelNewerThan.
+    Thanks, Sean Whitton
 
  -- Joey Hess <id@joeyh.name>  Fri, 10 Jun 2016 14:59:44 -0400
 
