@@ -3,6 +3,7 @@ module Propellor.Property.File where
 import Propellor.Base
 import Utility.FileMode
 
+import qualified Data.ByteString.Lazy as L
 import System.Posix.Files
 import System.Exit
 
@@ -17,7 +18,7 @@ f `hasContent` newcontent = fileProperty
 -- | Replaces all the content of a file, ensuring that its modes do not
 -- allow it to be read or written by anyone other than the current user
 hasContentProtected :: FilePath -> [Line] -> Property UnixLike
-f `hasContentProtected` newcontent = fileProperty' writeFileProtected 
+f `hasContentProtected` newcontent = fileProperty' writeFileProtected
 	("replace " ++ f)
 	(\_oldcontent -> newcontent) f
 
@@ -31,7 +32,7 @@ hasPrivContent f = hasPrivContentFrom (PrivDataSourceFile (PrivFile f) f) f
 -- | Like hasPrivContent, but allows specifying a source
 -- for PrivData, rather than using PrivDataSourceFile .
 hasPrivContentFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property (HasInfo + UnixLike)
-hasPrivContentFrom = hasPrivContent' writeFileProtected
+hasPrivContentFrom = hasPrivContent' writeBytesProtected
 
 -- | Leaves the file at its default or current mode,
 -- allowing "private" data to be read.
@@ -41,14 +42,14 @@ hasPrivContentExposed :: IsContext c => FilePath -> c -> Property (HasInfo + Uni
 hasPrivContentExposed f = hasPrivContentExposedFrom (PrivDataSourceFile (PrivFile f) f) f
 
 hasPrivContentExposedFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property (HasInfo + UnixLike)
-hasPrivContentExposedFrom = hasPrivContent' writeFile
+hasPrivContentExposedFrom = hasPrivContent' L.writeFile
 
-hasPrivContent' :: (IsContext c, IsPrivDataSource s) => (FilePath -> String -> IO ()) -> s -> FilePath -> c -> Property (HasInfo + UnixLike)
+hasPrivContent' :: (IsContext c, IsPrivDataSource s) => (FilePath -> L.ByteString -> IO ()) -> s -> FilePath -> c -> Property (HasInfo + UnixLike)
 hasPrivContent' writer source f context = 
 	withPrivData source context $ \getcontent -> 
 		property' desc $ \o -> getcontent $ \privcontent -> 
-			ensureProperty o $ fileProperty' writer desc
-				(\_oldcontent -> privDataLines privcontent) f
+			ensureProperty o $ bytesProperty' writer desc
+				(\_oldcontent -> privDataByteString privcontent) f
   where
 	desc = "privcontent " ++ f
 
@@ -95,6 +96,26 @@ fileProperty' writer desc a f = property desc $ go =<< liftIO (doesFileExist f)
 			then noChange
 			else makeChange $ updatefile new `viaStableTmp` f
 	go False = makeChange $ writer f (unlines $ a [])
+
+	-- Replicate the original file's owner and mode.
+	updatefile content f' = do
+		writer f' content
+		s <- getFileStatus f
+		setFileMode f' (fileMode s)
+		setOwnerAndGroup f' (fileOwner s) (fileGroup s)
+
+bytesProperty :: Desc -> (L.ByteString -> L.ByteString) -> FilePath -> Property UnixLike
+bytesProperty = bytesProperty' L.writeFile
+bytesProperty' :: (FilePath -> L.ByteString -> IO ()) -> Desc -> (L.ByteString -> L.ByteString) -> FilePath -> Property UnixLike
+bytesProperty' writer desc a f = property desc $ go =<< liftIO (doesFileExist f)
+  where
+	go True = do
+		old <- liftIO $ L.readFile f
+		let new = a old
+		if old == new
+			then noChange
+			else makeChange $ updatefile new `viaStableTmp` f
+	go False = makeChange $ writer f $ a L.empty
 
 	-- Replicate the original file's owner and mode.
 	updatefile content f' = do
