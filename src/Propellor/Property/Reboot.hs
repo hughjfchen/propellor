@@ -86,7 +86,7 @@ toKernelNewerThan ver =
 				-- under a kernel version that's too old.
 				-- E.g. Sbuild.built can fail
 				-- to add the config line `union-type=overlay`
-				else throwM $ StopPropellorException $ 
+				else stopPropellorMessage $
 					"kernel newer than "
 					++ ver
 					++ " not installed"

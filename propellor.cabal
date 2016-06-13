@@ -171,6 +171,7 @@ Library
     Propellor.Types.Docker
     Propellor.Types.Dns
     Propellor.Types.Empty
+    Propellor.Types.Exception
     Propellor.Types.Info
     Propellor.Types.MetaTypes
     Propellor.Types.OS
