@@ -3,6 +3,7 @@ module Propellor.Property.Reboot (
 	atEnd,
 	toDistroKernel,
 	toKernelNewerThan,
+	KernelVersion,
 ) where
 
 import Propellor.Base
@@ -11,6 +12,7 @@ import Data.List
 import Data.Version
 import Text.ParserCombinators.ReadP
 
+-- | Kernel version number, in a string. 
 type KernelVersion = String
 
 -- | Using this property causes an immediate reboot.
@@ -129,11 +131,10 @@ extractKernelVersion :: String -> KernelVersion
 extractKernelVersion =
 	unwords . take 1 . drop 1 . dropWhile (/= "version") . words
 
--- adapted from Utility.PartialPrelude.readish
 readVersionMaybe :: KernelVersion -> Maybe Version
-readVersionMaybe ver = case readP_to_S parseVersion ver of
-	((x,_):_) -> Just x
-	_ -> Nothing
+readVersionMaybe ver = case map fst $ readP_to_S parseVersion ver of
+	[] -> Nothing
+	l -> Just $ maximum l
 
 tryReadVersion :: KernelVersion -> Propellor Version
 tryReadVersion ver = case readVersionMaybe ver of
