@@ -109,9 +109,8 @@ infoMessage ls = liftIO $ outputConcurrent $ concatMap (++ "\n") ls
 
 -- | Displays the error message in red, and throws an exception.
 --
--- When used inside a property, the exception will only stop the current
--- property from being ensured. Propellor will continue ensuring other
--- properties.
+-- When used inside a property, the exception will make the current
+-- property fail. Propellor will continue to the next property.
 errorMessage :: MonadIO m => String -> m a
 errorMessage s = liftIO $ do
 	outputConcurrent =<< colorLine Vivid Red ("** error: " ++ s)
@@ -120,7 +119,8 @@ errorMessage s = liftIO $ do
 	-- caught, and so we say, cannot continue.
 	error "Cannot continue!"
  
--- | Like `errorMessage`, but throws a `StopPropellorException`
+-- | Like `errorMessage`, but throws a `StopPropellorException`,
+-- preventing propellor from continuing to the next property.
 --
 -- Think twice before using this. Is the problem so bad that propellor
 -- cannot try to ensure other properties? If not, use `errorMessage`
