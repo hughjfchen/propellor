@@ -14,7 +14,7 @@ propellor (3.1.0) UNRELEASED; urgency=medium
   * Added StopPropellorException and stopPropellorMessage which can be
     used in the unusual case where a failure of one property should stop
     propellor from trying to ensure any other properties.
-  * tryPropellor returns Either SomeException a now (API change)
+  * tryPropellor returns Either SomeException now (API change)
 
  -- Joey Hess <id@joeyh.name>  Fri, 10 Jun 2016 14:59:44 -0400
 
