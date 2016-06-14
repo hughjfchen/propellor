@@ -8,6 +8,14 @@ propellor (3.1.0) UNRELEASED; urgency=medium
     Thanks, Sean Whitton
   * Property.Reboot: Added toDistroKernel and toKernelNewerThan.
     Thanks, Sean Whitton
+  * Architecture changed from String to an ADT. (API Change)
+    Transition guide: Change "amd64" to X86_64, "i386" to X86_32,
+    "armel" to ARMEL, etc.
+    Thanks, Félix Sipma.
+  * The Debian data type now includes a DebianKernel. (API Change)
+    This won't affect most config.hs, as osDebian defaults to
+    Linux. Added osDebian' can be used to specify a different kernel.
+    Thanks, Félix Sipma.
   * Improve exception handling. A property that threw a non-IOException
     used to stop the whole propellor run. Now, all non-async exceptions
     only make the property that threw them fail. (Implicit API change)
