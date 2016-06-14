@@ -12,7 +12,7 @@ propellor (3.1.0) UNRELEASED; urgency=medium
     used to stop the whole propellor run. Now, all non-async exceptions
     only make the property that threw them fail. (Implicit API change)
   * Added StopPropellorException and stopPropellorMessage which can be
-    used in the unsual case where a failure of one property should stop
+    used in the unusual case where a failure of one property should stop
     propellor from trying to ensure any other properties.
   * tryPropellor returns Either SomeException a now (API change)
 
