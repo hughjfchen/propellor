@@ -76,12 +76,9 @@ isStable (Stable _) = True
 isStable _ = False
 
 type Release = String
-data Architecture = X86_64 | X86_32 | ARMHF | ARMEL | ANDROID
+data Architecture = X86_64 | X86_32 | ARMHF | ARMEL | ANDROID | PPC | PPC64 | SPARC | SPARC64 | MIPS | MIPSEL | MIPS64EL | SH4 | IA64 | S390 | S390X | ALPHA | HPPA | M68K | ARM64 | X32
 	deriving (Show, Eq)
 -- TODO: remove ANDROID (used in GitAnnexBuilder)
--- TODO: add other architectures
--- TODO: rename ARMHF
--- TODO: rename ARMEL
 
 architectureToDebianArchString :: Architecture -> String
 architectureToDebianArchString X86_64 = "amd64"
@@ -89,6 +86,22 @@ architectureToDebianArchString X86_32 = "i386"
 architectureToDebianArchString ARMHF = "armhf"
 architectureToDebianArchString ARMEL = "armel"
 architectureToDebianArchString ANDROID = "android"
+architectureToDebianArchString PPC = "powerpc"
+architectureToDebianArchString PPC64 = "ppc64el"
+architectureToDebianArchString SPARC = "sparc"
+architectureToDebianArchString SPARC64 = "sparc64"
+architectureToDebianArchString MIPS = "mips"
+architectureToDebianArchString MIPSEL = "mipsel"
+architectureToDebianArchString MIPS64EL = "mips64el"
+architectureToDebianArchString SH4 = "sh"
+architectureToDebianArchString IA64 = "ia64"
+architectureToDebianArchString S390 = "s390"
+architectureToDebianArchString S390X = "s390x"
+architectureToDebianArchString ALPHA = "alpha"
+architectureToDebianArchString HPPA = "hppa"
+architectureToDebianArchString M68K = "m68k"
+architectureToDebianArchString ARM64 = "arm64"
+architectureToDebianArchString X32 = "x32"
 
 type UserName = String
 
