@@ -24,6 +24,8 @@ propellor (3.1.0) UNRELEASED; urgency=medium
     propellor from trying to ensure any other properties.
   * tryPropellor returns Either SomeException instead of Either IOException
     (API change)
+  * Added ConfFile.hasIniSection.
+    Thanks, Félix Sipma.
 
  -- Joey Hess <id@joeyh.name>  Fri, 10 Jun 2016 14:59:44 -0400
 
