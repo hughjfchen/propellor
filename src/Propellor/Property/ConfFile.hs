@@ -9,6 +9,7 @@ module Propellor.Property.ConfFile (
 	IniSection,
 	IniKey,
 	containsIniSetting,
+	hasIniSection,
 	lacksIniSection,
 ) where
 
