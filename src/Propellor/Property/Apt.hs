@@ -175,7 +175,8 @@ installedMin :: [Package] -> Property DebianLike
 installedMin = installed' ["--no-install-recommends", "-y"]
 
 removed :: [Package] -> Property DebianLike
-removed ps = check (or <$> isInstalled' ps) (runApt (["-y", "remove"] ++ ps))
+removed ps = check (any (== IsInstalled) <$> getInstallStatus ps)
+	(runApt (["-y", "remove"] ++ ps))
 	`describe` unwords ("apt removed":ps)
 
 buildDep :: [Package] -> Property DebianLike
@@ -201,23 +202,26 @@ robustly :: Property DebianLike -> Property DebianLike
 robustly p = p `fallback` (update `before` p)
 
 isInstallable :: [Package] -> IO Bool
-isInstallable ps = do
-	l <- isInstalled' ps
-	return $ elem False l && not (null l)
+isInstallable ps = any (== NotInstalled) <$> getInstallStatus ps
 
 isInstalled :: Package -> IO Bool
-isInstalled p = (== [True]) <$> isInstalled' [p]
+isInstalled p = isInstalled' [p]
 
--- | Note that the order of the returned list will not always
--- correspond to the order of the input list. The number of items may
--- even vary. If apt does not know about a package at all, it will not
--- be included in the result list.
-isInstalled' :: [Package] -> IO [Bool]
-isInstalled' ps = (mapMaybe parse . lines) <$> policy
+isInstalled' :: [Package] -> IO Bool
+isInstalled' ps = all (== IsInstalled) <$> getInstallStatus ps
+
+data InstallStatus = IsInstalled | NotInstalled
+	deriving (Show, Eq)
+
+{- Returns the InstallStatus of packages that are installed
+ - or known and not installed. If a package is not known at all to apt
+ - or dpkg, it is not included in the list. -}
+getInstallStatus :: [Package] -> IO [InstallStatus]
+getInstallStatus ps = mapMaybe parse . lines <$> policy
   where
 	parse l
-		| "Installed: (none)" `isInfixOf` l = Just False
-		| "Installed: " `isInfixOf` l = Just True
+		| "Installed: (none)" `isInfixOf` l = Just NotInstalled
+		| "Installed: " `isInfixOf` l = Just IsInstalled
 		| otherwise = Nothing
 	policy = do
 		environ <- addEntry "LANG" "C" <$> getEnvironment
