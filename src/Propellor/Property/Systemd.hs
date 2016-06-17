@@ -64,10 +64,10 @@ type ServiceName = String
 
 type MachineName = String
 
-data Container = Container MachineName Chroot.Chroot Host
+data Container metatypes = Container MachineName Chroot.Chroot Host (Property metatypes)
 	deriving (Show)
 
-instance IsContainer Container where
+instance IsContainer (Container metatypes) where
 	containerProperties (Container _ _ h) = containerProperties h
 	containerInfo (Container _ _ h) = containerInfo h
 	setContainerProperties (Container n c h) ps = Container n c (setContainerProperties h ps)
