@@ -154,7 +154,7 @@ installed :: [Package] -> Property DebianLike
 installed = installed' ["-y"]
 
 installed' :: [String] -> [Package] -> Property DebianLike
-installed' params ps = robustly $ check (isInstallable ps) go
+installed' params ps = robustly $ check (not <$> isInstalled' ps) go
 	`describe` unwords ("apt installed":ps)
   where
 	go = runApt (params ++ ["install"] ++ ps)
@@ -200,9 +200,6 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
 -- Run an update in that case and retry.
 robustly :: Property DebianLike -> Property DebianLike
 robustly p = p `fallback` (update `before` p)
-
-isInstallable :: [Package] -> IO Bool
-isInstallable ps = any (== NotInstalled) <$> getInstallStatus ps
 
 isInstalled :: Package -> IO Bool
 isInstalled p = isInstalled' [p]
