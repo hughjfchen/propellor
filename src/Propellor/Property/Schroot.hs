@@ -1,5 +1,7 @@
 -- | Maintainer: Sean Whitton <spwhitton@spwhitton.name>
 
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Propellor.Property.Schroot where
 
 import Propellor.Base
@@ -9,7 +11,7 @@ import qualified Propellor.Property.Apt as Apt
 
 import Utility.FileMode
 
-data UseOverlays = UseOverlays deriving (Eq, Show)
+data UseOverlays = UseOverlays deriving (Eq, Show, Typeable)
 
 -- | Indicate that a schroots on a host should use @union-type=overlay@
 --
