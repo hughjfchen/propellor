@@ -54,8 +54,8 @@ import System.Posix.Files
 import qualified Data.Hash.MD5 as MD5
 import Data.List
 import Control.Applicative
-import Data.Foldable (Foldable, foldr1)
-import Prelude hiding (Foldable)
+import Data.Foldable
+import Prelude
 
 import Propellor.Types
 import Propellor.Types.Core
