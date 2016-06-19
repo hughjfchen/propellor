@@ -328,17 +328,14 @@ usableBy u = User.hasGroup u (Group "sbuild") `requires` installed
 keypairGenerated :: Property DebianLike
 keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 	`requires` installed
-	`requires` workAround792100
+	-- Work around Debian bug #792100 which is present in Jessie.
+	-- Since this is a harmless mkdir, don't actually check the OS
+	`requires` File.dirExists "/root/.gnupg"
   where
 	go :: Property DebianLike
 	go = tightenTargets $
 		cmdProperty "sbuild-update" ["--keygen"]
 		`assume` MadeChange
-
-	-- work around Debian bug #792100 which is present in Jessie
-	-- since this is a harmless mkdir, don't actually check the OS
-	workAround792100 :: Property UnixLike
-	workAround792100 = File.dirExists "/root/.gnupg"
 
 secKeyFile :: FilePath
 secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
