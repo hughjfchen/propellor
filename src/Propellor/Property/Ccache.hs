@@ -95,8 +95,11 @@ group@(Group g) `hasCache` limit = (make `requires` installed) <!> delete
 			& File.dirExists path
 			& File.ownerGroup path (User "root") group
 			& File.mode path (combineModes $
-				readModes ++ executeModes
-				++ [ownerWriteMode, groupWriteMode])
+				readModes ++ executeModes ++
+				[ ownerWriteMode
+				, groupWriteMode
+				, setGroupIDMode
+				])
 			& hasLimits path limit
 
 	delete = check (doesDirectoryExist path) $
