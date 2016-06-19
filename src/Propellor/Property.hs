@@ -54,6 +54,7 @@ import System.Posix.Files
 import qualified Data.Hash.MD5 as MD5
 import Data.List
 import Control.Applicative
+import Data.Foldable hiding (elem)
 import Prelude
 
 import Propellor.Types
