@@ -99,9 +99,8 @@ instance Show SbuildSchroot where
 -- | Build and configure a schroot for use with sbuild using a distribution's
 -- standard mirror
 --
--- This function is a convenience wrapper around
--- 'Propellor.Property.Sbuild.built', allowing the user to identify the
--- schroot and distribution using the 'System' type
+-- This function is a convenience wrapper around 'built', allowing the user to
+-- identify the schroot and distribution using the 'System' type
 builtFor :: System -> RevertableProperty DebianLike UnixLike
 builtFor sys = go <!> deleted
   where
@@ -185,9 +184,8 @@ built s@(SbuildSchroot suite arch) mirror =
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
--- This function is a convenience wrapper around
--- 'Propellor.Property.Sbuild.updated', allowing the user to identify the
--- schroot using the 'System' type
+-- This function is a convenience wrapper around 'updated', allowing the user to
+-- identify the schroot using the 'System' type
 updatedFor :: System -> Property DebianLike
 updatedFor system = property' ("updated sbuild schroot for " ++ show system) $
 	\w -> case schrootFromSystem system of
@@ -237,10 +235,9 @@ fixConfFile s@(SbuildSchroot suite arch) =
 
 -- | Create a corresponding schroot config file for use with piuparts
 --
--- This function is a convenience wrapper around
--- 'Propellor.Property.Sbuild.piupartsConf', allowing the user to identify the
--- schroot using the 'System' type.  See that function's documentation for why
--- you might want to use this property, and sample config.
+-- This function is a convenience wrapper around 'piupartsConf', allowing the
+-- user to identify the schroot using the 'System' type.  See that function's
+-- documentation for why you might want to use this property, and sample config.
 piupartsConfFor :: System -> Property DebianLike
 piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 	\w -> case (schrootFromSystem sys, stdMirror sys) of
@@ -253,8 +250,8 @@ piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 --
 -- This is useful because:
 --
--- - piuparts will clear out the apt cache which makes
--- 'Propellor.Property.Sbuild.shareAptCache' much less useful
+-- - piuparts will clear out the apt cache which makes 'shareAptCache' much less
+--   useful
 --
 -- - piuparts itself invokes eatmydata, so the command-prefix setting in our
 --   regular schroot config would force the user to pass @--no-eatmydata@ to
