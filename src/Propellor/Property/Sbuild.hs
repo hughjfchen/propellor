@@ -334,13 +334,9 @@ keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 		`assume` MadeChange
 
 	-- work around Debian bug #792100 which is present in Jessie
+	-- since this is a harmless mkdir, don't actually check the OS
 	workAround792100 :: Property UnixLike
-	workAround792100 = property' "work around #792100" $ \w -> do
-		maybeOS <- getOS
-		case maybeOS of
-			Just (System (Debian _ (Stable "jessie")) _) ->
-				ensureProperty w $ File.dirExists "/root/.gnupg"
-			_ -> return NoChange
+	workAround792100 = File.dirExists "/root/.gnupg"
 
 secKeyFile :: FilePath
 secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
