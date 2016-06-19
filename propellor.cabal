@@ -99,6 +99,7 @@ Library
     Propellor.Property.Docker
     Propellor.Property.Fail2Ban
     Propellor.Property.File
+    Propellor.Property.Firejail
     Propellor.Property.Firewall
     Propellor.Property.FreeBSD
     Propellor.Property.FreeBSD.Pkg

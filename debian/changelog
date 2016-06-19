@@ -28,6 +28,8 @@ propellor (3.1.0) UNRELEASED; urgency=medium
     Thanks, Félix Sipma.
   * Apt.install: When asked to install a package that apt does not know
     about, it used to incorrectly succeed. Now it will fail.
+  * Property.Firejail: New module.
+    Thanks, Sean Whitton
 
  -- Joey Hess <id@joeyh.name>  Fri, 10 Jun 2016 14:59:44 -0400
 
