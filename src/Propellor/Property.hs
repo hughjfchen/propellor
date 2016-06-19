@@ -54,8 +54,8 @@ import System.Posix.Files
 import qualified Data.Hash.MD5 as MD5
 import Data.List
 import Control.Applicative
-import Data.Foldable hiding (elem)
-import Prelude
+import Data.Foldable (Foldable, foldr1)
+import Prelude hiding (Foldable)
 
 import Propellor.Types
 import Propellor.Types.Core
@@ -349,7 +349,7 @@ applyToList
 	=> (b -> p)
 	-> t b
 	-> p
-prop `applyToList` xs = foldr1 before $ prop <$> xs
+prop `applyToList` xs = Data.Foldable.foldr1 before $ prop <$> xs
 
 makeChange :: IO () -> Propellor Result
 makeChange a = liftIO a >> return MadeChange
