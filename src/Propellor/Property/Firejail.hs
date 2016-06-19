@@ -22,7 +22,9 @@ installed = Apt.installed ["firejail"]
 --
 -- See "DESKTOP INTEGRATION" in firejail(1).
 jailed :: [String] -> Property DebianLike
-jailed ps = (jailed' `applyToList` ps) `requires` installed
+jailed ps = (jailed' `applyToList` ps)
+	`requires` installed
+	`describe` unwords ("firejail jailed":ps)
 
 jailed' :: String -> Property UnixLike
 jailed' p = ("/usr/local/bin" </> p)
