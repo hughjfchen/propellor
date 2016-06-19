@@ -79,6 +79,8 @@ import qualified Propellor.Property.Ccache as Ccache
 import qualified Propellor.Property.ConfFile as ConfFile
 import qualified Propellor.Property.File as File
 -- import qualified Propellor.Property.Firewall as Firewall
+import qualified Propellor.Property.Schroot as Schroot
+import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.User as User
 
 import Utility.FileMode
@@ -122,7 +124,8 @@ built s@(SbuildSchroot suite arch) mirror =
 	(go
 	`requires` keypairGenerated
 	`requires` ccachePrepared
-	`requires` installed)
+	`requires` installed
+	`requires` overlaysKernel)
 	<!> deleted
   where
 	go :: Property DebianLike
@@ -170,6 +173,21 @@ built s@(SbuildSchroot suite arch) mirror =
 	-- enable ccache and eatmydata for speed
 	commandPrefix = File.containsLine (schrootConf s)
 		"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
+
+	-- If the user has indicated that this host should use
+	-- union-type=overlay schroots, we need to ensure that we have rebooted
+	-- to a kernel supporting OverlayFS before we execute
+	-- sbuild-setupchroot(1).  Otherwise, sbuild-setupchroot(1) will fail to
+	-- add the union-type=overlay line to the schroot config.
+	-- (We could just add that line ourselves, but then sbuild wouldn't work
+	-- for the user, so we might as well do the reboot for them.)
+	overlaysKernel :: Property DebianLike
+	overlaysKernel = property' "reboot for union-type=overlay" $ \w ->
+		Schroot.usesOverlays >>= \usesOverlays ->
+			if usesOverlays
+			then ensureProperty w $
+				Reboot.toKernelNewerThan "3.18"
+			else noChange
 
 	-- A failed debootstrap run will leave a debootstrap directory;
 	-- recover by deleting it and trying again.
