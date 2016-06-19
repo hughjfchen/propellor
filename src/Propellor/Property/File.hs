@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Propellor.Property.File where
 
 import Propellor.Base
@@ -18,7 +20,7 @@ f `hasContent` newcontent = fileProperty
 -- | Replaces all the content of a file, ensuring that its modes do not
 -- allow it to be read or written by anyone other than the current user
 hasContentProtected :: FilePath -> [Line] -> Property UnixLike
-f `hasContentProtected` newcontent = fileProperty' writeFileProtected
+f `hasContentProtected` newcontent = fileProperty' ProtectedWrite
 	("replace " ++ f)
 	(\_oldcontent -> newcontent) f
 
@@ -32,7 +34,7 @@ hasPrivContent f = hasPrivContentFrom (PrivDataSourceFile (PrivFile f) f) f
 -- | Like hasPrivContent, but allows specifying a source
 -- for PrivData, rather than using PrivDataSourceFile .
 hasPrivContentFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property (HasInfo + UnixLike)
-hasPrivContentFrom = hasPrivContent' writeBytesProtected
+hasPrivContentFrom = hasPrivContent' ProtectedWrite
 
 -- | Leaves the file at its default or current mode,
 -- allowing "private" data to be read.
@@ -42,13 +44,13 @@ hasPrivContentExposed :: IsContext c => FilePath -> c -> Property (HasInfo + Uni
 hasPrivContentExposed f = hasPrivContentExposedFrom (PrivDataSourceFile (PrivFile f) f) f
 
 hasPrivContentExposedFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property (HasInfo + UnixLike)
-hasPrivContentExposedFrom = hasPrivContent' L.writeFile
+hasPrivContentExposedFrom = hasPrivContent' NormalWrite
 
-hasPrivContent' :: (IsContext c, IsPrivDataSource s) => (FilePath -> L.ByteString -> IO ()) -> s -> FilePath -> c -> Property (HasInfo + UnixLike)
-hasPrivContent' writer source f context = 
+hasPrivContent' :: (IsContext c, IsPrivDataSource s) => FileWriteMode -> s -> FilePath -> c -> Property (HasInfo + UnixLike)
+hasPrivContent' writemode source f context = 
 	withPrivData source context $ \getcontent -> 
 		property' desc $ \o -> getcontent $ \privcontent -> 
-			ensureProperty o $ bytesProperty' writer desc
+			ensureProperty o $ fileProperty' writemode desc
 				(\_oldcontent -> privDataByteString privcontent) f
   where
 	desc = "privcontent " ++ f
@@ -84,45 +86,48 @@ notPresent :: FilePath -> Property UnixLike
 notPresent f = check (doesFileExist f) $ property (f ++ " not present") $ 
 	makeChange $ nukeFile f
 
-fileProperty :: Desc -> ([Line] -> [Line]) -> FilePath -> Property UnixLike
-fileProperty = fileProperty' writeFile
-fileProperty' :: (FilePath -> String -> IO ()) -> Desc -> ([Line] -> [Line]) -> FilePath -> Property UnixLike
-fileProperty' writer desc a f = property desc $ go =<< liftIO (doesFileExist f)
+class FileContent c where
+	emptyFileContent :: c
+	readFileContent :: FilePath -> IO c
+	writeFileContent :: FileWriteMode -> FilePath -> c -> IO ()
+
+data FileWriteMode = NormalWrite | ProtectedWrite
+
+instance FileContent [Line] where
+	emptyFileContent = []
+	readFileContent f = lines <$> readFile f
+	writeFileContent NormalWrite f ls = writeFile f (unlines ls)
+	writeFileContent ProtectedWrite f ls = writeFileProtected f (unlines ls)
+
+instance FileContent L.ByteString where
+	emptyFileContent = L.empty
+	readFileContent = L.readFile
+	writeFileContent NormalWrite f c = L.writeFile f c
+	writeFileContent ProtectedWrite f c = 
+		writeFileProtected' f (`L.hPutStr` c)
+
+-- | A property that applies a pure function to the content of a file.
+fileProperty :: (FileContent c, Eq c) => Desc -> (c -> c) -> FilePath -> Property UnixLike
+fileProperty = fileProperty' NormalWrite
+fileProperty' :: (FileContent c, Eq c) => FileWriteMode -> Desc -> (c -> c) -> FilePath -> Property UnixLike
+fileProperty' writemode desc a f = property desc $ go =<< liftIO (doesFileExist f)
   where
 	go True = do
-		old <- liftIO $ readFile f
-		let new = unlines (a (lines old))
-		if old == new
-			then noChange
-			else makeChange $ updatefile new `viaStableTmp` f
-	go False = makeChange $ writer f (unlines $ a [])
-
-	-- Replicate the original file's owner and mode.
-	updatefile content f' = do
-		writer f' content
-		s <- getFileStatus f
-		setFileMode f' (fileMode s)
-		setOwnerAndGroup f' (fileOwner s) (fileGroup s)
-
-bytesProperty :: Desc -> (L.ByteString -> L.ByteString) -> FilePath -> Property UnixLike
-bytesProperty = bytesProperty' L.writeFile
-bytesProperty' :: (FilePath -> L.ByteString -> IO ()) -> Desc -> (L.ByteString -> L.ByteString) -> FilePath -> Property UnixLike
-bytesProperty' writer desc a f = property desc $ go =<< liftIO (doesFileExist f)
-  where
-	go True = do
-		old <- liftIO $ L.readFile f
+		old <- liftIO $ readFileContent f
 		let new = a old
 		if old == new
 			then noChange
 			else makeChange $ updatefile new `viaStableTmp` f
-	go False = makeChange $ writer f $ a L.empty
+	go False = makeChange $ writer f (a emptyFileContent)
 
 	-- Replicate the original file's owner and mode.
-	updatefile content f' = do
-		writer f' content
+	updatefile content dest = do
+		writer dest content
 		s <- getFileStatus f
-		setFileMode f' (fileMode s)
-		setOwnerAndGroup f' (fileOwner s) (fileGroup s)
+		setFileMode dest (fileMode s)
+		setOwnerAndGroup dest (fileOwner s) (fileGroup s)
+	
+	writer = writeFileContent writemode
 
 -- | Ensures a directory exists.
 dirExists :: FilePath -> Property UnixLike

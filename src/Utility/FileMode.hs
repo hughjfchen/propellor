@@ -13,7 +13,6 @@ module Utility.FileMode (
 ) where
 
 import System.IO
-import qualified Data.ByteString.Lazy as L
 import Control.Monad
 import System.PosixCompat.Types
 import Utility.PosixFiles
@@ -167,7 +166,3 @@ writeFileProtected' file writer = withUmask 0o0077 $
 	withFile file WriteMode $ \h -> do
 		void $ tryIO $ modifyFileMode file $ removeModes otherGroupModes
 		writer h
-
-writeBytesProtected :: FilePath -> L.ByteString -> IO ()
-writeBytesProtected file content = writeFileProtected' file
-	(`L.hPutStr` content)
