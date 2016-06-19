@@ -27,32 +27,35 @@ usesOverlays = isJust . fromInfoVal
 -- | Configure schroot such that all schroots with @union-type=overlay@ in their
 -- configuration will run their overlays in a tmpfs.
 --
+-- Implicitly sets 'useOverlays' info property.
+--
 -- Shell script from <https://wiki.debian.org/sbuild>.
-overlaysInTmpfs :: Property DebianLike
+overlaysInTmpfs :: Property (HasInfo + DebianLike)
 overlaysInTmpfs = go `requires` installed
   where
 	f = "/etc/schroot/setup.d/04tmpfs"
-	go :: Property UnixLike
-	go = f `File.hasContent`
-		[ "#!/bin/sh"
-		, ""
-		, "set -e"
-		, ""
-		, ". \"$SETUP_DATA_DIR/common-data\""
-		, ". \"$SETUP_DATA_DIR/common-functions\""
-		, ". \"$SETUP_DATA_DIR/common-config\""
-		, ""
-		, ""
-		, "if [ $STAGE = \"setup-start\" ]; then"
-		, "  mount -t tmpfs overlay /var/lib/schroot/union/overlay"
-		, "elif [ $STAGE = \"setup-recover\" ]; then"
-		, "  mount -t tmpfs overlay /var/lib/schroot/union/overlay"
-		, "elif [ $STAGE = \"setup-stop\" ]; then"
-		, "  umount -f /var/lib/schroot/union/overlay"
-		, "fi"
-		]
-		`onChange` (f `File.mode` (combineModes (readModes ++ executeModes)))
-		`describe` "schroot overlays in tmpfs"
+	go :: Property (HasInfo + UnixLike)
+	go = combineProperties "schroot overlays in tmpfs" $ props
+		& useOverlays
+		& f `File.hasContent`
+			[ "#!/bin/sh"
+			, ""
+			, "set -e"
+			, ""
+			, ". \"$SETUP_DATA_DIR/common-data\""
+			, ". \"$SETUP_DATA_DIR/common-functions\""
+			, ". \"$SETUP_DATA_DIR/common-config\""
+			, ""
+			, ""
+			, "if [ $STAGE = \"setup-start\" ]; then"
+			, "  mount -t tmpfs overlay /var/lib/schroot/union/overlay"
+			, "elif [ $STAGE = \"setup-recover\" ]; then"
+			, "  mount -t tmpfs overlay /var/lib/schroot/union/overlay"
+			, "elif [ $STAGE = \"setup-stop\" ]; then"
+			, "  umount -f /var/lib/schroot/union/overlay"
+			, "fi"
+			]
+		`onChange` (f `File.mode` combineModes (readModes ++ executeModes))
 
 installed :: Property DebianLike
 installed = Apt.installed ["schroot"]
