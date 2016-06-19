@@ -154,11 +154,19 @@ built s@(SbuildSchroot suite arch) mirror =
 			makeChange $ nukeFile (schrootConf s)
 
 	-- if we're building a sid chroot, add useful aliases
+	-- In order to avoid more than one schroot getting the same aliases, we
+	-- only do this if the arch of the chroot equals the host arch.
 	aliasesLine :: Property UnixLike
-	aliasesLine = if suite == "unstable"
-		then File.containsLine (schrootConf s)
-			"aliases=UNRELEASED,sid,rc-buggy,experimental"
-		else doNothing
+	aliasesLine = property' "maybe set aliases line" $ \w -> do
+		maybeOS <- getOS
+		case maybeOS of
+			Nothing -> return NoChange
+			Just (System _ hostArch) ->
+				if suite == "unstable" && hostArch == arch
+				then ensureProperty w $
+					schrootConf s `File.containsLine` aliases
+				else return NoChange
+
 	-- enable ccache and eatmydata for speed
 	commandPrefix = File.containsLine (schrootConf s)
 		"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
@@ -171,6 +179,8 @@ built s@(SbuildSchroot suite arch) mirror =
 			return True
 		, return False
 		)
+
+	aliases = "aliases=UNRELEASED,sid,rc-buggy,experimental"
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
