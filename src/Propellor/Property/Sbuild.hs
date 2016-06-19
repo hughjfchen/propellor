@@ -9,12 +9,12 @@ Build and maintain schroots for use with sbuild.
 Suggested usage in @config.hs@:
 
 >  & Apt.installed ["piuparts", "autopkgtest"]
+>  & Schroot.overlaysInTmpfs
 >  & Sbuild.builtFor (System (Debian Unstable) X86_32)
 >  & Sbuild.piupartsConfFor (System (Debian Unstable) X86_32)
 >  & Sbuild.updatedFor (System (Debian Unstable) X86_32) `period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Sbuild.shareAptCache
->  & Schroot.overlaysInTmpfs
 
 In @~/.sbuildrc@:
 
