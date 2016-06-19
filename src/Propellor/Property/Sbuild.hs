@@ -8,7 +8,7 @@ Build and maintain schroots for use with sbuild.
 
 Suggested usage in @config.hs@:
 
->  & Apt.installed ["piuparts"]
+>  & Apt.installed ["piuparts", "autopkgtest"]
 >  & Sbuild.builtFor (System (Debian Unstable) X86_32)
 >  & Sbuild.piupartsConfFor (System (Debian Unstable) X86_32)
 >  & Sbuild.updatedFor (System (Debian Unstable) X86_32) `period` Weekly 1
@@ -56,12 +56,12 @@ sbuild environment as standard as possible.
 module Propellor.Property.Sbuild (
 	-- * Creating and updating sbuild schroots
 	SbuildSchroot(..),
-	builtFor,
 	built,
 	updated,
+	piupartsConf,
+	builtFor,
 	updatedFor,
 	piupartsConfFor,
-	piupartsConf,
 	-- * Global sbuild configuration
 	-- blockNetwork,
 	installed,
@@ -99,8 +99,9 @@ instance Show SbuildSchroot where
 -- | Build and configure a schroot for use with sbuild using a distribution's
 -- standard mirror
 --
--- This function is a convenience wrapper around 'Sbuild.builtFor', allowing the
--- user to identify the schroot and distribution using the 'System' type
+-- This function is a convenience wrapper around
+-- 'Propellor.Property.Sbuild.built', allowing the user to identify the
+-- schroot and distribution using the 'System' type
 builtFor :: System -> RevertableProperty DebianLike UnixLike
 builtFor sys = go <!> deleted
   where
@@ -184,8 +185,9 @@ built s@(SbuildSchroot suite arch) mirror =
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
--- This function is a convenience wrapper around 'Sbuild.updated', allowing the
--- user to identify the schroot using the 'System' type
+-- This function is a convenience wrapper around
+-- 'Propellor.Property.Sbuild.updated', allowing the user to identify the
+-- schroot using the 'System' type
 updatedFor :: System -> Property DebianLike
 updatedFor system = property' ("updated sbuild schroot for " ++ show system) $
 	\w -> case schrootFromSystem system of
@@ -235,10 +237,10 @@ fixConfFile s@(SbuildSchroot suite arch) =
 
 -- | Create a corresponding schroot config file for use with piuparts
 --
--- This function is a convenience wrapper around 'Sbuild.piupartsConf', allowing
--- the user to identify the schroot using the 'System' type.  See that
--- function's documentation for why you might want to use this property, and
--- sample config.
+-- This function is a convenience wrapper around
+-- 'Propellor.Property.Sbuild.piupartsConf', allowing the user to identify the
+-- schroot using the 'System' type.  See that function's documentation for why
+-- you might want to use this property, and sample config.
 piupartsConfFor :: System -> Property DebianLike
 piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 	\w -> case (schrootFromSystem sys, stdMirror sys) of
@@ -251,11 +253,11 @@ piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 --
 -- This is useful because:
 --
--- - piuparts will clear out the apt cache which makes 'Sbuild.shareAptCache'
---   much less useful
+-- - piuparts will clear out the apt cache which makes
+-- 'Propellor.Property.Sbuild.shareAptCache' much less useful
 --
 -- - piuparts itself invokes eatmydata, so the command-prefix setting in our
---   regular schroot config would force the user to pass --no-eatmydata to
+--   regular schroot config would force the user to pass @--no-eatmydata@ to
 --   piuparts in their @~/.sbuildrc@, which is inconvenient.
 --
 -- To make use of this new schroot config, you can put something like this in
@@ -301,7 +303,7 @@ piupartsConf s u = go
 	f = schrootPiupartsConf s
 	munge = replace "-sbuild]" "-piuparts]"
 
--- | Bind-mount @/var/cache/apt/archives@ in all sbuild chroots so that the host
+-- | Bind-mount /var/cache/apt/archives in all sbuild chroots so that the host
 -- system and the chroot share the apt cache
 --
 -- This speeds up builds by avoiding unnecessary downloads of build
