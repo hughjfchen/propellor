@@ -17,6 +17,24 @@ f `hasContent` newcontent = fileProperty
 	("replace " ++ f)
 	(\_oldcontent -> newcontent) f
 
+-- | Ensures that a line is present in a file, adding it to the end if not.
+containsLine :: FilePath -> Line -> Property UnixLike
+f `containsLine` l = f `containsLines` [l]
+
+containsLines :: FilePath -> [Line] -> Property UnixLike
+f `containsLines` ls = fileProperty (f ++ " contains:" ++ show ls) go f
+  where
+	go content = content ++ filter (`notElem` content) ls
+
+-- | Ensures that a line is not present in a file.
+-- Note that the file is ensured to exist, so if it doesn't, an empty
+-- file will be written.
+lacksLine :: FilePath -> Line -> Property UnixLike
+f `lacksLine` l = fileProperty (f ++ " remove: " ++ l) (filter (/= l)) f
+
+lacksLines :: FilePath -> [Line] -> Property UnixLike
+f `lacksLines` ls = fileProperty (f ++ " remove: " ++ show [ls]) (filter (`notElem` ls)) f
+
 -- | Replaces all the content of a file, ensuring that its modes do not
 -- allow it to be read or written by anyone other than the current user
 hasContentProtected :: FilePath -> [Line] -> Property UnixLike
@@ -32,7 +50,7 @@ hasPrivContent :: IsContext c => FilePath -> c -> Property (HasInfo + UnixLike)
 hasPrivContent f = hasPrivContentFrom (PrivDataSourceFile (PrivFile f) f) f
 
 -- | Like hasPrivContent, but allows specifying a source
--- for PrivData, rather than using PrivDataSourceFile .
+-- for PrivData, rather than using `PrivDataSourceFile`.
 hasPrivContentFrom :: (IsContext c, IsPrivDataSource s) => s -> FilePath -> c -> Property (HasInfo + UnixLike)
 hasPrivContentFrom = hasPrivContent' ProtectedWrite
 
@@ -55,24 +73,6 @@ hasPrivContent' writemode source f context =
   where
 	desc = "privcontent " ++ f
 
--- | Ensures that a line is present in a file, adding it to the end if not.
-containsLine :: FilePath -> Line -> Property UnixLike
-f `containsLine` l = f `containsLines` [l]
-
-containsLines :: FilePath -> [Line] -> Property UnixLike
-f `containsLines` ls = fileProperty (f ++ " contains:" ++ show ls) go f
-  where
-	go content = content ++ filter (`notElem` content) ls
-
--- | Ensures that a line is not present in a file.
--- Note that the file is ensured to exist, so if it doesn't, an empty
--- file will be written.
-lacksLine :: FilePath -> Line -> Property UnixLike
-f `lacksLine` l = fileProperty (f ++ " remove: " ++ l) (filter (/= l)) f
-
-lacksLines :: FilePath -> [Line] -> Property UnixLike
-f `lacksLines` ls = fileProperty (f ++ " remove: " ++ show [ls]) (filter (`notElem` ls)) f
-
 -- | Replaces the content of a file with the transformed content of another file
 basedOn :: FilePath -> (FilePath, [Line] -> [Line]) -> Property UnixLike
 f `basedOn` (f', a) = property' desc $ \o -> do
@@ -85,49 +85,6 @@ f `basedOn` (f', a) = property' desc $ \o -> do
 notPresent :: FilePath -> Property UnixLike
 notPresent f = check (doesFileExist f) $ property (f ++ " not present") $ 
 	makeChange $ nukeFile f
-
-class FileContent c where
-	emptyFileContent :: c
-	readFileContent :: FilePath -> IO c
-	writeFileContent :: FileWriteMode -> FilePath -> c -> IO ()
-
-data FileWriteMode = NormalWrite | ProtectedWrite
-
-instance FileContent [Line] where
-	emptyFileContent = []
-	readFileContent f = lines <$> readFile f
-	writeFileContent NormalWrite f ls = writeFile f (unlines ls)
-	writeFileContent ProtectedWrite f ls = writeFileProtected f (unlines ls)
-
-instance FileContent L.ByteString where
-	emptyFileContent = L.empty
-	readFileContent = L.readFile
-	writeFileContent NormalWrite f c = L.writeFile f c
-	writeFileContent ProtectedWrite f c = 
-		writeFileProtected' f (`L.hPutStr` c)
-
--- | A property that applies a pure function to the content of a file.
-fileProperty :: (FileContent c, Eq c) => Desc -> (c -> c) -> FilePath -> Property UnixLike
-fileProperty = fileProperty' NormalWrite
-fileProperty' :: (FileContent c, Eq c) => FileWriteMode -> Desc -> (c -> c) -> FilePath -> Property UnixLike
-fileProperty' writemode desc a f = property desc $ go =<< liftIO (doesFileExist f)
-  where
-	go True = do
-		old <- liftIO $ readFileContent f
-		let new = a old
-		if old == new
-			then noChange
-			else makeChange $ updatefile new `viaStableTmp` f
-	go False = makeChange $ writer f (a emptyFileContent)
-
-	-- Replicate the original file's owner and mode.
-	updatefile content dest = do
-		writer dest content
-		s <- getFileStatus f
-		setFileMode dest (fileMode s)
-		setOwnerAndGroup dest (fileOwner s) (fileGroup s)
-	
-	writer = writeFileContent writemode
 
 -- | Ensures a directory exists.
 dirExists :: FilePath -> Property UnixLike
@@ -197,6 +154,49 @@ mode f v = p `changesFile` f
 	p = property (f ++ " mode " ++ show v) $ do
 		liftIO $ modifyFileMode f (const v)
 		return NoChange
+
+class FileContent c where
+	emptyFileContent :: c
+	readFileContent :: FilePath -> IO c
+	writeFileContent :: FileWriteMode -> FilePath -> c -> IO ()
+
+data FileWriteMode = NormalWrite | ProtectedWrite
+
+instance FileContent [Line] where
+	emptyFileContent = []
+	readFileContent f = lines <$> readFile f
+	writeFileContent NormalWrite f ls = writeFile f (unlines ls)
+	writeFileContent ProtectedWrite f ls = writeFileProtected f (unlines ls)
+
+instance FileContent L.ByteString where
+	emptyFileContent = L.empty
+	readFileContent = L.readFile
+	writeFileContent NormalWrite f c = L.writeFile f c
+	writeFileContent ProtectedWrite f c = 
+		writeFileProtected' f (`L.hPutStr` c)
+
+-- | A property that applies a pure function to the content of a file.
+fileProperty :: (FileContent c, Eq c) => Desc -> (c -> c) -> FilePath -> Property UnixLike
+fileProperty = fileProperty' NormalWrite
+fileProperty' :: (FileContent c, Eq c) => FileWriteMode -> Desc -> (c -> c) -> FilePath -> Property UnixLike
+fileProperty' writemode desc a f = property desc $ go =<< liftIO (doesFileExist f)
+  where
+	go True = do
+		old <- liftIO $ readFileContent f
+		let new = a old
+		if old == new
+			then noChange
+			else makeChange $ updatefile new `viaStableTmp` f
+	go False = makeChange $ writer f (a emptyFileContent)
+
+	-- Replicate the original file's owner and mode.
+	updatefile content dest = do
+		writer dest content
+		s <- getFileStatus f
+		setFileMode dest (fileMode s)
+		setOwnerAndGroup dest (fileOwner s) (fileGroup s)
+	
+	writer = writeFileContent writemode
 
 -- | A temp file to use when writing new content for a file.
 --
