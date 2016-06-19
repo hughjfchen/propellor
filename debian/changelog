@@ -33,7 +33,7 @@ propellor (3.1.0) UNRELEASED; urgency=medium
   * File: Write privdata files in binary rather than text, which avoids
     failure when they do not contain valid unicode.
     Thanks, Andrew Schurman
-  * Generalized fileProperty can now operate on files as either a series
+  * Generalized fileProperty can now operate on a file as either a series
     of lines, or a ByteString.
 
  -- Joey Hess <id@joeyh.name>  Fri, 10 Jun 2016 14:59:44 -0400
