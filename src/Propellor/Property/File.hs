@@ -79,7 +79,7 @@ f `basedOn` (f', a) = property' desc $ \o -> do
 	tmpl <- liftIO $ readFile f'
 	ensureProperty o $ fileProperty desc (\_ -> a $ lines $ tmpl) f
   where
-	desc = "replace " ++ f
+	desc = f ++ " is based on " ++ f'
 
 -- | Removes a file. Does not remove symlinks or non-plain-files.
 notPresent :: FilePath -> Property UnixLike
