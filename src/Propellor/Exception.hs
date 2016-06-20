@@ -29,4 +29,4 @@ catchPropellor' a onerr = a `catches`
 -- | Catches all exceptions (except for `StopPropellorException` and
 -- `AsyncException`).
 tryPropellor :: MonadCatch m => m a -> m (Either SomeException a)
-tryPropellor a = fmap Right a `catchPropellor'` (return . Left)
+tryPropellor a = (return . Right =<< a) `catchPropellor'` (return . Left)
