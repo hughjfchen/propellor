@@ -106,7 +106,7 @@ hasIniSection f header keyvalues =
   where
 	confheader = iniHeader header
 	conflines  = map (\(key, value) -> key ++ "=" ++ value) keyvalues
-	go _       = conflines
+	go _       = [confheader] ++ conflines
 
 -- | Ensures that a .ini file does not contain the specified section.
 lacksIniSection :: FilePath -> IniSection -> Property UnixLike
