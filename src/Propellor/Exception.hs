@@ -10,6 +10,7 @@ import Utility.Exception
 import Control.Exception (AsyncException)
 import Control.Monad.Catch
 import Control.Monad.IO.Class (MonadIO)
+import Control.Applicative
 
 -- | Catches all exceptions (except for `StopPropellorException` and
 -- `AsyncException`) and returns FailedChange.
