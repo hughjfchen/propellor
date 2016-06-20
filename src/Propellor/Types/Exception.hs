@@ -1,10 +1,11 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Propellor.Types.Exception where
 
 import Data.Typeable
 import Control.Exception
 
--- | Normally when an exception is encountered while propellor is 
--- ensuring a property, the property fails, but propellor robustly 
+-- | Normally when an exception is encountered while propellor is
+-- ensuring a property, the property fails, but propellor robustly
 -- continues on to the next property.
 --
 -- This is the only exception that will stop the entire propellor run,

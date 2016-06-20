@@ -54,7 +54,7 @@ import System.Posix.Files
 import qualified Data.Hash.MD5 as MD5
 import Data.List
 import Control.Applicative
-import Data.Foldable
+import Data.Foldable hiding (and, elem)
 import Prelude
 
 import Propellor.Types
@@ -83,7 +83,7 @@ flagFile' p getflagfile = adjustPropertySatisfy p $ \satisfy -> do
 	go _ _ True = return NoChange
 	go satisfy flagfile False = do
 		r <- satisfy
-		when (r == MadeChange) $ liftIO $ 
+		when (r == MadeChange) $ liftIO $
 			unlessM (doesFileExist flagfile) $ do
 				createDirectoryIfMissing True (takeDirectory flagfile)
 				writeFile flagfile ""
@@ -279,7 +279,7 @@ pickOS
 		, SingI c
 		-- Would be nice to have this constraint, but
 		-- union will not generate metatypes lists with the same
-		-- order of OS's as is used everywhere else. So, 
+		-- order of OS's as is used everywhere else. So,
 		-- would need a type-level sort.
 		--, Union a b ~ c
 		)
@@ -297,7 +297,7 @@ pickOS a b = c `addChildren` [toChildProperty a, toChildProperty b]
 				then getSatisfy b
 				else unsupportedOS'
 	matching Nothing _ = False
-	matching (Just o) p = 
+	matching (Just o) p =
 		Targeting (systemToTargetOS o)
 			`elem`
 		fromSing (proptype p)
