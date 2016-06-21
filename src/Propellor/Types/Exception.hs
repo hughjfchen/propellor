@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-
 module Propellor.Types.Exception where
 
 import Data.Typeable
