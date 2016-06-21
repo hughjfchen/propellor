@@ -64,7 +64,7 @@ toDistroKernel = check (not <$> runningInstalledKernel) now
 
 -- | Given a kernel version string @v@, reboots immediately if the running
 -- kernel version is strictly less than @v@ and there is an installed kernel
--- version is greater than or equal to @v@.  Dies if the requested kernel
+-- version is greater than or equal to @v@.  Fails if the requested kernel
 -- version is not installed.
 --
 -- For this to be useful, you need to have ensured that the installed kernel
@@ -83,12 +83,7 @@ toKernelNewerThan ver =
 		if runningV >= wantV then noChange
 			else if installedV >= wantV
 				then ensureProperty w now
-				-- Stop propellor here because other
-				-- properties may be incorrectly ensured
-				-- under a kernel version that's too old.
-				-- E.g. Sbuild.built can fail
-				-- to add the config line `union-type=overlay`
-				else stopPropellorMessage $
+				else errorMessage $
 					"kernel newer than "
 					++ ver
 					++ " not installed"

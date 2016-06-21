@@ -8,7 +8,7 @@ Build and maintain schroots for use with sbuild.
 
 Suggested usage in @config.hs@:
 
->  & Apt.installed ["piuparts"]
+>  & Apt.installed ["piuparts", "autopkgtest"]
 >  & Sbuild.builtFor (System (Debian Unstable) X86_32)
 >  & Sbuild.piupartsConfFor (System (Debian Unstable) X86_32)
 >  & Sbuild.updatedFor (System (Debian Unstable) X86_32) `period` Weekly 1
@@ -56,12 +56,12 @@ sbuild environment as standard as possible.
 module Propellor.Property.Sbuild (
 	-- * Creating and updating sbuild schroots
 	SbuildSchroot(..),
-	builtFor,
 	built,
 	updated,
+	piupartsConf,
+	builtFor,
 	updatedFor,
 	piupartsConfFor,
-	piupartsConf,
 	-- * Global sbuild configuration
 	-- blockNetwork,
 	installed,
@@ -79,6 +79,8 @@ import qualified Propellor.Property.Ccache as Ccache
 import qualified Propellor.Property.ConfFile as ConfFile
 import qualified Propellor.Property.File as File
 -- import qualified Propellor.Property.Firewall as Firewall
+import qualified Propellor.Property.Schroot as Schroot
+import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.User as User
 
 import Utility.FileMode
@@ -99,8 +101,8 @@ instance Show SbuildSchroot where
 -- | Build and configure a schroot for use with sbuild using a distribution's
 -- standard mirror
 --
--- This function is a convenience wrapper around 'Sbuild.builtFor', allowing the
--- user to identify the schroot and distribution using the 'System' type
+-- This function is a convenience wrapper around 'built', allowing the user to
+-- identify the schroot and distribution using the 'System' type
 builtFor :: System -> RevertableProperty DebianLike UnixLike
 builtFor sys = go <!> deleted
   where
@@ -122,7 +124,8 @@ built s@(SbuildSchroot suite arch) mirror =
 	(go
 	`requires` keypairGenerated
 	`requires` ccachePrepared
-	`requires` installed)
+	`requires` installed
+	`requires` overlaysKernel)
 	<!> deleted
   where
 	go :: Property DebianLike
@@ -154,14 +157,37 @@ built s@(SbuildSchroot suite arch) mirror =
 			makeChange $ nukeFile (schrootConf s)
 
 	-- if we're building a sid chroot, add useful aliases
+	-- In order to avoid more than one schroot getting the same aliases, we
+	-- only do this if the arch of the chroot equals the host arch.
 	aliasesLine :: Property UnixLike
-	aliasesLine = if suite == "unstable"
-		then File.containsLine (schrootConf s)
-			"aliases=UNRELEASED,sid,rc-buggy,experimental"
-		else doNothing
+	aliasesLine = property' "maybe set aliases line" $ \w -> do
+		maybeOS <- getOS
+		case maybeOS of
+			Nothing -> return NoChange
+			Just (System _ hostArch) ->
+				if suite == "unstable" && hostArch == arch
+				then ensureProperty w $
+					schrootConf s `File.containsLine` aliases
+				else return NoChange
+
 	-- enable ccache and eatmydata for speed
 	commandPrefix = File.containsLine (schrootConf s)
 		"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
+
+	-- If the user has indicated that this host should use
+	-- union-type=overlay schroots, we need to ensure that we have rebooted
+	-- to a kernel supporting OverlayFS before we execute
+	-- sbuild-setupchroot(1).  Otherwise, sbuild-setupchroot(1) will fail to
+	-- add the union-type=overlay line to the schroot config.
+	-- (We could just add that line ourselves, but then sbuild wouldn't work
+	-- for the user, so we might as well do the reboot for them.)
+	overlaysKernel :: Property DebianLike
+	overlaysKernel = property' "reboot for union-type=overlay" $ \w ->
+		Schroot.usesOverlays >>= \usesOverlays ->
+			if usesOverlays
+			then ensureProperty w $
+				Reboot.toKernelNewerThan "3.18"
+			else noChange
 
 	-- A failed debootstrap run will leave a debootstrap directory;
 	-- recover by deleting it and trying again.
@@ -172,10 +198,12 @@ built s@(SbuildSchroot suite arch) mirror =
 		, return False
 		)
 
+	aliases = "aliases=UNRELEASED,sid,rc-buggy,experimental"
+
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
--- This function is a convenience wrapper around 'Sbuild.updated', allowing the
--- user to identify the schroot using the 'System' type
+-- This function is a convenience wrapper around 'updated', allowing the user to
+-- identify the schroot using the 'System' type
 updatedFor :: System -> Property DebianLike
 updatedFor system = property' ("updated sbuild schroot for " ++ show system) $
 	\w -> case schrootFromSystem system of
@@ -225,10 +253,9 @@ fixConfFile s@(SbuildSchroot suite arch) =
 
 -- | Create a corresponding schroot config file for use with piuparts
 --
--- This function is a convenience wrapper around 'Sbuild.piupartsConf', allowing
--- the user to identify the schroot using the 'System' type.  See that
--- function's documentation for why you might want to use this property, and
--- sample config.
+-- This function is a convenience wrapper around 'piupartsConf', allowing the
+-- user to identify the schroot using the 'System' type.  See that function's
+-- documentation for why you might want to use this property, and sample config.
 piupartsConfFor :: System -> Property DebianLike
 piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 	\w -> case (schrootFromSystem sys, stdMirror sys) of
@@ -241,11 +268,11 @@ piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 --
 -- This is useful because:
 --
--- - piuparts will clear out the apt cache which makes 'Sbuild.shareAptCache'
---   much less useful
+-- - piuparts will clear out the apt cache which makes 'shareAptCache' much less
+--   useful
 --
 -- - piuparts itself invokes eatmydata, so the command-prefix setting in our
---   regular schroot config would force the user to pass --no-eatmydata to
+--   regular schroot config would force the user to pass @--no-eatmydata@ to
 --   piuparts in their @~/.sbuildrc@, which is inconvenient.
 --
 -- To make use of this new schroot config, you can put something like this in
@@ -291,7 +318,7 @@ piupartsConf s u = go
 	f = schrootPiupartsConf s
 	munge = replace "-sbuild]" "-piuparts]"
 
--- | Bind-mount @/var/cache/apt/archives@ in all sbuild chroots so that the host
+-- | Bind-mount /var/cache/apt/archives in all sbuild chroots so that the host
 -- system and the chroot share the apt cache
 --
 -- This speeds up builds by avoiding unnecessary downloads of build
@@ -316,6 +343,9 @@ usableBy u = User.hasGroup u (Group "sbuild") `requires` installed
 keypairGenerated :: Property DebianLike
 keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 	`requires` installed
+	-- Work around Debian bug #792100 which is present in Jessie.
+	-- Since this is a harmless mkdir, don't actually check the OS
+	`requires` File.dirExists "/root/.gnupg"
   where
 	go :: Property DebianLike
 	go = tightenTargets $
