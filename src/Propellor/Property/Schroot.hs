@@ -18,17 +18,6 @@ data UseOverlays = UseOverlays deriving (Eq, Show, Typeable)
 -- Setting this property does not actually ensure that the line
 -- @union-type=overlay@ is present in any schroot config files.  See
 -- 'Propellor.Property.Sbuild.built' for example usage.
---
--- You should apply this property to a host before any properties that can use
--- overlays.  For example, use
---
--- >  & Schroot.useOverlays
--- >  & Sbuild.builtFor (System (Debian Unstable) X86_32)
---
--- rather than
---
--- >  & Sbuild.builtFor (System (Debian Unstable) X86_32)
--- >  & Schroot.useOverlays
 useOverlays :: Property (HasInfo + UnixLike)
 useOverlays = pureInfoProperty "use schroot overlays" (InfoVal UseOverlays)
 
@@ -40,9 +29,7 @@ usesOverlays = isJust . fromInfoVal
 -- | Configure schroot such that all schroots with @union-type=overlay@ in their
 -- configuration will run their overlays in a tmpfs.
 --
--- Implicitly sets 'useOverlays' info property.  Like that property, you should
--- apply 'overlaysInTmpfs' to a host before applying any properties that can use
--- overlays (e.g. 'Propellor.Property.Sbuild.built').
+-- Implicitly sets 'useOverlays' info property.
 --
 -- Shell script from <https://wiki.debian.org/sbuild>.
 overlaysInTmpfs :: Property (HasInfo + DebianLike)
