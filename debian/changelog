@@ -33,8 +33,23 @@ propellor (3.1.0) UNRELEASED; urgency=medium
   * File: Write privdata files in binary rather than text, which avoids
     failure when they do not contain valid unicode.
     Thanks, Andrew Schurman
+
+  [ Sean Whitton ]
   * Generalized fileProperty can now operate on a file as either a series
     of lines, or a ByteString.
+  * New info property Schroot.useOverlays to indicate whether you want schroots
+    set up by propellor to use the Linux kernel's OverlayFS.
+  * Schroot.overlaysInTmpfs sets Schroot.useOverlays info property.
+  * If you have indicated that you want schroots to use OverlayFS and the
+    current kernel does not support it, Sbuild.built will attempt to reboot
+    into a kernel that does, or fail if it can't find one.
+  * Sbuild.built will no longer add duplicate `aliases=UNRELEASED,sid...` lines
+    to more than one schroot config. It will not remove any such lines that the
+    previous version of propellor added, though.
+  * Sbuild.keypairGenerated works around Debian bug #792100 by creating the
+    directory /root/.gnupg in advance.
+  * Ccache.hasCache now sets the setgid bit on the cache directory, as 
+    ccache requires.
 
  -- Joey Hess <id@joeyh.name>  Fri, 10 Jun 2016 14:59:44 -0400
 
