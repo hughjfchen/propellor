@@ -33,10 +33,10 @@ propellor (3.1.0) UNRELEASED; urgency=medium
   * File: Write privdata files in binary rather than text, which avoids
     failure when they do not contain valid unicode.
     Thanks, Andrew Schurman
-
-  [ Sean Whitton ]
   * Generalized fileProperty can now operate on a file as either a series
     of lines, or a ByteString.
+
+  [ Sean Whitton ]
   * New info property Schroot.useOverlays to indicate whether you want schroots
     set up by propellor to use the Linux kernel's OverlayFS.
   * Schroot.overlaysInTmpfs sets Schroot.useOverlays info property.
