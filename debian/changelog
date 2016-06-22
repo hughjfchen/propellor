@@ -1,13 +1,5 @@
-propellor (3.1.0) UNRELEASED; urgency=medium
+propellor (3.1.0) unstable; urgency=medium
 
-  * Switch letsencrypt to certbot package name.
-  * Sbuild: Add keyringInsecurelyGenerated which is useful on throwaway
-    build VMs.
-    Thanks, Sean Whitton
-  * Added Propellor.Property.SiteSpecific.Exoscale.
-    Thanks, Sean Whitton
-  * Property.Reboot: Added toDistroKernel and toKernelNewerThan.
-    Thanks, Sean Whitton
   * Architecture changed from String to an ADT. (API Change)
     Transition guide: Change "amd64" to X86_64, "i386" to X86_32,
     "armel" to ARMEL, etc.
@@ -24,6 +16,14 @@ propellor (3.1.0) UNRELEASED; urgency=medium
     propellor from trying to ensure any other properties.
   * tryPropellor returns Either SomeException instead of Either IOException
     (API change)
+  * Switch letsencrypt to certbot package name.
+  * Sbuild: Add keyringInsecurelyGenerated which is useful on throwaway
+    build VMs.
+    Thanks, Sean Whitton
+  * Added Propellor.Property.SiteSpecific.Exoscale.
+    Thanks, Sean Whitton
+  * Property.Reboot: Added toDistroKernel and toKernelNewerThan.
+    Thanks, Sean Whitton
   * Added ConfFile.hasIniSection.
     Thanks, Félix Sipma.
   * Apt.install: When asked to install a package that apt does not know
@@ -51,7 +51,7 @@ propellor (3.1.0) UNRELEASED; urgency=medium
   * Ccache.hasCache now sets the setgid bit on the cache directory, as 
     ccache requires.
 
- -- Joey Hess <id@joeyh.name>  Fri, 10 Jun 2016 14:59:44 -0400
+ -- Joey Hess <id@joeyh.name>  Wed, 22 Jun 2016 15:29:27 -0400
 
 propellor (3.0.5) unstable; urgency=medium
 
