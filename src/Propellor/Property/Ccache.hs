@@ -100,7 +100,7 @@ group@(Group g) `hasCache` limit = (make `requires` installed) <!> delete
 					, groupWriteMode
 					, setGroupIDMode
 					]) `onChange` fixSetgidBit
-				-- ^ we use onChange to catch upgrades from
+				-- here, we use onChange to catch upgrades from
 				-- 3.0.5 where the setGroupIDMode line was not
 				-- present
 			& hasLimits path limit
