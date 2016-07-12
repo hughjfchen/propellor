@@ -362,41 +362,11 @@ downloads hosts = annexWebSite "/srv/git/downloads.git"
 	`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "joey")
 
 tmp :: Property (HasInfo + DebianLike)
-tmp = propertyList "tmp.kitenet.net" $ props
+tmp = propertyList "tmp.joeyh.name" $ props
 	& annexWebSite "/srv/git/joey/tmp.git"
 		"tmp.joeyh.name"
 		"26fd6e38-1226-11e2-a75f-ff007033bdba"
 		[]
-	& twitRss
-	& pumpRss
-
--- Twitter, you kill us.
-twitRss :: Property DebianLike
-twitRss = combineProperties "twitter rss" $ props
-	& Git.cloned (User "joey") "git://git.kitenet.net/twitrss.git" dir Nothing
-	& check (not <$> doesFileExist (dir </> "twitRss")) compiled
-	& feed "http://twitter.com/search/realtime?q=git-annex" "git-annex-twitter"
-	& feed "http://twitter.com/search/realtime?q=olduse+OR+git-annex+OR+debhelper+OR+etckeeper+OR+ikiwiki+-ashley_ikiwiki" "twittergrep"
-  where
-	dir = "/srv/web/tmp.kitenet.net/twitrss"
-	crontime = Cron.Times "15 * * * *"
-	feed url desc = Cron.job desc crontime (User "joey") dir $
-		"./twitRss " ++ shellEscape url ++ " > " ++ shellEscape ("../" ++ desc ++ ".rss")
-	compiled = userScriptProperty (User "joey")
-		[ "cd " ++ dir
-		, "ghc --make twitRss"
-		]
-		`assume` NoChange
-		`requires` Apt.installed
-			[ "libghc-xml-dev"
-			, "libghc-feed-dev"
-			, "libghc-tagsoup-dev"
-			]
-
--- Work around for expired ssl cert.
-pumpRss :: Property DebianLike
-pumpRss = Cron.job "pump rss" (Cron.Times "15 * * * *") (User "joey") "/srv/web/tmp.kitenet.net/"
-	"wget https://rss.io.jpope.org/feed/joeyh@identi.ca.atom -O pump.atom.new --no-check-certificate 2>/dev/null; sed 's/ & / /g' pump.atom.new > pump.atom"
 
 ircBouncer :: Property (HasInfo + DebianLike)
 ircBouncer = propertyList "IRC bouncer" $ props
