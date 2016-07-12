@@ -364,7 +364,7 @@ downloads hosts = annexWebSite "/srv/git/downloads.git"
 tmp :: Property (HasInfo + DebianLike)
 tmp = propertyList "tmp.kitenet.net" $ props
 	& annexWebSite "/srv/git/joey/tmp.git"
-		"tmp.kitenet.net"
+		"tmp.joeyh.name"
 		"26fd6e38-1226-11e2-a75f-ff007033bdba"
 		[]
 	& twitRss
