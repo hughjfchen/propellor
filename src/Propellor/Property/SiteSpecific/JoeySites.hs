@@ -370,6 +370,7 @@ tmp = propertyList "tmp.joeyh.name" $ props
 	& pumpRss
 
 -- Work around for expired ssl cert.
+-- (Obsolete; need to revert this.)
 pumpRss :: Property DebianLike
 pumpRss = Cron.job "pump rss" (Cron.Times "15 * * * *") (User "joey") "/srv/web/tmp.joeyh.name/"
 	"wget https://rss.io.jpope.org/feed/joeyh@identi.ca.atom -O pump.atom.new --no-check-certificate 2>/dev/null; sed 's/ & / /g' pump.atom.new > pump.atom"
@@ -657,6 +658,9 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		`describe` "pine configured to use local imap server"
 
 	& Apt.serviceInstalledRunning "mailman"
+	-- Override the default http url. (Only affects new lists.)
+	& "/etc/mailman/mm_cfg.py" `File.containsLine`
+		"DEFAULT_URL_PATTERN = 'https://%s/cgi-bin/mailman/'"
 
 	& Postfix.service ssmtp
 
