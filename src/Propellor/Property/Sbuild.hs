@@ -372,7 +372,7 @@ keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) go
 		-- If there is already an rngd process running we have to kill
 		-- it, as it might not be feeding to /dev/urandom
 		& userScriptProperty (User "root")
-			[ "kill $(cat /var/run/rngd.pid) || true"
+			[ "kill 2>/dev/null $(cat /var/run/rngd.pid) || true"
 			, "sleep 10"
 			, "rngd -r /dev/urandom"
 			]
