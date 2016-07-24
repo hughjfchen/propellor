@@ -1,0 +1,3 @@
+Please consider merging branch `rngd-robust` of repo `https://git.spwhitton.name/propellor`
+
+Several changes to the `Sbuild.keypairInsecurelyGenerated` property to make it more robust.  Please see comments added by the diff.
