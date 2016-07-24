@@ -365,8 +365,23 @@ keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) go
 	go :: Property DebianLike
 	go = combineProperties "sbuild keyring insecurely generated" $ props
 		& Apt.installed ["rng-tools"]
-		& cmdProperty "rngd" ["-r", "/dev/urandom"] `assume` MadeChange
+		-- If this dir does not exist the sbuild key generation command
+		-- will fail; the user might have deleted it to work around
+		-- #831462
+		& File.dirExists "/var/lib/sbuild/apt-keys"
+		-- If there is already an rngd process running we have to kill
+		-- it, as it might not be feeding to /dev/urandom
+		& userScriptProperty (User "root")
+			[ "kill $(cat /var/run/rngd.pid) || true"
+			, "sleep 10"
+			, "rngd -r /dev/urandom"
+			]
+			`assume` MadeChange
 		& keypairGenerated
+		-- Kill off the rngd process we spawned
+		& userScriptProperty (User "root")
+			["kill $(cat /var/run/rngd.pid)"]
+			`assume` MadeChange
 
 -- another script from wiki.d.o/sbuild
 ccachePrepared :: Property DebianLike
