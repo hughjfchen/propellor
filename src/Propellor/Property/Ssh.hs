@@ -356,8 +356,8 @@ knownHostLines hosts hn = keylines <$> fromHost hosts hn getHostPubKey
 
 modKnownHost :: User -> FilePath -> Property UnixLike -> Property UnixLike
 modKnownHost user f p = p
-	`requires` File.ownerGroup f user (userGroup user)
-	`requires` File.ownerGroup (takeDirectory f) user (userGroup user)
+	`before` File.ownerGroup f user (userGroup user)
+	`before` File.ownerGroup (takeDirectory f) user (userGroup user)
 
 -- | Ensures that a local user's authorized_keys contains lines allowing
 -- logins from a remote user on the specified Host.

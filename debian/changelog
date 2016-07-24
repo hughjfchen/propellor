@@ -1,3 +1,10 @@
+propellor (3.1.2) UNRELEASED; urgency=medium
+
+  * Ssh.knownHost: Bug fix: Only fix up the owner of the known_hosts
+    file after it exists.
+
+ -- Joey Hess <id@joeyh.name>  Sun, 24 Jul 2016 13:34:37 -0400
+
 propellor (3.1.1) unstable; urgency=medium
 
   * Haddock build fix.
