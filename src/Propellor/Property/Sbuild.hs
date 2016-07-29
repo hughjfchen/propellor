@@ -358,6 +358,12 @@ secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
 -- | Generate the apt keys needed by sbuild using a low-quality source of
 -- randomness
 --
+-- Note that any running rngd will be killed; if you are using rngd, you should
+-- arrange for it to be restarted after this property has been ensured.  E.g.
+--
+-- >  & Sbuild.keypairInsecurelyGenerated
+-- >  	`onChange` Systemd.started "my-rngd-service"
+--
 -- Useful on throwaway build VMs.
 keypairInsecurelyGenerated :: Property DebianLike
 keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) go
@@ -365,8 +371,24 @@ keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) go
 	go :: Property DebianLike
 	go = combineProperties "sbuild keyring insecurely generated" $ props
 		& Apt.installed ["rng-tools"]
-		& cmdProperty "rngd" ["-r", "/dev/urandom"] `assume` MadeChange
+		-- If this dir does not exist the sbuild key generation command
+		-- will fail; the user might have deleted it to work around
+		-- #831462
+		& File.dirExists "/var/lib/sbuild/apt-keys"
+		-- If there is already an rngd process running we have to kill
+		-- it, as it might not be feeding to /dev/urandom.  We can't
+		-- kill by pid file because that is not guaranteed to be the
+		-- default (/var/run/rngd.pid), so we killall
+		& userScriptProperty (User "root")
+			[ "start-stop-daemon -q -K -R 10 -o -n rngd"
+			, "rngd -r /dev/urandom"
+			]
+			`assume` MadeChange
 		& keypairGenerated
+		-- Kill off the rngd process we spawned
+		& userScriptProperty (User "root")
+			["kill $(cat /var/run/rngd.pid)"]
+			`assume` MadeChange
 
 -- another script from wiki.d.o/sbuild
 ccachePrepared :: Property DebianLike
