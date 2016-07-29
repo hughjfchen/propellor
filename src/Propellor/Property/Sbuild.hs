@@ -358,6 +358,12 @@ secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
 -- | Generate the apt keys needed by sbuild using a low-quality source of
 -- randomness
 --
+-- Note that any running rngd will be killed; if you are using rngd, you should
+-- arrange for it to be restarted after this property has been ensured.  E.g.
+--
+-- >  & Sbuild.keypairInsecurelyGenerated
+-- >  	`onChange` Systemd.started "my-rngd-service"
+--
 -- Useful on throwaway build VMs.
 keypairInsecurelyGenerated :: Property DebianLike
 keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) go
@@ -370,10 +376,11 @@ keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) go
 		-- #831462
 		& File.dirExists "/var/lib/sbuild/apt-keys"
 		-- If there is already an rngd process running we have to kill
-		-- it, as it might not be feeding to /dev/urandom
+		-- it, as it might not be feeding to /dev/urandom.  We can't
+		-- kill by pid file because that is not guaranteed to be the
+		-- default (/var/run/rngd.pid), so we killall
 		& userScriptProperty (User "root")
-			[ "kill 2>/dev/null $(cat /var/run/rngd.pid) || true"
-			, "sleep 10"
+			[ "start-stop-daemon -q -K -R 10 -o -n rngd"
 			, "rngd -r /dev/urandom"
 			]
 			`assume` MadeChange
