@@ -8,9 +8,9 @@ It turns out that the apt keypair is only needed if you're trying to build for s
 
     - The code to update existing chroots will be unpleasant, because we don't want to run propellor inside the sbuild chroot so that it remains standardised (that's why we create it with sbuild-createchroot).
 
-2. Drop support for building for wheezy and newer, replacing the `keypairGenerated` and `keypairInsecurelyGenerated` properties with a property that ensures that the keypair directory does not exist.
+2. Drop support for building for squeeze and newer, replacing the `keypairGenerated` and `keypairInsecurelyGenerated` properties with a property that ensures that the keypair directory does not exist.
 
-    - Wheezy is very old.
+    - Squeeze is very old.
 
     - This will simplify and speed up chroot creation and builds.
 
