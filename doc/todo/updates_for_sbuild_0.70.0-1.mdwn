@@ -1,6 +1,6 @@
 sbuild 0.70.0-1 no longer installs gnupg into chroots on each build. That means that if you have an sbuild apt keypair generated, the build will fail unless you enter the source chroot and install gnupg.
 
-It turns out that the apt keypair is only needed if you're trying to build for wheezy or older.  Otherwise, you can just use sbuild without such a keypair.  So we have two options to fix Sbuild.hs:
+It turns out that the apt keypair is only needed if you're trying to build for squeeze or older.  Otherwise, you can just use sbuild without such a keypair.  So we have two options to fix Sbuild.hs:
 
 1. Install gnupg into chroots.
 
