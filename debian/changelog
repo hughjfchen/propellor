@@ -1,9 +1,15 @@
 propellor (3.1.2) UNRELEASED; urgency=medium
 
+  [ Joey Hess ]
   * Ssh.knownHost: Bug fix: Only fix up the owner of the known_hosts
     file after it exists.
   * Sbuild.keypairInsecurelyGenerated: Improved to be more robust.
     Thanks, Sean Whitton.
+
+  [ Sean Whitton ]
+  * Pass --allow-unrelated-histories to git merge.
+    This fixes the /usr/bin/propellor wrapper for git 2.9.x.
+    - Propellor now requires git to be at least version 2.9.
 
  -- Joey Hess <id@joeyh.name>  Sun, 24 Jul 2016 13:34:37 -0400
 

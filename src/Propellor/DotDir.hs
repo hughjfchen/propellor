@@ -401,7 +401,7 @@ setupUpstreamMaster newref = do
 		changeWorkingDirectory tmprepo
 		git ["fetch", distrepo, "--quiet"]
 		git ["reset", "--hard", oldref, "--quiet"]
-		git ["merge", newref, "-s", "recursive", "-Xtheirs", "--quiet", "-m", "merging upstream version"]
+		git ["merge", newref, "-s", "recursive", "-Xtheirs", "--quiet", "--allow-unrelated-histories", "-m", "merging upstream version"]
 
 		void $ fetchUpstreamBranch tmprepo
 		cleantmprepo
