@@ -31,15 +31,27 @@ In @~/.sbuildrc@:
 >  $autopkgtest_root_args = "";
 >  $autopkgtest_opts = ["--", "schroot", "%r-%a-sbuild"];
 
-We use @sbuild-createchroot(1)@ to create a chroot to the specification of
-@sbuild-setup(7)@.  This differs from the approach taken by picca's Sbuild.hs,
-which uses 'Propellor.Property.Debootstrap' to construct the chroot.  This is
-because we don't want to run propellor inside the chroot in order to keep the
-sbuild environment as standard as possible.
+We use @sbuild-createchroot(1)@ to create a chroot to the
+specification of @sbuild-setup(7)@.  This avoids running propellor
+inside the chroot to set it up.  While that approach is flexible, a
+propellor spin pulls in a lot of dependencies.  This could defeat
+using sbuild to determine if you've included all necessary build
+dependencies in your source package control file.
+
+Nevertheless, the chroot that @sbuild-createchroot(1)@ creates might
+not meet your needs.  For example, you might need to enable an apt
+cacher.  In that case you can do something like this in @config.hs@:
+
+>  & Sbuild.built (System (Debian Unstable) X86_32) `before` mySetup
+>    where
+>  	mySetup = Chroot.provisioned myChroot
+>  	myChroot = Chroot.debootstrapped
+>  		 	Debootstrap.BuilddD "/srv/chroot/unstable-i386"
+>  		-- the extra configuration you need:
+>  		& Apt.installed ["apt-transport-https"]
 -}
 
--- If you wanted to do it with Propellor.Property.Debootstrap, note that
--- sbuild-createchroot has a --setup-only option
+-- Also see the --setup-only option of sbuild-creatchroot
 
 module Propellor.Property.Sbuild (
 	-- * Creating and updating sbuild schroots
