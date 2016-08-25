@@ -4,7 +4,8 @@
 {-|
 Maintainer: Sean Whitton <spwhitton@spwhitton.name>
 
-Build and maintain schroots for use with sbuild.
+Build and maintain schroots for use with sbuild.  Assumes that the
+version of sbuild available is at least 0.71.0.
 
 Suggested usage in @config.hs@:
 
@@ -21,27 +22,14 @@ In @~/.sbuildrc@:
 >  $run_piuparts = 1;
 >  $piuparts_opts = [
 >      '--schroot',
->      'unstable-i386-piuparts',
+>      '%r-%a-piuparts',
 >      '--fail-if-inadequate',
 >      '--fail-on-broken-symlinks',
 >      ];
 >
->  $external_commands = {
->    'post-build-commands' => [
->      [
->        'adt-run',
->        '--changes', '%c',
->        '---',
->        'schroot', 'unstable-i386-sbuild;',
->
->        # if adt-run's exit code is 8 then the package had no tests but
->        # this isn't a failure, so catch it
->        'adtexit=$?;',
->        'if', 'test', '$adtexit', '=', '8;', 'then',
->        'exit', '0;', 'else', 'exit', '$adtexit;', 'fi'
->      ],
->    ],
->  };
+>  $run_autopkgtest = 1;
+>  $autopkgtest_root_args = "";
+>  $autopkgtest_opts = ["--", "schroot", "%r-%a-sbuild"];
 
 We use @sbuild-createchroot(1)@ to create a chroot to the specification of
 @sbuild-setup(7)@.  This differs from the approach taken by picca's Sbuild.hs,
