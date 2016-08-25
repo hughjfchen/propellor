@@ -7,10 +7,9 @@ Maintainer: Sean Whitton <spwhitton@spwhitton.name>
 Build and maintain schroots for use with sbuild.
 
 For convenience we set up several enhancements, such as ccache and
-eatmydata.  This means we have to assume that the version of sbuild
-available is at least 0.71.0, and that you want to build packages for
-a Debian release strictly newer than squeeze, or for Ubuntu releases
-newer than or equal to trusty.
+eatmydata.  This means we have to assume that you want to build
+packages for a Debian release strictly newer than squeeze, or for
+Buntish releases newer than or equal to trusty.
 
 Suggested usage in @config.hs@:
 
@@ -22,7 +21,7 @@ Suggested usage in @config.hs@:
 >  & Sbuild.shareAptCache
 >  & Schroot.overlaysInTmpfs
 
-In @~/.sbuildrc@:
+In @~/.sbuildrc@ (sbuild 0.71.0 or newer):
 
 >  $run_piuparts = 1;
 >  $piuparts_opts = [
@@ -56,7 +55,7 @@ cacher.  In that case you can do something like this in @config.hs@:
 >  		& Apt.installed ["apt-transport-https"]
 -}
 
--- Also see the --setup-only option of sbuild-creatchroot
+-- Also see the --setup-only option of sbuild-createchroot
 
 module Propellor.Property.Sbuild (
 	-- * Creating and updating sbuild schroots
