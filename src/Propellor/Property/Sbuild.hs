@@ -137,6 +137,8 @@ built s@(SbuildSchroot suite arch) mirror =
 				`before` commandPrefix
 			, return FailedChange
 			)
+	-- TODO we should kill any sessions still using the chroot
+	-- before destroying it (as suggested by sbuild-destroychroot)
 	deleted = check (not <$> unpopulated (schrootRoot s)) $
 		property ("no sbuild schroot for " ++ show s) $ do
 			liftIO $ removeChroot $ schrootRoot s
