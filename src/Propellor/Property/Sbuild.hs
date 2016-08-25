@@ -4,8 +4,13 @@
 {-|
 Maintainer: Sean Whitton <spwhitton@spwhitton.name>
 
-Build and maintain schroots for use with sbuild.  Assumes that the
-version of sbuild available is at least 0.71.0.
+Build and maintain schroots for use with sbuild.
+
+For convenience we set up several enhancements, such as ccache and
+eatmydata.  This means we have to assume that the version of sbuild
+available is at least 0.71.0, and that you want to build packages for
+a Debian release strictly newer than squeeze, or for Ubuntu releases
+newer than or equal to trusty.
 
 Suggested usage in @config.hs@:
 
@@ -122,7 +127,6 @@ builtFor sys = go <!> deleted
 built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
 built s@(SbuildSchroot suite arch) mirror =
 	(go
-	`requires` keypairGenerated
 	`requires` ccachePrepared
 	`requires` installed
 	`requires` overlaysKernel)
@@ -218,7 +222,6 @@ updated :: SbuildSchroot -> Property DebianLike
 updated s@(SbuildSchroot suite arch) =
 	check (doesDirectoryExist (schrootRoot s)) $ go
 	`describe` ("updated schroot for " ++ show s)
-	`requires` keypairGenerated
 	`requires` installed
   where
 	go :: Property DebianLike
