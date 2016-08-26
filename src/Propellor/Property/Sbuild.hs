@@ -7,9 +7,16 @@ Maintainer: Sean Whitton <spwhitton@spwhitton.name>
 Build and maintain schroots for use with sbuild.
 
 For convenience we set up several enhancements, such as ccache and
-eatmydata.  This means we have to assume that you want to build
-packages for a Debian release strictly newer than squeeze, or for
-Buntish releases newer than or equal to trusty.
+eatmydata.  This means we have to make several assumptions:
+
+1. you want to build for a Debian release strictly newer than squeeze,
+or for a Buntish release newer than or equal to trusty
+
+2. if you want to build for Debian stretch or newer, you have sbuild
+0.70.0 or newer (there is a backport to jessie)
+
+The latter is due to the migration from GnuPG v1 to GnuPG v2.1 in
+Debian stretch, which older sbuild can't handle.
 
 Suggested usage in @config.hs@:
 
@@ -20,6 +27,10 @@ Suggested usage in @config.hs@:
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Sbuild.shareAptCache
 >  & Schroot.overlaysInTmpfs
+
+If you are using sbuild older than 0.70.0, you also need:
+
+>  & Sbuild.keypairGenerated
 
 In @~/.sbuildrc@ (sbuild 0.71.0 or newer):
 
@@ -46,7 +57,7 @@ Nevertheless, the chroot that @sbuild-createchroot(1)@ creates might
 not meet your needs.  For example, you might need to enable an apt
 cacher.  In that case you can do something like this in @config.hs@:
 
->  & Sbuild.built (System (Debian Unstable) X86_32) `before` mySetup
+>  & Sbuild.built (System (Debian Linux Unstable) X86_32) `before` mySetup
 >    where
 >  	mySetup = Chroot.provisioned myChroot
 >  	myChroot = Chroot.debootstrapped
@@ -344,6 +355,8 @@ usableBy :: User -> Property DebianLike
 usableBy u = User.hasGroup u (Group "sbuild") `requires` installed
 
 -- | Generate the apt keys needed by sbuild
+--
+-- You only need this if you are using sbuild older than 0.70.0.
 keypairGenerated :: Property DebianLike
 keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
 	`requires` installed
@@ -369,6 +382,8 @@ secKeyFile = "/var/lib/sbuild/apt-keys/sbuild-key.sec"
 -- >  	`onChange` Systemd.started "my-rngd-service"
 --
 -- Useful on throwaway build VMs.
+--
+-- You only need this if you are using sbuild older than 0.70.0.
 keypairInsecurelyGenerated :: Property DebianLike
 keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) go
   where
