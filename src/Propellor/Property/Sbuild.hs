@@ -14,9 +14,9 @@ Buntish releases newer than or equal to trusty.
 Suggested usage in @config.hs@:
 
 >  & Apt.installed ["piuparts", "autopkgtest"]
->  & Sbuild.builtFor (System (Debian Unstable) X86_32)
->  & Sbuild.piupartsConfFor (System (Debian Unstable) X86_32)
->  & Sbuild.updatedFor (System (Debian Unstable) X86_32) `period` Weekly 1
+>  & Sbuild.builtFor (System (Debian Linux Unstable) X86_32)
+>  & Sbuild.piupartsConfFor (System (Debian Linux Unstable) X86_32)
+>  & Sbuild.updatedFor (System (Debian Linux Unstable) X86_32) `period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Sbuild.shareAptCache
 >  & Schroot.overlaysInTmpfs
