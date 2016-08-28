@@ -1,4 +1,4 @@
-propellor (3.1.2) UNRELEASED; urgency=medium
+propellor (3.1.2) unstable; urgency=medium
 
   [ Joey Hess ]
   * Ssh.knownHost: Bug fix: Only fix up the owner of the known_hosts
@@ -22,7 +22,7 @@ propellor (3.1.2) UNRELEASED; urgency=medium
     - Add hint for customising chroots with propellor.
     - Update example usage of System type.
 
- -- Joey Hess <id@joeyh.name>  Sun, 24 Jul 2016 13:34:37 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 28 Aug 2016 14:39:23 -0400
 
 propellor (3.1.1) unstable; urgency=medium
 
