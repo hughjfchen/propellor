@@ -468,6 +468,7 @@ k1 = host "k1.kitenet.net" $ props
 	& Apt.installed ["etckeeper", "sudo"]
 	& User.hasSomePassword (User "root")
 	& User.hasSomePassword (User "joey")
+	& Apt.serviceInstalledRunning "swapspace"
 
 iabak :: Host
 iabak = host "iabak.archiveteam.org" $ props
