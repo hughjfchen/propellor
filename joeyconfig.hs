@@ -469,7 +469,7 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& Apt.serviceInstalledRunning "swapspace"
 	& Cron.runPropellor (Cron.Times "30 * * * *")
 	& Apt.installed ["etckeeper", "sudo"]
-	& Apt.removed ["nfs-common", "exim4", "rsyslog", "acpid", "rpcbind"]
+	& Apt.removed ["nfs-common", "exim4", "exim4-base", "exim4-daemon-light", "rsyslog", "acpid", "rpcbind"]
 
 	& User.hasSomePassword (User "root")
 	& User.accountFor (User "joey")
