@@ -31,6 +31,7 @@ import qualified Propellor.Property.Aiccu as Aiccu
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
+import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.IABak as IABak
@@ -459,6 +460,7 @@ k1 = host "k1.kitenet.net" $ props
 	& ipv4 "139.59.17.168"
 	& Hostname.sane
 	& osDebian (Stable "jessie") X86_64
+	& DigitalOcean.distroKernel
 	& Cron.runPropellor (Cron.Times "30 * * * *")
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.installed ["openssh-server"]
