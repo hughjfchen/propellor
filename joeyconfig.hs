@@ -469,7 +469,7 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& Apt.serviceInstalledRunning "swapspace"
 	& Cron.runPropellor (Cron.Times "30 * * * *")
 	& Apt.installed ["etckeeper", "sudo"]
-	& Apt.removed ["nfs-common", "exim4", "exim4-base", "exim4-daemon-light", "rsyslog", "acpid", "rpcbind"]
+	& Apt.removed ["nfs-common", "exim4", "exim4-base", "exim4-daemon-light", "rsyslog", "acpid", "rpcbind", "at"]
 
 	& User.hasSomePassword (User "root")
 	& User.accountFor (User "joey")
@@ -483,6 +483,7 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& Ssh.noPasswords
 
 	& Tor.installed
+	-- keysafe installed manually until package is available
 
 iabak :: Host
 iabak = host "iabak.archiveteam.org" $ props
