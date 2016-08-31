@@ -468,14 +468,20 @@ keysafe = host "keysafe.joeyh.name" $ props
 	-- This is a 500 mb VM, so need more ram to build propellor.
 	& Apt.serviceInstalledRunning "swapspace"
 	& Cron.runPropellor (Cron.Times "30 * * * *")
-	& Apt.installed ["openssh-server", "etckeeper", "sudo"]
+	& Apt.installed ["etckeeper", "sudo"]
+
 	& User.hasSomePassword (User "root")
 	& User.accountFor (User "joey")
 	& User.hasSomePassword (User "joey")
 	& Sudo.enabledFor (User "joey")
+
+	& Ssh.installed
 	& Ssh.randomHostKeys
+	& User "root" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
 	& User "joey" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
 	& Ssh.noPasswords
+
+	& Tor.installed
 
 iabak :: Host
 iabak = host "iabak.archiveteam.org" $ props
