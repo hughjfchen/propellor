@@ -31,6 +31,7 @@ import qualified Propellor.Property.Aiccu as Aiccu
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
+import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.IABak as IABak
@@ -55,6 +56,7 @@ hosts =                 --                  (o)  `
 	, elephant
 	, beaver
 	, pell
+	, keysafe
 	, iabak
 	] ++ monsters
 
@@ -88,6 +90,9 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& JoeySites.dkimMilter
 	& JoeySites.alarmClock "*-*-* 7:30" (User "joey")
 		"/usr/bin/timeout 45m /home/joey/bin/goodmorning"
+	& Ssh.userKeys (User "joey") hostContext
+		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
+		]
 
 	! imageBuilt "/tmp/img" c MSDOS (grubBooted PC)
 		[ partition EXT2 `mountedAt` "/boot"
@@ -452,6 +457,33 @@ pell = host "pell.branchable.com" $ props
 	& Linode.chainPVGrub 5
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
+
+keysafe :: Host
+keysafe = host "keysafe.joeyh.name" $ props
+	& ipv4 "139.59.17.168"
+	& Hostname.sane
+	& osDebian (Stable "jessie") X86_64
+	& Apt.stdSourcesList `onChange` Apt.upgrade
+	& DigitalOcean.distroKernel
+	-- This is a 500 mb VM, so need more ram to build propellor.
+	& Apt.serviceInstalledRunning "swapspace"
+	& Cron.runPropellor (Cron.Times "30 * * * *")
+	& Apt.installed ["etckeeper", "sudo"]
+	& Apt.removed ["nfs-common", "exim4", "exim4-base", "exim4-daemon-light", "rsyslog", "acpid", "rpcbind", "at"]
+
+	& User.hasSomePassword (User "root")
+	& User.accountFor (User "joey")
+	& User.hasSomePassword (User "joey")
+	& Sudo.enabledFor (User "joey")
+
+	& Ssh.installed
+	& Ssh.randomHostKeys
+	& User "root" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
+	& User "joey" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
+	& Ssh.noPasswords
+
+	& Tor.installed
+	-- keysafe installed manually until package is available
 
 iabak :: Host
 iabak = host "iabak.archiveteam.org" $ props
