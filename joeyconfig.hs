@@ -470,6 +470,7 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& User.hasSomePassword (User "root")
 	& User.accountFor (User "joey")
 	& User.hasSomePassword (User "joey")
+	& Sudo.enabledFor (User "joey")
 
 iabak :: Host
 iabak = host "iabak.archiveteam.org" $ props
