@@ -466,11 +466,13 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& Apt.serviceInstalledRunning "swapspace"
 	& Cron.runPropellor (Cron.Times "30 * * * *")
 	& Apt.installed ["openssh-server", "etckeeper", "sudo"]
-	& Ssh.noPasswords
 	& User.hasSomePassword (User "root")
 	& User.accountFor (User "joey")
 	& User.hasSomePassword (User "joey")
 	& Sudo.enabledFor (User "joey")
+	& Ssh.randomHostKeys
+	& User "joey" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
+	& Ssh.noPasswords
 
 iabak :: Host
 iabak = host "iabak.archiveteam.org" $ props
