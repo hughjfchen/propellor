@@ -56,7 +56,7 @@ hosts =                 --                  (o)  `
 	, elephant
 	, beaver
 	, pell
-	, k1
+	, keysafe
 	, iabak
 	] ++ monsters
 
@@ -455,20 +455,21 @@ pell = host "pell.branchable.com" $ props
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
 
-k1 :: Host
-k1 = host "k1.kitenet.net" $ props
+keysafe :: Host
+keysafe = host "keysafe.joeyh.name" $ props
 	& ipv4 "139.59.17.168"
 	& Hostname.sane
 	& osDebian (Stable "jessie") X86_64
-	& DigitalOcean.distroKernel
-	& Cron.runPropellor (Cron.Times "30 * * * *")
 	& Apt.stdSourcesList `onChange` Apt.upgrade
-	& Apt.installed ["openssh-server"]
-	& Ssh.noPasswords
-	& Apt.installed ["etckeeper", "sudo"]
-	& User.hasSomePassword (User "root")
-	& User.hasSomePassword (User "joey")
+	& DigitalOcean.distroKernel
+	-- This is a 500 mb VM, so need more ram to build propellor.
 	& Apt.serviceInstalledRunning "swapspace"
+	& Cron.runPropellor (Cron.Times "30 * * * *")
+	& Apt.installed ["openssh-server", "etckeeper", "sudo"]
+	& Ssh.noPasswords
+	& User.hasSomePassword (User "root")
+	& User.accountFor (User "joey")
+	& User.hasSomePassword (User "joey")
 
 iabak :: Host
 iabak = host "iabak.archiveteam.org" $ props
