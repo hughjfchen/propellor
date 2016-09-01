@@ -1,6 +1,9 @@
 propellor (3.2.0) UNRELEASED; urgency=medium
 
   * Tor.hiddenService: Converted port parameter from Int to Port. (API change)
+  * Tor.hiddenServiceAvailable: The hidden service hostname file may not
+    be available immedaitely after configuring tor; avoid ugly error in
+    this case.
 
  -- Joey Hess <id@joeyh.name>  Thu, 01 Sep 2016 10:30:17 -0400
 

@@ -120,6 +120,9 @@ bandwidthRate' s divby = case readSize dataUnits s of
 	Nothing -> property ("unable to parse " ++ s) noChange
 
 -- | Enables a hidden service for a given port.
+--
+-- If used without `hiddenServiceData`, tor will generate a new
+-- private key.
 hiddenService :: HiddenServiceName -> Port -> Property DebianLike
 hiddenService hn (Port port) = ConfFile.adjustSection
 	(unwords ["hidden service", hn, "available on port", show port])
@@ -140,11 +143,13 @@ hiddenServiceAvailable hn port = hiddenServiceHostName $ hiddenService hn port
   where
 	hiddenServiceHostName p =  adjustPropertySatisfy p $ \satisfy -> do
 		r <- satisfy
-		h <- liftIO $ readFile (varLib </> hn </> "hostname")
-		warningMessage $ unwords ["hidden service hostname:", h]
+		mh <- liftIO $ tryIO $ readFile (varLib </> hn </> "hostname")
+		case mh of
+			Right h -> warningMessage $ unwords ["hidden service hostname:", h]
+			Left _e -> warningMessage "hidden service hostname not available yet"
 		return r
 
--- | 
+-- | Load the private key for a hidden service from the privdata.
 hiddenServiceData :: IsContext c => HiddenServiceName -> c -> Property (HasInfo + DebianLike)
 hiddenServiceData hn context = combineProperties desc $ props
 	& installonion "hostname"
