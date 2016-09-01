@@ -119,7 +119,7 @@ bandwidthRate' s divby = case readSize dataUnits s of
 			`describe` ("tor BandwidthRate " ++ v)
 	Nothing -> property ("unable to parse " ++ s) noChange
 
-hiddenServiceAvailable :: HiddenServiceName -> Int -> Property DebianLike
+hiddenServiceAvailable :: HiddenServiceName -> Port -> Property DebianLike
 hiddenServiceAvailable hn port = hiddenServiceHostName $ hiddenService hn port
   where
 	hiddenServiceHostName p =  adjustPropertySatisfy p $ \satisfy -> do
@@ -128,8 +128,8 @@ hiddenServiceAvailable hn port = hiddenServiceHostName $ hiddenService hn port
 		warningMessage $ unwords ["hidden service hostname:", h]
 		return r
 
-hiddenService :: HiddenServiceName -> Int -> Property DebianLike
-hiddenService hn port = ConfFile.adjustSection
+hiddenService :: HiddenServiceName -> Port -> Property DebianLike
+hiddenService hn (Port port) = ConfFile.adjustSection
 	(unwords ["hidden service", hn, "available on port", show port])
 	(== oniondir)
 	(not . isPrefixOf "HiddenServicePort")
