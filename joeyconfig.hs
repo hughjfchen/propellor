@@ -484,7 +484,7 @@ keysafe = host "keysafe.joeyh.name" $ props
 
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "keysafe" (Port 4242)
-		`requires` Tor.hiddenServiceData "keysafe" hostContext
+	--	`requires` Tor.hiddenServiceData "keysafe" hostContext
 	-- keysafe installed manually until package is available
 
 iabak :: Host
