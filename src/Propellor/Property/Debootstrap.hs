@@ -168,7 +168,7 @@ sourceInstall' = withTmpDir "debootstrap" $ \tmpd -> do
 				makeDevicesTarball
 				makeWrapperScript (localInstallDir </> subdir)
 				return MadeChange
-			_ -> errorMessage "debootstrap tar file did not contain exactly one dirctory"
+			_ -> errorMessage "debootstrap tar file did not contain exactly one directory"
 
 sourceRemove :: Property Linux
 sourceRemove = property "debootstrap not installed from source" $ liftIO $
