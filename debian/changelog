@@ -1,8 +1,12 @@
-propellor (3.1.3) UNRELEASED; urgency=medium
+propellor (3.2.0) UNRELEASED; urgency=medium
 
   * Sbuild.built & Sbuild.piupartsConf: add an additional alias to sid chroots
     This is for compatibility with `dgit sbuild`.
-  * Fix Sbuild.hs haddock formatting error.
+  * Sbuild.piupartsConf: no longer takes an Apt.Url. (API Change)
+  * Sbuild.piupartsConf & Sbuild.piupartsConfFor: does nothing if corresponding
+    schroot not built.
+    Previously, this property built the schroot if it was missing.
+  * Further improvements to Sbuild.hs haddock.
 
  -- Sean Whitton <spwhitton@spwhitton.name>  Mon, 05 Sep 2016 11:14:52 -0700
 

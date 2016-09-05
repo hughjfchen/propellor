@@ -292,9 +292,8 @@ fixConfFile s@(SbuildSchroot suite arch) =
 -- documentation for why you might want to use this property, and sample config.
 piupartsConfFor :: System -> Property DebianLike
 piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
-	\w -> case (schrootFromSystem sys, stdMirror sys) of
-			(Just s, Just u)  -> ensureProperty w $
-				piupartsConf s u
+	\w -> case schrootFromSystem sys of
+			Just s -> ensureProperty w $ piupartsConf s
 			_ -> errorMessage
 				("don't know how to debootstrap " ++ show sys)
 
@@ -319,9 +318,13 @@ piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 --  >      '--fail-if-inadequate',
 --  >      '--fail-on-broken-symlinks',
 --  >      ];
-piupartsConf :: SbuildSchroot -> Apt.Url -> Property DebianLike
-piupartsConf s@(SbuildSchroot _ arch) u = go
-	`requires` (setupRevertableProperty $ built s u)
+--
+-- This property has no effect if the corresponding sbuild schroot does not
+-- exist (i.e. you also need 'Sbuild.built' or 'Sbuild.builtFor').
+piupartsConf :: SbuildSchroot -> Property DebianLike
+piupartsConf s@(SbuildSchroot _ arch) =
+	check (doesFileExist (schrootConf s)) go
+	`requires` installed
   where
 	go :: Property DebianLike
 	go = property' desc $ \w -> do
