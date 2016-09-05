@@ -1,5 +1,7 @@
 propellor (3.1.3) UNRELEASED; urgency=medium
 
+  * Sbuild.built: add an additional alias to sid chroots for compatibility with
+    dgit
   * Fix Sbuild.hs haddock formatting error.
 
  -- Sean Whitton <spwhitton@spwhitton.name>  Mon, 05 Sep 2016 11:14:52 -0700

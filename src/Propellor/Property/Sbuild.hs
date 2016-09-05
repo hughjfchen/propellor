@@ -190,7 +190,12 @@ built s@(SbuildSchroot suite arch) mirror =
 			Just (System _ hostArch) ->
 				if suite == "unstable" && hostArch == arch
 				then ensureProperty w $
-					schrootConf s `File.containsLine` aliases
+					ConfFile.containsIniSetting
+						(schrootConf s)
+						( show s ++ "-sbuild"
+						, "aliases"
+						, aliases
+						)
 				else return NoChange
 
 	-- If the user has indicated that this host should use
@@ -217,7 +222,21 @@ built s@(SbuildSchroot suite arch) mirror =
 		, return False
 		)
 
-	aliases = "aliases=UNRELEASED,sid,rc-buggy,experimental"
+	aliases = intercalate ","
+		[ "sid"
+		-- if the user wants to build for experimental, they would use
+		-- their sid chroot and sbuild's --extra-repository option to
+		-- enable experimental
+		, "rc-buggy"
+		, "experimental"
+		-- we assume that building for UNRELEASED means building for
+		-- unstable
+		, "UNRELEASED"
+		-- the following is for dgit compatibility:
+		, "UNRELEASED-"
+			++ architectureToDebianArchString arch
+			++ "-sbuild"
+		]
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
