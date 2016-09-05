@@ -320,37 +320,44 @@ piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 --  >      '--fail-on-broken-symlinks',
 --  >      ];
 piupartsConf :: SbuildSchroot -> Apt.Url -> Property DebianLike
-piupartsConf s u = go
+piupartsConf s@(SbuildSchroot _ arch) u = go
 	`requires` (setupRevertableProperty $ built s u)
-	`describe` ("piuparts schroot conf for " ++ show s)
   where
 	go :: Property DebianLike
-	go = tightenTargets $
-		check (not <$> doesFileExist f)
-			(File.basedOn f (schrootConf s, map munge))
-		`before`
-		ConfFile.containsIniSetting f (sec, "profile", "piuparts")
-		`before`
-		ConfFile.containsIniSetting f (sec, "aliases", "")
-		`before`
-		ConfFile.containsIniSetting f (sec, "command-prefix", "")
-		`before`
-		File.dirExists dir
-		`before`
-		File.isSymlinkedTo (dir </> "copyfiles")
-			(File.LinkTarget $ orig </> "copyfiles")
-		`before`
-		File.isSymlinkedTo (dir </> "nssdatabases")
-			(File.LinkTarget $ orig </> "nssdatabases")
-		`before`
-		File.basedOn (dir </> "fstab")
-			(orig </> "fstab", filter (/= aptCacheLine))
+	go = property' desc $ \w -> do
+		aliases <- aliasesLine
+		ensureProperty w $ combineProperties desc $ props
+			& check (not <$> doesFileExist f)
+				(File.basedOn f (schrootConf s, map munge))
+			& ConfFile.containsIniSetting f
+				(sec, "profile", "piuparts")
+			& ConfFile.containsIniSetting f
+				(sec, "aliases", aliases)
+			& ConfFile.containsIniSetting f
+				(sec, "command-prefix", "")
+			& File.dirExists dir
+			& File.isSymlinkedTo (dir </> "copyfiles")
+				(File.LinkTarget $ orig </> "copyfiles")
+			& File.isSymlinkedTo (dir </> "nssdatabases")
+				(File.LinkTarget $ orig </> "nssdatabases")
+			& File.basedOn (dir </> "fstab")
+				(orig </> "fstab", filter (/= aptCacheLine))
 
 	orig = "/etc/schroot/sbuild"
 	dir = "/etc/schroot/piuparts"
 	sec = show s ++ "-piuparts"
 	f = schrootPiupartsConf s
 	munge = replace "-sbuild]" "-piuparts]"
+	desc = "piuparts schroot conf for " ++ show s
+
+	-- normally the piuparts schroot conf has no aliases, but we have to add
+	-- one, for dgit compatibility, if this is the default sid chroot
+	aliasesLine = sidHostArchSchroot s >>= \isSidHostArchSchroot ->
+			return $ if isSidHostArchSchroot
+			then "UNRELEASED-"
+				++ architectureToDebianArchString arch
+				++ "-piuparts"
+			else ""
 
 -- | Bind-mount /var/cache/apt/archives in all sbuild chroots so that the host
 -- system and the chroot share the apt cache
