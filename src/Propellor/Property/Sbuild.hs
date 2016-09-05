@@ -12,8 +12,8 @@ eatmydata.  This means we have to make several assumptions:
 1. you want to build for a Debian release strictly newer than squeeze,
 or for a Buntish release newer than or equal to trusty
 
-2. if you want to build for Debian stretch or newer, you have sbuild
-0.70.0 or newer (there is a backport to jessie)
+2. if you want to build for Debian stretch or newer, you have sbuild 0.70.0 or
+newer (there is a backport to jessie)
 
 The latter is due to the migration from GnuPG v1 to GnuPG v2.1 in
 Debian stretch, which older sbuild can't handle.

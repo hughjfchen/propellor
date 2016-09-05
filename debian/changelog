@@ -1,3 +1,9 @@
+propellor (3.1.3) UNRELEASED; urgency=medium
+
+  * Fix Sbuild.hs haddock formatting error.
+
+ -- Sean Whitton <spwhitton@spwhitton.name>  Mon, 05 Sep 2016 11:14:52 -0700
+
 propellor (3.1.2) unstable; urgency=medium
 
   [ Joey Hess ]
