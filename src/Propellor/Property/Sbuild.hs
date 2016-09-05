@@ -21,7 +21,7 @@ Debian stretch, which older sbuild can't handle.
 Suggested usage in @config.hs@:
 
 >  & Apt.installed ["piuparts", "autopkgtest"]
->  & Sbuild.builtFor (System (Debian Linux Unstable) X86_32)
+>  & Sbuild.builtFor (System (Debian Linux Unstable) X86_32) Sbuild.UseCcache
 >  & Sbuild.piupartsConfFor (System (Debian Linux Unstable) X86_32)
 >  & Sbuild.updatedFor (System (Debian Linux Unstable) X86_32) `period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
@@ -71,6 +71,7 @@ cacher.  In that case you can do something like this in @config.hs@:
 module Propellor.Property.Sbuild (
 	-- * Creating and updating sbuild schroots
 	SbuildSchroot(..),
+	UseCcache(..),
 	built,
 	updated,
 	piupartsConf,
@@ -113,31 +114,37 @@ data SbuildSchroot = SbuildSchroot Suite Architecture
 instance Show SbuildSchroot where
 	show (SbuildSchroot suite arch) = suite ++ "-" ++ architectureToDebianArchString arch
 
+-- | Whether an sbuild schroot should use ccache during builds
+--
+-- ccache is generally useful but it breaks building some packages.  This data
+-- types allows you to toggle it on and off for particular schroots.
+data UseCcache = UseCcache | NoCcache
+
 -- | Build and configure a schroot for use with sbuild using a distribution's
 -- standard mirror
 --
 -- This function is a convenience wrapper around 'built', allowing the user to
 -- identify the schroot and distribution using the 'System' type
-builtFor :: System -> RevertableProperty DebianLike UnixLike
-builtFor sys = go <!> deleted
+builtFor :: System -> UseCcache -> RevertableProperty DebianLike UnixLike
+builtFor sys cc = go <!> deleted
   where
 	go = property' ("sbuild schroot for " ++ show sys) $
 		\w -> case (schrootFromSystem sys, stdMirror sys) of
 			(Just s, Just u)  -> ensureProperty w $
-				setupRevertableProperty $ built s u
+				setupRevertableProperty $ built s u cc
 			_ -> errorMessage
 				("don't know how to debootstrap " ++ show sys)
 	deleted = property' ("no sbuild schroot for " ++ show sys) $
 		\w -> case schrootFromSystem sys of
 			Just s  -> ensureProperty w $
-				undoRevertableProperty $ built s "dummy"
+				undoRevertableProperty $ built s "dummy" cc
 			Nothing -> noChange
 
 -- | Build and configure a schroot for use with sbuild
-built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
-built s@(SbuildSchroot suite arch) mirror =
+built :: SbuildSchroot -> Apt.Url -> UseCcache -> RevertableProperty DebianLike UnixLike
+built s@(SbuildSchroot suite arch) mirror cc =
 	((go `before` enhancedConf)
-	`requires` ccachePrepared
+	`requires` ccacheMaybePrepared cc
 	`requires` installed
 	`requires` overlaysKernel)
 	<!> deleted
@@ -176,7 +183,7 @@ built s@(SbuildSchroot suite arch) mirror =
 			& ConfFile.containsIniSetting (schrootConf s)
 				( show s ++ "-sbuild"
 				, "command-prefix"
-				, "/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
+				, intercalate "," commandPrefix
 				)
 
 	-- if we're building a sid chroot, add useful aliases
@@ -234,6 +241,12 @@ built s@(SbuildSchroot suite arch) mirror =
 			++ architectureToDebianArchString arch
 			++ "-sbuild"
 		]
+
+	commandPrefix = case cc of
+		UseCcache -> "/var/cache/ccache-sbuild/sbuild-setup":base
+		_ -> base
+	  where
+		base = ["eatmydata"]
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
@@ -437,6 +450,11 @@ keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) go
 		& userScriptProperty (User "root")
 			["kill $(cat /var/run/rngd.pid)"]
 			`assume` MadeChange
+
+ccacheMaybePrepared :: UseCcache -> Property DebianLike
+ccacheMaybePrepared cc = case cc of
+	UseCcache -> ccachePrepared
+	NoCcache  -> doNothing
 
 -- another script from wiki.d.o/sbuild
 ccachePrepared :: Property DebianLike
