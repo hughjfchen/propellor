@@ -136,7 +136,7 @@ builtFor sys = go <!> deleted
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
 built s@(SbuildSchroot suite arch) mirror =
-	(go
+	((go `before` enhancedConf)
 	`requires` ccachePrepared
 	`requires` installed
 	`requires` overlaysKernel)
@@ -157,10 +157,7 @@ built s@(SbuildSchroot suite arch) mirror =
 			]
 		ifM (liftIO $
 			boolSystemEnv "sbuild-createchroot" params (Just de))
-			( ensureProperty w $
-				fixConfFile s
-				`before` aliasesLine
-				`before` commandPrefix
+			( ensureProperty w $ fixConfFile s
 			, return FailedChange
 			)
 	-- TODO we should kill any sessions still using the chroot
@@ -171,6 +168,16 @@ built s@(SbuildSchroot suite arch) mirror =
 			liftIO $ nukeFile
 				("/etc/sbuild/chroot" </> show s ++ "-sbuild")
 			makeChange $ nukeFile (schrootConf s)
+
+	enhancedConf =
+		combineProperties ("enhanced schroot conf for " ++ show s) $ props
+			& aliasesLine
+			-- enable ccache and eatmydata for speed
+			& ConfFile.containsIniSetting (schrootConf s)
+				[ show s ++ "-sbuild"
+				, "command-prefix"
+				, "/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
+				]
 
 	-- if we're building a sid chroot, add useful aliases
 	-- In order to avoid more than one schroot getting the same aliases, we
@@ -185,10 +192,6 @@ built s@(SbuildSchroot suite arch) mirror =
 				then ensureProperty w $
 					schrootConf s `File.containsLine` aliases
 				else return NoChange
-
-	-- enable ccache and eatmydata for speed
-	commandPrefix = File.containsLine (schrootConf s)
-		"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
 
 	-- If the user has indicated that this host should use
 	-- union-type=overlay schroots, we need to ensure that we have rebooted
