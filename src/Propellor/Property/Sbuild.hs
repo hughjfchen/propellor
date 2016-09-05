@@ -183,20 +183,17 @@ built s@(SbuildSchroot suite arch) mirror =
 	-- In order to avoid more than one schroot getting the same aliases, we
 	-- only do this if the arch of the chroot equals the host arch.
 	aliasesLine :: Property UnixLike
-	aliasesLine = property' "maybe set aliases line" $ \w -> do
-		maybeOS <- getOS
-		case maybeOS of
-			Nothing -> return NoChange
-			Just (System _ hostArch) ->
-				if suite == "unstable" && hostArch == arch
-				then ensureProperty w $
-					ConfFile.containsIniSetting
-						(schrootConf s)
-						( show s ++ "-sbuild"
-						, "aliases"
-						, aliases
-						)
-				else return NoChange
+	aliasesLine = property' "maybe set aliases line" $ \w ->
+		sidHostArchSchroot s >>= \isSidHostArchSchroot ->
+			if isSidHostArchSchroot
+			then ensureProperty w $
+				ConfFile.containsIniSetting
+					(schrootConf s)
+					( show s ++ "-sbuild"
+					, "aliases"
+					, aliases
+					)
+			else return NoChange
 
 	-- If the user has indicated that this host should use
 	-- union-type=overlay schroots, we need to ensure that we have rebooted
@@ -490,3 +487,19 @@ schrootConf (SbuildSchroot s a) =
 schrootPiupartsConf :: SbuildSchroot -> FilePath
 schrootPiupartsConf (SbuildSchroot s a) =
 	"/etc/schroot/chroot.d" </> s ++ "-" ++ architectureToDebianArchString a ++ "-piuparts-propellor"
+
+-- Determine whether a schroot is
+--
+-- (i)  Debian sid, and
+-- (ii) the same architecture as the host.
+--
+-- This is the "sid host arch schroot".  It is considered the default schroot
+-- for sbuild builds, so we add useful aliases that work well with the suggested
+-- ~/.sbuildrc given in the haddock
+sidHostArchSchroot :: SbuildSchroot -> Propellor Bool
+sidHostArchSchroot (SbuildSchroot suite arch) = do
+	maybeOS <- getOS
+	case maybeOS of
+		Nothing -> return False
+		Just (System _ hostArch) ->
+			return $ suite == "unstable" && hostArch == arch
