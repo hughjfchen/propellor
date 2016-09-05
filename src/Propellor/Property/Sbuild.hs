@@ -174,10 +174,10 @@ built s@(SbuildSchroot suite arch) mirror =
 			& aliasesLine
 			-- enable ccache and eatmydata for speed
 			& ConfFile.containsIniSetting (schrootConf s)
-				[ show s ++ "-sbuild"
+				( show s ++ "-sbuild"
 				, "command-prefix"
 				, "/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
-				]
+				)
 
 	-- if we're building a sid chroot, add useful aliases
 	-- In order to avoid more than one schroot getting the same aliases, we
@@ -294,12 +294,12 @@ piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 --   piuparts in their @~/.sbuildrc@, which is inconvenient.
 --
 -- To make use of this new schroot config, you can put something like this in
--- your ~/.sbuildrc:
+-- your ~/.sbuildrc (sbuild 0.71.0 or newer):
 --
 --  >  $run_piuparts = 1;
 --  >  $piuparts_opts = [
 --  >      '--schroot',
---  >      'unstable-i386-piuparts',
+--  >      '%r-%a-piuparts',
 --  >      '--fail-if-inadequate',
 --  >      '--fail-on-broken-symlinks',
 --  >      ];
