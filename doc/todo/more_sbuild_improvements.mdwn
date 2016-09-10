@@ -11,3 +11,5 @@ User-visible changes, excerpted from changelog:
     * Sbuild.built & Sbuild.piupartsConf: add an additional alias to sid chroots.
       This is for compatibility with `dgit sbuild`.
     * Further improvements to Sbuild.hs haddock.
+
+> [[done]] --[[Joey]]
