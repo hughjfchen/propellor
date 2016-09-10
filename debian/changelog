@@ -1,4 +1,4 @@
-propellor (3.2.0) UNRELEASED; urgency=medium
+propellor (3.2.0) unstable; urgency=medium
 
   [ Sean Whitton ]
   * Using ccache with Sbuild.built & Sbuild.builtFor is now toggleable: these
@@ -17,7 +17,7 @@ propellor (3.2.0) UNRELEASED; urgency=medium
     be available immedaitely after configuring tor; avoid ugly error in
     this case.
 
- -- Joey Hess <id@joeyh.name>  Thu, 01 Sep 2016 10:30:17 -0400
+ -- Joey Hess <id@joeyh.name>  Sat, 10 Sep 2016 11:39:40 -0400
 
 propellor (3.1.2) unstable; urgency=medium
 
