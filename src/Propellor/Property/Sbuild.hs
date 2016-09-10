@@ -12,8 +12,8 @@ eatmydata.  This means we have to make several assumptions:
 1. you want to build for a Debian release strictly newer than squeeze,
 or for a Buntish release newer than or equal to trusty
 
-2. if you want to build for Debian stretch or newer, you have sbuild
-0.70.0 or newer (there is a backport to jessie)
+2. if you want to build for Debian stretch or newer, you have sbuild 0.70.0 or
+newer (there is a backport to jessie)
 
 The latter is due to the migration from GnuPG v1 to GnuPG v2.1 in
 Debian stretch, which older sbuild can't handle.
@@ -21,7 +21,7 @@ Debian stretch, which older sbuild can't handle.
 Suggested usage in @config.hs@:
 
 >  & Apt.installed ["piuparts", "autopkgtest"]
->  & Sbuild.builtFor (System (Debian Linux Unstable) X86_32)
+>  & Sbuild.builtFor (System (Debian Linux Unstable) X86_32) Sbuild.UseCcache
 >  & Sbuild.piupartsConfFor (System (Debian Linux Unstable) X86_32)
 >  & Sbuild.updatedFor (System (Debian Linux Unstable) X86_32) `period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
@@ -71,6 +71,7 @@ cacher.  In that case you can do something like this in @config.hs@:
 module Propellor.Property.Sbuild (
 	-- * Creating and updating sbuild schroots
 	SbuildSchroot(..),
+	UseCcache(..),
 	built,
 	updated,
 	piupartsConf,
@@ -113,31 +114,37 @@ data SbuildSchroot = SbuildSchroot Suite Architecture
 instance Show SbuildSchroot where
 	show (SbuildSchroot suite arch) = suite ++ "-" ++ architectureToDebianArchString arch
 
+-- | Whether an sbuild schroot should use ccache during builds
+--
+-- ccache is generally useful but it breaks building some packages.  This data
+-- types allows you to toggle it on and off for particular schroots.
+data UseCcache = UseCcache | NoCcache
+
 -- | Build and configure a schroot for use with sbuild using a distribution's
 -- standard mirror
 --
 -- This function is a convenience wrapper around 'built', allowing the user to
 -- identify the schroot and distribution using the 'System' type
-builtFor :: System -> RevertableProperty DebianLike UnixLike
-builtFor sys = go <!> deleted
+builtFor :: System -> UseCcache -> RevertableProperty DebianLike UnixLike
+builtFor sys cc = go <!> deleted
   where
 	go = property' ("sbuild schroot for " ++ show sys) $
 		\w -> case (schrootFromSystem sys, stdMirror sys) of
 			(Just s, Just u)  -> ensureProperty w $
-				setupRevertableProperty $ built s u
+				setupRevertableProperty $ built s u cc
 			_ -> errorMessage
 				("don't know how to debootstrap " ++ show sys)
 	deleted = property' ("no sbuild schroot for " ++ show sys) $
 		\w -> case schrootFromSystem sys of
 			Just s  -> ensureProperty w $
-				undoRevertableProperty $ built s "dummy"
+				undoRevertableProperty $ built s "dummy" cc
 			Nothing -> noChange
 
 -- | Build and configure a schroot for use with sbuild
-built :: SbuildSchroot -> Apt.Url -> RevertableProperty DebianLike UnixLike
-built s@(SbuildSchroot suite arch) mirror =
-	(go
-	`requires` ccachePrepared
+built :: SbuildSchroot -> Apt.Url -> UseCcache -> RevertableProperty DebianLike UnixLike
+built s@(SbuildSchroot suite arch) mirror cc =
+	((go `before` enhancedConf)
+	`requires` ccacheMaybePrepared cc
 	`requires` installed
 	`requires` overlaysKernel)
 	<!> deleted
@@ -157,10 +164,7 @@ built s@(SbuildSchroot suite arch) mirror =
 			]
 		ifM (liftIO $
 			boolSystemEnv "sbuild-createchroot" params (Just de))
-			( ensureProperty w $
-				fixConfFile s
-				`before` aliasesLine
-				`before` commandPrefix
+			( ensureProperty w $ fixConfFile s
 			, return FailedChange
 			)
 	-- TODO we should kill any sessions still using the chroot
@@ -172,23 +176,31 @@ built s@(SbuildSchroot suite arch) mirror =
 				("/etc/sbuild/chroot" </> show s ++ "-sbuild")
 			makeChange $ nukeFile (schrootConf s)
 
+	enhancedConf =
+		combineProperties ("enhanced schroot conf for " ++ show s) $ props
+			& aliasesLine
+			-- enable ccache and eatmydata for speed
+			& ConfFile.containsIniSetting (schrootConf s)
+				( show s ++ "-sbuild"
+				, "command-prefix"
+				, intercalate "," commandPrefix
+				)
+
 	-- if we're building a sid chroot, add useful aliases
 	-- In order to avoid more than one schroot getting the same aliases, we
 	-- only do this if the arch of the chroot equals the host arch.
 	aliasesLine :: Property UnixLike
-	aliasesLine = property' "maybe set aliases line" $ \w -> do
-		maybeOS <- getOS
-		case maybeOS of
-			Nothing -> return NoChange
-			Just (System _ hostArch) ->
-				if suite == "unstable" && hostArch == arch
-				then ensureProperty w $
-					schrootConf s `File.containsLine` aliases
-				else return NoChange
-
-	-- enable ccache and eatmydata for speed
-	commandPrefix = File.containsLine (schrootConf s)
-		"command-prefix=/var/cache/ccache-sbuild/sbuild-setup,eatmydata"
+	aliasesLine = property' "maybe set aliases line" $ \w ->
+		sidHostArchSchroot s >>= \isSidHostArchSchroot ->
+			if isSidHostArchSchroot
+			then ensureProperty w $
+				ConfFile.containsIniSetting
+					(schrootConf s)
+					( show s ++ "-sbuild"
+					, "aliases"
+					, aliases
+					)
+			else return NoChange
 
 	-- If the user has indicated that this host should use
 	-- union-type=overlay schroots, we need to ensure that we have rebooted
@@ -214,7 +226,27 @@ built s@(SbuildSchroot suite arch) mirror =
 		, return False
 		)
 
-	aliases = "aliases=UNRELEASED,sid,rc-buggy,experimental"
+	aliases = intercalate ","
+		[ "sid"
+		-- if the user wants to build for experimental, they would use
+		-- their sid chroot and sbuild's --extra-repository option to
+		-- enable experimental
+		, "rc-buggy"
+		, "experimental"
+		-- we assume that building for UNRELEASED means building for
+		-- unstable
+		, "UNRELEASED"
+		-- the following is for dgit compatibility:
+		, "UNRELEASED-"
+			++ architectureToDebianArchString arch
+			++ "-sbuild"
+		]
+
+	commandPrefix = case cc of
+		UseCcache -> "/var/cache/ccache-sbuild/sbuild-setup":base
+		_ -> base
+	  where
+		base = ["eatmydata"]
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
@@ -273,9 +305,8 @@ fixConfFile s@(SbuildSchroot suite arch) =
 -- documentation for why you might want to use this property, and sample config.
 piupartsConfFor :: System -> Property DebianLike
 piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
-	\w -> case (schrootFromSystem sys, stdMirror sys) of
-			(Just s, Just u)  -> ensureProperty w $
-				piupartsConf s u
+	\w -> case schrootFromSystem sys of
+			Just s -> ensureProperty w $ piupartsConf s
 			_ -> errorMessage
 				("don't know how to debootstrap " ++ show sys)
 
@@ -291,47 +322,58 @@ piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
 --   piuparts in their @~/.sbuildrc@, which is inconvenient.
 --
 -- To make use of this new schroot config, you can put something like this in
--- your ~/.sbuildrc:
+-- your ~/.sbuildrc (sbuild 0.71.0 or newer):
 --
 --  >  $run_piuparts = 1;
 --  >  $piuparts_opts = [
 --  >      '--schroot',
---  >      'unstable-i386-piuparts',
+--  >      '%r-%a-piuparts',
 --  >      '--fail-if-inadequate',
 --  >      '--fail-on-broken-symlinks',
 --  >      ];
-piupartsConf :: SbuildSchroot -> Apt.Url -> Property DebianLike
-piupartsConf s u = go
-	`requires` (setupRevertableProperty $ built s u)
-	`describe` ("piuparts schroot conf for " ++ show s)
+--
+-- This property has no effect if the corresponding sbuild schroot does not
+-- exist (i.e. you also need 'Sbuild.built' or 'Sbuild.builtFor').
+piupartsConf :: SbuildSchroot -> Property DebianLike
+piupartsConf s@(SbuildSchroot _ arch) =
+	check (doesFileExist (schrootConf s)) go
+	`requires` installed
   where
 	go :: Property DebianLike
-	go = tightenTargets $
-		check (not <$> doesFileExist f)
-			(File.basedOn f (schrootConf s, map munge))
-		`before`
-		ConfFile.containsIniSetting f (sec, "profile", "piuparts")
-		`before`
-		ConfFile.containsIniSetting f (sec, "aliases", "")
-		`before`
-		ConfFile.containsIniSetting f (sec, "command-prefix", "")
-		`before`
-		File.dirExists dir
-		`before`
-		File.isSymlinkedTo (dir </> "copyfiles")
-			(File.LinkTarget $ orig </> "copyfiles")
-		`before`
-		File.isSymlinkedTo (dir </> "nssdatabases")
-			(File.LinkTarget $ orig </> "nssdatabases")
-		`before`
-		File.basedOn (dir </> "fstab")
-			(orig </> "fstab", filter (/= aptCacheLine))
+	go = property' desc $ \w -> do
+		aliases <- aliasesLine
+		ensureProperty w $ combineProperties desc $ props
+			& check (not <$> doesFileExist f)
+				(File.basedOn f (schrootConf s, map munge))
+			& ConfFile.containsIniSetting f
+				(sec, "profile", "piuparts")
+			& ConfFile.containsIniSetting f
+				(sec, "aliases", aliases)
+			& ConfFile.containsIniSetting f
+				(sec, "command-prefix", "")
+			& File.dirExists dir
+			& File.isSymlinkedTo (dir </> "copyfiles")
+				(File.LinkTarget $ orig </> "copyfiles")
+			& File.isSymlinkedTo (dir </> "nssdatabases")
+				(File.LinkTarget $ orig </> "nssdatabases")
+			& File.basedOn (dir </> "fstab")
+				(orig </> "fstab", filter (/= aptCacheLine))
 
 	orig = "/etc/schroot/sbuild"
 	dir = "/etc/schroot/piuparts"
 	sec = show s ++ "-piuparts"
 	f = schrootPiupartsConf s
 	munge = replace "-sbuild]" "-piuparts]"
+	desc = "piuparts schroot conf for " ++ show s
+
+	-- normally the piuparts schroot conf has no aliases, but we have to add
+	-- one, for dgit compatibility, if this is the default sid chroot
+	aliasesLine = sidHostArchSchroot s >>= \isSidHostArchSchroot ->
+			return $ if isSidHostArchSchroot
+			then "UNRELEASED-"
+				++ architectureToDebianArchString arch
+				++ "-piuparts"
+			else ""
 
 -- | Bind-mount /var/cache/apt/archives in all sbuild chroots so that the host
 -- system and the chroot share the apt cache
@@ -409,6 +451,11 @@ keypairInsecurelyGenerated = check (not <$> doesFileExist secKeyFile) go
 			["kill $(cat /var/run/rngd.pid)"]
 			`assume` MadeChange
 
+ccacheMaybePrepared :: UseCcache -> Property DebianLike
+ccacheMaybePrepared cc = case cc of
+	UseCcache -> ccachePrepared
+	NoCcache  -> doNothing
+
 -- another script from wiki.d.o/sbuild
 ccachePrepared :: Property DebianLike
 ccachePrepared = propertyList "sbuild group ccache configured" $ props
@@ -468,3 +515,19 @@ schrootConf (SbuildSchroot s a) =
 schrootPiupartsConf :: SbuildSchroot -> FilePath
 schrootPiupartsConf (SbuildSchroot s a) =
 	"/etc/schroot/chroot.d" </> s ++ "-" ++ architectureToDebianArchString a ++ "-piuparts-propellor"
+
+-- Determine whether a schroot is
+--
+-- (i)  Debian sid, and
+-- (ii) the same architecture as the host.
+--
+-- This is the "sid host arch schroot".  It is considered the default schroot
+-- for sbuild builds, so we add useful aliases that work well with the suggested
+-- ~/.sbuildrc given in the haddock
+sidHostArchSchroot :: SbuildSchroot -> Propellor Bool
+sidHostArchSchroot (SbuildSchroot suite arch) = do
+	maybeOS <- getOS
+	case maybeOS of
+		Nothing -> return False
+		Just (System _ hostArch) ->
+			return $ suite == "unstable" && hostArch == arch

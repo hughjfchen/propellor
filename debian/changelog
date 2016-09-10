@@ -1,3 +1,17 @@
+propellor (3.2.0) UNRELEASED; urgency=medium
+
+  * Using ccache with Sbuild.built & Sbuild.builtFor is now toggleable: these
+    properties now take a parameter of type Sbuild.UseCcache.  (API Change)
+  * Sbuild.piupartsConf: no longer takes an Apt.Url. (API Change)
+  * Sbuild.piupartsConf & Sbuild.piupartsConfFor: does nothing if corresponding
+    schroot not built.
+    Previously, these properties built the schroot if it was missing.
+  * Sbuild.built & Sbuild.piupartsConf: add an additional alias to sid chroots.
+    This is for compatibility with `dgit sbuild`.
+  * Further improvements to Sbuild.hs haddock.
+
+ -- Sean Whitton <spwhitton@spwhitton.name>  Mon, 05 Sep 2016 11:14:52 -0700
+
 propellor (3.1.2) unstable; urgency=medium
 
   [ Joey Hess ]
