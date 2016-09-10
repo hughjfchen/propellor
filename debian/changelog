@@ -1,5 +1,6 @@
 propellor (3.2.0) UNRELEASED; urgency=medium
 
+  [ Sean Whitton ]
   * Using ccache with Sbuild.built & Sbuild.builtFor is now toggleable: these
     properties now take a parameter of type Sbuild.UseCcache.  (API Change)
   * Sbuild.piupartsConf: no longer takes an Apt.Url. (API Change)
@@ -10,7 +11,13 @@ propellor (3.2.0) UNRELEASED; urgency=medium
     This is for compatibility with `dgit sbuild`.
   * Further improvements to Sbuild.hs haddock.
 
- -- Sean Whitton <spwhitton@spwhitton.name>  Mon, 05 Sep 2016 11:14:52 -0700
+  [ Joey Hess ]
+  * Tor.hiddenService: Converted port parameter from Int to Port. (API change)
+  * Tor.hiddenServiceAvailable: The hidden service hostname file may not
+    be available immedaitely after configuring tor; avoid ugly error in
+    this case.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 01 Sep 2016 10:30:17 -0400
 
 propellor (3.1.2) unstable; urgency=medium
 
