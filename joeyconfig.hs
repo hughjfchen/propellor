@@ -454,7 +454,6 @@ pell = host "pell.branchable.com" $ props
 	& alias "family.kitenet.net"
 
 	& Apt.installed ["linux-image-amd64"]
-	& Linode.chainPVGrub 5
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
 
