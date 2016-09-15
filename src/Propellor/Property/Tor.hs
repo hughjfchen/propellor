@@ -145,7 +145,7 @@ hiddenServiceAvailable hn port = hiddenServiceHostName $ hiddenService hn port
 		r <- satisfy
 		mh <- liftIO $ tryIO $ readFile (varLib </> hn </> "hostname")
 		case mh of
-			Right h -> warningMessage $ unwords ["hidden service hostname:", h]
+			Right h -> infoMessage $ unwords ["hidden service hostname:", h]
 			Left _e -> warningMessage "hidden service hostname not available yet"
 		return r
 
