@@ -457,12 +457,14 @@ pell = host "pell.branchable.com" $ props
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
 
+-- See https://joeyh.name/code/keysafe/servers/ for requirements.
 keysafe :: Host
 keysafe = host "keysafe.joeyh.name" $ props
 	& ipv4 "139.59.17.168"
 	& Hostname.sane
 	& osDebian (Stable "jessie") X86_64
 	& Apt.stdSourcesList `onChange` Apt.upgrade
+	& Apt.unattendedUpgrades
 	& DigitalOcean.distroKernel
 	-- This is a 500 mb VM, so need more ram to build propellor.
 	& Apt.serviceInstalledRunning "swapspace"
@@ -491,6 +493,19 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& Tor.bandwidthRate (Tor.PerMonth "750 GB")
 
 	-- keysafe installed manually until package is available
+	
+	& Obnam.backupEncrypted "/var/lib/keysafe" (Cron.Times "42 9 * * *")
+		[ "--repository=sftp://2318@usw-s002.rsync.net/~/keysafe.obnam"
+		, "--client-name=keysafe.joeyh.name"
+		, Obnam.keepParam [Obnam.KeepDays 7, Obnam.KeepWeeks 4]
+		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
+		`requires` rootsshkey
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
+  where
+	rootsshkey = Ssh.userKeys (User "root")
+		(Context "keysafe.joeyh.name")
+		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEx8bK9ZbXVEgEvxQeXLjnr9cGa/QvoB459aglP529My root@keysafe")
+		]
 
 iabak :: Host
 iabak = host "iabak.archiveteam.org" $ props
