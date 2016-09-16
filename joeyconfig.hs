@@ -490,7 +490,7 @@ keysafe = host "keysafe.joeyh.name" $ props
 
 	-- keysafe installed manually until package is available
 	
-	& Gpg.keyImported (Gpg.GpgKeyId "98147487") (User "root")
+	-- & Gpg.keyImported (Gpg.GpgKeyId "98147487") (User "root")
 	& Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 	& Ssh.userKeys (User "root")
 		(Context "keysafe.joeyh.name")
