@@ -486,25 +486,25 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "keysafe" (Port 4242)
 		`requires` Tor.hiddenServiceData "keysafe" hostContext
-	-- This is optional, but may as well act as a tor bridge
-	-- to use spare bandwidth capacity.
-	& Tor.isBridge
-	& Tor.named "keysafe1"
 	& Tor.bandwidthRate (Tor.PerMonth "750 GB")
 
 	-- keysafe installed manually until package is available
 	
-	& Obnam.backupEncrypted "/var/lib/keysafe" (Cron.Times "42 9 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/keysafe.obnam"
-		, "--client-name=keysafe.joeyh.name"
-		, Obnam.keepParam [Obnam.KeepDays 7, Obnam.KeepWeeks 4]
-		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
-		`requires` rootsshkey
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
-  where
-	rootsshkey = Ssh.userKeys (User "root")
+	& Gpg.keyImported (Gpg.GpgKeyId "98147487") (User "root")
+	& Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
+	& Ssh.userKeys (User "root")
 		(Context "keysafe.joeyh.name")
 		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEx8bK9ZbXVEgEvxQeXLjnr9cGa/QvoB459aglP529My root@keysafe")
+		]
+	-- Note that this is not an incremental backup; it uploads the
+	-- whole content every time. So, only run weekly.
+	& Cron.niceJob "keysafe backup" Cron.Weekly (User "root") "/" backupcmd
+  where
+	backupdir = "/var/backups/keysafe"
+	rsyncnetbackup = "sftp://2318@usw-s002.rsync.net/~/keysafe"
+	backupcmd = unwords
+		[ "keysafe --backup-server", backupdir
+		, "&& rsync -a --delete --max-delete 3 ",  backupdir , rsyncnetbackup
 		]
 
 iabak :: Host
