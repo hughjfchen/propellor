@@ -499,10 +499,11 @@ keysafe = host "keysafe.joeyh.name" $ props
 	-- Note that this is not an incremental backup; it uploads the
 	-- whole content every time. So, only run weekly.
 	& Cron.niceJob "keysafe backup" Cron.Weekly (User "root") "/" backupcmd
+		`requires` Apt.installed ["rsync"]
   where
 	datadir = "/var/lib/keysafe"
 	backupdir = "/var/backups/keysafe"
-	rsyncnetbackup = "sftp://2318@usw-s002.rsync.net/~/keysafe"
+	rsyncnetbackup = "2318@usw-s002.rsync.net:keysafe"
 	backupcmd = unwords
 		[ "keysafe --store-directory", datadir, "--backup-server", backupdir
 		, "&& rsync -a --delete --max-delete 3 ",  backupdir , rsyncnetbackup
