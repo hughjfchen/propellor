@@ -500,10 +500,11 @@ keysafe = host "keysafe.joeyh.name" $ props
 	-- whole content every time. So, only run weekly.
 	& Cron.niceJob "keysafe backup" Cron.Weekly (User "root") "/" backupcmd
   where
+	datadir = "/var/lib/keysafe"
 	backupdir = "/var/backups/keysafe"
 	rsyncnetbackup = "sftp://2318@usw-s002.rsync.net/~/keysafe"
 	backupcmd = unwords
-		[ "keysafe --backup-server", backupdir
+		[ "keysafe --store-directory", datadir, "--backup-server", backupdir
 		, "&& rsync -a --delete --max-delete 3 ",  backupdir , rsyncnetbackup
 		]
 
