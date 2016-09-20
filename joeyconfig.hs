@@ -457,12 +457,14 @@ pell = host "pell.branchable.com" $ props
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
 
+-- See https://joeyh.name/code/keysafe/servers/ for requirements.
 keysafe :: Host
 keysafe = host "keysafe.joeyh.name" $ props
 	& ipv4 "139.59.17.168"
 	& Hostname.sane
 	& osDebian (Stable "jessie") X86_64
 	& Apt.stdSourcesList `onChange` Apt.upgrade
+	& Apt.unattendedUpgrades
 	& DigitalOcean.distroKernel
 	-- This is a 500 mb VM, so need more ram to build propellor.
 	& Apt.serviceInstalledRunning "swapspace"
@@ -484,7 +486,28 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "keysafe" (Port 4242)
 		`requires` Tor.hiddenServiceData "keysafe" hostContext
+	& Tor.bandwidthRate (Tor.PerMonth "750 GB")
+
 	-- keysafe installed manually until package is available
+	
+	& Gpg.keyImported (Gpg.GpgKeyId "CECE11AE") (User "root")
+	& Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
+	& Ssh.userKeys (User "root")
+		(Context "keysafe.joeyh.name")
+		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEx8bK9ZbXVEgEvxQeXLjnr9cGa/QvoB459aglP529My root@keysafe")
+		]
+	-- Note that this is not an incremental backup; it uploads the
+	-- whole content every time. So, only run weekly.
+	& Cron.niceJob "keysafe backup" Cron.Weekly (User "root") "/" backupcmd
+		`requires` Apt.installed ["rsync"]
+  where
+	datadir = "/var/lib/keysafe"
+	backupdir = "/var/backups/keysafe"
+	rsyncnetbackup = "2318@usw-s002.rsync.net:keysafe"
+	backupcmd = unwords
+		[ "keysafe --store-directory", datadir, "--backup-server", backupdir
+		, "&& rsync -a --delete --max-delete 3 ",  backupdir , rsyncnetbackup
+		]
 
 iabak :: Host
 iabak = host "iabak.archiveteam.org" $ props
