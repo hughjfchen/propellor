@@ -1,3 +1,9 @@
+propellor (3.2.1) UNRELEASED; urgency=medium
+
+  * Simplify Debootstrap.sourceInstall since #770217 was fixed.
+
+ -- Joey Hess <id@joeyh.name>  Sat, 24 Sep 2016 14:34:39 -0400
+
 propellor (3.2.0) unstable; urgency=medium
 
   [ Sean Whitton ]
