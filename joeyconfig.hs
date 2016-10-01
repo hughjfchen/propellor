@@ -489,7 +489,8 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& Tor.bandwidthRate (Tor.PerMonth "750 GB")
 
 	-- keysafe installed manually until package is available
-	
+	& Systemd.enabled "keysafe"
+
 	& Gpg.keyImported (Gpg.GpgKeyId "CECE11AE") (User "root")
 	& Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 	& Ssh.userKeys (User "root")
