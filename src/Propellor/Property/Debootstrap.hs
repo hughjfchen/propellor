@@ -100,7 +100,7 @@ extractSuite (System (FreeBSD _) _) = Nothing
 installed :: RevertableProperty Linux Linux
 installed = install <!> remove
   where
-	install = check (isJust <$> programPath) $
+	install = check (isNothing <$> programPath) $
 		(aptinstall `pickOS` sourceInstall)
 			`describe` "debootstrap installed"
 
