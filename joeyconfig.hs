@@ -448,6 +448,7 @@ pell = host "pell.branchable.com" $ props
 	& alias "joeyh.name"
 	& alias "campaign.joeyh.name"
 	& alias "ikiwiki.info"
+	& alias "www.ikiwiki.info"
 	& alias "git.ikiwiki.info"
 	& alias "l10n.ikiwiki.info"
 	& alias "dist-bugs.kitenet.net"
