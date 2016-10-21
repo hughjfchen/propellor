@@ -260,6 +260,7 @@ kite = host "kite.kitenet.net" $ props
 
 	& Network.static "eth0" `requires` Network.cleanInterfacesFile
 	& Apt.installed ["linux-image-amd64"]
+	& Linode.serialGrub
 	& Linode.mlocateEnabled
 	& Apt.unattendedUpgrades
 	& Systemd.installed
@@ -456,6 +457,7 @@ pell = host "pell.branchable.com" $ props
 	& Apt.installed ["linux-image-amd64"]
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
+	& Linode.serialGrub
 
 -- See https://joeyh.name/code/keysafe/servers/ for requirements.
 keysafe :: Host
