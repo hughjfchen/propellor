@@ -1,9 +1,14 @@
+propellor (3.2.2) UNRELEASED; urgency=medium
+
+  * Added Linode.serialGrub property.
+
+ -- Joey Hess <id@joeyh.name>  Fri, 21 Oct 2016 14:59:09 -0400
+
 propellor (3.2.1) unstable; urgency=medium
 
   * Simplify Debootstrap.sourceInstall since #770217 was fixed.
   * Debootstap.installed: Fix inverted logic that made this never install
     debootstrap. Thanks, mithrandi.
-  * Added Linode.serialGrub property.
 
  -- Joey Hess <id@joeyh.name>  Mon, 03 Oct 2016 18:06:31 -0400
 
