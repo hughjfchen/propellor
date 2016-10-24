@@ -168,7 +168,7 @@ oyster :: Host
 oyster = host "oyster.kitenet.net" $ props
 	& standardSystem Unstable X86_64
 		[ "Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "64.137.222.48"
+	& ipv4 "64.137.221.146"
 
 	& CloudAtCost.decruft
 	& Ssh.hostKeys hostContext
