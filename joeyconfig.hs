@@ -168,7 +168,7 @@ oyster :: Host
 oyster = host "oyster.kitenet.net" $ props
 	& standardSystem Unstable X86_64
 		[ "Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "104.167.117.109"
+	& ipv4 "64.137.221.146"
 
 	& CloudAtCost.decruft
 	& Ssh.hostKeys hostContext
@@ -260,15 +260,14 @@ kite = host "kite.kitenet.net" $ props
 
 	& Network.static "eth0" `requires` Network.cleanInterfacesFile
 	& Apt.installed ["linux-image-amd64"]
-	& Linode.chainPVGrub 5
+	& Linode.serialGrub
 	& Linode.mlocateEnabled
 	& Apt.unattendedUpgrades
 	& Systemd.installed
 	& Systemd.persistentJournal
 	& Journald.systemMaxUse "500MiB"
 	& Ssh.passwordAuthentication True
-	-- Since ssh password authentication is allowed:
-	& Fail2Ban.installed
+	& Fail2Ban.installed -- since ssh password authentication is allowed
 	& Apt.serviceInstalledRunning "ntp"
 	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
 
@@ -446,8 +445,10 @@ pell = host "pell.branchable.com" $ props
 	& alias "www.olduse.net"
 	& alias "www.kitenet.net"
 	& alias "joeyh.name"
+	& alias "www.joeyh.name"
 	& alias "campaign.joeyh.name"
 	& alias "ikiwiki.info"
+	& alias "www.ikiwiki.info"
 	& alias "git.ikiwiki.info"
 	& alias "l10n.ikiwiki.info"
 	& alias "dist-bugs.kitenet.net"
@@ -456,6 +457,7 @@ pell = host "pell.branchable.com" $ props
 	& Apt.installed ["linux-image-amd64"]
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
+	& Linode.serialGrub
 
 -- See https://joeyh.name/code/keysafe/servers/ for requirements.
 keysafe :: Host
