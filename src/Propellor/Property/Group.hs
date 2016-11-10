@@ -12,3 +12,6 @@ exists (Group group') mgid = check test (cmdProperty "addgroup" (args mgid))
 	test = not . elem group' . words <$> readProcess "cut" ["-d:", "-f1", groupFile]
 	args Nothing = [group']
 	args (Just gid) = ["--gid", show gid, group']
+
+hasUser :: Group -> User -> Property DebianLike
+hasUser (Group group') (User user) = hasGroup user group'
