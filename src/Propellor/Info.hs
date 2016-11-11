@@ -1,4 +1,5 @@
 {-# LANGUAGE PackageImports, TypeFamilies, DataKinds, PolyKinds #-}
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 module Propellor.Info (
 	osDebian,
@@ -38,6 +39,9 @@ import Prelude
 --
 -- The new Property will include HasInfo in its metatypes.
 setInfoProperty
+	-- -Wredundant-constraints is turned off because
+	-- this constraint appears redundant, but is actually
+	-- crucial.
 	:: (MetaTypes metatypes' ~ (+) HasInfo metatypes, SingI metatypes')
 	=> Property metatypes
 	-> Info
@@ -47,6 +51,9 @@ setInfoProperty (Property _ d a oldi c) newi =
 
 -- | Adds more info to a Property that already HasInfo.
 addInfoProperty
+	-- -Wredundant-constraints is turned off because
+	-- this constraint appears redundant, but is actually
+	-- crucial.
 	:: (IncludesInfo metatypes ~ 'True)
 	=> Property metatypes
 	-> Info

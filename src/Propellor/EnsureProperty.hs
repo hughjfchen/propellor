@@ -3,6 +3,7 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 module Propellor.EnsureProperty
 	( ensureProperty
@@ -37,6 +38,9 @@ import Prelude
 -- with the property to be lost.
 ensureProperty
 	::
+		-- -Wredundant-constraints is turned off because
+		-- this constraint appears redundant, but is actually
+		-- crucial.
 		( Cannot_ensureProperty_WithInfo inner ~ 'True
 		, (Targets inner `NotSuperset` Targets outer) ~ 'CanCombine
 		)
@@ -45,7 +49,7 @@ ensureProperty
 	-> Propellor Result
 ensureProperty _ = catchPropellor . getSatisfy
 
--- The name of this was chosen to make type errors a more understandable.
+-- The name of this was chosen to make type errors a bit more understandable.
 type family Cannot_ensureProperty_WithInfo (l :: [a]) :: Bool
 type instance Cannot_ensureProperty_WithInfo '[] = 'True
 type instance Cannot_ensureProperty_WithInfo (t ': ts) =

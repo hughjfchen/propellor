@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DataKinds #-}
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 module Propellor.PropAccum
 	( host
@@ -51,6 +52,9 @@ type instance GetMetaTypes (RevertableProperty (MetaTypes t) undo) = MetaTypes t
 (&)
 	::
 		( IsProp p
+		-- -Wredundant-constraints is turned off because
+		-- this constraint appears redundant, but is actually
+		-- crucial.
 		, MetaTypes y ~ GetMetaTypes p
 		, CheckCombinable x y ~ 'CanCombine
 		)
@@ -63,6 +67,9 @@ Props c & p = Props (c ++ [toChildProperty p])
 (&^)
 	::
 		( IsProp p
+		-- -Wredundant-constraints is turned off because
+		-- this constraint appears redundant, but is actually
+		-- crucial.
 		, MetaTypes y ~ GetMetaTypes p
 		, CheckCombinable x y ~ 'CanCombine
 		)
@@ -73,6 +80,9 @@ Props c &^ p = Props (toChildProperty p : c)
 
 -- | Adds a property in reverted form.
 (!)
+	-- -Wredundant-constraints is turned off because
+	-- this constraint appears redundant, but is actually
+	-- crucial.
 	:: (CheckCombinable x z ~ 'CanCombine)
 	=> Props (MetaTypes x)
 	-> RevertableProperty (MetaTypes y) (MetaTypes z)

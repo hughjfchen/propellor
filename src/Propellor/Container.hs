@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds, TypeFamilies #-}
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 module Propellor.Container where
 
@@ -43,6 +44,9 @@ propagateContainer
 	::
 		-- Since the children being added probably have info,
 		-- require the Property's metatypes to have info.
+		-- -Wredundant-constraints is turned off because
+		-- this constraint appears redundant, but is actually
+		-- crucial.
 		( IncludesInfo metatypes ~ 'True
 		, IsContainer c
 		)
