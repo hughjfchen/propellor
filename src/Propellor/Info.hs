@@ -1,5 +1,4 @@
 {-# LANGUAGE PackageImports, TypeFamilies, DataKinds, PolyKinds #-}
-{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 module Propellor.Info (
 	osDebian,

@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DataKinds #-}
-{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 module Propellor.PropAccum
 	( host

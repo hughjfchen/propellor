@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds, TypeFamilies #-}
-{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 module Propellor.Container where
 
