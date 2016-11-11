@@ -1,6 +1,7 @@
 module Propellor.Property.Group where
 
 import Propellor.Base
+import Propellor.Property.User (hasGroup)
 
 type GID = Int
 

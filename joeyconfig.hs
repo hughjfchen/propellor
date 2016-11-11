@@ -12,6 +12,7 @@ import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
+import qualified Propellor.Property.Group as Group
 import qualified Propellor.Property.Hostname as Hostname
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Dns as Dns
