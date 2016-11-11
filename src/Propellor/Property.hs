@@ -345,7 +345,7 @@ revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
 -- | Apply a property to each element of a list.
 applyToList
-	:: (Foldable t, Functor t, IsProp p, Combines p p, p ~ CombinedType p p)
+	:: (Foldable t, Functor t, Combines p p, p ~ CombinedType p p)
 	=> (b -> p)
 	-> t b
 	-> p
