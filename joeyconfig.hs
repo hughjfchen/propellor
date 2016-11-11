@@ -542,13 +542,14 @@ iabak = host "iabak.archiveteam.org" $ props
 	& Ssh.authorizedKey (User "db48x") "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJQkqIgZ7D8WHW5Y3o+fpZC/4xtv/3IQrORJrTPCt7KY db48x@erebor"
 	& Ssh.authorizedKey (User "hcross") "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP5OhU2Lita9RdjPkX9N0w9wZnmVlednUDEx24bVn4Mk IABAK key - Harry C"
 	& Ssh.authorizedKey (User "kaz") "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHhFYMd9Htlf9wPZzIDyqbYYNwuo3m+kWQ9/pfAD/TE9 Kaz IABAK"
+	& Ssh.authorizedKey (User "yipdw") "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEo2mGPw2TTJMHp7G86hMBh6n9/+abzg1oXIIlkwWwzo trythil@aglarond"
 	& Ssh.noPasswords
 	& IABak.gitServer monsters
 	& IABak.registrationServer monsters
 	& IABak.graphiteServer
 	& IABak.publicFace
   where
-	admins = map User ["joey", "db48x", "hcross", "kaz"]
+	admins = map User ["joey", "db48x", "hcross", "kaz", "yipdw"]
 
        --'                        __|II|      ,.
      ----                      __|II|II|__   (  \_,/\
