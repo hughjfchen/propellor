@@ -1,3 +1,9 @@
+propellor (3.2.3) UNRELEASED; urgency=medium
+
+  * Improve extraction of gpg secret key id list, to work with gpg 2.1.
+
+ -- Joey Hess <id@joeyh.name>  Fri, 11 Nov 2016 19:32:54 -0400
+
 propellor (3.2.2) unstable; urgency=medium
 
   * Added Linode.serialGrub property.
