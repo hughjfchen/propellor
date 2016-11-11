@@ -158,7 +158,6 @@ Library
     Propellor.Property.SiteSpecific.JoeySites
     Propellor.Property.SiteSpecific.GitAnnexBuilder
     Propellor.Property.SiteSpecific.Branchable
-    Propellor.Property.SiteSpecific.IABak
     Propellor.PropAccum
     Propellor.Utilities
     Propellor.CmdLine
