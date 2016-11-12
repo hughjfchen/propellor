@@ -13,11 +13,13 @@ and configured in haskell.
 
 # MODES OF OPERATION
 
-* propellor
+* propellor --init
 
-  The first time you run `propellor`, without any options,
-  it will set up a `~/.propellor/` repository. Edit `~/.propellor/config.hs`
-  to configure it.
+  Get started by initializing a `~/.propellor/` repository.
+
+  After this, you'll edit `~/.propellor/config.hs` to configure propellor.
+
+* propellor
 
   Once propellor is configured, running it without any options will take
   action as needed to satisfy the configured properties of the local host.
