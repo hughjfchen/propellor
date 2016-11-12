@@ -7,8 +7,8 @@
 -- This bootstraps ~/.propellor/config.hs, builds it if
 -- it's not already built, and runs it.
 --
--- If ./config.hs exists, it instead builds and runs in the
--- current working directory.
+-- If ./config.hs exists and looks like a propellor config file, 
+-- it instead builds and runs in the current working directory.
 
 module Main where
 
@@ -24,7 +24,10 @@ import Utility.Process.NonConcurrent
 import System.Environment (getArgs)
 import System.Exit
 import System.Posix
+import Data.List
 import Control.Monad.IfElse
+import Control.Applicative
+import Prelude
 
 main :: IO ()
 main = withConcurrentOutput $ go =<< getArgs
@@ -66,8 +69,13 @@ configInCurrentWorkingDirectory = ifM (doesFileExist "config.hs")
 				then unsafe "the current directory is group writable"
 				else if checkMode otherWriteMode (fileMode s)
 					then unsafe "the current directory is world-writable"
-					else return True
+					else ifM mentionspropellor
+						( return True
+						, notusing "it does not seem to be a propellor config file"
+						)
 	, return False
 	)
   where
-	unsafe s = error $ "Not using ./config.hs because " ++ s ++ ". This seems unsafe."
+	unsafe s = notusing (s ++ ". This seems unsafe.")
+	notusing s = error $ "Not using ./config.hs because " ++ s
+	mentionspropellor = ("Propellor" `isInfixOf`) <$> readFile "config.hs"
