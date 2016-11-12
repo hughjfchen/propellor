@@ -59,6 +59,9 @@ and configured in haskell.
 
   Adds a gpg key, which is used to encrypt the privdata.
 
+  Multiple gpg keys can be added; the privdata will be encrypted so that
+  all of them can decrypt it.
+
   If the gpg secret key is present, git is configured to sign commits
   using this key. Propellor requires signed commits when pulling from
   a central git repository.
@@ -152,7 +155,7 @@ Additionally, the url of a remote named "deploy", if it exists
 in your ~/.propellor/ repository, is used as the origin url for
 the other repositories.
 
-# SH AUTHOR 
+# AUTHOR 
 
 Joey Hess <id@joeyh.name>
 
