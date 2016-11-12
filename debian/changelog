@@ -1,6 +1,9 @@
 propellor (3.2.3) UNRELEASED; urgency=medium
 
   * Improve extraction of gpg secret key id list, to work with gpg 2.1.
+  * The propellor wrapper checks if ./config.hs exists; if so it runs
+    using the configuration in the current directory, rather than
+    ~/.propellor/config.hs
 
  -- Joey Hess <id@joeyh.name>  Fri, 11 Nov 2016 19:32:54 -0400
 

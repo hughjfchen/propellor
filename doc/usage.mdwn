@@ -24,8 +24,8 @@ and configured in haskell.
   Once propellor is configured, running it without any options will take
   action as needed to satisfy the configured properties of the local host.
 
-  If there's a central git repository, it will first fetch from the
-  repository, check the gpg signature and merge, and rebuild propellor,
+  If there's a central git repository, it will first fetch from it,
+  check the gpg signature and merge, and rebuild propellor,
   so that any configuration changes will immediately take effect.
 
   If propellor is run by a non-root user without any options, this is
@@ -115,6 +115,19 @@ and configured in haskell.
   provision the local host with the configuration of that hostname.
   This is useful when the local host doesn't yet have its hostname set
   correctly.
+
+# FILES
+
+* ~/.propellor/config.hs
+
+  This is the default config file used by propellor.
+
+* ./config.hs
+
+  If propellor is run in a directory containing a config.hs, it
+  assumes that the current directory is a propellor repository, and 
+  uses the configuration from the current directory, rather tnan
+  ~/.propellor/ 
 
 # ENVIRONMENT
 
