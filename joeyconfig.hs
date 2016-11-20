@@ -110,9 +110,6 @@ gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
 	& Apt.buildDep ["git-annex"] `period` Daily
 
-	& JoeySites.postfixClientRelay (Context "gnu.kitenet.net")
-	& JoeySites.dkimMilter
-
 clam :: Host
 clam = host "clam.kitenet.net" $ props
 	& standardSystem Unstable X86_64

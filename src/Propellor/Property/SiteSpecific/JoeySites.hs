@@ -513,6 +513,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 	& Fail2Ban.jailEnabled "postfix-sasl"
 	& "/etc/default/saslauthd" `File.containsLine` "MECHANISMS=sasldb"
 	& Postfix.saslPasswdSet "kitenet.net" (User "errol")
+	& Postfix.saslPasswdSet "kitenet.net" (User "joey")
 
 	& Apt.installed ["maildrop"]
 	& "/etc/maildroprc" `File.hasContent`
@@ -578,7 +579,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "# Filter out client relay lines from headers."
 		, "header_checks = pcre:$config_directory/obscure_client_relay.pcre"
 
-		, "# Password auth for relaying (used by errol)"
+		, "# Password auth for relaying"
 		, "smtpd_sasl_auth_enable = yes"
 		, "smtpd_sasl_security_options = noanonymous"
 		, "smtpd_sasl_local_domain = kitenet.net"
