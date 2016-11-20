@@ -532,7 +532,6 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 
 	& "/etc/aliases" `File.hasPrivContentExposed` ctx
 		`onChange` Postfix.newaliases
-	& hasJoeyCAChain
 	& hasPostfixCert ctx
 
 	& "/etc/postfix/mydomain" `File.containsLines`
@@ -671,24 +670,6 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		(Postfix.InetService Nothing "ssmtp")
 		"smtpd" Postfix.defServiceOpts
 
--- Configures postfix to relay outgoing mail to kitenet.net, with
--- verification via tls cert.
-postfixClientRelay :: Context -> Property (HasInfo + DebianLike)
-postfixClientRelay ctx = Postfix.mainCfFile `File.containsLines`
-	-- Using smtps not smtp because more networks firewall smtp
-	[ "relayhost = kitenet.net:smtps"
-	, "smtp_tls_CAfile = /etc/ssl/certs/joeyca.pem"
-	, "smtp_tls_cert_file = /etc/ssl/certs/postfix.pem"
-	, "smtp_tls_key_file = /etc/ssl/private/postfix.pem"
-	, "smtp_tls_loglevel = 0"
-	, "smtp_use_tls = yes"
-	]
-	`describe` "postfix client relay"
-	`onChange` Postfix.dedupMainCf
-	`onChange` Postfix.reloaded
-	`requires` hasJoeyCAChain
-	`requires` hasPostfixCert ctx
-
 -- Configures postfix to have the dkim milter, and no other milters.
 dkimMilter :: Property (HasInfo + DebianLike)
 dkimMilter = Postfix.mainCfFile `File.containsLines`
@@ -744,7 +725,73 @@ legacyWebSites = propertyList "legacy web sites" $ props
 	& Apache.modEnabled "cgi"
 	& Apache.modEnabled "speling"
 	& userDirHtml
-	& Apache.httpsVirtualHost' "kitenet.net" "/var/www" letos
+	& Apache.httpsVirtualHost' "kitenet.net" "/var/www" letos kitenetcfg
+	& alias "anna.kitenet.net"
+	& apacheSite "anna.kitenet.net"
+		[ "DocumentRoot /home/anna/html"
+		, "<Directory /home/anna/html/>"
+		, "  Options Indexes ExecCGI"
+		, "  AllowOverride None"
+		, Apache.allowAll
+		, "</Directory>"
+		]
+	& alias "sows-ear.kitenet.net"
+	& alias "www.sows-ear.kitenet.net"
+	& apacheSite "sows-ear.kitenet.net"
+		[ "ServerAlias www.sows-ear.kitenet.net"
+		, "DocumentRoot /srv/web/sows-ear.kitenet.net"
+		, "<Directory /srv/web/sows-ear.kitenet.net>"
+		, "  Options FollowSymLinks"
+		, "  AllowOverride None"
+		, Apache.allowAll
+		, "</Directory>"
+		, "RewriteEngine On"
+		, "RewriteRule .* http://www.sowsearpoetry.org/ [L]"
+		]
+	& alias "wortroot.kitenet.net"
+	& alias "www.wortroot.kitenet.net"
+	& apacheSite "wortroot.kitenet.net"
+		[ "ServerAlias www.wortroot.kitenet.net"
+		, "DocumentRoot /srv/web/wortroot.kitenet.net"
+		, "<Directory /srv/web/wortroot.kitenet.net>"
+		, "  Options FollowSymLinks"
+		, "  AllowOverride None"
+		, Apache.allowAll
+		, "</Directory>"
+		]
+	& alias "creeksidepress.com"
+	& apacheSite "creeksidepress.com"
+		[ "ServerAlias www.creeksidepress.com"
+		, "DocumentRoot /srv/web/www.creeksidepress.com"
+		, "<Directory /srv/web/www.creeksidepress.com>"
+		, "  Options FollowSymLinks"
+		, "  AllowOverride None"
+		, Apache.allowAll
+		, "</Directory>"
+		]
+	& alias "joey.kitenet.net"
+	& apacheSite "joey.kitenet.net"
+		[ "DocumentRoot /var/www"
+		, "<Directory /var/www/>"
+		, "  Options Indexes ExecCGI"
+		, "  AllowOverride None"
+		, Apache.allowAll
+		, "</Directory>"
+
+		, "RewriteEngine On"
+
+		, "# Old ikiwiki filenames for joey's wiki."
+		, "rewritecond $1 !.*/index$"
+		, "rewriterule (.+).html$ http://joeyh.name/$1/ [l]"
+
+		, "rewritecond $1 !.*/index$"
+		, "rewriterule (.+).rss$ http://joeyh.name/$1/index.rss [l]"
+
+		, "# Redirect all to joeyh.name."
+		, "rewriterule (.*) http://joeyh.name$1 [r]"
+		]
+  where
+	kitenetcfg =
 		-- /var/www is empty
 		[ "DocumentRoot /var/www"
 		, "<Directory /var/www>"
@@ -830,70 +877,6 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "rewriterule /~kyle/family/wiki/(.*).html http://macleawiki.branchable.com/$1 [L]"
 		, "rewriterule /~kyle/family/wiki/(.*).rss http://macleawiki.branchable.com/$1/index.rss [L]"
 		, "rewriterule /~kyle/family/wiki(.*) http://macleawiki.branchable.com$1 [L]"
-		]
-	& alias "anna.kitenet.net"
-	& apacheSite "anna.kitenet.net"
-		[ "DocumentRoot /home/anna/html"
-		, "<Directory /home/anna/html/>"
-		, "  Options Indexes ExecCGI"
-		, "  AllowOverride None"
-		, Apache.allowAll
-		, "</Directory>"
-		]
-	& alias "sows-ear.kitenet.net"
-	& alias "www.sows-ear.kitenet.net"
-	& apacheSite "sows-ear.kitenet.net"
-		[ "ServerAlias www.sows-ear.kitenet.net"
-		, "DocumentRoot /srv/web/sows-ear.kitenet.net"
-		, "<Directory /srv/web/sows-ear.kitenet.net>"
-		, "  Options FollowSymLinks"
-		, "  AllowOverride None"
-		, Apache.allowAll
-		, "</Directory>"
-		, "RewriteEngine On"
-		, "RewriteRule .* http://www.sowsearpoetry.org/ [L]"
-		]
-	& alias "wortroot.kitenet.net"
-	& alias "www.wortroot.kitenet.net"
-	& apacheSite "wortroot.kitenet.net"
-		[ "ServerAlias www.wortroot.kitenet.net"
-		, "DocumentRoot /srv/web/wortroot.kitenet.net"
-		, "<Directory /srv/web/wortroot.kitenet.net>"
-		, "  Options FollowSymLinks"
-		, "  AllowOverride None"
-		, Apache.allowAll
-		, "</Directory>"
-		]
-	& alias "creeksidepress.com"
-	& apacheSite "creeksidepress.com"
-		[ "ServerAlias www.creeksidepress.com"
-		, "DocumentRoot /srv/web/www.creeksidepress.com"
-		, "<Directory /srv/web/www.creeksidepress.com>"
-		, "  Options FollowSymLinks"
-		, "  AllowOverride None"
-		, Apache.allowAll
-		, "</Directory>"
-		]
-	& alias "joey.kitenet.net"
-	& apacheSite "joey.kitenet.net"
-		[ "DocumentRoot /var/www"
-		, "<Directory /var/www/>"
-		, "  Options Indexes ExecCGI"
-		, "  AllowOverride None"
-		, Apache.allowAll
-		, "</Directory>"
-
-		, "RewriteEngine On"
-
-		, "# Old ikiwiki filenames for joey's wiki."
-		, "rewritecond $1 !.*/index$"
-		, "rewriterule (.+).html$ http://joeyh.name/$1/ [l]"
-
-		, "rewritecond $1 !.*/index$"
-		, "rewriterule (.+).rss$ http://joeyh.name/$1/index.rss [l]"
-
-		, "# Redirect all to joeyh.name."
-		, "rewriterule (.*) http://joeyh.name$1 [r]"
 		]
 
 userDirHtml :: Property DebianLike
