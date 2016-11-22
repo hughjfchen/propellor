@@ -1,4 +1,4 @@
-propellor (3.2.3) UNRELEASED; urgency=medium
+propellor (3.2.3) unstable; urgency=medium
 
   * Improve extraction of gpg secret key id list, to work with gpg 2.1.
   * The propellor wrapper checks if ./config.hs exists; if so it runs
@@ -8,7 +8,7 @@ propellor (3.2.3) UNRELEASED; urgency=medium
     chroots, which prevented non-root users from doing anything in the
     chroot.
 
- -- Joey Hess <id@joeyh.name>  Fri, 11 Nov 2016 19:32:54 -0400
+ -- Joey Hess <id@joeyh.name>  Tue, 22 Nov 2016 11:36:18 -0400
 
 propellor (3.2.2) unstable; urgency=medium
 
