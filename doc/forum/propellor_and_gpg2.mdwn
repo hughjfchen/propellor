@@ -1,6 +1,6 @@
 I had a problem similar to [[Key sign problem]]. Maybe in that case the fix was easy, just supplying the secret key.
 
-In my case this was a fresh install into a new Debian/sid system (so gpg2 is the default) and the failure happened during the propellor --init following the directions in the quick start at <https://propellor.branchable.com/>. During the --init I selected to create a gpg key. The message, after finally getting enough entropy and creating the gpg key was:
+In my case this was a fresh install into a new Debian/sid system (so gpg2 is the default) and the failure happened during the propellor --init following the directions in the quick start at <https://propellor.branchable.com/>. During the --init I selected to create a gpg key. The message, after finally getting enough entropy and creating the gpg key, was:
     error:gpg failed to sign the data
     fatal: failed to write commit object
 
