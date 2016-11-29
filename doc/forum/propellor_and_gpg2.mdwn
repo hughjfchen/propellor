@@ -6,11 +6,9 @@ In my case this was a fresh install into a new Debian/sid system (so gpg2 is the
 
 So it was frustrating that propellor didn't work out of the box and there were no hints what was wrong with signing commits in git (the error above is from git and doing git commit -S was enough to reproduce it).
 
-But I persevered and happened across a sort of solution. I'm sharing it here because searching for git commit failures with gpgp2 wasn't very helpful.
+The issue has to do with prompting for a passphrase in gpg2. If the agent is running and $GPG_TTY is set correctly you get a prompt and things will work. I was able to convince myself that if the agent wasn't running it would cause this error but it seems that gpg2 requires the agent and automatically starts it so I'm not sure how I managed that.
 
-The issue has to do with prompting for a passphrase in gpg2. If the agent is running and $GPG_TTY is set correctly you get a prompt and things will work. If the agent is not running then gpg doesn't prompt for the passphrase and the commit fails as above. Luckily I was able to try this on a Mac, which gave an agent ioctl error, which got me to this answer.
-
-Initially I was trying propellor before I installed a desktop so I didn't have the gpg agent. I'm not sure how to work around this issue without the agent but I'll keep looking for git + gpg2 help.
+Initially I was trying propellor before I installed a desktop so I don't know what I had for the gpg agent or how it should have been prompting. There doesn't seem to be much help out there on gpg2 + git failures but I'll keep looking.
 
 Dave
 
