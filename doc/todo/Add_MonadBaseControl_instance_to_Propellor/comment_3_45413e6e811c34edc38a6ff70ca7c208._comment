@@ -25,16 +25,17 @@ Writers and/or two States, that need to be merged somehow. I don't see
 anything in the library that lets it do an intelligent merge. (For example,
 it could notice that [EndAction] is a monoid and mappend the two values.)
 
-So, I think when it says it's arestoring the monadic effects, it means it's
+So, I think when it says it's a restoring the monadic effects, it means it's
 *discarding* any changes that might have been made to the Writer or State.
 
-Is this a large problem for propellor? Maybe not. EndActions rarely need to
+Is this a large problem for Propellor? Maybe not. EndActions rarely need to
 be added, and in fact only one property in all of Propellor currently adds
-an EndAction.
+an EndAction. But this could change; Propellor could get state in its
+monad. What then?
 
 Now, I actually dealt with this problem in the
 Propellor.Property.Concurrent module. The code there threads the Writer
-values through the concurrent actions and merges them at the end. If
+v alues through the concurrent actions and merges them at the end. If
 MonadBaseControl provides a more principled way to do that, which lets
 lifted-async also be used safely, then that part of propellor could perhaps
 be changed to use it. 
