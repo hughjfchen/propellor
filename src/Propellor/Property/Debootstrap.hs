@@ -148,7 +148,7 @@ sourceInstall' = withTmpDir "debootstrap" $ \tmpd -> do
 		. filter ("debootstrap_" `isInfixOf`)
 		. filter (".tar." `isInfixOf`)
 		. extractUrls baseurl <$>
-		readFileStrictAnyEncoding indexfile
+		readFileStrict indexfile
 	nukeFile indexfile
 
 	tarfile <- case urls of

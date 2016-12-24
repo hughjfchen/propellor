@@ -1,3 +1,10 @@
+propellor (3.2.4) UNRELEASED; urgency=medium
+
+  * GHC's fileSystemEncoding is used for all String IO, to avoid
+    encoding-related crashes in eg, Propellor.Property.File.
+
+ -- Joey Hess <id@joeyh.name>  Sat, 24 Dec 2016 15:06:36 -0400
+
 propellor (3.2.3) unstable; urgency=medium
 
   * Improve extraction of gpg secret key id list, to work with gpg 2.1.

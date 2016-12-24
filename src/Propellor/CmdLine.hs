@@ -19,6 +19,7 @@ import Propellor.Types.CmdLine
 import qualified Propellor.Property.Docker as Docker
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Shim as Shim
+import Utility.FileSystemEncoding
 
 usage :: Handle -> IO ()
 usage h = hPutStrLn h $ unlines
@@ -94,6 +95,7 @@ data CanRebuild = CanRebuild | NoRebuild
 -- | Runs propellor on hosts, as controlled by command-line options.
 defaultMain :: [Host] -> IO ()
 defaultMain hostlist = withConcurrentOutput $ do
+	useFileSystemEncoding
 	Shim.cleanEnv
 	checkDebugMode
 	cmdline <- processCmdLine
