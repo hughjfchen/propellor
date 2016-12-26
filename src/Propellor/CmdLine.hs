@@ -26,6 +26,7 @@ usage h = hPutStrLn h $ unlines
 	, "  propellor --init"
 	, "  propellor"
 	, "  propellor --spin targethost [--via relayhost]"
+	, "  propellor --build"
 	, "  propellor --add-key keyid"
 	, "  propellor --rm-key keyid"
 	, "  propellor --list-fields"
@@ -53,6 +54,7 @@ processCmdLine = go =<< getArgs
 			<$> mapM hostname (reverse hs)
 			<*> pure (Just r)
 		_ -> Spin <$> mapM hostname ps <*> pure Nothing
+	go ("--build":[]) = return Build
 	go ("--add-key":k:[]) = return $ AddKey k
 	go ("--rm-key":k:[]) = return $ RmKey k
 	go ("--set":f:c:[]) = withprivfield f c Set
@@ -101,6 +103,7 @@ defaultMain hostlist = withConcurrentOutput $ do
   where
 	go cr (Serialized cmdline) = go cr cmdline
 	go _ Check = return ()
+	go cr Build = buildFirst Nothing cr Build $ return ()
 	go _ (Set field context) = setPrivData field context
 	go _ (Unset field context) = unsetPrivData field context
 	go _ (UnsetUnused) = unsetPrivDataUnused hostlist

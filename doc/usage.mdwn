@@ -55,6 +55,14 @@ and configured in haskell.
   The hostname given to --spin can be a short name, which is
   then looked up in the DNS to find the FQDN.
 
+* propellor --build
+
+  Causes propellor to build itself, checking that your config.hs, etc are
+  valid.
+
+  You do not need to run this as a separate step; propellor automatically
+  builds itself when using things like --spin.
+
 * propellor --add-key keyid
 
   Adds a gpg key, which is used to encrypt the privdata.

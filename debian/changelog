@@ -1,3 +1,9 @@
+propellor (3.2.4) UNRELEASED; urgency=medium
+
+  * Added --build option, which makes propellor simply build itself.
+
+ -- Joey Hess <id@joeyh.name>  Mon, 26 Dec 2016 12:03:19 -0400
+
 propellor (3.2.3) unstable; urgency=medium
 
   * Improve extraction of gpg secret key id list, to work with gpg 2.1.
