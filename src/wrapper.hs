@@ -20,6 +20,7 @@ import Utility.Directory
 import Utility.FileMode
 import Utility.Process
 import Utility.Process.NonConcurrent
+import Utility.FileSystemEncoding
 
 import System.Environment (getArgs)
 import System.Exit
@@ -30,7 +31,9 @@ import Control.Applicative
 import Prelude
 
 main :: IO ()
-main = withConcurrentOutput $ go =<< getArgs
+main = withConcurrentOutput $ do
+	useFileSystemEncoding
+	go =<< getArgs
   where
 	go ["--init"] = interactiveInit
 	go args = ifM configInCurrentWorkingDirectory

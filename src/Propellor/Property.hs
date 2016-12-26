@@ -222,7 +222,7 @@ changesFile p f = checkResult getstat comparestat p
 changesFileContent :: Checkable p i => p i -> FilePath -> Property i
 changesFileContent p f = checkResult getmd5 comparemd5 p
   where
-	getmd5 = catchMaybeIO $ MD5.md5 . MD5.Str <$> readFileStrictAnyEncoding f
+	getmd5 = catchMaybeIO $ MD5.md5 . MD5.Str <$> readFileStrict f
 	comparemd5 oldmd5 = do
 		newmd5 <- getmd5
 		return $ if oldmd5 == newmd5 then NoChange else MadeChange

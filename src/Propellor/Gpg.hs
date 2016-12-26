@@ -16,7 +16,6 @@ import Utility.Process.NonConcurrent
 import Utility.Monad
 import Utility.Misc
 import Utility.Tmp
-import Utility.FileSystemEncoding
 import Utility.Env
 import Utility.Directory
 
@@ -183,7 +182,7 @@ gpgDecrypt :: FilePath -> IO String
 gpgDecrypt f = do
 	gpgbin <- getGpgBin
 	ifM (doesFileExist f)
-		( writeReadProcessEnv gpgbin ["--decrypt", f] Nothing Nothing (Just fileEncoding)
+		( writeReadProcessEnv gpgbin ["--decrypt", f] Nothing Nothing Nothing
 		, return ""
 		)
 
@@ -201,6 +200,4 @@ gpgEncrypt f s = do
 	encrypted <- writeReadProcessEnv gpgbin opts Nothing (Just writer) Nothing
 	viaTmp writeFile f encrypted
   where
-	writer h = do
-		fileEncoding h
-		hPutStr h s
+	writer h = hPutStr h s
