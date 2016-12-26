@@ -66,6 +66,10 @@ and configured in haskell.
   using this key. Propellor requires signed commits when pulling from
   a central git repository.
 
+* propellor --rm-key keyid
+
+  Stops encrypting the privdata to a gpg key.
+
 * propellor --list-fields
 
   Lists all privdata fields that are used by your propellor configuration.

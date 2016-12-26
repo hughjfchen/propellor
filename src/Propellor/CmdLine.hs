@@ -25,19 +25,18 @@ usage h = hPutStrLn h $ unlines
 	[ "Usage:"
 	, "  propellor --init"
 	, "  propellor"
-	, "  propellor hostname"
 	, "  propellor --spin targethost [--via relayhost]"
 	, "  propellor --add-key keyid"
 	, "  propellor --rm-key keyid"
 	, "  propellor --list-fields"
-	, "  propellor --dump field context"
-	, "  propellor --edit field context"
 	, "  propellor --set field context"
 	, "  propellor --unset field context"
 	, "  propellor --unset-unused"
+	, "  propellor --dump field context"
+	, "  propellor --edit field context"
 	, "  propellor --merge"
-	, "  propellor --build"
 	, "  propellor --check"
+	, "  propellor hostname"
 	]
 
 usageError :: [String] -> IO a
