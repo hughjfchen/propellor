@@ -24,22 +24,22 @@ import Utility.FileSystemEncoding
 usage :: Handle -> IO ()
 usage h = hPutStrLn h $ unlines
 	[ "Usage:"
-	, "  propellor --init"
-	, "  propellor"
-	, "  propellor --spin targethost [--via relayhost]"
-	, "  propellor --build"
-	, "  propellor --add-key keyid"
-	, "  propellor --rm-key keyid"
-	, "  propellor --list-fields"
-	, "  propellor --set field context"
-	, "  propellor --unset field context"
-	, "  propellor --unset-unused"
-	, "  propellor --dump field context"
-	, "  propellor --edit field context"
-	, "  propellor --merge"
-	, "  propellor --check"
-	, "  propellor hostname"
-	]
+	, "  --init\t\t  initialize ~/.propellor"
+	, "  \t\t\t  with no arguments, provision the current host"
+	, "  hostname\t\t  provision the current host as if it had the specified hostname"
+	, "  --spin targethost [--via relayhost] "
+	, "  \t\t\t  provision the specified host"
+	, "  --build\t\t  recompile using your current config"
+	, "  --add-key keyid\t  add an additional signing key to the private data"
+	, "  --rm-key keyid\t  remove a signing key from the private data"
+	, "  --list-fields\t\t  list private data fields"
+	, "  --set field context\t  set a private data field"
+	, "  --unset field context\t  clear a private data field"
+	, "  --unset-unused\t  clear unused fields from the private data"
+	, "  --dump field context\t  show the content of a private data field"
+	, "  --edit field context\t  edit the content of a private data field"
+	, "  --merge\t\t  combine multiple spins into a single git commit"
+	, "  --check\t\t  double-check that propellor can actually run here"]
 
 usageError :: [String] -> IO a
 usageError ps = do
