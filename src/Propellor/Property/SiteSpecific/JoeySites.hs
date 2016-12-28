@@ -78,7 +78,8 @@ scrollBox = propertyList "scroll server" $ props
 		`onChange` Ssh.restarted
 	& User.shellSetTo (User "scroll") s
 	& User.hasPassword (User "scroll")
-	& Apt.serviceInstalledRunning "telnetd"
+	-- telnetd attracted password crackers, so disabled
+	& Apt.removed ["telnetd"]
 	& Apt.installed ["shellinabox"]
 	& File.hasContent "/etc/default/shellinabox"
 		[ "# Deployed by propellor"
