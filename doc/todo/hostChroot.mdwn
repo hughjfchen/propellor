@@ -1,0 +1,4 @@
+Would be useful to have a `hostChroot :: Host -> Chroot`.
+
+For a Debian host, this would use debootstrapped and pass all the Host's
+properties to it. --[[Joey]] 
