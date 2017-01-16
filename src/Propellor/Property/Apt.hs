@@ -349,5 +349,10 @@ hasForeignArch arch = check notAdded (add `before` update)
 	add = cmdProperty "dpkg" ["--add-architecture", arch]
 		`assume` MadeChange
 
+-- | Disable the use of PDiffs for machines with high-bandwidth connections.
+noPDiffs :: Property DebianLike
+noPDiffs = tightenTargets $ "/etc/apt/apt.conf.d/20pdiffs" `File.hasContent`
+	[ "Acquire::PDiffs \"false\";" ]
+
 dpkgStatus :: FilePath
 dpkgStatus = "/var/lib/dpkg/status"
