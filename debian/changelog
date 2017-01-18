@@ -4,6 +4,8 @@ propellor (3.2.4) UNRELEASED; urgency=medium
     encoding-related crashes in eg, Propellor.Property.File.
   * Add --build option to simply build config.hs.
   * More informative usage message. Thanks, Daniel Brooks
+  * Tor.hiddenService' added to support multiple ports.
+    Thanks, Félix Sipma.
 
  -- Joey Hess <id@joeyh.name>  Sat, 24 Dec 2016 15:06:36 -0400
 
