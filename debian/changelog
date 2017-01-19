@@ -6,6 +6,8 @@ propellor (3.2.4) UNRELEASED; urgency=medium
   * More informative usage message. Thanks, Daniel Brooks
   * Tor.hiddenService' added to support multiple ports.
     Thanks, Félix Sipma.
+  * Apt.noPDiffs added.
+    Thanks, Sean Whitton.
 
  -- Joey Hess <id@joeyh.name>  Sat, 24 Dec 2016 15:06:36 -0400
 
