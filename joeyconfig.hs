@@ -13,6 +13,7 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
+import qualified Propellor.Property.Fstab as Fstab
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.OpenId as OpenId
@@ -50,6 +51,7 @@ hosts =                 --                  (o)  `
 	, mayfly
 	, oyster
 	, orca
+	, baleen
 	, honeybee
 	, kite
 	, elephant
@@ -181,6 +183,22 @@ oyster = host "oyster.kitenet.net" $ props
 	-- that port for ssh, for traveling on bad networks that
 	-- block 22.
 	& Ssh.listenPort (Port 80)
+
+baleen :: Host
+baleen = host "baleen.kitenet.net" $ props
+	& standardSystem Unstable X86_64 [ "New git-annex build box." ]
+
+	-- Not on public network; ssh access via bounce host.
+	& ipv4 "138.38.77.40"
+	
+	-- The root filesystem content may be lost if the VM is resized.
+	-- /dev/vdb contains persistent storage.
+	& Fstab.mounted "auto" "/dev/vdb" "/var/lib/container" mempty
+	
+	& Apt.unattendedUpgrades
+	& Postfix.satellite
+	& Apt.serviceInstalledRunning "ntp"
+	& Systemd.persistentJournal
 
 orca :: Host
 orca = host "orca.kitenet.net" $ props
@@ -638,6 +656,7 @@ monsters =            -- but do want to track their public keys etc.
 		& ipv6 "2001:4978:f:2d9::2"
 	, host "mouse.kitenet.net" $ props
 		& ipv6 "2001:4830:1600:492::2"
+		& ipv4 "67.223.19.96"
 	, host "animx" $ props
 		& ipv4 "76.7.162.101"
 		& ipv4 "76.7.162.186"
