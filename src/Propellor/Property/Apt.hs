@@ -108,27 +108,36 @@ type PinPriority = Int
 -- If the requested suite is the host's OS suite, the suite is pinned, but no
 -- source is added.  That apt source should already be available, or you can use
 -- a property like 'Apt.stdSourcesList'.
-suiteAvailablePinned :: DebianSuite -> PinPriority -> RevertableProperty Debian
+suiteAvailablePinned
+	:: DebianSuite
+	-> PinPriority
+	-> RevertableProperty Debian Debian
 suiteAvailablePinned s pin = available <!> unavailable
-	`onChange` update
   where
-	available = combineProperties (desc True) $ props
+	available :: Property Debian
+	available = tightenTargets $ combineProperties (desc True) $ props
 		& File.hasContent prefFile
 			[ "Package: *"
 			, "Pin: release " ++ suitePin s
 			, "Pin-Priority: " ++ show pin
 			]
-		& withOS (desc True) $ \w o -> case o of
-			(Just (System (Debian _ hostSuite) _)) ->
-				| s /= hostSuite = ensureProperty w $
-					File.hasContent sourceFile
-					(concatMap (\gen -> gen s) generators)
-				| otherwise = doNothing
-			_ -> doNothing
+		& setSourceFile
 
-	unavailable = combineProperties (desc False) $ props
+	unavailable :: Property Debian
+	unavailable = tightenTargets $ combineProperties (desc False) $ props
 		& File.notPresent sourceFile
+			`onChange` update
 		& File.notPresent prefFile
+
+	setSourceFile :: Property Debian
+	setSourceFile = withOS (desc True) $ \w o -> case o of
+			(Just (System (Debian _ hostSuite) _))
+				| s /= hostSuite -> ensureProperty w $
+					File.hasContent
+						sourceFile
+						(concatMap (\gen -> gen s) generators)
+						`onChange` update
+			_ -> noChange
 
 	generators = [debCdn, kernelOrg, securityUpdates]
 	sourceFile = "/etc/apt/preferences.d/20" ++ showSuite s ++ ".pref"
@@ -244,7 +253,7 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
 --
 --  > & Apt.suiteAvailablePinned Unstable
 --  > & ["elpa-*"] `Apt.pinnedTo` Unstable 990
-pinnedTo :: [String] -> DebianSuite -> PinPriority -> RevertableProperty Debian
+pinnedTo :: [String] -> DebianSuite -> PinPriority -> RevertableProperty Debian Debian
 pinnedTo = undefined
 
 -- | Package installation may fail becuse the archive has changed.
