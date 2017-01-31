@@ -140,8 +140,8 @@ suiteAvailablePinned s pin = available <!> unavailable
 			_ -> noChange
 
 	generators = [debCdn, kernelOrg, securityUpdates]
-	sourceFile = "/etc/apt/preferences.d/20" ++ showSuite s ++ ".pref"
-	prefFile = "/etc/apt/sources.list.d/" ++ showSuite s ++ ".list"
+	prefFile = "/etc/apt/preferences.d/20" ++ showSuite s ++ ".pref"
+	sourceFile = "/etc/apt/sources.list.d/" ++ showSuite s ++ ".list"
 
 	desc True = "Debian " ++ showSuite s ++ " pinned, priority " ++ show pin
 	desc False = "Debian " ++ showSuite s ++ "not pinned"
