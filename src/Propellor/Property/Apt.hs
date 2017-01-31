@@ -105,23 +105,26 @@ type PinPriority = Int
 -- | Adds an apt source for a suite, and pins that suite to a given pin value
 -- (see apt_preferences(5)).  Revert to drop the source and unpin the suite.
 --
--- If the requested suite is the host's OS suite, this property does nothing.
--- That apt source should already be available, or you can use a property like
--- 'Apt.stdSourcesList'.
+-- If the requested suite is the host's OS suite, the suite is pinned, but no
+-- source is added.  That apt source should already be available, or you can use
+-- a property like 'Apt.stdSourcesList'.
 suiteAvailablePinned :: DebianSuite -> PinPriority -> RevertableProperty Debian
 suiteAvailablePinned s pin = available <!> unavailable
 	`onChange` update
   where
-	available = withOS (desc True) $ \w o -> case o of
-		(Just (System (Debian _ hostSuite) _)) ->
-			if s == hostSuite then doNothing else ensureProperty w $
-				File.hasContent sourceFile
+	available = combineProperties (desc True) $ props
+		& File.hasContent prefFile
+			[ "Package: *"
+			, "Pin: release " ++ suitePin s
+			, "Pin-Priority: " ++ show pin
+			]
+		& withOS (desc True) $ \w o -> case o of
+			(Just (System (Debian _ hostSuite) _)) ->
+				| s /= hostSuite = ensureProperty w $
+					File.hasContent sourceFile
 					(concatMap (\gen -> gen s) generators)
-				`requires` File.hasContent prefFile
-					[ "Package: *"
-					, "Pin: release " ++ suitePin s
-					, "Pin-Priority: " ++ show pin
-					]
+				| otherwise = doNothing
+			_ -> doNothing
 
 	unavailable = combineProperties (desc False) $ props
 		& File.notPresent sourceFile
