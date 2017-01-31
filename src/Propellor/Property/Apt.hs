@@ -100,6 +100,16 @@ stdSourcesList' suite more = tightenTargets $ setSourcesList
   where
 	generators = [debCdn, kernelOrg, securityUpdates] ++ more
 
+type PinPriority = Int
+
+-- | Adds an apt source for a suite, and pins that suite to a given pin value
+-- (see apt_preferences(5)).  Revert to drop the source and unpin the suite.
+--
+-- If the requested suite is the host's OS suite, this property does nothing.
+-- That apt source should already be available, or you can use a property like
+-- 'Apt.stdSourcesList'.
+suiteAvailablePinned :: DebianSuite -> PinPriority -> RevertableProperty Debian
+
 setSourcesList :: [Line] -> Property DebianLike
 setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
 
@@ -195,6 +205,18 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
 	`requires` installedMin ["devscripts", "equivs"]
   where
 	cmd = "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"
+
+-- | Pins a list of packages and/or package wildcards to a given suite with a
+-- given pin priority (see apt_preferences(5)).  Revert to unpin.
+--
+-- Note that this will have no effect unless there is an apt source for the
+-- suite.  One way to add an apt source is 'Apt.suiteAvailablePinned'.
+--
+-- For example, to obtain all Emacs Lisp addon packages from sid, you could use
+--
+--  > & Apt.suiteAvailablePinned Unstable
+--  > & ["elpa-*"] `Apt.pinnedTo` Unstable 990
+pinnedTo :: [String] -> DebianSuite -> PinPriority -> RevertableProperty Debian
 
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
@@ -353,6 +375,12 @@ hasForeignArch arch = check notAdded (add `before` update)
 noPDiffs :: Property DebianLike
 noPDiffs = tightenTargets $ "/etc/apt/apt.conf.d/20pdiffs" `File.hasContent`
 	[ "Acquire::PDiffs \"false\";" ]
+
+suitePin :: DebianSuite -> String
+suitePin s = prefix s ++ showSuite s
+  where
+	prefix (Stable _) = "n="
+	prefix _ = "a="
 
 dpkgStatus :: FilePath
 dpkgStatus = "/var/lib/dpkg/status"
