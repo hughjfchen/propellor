@@ -230,8 +230,9 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
   where
 	cmd = "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"
 
--- | Pins a list of packages and/or package wildcards to a given suite with a
--- given pin priority (see apt_preferences(5)).  Revert to unpin.
+-- | Pins a list of packages, package wildcards and/or regular expressions to a
+-- given suite with a given pin priority (see apt_preferences(5)).  Revert to
+-- unpin.
 --
 -- Note that this will have no effect unless there is an apt source for the
 -- suite.  One way to add an apt source is 'Apt.suiteAvailablePinned'.
@@ -241,6 +242,7 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
 --  > & Apt.suiteAvailablePinned Unstable
 --  > & ["elpa-*"] `Apt.pinnedTo` Unstable 990
 pinnedTo :: [String] -> DebianSuite -> PinPriority -> RevertableProperty Debian
+pinnedTo = undefined
 
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
