@@ -109,6 +109,30 @@ type PinPriority = Int
 -- That apt source should already be available, or you can use a property like
 -- 'Apt.stdSourcesList'.
 suiteAvailablePinned :: DebianSuite -> PinPriority -> RevertableProperty Debian
+suiteAvailablePinned s pin = available <!> unavailable
+	`onChange` update
+  where
+	available = withOS (desc True) $ \w o -> case o of
+		(Just (System (Debian _ hostSuite) _)) ->
+			if s == hostSuite then doNothing else ensureProperty w $
+				File.hasContent sourceFile
+					(concatMap (\gen -> gen s) generators)
+				`requires` File.hasContent prefFile
+					[ "Package: *"
+					, "Pin: release " ++ suitePin s
+					, "Pin-Priority: " ++ show pin
+					]
+
+	unavailable = combineProperties (desc False) $ props
+		& File.notPresent sourceFile
+		& File.notPresent prefFile
+
+	generators = [debCdn, kernelOrg, securityUpdates]
+	sourceFile = "/etc/apt/preferences.d/20" ++ showSuite s ++ ".pref"
+	prefFile = "/etc/apt/sources.list.d/" ++ showSuite s ++ ".list"
+
+	desc True = "Debian " ++ showSuite s ++ " pinned, priority " ++ show pin
+	desc False = "Debian " ++ showSuite s ++ "not pinned"
 
 setSourcesList :: [Line] -> Property DebianLike
 setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
