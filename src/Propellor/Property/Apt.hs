@@ -114,6 +114,8 @@ suiteAvailablePinned
 	-> RevertableProperty Debian Debian
 suiteAvailablePinned s pin = available <!> unavailable
   where
+	-- TODO have to pin -backports too?  is that sensible?  maybe avoid
+	-- adding it, instead
 	available :: Property Debian
 	available = tightenTargets $ combineProperties (desc True) $ props
 		& File.hasContent prefFile
