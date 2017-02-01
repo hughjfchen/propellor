@@ -265,7 +265,7 @@ pinnedTo
 	-> (DebianSuite, PinPriority)
 	-> RevertableProperty UnixLike UnixLike
 pinnedTo ps (suite, pin) = (\p -> pinnedTo' p (suite, pin)) `applyToList` ps
-	`describe` unwords (("pinned to" ++ showSuite suite):ps)
+	`describe` unwords (("pinned to " ++ showSuite suite):ps)
 
 pinnedTo'
 	:: String
