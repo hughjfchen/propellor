@@ -151,7 +151,7 @@ suiteAvailablePinned s pin = available <!> unavailable
 	sourcesFile = "/etc/apt/sources.list.d/" ++ showSuite s ++ ".list"
 
 	desc True = "Debian " ++ showSuite s ++ " pinned, priority " ++ show pin
-	desc False = "Debian " ++ showSuite s ++ "not pinned"
+	desc False = "Debian " ++ showSuite s ++ " not pinned"
 
 setSourcesList :: [Line] -> Property DebianLike
 setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
