@@ -255,31 +255,26 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
 --
 --  > & Apt.suiteAvailablePinned Unstable
 --  > & ["elpa-*"] `Apt.pinnedTo` Unstable 990
-pinnedTo :: [String] -> DebianSuite -> PinPriority -> RevertableProperty Debian Debian
-pinnedTo = undefined
+pinnedTo
+	:: [String]
+	-> DebianSuite
+	-> PinPriority
+	-> RevertableProperty UnixLike UnixLike
+pinnedTo ps suite pin =	(\p -> pinnedTo' p suite pin) `applyToList` ps
 
--- ps `pinnedTo` suite pin = (f `File.containsLines` ls) <!> (f `File.lacksLines` ls)
--- 	`describe` unwords (ps ++ ["pinned to " ++ showSuite suite])
---   where
--- 	ls = [ "Package: " ++ unwords ps
--- 	     , "Pin: release " ++ suitePin suite
--- 	     , "Pin-Priority: " ++ show pin
--- 	     ]
--- 	f = "/etc/apt/preferences.d/10propellor"
+pinnedTo'
+	:: String
+	-> DebianSuite
+	-> PinPriority
+	-> RevertableProperty UnixLike UnixLike
+pinnedTo' p suite pin =
+	"/etc/apt/preferences.d/10propellor" `File.containsBlock`
+		[ "Package: " ++ p
+		, "Pin: release " ++ suitePin suite
+		, "Pin-Priority: " ++ show pin
+		]
 
--- -- Apt supports multiple entries in each "Package:" line, so we could use a
--- -- single configuration block for each pinnedTo property that is applied to the
--- -- host.  However, that would make it hard to sensibly revert the pin.
-
--- pinnedTo' :: String -> DebianSuite -> PinPriority -> RevertableProperty Debian
--- p `pinnedTo` suite pin = (f `File.containsLines` ls) <!> (f `File.lacksLines` ls)
---   where
--- 	ls = [ ""
--- 	     , "Package: " ++ p
--- 	     , "Pin: release " ++ suitePin suite
--- 	     , "Pin-Priority: " ++ show pin
--- 	     ]
--- 	f = "/etc/apt/preferences.d/10" ++ p
+-- TODO should be RevertableProperty Debian Debian
 
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
