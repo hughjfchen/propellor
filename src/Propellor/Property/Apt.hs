@@ -272,10 +272,11 @@ pinnedTo'
 	-> (DebianSuite, PinPriority)
 	-> RevertableProperty UnixLike UnixLike
 pinnedTo' p (suite, pin) =
-	"/etc/apt/preferences.d/10propellor" `File.containsBlock`
+	"/etc/apt/preferences.d/10propellor.pref" `File.containsBlock`
 		[ "Package: " ++ p
 		, "Pin: release " ++ suitePin suite
 		, "Pin-Priority: " ++ show pin
+		, ""
 		]
 
 -- TODO should be RevertableProperty Debian Debian
