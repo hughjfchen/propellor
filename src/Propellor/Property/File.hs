@@ -21,6 +21,12 @@ f `hasContent` newcontent = fileProperty
 containsLine :: FilePath -> Line -> Property UnixLike
 f `containsLine` l = f `containsLines` [l]
 
+-- | Ensures that a list of lines are present in a file, adding any that are not
+-- to the end of the file.
+--
+-- Note that this property does not guarantee that the lines will appear
+-- consecutively, nor in the order specified.  If you need either of these, use
+-- 'File.containsBlock'.
 containsLines :: FilePath -> [Line] -> Property UnixLike
 f `containsLines` ls = fileProperty (f ++ " contains:" ++ show ls) go f
   where
