@@ -46,7 +46,7 @@ f `containsBlock` ls =
 		| otherwise              = content ++ ls
 	remove [] = []
 	remove content@(x:xs)
-		| ls `isPrefixOf` content = x : remove (drop (length ls) xs)
+		| ls `isPrefixOf` content = remove (drop (length ls) content)
 		| otherwise = x : remove xs
 
 -- | Ensures that a line is not present in a file.
