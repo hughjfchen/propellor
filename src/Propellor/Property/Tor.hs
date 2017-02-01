@@ -147,7 +147,7 @@ hiddenServiceAvailable :: HiddenServiceName -> Port -> Property DebianLike
 hiddenServiceAvailable hn port = hiddenServiceAvailable' hn [port]
 
 hiddenServiceAvailable' :: HiddenServiceName -> [Port] -> Property DebianLike
-hiddenServiceAvailable' hn ports = hiddenServiceHostName $ hiddenService hn ports
+hiddenServiceAvailable' hn ports = hiddenServiceHostName $ hiddenService' hn ports
   where
 	hiddenServiceHostName p =  adjustPropertySatisfy p $ \satisfy -> do
 		r <- satisfy
