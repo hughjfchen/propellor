@@ -114,8 +114,6 @@ suiteAvailablePinned
 	-> RevertableProperty Debian Debian
 suiteAvailablePinned s pin = available <!> unavailable
   where
-	-- TODO have to pin -backports too?  is that sensible?  maybe avoid
-	-- adding it, instead
 	available :: Property Debian
 	available = tightenTargets $ combineProperties (desc True) $ props
 		& File.hasContent prefFile
@@ -123,27 +121,34 @@ suiteAvailablePinned s pin = available <!> unavailable
 			, "Pin: release " ++ suitePin s
 			, "Pin-Priority: " ++ show pin
 			]
-		& setSourceFile
+		& setSourcesFile
 
 	unavailable :: Property Debian
 	unavailable = tightenTargets $ combineProperties (desc False) $ props
-		& File.notPresent sourceFile
+		& File.notPresent sourcesFile
 			`onChange` update
 		& File.notPresent prefFile
 
-	setSourceFile :: Property Debian
-	setSourceFile = withOS (desc True) $ \w o -> case o of
+	setSourcesFile :: Property Debian
+	setSourcesFile = withOS (desc True) $ \w o -> case o of
 			(Just (System (Debian _ hostSuite) _))
 				| s /= hostSuite -> ensureProperty w $
-					File.hasContent
-						sourceFile
-						(concatMap (\gen -> gen s) generators)
-						`onChange` update
+					File.hasContent sourcesFile sources
+					`onChange` update
 			_ -> noChange
+
+	-- Unless we are pinning a backports suite, filter out any backports
+	-- sources that were added by our generators.  The user probably doesn't
+	-- want those to be pinned to the same value
+	sources = dropBackports $ concatMap (\gen -> gen s) generators
+	  where
+		dropBackports
+			| "-backports" `isSuffixOf` (showSuite s) = id
+			| otherwise = filter (not . isInfixOf "-backports")
 
 	generators = [debCdn, kernelOrg, securityUpdates]
 	prefFile = "/etc/apt/preferences.d/20" ++ showSuite s ++ ".pref"
-	sourceFile = "/etc/apt/sources.list.d/" ++ showSuite s ++ ".list"
+	sourcesFile = "/etc/apt/sources.list.d/" ++ showSuite s ++ ".list"
 
 	desc True = "Debian " ++ showSuite s ++ " pinned, priority " ++ show pin
 	desc False = "Debian " ++ showSuite s ++ "not pinned"
