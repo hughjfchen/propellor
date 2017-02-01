@@ -258,21 +258,19 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
 --
 -- For example, to obtain all Emacs Lisp addon packages from sid, you could use
 --
---  > & Apt.suiteAvailablePinned Unstable
---  > & ["elpa-*"] `Apt.pinnedTo` Unstable 990
+--  > & Apt.suiteAvailablePinned Unstable (-10)
+--  > & ["elpa-*"] `Apt.pinnedTo` (Unstable, 990)
 pinnedTo
 	:: [String]
-	-> DebianSuite
-	-> PinPriority
+	-> (DebianSuite, PinPriority)
 	-> RevertableProperty UnixLike UnixLike
-pinnedTo ps suite pin =	(\p -> pinnedTo' p suite pin) `applyToList` ps
+pinnedTo ps (suite, pin) = (\p -> pinnedTo' p (suite, pin)) `applyToList` ps
 
 pinnedTo'
 	:: String
-	-> DebianSuite
-	-> PinPriority
+	-> (DebianSuite, PinPriority)
 	-> RevertableProperty UnixLike UnixLike
-pinnedTo' p suite pin =
+pinnedTo' p (suite, pin) =
 	"/etc/apt/preferences.d/10propellor" `File.containsBlock`
 		[ "Package: " ++ p
 		, "Pin: release " ++ suitePin suite
