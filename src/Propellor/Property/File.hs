@@ -6,6 +6,7 @@ import Propellor.Base
 import Utility.FileMode
 
 import qualified Data.ByteString.Lazy as L
+import Data.List (isInfixOf, isPrefixOf)
 import System.Posix.Files
 import System.Exit
 
@@ -31,6 +32,22 @@ containsLines :: FilePath -> [Line] -> Property UnixLike
 f `containsLines` ls = fileProperty (f ++ " contains:" ++ show ls) go f
   where
 	go content = content ++ filter (`notElem` content) ls
+
+-- | Ensures that a block of consecutive lines is present in a file, adding it
+-- to the end if not.  Revert to ensure that the block is not present (though
+-- the lines it contains could be present, non-consecutively).
+containsBlock :: FilePath -> [Line] -> RevertableProperty UnixLike UnixLike
+f `containsBlock` ls =
+	fileProperty (f ++ " contains block:" ++ show ls) add f
+	<!> fileProperty (f ++ " lacks block:" ++ show ls) remove f
+  where
+	add content
+		| ls `isInfixOf` content = content
+		| otherwise              = content ++ ls
+	remove [] = []
+	remove content@(x:xs)
+		| ls `isPrefixOf` content = x : remove (drop (length ls) xs)
+		| otherwise = x : remove xs
 
 -- | Ensures that a line is not present in a file.
 -- Note that the file is ensured to exist, so if it doesn't, an empty
