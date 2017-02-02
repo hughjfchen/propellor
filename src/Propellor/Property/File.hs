@@ -237,7 +237,7 @@ viaStableTmp a f = bracketIO setup cleanup go
 -- it's a good idea to add an static prefix and extension to the 
 -- result of this function. For example:
 --
--- > aptSource foo = "/etc/apt/sources.list.d" </> "propellor_" ++ configFileName foo <.> ".conf"
+-- > aptConf foo = "/etc/apt/apt.conf.d" </> "propellor_" ++ configFileName foo <.> ".conf"
 configFileName :: String -> FilePath
 configFileName = concatMap escape
   where
