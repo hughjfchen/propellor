@@ -225,14 +225,14 @@ viaStableTmp a f = bracketIO setup cleanup go
 
 -- | Generates a base configuration file name from a String, which
 -- can be put in a configuration directory, such as
--- /etc/apt/sources.list.d/
+-- </etc/apt/sources.list.d/>
 --
 -- The generated file name is limited to using ASCII alphanumerics,
--- '_' and '.', so that programs that only accept a limited set of
+-- \'_\' and \'.\' , so that programs that only accept a limited set of
 -- characters will accept it. Any other characters will be encoded
 -- in escaped form.
 --
--- Some file extensions, such as ".dpkg-new" may be filtered out by
+-- Some file extensions, such as ".old" may be filtered out by
 -- programs that use configuration directories. To avoid such problems,
 -- it's a good idea to add an static prefix and extension to the 
 -- result of this function. For example:
