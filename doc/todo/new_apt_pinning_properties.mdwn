@@ -6,3 +6,5 @@ My branch `pin` of repo `https://git.spwhitton.name/propellor` adds
 - a haddock for `File.containsLines`
 
 There is one TODO in a comment that relates to propellor's algebraic data types.  I'd be grateful for help with that.  --spwhitton
+
+> merged, thanks. [[done]] --[[Joey]]

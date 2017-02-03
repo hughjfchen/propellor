@@ -12,6 +12,10 @@ propellor (3.2.4) UNRELEASED; urgency=medium
     Thanks, Andrew Cowie.
   * Added Propellor.Property.File.configFileName and related functions
     to generate good filenames for config directories.
+  * Added Apt.suiteAvailablePinned, Apt.pinnedTo.
+    Thanks, Sean Whitton.
+  * Added File.containsBlock
+    Thanks, Sean Whitton.
 
  -- Joey Hess <id@joeyh.name>  Sat, 24 Dec 2016 15:06:36 -0400
 
