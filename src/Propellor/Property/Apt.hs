@@ -249,6 +249,11 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
   where
 	cmd = "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"
 
+-- | The name of a package, a glob to match the names of packages, or a regexp
+-- surrounded by slashes to match the names of packages.  See
+-- apt_preferences(5), "Regular expressions and glob(7) syntax"
+type AptPrefPackage = String
+
 -- | Pins a list of packages, package wildcards and/or regular expressions to a
 -- given suite with a given pin priority (see apt_preferences(5)).  Revert to
 -- unpin.
@@ -261,14 +266,14 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
 --  > & Apt.suiteAvailablePinned Unstable (-10)
 --  > & ["elpa-*"] `Apt.pinnedTo` (Unstable, 990)
 pinnedTo
-	:: [String]
+	:: [AptPrefPackage]
 	-> (DebianSuite, PinPriority)
 	-> RevertableProperty UnixLike UnixLike
 pinnedTo ps (suite, pin) = (\p -> pinnedTo' p (suite, pin)) `applyToList` ps
 	`describe` unwords (("pinned to " ++ showSuite suite):ps)
 
 pinnedTo'
-	:: String
+	:: AptPrefPackage
 	-> (DebianSuite, PinPriority)
 	-> RevertableProperty UnixLike UnixLike
 pinnedTo' p (suite, pin) =
