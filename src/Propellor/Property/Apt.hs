@@ -284,7 +284,6 @@ pinnedTo' p (suite, pin) =
 		[ "Package: " ++ p
 		, "Pin: release " ++ suitePin suite
 		, "Pin-Priority: " ++ show pin
-		, ""
 		]
 	prefFile = "/etc/apt/preferences.d/10propellor_"
 		++ File.configFileName p <.> "pref"
