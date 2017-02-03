@@ -100,6 +100,60 @@ stdSourcesList' suite more = tightenTargets $ setSourcesList
   where
 	generators = [debCdn, kernelOrg, securityUpdates] ++ more
 
+type PinPriority = Int
+
+-- | Adds an apt source for a suite, and pins that suite to a given pin value
+-- (see apt_preferences(5)).  Revert to drop the source and unpin the suite.
+--
+-- If the requested suite is the host's OS suite, the suite is pinned, but no
+-- source is added.  That apt source should already be available, or you can use
+-- a property like 'Apt.stdSourcesList'.
+suiteAvailablePinned
+	:: DebianSuite
+	-> PinPriority
+	-> RevertableProperty Debian Debian
+suiteAvailablePinned s pin = available <!> unavailable
+  where
+	available :: Property Debian
+	available = tightenTargets $ combineProperties (desc True) $ props
+		& File.hasContent prefFile
+			[ "Explanation: This file added by propellor"
+			, "Package: *"
+			, "Pin: release " ++ suitePin s
+			, "Pin-Priority: " ++ show pin
+			]
+		& setSourcesFile
+
+	unavailable :: Property Debian
+	unavailable = tightenTargets $ combineProperties (desc False) $ props
+		& File.notPresent sourcesFile
+			`onChange` update
+		& File.notPresent prefFile
+
+	setSourcesFile :: Property Debian
+	setSourcesFile = withOS (desc True) $ \w o -> case o of
+			(Just (System (Debian _ hostSuite) _))
+				| s /= hostSuite -> ensureProperty w $
+					File.hasContent sourcesFile sources
+					`onChange` update
+			_ -> noChange
+
+	-- Unless we are pinning a backports suite, filter out any backports
+	-- sources that were added by our generators.  The user probably doesn't
+	-- want those to be pinned to the same value
+	sources = dropBackports $ concatMap (\gen -> gen s) generators
+	  where
+		dropBackports
+			| "-backports" `isSuffixOf` (showSuite s) = id
+			| otherwise = filter (not . isInfixOf "-backports")
+
+	generators = [debCdn, kernelOrg, securityUpdates]
+	prefFile = "/etc/apt/preferences.d/20" ++ showSuite s ++ ".pref"
+	sourcesFile = "/etc/apt/sources.list.d/" ++ showSuite s ++ ".list"
+
+	desc True = "Debian " ++ showSuite s ++ " pinned, priority " ++ show pin
+	desc False = "Debian " ++ showSuite s ++ " not pinned"
+
 setSourcesList :: [Line] -> Property DebianLike
 setSourcesList ls = sourcesList `File.hasContent` ls `onChange` update
 
@@ -195,6 +249,48 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
 	`requires` installedMin ["devscripts", "equivs"]
   where
 	cmd = "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"
+
+-- | The name of a package, a glob to match the names of packages, or a regexp
+-- surrounded by slashes to match the names of packages.  See
+-- apt_preferences(5), "Regular expressions and glob(7) syntax"
+type AptPrefPackage = String
+
+-- | Pins a list of packages, package wildcards and/or regular expressions to a
+-- given suite with a given pin priority (see apt_preferences(5)).  Revert to
+-- unpin.
+--
+-- Note that this will have no effect unless there is an apt source for the
+-- suite.  One way to add an apt source is 'Apt.suiteAvailablePinned'.
+--
+-- For example, to obtain all Emacs Lisp addon packages from sid, you could use
+--
+--  > & Apt.suiteAvailablePinned Unstable (-10)
+--  > & ["elpa-*"] `Apt.pinnedTo` (Unstable, 990)
+pinnedTo
+	:: [AptPrefPackage]
+	-> (DebianSuite, PinPriority)
+	-> RevertableProperty Debian Debian
+pinnedTo ps (suite, pin) = (\p -> pinnedTo' p (suite, pin)) `applyToList` ps
+	`describe` unwords (("pinned to " ++ showSuite suite):ps)
+
+pinnedTo'
+	:: AptPrefPackage
+	-> (DebianSuite, PinPriority)
+	-> RevertableProperty Debian Debian
+pinnedTo' p (suite, pin) =
+	(tightenTargets $ prefFile `File.hasContent` prefs)
+	<!> (tightenTargets $ File.notPresent prefFile)
+  where
+	prefs =
+		[ "Explanation: This file added by propellor"
+		, "Package: " ++ p
+		, "Pin: release " ++ suitePin suite
+		, "Pin-Priority: " ++ show pin
+		]
+	prefFile = "/etc/apt/preferences.d/10propellor_"
+		++ File.configFileName p <.> "pref"
+
+-- TODO should be RevertableProperty Debian Debian
 
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
@@ -353,6 +449,12 @@ hasForeignArch arch = check notAdded (add `before` update)
 noPDiffs :: Property DebianLike
 noPDiffs = tightenTargets $ "/etc/apt/apt.conf.d/20pdiffs" `File.hasContent`
 	[ "Acquire::PDiffs \"false\";" ]
+
+suitePin :: DebianSuite -> String
+suitePin s = prefix s ++ showSuite s
+  where
+	prefix (Stable _) = "n="
+	prefix _ = "a="
 
 dpkgStatus :: FilePath
 dpkgStatus = "/var/lib/dpkg/status"
