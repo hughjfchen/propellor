@@ -268,16 +268,17 @@ type AptPrefPackage = String
 pinnedTo
 	:: [AptPrefPackage]
 	-> (DebianSuite, PinPriority)
-	-> RevertableProperty UnixLike UnixLike
+	-> RevertableProperty Debian Debian
 pinnedTo ps (suite, pin) = (\p -> pinnedTo' p (suite, pin)) `applyToList` ps
 	`describe` unwords (("pinned to " ++ showSuite suite):ps)
 
 pinnedTo'
 	:: AptPrefPackage
 	-> (DebianSuite, PinPriority)
-	-> RevertableProperty UnixLike UnixLike
+	-> RevertableProperty Debian Debian
 pinnedTo' p (suite, pin) =
-	(prefFile `File.hasContent` prefs) <!> File.notPresent prefFile
+	(tightenTargets $ prefFile `File.hasContent` prefs)
+	<!> (tightenTargets $ File.notPresent prefFile)
   where
 	prefs =
 		[ "Package: " ++ p
