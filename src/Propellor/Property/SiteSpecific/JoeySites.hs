@@ -892,7 +892,7 @@ userDirHtml = File.fileProperty "apache userdir is html" (map munge) conf
 -- <http://joeyh.name/blog/entry/a_programmable_alarm_clock_using_systemd/>
 --
 -- oncalendar example value: "*-*-* 7:30"
-alarmClock :: String -> User -> String -> Property DebianLike
+alarmClock :: String -> User -> String -> Property Linux
 alarmClock oncalendar (User user) command = combineProperties "goodmorning timer installed" $ props
 	& "/etc/systemd/system/goodmorning.timer" `File.hasContent`
 		[ "[Unit]"
