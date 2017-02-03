@@ -117,7 +117,8 @@ suiteAvailablePinned s pin = available <!> unavailable
 	available :: Property Debian
 	available = tightenTargets $ combineProperties (desc True) $ props
 		& File.hasContent prefFile
-			[ "Package: *"
+			[ "Explanation: This file added by propellor"
+			, "Package: *"
 			, "Pin: release " ++ suitePin s
 			, "Pin-Priority: " ++ show pin
 			]
@@ -281,7 +282,8 @@ pinnedTo' p (suite, pin) =
 	<!> (tightenTargets $ File.notPresent prefFile)
   where
 	prefs =
-		[ "Package: " ++ p
+		[ "Explanation: This file added by propellor"
+		, "Package: " ++ p
 		, "Pin: release " ++ suitePin suite
 		, "Pin-Priority: " ++ show pin
 		]
