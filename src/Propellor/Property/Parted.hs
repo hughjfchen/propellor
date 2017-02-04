@@ -23,6 +23,7 @@ module Propellor.Property.Parted (
 
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Pacman as Pacman
 import qualified Propellor.Property.Partition as Partition
 import Utility.DataUnits
 import Data.Char
@@ -192,12 +193,12 @@ partitioned eep disk (PartTable tabletype parts) = property' desc $ \w -> do
 --
 -- Parted is run in script mode, so it will never prompt for input.
 -- It is asked to use cylinder alignment for the disk.
-parted :: Eep -> FilePath -> [String] -> Property DebianLike
+parted :: Eep -> FilePath -> [String] -> Property (DebianLike + ArchLinux)
 parted YesReallyDeleteDiskContents disk ps = p `requires` installed
   where
 	p = cmdProperty "parted" ("--script":"--align":"cylinder":disk:ps)
 		`assume` MadeChange
 
 -- | Gets parted installed.
-installed :: Property DebianLike
-installed = Apt.installed ["parted"]
+installed :: Property (DebianLike + ArchLinux)
+installed = Apt.installed ["parted"] `pickOS` Pacman.installed ["parted"]
