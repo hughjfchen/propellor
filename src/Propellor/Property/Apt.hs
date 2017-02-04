@@ -116,12 +116,7 @@ suiteAvailablePinned s pin = available <!> unavailable
   where
 	available :: Property Debian
 	available = tightenTargets $ combineProperties (desc True) $ props
-		& File.hasContent prefFile
-			[ "Explanation: This file added by propellor"
-			, "Package: *"
-			, "Pin: release " ++ suitePin s
-			, "Pin-Priority: " ++ show pin
-			]
+		& File.hasContent prefFile (suitePinBlock "*" s pin)
 		& setSourcesFile
 
 	unavailable :: Property Debian
@@ -281,12 +276,7 @@ pinnedTo' p (suite, pin) =
 	(tightenTargets $ prefFile `File.hasContent` prefs)
 	<!> (tightenTargets $ File.notPresent prefFile)
   where
-	prefs =
-		[ "Explanation: This file added by propellor"
-		, "Package: " ++ p
-		, "Pin: release " ++ suitePin suite
-		, "Pin-Priority: " ++ show pin
-		]
+	prefs = suitePinBlock p suite pin
 	prefFile = "/etc/apt/preferences.d/10propellor_"
 		++ File.configFileName p <.> "pref"
 
@@ -453,6 +443,14 @@ suitePin s = prefix s ++ showSuite s
   where
 	prefix (Stable _) = "n="
 	prefix _ = "a="
+
+suitePinBlock :: AptPrefPackage -> DebianSuite -> PinPriority
+suitePinBlock p suite pin =
+	[ "Explanation: This file added by propellor"
+	, "Package: " ++ p
+	, "Pin: release " ++ suitePin suite
+	, "Pin-Priority: " ++ show pin
+	]
 
 dpkgStatus :: FilePath
 dpkgStatus = "/var/lib/dpkg/status"
