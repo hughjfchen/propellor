@@ -36,17 +36,19 @@ data MetaType
 	deriving (Show, Eq, Ord)
 
 -- | Any unix-like system
-type UnixLike = MetaTypes '[ 'Targeting 'OSDebian
-			   , 'Targeting 'OSBuntish
-			   , 'Targeting 'OSArchLinux
-			   , 'Targeting 'OSFreeBSD
-			   ]
+type UnixLike = MetaTypes
+	'[ 'Targeting 'OSDebian
+	, 'Targeting 'OSBuntish
+	, 'Targeting 'OSArchLinux
+	, 'Targeting 'OSFreeBSD
+	]
 
 -- | Any linux system
-type Linux = MetaTypes '[ 'Targeting 'OSDebian
-			, 'Targeting 'OSBuntish
-			, 'Targeting 'OSArchLinux
-			]
+type Linux = MetaTypes
+	'[ 'Targeting 'OSDebian
+	, 'Targeting 'OSBuntish
+	, 'Targeting 'OSArchLinux
+	]
 
 -- | Debian and derivatives.
 type DebianLike = MetaTypes '[ 'Targeting 'OSDebian, 'Targeting 'OSBuntish ]
