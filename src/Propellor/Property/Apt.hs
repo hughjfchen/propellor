@@ -290,8 +290,6 @@ pinnedTo' p (suite, pin) =
 	prefFile = "/etc/apt/preferences.d/10propellor_"
 		++ File.configFileName p <.> "pref"
 
--- TODO should be RevertableProperty Debian Debian
-
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
 robustly :: Property DebianLike -> Property DebianLike
