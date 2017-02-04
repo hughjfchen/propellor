@@ -12,3 +12,5 @@ I've made some addtional minor changes to make propellor compile without errors:
 - Rsync.installed and Docker.installed now supports Pacman as well
 
 Hope you enjoy it!
+
+> [[merged|done]]; it was indeed enjoyable. thank you! --[[Joey]]

@@ -1,5 +1,12 @@
-propellor (3.2.4) UNRELEASED; urgency=medium
+propellor (3.3.0) UNRELEASED; urgency=medium
 
+  * Arch Linux is now supported by Propellor!
+    Thanks to Zihao Wang for this port.
+  * Added Propellor.Property.Pacman for Arch's package manager.
+    Maintained by Zihao Wang.
+  * The types of some properties changed; eg from Property DebianLike
+    to Property (DebianLike + ArchLinux). This could require updates
+    to code using those properties, so is a minor API change.
   * GHC's fileSystemEncoding is used for all String IO, to avoid
     encoding-related crashes in eg, Propellor.Property.File.
   * Add --build option to simply build config.hs.
