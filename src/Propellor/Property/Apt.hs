@@ -116,12 +116,7 @@ suiteAvailablePinned s pin = available <!> unavailable
   where
 	available :: Property Debian
 	available = tightenTargets $ combineProperties (desc True) $ props
-		& File.hasContent prefFile
-			[ "Explanation: This file added by propellor"
-			, "Package: *"
-			, "Pin: release " ++ suitePin s
-			, "Pin-Priority: " ++ show pin
-			]
+		& File.hasContent prefFile (suitePinBlock "*" s pin)
 		& setSourcesFile
 
 	unavailable :: Property Debian
@@ -253,44 +248,46 @@ buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
 -- | The name of a package, a glob to match the names of packages, or a regexp
 -- surrounded by slashes to match the names of packages.  See
 -- apt_preferences(5), "Regular expressions and glob(7) syntax"
-type AptPrefPackage = String
+type AptPackagePref = String
 
 -- | Pins a list of packages, package wildcards and/or regular expressions to a
--- given suite with a given pin priority (see apt_preferences(5)).  Revert to
--- unpin.
+-- list of suites and corresponding pin priorities (see apt_preferences(5)).
+-- Revert to unpin.
 --
--- Note that this will have no effect unless there is an apt source for the
--- suite.  One way to add an apt source is 'Apt.suiteAvailablePinned'.
+-- Each package, package wildcard or regular expression will be pinned to all of
+-- the specified suites.
 --
--- For example, to obtain all Emacs Lisp addon packages from sid, you could use
+-- Note that this will have no effect unless there is an apt source for each of
+-- the suites.  One way to add an apt source is 'Apt.suiteAvailablePinned'.
 --
+-- For example, to obtain Emacs Lisp addon packages not present in your release
+-- of Debian from testing, falling back to sid if they're not available in
+-- testing, you could use
+--
+--  > & Apt.suiteAvailablePinned Testing (-10)
 --  > & Apt.suiteAvailablePinned Unstable (-10)
---  > & ["elpa-*"] `Apt.pinnedTo` (Unstable, 990)
+--  > & ["elpa-*"] `Apt.pinnedTo` [(Testing, 100), (Unstable, 50)]
 pinnedTo
-	:: [AptPrefPackage]
-	-> (DebianSuite, PinPriority)
+	:: [AptPackagePref]
+	-> [(DebianSuite, PinPriority)]
 	-> RevertableProperty Debian Debian
-pinnedTo ps (suite, pin) = (\p -> pinnedTo' p (suite, pin)) `applyToList` ps
-	`describe` unwords (("pinned to " ++ showSuite suite):ps)
+pinnedTo ps pins = (\p -> pinnedTo' p pins) `applyToList` ps
+	`describe` unwords (("pinned to " ++ showSuites):ps)
+  where
+	showSuites = intercalate "," $ showSuite . fst <$> pins
 
 pinnedTo'
-	:: AptPrefPackage
-	-> (DebianSuite, PinPriority)
+	:: AptPackagePref
+	-> [(DebianSuite, PinPriority)]
 	-> RevertableProperty Debian Debian
-pinnedTo' p (suite, pin) =
+pinnedTo' p pins =
 	(tightenTargets $ prefFile `File.hasContent` prefs)
 	<!> (tightenTargets $ File.notPresent prefFile)
   where
-	prefs =
-		[ "Explanation: This file added by propellor"
-		, "Package: " ++ p
-		, "Pin: release " ++ suitePin suite
-		, "Pin-Priority: " ++ show pin
-		]
+	prefs = foldr step [] pins
+	step (suite, pin) ls = ls ++ suitePinBlock p suite pin ++ [""]
 	prefFile = "/etc/apt/preferences.d/10propellor_"
 		++ File.configFileName p <.> "pref"
-
--- TODO should be RevertableProperty Debian Debian
 
 -- | Package installation may fail becuse the archive has changed.
 -- Run an update in that case and retry.
@@ -455,6 +452,14 @@ suitePin s = prefix s ++ showSuite s
   where
 	prefix (Stable _) = "n="
 	prefix _ = "a="
+
+suitePinBlock :: AptPackagePref -> DebianSuite -> PinPriority -> [Line]
+suitePinBlock p suite pin =
+	[ "Explanation: This file added by propellor"
+	, "Package: " ++ p
+	, "Pin: release " ++ suitePin suite
+	, "Pin-Priority: " ++ show pin
+	]
 
 dpkgStatus :: FilePath
 dpkgStatus = "/var/lib/dpkg/status"
