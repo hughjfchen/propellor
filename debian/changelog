@@ -1,4 +1,4 @@
-propellor (3.3.0) UNRELEASED; urgency=medium
+propellor (3.3.0) unstable; urgency=medium
 
   * Arch Linux is now supported by Propellor!
     Thanks to Zihao Wang for this port.
@@ -25,7 +25,7 @@ propellor (3.3.0) UNRELEASED; urgency=medium
   * Added File.containsBlock
     Thanks, Sean Whitton.
 
- -- Joey Hess <id@joeyh.name>  Sat, 24 Dec 2016 15:06:36 -0400
+ -- Joey Hess <id@joeyh.name>  Tue, 07 Feb 2017 12:09:24 -0400
 
 propellor (3.2.3) unstable; urgency=medium
 
