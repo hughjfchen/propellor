@@ -62,10 +62,7 @@ binandsrc url suite = catMaybes
 		return $ debLine bs url stdSections
 
 debCdn :: SourcesGenerator
-debCdn = binandsrc "http://httpredir.debian.org/debian"
-
-kernelOrg :: SourcesGenerator
-kernelOrg = binandsrc "http://mirrors.kernel.org/debian"
+debCdn = binandsrc "http://deb.debian.org/debian"
 
 -- | Only available for Stable and Testing
 securityUpdates :: SourcesGenerator
@@ -77,9 +74,6 @@ securityUpdates suite
 
 -- | Makes sources.list have a standard content using the Debian mirror CDN,
 -- with the Debian suite configured by the os.
---
--- Since the CDN is sometimes unreliable, also adds backup lines using
--- kernel.org.
 stdSourcesList :: Property Debian
 stdSourcesList = withOS "standard sources.list" $ \w o -> case o of
 	(Just (System (Debian _ suite) _)) ->
@@ -98,7 +92,7 @@ stdSourcesList' suite more = tightenTargets $ setSourcesList
 	(concatMap (\gen -> gen suite) generators)
 	`describe` ("standard sources.list for " ++ show suite)
   where
-	generators = [debCdn, kernelOrg, securityUpdates] ++ more
+	generators = [debCdn, securityUpdates] ++ more
 
 type PinPriority = Int
 
@@ -142,7 +136,7 @@ suiteAvailablePinned s pin = available <!> unavailable
 			| "-backports" `isSuffixOf` (showSuite s) = id
 			| otherwise = filter (not . isInfixOf "-backports")
 
-	generators = [debCdn, kernelOrg, securityUpdates]
+	generators = [debCdn, securityUpdates]
 	prefFile = "/etc/apt/preferences.d/20" ++ showSuite s ++ ".pref"
 	sourcesFile = "/etc/apt/sources.list.d/" ++ showSuite s ++ ".list"
 
