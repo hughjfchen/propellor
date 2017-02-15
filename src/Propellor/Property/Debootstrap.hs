@@ -96,6 +96,7 @@ built' installprop target system@(System _ arch) config =
 extractSuite :: System -> Maybe String
 extractSuite (System (Debian _ s) _) = Just $ Apt.showSuite s
 extractSuite (System (Buntish r) _) = Just r
+extractSuite (System (ArchLinux) _) = Nothing
 extractSuite (System (FreeBSD _) _) = Nothing
 
 -- | Ensures debootstrap is installed.

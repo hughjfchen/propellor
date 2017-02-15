@@ -1,5 +1,5 @@
 Name: propellor
-Version: 3.2.3
+Version: 3.3.0
 Cabal-Version: >= 1.8
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
@@ -128,6 +128,7 @@ Library
     Propellor.Property.Obnam
     Propellor.Property.OpenId
     Propellor.Property.OS
+    Propellor.Property.Pacman
     Propellor.Property.Parted
     Propellor.Property.Partition
     Propellor.Property.Postfix

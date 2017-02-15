@@ -501,7 +501,7 @@ schrootFromSystem system@(System _ arch) =
 	>>= \suite -> return $ SbuildSchroot suite arch
 
 stdMirror :: System -> Maybe Apt.Url
-stdMirror (System (Debian _ _) _) = Just "http://httpredir.debian.org/debian"
+stdMirror (System (Debian _ _) _) = Just "http://deb.debian.org/debian"
 stdMirror (System (Buntish _) _) = Just "mirror://mirrors.ubuntu.com/"
 stdMirror _ = Nothing
 

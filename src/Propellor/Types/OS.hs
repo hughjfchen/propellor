@@ -33,6 +33,7 @@ data System = System Distribution Architecture
 data Distribution
 	= Debian DebianKernel DebianSuite
 	| Buntish Release -- ^ A well-known Debian derivative founded by a space tourist. The actual name of this distribution is not used in Propellor per <http://joeyh.name/blog/entry/trademark_nonsense/>
+	| ArchLinux
 	| FreeBSD FreeBSDRelease
 	deriving (Show, Eq)
 
@@ -41,12 +42,14 @@ data Distribution
 data TargetOS
 	= OSDebian
 	| OSBuntish
+	| OSArchLinux
 	| OSFreeBSD
 	deriving (Show, Eq, Ord)
 
 systemToTargetOS :: System -> TargetOS
 systemToTargetOS (System (Debian _ _) _) = OSDebian
 systemToTargetOS (System (Buntish _) _) = OSBuntish
+systemToTargetOS (System (ArchLinux) _) = OSArchLinux
 systemToTargetOS (System (FreeBSD _) _) = OSFreeBSD
 
 -- | Most of Debian ports are based on Linux. There also exist hurd-i386,
@@ -143,7 +146,7 @@ userGroup :: User -> Group
 userGroup (User u) = Group u
 
 newtype Port = Port Int
-	deriving (Eq, Show)
+	deriving (Eq, Ord, Show)
 
 fromPort :: Port -> String
 fromPort (Port p) = show p

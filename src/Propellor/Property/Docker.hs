@@ -55,6 +55,7 @@ import Propellor.Container
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cmd as Cmd
+import qualified Propellor.Property.Pacman as Pacman
 import qualified Propellor.Shim as Shim
 import Utility.Path
 import Utility.ThreadScheduler
@@ -68,8 +69,8 @@ import Data.List.Utils
 import qualified Data.Map as M
 import System.Console.Concurrent
 
-installed :: Property DebianLike
-installed = Apt.installed ["docker.io"]
+installed :: Property (DebianLike + ArchLinux)
+installed = Apt.installed ["docker.io"] `pickOS` Pacman.installed ["docker"]
 
 -- | Configures docker with an authentication file, so that images can be
 -- pushed to index.docker.io. Optional.

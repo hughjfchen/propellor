@@ -24,6 +24,7 @@ module Propellor.Types (
 	, DebianLike
 	, Debian
 	, Buntish
+	, ArchLinux
 	, FreeBSD
 	, HasInfo
 	, type (+)
