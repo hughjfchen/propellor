@@ -1,4 +1,4 @@
-propellor (3.3.1) UNRELEASED; urgency=medium
+propellor (3.3.1) unstable; urgency=medium
 
   * Apt: Removed the mirrors.kernel.org line from stdSourcesList etc.
     The mirror CDN has a new implementation that should avoid the problems
@@ -7,7 +7,7 @@ propellor (3.3.1) UNRELEASED; urgency=medium
   * Tor.hiddenService: Fix bug in torrc's HiddenServicePort configuration.
     Thanks, Félix Sipma
 
- -- Joey Hess <id@joeyh.name>  Mon, 13 Feb 2017 12:23:42 -0400
+ -- Joey Hess <id@joeyh.name>  Mon, 20 Feb 2017 13:49:26 -0400
 
 propellor (3.3.0) unstable; urgency=medium
 
