@@ -1,1 +1,0 @@
-Maintainer of the Debian package of propellor.  Also maintainer of some of propellor's modules.
