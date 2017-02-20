@@ -4,6 +4,8 @@ propellor (3.3.1) UNRELEASED; urgency=medium
     The mirror CDN has a new implementation that should avoid the problems
     with httpredir that made an extra mirror sometimes be needed.
   * Switch Debian CDN address to deb.debian.org.
+  * Tor.hiddenService: Fix bug in torrc's HiddenServicePort configuration.
+    Thanks, Félix Sipma
 
  -- Joey Hess <id@joeyh.name>  Mon, 13 Feb 2017 12:23:42 -0400
 
