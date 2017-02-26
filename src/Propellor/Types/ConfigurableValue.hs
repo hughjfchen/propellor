@@ -2,6 +2,8 @@
 
 module Propellor.Types.ConfigurableValue where
 
+import Data.Word
+
 -- | A value that can be used in a configuration file, or otherwise used to
 -- configure a program.
 --
@@ -29,4 +31,13 @@ instance ConfigurableValue Float where
 	val = show
 
 instance ConfigurableValue Double where
+	val = show
+
+instance ConfigurableValue Word8 where
+	val = show
+
+instance ConfigurableValue Word16 where
+	val = show
+
+instance ConfigurableValue Word32 where
 	val = show

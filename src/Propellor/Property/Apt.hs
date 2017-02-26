@@ -452,7 +452,7 @@ suitePinBlock p suite pin =
 	[ "Explanation: This file added by propellor"
 	, "Package: " ++ p
 	, "Pin: release " ++ suitePin suite
-	, "Pin-Priority: " ++ show pin
+	, "Pin-Priority: " ++ val pin
 	]
 
 dpkgStatus :: FilePath

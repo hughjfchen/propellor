@@ -314,9 +314,9 @@ apacheSite hn middle = Apache.siteEnabled hn $ apachecfg hn middle
 
 apachecfg :: HostName -> Apache.ConfigFile -> Apache.ConfigFile
 apachecfg hn middle =
-	[ "<VirtualHost *:"++show port++">"
+	[ "<VirtualHost *:" ++ val port ++ ">"
 	, "  ServerAdmin grue@joeyh.name"
-	, "  ServerName "++hn++":"++show port
+	, "  ServerName "++hn++":" ++ val port
 	]
 	++ middle ++
 	[ ""
@@ -329,7 +329,7 @@ apachecfg hn middle =
 	, "</VirtualHost>"
 	]
 	  where
-		port = 80 :: Int
+		port = Port 80
 
 gitAnnexDistributor :: Property (HasInfo + DebianLike)
 gitAnnexDistributor = combineProperties "git-annex distributor, including rsync server and signer" $ props

@@ -307,17 +307,17 @@ rValue :: Record -> Maybe String
 rValue (Address (IPv4 addr)) = Just addr
 rValue (Address (IPv6 addr)) = Just addr
 rValue (CNAME d) = Just $ dValue d
-rValue (MX pri d) = Just $ show pri ++ " " ++ dValue d
+rValue (MX pri d) = Just $ val pri ++ " " ++ dValue d
 rValue (NS d) = Just $ dValue d
 rValue (SRV priority weight port target) = Just $ unwords
-	[ show priority
-	, show weight
-	, show port
+	[ val priority
+	, val weight
+	, val port
 	, dValue target
 	]
 rValue (SSHFP x y s) = Just $ unwords
-	[ show x
-	, show y
+	[ val x
+	, val y
 	, s
 	]
 rValue (INCLUDE f) = Just f
