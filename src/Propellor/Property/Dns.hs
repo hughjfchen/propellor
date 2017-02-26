@@ -250,7 +250,7 @@ confStanza c =
 	cfgline f v = "\t" ++ f ++ " " ++ v ++ ";"
 	ipblock name l =
 		[ "\t" ++ name ++ " {" ] ++
-		(map (\ip -> "\t\t" ++ fromIPAddr ip ++ ";") l) ++
+		(map (\ip -> "\t\t" ++ val ip ++ ";") l) ++
 		[ "\t};" ]
 	mastersblock
 		| null (confMasters c) = []

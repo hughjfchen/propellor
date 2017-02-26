@@ -133,7 +133,7 @@ genAddress dom ttl addr = case addr of
 	IPv6 _ -> genAddress' "AAAA" dom ttl addr
 
 genAddress' :: String -> BindDomain -> Maybe Int -> IPAddr -> String
-genAddress' recordtype dom ttl addr = dValue dom ++ " " ++ maybe "" (\ttl' -> val ttl' ++ " ") ttl ++ "IN " ++ recordtype ++ " " ++ fromIPAddr addr
+genAddress' recordtype dom ttl addr = dValue dom ++ " " ++ maybe "" (\ttl' -> val ttl' ++ " ") ttl ++ "IN " ++ recordtype ++ " " ++ val addr
 
 genMX :: BindDomain -> Int -> BindDomain -> String
 genMX dom priority dest = dValue dom ++ " " ++ "MX" ++ " " ++ val priority ++ " " ++ dValue dest

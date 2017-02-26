@@ -3,7 +3,7 @@ propellor (3.4.0) UNRELEASED; urgency=medium
   * Added ConfigurableValue type class, for values that can be used in a
     config file, or to otherwise configure a program.
   * The val function converts such values to String.
-  * Removed fromPort (use val instead). (API change)
+  * Removed fromPort and fromIPAddr (use val instead). (API change)
   * Removed several Show instances that were only used for generating
     configuration, replacing with ConfigurableValue instances. (API change)
 

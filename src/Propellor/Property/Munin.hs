@@ -46,7 +46,7 @@ hostListFragment' hs os = concatMap muninHost hs
   where
 	muninHost :: Host -> [String]
 	muninHost h = [ "[" ++ (hostName h) ++ "]"
-		      , "  address " ++ maybe (hostName h) (fromIPAddr . fst) (hOverride h)
+		      , "  address " ++ maybe (hostName h) (val . fst) (hOverride h)
 		      ] ++ (maybe [] (\x -> ["  port " ++ (val $ snd x)]) (hOverride h)) ++ [""]
 	hOverride :: Host -> Maybe (IPAddr, Port)
 	hOverride h = lookup (hostName h) os

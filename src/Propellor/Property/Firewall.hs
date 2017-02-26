@@ -99,7 +99,7 @@ toIpTableArg (NotDestination ipwm) =
 	]
 toIpTableArg (NatDestination ip mport) =
 	[ "--to-destination"
-	, fromIPAddr ip ++ maybe "" (\p -> ":" ++ val p) mport
+	, val ip ++ maybe "" (\p -> ":" ++ val p) mport
 	]
 toIpTableArg (r :- r') = toIpTableArg r <> toIpTableArg r'
 
@@ -107,9 +107,9 @@ data IPWithMask = IPWithNoMask IPAddr | IPWithIPMask IPAddr IPAddr | IPWithNumMa
 	deriving (Eq, Show)
 
 instance ConfigurableValue IPWithMask where
-	val (IPWithNoMask ip) = fromIPAddr ip
-	val (IPWithIPMask ip ipm) = fromIPAddr ip ++ "/" ++ fromIPAddr ipm
-	val (IPWithNumMask ip m) = fromIPAddr ip ++ "/" ++ show m
+	val (IPWithNoMask ip) = val ip
+	val (IPWithIPMask ip ipm) = val ip ++ "/" ++ val ipm
+	val (IPWithNumMask ip m) = val ip ++ "/" ++ val m
 
 data Rule = Rule
 	{ ruleChain  :: Chain
