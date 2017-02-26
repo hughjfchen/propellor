@@ -18,6 +18,7 @@ import Data.Word
 class ConfigurableValue t where
 	val :: t -> String
 
+-- | val String does not do any quoting, unlike show String
 instance ConfigurableValue String where
 	val = id
 
