@@ -171,6 +171,7 @@ Library
     Propellor.EnsureProperty
     Propellor.Exception
     Propellor.Types
+    Propellor.Types.ConfigurableValue
     Propellor.Types.Core
     Propellor.Types.Chroot
     Propellor.Types.CmdLine

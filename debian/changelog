@@ -1,3 +1,11 @@
+propellor (3.3.2) UNRELEASED; urgency=medium
+
+  * Added ConfigurableValue type class, for values that can be used in a
+    config file, or to otherwise configure a program.
+  * The val function converts such values to String.
+
+ -- Joey Hess <id@joeyh.name>  Sun, 26 Feb 2017 15:15:33 -0400
+
 propellor (3.3.1) unstable; urgency=medium
 
   * Apt: Removed the mirrors.kernel.org line from stdSourcesList etc.
