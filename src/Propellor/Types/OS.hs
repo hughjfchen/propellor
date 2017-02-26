@@ -142,8 +142,14 @@ type UserName = String
 newtype User = User UserName
 	deriving (Eq, Ord, Show)
 
+instance ConfigurableValue User where
+	val (User n) = n
+
 newtype Group = Group String
 	deriving (Eq, Ord, Show)
+
+instance ConfigurableValue Group where
+	val (Group n) = n
 
 -- | Makes a Group with the same name as the User.
 userGroup :: User -> Group
