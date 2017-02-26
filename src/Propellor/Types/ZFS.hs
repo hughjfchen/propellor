@@ -6,6 +6,8 @@
 
 module Propellor.Types.ZFS where
 
+import Propellor.Types.ConfigurableValue
+
 import Data.String
 import qualified Data.Set as Set
 import qualified Data.String.Utils as SU
@@ -37,8 +39,11 @@ fromPropertyList props =
 zfsName :: ZFS -> String
 zfsName (ZFS (ZPool pool) dataset) = intercalate "/" [pool, show dataset]
 
+instance ConfigurableValue ZDataset where
+  val (ZDataset paths) = intercalate "/" paths
+
 instance Show ZDataset where
-  show (ZDataset paths) = intercalate "/" paths
+  show = val
 
 instance IsString ZDataset where
   fromString s = ZDataset $ SU.split "/" s

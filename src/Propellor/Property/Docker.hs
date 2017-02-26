@@ -323,7 +323,7 @@ class Publishable p where
 	toPublish :: p -> String
 
 instance Publishable (Bound Port) where
-	toPublish p = fromPort (hostSide p) ++ ":" ++ fromPort (containerSide p)
+	toPublish p = val (hostSide p) ++ ":" ++ val (containerSide p)
 
 -- | string format: ip:hostPort:containerPort | ip::containerPort | hostPort:containerPort
 instance Publishable String where

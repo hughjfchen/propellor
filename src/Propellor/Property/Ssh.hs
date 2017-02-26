@@ -120,7 +120,7 @@ dotFile f user = do
 listenPort :: Port -> RevertableProperty DebianLike DebianLike
 listenPort port = enable <!> disable
   where
-	portline = "Port " ++ fromPort port
+	portline = "Port " ++ val port
 	enable = sshdConfig `File.containsLine` portline
 		`describe` ("ssh listening on " ++ portline)
 		`onChange` restarted

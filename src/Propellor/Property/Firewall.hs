@@ -51,9 +51,9 @@ toIpTable r =  map Param $
 toIpTableArg :: Rules -> [String]
 toIpTableArg Everything = []
 toIpTableArg (Proto proto) = ["-p", map toLower $ show proto]
-toIpTableArg (DPort port) = ["--dport", fromPort port]
+toIpTableArg (DPort port) = ["--dport", val port]
 toIpTableArg (DPortRange (portf, portt)) =
-	["--dport", fromPort portf ++ ":" ++ fromPort portt]
+	["--dport", val portf ++ ":" ++ val portt]
 toIpTableArg (InIFace iface) = ["-i", iface]
 toIpTableArg (OutIFace iface) = ["-o", iface]
 toIpTableArg (Ctstate states) =
@@ -100,7 +100,7 @@ toIpTableArg (NotDestination ipwm) =
 	]
 toIpTableArg (NatDestination ip mport) =
 	[ "--to-destination"
-	, fromIPAddr ip ++ maybe "" (\p -> ":" ++ fromPort p) mport
+	, fromIPAddr ip ++ maybe "" (\p -> ":" ++ val p) mport
 	]
 toIpTableArg (r :- r') = toIpTableArg r <> toIpTableArg r'
 
