@@ -1,4 +1,4 @@
-propellor (3.4.0) UNRELEASED; urgency=medium
+propellor (3.4.0) unstable; urgency=medium
 
   * Added ConfigurableValue type class, for values that can be used in a
     config file, or to otherwise configure a program.
@@ -13,7 +13,7 @@ propellor (3.4.0) UNRELEASED; urgency=medium
     used to use the github mirror, and has been changed to use a different
     mirror.
 
- -- Joey Hess <id@joeyh.name>  Sun, 26 Feb 2017 15:15:33 -0400
+ -- Joey Hess <id@joeyh.name>  Wed, 01 Mar 2017 16:44:20 -0400
 
 propellor (3.3.1) unstable; urgency=medium
 
