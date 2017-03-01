@@ -236,7 +236,7 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 	& Git.daemonRunning "/srv/git"
 	& "/etc/gitweb.conf" `File.containsLines`
 		[ "$projectroot = '/srv/git';"
-		, "@git_base_url_list = ('git://git.kitenet.net', 'http://git.kitenet.net/git', 'https://git.kitenet.net/git', 'ssh://git.kitenet.net/srv/git');"
+		, "@git_base_url_list = ('https://git.joeyh.name/git', 'git://git.joeyh.name', 'ssh://git.joeyh.name/srv/git');"
 		, "# disable snapshot download; overloads server"
 		, "$feature{'snapshot'}{'default'} = [];"
 		]
