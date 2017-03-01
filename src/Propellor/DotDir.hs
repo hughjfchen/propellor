@@ -50,7 +50,7 @@ upstreambranch = "upstream/master"
 -- Using the joeyh.name mirror of the main propellor repo because
 -- it is accessible over https for better security.
 netrepo :: String
-netrepo = "https://git.joeyh.name/propellor.git"
+netrepo = "https://git.joeyh.name/git/propellor.git"
 
 dotPropellor :: IO FilePath
 dotPropellor = do

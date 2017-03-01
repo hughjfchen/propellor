@@ -1,3 +1,9 @@
+propellor (3.4.1) unstable; urgency=medium
+
+  * Fixed https url to propellor git repository.
+
+ -- Joey Hess <id@joeyh.name>  Wed, 01 Mar 2017 16:50:05 -0400
+
 propellor (3.4.0) unstable; urgency=medium
 
   * Added ConfigurableValue type class, for values that can be used in a
