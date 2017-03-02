@@ -20,6 +20,12 @@ f `hasContent` newcontent = fileProperty
 	(\_oldcontent -> newcontent) f
 
 -- | Ensures that a line is present in a file, adding it to the end if not.
+--
+-- For example:
+--
+-- >	& "/etc/default/daemon.conf" `File.containsLine` ("cachesize = " ++ val 1024)
+--
+-- The above example uses `val` to serialize a `ConfigurableValue`
 containsLine :: FilePath -> Line -> Property UnixLike
 f `containsLine` l = f `containsLines` [l]
 

@@ -1,5 +1,5 @@
 Name: propellor
-Version: 3.3.1
+Version: 3.4.1
 Cabal-Version: >= 1.8
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
@@ -171,6 +171,7 @@ Library
     Propellor.EnsureProperty
     Propellor.Exception
     Propellor.Types
+    Propellor.Types.ConfigurableValue
     Propellor.Types.Core
     Propellor.Types.Chroot
     Propellor.Types.CmdLine

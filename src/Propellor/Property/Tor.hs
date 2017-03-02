@@ -128,7 +128,7 @@ hiddenService hn port = hiddenService' hn [port]
 
 hiddenService' :: HiddenServiceName -> [Port] -> Property DebianLike
 hiddenService' hn ports = ConfFile.adjustSection
-	(unwords ["hidden service", hn, "available on ports", intercalate "," (map fromPort ports')])
+	(unwords ["hidden service", hn, "available on ports", intercalate "," (map val ports')])
 	(== oniondir)
 	(not . isPrefixOf "HiddenServicePort")
 	(const (oniondir : onionports))
@@ -139,7 +139,7 @@ hiddenService' hn ports = ConfFile.adjustSection
 	oniondir = unwords ["HiddenServiceDir", varLib </> hn]
 	onionports = map onionport ports'
 	ports' = sort ports
-	onionport port = unwords ["HiddenServicePort", fromPort port, "127.0.0.1:" ++ fromPort port]
+	onionport port = unwords ["HiddenServicePort", val port, "127.0.0.1:" ++ val port]
 
 -- | Same as `hiddenService` but also causes propellor to display
 -- the onion address of the hidden service.

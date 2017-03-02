@@ -323,7 +323,7 @@ class Publishable p where
 	toPublish :: p -> String
 
 instance Publishable (Bound Port) where
-	toPublish p = fromPort (hostSide p) ++ ":" ++ fromPort (containerSide p)
+	toPublish p = val (hostSide p) ++ ":" ++ val (containerSide p)
 
 -- | string format: ip:hostPort:containerPort | ip::containerPort | hostPort:containerPort
 instance Publishable String where
@@ -660,10 +660,10 @@ listImages :: IO [ImageUID]
 listImages = map ImageUID . lines <$> readProcess dockercmd ["images", "--all", "--quiet"]
 
 runProp :: String -> RunParam -> Property (HasInfo + Linux)
-runProp field val = tightenTargets $ pureInfoProperty (param) $
+runProp field v = tightenTargets $ pureInfoProperty (param) $
 	mempty { _dockerRunParams = [DockerRunParam (\_ -> "--"++param)] }
   where
-	param = field++"="++val
+	param = field++"="++v
 
 genProp :: String -> (HostName -> RunParam) -> Property (HasInfo + Linux)
 genProp field mkval = tightenTargets $ pureInfoProperty field $
