@@ -1,7 +1,7 @@
 [[!meta title="propellor: deploying properties to hosts with haskell"]]
 
 [[!sidebar content="""
-[[Install]]  
+[[Download]]  
 [API documentation](http://hackage.haskell.org/package/propellor)  
 [[Other Documentation|documentation]]
 [Sample config file](http://git.joeyh.name/?p=propellor.git;a=blob;f=joeyconfig.hs)  

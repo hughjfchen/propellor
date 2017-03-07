@@ -12,8 +12,8 @@ repository to each host it manages, in a
 [components](http://propellor.branchable.com/components/)
 for details.
 
-Properties are defined using Haskell. Edit `~/.propellor/config.hs`
-to get started. There is fairly complete 
+Properties are defined using Haskell in the file `~/.propellor/config.hs`.
+There is fairly complete 
 [API documentation](http://hackage.haskell.org/package/propellor/),
 which includes many built-in Properties for dealing with
 [Apt](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Apt.html)
