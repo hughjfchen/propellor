@@ -164,7 +164,7 @@ oyster :: Host
 oyster = host "oyster.kitenet.net" $ props
 	& standardSystem Unstable X86_64
 		[ "Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "64.137.221.146"
+	& ipv4 "45.62.245.55"
 
 	& CloudAtCost.decruft
 	& Ssh.hostKeys hostContext
@@ -252,13 +252,14 @@ honeybee = host "honeybee.kitenet.net" $ props
 	-- Runs only on weekdays.
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.armAutoBuilder
-		Unstable ARMEL Nothing 
-		(Cron.Times "15 6 * * 2-5") "23h")
+		Unstable ARMEL Nothing weekends "23h")
 	-- Runs only on weekends.
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.stackAutoBuilder
-		(Stable "jessie") ARMEL (Just "ancient")
-		(Cron.Times "15 6 * * 6-7") "23h")
+		(Stable "jessie") ARMEL (Just "ancient") weekdays "23h")
+  where
+	weekdays = Cron.Times "15 6 * * 2-5"
+	weekends = Cron.Times "15 6 * * 6-7"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
