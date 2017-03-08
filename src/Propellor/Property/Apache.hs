@@ -64,6 +64,24 @@ modEnabled modname = enable <!> disable
 			`onChange` reloaded
 	isenabled = boolSystem "a2query" [Param "-q", Param "-m", Param modname]
 
+-- | Control whether an apache configuration file is enabled. 
+--
+-- The String is the base name of the configuration, eg "charset" or "gitweb".
+confEnabled :: String -> RevertableProperty DebianLike DebianLike
+confEnabled confname = enable <!> disable
+  where
+	enable = check (not <$> isenabled)
+		(cmdProperty "a2enconf" ["--quiet", confname])
+			`describe` ("apache configuration enabled " ++ confname)
+			`requires` installed
+			`onChange` reloaded
+	disable = check isenabled
+		(cmdProperty "a2disconf" ["--quiet", confname])
+			`describe` ("apache configuration disabled " ++ confname)
+			`requires` installed
+			`onChange` reloaded
+	isenabled = boolSystem "a2query" [Param "-q", Param "-c", Param confname]
+
 -- | Make apache listen on the specified ports.
 --
 -- Note that ports are also specified inside a site's config file,

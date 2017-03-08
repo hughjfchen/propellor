@@ -228,23 +228,29 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 		`requires` Ssh.authorizedKeys (User "family") (Context "git.kitenet.net")
 		`requires` User.accountFor (User "family")
-	& Apt.installed ["git", "rsync", "gitweb"]
+	& Apt.installed ["git", "rsync", "cgit"]
 	& Apt.installed ["git-annex"]
 	& Apt.installed ["kgb-client"]
 	& File.hasPrivContentExposed "/etc/kgb-bot/kgb-client.conf" anyContext
 		`requires` File.dirExists "/etc/kgb-bot/"
 	& Git.daemonRunning "/srv/git"
-	& "/etc/gitweb.conf" `File.containsLines`
-		[ "$projectroot = '/srv/git';"
-		, "@git_base_url_list = ('https://git.joeyh.name/git', 'git://git.joeyh.name', 'ssh://git.joeyh.name/srv/git');"
-		, "# disable snapshot download; overloads server"
-		, "$feature{'snapshot'}{'default'} = [];"
+	& "/etc/cgitrc" `File.hasContent`
+		[ "clone-url=https://git.joeyh.name/git/$CGIT_REPO_URL git://git.joeyh.name/$CGIT_REPO_URL"
+		, "css=/cgit-css/cgit.css"
+		, "logo=/cgit-css/cgit.png"
+		, "enable-http-clone=1"
+		, "root-title=Joey's git repositories"
+		, "root-desc="
+		, "enable-index-owner=0"
+		, "snapshots=tar.gz"
+		, "enable-git-config=1"
+		, "scan-path=/srv/git"
 		]
-		`describe` "gitweb configured"
-	-- Repos push on to github.
-	& Ssh.knownHost hosts "github.com" (User "joey")
-	-- I keep the website used for gitweb checked into git..
+		`describe` "cgit configured"
+	-- I keep the website used for git.kitenet.net/git.joeyh.name checked into git..
 	& Git.cloned (User "root") "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
+	-- Don't need global apache configuration for cgit.
+	! Apache.confEnabled "cgit"
 	& website "git.kitenet.net"
 	& website "git.joeyh.name"
 	& Apache.modEnabled "cgi"
