@@ -94,7 +94,6 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "libghc-exceptions-dev"
 		, "libghc-stm-dev"
 		, "libghc-text-dev"
-		, "make"
 		]
 	fbsddeps =
 		[ "gnupg"
@@ -112,7 +111,6 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "hs-exceptions"
 		, "hs-stm"
 		, "hs-text"
-		, "gmake"
 		]
 	archlinuxdeps =
 		[ "gnupg"
@@ -131,7 +129,6 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "haskell-exceptions"
 		, "haskell-stm"
 		, "haskell-text"
-		, "make"
 		]
 
 installGitCommand :: Maybe System -> ShellCommand

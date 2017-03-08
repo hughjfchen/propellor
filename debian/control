@@ -44,7 +44,6 @@ Depends: ${misc:Depends}, ${shlibs:Depends},
 	libghc-text-dev,
 	libghc-concurrent-output-dev,
 	git,
-	make,
 Description: property-based host configuration management in haskell
  Propellor ensures that the system it's run in satisfies a list of
  properties, taking action as necessary when a property is not yet met.

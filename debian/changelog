@@ -6,6 +6,8 @@ propellor (3.4.2) UNRELEASED; urgency=medium
     Note that propellor 1.0.0 and earlier relied on this target for
     the Cron.runPropellor property's cronjob to work, so upgrading
     directly to this version from 1.0.0 would break that cron job.
+  * Remove make from propellor's dependency list; it's not used by
+    propellor any longer.
 
  -- Joey Hess <id@joeyh.name>  Wed, 08 Mar 2017 14:02:10 -0400
 
