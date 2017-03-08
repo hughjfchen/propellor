@@ -262,7 +262,7 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		, "    Options Indexes ExecCGI FollowSymlinks"
 		, "    AllowOverride None"
 		, "    AddHandler cgi-script .cgi"
-		, "    DirectoryIndex cgit.cgi"
+		, "    DirectoryIndex index.cgi"
 		,      Apache.allowAll
 		, "  </Directory>"
 		, ""
