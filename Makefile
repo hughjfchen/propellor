@@ -1,11 +1,6 @@
 CABAL?=cabal
 DATE := $(shell dpkg-parsechangelog 2>/dev/null | grep Date | cut -d " " -f2-)
 
-# this target is provided (and is first) to keep old versions of the
-# propellor cron job working, and will eventually be removed
-run: build
-	./propellor
-
 build: tags propellor.1 dist/setup-config
 	$(CABAL) build
 	ln -sf dist/build/propellor-config/propellor-config propellor
