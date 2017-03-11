@@ -55,7 +55,7 @@ type DiskImage = FilePath
 --
 -- > import Propellor.Property.DiskImage
 --
--- > let chroot d = Chroot.debootstrapped mempty d
+-- > let chroot d = Chroot.debootstrapped mempty d $ props
 -- >	& osDebian Unstable X86_64
 -- >	& Apt.installed ["linux-image-amd64"]
 -- >	& User.hasPassword (User "root")
