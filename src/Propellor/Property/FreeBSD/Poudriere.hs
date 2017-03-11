@@ -21,7 +21,7 @@ newtype PoudriereConfigured = PoudriereConfigured String
 	deriving (Typeable, Monoid, Show)
 
 instance IsInfo PoudriereConfigured where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 
 poudriereConfigured :: PoudriereConfigured -> Bool
 poudriereConfigured (PoudriereConfigured _) = True

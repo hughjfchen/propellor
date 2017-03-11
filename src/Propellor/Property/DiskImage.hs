@@ -130,7 +130,7 @@ imageBuilt' rebuild img mkchroot tabletype final partspec =
 		| otherwise = doNothing
 	chrootdir = img ++ ".chroot"
 	chroot =
-		let c = mkchroot chrootdir
+		let c = propprivdataonly $ mkchroot chrootdir
 		in setContainerProps c $ containerProps c
 			-- Before ensuring any other properties of the chroot,
 			-- avoid starting services. Reverted by imageFinalized.
@@ -138,6 +138,9 @@ imageBuilt' rebuild img mkchroot tabletype final partspec =
 			-- First stage finalization.
 			& fst final
 			& cachesCleaned
+	-- Only propagate privdata Info from this chroot, nothing else.
+	propprivdataonly (Chroot.Chroot d b ip h) =
+		Chroot.Chroot d b (const $ ip onlyPrivData) h
 
 -- | This property is automatically added to the chroot when building a
 -- disk image. It cleans any caches of information that can be omitted;

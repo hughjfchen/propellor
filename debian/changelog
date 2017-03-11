@@ -14,6 +14,12 @@ propellor (3.5.0) UNRELEASED; urgency=medium
     Linux.Conf.Au 2017 in January. Now that it's not vaporware, it allows
     one Host to build a disk image that has all the properties of another
     Host.
+  * DiskImage building properties used to propagate DNS info out from
+    the chroot used to build the disk image to the Host. That is no longer
+    done, since that chroot only exists as a side effect of the disk image
+    creation and servers will not be running in it.
+  * The IsInfo types class's propagateInfo function changed to use a
+    PropagateInfo data type. (API change)
 
  -- Joey Hess <id@joeyh.name>  Wed, 08 Mar 2017 14:02:10 -0400
 

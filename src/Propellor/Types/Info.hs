@@ -1,13 +1,14 @@
 {-# LANGUAGE GADTs, DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
 
 module Propellor.Types.Info (
-	Info,
+	Info(..),
+	InfoEntry(..),
 	IsInfo(..),
+	PropagateInfo(..),
 	addInfo,
 	toInfo,
 	fromInfo,
 	mapInfo,
-	propagatableInfo,
 	InfoVal(..),
 	fromInfoVal,
 	Typeable,
@@ -44,7 +45,13 @@ extractInfoEntry (InfoEntry v) = cast v
 class (Typeable v, Monoid v, Show v) => IsInfo v where
 	-- | Should info of this type be propagated out of a
 	-- container to its Host?
-	propagateInfo :: v -> Bool
+	propagateInfo :: v -> PropagateInfo
+
+data PropagateInfo
+	= PropagateInfo Bool
+	| PropagatePrivData
+	-- ^ Info about PrivData generally will be propigated even in cases
+	-- where other Info is not, so it treated specially.
 
 -- | Any value in the `IsInfo` type class can be added to an Info.
 addInfo :: IsInfo v => Info -> v -> Info
@@ -68,11 +75,6 @@ mapInfo f (Info l) = Info (map go l)
 		Nothing -> i
 		Just v -> InfoEntry (f v)
 
--- | Filters out parts of the Info that should not propagate out of a
--- container.
-propagatableInfo :: Info -> Info
-propagatableInfo (Info l) = Info (filter (\(InfoEntry a) -> propagateInfo a) l)
-
 -- | Use this to put a value in Info that is not a monoid.
 -- The last value set will be used. This info does not propagate
 -- out of a container.
@@ -85,7 +87,7 @@ instance Monoid (InfoVal v) where
 	mappend v NoInfoVal = v
 
 instance (Typeable v, Show v) => IsInfo (InfoVal v) where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 
 fromInfoVal :: InfoVal v -> Maybe v
 fromInfoVal NoInfoVal = Nothing

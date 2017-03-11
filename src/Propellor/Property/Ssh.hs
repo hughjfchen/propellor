@@ -227,7 +227,7 @@ newtype HostKeyInfo = HostKeyInfo
 	deriving (Eq, Ord, Typeable, Show)
 
 instance IsInfo HostKeyInfo where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 
 instance Monoid HostKeyInfo where
 	mempty = HostKeyInfo M.empty
@@ -248,7 +248,7 @@ newtype UserKeyInfo = UserKeyInfo
 	deriving (Eq, Ord, Typeable, Show)
 
 instance IsInfo UserKeyInfo where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 
 instance Monoid UserKeyInfo where
 	mempty = UserKeyInfo M.empty

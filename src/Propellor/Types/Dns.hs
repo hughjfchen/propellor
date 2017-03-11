@@ -28,7 +28,7 @@ newtype AliasesInfo = AliasesInfo (S.Set HostName)
 	deriving (Show, Eq, Ord, Monoid, Typeable)
 
 instance IsInfo AliasesInfo where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 
 toAliasesInfo :: [HostName] -> AliasesInfo
 toAliasesInfo l = AliasesInfo (S.fromList l)
@@ -45,7 +45,7 @@ toDnsInfo = DnsInfo
 -- | DNS Info is propagated, so that eg, aliases of a container
 -- are reflected in the dns for the host where it runs.
 instance IsInfo DnsInfo where
-	propagateInfo _ = True
+	propagateInfo _ = PropagateInfo True
 
 -- | Represents a bind 9 named.conf file.
 data NamedConf = NamedConf
@@ -157,7 +157,7 @@ newtype NamedConfMap = NamedConfMap (M.Map Domain NamedConf)
 	deriving (Eq, Ord, Show, Typeable)
 
 instance IsInfo NamedConfMap where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 
 -- | Adding a Master NamedConf stanza for a particulr domain always
 -- overrides an existing Secondary stanza for that domain, while a

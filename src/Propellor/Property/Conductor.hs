@@ -323,15 +323,15 @@ instance Show NotConductorFor where
 	show (NotConductorFor l) = "NotConductorFor " ++ show (map hostName l)
 
 instance IsInfo ConductorFor where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 instance IsInfo NotConductorFor where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 
 -- Added to Info when a host has been orchestrated.
 newtype Orchestrated = Orchestrated Any
 	deriving (Typeable, Monoid, Show)
 instance IsInfo Orchestrated where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 
 isOrchestrated :: Orchestrated -> Bool
 isOrchestrated (Orchestrated v) = getAny v

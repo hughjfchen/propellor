@@ -39,7 +39,7 @@ pkgCmd cmd args =
 newtype PkgUpdate = PkgUpdate String
 	deriving (Typeable, Monoid, Show)
 instance IsInfo PkgUpdate where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 
 pkgUpdated :: PkgUpdate -> Bool
 pkgUpdated (PkgUpdate _) = True
@@ -55,8 +55,9 @@ update =
 
 newtype PkgUpgrade = PkgUpgrade String
 	deriving (Typeable, Monoid, Show)
+
 instance IsInfo PkgUpgrade where
-	propagateInfo _ = False
+	propagateInfo _ = PropagateInfo False
 
 pkgUpgraded :: PkgUpgrade -> Bool
 pkgUpgraded (PkgUpgrade _) = True

@@ -135,7 +135,7 @@ provisioned'
 	-> Bool
 	-> RevertableProperty (HasInfo + Linux) Linux
 provisioned' c@(Chroot loc bootstrapper infopropigator _) systemdonly =
-	(infopropigator $ setup `describe` chrootDesc c "exists")
+	(infopropigator normalContainerInfo $ setup `describe` chrootDesc c "exists")
 		<!>
 	(teardown `describe` chrootDesc c "removed")
   where
@@ -154,11 +154,12 @@ provisioned' c@(Chroot loc bootstrapper infopropigator _) systemdonly =
 		property ("removed " ++ loc) $
 			makeChange (removeChroot loc)
 
-type InfoPropagator = Property Linux -> Property (HasInfo + Linux)
+type InfoPropagator = (PropagateInfo -> Bool) -> Property Linux -> Property (HasInfo + Linux)
 
 propagateChrootInfo :: Chroot -> InfoPropagator
-propagateChrootInfo c@(Chroot location _ _ _) p = propagateContainer location c $
-	p `setInfoProperty` chrootInfo c
+propagateChrootInfo c@(Chroot location _ _ _) pinfo p =
+	propagateContainer location c pinfo $
+		p `setInfoProperty` chrootInfo c
 
 chrootInfo :: Chroot -> Info
 chrootInfo (Chroot loc _ _ h) = mempty `addInfo`
@@ -308,6 +309,6 @@ hostChroot h bootstrapper d = chroot
 -- HostContext is not made to use the name of the chroot as its context,
 -- but instead uses the hostname of the Host.
 propagateHostChrootInfo :: Host -> Chroot -> InfoPropagator
-propagateHostChrootInfo h c p =
-	propagateContainer (hostName h) c $
+propagateHostChrootInfo h c pinfo p =
+	propagateContainer (hostName h) c pinfo $
 		p `setInfoProperty` chrootInfo c
