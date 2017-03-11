@@ -1,4 +1,4 @@
-propellor (3.4.2) UNRELEASED; urgency=medium
+propellor (3.5.0) UNRELEASED; urgency=medium
 
   * Added Apache.confEnabled.
   * Makefile: Removed "run" target which was default target.
@@ -8,6 +8,8 @@ propellor (3.4.2) UNRELEASED; urgency=medium
     directly to this version from 1.0.0 would break that cron job.
   * Remove make from propellor's dependency list; it's not used by
     propellor any longer.
+  * Changed Chroot data type to include Info propigation.
+    (API change)
 
  -- Joey Hess <id@joeyh.name>  Wed, 08 Mar 2017 14:02:10 -0400
 

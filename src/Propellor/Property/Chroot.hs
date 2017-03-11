@@ -40,18 +40,18 @@ import System.Console.Concurrent
 -- | Specification of a chroot. Normally you'll use `debootstrapped` or
 -- `bootstrapped` to construct a Chroot value.
 data Chroot where
-	Chroot :: ChrootBootstrapper b => FilePath -> b -> Host -> Chroot
+	Chroot :: ChrootBootstrapper b => FilePath -> b -> InfoPropagator -> Host -> Chroot
 
 instance IsContainer Chroot where
-	containerProperties (Chroot _ _ h) = containerProperties h
-	containerInfo (Chroot _ _ h) = containerInfo h
-	setContainerProperties (Chroot loc b h) ps = Chroot loc b (setContainerProperties h ps)
+	containerProperties (Chroot _ _ _ h) = containerProperties h
+	containerInfo (Chroot _ _ _ h) = containerInfo h
+	setContainerProperties (Chroot loc b p h) ps = Chroot loc b p (setContainerProperties h ps)
 
 chrootSystem :: Chroot -> Maybe System
 chrootSystem = fromInfoVal . fromInfo . containerInfo
 
 instance Show Chroot where
-	show c@(Chroot loc _ _) = "Chroot " ++ loc ++ " " ++ show (chrootSystem c)
+	show c@(Chroot loc _ _ _) = "Chroot " ++ loc ++ " " ++ show (chrootSystem c)
 
 -- | Class of things that can do initial bootstrapping of an operating
 -- System in a chroot.
@@ -115,7 +115,9 @@ debootstrapped conf = bootstrapped (Debootstrapped conf)
 -- | Defines a Chroot at the given location, bootstrapped with the
 -- specified ChrootBootstrapper.
 bootstrapped :: ChrootBootstrapper b => b -> FilePath -> Props metatypes -> Chroot
-bootstrapped bootstrapper location ps = Chroot location bootstrapper (host location ps)
+bootstrapped bootstrapper location ps = c
+  where
+	c = Chroot location bootstrapper (propagateChrootInfo c) (host location ps)
 
 -- | Ensures that the chroot exists and is provisioned according to its
 -- properties.
@@ -124,15 +126,14 @@ bootstrapped bootstrapper location ps = Chroot location bootstrapper (host locat
 -- is first unmounted. Note that it does not ensure that any processes
 -- that might be running inside the chroot are stopped.
 provisioned :: Chroot -> RevertableProperty (HasInfo + Linux) Linux
-provisioned c = provisioned' (propagateChrootInfo c) c False
+provisioned c = provisioned' c False
 
 provisioned'
-	:: (Property Linux -> Property (HasInfo + Linux))
-	-> Chroot
+	:: Chroot
 	-> Bool
 	-> RevertableProperty (HasInfo + Linux) Linux
-provisioned' propigator c@(Chroot loc bootstrapper _) systemdonly =
-	(propigator $ setup `describe` chrootDesc c "exists")
+provisioned' c@(Chroot loc bootstrapper infopropigator _) systemdonly =
+	(infopropigator $ setup `describe` chrootDesc c "exists")
 		<!>
 	(teardown `describe` chrootDesc c "removed")
   where
@@ -151,17 +152,19 @@ provisioned' propigator c@(Chroot loc bootstrapper _) systemdonly =
 		property ("removed " ++ loc) $
 			makeChange (removeChroot loc)
 
-propagateChrootInfo :: Chroot -> Property Linux -> Property (HasInfo + Linux)
-propagateChrootInfo c@(Chroot location _ _) p = propagateContainer location c $
+type InfoPropagator = Property Linux -> Property (HasInfo + Linux)
+
+propagateChrootInfo :: Chroot -> InfoPropagator
+propagateChrootInfo c@(Chroot location _ _ _) p = propagateContainer location c $
 	p `setInfoProperty` chrootInfo c
 
 chrootInfo :: Chroot -> Info
-chrootInfo (Chroot loc _ h) = mempty `addInfo`
+chrootInfo (Chroot loc _ _ h) = mempty `addInfo`
 	mempty { _chroots = M.singleton loc h }
 
 -- | Propellor is run inside the chroot to provision it.
 propellChroot :: Chroot -> ([String] -> IO (CreateProcess, IO ())) -> Bool -> Property UnixLike
-propellChroot c@(Chroot loc _ _) mkproc systemdonly = property (chrootDesc c "provisioned") $ do
+propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "provisioned") $ do
 	let d = localdir </> shimdir c
 	let me = localdir </> "propellor"
 	shim <- liftIO $ ifM (doesDirectoryExist d)
@@ -200,7 +203,7 @@ propellChroot c@(Chroot loc _ _) mkproc systemdonly = property (chrootDesc c "pr
 		return r
 
 toChain :: HostName -> Chroot -> Bool -> IO CmdLine
-toChain parenthost (Chroot loc _ _) systemdonly = do
+toChain parenthost (Chroot loc _ _ _) systemdonly = do
 	onconsole <- isConsole <$> getMessageHandle
 	return $ ChrootChain parenthost loc systemdonly onconsole
 
@@ -225,7 +228,7 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 chain _ _ = errorMessage "bad chain command"
 
 inChrootProcess :: Bool -> Chroot -> [String] -> IO (CreateProcess, IO ())
-inChrootProcess keepprocmounted (Chroot loc _ _) cmd = do
+inChrootProcess keepprocmounted (Chroot loc _ _ _) cmd = do
 	mountproc
 	return (proc "chroot" (loc:cmd), cleanup)
   where
@@ -245,13 +248,13 @@ provisioningLock :: FilePath -> FilePath
 provisioningLock containerloc = "chroot" </> mungeloc containerloc ++ ".lock"
 
 shimdir :: Chroot -> FilePath
-shimdir (Chroot loc _ _) = "chroot" </> mungeloc loc ++ ".shim"
+shimdir (Chroot loc _ _ _) = "chroot" </> mungeloc loc ++ ".shim"
 
 mungeloc :: FilePath -> String
 mungeloc = replace "/" "_"
 
 chrootDesc :: Chroot -> String -> String
-chrootDesc (Chroot loc _ _) desc = "chroot " ++ loc ++ " " ++ desc
+chrootDesc (Chroot loc _ _ _) desc = "chroot " ++ loc ++ " " ++ desc
 
 -- | Adding this property to a chroot prevents daemons and other services
 -- from being started, which is often something you want to prevent when
