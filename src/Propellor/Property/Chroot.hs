@@ -1,9 +1,11 @@
 {-# LANGUAGE FlexibleContexts, GADTs, DeriveDataTypeable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Propellor.Property.Chroot (
 	debootstrapped,
 	bootstrapped,
 	provisioned,
+	hostChroot,
 	Chroot(..),
 	ChrootBootstrapper(..),
 	Debootstrapped(..),
@@ -290,3 +292,22 @@ setInChroot h = h { hostInfo = hostInfo h `addInfo` InfoVal (InChroot True) }
 
 newtype InChroot = InChroot Bool
 	deriving (Typeable, Show)
+
+-- | Generates a Chroot that has all the properties of a Host.
+-- 
+-- Note that it's possible to create loops using this, where a host
+-- contains a Chroot containing itself etc. Such loops will be detected at
+-- runtime.
+hostChroot :: ChrootBootstrapper bootstrapper => Host -> bootstrapper -> FilePath -> Chroot
+hostChroot h bootstrapper d = chroot
+  where
+	chroot = Chroot d bootstrapper pinfo h
+	pinfo = propagateHostChrootInfo h chroot
+
+-- This is different than propagateChrootInfo in that Info using
+-- HostContext is not made to use the name of the chroot as its context,
+-- but instead uses the hostname of the Host.
+propagateHostChrootInfo :: Host -> Chroot -> InfoPropagator
+propagateHostChrootInfo h c p =
+	propagateContainer (hostName h) c $
+		p `setInfoProperty` chrootInfo c

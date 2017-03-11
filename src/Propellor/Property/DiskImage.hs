@@ -63,19 +63,20 @@ type DiskImage = FilePath
 -- Example use:
 --
 -- > import Propellor.Property.DiskImage
+-- > import Propellor.Property.Chroot
 -- > 
--- > ...
--- > & imageBuilt "/srv/images/foo.img" mychroot
--- >	MSDOS (grubBooted PC)
--- >	[ partition EXT2 `mountedAt` "/boot"
--- >		`setFlag` BootFlag
--- >	, partition EXT4 `mountedAt` "/"
--- >		`addFreeSpace` MegaBytes 100
--- >		`mountOpt` errorReadonly
--- >	, swapPartition (MegaBytes 256)
--- >	]
--- > where
--- >	mychroot d = Chroot.debootstrapped mempty d $ props
+-- > foo = host "foo.example.com" $ props
+-- > 	& imageBuilt "/srv/diskimages/disk.img" mychroot
+-- >		MSDOS (grubBooted PC)
+-- >		[ partition EXT2 `mountedAt` "/boot"
+-- >			`setFlag` BootFlag
+-- >		, partition EXT4 `mountedAt` "/"
+-- >			`addFreeSpace` MegaBytes 100
+-- >			`mountOpt` errorReadonly
+-- >		, swapPartition (MegaBytes 256)
+-- >		]
+-- >  where
+-- >	mychroot d = debootstrapped mempty d $ props
 -- >		& osDebian Unstable X86_64
 -- >		& Apt.installed ["linux-image-amd64"]
 -- >		& User.hasPassword (User "root")
@@ -84,7 +85,26 @@ type DiskImage = FilePath
 -- >		& User.hasDesktopGroups (User "demo")
 -- > 		& ...
 --
--- 
+-- This can also be used with `Chroot.hostChroot` to build a disk image
+-- that has all the properties of a Host. For example:
+--
+-- > foo :: Host
+-- > foo = host "foo.example.com" $ props
+-- >	& imageBuilt "/srv/diskimages/bar-disk.img"
+-- >		(hostChroot bar (Debootstrapped mempty))
+-- >		MSDOS (grubBooted PC)
+-- >		[ partition EXT2 `mountedAt` "/boot"
+-- >			`setFlag` BootFlag
+-- >		, partition EXT4 `mountedAt` "/"
+-- >			`addFreeSpace` MegaBytes 5000
+-- >		, swapPartition (MegaBytes 256)
+-- >		]
+-- >
+-- > bar :: Host
+-- > bar = host "bar.example.com" $ props
+-- >	& osDebian Unstable X86_64
+-- >	& Apt.installed ["linux-image-amd64"]
+-- >	& hasPassword (User "root")
 imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageBuilt = imageBuilt' False
 

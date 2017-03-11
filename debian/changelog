@@ -10,6 +10,10 @@ propellor (3.5.0) UNRELEASED; urgency=medium
     propellor any longer.
   * Changed Chroot data type to include Info propigation.
     (API change)
+  * Implemented hostChroot, as originally seen in my slides at
+    Linux.Conf.Au 2017 in January. Now that it's not vaporware, it allows
+    one Host to build a disk image that has all the properties of another
+    Host.
 
  -- Joey Hess <id@joeyh.name>  Wed, 08 Mar 2017 14:02:10 -0400
 
