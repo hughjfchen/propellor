@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts, GADTs, DeriveDataTypeable #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Propellor.Property.Chroot (
 	debootstrapped,
