@@ -1,0 +1,30 @@
+propellor 4.0.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Added Monoid instances for Property and RevertableProperty.
+   * Removed applyToList. Instead, use mconcat. (API change)
+     If you had:  applyToList accountFor [User "joey", User "root"]
+     use instead: mconcat (map accountFor [User "joey", User "root"])
+   * Makefile: Removed "run" target which was default target.
+     "make" now only builds propellor, does not run it.
+     Note that propellor 1.0.0 and earlier relied on this target for
+     the Cron.runPropellor property's cronjob to work, so upgrading
+     directly from 1.0.0 to 4.0.0 would break that cron job.
+   * Remove make from propellor's dependency list; it's not used by
+     propellor any longer.
+   * Implemented hostChroot, as originally seen in my slides at
+     Linux.Conf.Au 2017 in January. Now that it's not vaporware, it allows
+     one Host to build a disk image that has all the properties of another
+     Host.
+   * DiskImage building properties used to propagate DNS info out from
+     the chroot used to build the disk image to the Host. That is no longer
+     done, since that chroot only exists as a side effect of the disk image
+     creation and servers will not be running in it.
+   * The IsInfo types class's propagateInfo function changed to use a
+     PropagateInfo data type. (API change)
+   * The action used to satisfy a property changed to Maybe (Propellor Result).
+     When it is Nothing, propellor knows it can skip displaying the
+     description of that property. This is mostly useful in the
+     implementation of mempty. (API change)
+   * The doNothing property is now simply mempty. The name was retained
+     because it can be clearer than mempty in some contexts.
+   * Added Apache.confEnabled."""]]
