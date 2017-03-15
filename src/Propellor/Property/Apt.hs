@@ -265,7 +265,7 @@ pinnedTo
 	:: [AptPackagePref]
 	-> [(DebianSuite, PinPriority)]
 	-> RevertableProperty Debian Debian
-pinnedTo ps pins = (\p -> pinnedTo' p pins) `applyToList` ps
+pinnedTo ps pins = mconcat (map (\p -> pinnedTo' p pins) ps)
 	`describe` unwords (("pinned to " ++ showSuites):ps)
   where
 	showSuites = intercalate "," $ showSuite . fst <$> pins

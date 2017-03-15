@@ -48,9 +48,10 @@ instance LiftPropellor Propellor where
 instance LiftPropellor IO where
 	liftPropellor = liftIO
 
+-- | When two actions are appended together, the second action
+-- is only run if the first action does not fail.
 instance Monoid (Propellor Result) where
 	mempty = return NoChange
-	-- | The second action is only run if the first action does not fail.
 	mappend x y = do
 		rx <- x
 		case rx of

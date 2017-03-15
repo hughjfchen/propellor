@@ -16,7 +16,6 @@ module Propellor.Property (
 	, check
 	, fallback
 	, revert
-	, applyToList
 	-- * Property descriptions
 	, describe
 	, (==>)
@@ -54,7 +53,6 @@ import System.Posix.Files
 import qualified Data.Hash.MD5 as MD5
 import Data.List
 import Control.Applicative
-import Data.Foldable hiding (and, elem)
 import Prelude
 
 import Propellor.Types
@@ -353,14 +351,6 @@ unsupportedOS' = go =<< getOS
 revert :: RevertableProperty setup undo -> RevertableProperty undo setup
 revert (RevertableProperty p1 p2) = RevertableProperty p2 p1
 
--- | Apply a property to each element of a list.
-applyToList
-	:: (Foldable t, Functor t, Combines p p, p ~ CombinedType p p)
-	=> (b -> p)
-	-> t b
-	-> p
-prop `applyToList` xs = Data.Foldable.foldr1 before $ prop <$> xs
-
 makeChange :: IO () -> Propellor Result
 makeChange a = liftIO a >> return MadeChange
 
@@ -368,7 +358,7 @@ noChange :: Propellor Result
 noChange = return NoChange
 
 doNothing :: SingI t => Property (MetaTypes t)
-doNothing = property'' "noop property" Nothing
+doNothing = mempty
 
 -- | Registers an action that should be run at the very end, after
 -- propellor has checks all the properties of a host.

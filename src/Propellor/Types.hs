@@ -205,3 +205,35 @@ class TightenTargets p where
 
 instance TightenTargets Property where
 	tightenTargets (Property _ d a i c) = Property sing d a i c
+
+-- | Any type of Property is a monoid. When properties x and y are
+-- appended together, the resulting property has a description like
+-- "x and y". Note that when x fails to be ensured, it will not
+-- try to ensure y.
+instance SingI metatypes => Monoid (Property (MetaTypes metatypes))
+  where
+	mempty = Property sing "noop property" Nothing mempty mempty
+	mappend (Property _ d1 a1 i1 c1) (Property _ d2 a2 i2 c2) =
+	  	Property sing d (a1 <> a2) (i1 <> i2) (c1 <> c2)
+	  where
+		-- Avoid including "noop property" in description
+		-- when using eg mconcat.
+		d = case (a1, a2) of
+			(Just _, Just _) -> d1 <> " and " <> d2
+			(Just _, Nothing) -> d1
+			(Nothing, Just _) -> d2
+			(Nothing, Nothing) -> d1
+
+-- | Any type of RevertableProperty is a monoid. When revertable 
+-- properties x and y are appended together, the resulting revertable
+-- property has a description like "x and y".
+-- Note that when x fails to be ensured, it will not try to ensure y.
+instance
+	( Monoid (Property setupmetatypes)
+	, Monoid (Property undometatypes)
+	)
+	=> Monoid (RevertableProperty setupmetatypes undometatypes)
+  where
+	mempty = RevertableProperty mempty mempty
+	mappend (RevertableProperty s1 u1) (RevertableProperty s2 u2) =
+		RevertableProperty (s1 <> s2) (u2 <> u1)
