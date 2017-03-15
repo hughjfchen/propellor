@@ -53,7 +53,7 @@ combineProperties desc (Props ps) =
 combineSatisfy :: [ChildProperty] -> Result -> Propellor Result
 combineSatisfy [] rs = return rs
 combineSatisfy (p:ps) rs = do
-	r <- catchPropellor $ getSatisfy p
+	r <- maybe (pure NoChange) catchPropellor (getSatisfy p)
 	case r of
 		FailedChange -> return FailedChange
 		_ -> combineSatisfy ps (r <> rs)

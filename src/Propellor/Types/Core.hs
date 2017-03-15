@@ -71,7 +71,7 @@ data Props metatypes = Props [ChildProperty]
 
 -- | Since there are many different types of Properties, they cannot be put
 -- into a list. The simplified ChildProperty can be put into a list.
-data ChildProperty = ChildProperty Desc (Propellor Result) Info [ChildProperty]
+data ChildProperty = ChildProperty Desc (Maybe (Propellor Result)) Info [ChildProperty]
   
 instance Show ChildProperty where
 	show p = "property " ++ show (getDesc p)
@@ -92,7 +92,7 @@ class IsProp p where
 	-- | Gets the action that can be run to satisfy a Property.
 	-- You should never run this action directly. Use
 	-- 'Propellor.EnsureProperty.ensureProperty` instead.
-	getSatisfy :: p -> Propellor Result
+	getSatisfy :: p -> Maybe (Propellor Result)
 
 instance IsProp ChildProperty where
 	setDesc (ChildProperty _ a i c) d = ChildProperty d a i c

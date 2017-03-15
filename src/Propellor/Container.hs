@@ -58,7 +58,7 @@ propagateContainer containername c wanted prop = prop
 	`addChildren` map convert (containerProperties c)
   where
 	convert p = 
-		let n = property (getDesc p) (getSatisfy p) :: Property UnixLike
+		let n = property'' (getDesc p) (getSatisfy p) :: Property UnixLike
 		    n' = n
 		    	`setInfoProperty` mapInfo (forceHostContext containername)
 				(propagatableInfo wanted (getInfo p))

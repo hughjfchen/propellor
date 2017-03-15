@@ -64,10 +64,13 @@ concurrently p1 p2 = (combineWith go go p1 p2)
 	-- Increase the number of capabilities right up to the number of
 	-- processors, so that A `concurrently` B `concurrently` C
 	-- runs all 3 properties on different processors when possible.
-	go a1 a2 = do
+	go (Just a1) (Just a2) = Just $ do
 		n <- liftIO getNumProcessors
 		withCapabilities n $
 			concurrentSatisfy a1 a2
+	go (Just a1) Nothing = Just a1
+	go Nothing (Just a2) = Just a2
+	go Nothing Nothing = Nothing
 
 -- | Ensures all the properties in the list, with a specified amount of
 -- concurrency.
@@ -101,9 +104,9 @@ concurrentList getn d (Props ps) = property d go `addChildren` ps
 			Nothing -> return r
 			Just p -> do
 				hn <- asks hostName
-				r' <- actionMessageOn hn
-					(getDesc p)
-					(getSatisfy p)
+				r' <- case getSatisfy p of
+					Nothing -> return NoChange
+					Just a -> actionMessageOn hn (getDesc p) a
 				worker q (r <> r')
 
 -- | Run an action with the number of capabiities increased as necessary to

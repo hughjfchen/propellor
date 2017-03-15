@@ -66,7 +66,9 @@ ensureChildProperties ps = ensure ps NoChange
 	ensure [] rs = return rs
 	ensure (p:ls) rs = do
 		hn <- asks hostName
-		r <- actionMessageOn hn (getDesc p) (catchPropellor $ getSatisfy p)
+		r <- maybe (pure NoChange)
+			(actionMessageOn hn (getDesc p) . catchPropellor)
+			(getSatisfy p)
 		ensure ls (r <> rs)
 
 -- | Lifts an action into the context of a different host.

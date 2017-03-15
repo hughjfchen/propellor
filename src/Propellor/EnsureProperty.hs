@@ -46,7 +46,7 @@ ensureProperty
 	=> OuterMetaTypesWitness outer
 	-> Property (MetaTypes inner)
 	-> Propellor Result
-ensureProperty _ = catchPropellor . getSatisfy
+ensureProperty _ = maybe (pure NoChange) catchPropellor . getSatisfy
 
 -- The name of this was chosen to make type errors a bit more understandable.
 type family Cannot_ensureProperty_WithInfo (l :: [a]) :: Bool
@@ -62,7 +62,7 @@ property'
 	-> (OuterMetaTypesWitness metatypes -> Propellor Result)
 	-> Property (MetaTypes metatypes)
 property' d a =
-	let p = Property sing d (a (outerMetaTypesWitness p)) mempty mempty
+	let p = Property sing d (Just (a (outerMetaTypesWitness p))) mempty mempty
 	in p
 
 -- | Used to provide the metatypes of a Property to calls to 
