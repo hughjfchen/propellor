@@ -357,6 +357,9 @@ makeChange a = liftIO a >> return MadeChange
 noChange :: Propellor Result
 noChange = return NoChange
 
+-- | A no-op property.
+--
+-- This is the same as `mempty` from the `Monoid` instance.
 doNothing :: SingI t => Property (MetaTypes t)
 doNothing = mempty
 
