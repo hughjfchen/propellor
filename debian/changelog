@@ -1,15 +1,16 @@
-propellor (3.5.0) UNRELEASED; urgency=medium
+propellor (4.0.0) unstable; urgency=medium
 
-  * Added Apache.confEnabled.
+  * Added Monoid instances for Property and RevertableProperty.
+  * Removed applyToList. Instead, use mconcat. (API change)
+    If you had:  applyToList accountFor [User "joey", User "root"]
+    use instead: mconcat (map accountFor [User "joey", User "root"])
   * Makefile: Removed "run" target which was default target.
     "make" now only builds propellor, does not run it.
     Note that propellor 1.0.0 and earlier relied on this target for
     the Cron.runPropellor property's cronjob to work, so upgrading
-    directly to this version from 1.0.0 would break that cron job.
+    directly from 1.0.0 to 4.0.0 would break that cron job.
   * Remove make from propellor's dependency list; it's not used by
     propellor any longer.
-  * Changed Chroot data type to include Info propigation.
-    (API change)
   * Implemented hostChroot, as originally seen in my slides at
     Linux.Conf.Au 2017 in January. Now that it's not vaporware, it allows
     one Host to build a disk image that has all the properties of another
@@ -20,16 +21,9 @@ propellor (3.5.0) UNRELEASED; urgency=medium
     creation and servers will not be running in it.
   * The IsInfo types class's propagateInfo function changed to use a
     PropagateInfo data type. (API change)
-  * Property types changed to use a Maybe (Propellor Result). (API change)
-  * When Nothing needs to be done to ensure a property, propellor
-    will avoid displaying its description at all. The doNothing property
-    is an example of such a property.
-  * Added Monoid instances for Property and RevertableProperty.
-  * Removed applyToList. Instead, use mconcat. (API change)
-    Eg, if you had: applyToList accountFor [User "joey", User "root"]
-    use instead: mconcat (map accountFor [User "joey", User "root"])
+  * Added Apache.confEnabled.
 
- -- Joey Hess <id@joeyh.name>  Wed, 08 Mar 2017 14:02:10 -0400
+ -- Joey Hess <id@joeyh.name>  Wed, 15 Mar 2017 15:46:42 -0400
 
 propellor (3.4.1) unstable; urgency=medium
 
