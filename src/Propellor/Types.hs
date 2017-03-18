@@ -44,6 +44,8 @@ module Propellor.Types (
 	) where
 
 import Data.Monoid
+import Control.Applicative
+import Prelude
 
 import Propellor.Types.Core
 import Propellor.Types.Info

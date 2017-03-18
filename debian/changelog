@@ -1,3 +1,9 @@
+propellor (4.0.1) UNRELEASED; urgency=medium
+
+  * Fix build with pre-AMP ghc.
+
+ -- Joey Hess <id@joeyh.name>  Sat, 18 Mar 2017 19:40:35 -0400
+
 propellor (4.0.0) unstable; urgency=medium
 
   * Added Monoid instances for Property and RevertableProperty.
