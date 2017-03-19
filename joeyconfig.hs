@@ -126,7 +126,7 @@ clam = host "clam.kitenet.net" $ props
 	& Apt.unattendedUpgrades
 	& Network.ipv6to4
 	& Systemd.persistentJournal
-	& Journald.systemMaxUse "500MiB"
+	& Journald.systemMaxUse "50MiB"
 
 	& Tor.isRelay
 	& Tor.named "kite1"
