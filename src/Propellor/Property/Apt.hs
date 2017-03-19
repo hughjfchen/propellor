@@ -20,6 +20,11 @@ import Propellor.Types.Info
 data HostMirror = HostMirror Url
 	deriving (Eq, Show, Typeable)
 
+-- | Indicate host's preferred apt mirror (e.g. an apt cacher on the host's LAN)
+hostMirrorIs :: Url -> Property (HasInfo + UnixLike)
+hostMirrorIs u = pureInfoProperty (u ++ " apt mirror selected")
+	     (InfoVal (HostMirror u))
+
 getHostMirror :: Propellor Url
 getHostMirror = do
 	mirrorInfo <- getHostMirrorInfo
