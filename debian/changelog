@@ -1,6 +1,8 @@
 propellor (4.0.1) UNRELEASED; urgency=medium
 
   * Fix build with pre-AMP ghc.
+  * Tor.named, Tor.torPrivKey: Include the new ed25519 public/private key
+    pair in addition to the old secret_id_key.
 
  -- Joey Hess <id@joeyh.name>  Sat, 18 Mar 2017 19:40:35 -0400
 
