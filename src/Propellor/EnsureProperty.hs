@@ -46,7 +46,7 @@ ensureProperty
 	=> OuterMetaTypesWitness outer
 	-> Property (MetaTypes inner)
 	-> Propellor Result
-ensureProperty _ = maybe (pure NoChange) catchPropellor . getSatisfy
+ensureProperty _ = maybe (return NoChange) catchPropellor . getSatisfy
 
 -- The name of this was chosen to make type errors a bit more understandable.
 type family Cannot_ensureProperty_WithInfo (l :: [a]) :: Bool
