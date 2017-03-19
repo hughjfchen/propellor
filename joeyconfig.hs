@@ -176,7 +176,7 @@ oyster = host "oyster.kitenet.net" $ props
 	& Journald.systemMaxUse "500MiB"
 
 	& Tor.isRelay
-	& Tor.named "kite2"
+	& Tor.named "kite4"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
 
 	-- Nothing is using http port 80, so listen on

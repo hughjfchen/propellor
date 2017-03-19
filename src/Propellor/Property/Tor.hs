@@ -53,8 +53,8 @@ named n = configured [("Nickname", n')]
   where
 	n' = saneNickname n
 
--- | Configures tor with secret_id_key, ed25519_master_id_public_key, and
--- ed25519_master_id_secret_key from privdata.
+-- | Configures tor with secret_id_key, ed25519_master_id_public_key,
+-- and ed25519_master_id_secret_key from privdata.
 torPrivKey :: Context -> Property (HasInfo + DebianLike)
 torPrivKey context = mconcat (map go keyfiles)
 	`requires` torPrivKeyDirExists
