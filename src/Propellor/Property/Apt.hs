@@ -85,8 +85,8 @@ binandsrc url suite = catMaybes
 		bs <- backportSuite suite
 		return $ debLine bs url stdSections
 
-debCdn :: SourcesGenerator
-debCdn = binandsrc "http://deb.debian.org/debian"
+stdArchiveLines :: Propellor SourcesGenerator
+stdArchiveLines = return . binandsrc =<< getHostMirror
 
 -- | Only available for Stable and Testing
 securityUpdates :: SourcesGenerator
