@@ -105,8 +105,9 @@ securityUpdates suite
 		in [l, srcLine l]
 	| otherwise = []
 
--- | Makes sources.list have a standard content using the Debian mirror CDN,
--- with the Debian suite configured by the os.
+-- | Makes sources.list have a standard content using the Debian mirror CDN
+-- (or other host specified using the `mirror` property), with the
+-- Debian suite configured by the os.
 stdSourcesList :: Property Debian
 stdSourcesList = withOS "standard sources.list" $ \w o -> case o of
 	(Just (System (Debian _ suite) _)) ->
