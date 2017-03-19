@@ -1,9 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module Propellor.Property.Apt where
 
 import Data.Maybe
 import Data.List
+import Data.Typeable
 import System.IO
 import Control.Monad
 import Control.Applicative
@@ -13,6 +15,37 @@ import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Service as Service
 import Propellor.Property.File (Line)
+import Propellor.Types.Info
+
+data HostMirror = HostMirror Url
+	deriving (Eq, Show, Typeable)
+
+-- | Indicate host's preferred apt mirror (e.g. an apt cacher on the host's LAN)
+mirror :: Url -> Property (HasInfo + UnixLike)
+mirror u = pureInfoProperty (u ++ " apt mirror selected")
+	     (InfoVal (HostMirror u))
+
+getMirror :: Propellor Url
+getMirror = do
+	mirrorInfo <- getMirrorInfo
+	osInfo <- getOS
+	return $ case (osInfo, mirrorInfo) of
+		(_, Just (HostMirror u)) -> u
+		(Just (System (Debian _ _) _), _) ->
+			"http://deb.debian.org/debian"
+		(Just (System (Buntish _) _), _) ->
+			"mirror://mirrors.ubuntu.com/"
+		(Just (System dist _), _) ->
+			error ("no Apt mirror defined for " ++ show dist)
+		_ -> error "no Apt mirror defined for this host or OS"
+  where
+	getMirrorInfo :: Propellor (Maybe HostMirror)
+	getMirrorInfo = fromInfoVal <$> askInfo
+
+withMirror :: Desc -> (Url -> Property DebianLike) -> Property DebianLike
+withMirror desc mkp = property' desc $ \w -> do
+	u <- getMirror
+	ensureProperty w (mkp u)
 
 sourcesList :: FilePath
 sourcesList = "/etc/apt/sources.list"
@@ -37,8 +70,8 @@ stableUpdatesSuite (Stable s) = Just (s ++ "-updates")
 stableUpdatesSuite _ = Nothing
 
 debLine :: String -> Url -> [Section] -> Line
-debLine suite mirror sections = unwords $
-	["deb", mirror, suite] ++ sections
+debLine suite url sections = unwords $
+	["deb", url, suite] ++ sections
 
 srcLine :: Line -> Line
 srcLine l = case words l of
@@ -61,8 +94,8 @@ binandsrc url suite = catMaybes
 		bs <- backportSuite suite
 		return $ debLine bs url stdSections
 
-debCdn :: SourcesGenerator
-debCdn = binandsrc "http://deb.debian.org/debian"
+stdArchiveLines :: Propellor SourcesGenerator
+stdArchiveLines = return . binandsrc =<< getMirror
 
 -- | Only available for Stable and Testing
 securityUpdates :: SourcesGenerator
@@ -88,11 +121,12 @@ stdSourcesListFor suite = stdSourcesList' suite []
 -- Note that if a Property needs to enable an apt source, it's better
 -- to do so via a separate file in </etc/apt/sources.list.d/>
 stdSourcesList' :: DebianSuite -> [SourcesGenerator] -> Property Debian
-stdSourcesList' suite more = tightenTargets $ setSourcesList
-	(concatMap (\gen -> gen suite) generators)
-	`describe` ("standard sources.list for " ++ show suite)
+stdSourcesList' suite more = tightenTargets $
+	withMirror desc $ \u -> setSourcesList
+		(concatMap (\gen -> gen suite) (generators u))
   where
-	generators = [debCdn, securityUpdates] ++ more
+	generators u = [binandsrc u, securityUpdates] ++ more
+	desc = ("standard sources.list for " ++ show suite)
 
 type PinPriority = Int
 
@@ -120,23 +154,24 @@ suiteAvailablePinned s pin = available <!> unavailable
 		& File.notPresent prefFile
 
 	setSourcesFile :: Property Debian
-	setSourcesFile = withOS (desc True) $ \w o -> case o of
+	setSourcesFile = tightenTargets $ withMirror (desc True) $ \u ->
+		withOS (desc True) $ \w o -> case o of
 			(Just (System (Debian _ hostSuite) _))
 				| s /= hostSuite -> ensureProperty w $
-					File.hasContent sourcesFile sources
+					File.hasContent sourcesFile (sources u)
 					`onChange` update
 			_ -> noChange
 
 	-- Unless we are pinning a backports suite, filter out any backports
 	-- sources that were added by our generators.  The user probably doesn't
 	-- want those to be pinned to the same value
-	sources = dropBackports $ concatMap (\gen -> gen s) generators
+	sources u = dropBackports $ concatMap (\gen -> gen s) (generators u)
 	  where
 		dropBackports
 			| "-backports" `isSuffixOf` (showSuite s) = id
 			| otherwise = filter (not . isInfixOf "-backports")
 
-	generators = [debCdn, securityUpdates]
+	generators u = [binandsrc u, securityUpdates]
 	prefFile = "/etc/apt/preferences.d/20" ++ showSuite s ++ ".pref"
 	sourcesFile = "/etc/apt/sources.list.d/" ++ showSuite s ++ ".list"
 
