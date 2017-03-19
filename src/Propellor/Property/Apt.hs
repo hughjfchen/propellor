@@ -33,6 +33,11 @@ getHostMirror = do
 	getHostMirrorInfo :: Propellor (Maybe HostMirror)
 	getHostMirrorInfo = fromInfoVal <$> askInfo
 
+withHostMirror :: Desc -> (Url -> Property DebianLike) -> Property DebianLike
+withHostMirror desc mkp = property' desc $ \w -> do
+	u <- getHostMirror
+	ensureProperty w (mkp u)
+
 sourcesList :: FilePath
 sourcesList = "/etc/apt/sources.list"
 
