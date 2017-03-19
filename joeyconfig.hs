@@ -132,11 +132,7 @@ clam = host "clam.kitenet.net" $ props
 	& Tor.named "kite1"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
 
-	& Systemd.nspawned webserver
-	& File.dirExists "/var/www/html"
-	& File.notPresent "/var/www/index.html"
-	& "/var/www/html/index.html" `File.hasContent` ["hello, world"]
-	& alias "helloworld.kitenet.net"
+	! Systemd.nspawned webserver
 
 	& Systemd.nspawned oldusenetShellBox
 
