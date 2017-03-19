@@ -128,7 +128,7 @@ data UseCcache = UseCcache | NoCcache
 builtFor :: System -> UseCcache -> RevertableProperty DebianLike UnixLike
 builtFor sys cc = go <!> deleted
   where
-	go = Apt.withHostMirror goDesc $ \u -> property' goDesc $ \w ->
+	go = Apt.withMirror goDesc $ \u -> property' goDesc $ \w ->
 		case schrootFromSystem sys of
 			Just s  -> ensureProperty w $
 				setupRevertableProperty $ built s u cc

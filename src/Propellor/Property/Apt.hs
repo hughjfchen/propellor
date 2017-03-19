@@ -21,13 +21,13 @@ data HostMirror = HostMirror Url
 	deriving (Eq, Show, Typeable)
 
 -- | Indicate host's preferred apt mirror (e.g. an apt cacher on the host's LAN)
-hostMirrorIs :: Url -> Property (HasInfo + UnixLike)
-hostMirrorIs u = pureInfoProperty (u ++ " apt mirror selected")
+mirror :: Url -> Property (HasInfo + UnixLike)
+mirror u = pureInfoProperty (u ++ " apt mirror selected")
 	     (InfoVal (HostMirror u))
 
-getHostMirror :: Propellor Url
-getHostMirror = do
-	mirrorInfo <- getHostMirrorInfo
+getMirror :: Propellor Url
+getMirror = do
+	mirrorInfo <- getMirrorInfo
 	osInfo <- getOS
 	return $ case (osInfo, mirrorInfo) of
 		(_, Just (HostMirror u)) -> u
@@ -39,12 +39,12 @@ getHostMirror = do
 			error ("no Apt mirror defined for " ++ show dist)
 		_ -> error "no Apt mirror defined for this host or OS"
   where
-	getHostMirrorInfo :: Propellor (Maybe HostMirror)
-	getHostMirrorInfo = fromInfoVal <$> askInfo
+	getMirrorInfo :: Propellor (Maybe HostMirror)
+	getMirrorInfo = fromInfoVal <$> askInfo
 
-withHostMirror :: Desc -> (Url -> Property DebianLike) -> Property DebianLike
-withHostMirror desc mkp = property' desc $ \w -> do
-	u <- getHostMirror
+withMirror :: Desc -> (Url -> Property DebianLike) -> Property DebianLike
+withMirror desc mkp = property' desc $ \w -> do
+	u <- getMirror
 	ensureProperty w (mkp u)
 
 sourcesList :: FilePath
@@ -70,8 +70,8 @@ stableUpdatesSuite (Stable s) = Just (s ++ "-updates")
 stableUpdatesSuite _ = Nothing
 
 debLine :: String -> Url -> [Section] -> Line
-debLine suite mirror sections = unwords $
-	["deb", mirror, suite] ++ sections
+debLine suite url sections = unwords $
+	["deb", url, suite] ++ sections
 
 srcLine :: Line -> Line
 srcLine l = case words l of
@@ -95,7 +95,7 @@ binandsrc url suite = catMaybes
 		return $ debLine bs url stdSections
 
 stdArchiveLines :: Propellor SourcesGenerator
-stdArchiveLines = return . binandsrc =<< getHostMirror
+stdArchiveLines = return . binandsrc =<< getMirror
 
 -- | Only available for Stable and Testing
 securityUpdates :: SourcesGenerator
@@ -122,7 +122,7 @@ stdSourcesListFor suite = stdSourcesList' suite []
 -- to do so via a separate file in </etc/apt/sources.list.d/>
 stdSourcesList' :: DebianSuite -> [SourcesGenerator] -> Property Debian
 stdSourcesList' suite more = tightenTargets $
-	withHostMirror desc $ \u -> setSourcesList
+	withMirror desc $ \u -> setSourcesList
 		(concatMap (\gen -> gen suite) (generators u))
   where
 	generators u = [binandsrc u, securityUpdates] ++ more
@@ -154,7 +154,7 @@ suiteAvailablePinned s pin = available <!> unavailable
 		& File.notPresent prefFile
 
 	setSourcesFile :: Property Debian
-	setSourcesFile = tightenTargets $ withHostMirror (desc True) $ \u ->
+	setSourcesFile = tightenTargets $ withMirror (desc True) $ \u ->
 		withOS (desc True) $ \w o -> case o of
 			(Just (System (Debian _ hostSuite) _))
 				| s /= hostSuite -> ensureProperty w $
