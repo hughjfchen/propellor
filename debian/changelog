@@ -1,8 +1,9 @@
-propellor (4.0.1) UNRELEASED; urgency=medium
+propellor (4.0.1) unstable; urgency=medium
 
   * Fix build with pre-AMP ghc.
+  * Tor: Restart daemon after installing private key.
 
- -- Joey Hess <id@joeyh.name>  Sat, 18 Mar 2017 19:40:35 -0400
+ -- Joey Hess <id@joeyh.name>  Sat, 18 Mar 2017 20:19:41 -0400
 
 propellor (4.0.0) unstable; urgency=medium
 

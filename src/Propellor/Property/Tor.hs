@@ -56,6 +56,7 @@ named n = configured [("Nickname", n')]
 torPrivKey :: Context -> Property (HasInfo + DebianLike)
 torPrivKey context = f `File.hasPrivContent` context
 	`onChange` File.ownerGroup f user (userGroup user)
+	`onChange` restarted
 	`requires` torPrivKeyDirExists
   where
 	f = torPrivKeyDir </> "secret_id_key"
