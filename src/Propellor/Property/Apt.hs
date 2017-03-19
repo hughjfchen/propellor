@@ -30,6 +30,8 @@ getHostMirror = do
 			"http://deb.debian.org/debian"
 		(Just (System (Buntish _) _), _) ->
 			"mirror://mirrors.ubuntu.com/"
+		(Just (System dist _), _) ->
+			error ("no Apt mirror defined for " ++ show dist)
 		_ -> error "no Apt mirror defined for this host or OS"
   where
 	getHostMirrorInfo :: Propellor (Maybe HostMirror)
