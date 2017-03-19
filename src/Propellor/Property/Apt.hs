@@ -112,11 +112,12 @@ stdSourcesListFor suite = stdSourcesList' suite []
 -- Note that if a Property needs to enable an apt source, it's better
 -- to do so via a separate file in </etc/apt/sources.list.d/>
 stdSourcesList' :: DebianSuite -> [SourcesGenerator] -> Property Debian
-stdSourcesList' suite more = tightenTargets $ setSourcesList
-	(concatMap (\gen -> gen suite) generators)
-	`describe` ("standard sources.list for " ++ show suite)
+stdSourcesList' suite more = tightenTargets $
+	withHostMirror desc $ \u -> setSourcesList
+		(concatMap (\gen -> gen suite) (generators u))
   where
-	generators = [debCdn, securityUpdates] ++ more
+	generators u = [binandsrc u, securityUpdates] ++ more
+	desc = ("standard sources.list for " ++ show suite)
 
 type PinPriority = Int
 
@@ -144,23 +145,24 @@ suiteAvailablePinned s pin = available <!> unavailable
 		& File.notPresent prefFile
 
 	setSourcesFile :: Property Debian
-	setSourcesFile = withOS (desc True) $ \w o -> case o of
+	setSourcesFile = tightenTargets $ withHostMirror (desc True) $ \u ->
+		withOS (desc True) $ \w o -> case o of
 			(Just (System (Debian _ hostSuite) _))
 				| s /= hostSuite -> ensureProperty w $
-					File.hasContent sourcesFile sources
+					File.hasContent sourcesFile (sources u)
 					`onChange` update
 			_ -> noChange
 
 	-- Unless we are pinning a backports suite, filter out any backports
 	-- sources that were added by our generators.  The user probably doesn't
 	-- want those to be pinned to the same value
-	sources = dropBackports $ concatMap (\gen -> gen s) generators
+	sources u = dropBackports $ concatMap (\gen -> gen s) (generators u)
 	  where
 		dropBackports
 			| "-backports" `isSuffixOf` (showSuite s) = id
 			| otherwise = filter (not . isInfixOf "-backports")
 
-	generators = [debCdn, securityUpdates]
+	generators u = [binandsrc u, securityUpdates]
 	prefFile = "/etc/apt/preferences.d/20" ++ showSuite s ++ ".pref"
 	sourcesFile = "/etc/apt/sources.list.d/" ++ showSuite s ++ ".list"
 
