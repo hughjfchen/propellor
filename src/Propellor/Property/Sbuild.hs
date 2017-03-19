@@ -128,9 +128,9 @@ data UseCcache = UseCcache | NoCcache
 builtFor :: System -> UseCcache -> RevertableProperty DebianLike UnixLike
 builtFor sys cc = go <!> deleted
   where
-	go = property' ("sbuild schroot for " ++ show sys) $
-		\w -> case (schrootFromSystem sys, stdMirror sys) of
-			(Just s, Just u)  -> ensureProperty w $
+	go = Apt.withHostMirror goDesc $ \u -> property' goDesc $ \w ->
+		case schrootFromSystem sys of
+			Just s  -> ensureProperty w $
 				setupRevertableProperty $ built s u cc
 			_ -> errorMessage
 				("don't know how to debootstrap " ++ show sys)
@@ -139,6 +139,7 @@ builtFor sys cc = go <!> deleted
 			Just s  -> ensureProperty w $
 				undoRevertableProperty $ built s "dummy" cc
 			Nothing -> noChange
+	goDesc = "sbuild schroot for " ++ show sys
 
 -- | Build and configure a schroot for use with sbuild
 built :: SbuildSchroot -> Apt.Url -> UseCcache -> RevertableProperty DebianLike UnixLike
@@ -499,11 +500,6 @@ schrootFromSystem :: System -> Maybe SbuildSchroot
 schrootFromSystem system@(System _ arch) =
 	extractSuite system
 	>>= \suite -> return $ SbuildSchroot suite arch
-
-stdMirror :: System -> Maybe Apt.Url
-stdMirror (System (Debian _ _) _) = Just "http://deb.debian.org/debian"
-stdMirror (System (Buntish _) _) = Just "mirror://mirrors.ubuntu.com/"
-stdMirror _ = Nothing
 
 schrootRoot :: SbuildSchroot -> FilePath
 schrootRoot (SbuildSchroot s a) = "/srv/chroot" </> s ++ "-" ++ architectureToDebianArchString a
