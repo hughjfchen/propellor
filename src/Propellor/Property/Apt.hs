@@ -27,7 +27,9 @@ getHostMirror = do
 	return $ case (osInfo, mirrorInfo) of
 		(_, Just (HostMirror u)) -> u
 		(Just (System (Debian _ _) _), _) ->
-		      "http://deb.debian.org/debian"
+			"http://deb.debian.org/debian"
+		(Just (System (Buntish _) _), _) ->
+			"mirror://mirrors.ubuntu.com/"
 		_ -> error "no Apt mirror defined for this host or OS"
   where
 	getHostMirrorInfo :: Propellor (Maybe HostMirror)
