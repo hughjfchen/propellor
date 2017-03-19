@@ -5,7 +5,7 @@ propellor (4.0.1) unstable; urgency=medium
   * Tor.named, Tor.torPrivKey: Include the new ed25519 public/private key
     pair in addition to the old secret_id_key.
 
- -- Joey Hess <id@joeyh.name>  Sat, 18 Mar 2017 20:19:41 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 19 Mar 2017 16:18:11 -0400
 
 propellor (4.0.0) unstable; urgency=medium
 
