@@ -2,6 +2,8 @@ propellor (4.0.1) unstable; urgency=medium
 
   * Fix build with pre-AMP ghc.
   * Tor: Restart daemon after installing private key.
+  * Tor.named, Tor.torPrivKey: Include the new ed25519 public/private key
+    pair in addition to the old secret_id_key.
 
  -- Joey Hess <id@joeyh.name>  Sat, 18 Mar 2017 20:19:41 -0400
 
