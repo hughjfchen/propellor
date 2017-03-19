@@ -1,9 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module Propellor.Property.Apt where
 
 import Data.Maybe
 import Data.List
+import Data.Typeable
 import System.IO
 import Control.Monad
 import Control.Applicative
@@ -13,6 +15,23 @@ import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Service as Service
 import Propellor.Property.File (Line)
+import Propellor.Types.Info
+
+data HostMirror = HostMirror Url
+	deriving (Eq, Show, Typeable)
+
+getHostMirror :: Propellor Url
+getHostMirror = do
+	mirrorInfo <- getHostMirrorInfo
+	osInfo <- getOS
+	return $ case (osInfo, mirrorInfo) of
+		(_, Just (HostMirror u)) -> u
+		(Just (System (Debian _ _) _), _) ->
+		      "http://deb.debian.org/debian"
+		_ -> error "no Apt mirror defined for this host or OS"
+  where
+	getHostMirrorInfo :: Propellor (Maybe HostMirror)
+	getHostMirrorInfo = fromInfoVal <$> askInfo
 
 sourcesList :: FilePath
 sourcesList = "/etc/apt/sources.list"
