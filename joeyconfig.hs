@@ -132,8 +132,6 @@ clam = host "clam.kitenet.net" $ props
 	& Tor.named "kite1"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
 
-	! Systemd.nspawned webserver
-
 	& Systemd.nspawned oldusenetShellBox
 
 	& JoeySites.scrollBox
@@ -170,6 +168,7 @@ oyster = host "oyster.kitenet.net" $ props
 	& Network.ipv6to4
 	& Systemd.persistentJournal
 	& Journald.systemMaxUse "500MiB"
+	& Apt.serviceInstalledRunning "swapspace"
 
 	& Tor.isRelay
 	& Tor.named "kite4"
@@ -536,13 +535,6 @@ keysafe = host "keysafe.joeyh.name" $ props
 --------------------------- \____, o          ,' ----------------------------
 ---------------------------- '--,___________,'  -----------------------------
 
--- Simple web server, publishing the outside host's /var/www
-webserver :: Systemd.Container
-webserver = Systemd.debContainer "webserver" $ props
-	& standardContainer (Stable "jessie")
-	& Systemd.bind "/var/www"
-	& Apache.installed
-
 -- My own openid provider. Uses php, so containerized for security
 -- and administrative sanity.
 openidProvider :: Systemd.Container
@@ -655,9 +647,6 @@ monsters =            -- but do want to track their public keys etc.
 		& Ssh.hostPubKey SshEcdsa "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY="
 	, host "ns6.gandi.net" $ props
 		& ipv4 "217.70.177.40"
-	, host "turtle.kitenet.net" $ props
-		& ipv4 "67.223.19.96"
-		& ipv6 "2001:4978:f:2d9::2"
 	, host "mouse.kitenet.net" $ props
 		& ipv6 "2001:4830:1600:492::2"
 		& ipv4 "67.223.19.96"
