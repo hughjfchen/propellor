@@ -1,6 +1,0 @@
-propellor 4.0.1 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Fix build with pre-AMP ghc.
-   * Tor: Restart daemon after installing private key.
-   * Tor.named, Tor.torPrivKey: Include the new ed25519 public/private key
-     pair in addition to the old secret\_id\_key."""]]
