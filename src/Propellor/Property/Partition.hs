@@ -58,7 +58,7 @@ isLoopDev l = isLoopDev' (partitionLoopDev l) <&&> isLoopDev' (wholeDiskLoopDev 
 isLoopDev' :: FilePath -> IO Bool
 isLoopDev' f
 	| "loop" `isInfixOf` f = catchBoolIO $
-		isBlockDevice <$> getFileStatus f
+		isBlockDevice <$> getSymbolicLinkStatus f
 	| otherwise = return False
 
 -- | Uses the kpartx utility to create device maps for partitions contained
