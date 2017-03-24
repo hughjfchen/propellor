@@ -57,6 +57,7 @@ named n = configured [("Nickname", n')]
 -- and ed25519_master_id_secret_key from privdata.
 torPrivKey :: Context -> Property (HasInfo + DebianLike)
 torPrivKey context = mconcat (map go keyfiles)
+	`onChange` restarted
 	`requires` torPrivKeyDirExists
   where
 	keyfiles = map (torPrivKeyDir </>)
