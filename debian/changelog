@@ -6,6 +6,10 @@ propellor (4.0.2) UNRELEASED; urgency=medium
     Thanks, Sean Whitton.
   * Property.Partition: Update kpartx output parser, as its output format
     changed around version 0.6. Both output formats are supported now.
+  * Fix bug when using setContainerProps with a chroot that prevented
+    properties added to a chroot that way from being seen when propellor
+    was running inside the chroot. This affected disk image creation, and
+    possibly other things that use chroots.
    
  -- Joey Hess <id@joeyh.name>  Sun, 19 Mar 2017 16:37:27 -0400
 

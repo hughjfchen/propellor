@@ -140,7 +140,7 @@ imageBuilt' rebuild img mkchroot tabletype final partspec =
 			& cachesCleaned
 	-- Only propagate privdata Info from this chroot, nothing else.
 	propprivdataonly (Chroot.Chroot d b ip h) =
-		Chroot.Chroot d b (const $ ip onlyPrivData) h
+		Chroot.Chroot d b (\c _ -> ip c onlyPrivData) h
 
 -- | This property is automatically added to the chroot when building a
 -- disk image. It cleans any caches of information that can be omitted;

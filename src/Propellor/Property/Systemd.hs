@@ -281,7 +281,7 @@ nspawned c@(Container name (Chroot.Chroot loc builder _ _) h) =
 			<!>
 		doNothing
 
-	chroot = Chroot.Chroot loc builder (Chroot.propagateChrootInfo chroot) h
+	chroot = Chroot.Chroot loc builder Chroot.propagateChrootInfo h
 
 -- | Sets up the service file for the container, and then starts
 -- it running.

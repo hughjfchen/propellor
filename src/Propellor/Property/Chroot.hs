@@ -46,7 +46,9 @@ data Chroot where
 instance IsContainer Chroot where
 	containerProperties (Chroot _ _ _ h) = containerProperties h
 	containerInfo (Chroot _ _ _ h) = containerInfo h
-	setContainerProperties (Chroot loc b p h) ps = Chroot loc b p (setContainerProperties h ps)
+	setContainerProperties (Chroot loc b p h) ps =
+		let h' = setContainerProperties h ps
+		in Chroot loc b p h'
 
 chrootSystem :: Chroot -> Maybe System
 chrootSystem = fromInfoVal . fromInfo . containerInfo
@@ -118,7 +120,7 @@ debootstrapped conf = bootstrapped (Debootstrapped conf)
 bootstrapped :: ChrootBootstrapper b => b -> FilePath -> Props metatypes -> Chroot
 bootstrapped bootstrapper location ps = c
   where
-	c = Chroot location bootstrapper (propagateChrootInfo c) (host location ps)
+	c = Chroot location bootstrapper propagateChrootInfo (host location ps)
 
 -- | Ensures that the chroot exists and is provisioned according to its
 -- properties.
@@ -134,7 +136,7 @@ provisioned'
 	-> Bool
 	-> RevertableProperty (HasInfo + Linux) Linux
 provisioned' c@(Chroot loc bootstrapper infopropigator _) systemdonly =
-	(infopropigator normalContainerInfo $ setup `describe` chrootDesc c "exists")
+	(infopropigator c normalContainerInfo $ setup `describe` chrootDesc c "exists")
 		<!>
 	(teardown `describe` chrootDesc c "removed")
   where
@@ -153,9 +155,9 @@ provisioned' c@(Chroot loc bootstrapper infopropigator _) systemdonly =
 		property ("removed " ++ loc) $
 			makeChange (removeChroot loc)
 
-type InfoPropagator = (PropagateInfo -> Bool) -> Property Linux -> Property (HasInfo + Linux)
+type InfoPropagator = Chroot -> (PropagateInfo -> Bool) -> Property Linux -> Property (HasInfo + Linux)
 
-propagateChrootInfo :: Chroot -> InfoPropagator
+propagateChrootInfo :: InfoPropagator
 propagateChrootInfo c@(Chroot location _ _ _) pinfo p =
 	propagateContainer location c pinfo $
 		p `setInfoProperty` chrootInfo c
@@ -302,12 +304,12 @@ hostChroot :: ChrootBootstrapper bootstrapper => Host -> bootstrapper -> FilePat
 hostChroot h bootstrapper d = chroot
   where
 	chroot = Chroot d bootstrapper pinfo h
-	pinfo = propagateHostChrootInfo h chroot
+	pinfo = propagateHostChrootInfo h
 
 -- This is different than propagateChrootInfo in that Info using
 -- HostContext is not made to use the name of the chroot as its context,
 -- but instead uses the hostname of the Host.
-propagateHostChrootInfo :: Host -> Chroot -> InfoPropagator
+propagateHostChrootInfo :: Host -> InfoPropagator
 propagateHostChrootInfo h c pinfo p =
 	propagateContainer (hostName h) c pinfo $
 		p `setInfoProperty` chrootInfo c
