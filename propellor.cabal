@@ -231,4 +231,4 @@ Library
 
 source-repository head
   type: git
-  location: git://git.joeyh.name/propellor.git
+  location: https://git.joeyh.name/git/propellor.git
