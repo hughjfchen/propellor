@@ -573,8 +573,8 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "# Enable postgrey."
 		, "smtpd_recipient_restrictions = permit_tls_clientcerts,permit_sasl_authenticated,,permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
 
-		, "# Enable spamass-milter, amavis-milter, opendkim"
-		, "smtpd_milters = unix:/spamass/spamass.sock unix:amavis/amavis.sock inet:localhost:8891"
+		, "# Enable spamass-milter, amavis-milter (opendkim is not enabled because it causes mails forwarded from eg gmail to be rejected)"
+		, "smtpd_milters = unix:/spamass/spamass.sock unix:amavis/amavis.sock"
 		, "# opendkim is used for outgoing mail"
 		, "non_smtpd_milters = inet:localhost:8891"
 		, "milter_connect_macros = j {daemon_name} v {if_name} _"
