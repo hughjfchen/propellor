@@ -651,8 +651,8 @@ monsters =            -- but do want to track their public keys etc.
 		& ipv6 "2001:4830:1600:492::2"
 		& ipv4 "67.223.19.96"
 	, host "animx" $ props
-		& ipv4 "76.7.162.101"
 		& ipv4 "76.7.162.186"
+		& ipv4 "76.7.162.187"
 	]
 
 
