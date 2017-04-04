@@ -35,7 +35,9 @@ mounted fs src mnt opts = tightenTargets $
 	-- This use of mountPoints, which is linux-only, is why this
 	-- property currently only supports linux.
 	mountnow = check (notElem mnt <$> mountPoints) $
-		cmdProperty "mount" [mnt]
+		if fs == "swap"
+			then cmdProperty "swapon" [mnt]
+			else cmdProperty "mount" [mnt]
 
 newtype SwapPartition = SwapPartition FilePath
 
