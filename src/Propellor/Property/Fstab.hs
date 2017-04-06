@@ -16,10 +16,9 @@ import Utility.Table
 
 -- | Ensures that </etc/fstab> contains a line mounting the specified
 -- `Source` on the specified `MountPoint`.
-listed :: FsType -> Source -> MountPoint -> MountOpts -> Property Linux
-listed fs src mnt opts = tightenTargets $
-	"/etc/fstab" `File.containsLine` l
-		`describe` (mnt ++ " mounted by fstab")
+listed :: FsType -> Source -> MountPoint -> MountOpts -> Property UnixLike
+listed fs src mnt opts = "/etc/fstab" `File.containsLine` l
+	`describe` (mnt ++ " mounted by fstab")
   where
 	l = intercalate "\t" [src, mnt, fs, formatMountOpts opts, dump, passno]
 	dump = "0"
