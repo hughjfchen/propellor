@@ -40,6 +40,9 @@ formatMountOpts (MountOpts []) = "defaults"
 formatMountOpts (MountOpts l) = intercalate "," l
 
 -- | Mounts a device, without listing it in </etc/fstab>.
+--
+-- Note that this property will fail if the device is already mounted
+-- at the MountPoint.
 mounted :: FsType -> Source -> MountPoint -> MountOpts -> Property UnixLike
 mounted fs src mnt opts = property (mnt ++ " mounted") $ 
 	toResult <$> liftIO (mount fs src mnt opts)
@@ -51,6 +54,17 @@ bindMount src dest = tightenTargets $
 	cmdProperty "mount" ["--bind", src, dest]
 		`assume` MadeChange
 		`describe` ("bind mounted " ++ src ++ " to " ++ dest)
+
+-- | Enables swapping to a device, which must be formatted already as a swap
+-- partition.
+swapOn :: Source -> RevertableProperty Linux Linux
+swapOn mnt = tightenTargets doswapon <!> tightenTargets doswapoff
+  where
+	swaps = lines <$> readProcess "swapon" ["--show=NAME"]
+	doswapon = check (notElem mnt <$> swaps) $
+		cmdProperty "swapon" [mnt]
+	doswapoff = check (elem mnt <$> swaps) $
+		cmdProperty "swapoff" [mnt]
 
 mount :: FsType -> Source -> MountPoint -> MountOpts -> IO Bool
 mount fs src mnt opts = boolSystem "mount" $

@@ -1,3 +1,10 @@
+propellor (4.0.3) UNRELEASED; urgency=medium
+
+  * Added Fstab.listed, Fstab.swap, and Mount.swapOn properties.
+    Thanks, Daniel Brooks.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 06 Apr 2017 19:40:12 -0400
+
 propellor (4.0.2) unstable; urgency=medium
 
   * Apt.mirror can be used to set the preferred apt mirror of a host,

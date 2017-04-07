@@ -15,16 +15,6 @@ import Data.List
 import Utility.Table
 
 -- | Ensures that </etc/fstab> contains a line mounting the specified
--- `Source` on the specified `MountPoint`.
-listed :: FsType -> Source -> MountPoint -> MountOpts -> Property UnixLike
-listed fs src mnt opts = "/etc/fstab" `File.containsLine` l
-	`describe` (mnt ++ " mounted by fstab")
-  where
-	l = intercalate "\t" [src, mnt, fs, formatMountOpts opts, dump, passno]
-	dump = "0"
-	passno = "2"
-
--- | Ensures that </etc/fstab> contains a line mounting the specified
 -- `Source` on the specified `MountPoint`, and that it's currently mounted.
 --
 -- For example:
@@ -34,29 +24,31 @@ listed fs src mnt opts = "/etc/fstab" `File.containsLine` l
 -- Note that if anything else is already mounted at the `MountPoint`, it
 -- will be left as-is by this property.
 mounted :: FsType -> Source -> MountPoint -> MountOpts -> Property Linux
-mounted fs src mnt opts = (listed fs src mnt opts) `onChange` (mountNow src)
+mounted fs src mnt opts = tightenTargets $ 
+	listed fs src mnt opts
+		`onChange` mountnow
+  where
+	-- This use of mountPoints, which is linux-only, is why this
+	-- property currently only supports linux.
+	mountnow = check (notElem mnt <$> mountPoints) $
+		cmdProperty "mount" [mnt]
+
+-- | Ensures that </etc/fstab> contains a line mounting the specified
+-- `Source` on the specified `MountPoint`. Does not ensure that it's
+-- currently `mounted`.
+listed :: FsType -> Source -> MountPoint -> MountOpts -> Property UnixLike
+listed fs src mnt opts = "/etc/fstab" `File.containsLine` l
+	`describe` (mnt ++ " mounted by fstab")
+  where
+	l = intercalate "\t" [src, mnt, fs, formatMountOpts opts, dump, passno]
+	dump = "0"
+	passno = "2"
 
 -- | Ensures that </etc/fstab> contains a line enabling the specified
--- `Source` to be used as swap space, and that it's enabled
+-- `Source` to be used as swap space, and that it's enabled.
 swap :: Source -> Property Linux
-swap src = (listed "swap" src "none" mempty) `onChange` (swapOn src)
-
--- This use of mountPoints, which is linux-only, is why this
--- property currently only supports linux.
-mountNow :: Source -> RevertableProperty Linux Linux
-mountNow mnt = tightenTargets domount <!> tightenTargets doumount
-  where domount = check (notElem mnt <$> mountPoints) $
-		cmdProperty "mount" [mnt]
-        doumount = check (elem mnt <$> mountPoints) $
-		cmdProperty "umount" [mnt]
-
-swapOn :: Source -> RevertableProperty Linux Linux
-swapOn mnt = tightenTargets doswapon <!> tightenTargets doswapoff
-  where swaps = lines <$> readProcess "swapon" ["--no-headings", "--show=NAME"]
-        doswapon = check (notElem mnt <$> swaps) $
-		cmdProperty "swapon" [mnt]
-        doswapoff = check (elem mnt <$> swaps) $
-		cmdProperty "swapoff" [mnt]
+swap src = listed "swap" src "none" mempty
+	`onChange` swapOn src
 
 newtype SwapPartition = SwapPartition FilePath
 
