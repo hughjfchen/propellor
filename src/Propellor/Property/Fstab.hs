@@ -24,18 +24,31 @@ import Utility.Table
 -- Note that if anything else is already mounted at the `MountPoint`, it
 -- will be left as-is by this property.
 mounted :: FsType -> Source -> MountPoint -> MountOpts -> Property Linux
-mounted fs src mnt opts = tightenTargets $
-	"/etc/fstab" `File.containsLine` l
-		`describe` (mnt ++ " mounted by fstab")
+mounted fs src mnt opts = tightenTargets $ 
+	listed fs src mnt opts
 		`onChange` mountnow
   where
-	l = intercalate "\t" [src, mnt, fs, formatMountOpts opts, dump, passno]
-	dump = "0"
-	passno = "2"
 	-- This use of mountPoints, which is linux-only, is why this
 	-- property currently only supports linux.
 	mountnow = check (notElem mnt <$> mountPoints) $
 		cmdProperty "mount" [mnt]
+
+-- | Ensures that </etc/fstab> contains a line mounting the specified
+-- `Source` on the specified `MountPoint`. Does not ensure that it's
+-- currently `mounted`.
+listed :: FsType -> Source -> MountPoint -> MountOpts -> Property UnixLike
+listed fs src mnt opts = "/etc/fstab" `File.containsLine` l
+	`describe` (mnt ++ " mounted by fstab")
+  where
+	l = intercalate "\t" [src, mnt, fs, formatMountOpts opts, dump, passno]
+	dump = "0"
+	passno = "2"
+
+-- | Ensures that </etc/fstab> contains a line enabling the specified
+-- `Source` to be used as swap space, and that it's enabled.
+swap :: Source -> Property Linux
+swap src = listed "swap" src "none" mempty
+	`onChange` swapOn src
 
 newtype SwapPartition = SwapPartition FilePath
 
@@ -77,8 +90,8 @@ genFstab mnts swaps mnttransform = do
 		, pure "0"
 		, pure (if mnt == "/" then "1" else "2")
 		]
-	getswapcfg (SwapPartition swap) = sequence
-		[ fromMaybe swap <$> getM (\a -> a swap)
+	getswapcfg (SwapPartition s) = sequence
+		[ fromMaybe s <$> getM (\a -> a s)
 			[ uuidprefix getSourceUUID
 			, sourceprefix getSourceLabel
 			]

@@ -1,4 +1,11 @@
-propellor (4.0.2) UNRELEASED; urgency=medium
+propellor (4.0.3) UNRELEASED; urgency=medium
+
+  * Added Fstab.listed, Fstab.swap, and Mount.swapOn properties.
+    Thanks, Daniel Brooks.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 06 Apr 2017 19:40:12 -0400
+
+propellor (4.0.2) unstable; urgency=medium
 
   * Apt.mirror can be used to set the preferred apt mirror of a host,
     overriding the default CDN. This info is used by 
@@ -10,8 +17,8 @@ propellor (4.0.2) UNRELEASED; urgency=medium
     properties added to a chroot that way from being seen when propellor
     was running inside the chroot. This affected disk image creation, and
     possibly other things that use chroots.
-   
- -- Joey Hess <id@joeyh.name>  Sun, 19 Mar 2017 16:37:27 -0400
+
+ -- Joey Hess <id@joeyh.name>  Fri, 24 Mar 2017 14:04:50 -0400
 
 propellor (4.0.1) unstable; urgency=medium
 
