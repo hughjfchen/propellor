@@ -94,7 +94,9 @@ exposeTrueLocaldir a = ifM inChroot
   where
 	movebindmount from to = do
 		run "mount" [Param "--bind", File from, File to]
-		run "umount" [File from]
+		-- Have to lazy unmount, because the propellor process
+		-- is running in the localdir that it's unmounting..
+		run "umount" [Param "-l", File from]
 	run cmd ps = unlessM (boolSystem cmd ps) $
 		error $ "exposeTrueLocaldir failed to run " ++ show (cmd, ps)
 
