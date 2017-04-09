@@ -29,7 +29,7 @@ bootstrappedFrom reposource = go `requires` clonedFrom reposource
 	go :: Property Linux
 	go = property "Propellor bootstrapped" $ do
 		system <- getOS
-		assumeChange $ exposeTrueLocaldir $ buildShellCommand
+		assumeChange $ exposeTrueLocaldir $ runShellCommand $ buildShellCommand
 			[ "cd " ++ localdir
 			, bootstrapPropellorCommand system
 			]
@@ -48,7 +48,7 @@ clonedFrom reposource = property ("Propellor repo cloned from " ++ originloc) $ 
 		( do
 			let tmpclone = localdir ++ ".tmpclone"
 			system <- getOS
-			assumeChange $ exposeTrueLocaldir $ buildShellCommand
+			assumeChange $ exposeTrueLocaldir $ runShellCommand $ buildShellCommand
 				[ installGitCommand system
 				, "rm -rf " ++ tmpclone
 				, "git clone " ++ shellEscape originloc ++ " " ++ tmpclone
@@ -61,7 +61,7 @@ clonedFrom reposource = property ("Propellor repo cloned from " ++ originloc) $ 
 				, "(cd " ++ tmpclone ++ " && tar c) | (cd " ++ localdir ++ " && tar x)"
 				, "rm -rf " ++ tmpclone
 				]
-		, assumeChange $ exposeTrueLocaldir $ buildShellCommand
+		, assumeChange $ exposeTrueLocaldir $ runShellCommand $ buildShellCommand
 			[ "cd " ++ localdir
 			, "git pull"
 			]
@@ -69,25 +69,34 @@ clonedFrom reposource = property ("Propellor repo cloned from " ++ originloc) $ 
   where
 	needclone = (inChroot <&&> truelocaldirisempty)
 		<||> (liftIO (not <$> doesDirectoryExist localdir))
-	truelocaldirisempty = exposeTrueLocaldir $
+	truelocaldirisempty = exposeTrueLocaldir $ runShellCommand $
 		"test ! -d " ++ localdir ++ "/.git"
 	originloc = case reposource of
 		GitRepoUrl s -> s
 		GitRepoOutsideChroot -> localdir
 
--- | Runs the shell command with the true localdir exposed,
+-- | Runs an action with the true localdir exposed,
 -- not the one bind-mounted into a chroot.
 --
--- FIXME: unshare -m does not work in a chroot!
--- "unshare: cannot change root filesystem propagation: Invalid argument"
-exposeTrueLocaldir :: String -> Propellor Bool
-exposeTrueLocaldir s = do
-	s' <- ifM inChroot
-		( return $ "unshare -m sh -c " ++ shellEscape
-			("umount " ++ localdir ++ " && ( " ++ s ++ ")")
-		, return s
-		)
-	liftIO $ boolSystem "sh" [ Param "-c", Param s']
+-- In a chroot, this is accomplished by temporily bind mounting the localdir
+-- to a temp directory, to preserve access to the original bind mount. Then
+-- we unmount the localdir to expose the true localdir. Finally, to cleanup,
+-- the temp directory is bind mounted back to the localdir.
+exposeTrueLocaldir :: IO a -> Propellor a
+exposeTrueLocaldir a = ifM inChroot
+	( liftIO $ withTmpDirIn (takeDirectory localdir) "propellor.tmp" $ \tmpdir ->
+		bracket_
+			(movebindmount localdir tmpdir)
+			(movebindmount tmpdir localdir)
+			a
+	, liftIO a
+	)
+  where
+	movebindmount from to = do
+		run "mount" [Param "--bind", File from, File to]
+		run "umount" [File from]
+	run cmd ps = unlessM (boolSystem cmd ps) $
+		error $ "exposeTrueLocaldir failed to run " ++ show (cmd, ps)
 
 assumeChange :: Propellor Bool -> Propellor Result
 assumeChange a = do
@@ -96,3 +105,6 @@ assumeChange a = do
 
 buildShellCommand :: [String] -> String
 buildShellCommand = intercalate "&&" . map (\c -> "(" ++ c ++ ")")
+
+runShellCommand :: String -> IO Bool
+runShellCommand s = liftIO $ boolSystem "sh" [ Param "-c", Param s]
