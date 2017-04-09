@@ -5,6 +5,7 @@ import Propellor.Bootstrap
 import Propellor.Property.Chroot
 
 import Data.List
+import System.Posix.Directory
 
 -- | Where a propellor repository should be bootstrapped from.
 data RepoSource
@@ -97,6 +98,12 @@ exposeTrueLocaldir a = ifM inChroot
 		-- Have to lazy unmount, because the propellor process
 		-- is running in the localdir that it's unmounting..
 		run "umount" [Param "-l", File from]
+		-- We were in the old localdir; move to the new one after
+		-- flipping the bind mounts. Otherwise, commands that try
+		-- to access the cwd will fail because it got umounted out
+		-- from under.
+		changeWorkingDirectory "/"
+		changeWorkingDirectory localdir
 	run cmd ps = unlessM (boolSystem cmd ps) $
 		error $ "exposeTrueLocaldir failed to run " ++ show (cmd, ps)
 
