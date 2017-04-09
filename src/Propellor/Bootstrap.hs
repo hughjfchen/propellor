@@ -144,7 +144,7 @@ installGitCommand msys = case msys of
 	-- assume a debian derived system when not specified
 	Nothing -> use apt
   where
-	use cmds = "if ! git --version >/dev/null; then " ++ intercalate " && " cmds ++ "; fi"
+	use cmds = "if ! git --version >/dev/null 2>&1; then " ++ intercalate " && " cmds ++ "; fi"
 	apt =
 		[ "apt-get update"
 		, "DEBIAN_FRONTEND=noninteractive apt-get -qq --no-install-recommends --no-upgrade -y install git"
