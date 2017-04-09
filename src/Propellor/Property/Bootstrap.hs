@@ -77,6 +77,9 @@ clonedFrom reposource = property ("Propellor repo cloned from " ++ originloc) $ 
 
 -- | Runs the shell command with the true localdir exposed,
 -- not the one bind-mounted into a chroot.
+--
+-- FIXME: unshare -m does not work in a chroot!
+-- "unshare: cannot change root filesystem propagation: Invalid argument"
 exposeTrueLocaldir :: String -> Propellor Bool
 exposeTrueLocaldir s = do
 	s' <- ifM inChroot
