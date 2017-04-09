@@ -87,6 +87,7 @@ Library
     Propellor.Property.Apt
     Propellor.Property.Apt.PPA
     Propellor.Property.Attic
+    Propellor.Property.Bootstrap
     Propellor.Property.Borg
     Propellor.Property.Ccache
     Propellor.Property.Cmd

@@ -33,6 +33,7 @@ module Propellor.Property.Cmd (
 	Script,
 	scriptProperty,
 	userScriptProperty,
+	cmdResult,
 	-- * Lower-level interface for running commands
 	CommandParam(..),
 	boolSystem,

@@ -38,6 +38,7 @@ import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuil
 import qualified Propellor.Property.SiteSpecific.Branchable as Branchable
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 import Propellor.Property.DiskImage
+import Propellor.Property.Bootstrap
 
 main :: IO ()           --     _         ______`|                       ,-.__
 main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
@@ -93,7 +94,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
 
-	! imageBuilt "/tmp/img" c MSDOS (grubBooted PC)
+	& imageBuilt "/tmp/img" c MSDOS (grubBooted PC)
 		[ partition EXT2 `mountedAt` "/boot"
 			`setFlag` BootFlag
 		, partition EXT4 `mountedAt` "/"
@@ -106,6 +107,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 		& Hostname.setTo "demo"
 		& Apt.installed ["linux-image-amd64"]
 		& User "root" `User.hasInsecurePassword` "root"
+		& bootstrappedFrom GitRepoOutsideChroot
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
