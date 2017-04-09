@@ -64,7 +64,7 @@ clonedFrom reposource = property ("Propellor repo cloned from " ++ sourcedesc) $
 					-- mounted from outside the chroot, deleting
 					-- it after unmounting in unshare will remove
 					-- the bind mount outside the unshare.
-					, "(cd " ++ tmpclone ++ " && tar c) | (cd " ++ localdir ++ " && tar x)"
+					, "(cd " ++ tmpclone ++ " && tar c .) | (cd " ++ localdir ++ " && tar x)"
 					, "rm -rf " ++ tmpclone
 					]
 		, assumeChange $ exposeTrueLocaldir $ const $
