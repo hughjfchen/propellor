@@ -82,6 +82,7 @@ testvm = host "testvm.kitenet.net" $ props
 
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net" $ props
+	& osDebian Unstable X86_64
 	& ipv6 "2001:4830:1600:187::2"
 	& Aiccu.hasConfig "T18376" "JHZ2-SIXXS"
 
