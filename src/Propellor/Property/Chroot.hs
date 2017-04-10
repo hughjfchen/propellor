@@ -304,17 +304,17 @@ newtype InChroot = InChroot Bool
 -- to a temp directory, to preserve access to the original bind mount. Then
 -- we unmount the localdir to expose the true localdir. Finally, to cleanup,
 -- the temp directory is bind mounted back to the localdir.
-exposeTrueLocaldir :: (FilePath -> IO a) -> Propellor a
+exposeTrueLocaldir :: (FilePath -> Propellor a) -> Propellor a
 exposeTrueLocaldir a = ifM inChroot
-	( liftIO $ withTmpDirIn (takeDirectory localdir) "propellor.tmp" $ \tmpdir ->
+	( withTmpDirIn (takeDirectory localdir) "propellor.tmp" $ \tmpdir ->
 		bracket_
 			(movebindmount localdir tmpdir)
 			(movebindmount tmpdir localdir)
 			(a tmpdir)
-	, liftIO $ a localdir
+	, a localdir
 	)
   where
-	movebindmount from to = do
+	movebindmount from to = liftIO $ do
 		run "mount" [Param "--bind", File from, File to]
 		-- Have to lazy unmount, because the propellor process
 		-- is running in the localdir that it's unmounting..
