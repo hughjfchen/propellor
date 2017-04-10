@@ -5,12 +5,13 @@ import Propellor.Bootstrap
 import Propellor.Property.Chroot
 
 import Data.List
-import System.Posix.Directory
 
 -- | Where a propellor repository should be bootstrapped from.
 data RepoSource
 	= GitRepoUrl String
 	| GitRepoOutsideChroot
+	-- ^ When used in a chroot, this clones the git repository from
+	-- outside the chroot.
 
 -- | Bootstraps a propellor installation into
 -- /usr/local/propellor/
@@ -37,10 +38,6 @@ bootstrappedFrom reposource = go `requires` clonedFrom reposource
 				]
 
 -- | Clones the propellor repeository into /usr/local/propellor/
---
--- GitRepoOutsideChroot can be used when this is used in a chroot.
--- In that case, it clones the /usr/local/propellor/ from outside the
--- chroot into the same path inside the chroot.
 --
 -- If the propellor repo has already been cloned, pulls to get it
 -- up-to-date.
@@ -81,38 +78,6 @@ clonedFrom reposource = property ("Propellor repo cloned from " ++ sourcedesc) $
 	sourcedesc = case reposource of
 		GitRepoUrl s -> s
 		GitRepoOutsideChroot -> localdir
-
--- | Runs an action with the true localdir exposed,
--- not the one bind-mounted into a chroot. The action is passed the
--- path containing the contents of the localdir outside the chroot.
---
--- In a chroot, this is accomplished by temporily bind mounting the localdir
--- to a temp directory, to preserve access to the original bind mount. Then
--- we unmount the localdir to expose the true localdir. Finally, to cleanup,
--- the temp directory is bind mounted back to the localdir.
-exposeTrueLocaldir :: (FilePath -> IO a) -> Propellor a
-exposeTrueLocaldir a = ifM inChroot
-	( liftIO $ withTmpDirIn (takeDirectory localdir) "propellor.tmp" $ \tmpdir ->
-		bracket_
-			(movebindmount localdir tmpdir)
-			(movebindmount tmpdir localdir)
-			(a tmpdir)
-	, liftIO $ a localdir
-	)
-  where
-	movebindmount from to = do
-		run "mount" [Param "--bind", File from, File to]
-		-- Have to lazy unmount, because the propellor process
-		-- is running in the localdir that it's unmounting..
-		run "umount" [Param "-l", File from]
-		-- We were in the old localdir; move to the new one after
-		-- flipping the bind mounts. Otherwise, commands that try
-		-- to access the cwd will fail because it got umounted out
-		-- from under.
-		changeWorkingDirectory "/"
-		changeWorkingDirectory localdir
-	run cmd ps = unlessM (boolSystem cmd ps) $
-		error $ "exposeTrueLocaldir failed to run " ++ show (cmd, ps)
 
 assumeChange :: Propellor Bool -> Propellor Result
 assumeChange a = do
