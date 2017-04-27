@@ -149,17 +149,17 @@ backup' dir repo crontimes extraargs kp = cronjob
   where
 	desc = val repo ++ " restic backup"
 	cronjob = Cron.niceJob ("restic_backup" ++ dir) crontimes (User "root") "/" $
-		"flock " ++ shellEscape lockfile ++ " sh -c " ++ backupcmd
+		"flock " ++ shellEscape lockfile ++ " sh -c " ++ shellEscape backupcmd
 	lockfile = "/var/lock/propellor-restic.lock"
-	backupcmd = intercalate ";" $
+	backupcmd = intercalate " && " $
 		createCommand
 		: if null kp then [] else [pruneCommand]
 	createCommand = unwords $
 		[ "restic"
 		, "-r"
-		, val repo
+		, shellEscape (val repo)
 		, "--password-file"
-		, getPasswordFile repo
+		, shellEscape (getPasswordFile repo)
 		]
 		++ map shellEscape extraargs ++
 		[ "backup"
@@ -168,9 +168,9 @@ backup' dir repo crontimes extraargs kp = cronjob
 	pruneCommand = unwords $
 		[ "restic"
 		, "-r"
-		, val repo
+		, shellEscape (val repo)
 		, "--password-file"
-		, getPasswordFile repo
+		, shellEscape (getPasswordFile repo)
 		, "forget"
 		, "--prune"
 		]
