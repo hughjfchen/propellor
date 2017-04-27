@@ -86,8 +86,7 @@ init repo = check (not <$> repoExists repo) (cmdProperty "restic" initargs)
 -- and then moving it to the directory.
 restored :: FilePath -> ResticRepo -> Property (HasInfo + DebianLike)
 restored dir repo = go
-	`requires` installed
-	`requires` passwordFileConfigured repo
+	`requires` init repo
   where
 	go :: Property DebianLike
 	go = property (dir ++ " restored by restic") $ ifM (liftIO needsRestore)
@@ -146,8 +145,7 @@ backup dir repo crontimes extraargs kp = backup' dir repo crontimes extraargs kp
 backup' :: FilePath -> ResticRepo -> Cron.Times -> [ResticParam] -> [KeepPolicy] -> Property (HasInfo + DebianLike)
 backup' dir repo crontimes extraargs kp = cronjob
 	`describe` desc
-	`requires` installed
-	`requires` passwordFileConfigured repo
+	`requires` init repo
   where
 	desc = val repo ++ " restic backup"
 	cronjob = Cron.niceJob ("restic_backup" ++ dir) crontimes (User "root") "/" $
