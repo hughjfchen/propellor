@@ -1,3 +1,10 @@
+propellor (4.0.4) UNRELEASED; urgency=medium
+
+  * Propellor.Property.Restic added for yet another backup program.
+    Thanks, Félix Sipma.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 27 Apr 2017 16:31:26 -0400
+
 propellor (4.0.3) unstable; urgency=medium
 
   * Added Fstab.listed, Fstab.swap, and Mount.swapOn properties.
