@@ -40,7 +40,7 @@ installed = withOS desc $ \w o -> case o of
 	_ -> ensureProperty w $
 		Apt.installed ["restic"]
   where
-        desc = "installed restic"
+	desc = "installed restic"
 
 repoExists :: ResticRepo -> IO Bool
 repoExists repo = boolSystem "restic"
@@ -119,7 +119,7 @@ restored dir repo = go
 			)
 
 -- | Installs a cron job that causes a given directory to be backed
--- up, by running borg with some parameters.
+-- up, by running restic with some parameters.
 --
 -- If the directory does not exist, or exists but is completely empty,
 -- this Property will immediately restore it from an existing backup.
@@ -192,7 +192,7 @@ keepParam (KeepYears n) = "--keep-yearly=" ++ val n
 -- | Policy for backup generations to keep. For example, KeepDays 30 will
 -- keep the latest backup for each day when a backup was made, and keep the
 -- last 30 such backups. When multiple KeepPolicies are combined together,
--- backups meeting any policy are kept. See borg's man page for details.
+-- backups meeting any policy are kept. See restic's man page for details.
 data KeepPolicy
 	= KeepLast Int
 	| KeepHours Int
