@@ -136,6 +136,7 @@ Library
     Propellor.Property.PropellorRepo
     Propellor.Property.Prosody
     Propellor.Property.Reboot
+    Propellor.Property.Restic
     Propellor.Property.Rsync
     Propellor.Property.Sbuild
     Propellor.Property.Scheduled
