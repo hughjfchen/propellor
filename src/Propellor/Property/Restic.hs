@@ -9,6 +9,7 @@ module Propellor.Property.Restic
 	, init
 	, restored
 	, backup
+	, backup'
 	, KeepPolicy (..)
 	) where
 
@@ -138,17 +139,17 @@ restored dir repo = go
 -- backup job will be run at a time. Other jobs will wait their turns to
 -- run.
 backup :: FilePath -> ResticRepo -> Cron.Times -> [ResticParam] -> [KeepPolicy] -> Property (HasInfo + DebianLike)
-backup dir repo crontimes extraargs kp = backup' dir repo crontimes extraargs kp
+backup dir repo crontimes extraargs kp = backup' [dir] repo crontimes extraargs kp
 	`requires` restored dir repo
 
 -- | Does a backup, but does not automatically restore.
-backup' :: FilePath -> ResticRepo -> Cron.Times -> [ResticParam] -> [KeepPolicy] -> Property (HasInfo + DebianLike)
-backup' dir repo crontimes extraargs kp = cronjob
+backup' :: [FilePath] -> ResticRepo -> Cron.Times -> [ResticParam] -> [KeepPolicy] -> Property (HasInfo + DebianLike)
+backup' dirs repo crontimes extraargs kp = cronjob
 	`describe` desc
 	`requires` init repo
   where
 	desc = val repo ++ " restic backup"
-	cronjob = Cron.niceJob ("restic_backup" ++ dir) crontimes (User "root") "/" $
+	cronjob = Cron.niceJob ("restic_backup" ++ intercalate "_" dirs) crontimes (User "root") "/" $
 		"flock " ++ shellEscape lockfile ++ " sh -c " ++ shellEscape backupcmd
 	lockfile = "/var/lock/propellor-restic.lock"
 	backupcmd = intercalate " && " $
@@ -162,9 +163,8 @@ backup' dir repo crontimes extraargs kp = cronjob
 		, shellEscape (getPasswordFile repo)
 		]
 		++ map shellEscape extraargs ++
-		[ "backup"
-		, shellEscape dir
-		]
+		[ "backup" ]
+		++ map shellEscape dirs
 	pruneCommand = unwords $
 		[ "restic"
 		, "-r"
