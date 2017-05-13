@@ -366,6 +366,10 @@ kite = host "kite.kitenet.net" $ props
 	& branchableSecondary
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 
+	& alias "debug-me.joeyh.name"
+	-- debug-me installed manually until package is available
+	& Systemd.enabled "debug-me"
+
 	-- testing
 	& Apache.httpsVirtualHost "letsencrypt.joeyh.name" "/var/www/html"
 		(LetsEncrypt.AgreeTOS (Just "id@joeyh.name"))
