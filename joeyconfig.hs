@@ -50,7 +50,6 @@ hosts =                 --                  (o)  `
 	, gnu
 	, clam
 	, mayfly
-	, oyster
 	, orca
 	, baleen
 	, honeybee
@@ -118,7 +117,7 @@ clam :: Host
 clam = host "clam.kitenet.net" $ props
 	& standardSystem Unstable X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "167.88.41.194"
+	& ipv4 "64.137.231.62"
 
 	& CloudAtCost.decruft
 	& Ssh.hostKeys hostContext
@@ -156,31 +155,6 @@ mayfly = host "mayfly.kitenet.net" $ props
 	& Tor.isRelay
 	& Tor.named "kite3"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
-
-oyster :: Host
-oyster = host "oyster.kitenet.net" $ props
-	& standardSystem Unstable X86_64
-		[ "Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "64.137.179.21"
-
-	& CloudAtCost.decruft
-	& Ssh.hostKeys hostContext
-		[ (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBP0ws/IxQegVU0RhqnIm5A/vRSPTO70wD4o2Bd1jL970dTetNyXzvWGe1spEbLjIYSLIO7WvOBSE5RhplBKFMUU=")
-		]
-	& Apt.unattendedUpgrades
-	& Network.ipv6to4
-	& Systemd.persistentJournal
-	& Journald.systemMaxUse "500MiB"
-	& Apt.serviceInstalledRunning "swapspace"
-
-	& Tor.isRelay
-	& Tor.named "kite4"
-	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
-
-	-- Nothing is using http port 80, so listen on
-	-- that port for ssh, for traveling on bad networks that
-	-- block 22.
-	& Ssh.listenPort (Port 80)
 
 baleen :: Host
 baleen = host "baleen.kitenet.net" $ props
