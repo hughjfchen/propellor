@@ -32,9 +32,9 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Shim as Shim
 import Propellor.Property.Mount
 import Utility.FileMode
+import Utility.Split
 
 import qualified Data.Map as M
-import Data.List.Utils
 import System.Posix.Directory
 import System.Console.Concurrent
 

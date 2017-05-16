@@ -7,10 +7,10 @@
 module Propellor.Types.ZFS where
 
 import Propellor.Types.ConfigurableValue
+import Utility.Split
 
 import Data.String
 import qualified Data.Set as Set
-import qualified Data.String.Utils as SU
 import Data.List
 
 -- | A single ZFS filesystem.
@@ -46,7 +46,7 @@ instance Show ZDataset where
 	show = val
 
 instance IsString ZDataset where
-	fromString s = ZDataset $ SU.split "/" s
+	fromString s = ZDataset $ splitc '/' s
 
 instance IsString ZPool where
 	fromString p = ZPool p

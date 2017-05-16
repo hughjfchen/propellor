@@ -83,7 +83,7 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "ghc"
 		, "cabal-install"
 		, "libghc-async-dev"
-		, "libghc-missingh-dev"
+		, "libghc-split-dev"
 		, "libghc-hslogger-dev"
 		, "libghc-unix-compat-dev"
 		, "libghc-ansi-terminal-dev"
@@ -94,13 +94,14 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "libghc-exceptions-dev"
 		, "libghc-stm-dev"
 		, "libghc-text-dev"
+		, "libghc-hashable-dev"
 		]
 	fbsddeps =
 		[ "gnupg"
 		, "ghc"
 		, "hs-cabal-install"
 		, "hs-async"
-		, "hs-MissingH"
+		, "hs-split"
 		, "hs-hslogger"
 		, "hs-unix-compat"
 		, "hs-ansi-terminal"
@@ -111,13 +112,14 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "hs-exceptions"
 		, "hs-stm"
 		, "hs-text"
+		, "hs-hashable"
 		]
 	archlinuxdeps =
 		[ "gnupg"
 		, "ghc"
 		, "cabal-install"
 		, "haskell-async"
-		, "haskell-missingh"
+		, "haskell-split"
 		, "haskell-hslogger"
 		, "haskell-unix-compat"
 		, "haskell-ansi-terminal"
@@ -129,6 +131,7 @@ depsCommand msys = "( " ++ intercalate " ; " (concat [osinstall, cabalinstall]) 
 		, "haskell-exceptions"
 		, "haskell-stm"
 		, "haskell-text"
+		, "hashell-hashable"
 		]
 
 installGitCommand :: Maybe System -> ShellCommand

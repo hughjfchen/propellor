@@ -5,7 +5,8 @@
 module Propellor.Property.ZFS.Process where
 
 import Propellor.Base
-import Data.String.Utils (split)
+import Utility.Split
+
 import Data.List
 
 -- | Gets the properties of a ZFS volume.

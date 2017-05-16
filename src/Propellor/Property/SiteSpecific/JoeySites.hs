@@ -22,10 +22,10 @@ import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import Utility.FileMode
+import Utility.Split
 
 import Data.List
 import System.Posix.Files
-import Data.String.Utils
 
 scrollBox :: Property (HasInfo + DebianLike)
 scrollBox = propertyList "scroll server" $ props

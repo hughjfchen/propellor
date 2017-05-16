@@ -59,13 +59,13 @@ import qualified Propellor.Property.Pacman as Pacman
 import qualified Propellor.Shim as Shim
 import Utility.Path
 import Utility.ThreadScheduler
+import Utility.Split
 
 import Control.Concurrent.Async hiding (link)
 import System.Posix.Directory
 import System.Posix.Process
 import Prelude hiding (init)
 import Data.List hiding (init)
-import Data.List.Utils
 import qualified Data.Map as M
 import System.Console.Concurrent
 

@@ -46,9 +46,9 @@ Executable propellor
     -- propellor needs to support the ghc shipped in Debian stable,
     -- and also only depends on packages in Debian stable.
     base >= 4.5, base < 5,
-    MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
+    directory, filepath, IfElse, process, bytestring, hslogger, split,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text
+    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
   Other-Modules:
     Propellor.DotDir
 
@@ -61,9 +61,9 @@ Executable propellor-config
   Hs-Source-Dirs: src
   Build-Depends:
     base >= 4.5, base < 5,
-    MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
+    directory, filepath, IfElse, process, bytestring, hslogger, split,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text
+    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
 
 Library
   GHC-Options: -Wall -fno-warn-tabs -O0
@@ -73,9 +73,9 @@ Library
   Hs-Source-Dirs: src
   Build-Depends:
     base >= 4.5, base < 5,
-    MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
+    directory, filepath, IfElse, process, bytestring, hslogger, split,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text
+    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
 
   Exposed-Modules:
     Propellor
@@ -221,10 +221,13 @@ Library
     Utility.Process.NonConcurrent
     Utility.SafeCommand
     Utility.Scheduled
+    Utility.Scheduled
+    Utility.Split
     Utility.SystemDirectory
     Utility.Table
     Utility.ThreadScheduler
     Utility.Tmp
+    Utility.Tuple
     Utility.UserInfo
     System.Console.Concurrent
     System.Console.Concurrent.Internal
