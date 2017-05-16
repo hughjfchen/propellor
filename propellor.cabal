@@ -36,6 +36,7 @@ Description:
  It is configured using haskell.
 
 Executable propellor
+  Default-Language: Haskell98
   Main-Is: wrapper.hs
   GHC-Options: -threaded -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
@@ -53,6 +54,7 @@ Executable propellor
     Propellor.DotDir
 
 Executable propellor-config
+  Default-Language: Haskell98
   Main-Is: config.hs
   GHC-Options: -threaded -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
@@ -66,6 +68,7 @@ Executable propellor-config
     time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
 
 Library
+  Default-Language: Haskell98
   GHC-Options: -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
     GHC-Options: -fno-warn-redundant-constraints
