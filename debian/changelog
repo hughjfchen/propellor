@@ -2,6 +2,7 @@ propellor (4.0.4) UNRELEASED; urgency=medium
 
   * Propellor.Property.Restic added for yet another backup program.
     Thanks, Félix Sipma.
+  * Removed dependency on MissingH, instead depends on split and hashable.
 
  -- Joey Hess <id@joeyh.name>  Thu, 27 Apr 2017 16:31:26 -0400
 
@@ -11,7 +12,6 @@ propellor (4.0.3) unstable; urgency=medium
     Thanks, Daniel Brooks.
   * Added Propellor.Property.Bootstrap, which can be used to make
     disk images contain their own installation of propellor.
-  * Removed dependency on MissingH, instead depends on split and hashable.
 
  -- Joey Hess <id@joeyh.name>  Thu, 20 Apr 2017 00:54:32 -0400
 
