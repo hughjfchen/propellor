@@ -21,6 +21,8 @@ module Utility.FileSystemEncoding (
 	truncateFilePath,
 	s2w8,
 	w82s,
+	c2w8,
+	w82c,
 ) where
 
 import qualified GHC.Foreign as GHC

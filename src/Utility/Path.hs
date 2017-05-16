@@ -27,6 +27,7 @@ import Utility.Exception
 import Utility.Monad
 import Utility.UserInfo
 import Utility.Directory
+import Utility.Split
 
 {- Simplifies a path, removing any "." component, collapsing "dir/..", 
  - and removing the trailing path separator.
@@ -75,11 +76,13 @@ parentDir = takeDirectory . dropTrailingPathSeparator
 upFrom :: FilePath -> Maybe FilePath
 upFrom dir
 	| length dirs < 2 = Nothing
-	| otherwise = Just $ joinDrive drive $ joinPath $ init dirs
+	| otherwise = Just $ joinDrive drive $ intercalate s $ init dirs
   where
-	-- on Unix, the drive will be "/" when the dir is absolute, otherwise ""
+	-- on Unix, the drive will be "/" when the dir is absolute,
+	-- otherwise ""
 	(drive, path) = splitDrive dir
-	dirs = filter (not . null) $ splitPath path
+	s = [pathSeparator]
+	dirs = filter (not . null) $ split s path
 
 prop_upFrom_basics :: FilePath -> Bool
 prop_upFrom_basics dir
@@ -136,8 +139,9 @@ relPathDirToFileAbs from to
 	| takeDrive from /= takeDrive to = to
 	| otherwise = joinPath $ dotdots ++ uncommon
   where
-	pfrom = splitPath from
-	pto = splitPath to
+	pfrom = sp from
+	pto = sp to
+	sp = map dropTrailingPathSeparator . splitPath
 	common = map fst $ takeWhile same $ zip pfrom pto
 	same (c,d) = c == d
 	uncommon = drop numcommon pto
