@@ -1,4 +1,11 @@
-propellor (4.0.3) UNRELEASED; urgency=medium
+propellor (4.0.4) UNRELEASED; urgency=medium
+
+  * Propellor.Property.Restic added for yet another backup program.
+    Thanks, Félix Sipma.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 27 Apr 2017 16:31:26 -0400
+
+propellor (4.0.3) unstable; urgency=medium
 
   * Added Fstab.listed, Fstab.swap, and Mount.swapOn properties.
     Thanks, Daniel Brooks.
@@ -6,7 +13,7 @@ propellor (4.0.3) UNRELEASED; urgency=medium
     disk images contain their own installation of propellor.
   * Removed dependency on MissingH, instead depends on split and hashable.
 
- -- Joey Hess <id@joeyh.name>  Thu, 06 Apr 2017 19:40:12 -0400
+ -- Joey Hess <id@joeyh.name>  Thu, 20 Apr 2017 00:54:32 -0400
 
 propellor (4.0.2) unstable; urgency=medium
 

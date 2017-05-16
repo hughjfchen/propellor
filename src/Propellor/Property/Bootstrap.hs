@@ -5,12 +5,14 @@ import Propellor.Bootstrap
 import Propellor.Property.Chroot
 
 import Data.List
-import System.Posix.Directory
+import qualified Data.ByteString as B
 
 -- | Where a propellor repository should be bootstrapped from.
 data RepoSource
 	= GitRepoUrl String
 	| GitRepoOutsideChroot
+	-- ^ When used in a chroot, this copies the git repository from
+	-- outside the chroot, including its configuration.
 
 -- | Bootstraps a propellor installation into
 -- /usr/local/propellor/
@@ -38,81 +40,64 @@ bootstrappedFrom reposource = go `requires` clonedFrom reposource
 
 -- | Clones the propellor repeository into /usr/local/propellor/
 --
--- GitRepoOutsideChroot can be used when this is used in a chroot.
--- In that case, it clones the /usr/local/propellor/ from outside the
--- chroot into the same path inside the chroot.
---
 -- If the propellor repo has already been cloned, pulls to get it
 -- up-to-date.
 clonedFrom :: RepoSource -> Property Linux
-clonedFrom reposource = property ("Propellor repo cloned from " ++ sourcedesc) $ do
-	ifM needclone
-		( do
-			let tmpclone = localdir ++ ".tmpclone"
-			system <- getOS
-			assumeChange $ exposeTrueLocaldir $ \sysdir -> do
-				let originloc = case reposource of
-					GitRepoUrl s -> s
-					GitRepoOutsideChroot -> sysdir
-				runShellCommand $ buildShellCommand
-					[ installGitCommand system
-					, "rm -rf " ++ tmpclone
-					, "git clone " ++ shellEscape originloc ++ " " ++ tmpclone
-					, "mkdir -p " ++ localdir
-						-- This is done rather than deleting
-					-- the old localdir, because if it is bound
-					-- mounted from outside the chroot, deleting
-					-- it after unmounting in unshare will remove
-					-- the bind mount outside the unshare.
-					, "(cd " ++ tmpclone ++ " && tar c .) | (cd " ++ localdir ++ " && tar x)"
-					, "rm -rf " ++ tmpclone
-					]
-		, assumeChange $ exposeTrueLocaldir $ const $
-			runShellCommand $ buildShellCommand
-				[ "cd " ++ localdir
-				, "git pull"
-				]
-		)
+clonedFrom reposource = case reposource of
+	GitRepoOutsideChroot -> go `onChange` copygitconfig
+	_ -> go
   where
+	go :: Property Linux
+	go = property ("Propellor repo cloned from " ++ sourcedesc) $
+		ifM needclone (makeclone, updateclone)
+	
+	makeclone = do
+		let tmpclone = localdir ++ ".tmpclone"
+		system <- getOS
+		assumeChange $ exposeTrueLocaldir $ \sysdir -> do
+			let originloc = case reposource of
+				GitRepoUrl s -> s
+				GitRepoOutsideChroot -> sysdir
+			runShellCommand $ buildShellCommand
+				[ installGitCommand system
+				, "rm -rf " ++ tmpclone
+				, "git clone " ++ shellEscape originloc ++ " " ++ tmpclone
+				, "mkdir -p " ++ localdir
+				-- This is done rather than deleting
+				-- the old localdir, because if it is bound
+				-- mounted from outside the chroot, deleting
+				-- it after unmounting in unshare will remove
+				-- the bind mount outside the unshare.
+				, "(cd " ++ tmpclone ++ " && tar c .) | (cd " ++ localdir ++ " && tar x)"
+				, "rm -rf " ++ tmpclone
+				]
+	
+	updateclone = assumeChange $ exposeTrueLocaldir $ const $
+		runShellCommand $ buildShellCommand
+			[ "cd " ++ localdir
+			, "git pull"
+			]
+	
+	-- Copy the git config of the repo outside the chroot into the
+	-- chroot. This way it has the same remote urls, and other git
+	-- configuration.
+	copygitconfig :: Property Linux
+	copygitconfig = property ("Propellor repo git config copied from outside the chroot") $ do
+		let gitconfig = localdir <> ".git" <> "config"
+		cfg <- liftIO $ B.readFile gitconfig
+		exposeTrueLocaldir $ const $
+			liftIO $ B.writeFile gitconfig cfg
+		return MadeChange
+
 	needclone = (inChroot <&&> truelocaldirisempty)
 		<||> (liftIO (not <$> doesDirectoryExist localdir))
+	
 	truelocaldirisempty = exposeTrueLocaldir $ const $
 		runShellCommand ("test ! -d " ++ localdir ++ "/.git")
+
 	sourcedesc = case reposource of
 		GitRepoUrl s -> s
-		GitRepoOutsideChroot -> localdir
-
--- | Runs an action with the true localdir exposed,
--- not the one bind-mounted into a chroot. The action is passed the
--- path containing the contents of the localdir outside the chroot.
---
--- In a chroot, this is accomplished by temporily bind mounting the localdir
--- to a temp directory, to preserve access to the original bind mount. Then
--- we unmount the localdir to expose the true localdir. Finally, to cleanup,
--- the temp directory is bind mounted back to the localdir.
-exposeTrueLocaldir :: (FilePath -> IO a) -> Propellor a
-exposeTrueLocaldir a = ifM inChroot
-	( liftIO $ withTmpDirIn (takeDirectory localdir) "propellor.tmp" $ \tmpdir ->
-		bracket_
-			(movebindmount localdir tmpdir)
-			(movebindmount tmpdir localdir)
-			(a tmpdir)
-	, liftIO $ a localdir
-	)
-  where
-	movebindmount from to = do
-		run "mount" [Param "--bind", File from, File to]
-		-- Have to lazy unmount, because the propellor process
-		-- is running in the localdir that it's unmounting..
-		run "umount" [Param "-l", File from]
-		-- We were in the old localdir; move to the new one after
-		-- flipping the bind mounts. Otherwise, commands that try
-		-- to access the cwd will fail because it got umounted out
-		-- from under.
-		changeWorkingDirectory "/"
-		changeWorkingDirectory localdir
-	run cmd ps = unlessM (boolSystem cmd ps) $
-		error $ "exposeTrueLocaldir failed to run " ++ show (cmd, ps)
+		GitRepoOutsideChroot -> localdir ++ " outside the chroot"
 
 assumeChange :: Propellor Bool -> Propellor Result
 assumeChange a = do
@@ -122,5 +107,5 @@ assumeChange a = do
 buildShellCommand :: [String] -> String
 buildShellCommand = intercalate "&&" . map (\c -> "(" ++ c ++ ")")
 
-runShellCommand :: String -> IO Bool
+runShellCommand :: String -> Propellor Bool
 runShellCommand s = liftIO $ boolSystem "sh" [ Param "-c", Param s]

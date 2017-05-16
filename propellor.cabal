@@ -1,6 +1,6 @@
 Name: propellor
-Version: 4.0.2
-Cabal-Version: >= 1.8
+Version: 4.0.3
+Cabal-Version: >= 1.20
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
 Author: Joey Hess
@@ -136,6 +136,7 @@ Library
     Propellor.Property.PropellorRepo
     Propellor.Property.Prosody
     Propellor.Property.Reboot
+    Propellor.Property.Restic
     Propellor.Property.Rsync
     Propellor.Property.Sbuild
     Propellor.Property.Scheduled
