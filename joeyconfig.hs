@@ -331,7 +331,9 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.oldUseNetServer hosts
 
 	& alias "ns4.kitenet.net"
-	& myDnsPrimary True "kitenet.net" []
+	& myDnsPrimary True "kitenet.net"
+		[ (RelDomain "mouse.onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
+		]
 	& myDnsPrimary True "joeyh.name" []
 	& myDnsPrimary True "ikiwiki.info" []
 	& myDnsPrimary True "olduse.net"
@@ -435,7 +437,6 @@ mouse = host "mouse.kitenet.net" $ props
 	& Apt.installed ["ssh"]
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "ssh" (Port 22)
-	& addDNS (CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
 
 -- Branchable is not completely deployed with propellor yet.
 pell :: Host
