@@ -435,7 +435,7 @@ mouse = host "mouse.kitenet.net" $ props
 	& Apt.installed ["ssh"]
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "ssh" (Port 22)
-	-- & addDNS (CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
+	& addDNS (CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
 
 -- Branchable is not completely deployed with propellor yet.
 pell :: Host
