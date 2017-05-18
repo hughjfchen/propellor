@@ -1,0 +1,10 @@
+Seen recently on 2 hosts:
+
+	Sending privdata (73139 bytes) to kite.kitenet.net ... done
+	fatal: Couldn't find remote ref HEAD
+	propellor: <stdout>: hPutStr: illegal operation (handle is closed)
+	fatal: The remote end hung up unexpectedly
+	Sending git update to kite.kitenet.net ... failed
+
+Despite the error, HEAD seems to be updated to the commit that is being spun,
+but the rest of the propellor runs doesn't happen. --[[Joey]]
