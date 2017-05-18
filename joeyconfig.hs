@@ -431,6 +431,7 @@ beaver = host "beaver.kitenet.net" $ props
 
 mouse :: Host
 mouse = host "mouse.kitenet.net" $ props
+	& ipv4 "67.223.19.96"
 	& Apt.installed ["ssh"]
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "ssh" (Port 22)
