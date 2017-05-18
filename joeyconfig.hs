@@ -56,6 +56,7 @@ hosts =                 --                  (o)  `
 	, kite
 	, elephant
 	, beaver
+	, mouse
 	, pell
 	, keysafe
 	] ++ monsters
@@ -428,6 +429,12 @@ beaver = host "beaver.kitenet.net" $ props
 	& Cron.niceJob "system disk backed up" Cron.Weekly (User "root") "/"
 		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"
 
+mouse :: Host
+mouse = host "mouse.kitenet.net" $ props
+	& Apt.installed ["ssh"]
+	& Tor.installed
+	& Tor.hiddenServiceAvailable "ssh" (Port 22)
+
 -- Branchable is not completely deployed with propellor yet.
 pell :: Host
 pell = host "pell.branchable.com" $ props
@@ -628,9 +635,6 @@ monsters =            -- but do want to track their public keys etc.
 		& Ssh.hostPubKey SshEcdsa "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY="
 	, host "ns6.gandi.net" $ props
 		& ipv4 "217.70.177.40"
-	, host "mouse.kitenet.net" $ props
-		& ipv6 "2001:4830:1600:492::2"
-		& ipv4 "67.223.19.96"
 	, host "animx" $ props
 		& ipv4 "76.7.162.186"
 		& ipv4 "76.7.162.187"
