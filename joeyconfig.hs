@@ -332,7 +332,7 @@ kite = host "kite.kitenet.net" $ props
 
 	& alias "ns4.kitenet.net"
 	& myDnsPrimary True "kitenet.net"
-		[ (RelDomain "mouse.onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
+		[ (RelDomain "mouse-onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
 		]
 	& myDnsPrimary True "joeyh.name" []
 	& myDnsPrimary True "ikiwiki.info" []
