@@ -88,6 +88,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Aiccu.hasConfig "T18376" "JHZ2-SIXXS"
 
 	& JoeySites.dkimMilter
+	& JoeySites.postfixSaslPasswordClient
 	& JoeySites.alarmClock "*-*-* 7:30" (User "joey")
 		"/usr/bin/timeout 45m /home/joey/bin/goodmorning"
 	& Ssh.userKeys (User "joey") hostContext
@@ -116,8 +117,8 @@ gnu = host "gnu.kitenet.net" $ props
 dragon :: Host
 dragon = host "dragon.kitenet.net" $ props
 	& ipv6 "2001:4830:1600:187::2"
-	& Postfix.satellite
 	& JoeySites.dkimMilter
+	& JoeySites.postfixSaslPasswordClient
 
 clam :: Host
 clam = host "clam.kitenet.net" $ props

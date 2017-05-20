@@ -698,9 +698,22 @@ dkimInstalled = go `onChange` Service.restarted "opendkim"
 domainKey :: (BindDomain, Record)
 domainKey = (RelDomain "mail._domainkey", TXT "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCc+/rfzNdt5DseBBmfB3C6sVM7FgVvf4h1FeCfyfwPpVcmPdW6M2I+NtJsbRkNbEICxiP6QY2UM0uoo9TmPqLgiCCG2vtuiG6XMsS0Y/gGwqKM7ntg/7vT1Go9vcquOFFuLa5PnzpVf8hB9+PMFdS4NPTvWL2c5xxshl/RJzICnQIDAQAB")
 
-hasJoeyCAChain :: Property (HasInfo + UnixLike)
-hasJoeyCAChain = "/etc/ssl/certs/joeyca.pem" `File.hasPrivContentExposed`
-	Context "joeyca.pem"
+postfixSaslPasswordClient :: Property (HasInfo + DebianLike)
+postfixSaslPasswordClient = combineProperties "postfix uses SASL password to authenticate with smarthost" $ props
+	& Postfix.satellite
+	& Postfix.mappedFile "/etc/postfix/sasl_passwd" 
+		(`File.hasPrivContent` (Context "kitenet.net"))
+	& Postfix.mainCfFile `File.containsLines`
+		[ "# TLS setup for SASL auth to kite"
+		, "smtp_sasl_auth_enable = yes"
+		, "smtp_tls_security_level = encrypt"
+		, "smtp_sasl_tls_security_options = noanonymous"
+		, "relayhost = [kitenet.net]"
+		, "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd"
+		, "# kite's fingerprint"
+		, "smtp_tls_fingerprint_cert_match = 13:B0:0C:F3:11:83:A5:EB:A9:37:C6:C5:ED:16:60:86"
+		]
+		`onChange` Postfix.reloaded
 
 hasPostfixCert :: Context -> Property (HasInfo + UnixLike)
 hasPostfixCert ctx = combineProperties "postfix tls cert installed" $ props
