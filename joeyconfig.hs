@@ -47,6 +47,7 @@ hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                 --                  (o)  `
 	[ darkstar
 	, gnu
+	, dragon
 	, clam
 	, mayfly
 	, oyster
@@ -84,8 +85,6 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& ipv6 "2001:4830:1600:187::2"
 	& Aiccu.hasConfig "T18376" "JHZ2-SIXXS"
 
-	& Apt.buildDep ["git-annex"] `period` Daily
-
 	& JoeySites.dkimMilter
 	& JoeySites.alarmClock "*-*-* 7:30" (User "joey")
 		"/usr/bin/timeout 45m /home/joey/bin/goodmorning"
@@ -109,7 +108,11 @@ darkstar = host "darkstar.kitenet.net" $ props
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
-	& Apt.buildDep ["git-annex"] `period` Daily
+	& Postfix.satellite
+
+darkstar :: Host
+darkstar = host "gnu.kitenet.net" $ props
+	& Postfix.satellite
 
 clam :: Host
 clam = host "clam.kitenet.net" $ props
