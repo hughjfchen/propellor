@@ -112,6 +112,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
 	& Postfix.satellite
+	& JoeySites.dkimMilter
 
 dragon :: Host
 dragon = host "dragon.kitenet.net" $ props
