@@ -115,6 +115,7 @@ gnu = host "gnu.kitenet.net" $ props
 
 dragon :: Host
 dragon = host "dragon.kitenet.net" $ props
+	& ipv6 "2001:4830:1600:187::2"
 	& Postfix.satellite
 	& JoeySites.dkimMilter
 

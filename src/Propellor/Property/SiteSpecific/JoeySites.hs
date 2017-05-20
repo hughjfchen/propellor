@@ -681,6 +681,10 @@ dkimInstalled = go `onChange` Service.restarted "opendkim"
 		& File.ownerGroup "/etc/mail/dkim.key" (User "opendkim") (Group "opendkim")
 		& "/etc/default/opendkim" `File.containsLine`
 			"SOCKET=\"inet:8891@localhost\""
+			`onChange` 
+				(cmdProperty "/lib/opendkim/opendkim.service.generate" []
+				`assume` MadeChange)
+			`onChange` Service.restarted "opendkim"
 		& "/etc/opendkim.conf" `File.containsLines`
 			[ "KeyFile /etc/mail/dkim.key"
 			, "SubDomains yes"
