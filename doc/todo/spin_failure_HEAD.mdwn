@@ -8,3 +8,10 @@ Seen recently on 2 hosts:
 
 Despite the error, HEAD seems to be updated to the commit that is being spun,
 but the rest of the propellor runs doesn't happen. --[[Joey]]
+
+> This was happening spinning kite at my Mom's, but not from home.
+
+> Earlier, it was happening spinning clam from home, when clam had debian
+> oldstable on it (new install).
+> 
+> So, transient and/or network-related.. --[[Joey]]
