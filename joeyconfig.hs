@@ -114,7 +114,7 @@ gnu = host "gnu.kitenet.net" $ props
 	& Postfix.satellite
 
 dragon :: Host
-dragon = host "gnu.kitenet.net" $ props
+dragon = host "dragon.kitenet.net" $ props
 	& Postfix.satellite
 
 clam :: Host
