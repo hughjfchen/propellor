@@ -3,9 +3,9 @@ module Propellor.Property.Hostname where
 import Propellor.Base
 import qualified Propellor.Property.File as File
 import Propellor.Property.Chroot (inChroot)
+import Utility.Split
 
 import Data.List
-import Data.List.Utils
 
 -- | Ensures that the hostname is set using best practices, to whatever
 -- name the `Host` has.

@@ -87,7 +87,7 @@ spin' mprivdata relay target hst = do
 
 	-- And now we can run it.
 	unlessM (boolSystemNonConcurrent "ssh" (map Param $ cacheparams ++ ["-t", sshtarget, shellWrap runcmd])) $
-		error "remote propellor failed"
+		giveup "remote propellor failed"
   where
 	hn = fromMaybe target relay
 	sys = case fromInfo (hostInfo hst) of

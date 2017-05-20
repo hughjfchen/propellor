@@ -1,6 +1,6 @@
 Name: propellor
-Version: 4.0.1
-Cabal-Version: >= 1.8
+Version: 4.0.3
+Cabal-Version: >= 1.20
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
 Author: Joey Hess
@@ -36,6 +36,7 @@ Description:
  It is configured using haskell.
 
 Executable propellor
+  Default-Language: Haskell98
   Main-Is: wrapper.hs
   GHC-Options: -threaded -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
@@ -46,13 +47,14 @@ Executable propellor
     -- propellor needs to support the ghc shipped in Debian stable,
     -- and also only depends on packages in Debian stable.
     base >= 4.5, base < 5,
-    MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
+    directory, filepath, IfElse, process, bytestring, hslogger, split,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text
+    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
   Other-Modules:
     Propellor.DotDir
 
 Executable propellor-config
+  Default-Language: Haskell98
   Main-Is: config.hs
   GHC-Options: -threaded -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
@@ -61,11 +63,12 @@ Executable propellor-config
   Hs-Source-Dirs: src
   Build-Depends:
     base >= 4.5, base < 5,
-    MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
+    directory, filepath, IfElse, process, bytestring, hslogger, split,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text
+    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
 
 Library
+  Default-Language: Haskell98
   GHC-Options: -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
     GHC-Options: -fno-warn-redundant-constraints
@@ -73,9 +76,9 @@ Library
   Hs-Source-Dirs: src
   Build-Depends:
     base >= 4.5, base < 5,
-    MissingH, directory, filepath, IfElse, process, bytestring, hslogger,
+    directory, filepath, IfElse, process, bytestring, hslogger, split,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text
+    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
 
   Exposed-Modules:
     Propellor
@@ -87,6 +90,7 @@ Library
     Propellor.Property.Apt
     Propellor.Property.Apt.PPA
     Propellor.Property.Attic
+    Propellor.Property.Bootstrap
     Propellor.Property.Borg
     Propellor.Property.Ccache
     Propellor.Property.Cmd
@@ -135,6 +139,7 @@ Library
     Propellor.Property.PropellorRepo
     Propellor.Property.Prosody
     Propellor.Property.Reboot
+    Propellor.Property.Restic
     Propellor.Property.Rsync
     Propellor.Property.Sbuild
     Propellor.Property.Scheduled
@@ -220,10 +225,13 @@ Library
     Utility.Process.NonConcurrent
     Utility.SafeCommand
     Utility.Scheduled
+    Utility.Scheduled
+    Utility.Split
     Utility.SystemDirectory
     Utility.Table
     Utility.ThreadScheduler
     Utility.Tmp
+    Utility.Tuple
     Utility.UserInfo
     System.Console.Concurrent
     System.Console.Concurrent.Internal

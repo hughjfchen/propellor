@@ -38,6 +38,7 @@ import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuil
 import qualified Propellor.Property.SiteSpecific.Branchable as Branchable
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
 import Propellor.Property.DiskImage
+import Propellor.Property.Bootstrap
 
 main :: IO ()           --     _         ______`|                       ,-.__
 main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
@@ -50,13 +51,13 @@ hosts =                 --                  (o)  `
 	, dragon
 	, clam
 	, mayfly
-	, oyster
 	, orca
 	, baleen
 	, honeybee
 	, kite
 	, elephant
 	, beaver
+	, mouse
 	, pell
 	, keysafe
 	] ++ monsters
@@ -82,6 +83,7 @@ testvm = host "testvm.kitenet.net" $ props
 
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net" $ props
+	& osDebian Unstable X86_64
 	& ipv6 "2001:4830:1600:187::2"
 	& Aiccu.hasConfig "T18376" "JHZ2-SIXXS"
 
@@ -92,7 +94,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
 
-	! imageBuilt "/tmp/img" c MSDOS (grubBooted PC)
+	& imageBuilt "/srv/propellor-disk.img" c MSDOS (grubBooted PC)
 		[ partition EXT2 `mountedAt` "/boot"
 			`setFlag` BootFlag
 		, partition EXT4 `mountedAt` "/"
@@ -105,6 +107,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 		& Hostname.setTo "demo"
 		& Apt.installed ["linux-image-amd64"]
 		& User "root" `User.hasInsecurePassword` "root"
+		& bootstrappedFrom GitRepoOutsideChroot
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
@@ -118,7 +121,7 @@ clam :: Host
 clam = host "clam.kitenet.net" $ props
 	& standardSystem Unstable X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "167.88.41.194"
+	& ipv4 "64.137.231.62"
 
 	& CloudAtCost.decruft
 	& Ssh.hostKeys hostContext
@@ -156,31 +159,6 @@ mayfly = host "mayfly.kitenet.net" $ props
 	& Tor.isRelay
 	& Tor.named "kite3"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
-
-oyster :: Host
-oyster = host "oyster.kitenet.net" $ props
-	& standardSystem Unstable X86_64
-		[ "Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "64.137.179.21"
-
-	& CloudAtCost.decruft
-	& Ssh.hostKeys hostContext
-		[ (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBP0ws/IxQegVU0RhqnIm5A/vRSPTO70wD4o2Bd1jL970dTetNyXzvWGe1spEbLjIYSLIO7WvOBSE5RhplBKFMUU=")
-		]
-	& Apt.unattendedUpgrades
-	& Network.ipv6to4
-	& Systemd.persistentJournal
-	& Journald.systemMaxUse "500MiB"
-	& Apt.serviceInstalledRunning "swapspace"
-
-	& Tor.isRelay
-	& Tor.named "kite4"
-	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
-
-	-- Nothing is using http port 80, so listen on
-	-- that port for ssh, for traveling on bad networks that
-	-- block 22.
-	& Ssh.listenPort (Port 80)
 
 baleen :: Host
 baleen = host "baleen.kitenet.net" $ props
@@ -356,7 +334,9 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.oldUseNetServer hosts
 
 	& alias "ns4.kitenet.net"
-	& myDnsPrimary True "kitenet.net" []
+	& myDnsPrimary True "kitenet.net"
+		[ (RelDomain "mouse-onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
+		]
 	& myDnsPrimary True "joeyh.name" []
 	& myDnsPrimary True "ikiwiki.info" []
 	& myDnsPrimary True "olduse.net"
@@ -365,6 +345,10 @@ kite = host "kite.kitenet.net" $ props
 	& alias "ns4.branchable.com"
 	& branchableSecondary
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
+
+	& alias "debug-me.joeyh.name"
+	-- debug-me installed manually until package is available
+	& Systemd.enabled "debug-me"
 
 	-- testing
 	& Apache.httpsVirtualHost "letsencrypt.joeyh.name" "/var/www/html"
@@ -449,6 +433,13 @@ beaver = host "beaver.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "anacron"
 	& Cron.niceJob "system disk backed up" Cron.Weekly (User "root") "/"
 		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"
+
+mouse :: Host
+mouse = host "mouse.kitenet.net" $ props
+	& ipv4 "67.223.19.96"
+	& Apt.installed ["ssh"]
+	& Tor.installed
+	& Tor.hiddenServiceAvailable "ssh" (Port 22)
 
 -- Branchable is not completely deployed with propellor yet.
 pell :: Host
@@ -650,12 +641,9 @@ monsters =            -- but do want to track their public keys etc.
 		& Ssh.hostPubKey SshEcdsa "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY="
 	, host "ns6.gandi.net" $ props
 		& ipv4 "217.70.177.40"
-	, host "mouse.kitenet.net" $ props
-		& ipv6 "2001:4830:1600:492::2"
-		& ipv4 "67.223.19.96"
 	, host "animx" $ props
-		& ipv4 "76.7.162.101"
 		& ipv4 "76.7.162.186"
+		& ipv4 "76.7.162.187"
 	]
 
 

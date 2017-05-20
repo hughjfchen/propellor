@@ -6,10 +6,11 @@ module Propellor.Property.Apt.PPA where
 import Data.List
 import Control.Applicative
 import Prelude
-import Data.String.Utils
 import Data.String (IsString(..))
+
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
+import Utility.Split
 
 -- | Ensure software-properties-common is installed.
 installed :: Property DebianLike

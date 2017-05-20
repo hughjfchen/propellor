@@ -2,7 +2,6 @@ module Propellor.Gpg where
 
 import System.IO
 import Data.Maybe
-import Data.List.Utils
 import Control.Monad
 import Control.Applicative
 import Prelude
@@ -18,6 +17,7 @@ import Utility.Misc
 import Utility.Tmp
 import Utility.Env
 import Utility.Directory
+import Utility.Split
 
 type KeyId = String
 

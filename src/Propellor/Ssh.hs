@@ -6,7 +6,7 @@ import Utility.FileSystemEncoding
 
 import System.PosixCompat
 import Data.Time.Clock.POSIX
-import qualified Data.Hash.MD5 as MD5
+import Data.Hashable
 
 -- Parameters can be passed to both ssh and scp, to enable a ssh connection
 -- caching socket.
@@ -50,24 +50,22 @@ sshCachingParams hn = do
 -- 100 bytes. Try to never construct a filename longer than that.
 --
 -- When space allows, include the full hostname in the socket filename.
--- Otherwise, include at least a partial md5sum of it,
--- to avoid using the same socket file for multiple hosts.
+-- Otherwise, a checksum of the hostname is included in the name, to
+-- avoid using the same socket file for multiple hosts.
 socketFile :: FilePath -> HostName -> FilePath
 socketFile home hn = selectSocketFile
-	[  sshdir </> hn ++ ".sock"
+	[ sshdir </> hn ++ ".sock"
 	, sshdir </> hn
-	, sshdir </> take 10 hn ++ "-" ++ md5
-	, sshdir </> md5
-	, home </> ".propellor-" ++ md5
+	, sshdir </> take 10 hn ++ "-" ++ checksum
+	, sshdir </> checksum
 	]
-	(".propellor-" ++ md5)
+	(home </> ".propellor-" ++ checksum)
   where
 	sshdir = home </> ".ssh" </> "propellor"
-	md5 = take 9 $ MD5.md5s $ MD5.Str hn
+	checksum = take 9 $ show $ abs $ hash hn
 
 selectSocketFile :: [FilePath] -> FilePath -> FilePath
 selectSocketFile [] d = d
-selectSocketFile [f] _ = f
 selectSocketFile (f:fs) d
 	| valid_unix_socket_path f = f
 	| otherwise = selectSocketFile fs d

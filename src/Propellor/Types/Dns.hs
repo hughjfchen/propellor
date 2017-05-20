@@ -6,12 +6,12 @@ import Propellor.Types.OS (HostName)
 import Propellor.Types.Empty
 import Propellor.Types.Info
 import Propellor.Types.ConfigurableValue
+import Utility.Split
 
 import Data.Word
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.List
-import Data.String.Utils (split, replace)
 import Data.Monoid
 import Prelude
 
@@ -102,14 +102,14 @@ data Record
 type ReverseIP = String
 
 reverseIP :: IPAddr -> ReverseIP
-reverseIP (IPv4 addr) = intercalate "." (reverse $ split "." addr) ++ ".in-addr.arpa"
+reverseIP (IPv4 addr) = intercalate "." (reverse $ splitc '.' addr) ++ ".in-addr.arpa"
 reverseIP addr@(IPv6 _) = reverse (intersperse '.' $ replace ":" "" $ val $ canonicalIP addr) ++ ".ip6.arpa"
 
 -- | Converts an IP address (particularly IPv6) to canonical, fully
 -- expanded form.
 canonicalIP :: IPAddr -> IPAddr
 canonicalIP (IPv4 addr) = IPv4 addr
-canonicalIP (IPv6 addr) = IPv6 $ intercalate ":" $ map canonicalGroup $ split ":" $ replaceImplicitGroups addr
+canonicalIP (IPv6 addr) = IPv6 $ intercalate ":" $ map canonicalGroup $ splitc ':' $ replaceImplicitGroups addr
   where
 	canonicalGroup g
 		| l <= 4    = replicate (4 - l) '0' ++ g
@@ -117,7 +117,7 @@ canonicalIP (IPv6 addr) = IPv6 $ intercalate ":" $ map canonicalGroup $ split ":
 	  where
 		l = length g
 	emptyGroups n = iterate (++ ":") "" !! n
-	numberOfImplicitGroups a = 8 - length (split ":" $ replace "::" "" a)
+	numberOfImplicitGroups a = 8 - length (splitc ':' $ replace "::" "" a)
 	replaceImplicitGroups a = concat $ aux $ split "::" a
 	  where
 		aux [] = []

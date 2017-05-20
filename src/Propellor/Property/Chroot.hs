@@ -11,6 +11,7 @@ module Propellor.Property.Chroot (
 	ChrootTarball(..),
 	noServices,
 	inChroot,
+	exposeTrueLocaldir,
 	-- * Internal use
 	provisioned',
 	propagateChrootInfo,
@@ -32,9 +33,9 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Shim as Shim
 import Propellor.Property.Mount
 import Utility.FileMode
+import Utility.Split
 
 import qualified Data.Map as M
-import Data.List.Utils
 import System.Posix.Directory
 import System.Console.Concurrent
 
@@ -294,6 +295,38 @@ setInChroot h = h { hostInfo = hostInfo h `addInfo` InfoVal (InChroot True) }
 
 newtype InChroot = InChroot Bool
 	deriving (Typeable, Show)
+
+-- | Runs an action with the true localdir exposed,
+-- not the one bind-mounted into a chroot. The action is passed the
+-- path containing the contents of the localdir outside the chroot.
+--
+-- In a chroot, this is accomplished by temporily bind mounting the localdir
+-- to a temp directory, to preserve access to the original bind mount. Then
+-- we unmount the localdir to expose the true localdir. Finally, to cleanup,
+-- the temp directory is bind mounted back to the localdir.
+exposeTrueLocaldir :: (FilePath -> Propellor a) -> Propellor a
+exposeTrueLocaldir a = ifM inChroot
+	( withTmpDirIn (takeDirectory localdir) "propellor.tmp" $ \tmpdir ->
+		bracket_
+			(movebindmount localdir tmpdir)
+			(movebindmount tmpdir localdir)
+			(a tmpdir)
+	, a localdir
+	)
+  where
+	movebindmount from to = liftIO $ do
+		run "mount" [Param "--bind", File from, File to]
+		-- Have to lazy unmount, because the propellor process
+		-- is running in the localdir that it's unmounting..
+		run "umount" [Param "-l", File from]
+		-- We were in the old localdir; move to the new one after
+		-- flipping the bind mounts. Otherwise, commands that try
+		-- to access the cwd will fail because it got umounted out
+		-- from under.
+		changeWorkingDirectory "/"
+		changeWorkingDirectory localdir
+	run cmd ps = unlessM (boolSystem cmd ps) $
+		error $ "exposeTrueLocaldir failed to run " ++ show (cmd, ps)
 
 -- | Generates a Chroot that has all the properties of a Host.
 -- 
