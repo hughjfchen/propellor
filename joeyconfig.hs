@@ -113,8 +113,8 @@ gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
 	& Postfix.satellite
 
-darkstar :: Host
-darkstar = host "gnu.kitenet.net" $ props
+dragon :: Host
+dragon = host "gnu.kitenet.net" $ props
 	& Postfix.satellite
 
 clam :: Host
