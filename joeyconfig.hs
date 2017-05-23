@@ -261,6 +261,8 @@ kite = host "kite.kitenet.net" $ props
 	& Journald.systemMaxUse "500MiB"
 	& Ssh.passwordAuthentication True
 	& Fail2Ban.installed -- since ssh password authentication is allowed
+	-- Allow ssh -R to forward ports via kite
+	& Ssh.setSshdConfig "GatewayPorts" "clientspecified"
 	& Apt.serviceInstalledRunning "ntp"
 	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
 
