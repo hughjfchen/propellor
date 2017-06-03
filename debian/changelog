@@ -1,3 +1,10 @@
+propellor (4.0.5) unstable; urgency=medium
+
+  * Switch cabal file from Extensions to Default-Extensions to fix
+    new picky hackage rejection.
+
+ -- Joey Hess <id@joeyh.name>  Sat, 03 Jun 2017 15:07:36 -0400
+
 propellor (4.0.4) unstable; urgency=medium
 
   * Propellor.Property.Restic added for yet another backup program.

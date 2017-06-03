@@ -41,7 +41,7 @@ Executable propellor
   GHC-Options: -threaded -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
     GHC-Options: -fno-warn-redundant-constraints
-  Extensions: TypeOperators
+  Default-Extensions: TypeOperators
   Hs-Source-Dirs: src
   Build-Depends:
     -- propellor needs to support the ghc shipped in Debian stable,
@@ -59,7 +59,7 @@ Executable propellor-config
   GHC-Options: -threaded -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
     GHC-Options: -fno-warn-redundant-constraints
-  Extensions: TypeOperators
+  Default-Extensions: TypeOperators
   Hs-Source-Dirs: src
   Build-Depends:
     base >= 4.5, base < 5,
@@ -72,7 +72,7 @@ Library
   GHC-Options: -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
     GHC-Options: -fno-warn-redundant-constraints
-  Extensions: TypeOperators
+  Default-Extensions: TypeOperators
   Hs-Source-Dirs: src
   Build-Depends:
     base >= 4.5, base < 5,
