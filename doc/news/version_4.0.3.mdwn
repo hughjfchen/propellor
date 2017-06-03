@@ -1,6 +1,0 @@
-propellor 4.0.3 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Added Fstab.listed, Fstab.swap, and Mount.swapOn properties.
-     Thanks, Daniel Brooks.
-   * Added Propellor.Property.Bootstrap, which can be used to make
-     disk images contain their own installation of propellor."""]]
