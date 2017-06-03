@@ -1,10 +1,10 @@
-propellor (4.0.4) UNRELEASED; urgency=medium
+propellor (4.0.4) unstable; urgency=medium
 
   * Propellor.Property.Restic added for yet another backup program.
     Thanks, Félix Sipma.
   * Removed dependency on MissingH, instead depends on split and hashable.
 
- -- Joey Hess <id@joeyh.name>  Thu, 27 Apr 2017 16:31:26 -0400
+ -- Joey Hess <id@joeyh.name>  Sat, 03 Jun 2017 14:56:44 -0400
 
 propellor (4.0.3) unstable; urgency=medium
 
