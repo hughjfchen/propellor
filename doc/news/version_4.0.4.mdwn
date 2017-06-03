@@ -1,5 +1,0 @@
-propellor 4.0.4 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Propellor.Property.Restic added for yet another backup program.
-     Thanks, Félix Sipma.
-   * Removed dependency on MissingH, instead depends on split and hashable."""]]
