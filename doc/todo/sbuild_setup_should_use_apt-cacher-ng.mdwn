@@ -1,0 +1,11 @@
+The properties in `Sbuild.hs` should use apt-cacher-ng instead of a bind mount of `/var/cache/apt/archives`.  This has at least three advantages:
+
+1. more than one instance of sbuild can run at once
+
+2. sbuild can run even if apt is doing something else with its cache
+
+3. the `piupartsConf` properties are no longer needed.
+
+--spwhitton
+
+[[!tag user/spwhitton]]
