@@ -468,6 +468,7 @@ pell = host "pell.branchable.com" $ props
 	& alias "dist-bugs.kitenet.net"
 	& alias "family.kitenet.net"
 
+	& osDebian (Stable "jessie") X86_64
 	& Apt.installed ["linux-image-amd64"]
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
