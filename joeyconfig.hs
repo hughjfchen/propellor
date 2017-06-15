@@ -50,7 +50,6 @@ hosts =                 --                  (o)  `
 	, gnu
 	, dragon
 	, clam
-	, mayfly
 	, orca
 	, baleen
 	, honeybee
@@ -124,7 +123,7 @@ clam :: Host
 clam = host "clam.kitenet.net" $ props
 	& standardSystem Unstable X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "64.137.231.62"
+	& ipv4 "64.137.246.222"
 
 	& CloudAtCost.decruft
 	& Ssh.hostKeys hostContext
@@ -146,22 +145,6 @@ clam = host "clam.kitenet.net" $ props
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
 	& alias "us.scroll.joeyh.name"
-
-mayfly :: Host
-mayfly = host "mayfly.kitenet.net" $ props
-	& standardSystem (Stable "jessie") X86_64
-		[ "Scratch VM. Contents can change at any time!" ]
-	& ipv4 "167.88.36.193"
-
-	& CloudAtCost.decruft
-	& Apt.unattendedUpgrades
-	& Network.ipv6to4
-	& Systemd.persistentJournal
-	& Journald.systemMaxUse "500MiB"
-
-	& Tor.isRelay
-	& Tor.named "kite3"
-	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
 
 baleen :: Host
 baleen = host "baleen.kitenet.net" $ props
