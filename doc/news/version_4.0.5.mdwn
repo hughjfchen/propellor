@@ -1,4 +1,0 @@
-propellor 4.0.5 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Switch cabal file from Extensions to Default-Extensions to fix
-     new picky hackage rejection."""]]
