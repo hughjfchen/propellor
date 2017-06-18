@@ -102,7 +102,7 @@ actionMessage' mhn desc a = do
 
 warningMessage :: MonadIO m => String -> m ()
 warningMessage s = liftIO $
-	outputConcurrent =<< colorLine Vivid Magenta ("** warning: " ++ s)
+	errorConcurrent =<< colorLine Vivid Magenta ("** warning: " ++ s)
 
 infoMessage :: MonadIO m => [String] -> m ()
 infoMessage ls = liftIO $ outputConcurrent $ concatMap (++ "\n") ls
@@ -113,7 +113,7 @@ infoMessage ls = liftIO $ outputConcurrent $ concatMap (++ "\n") ls
 -- property fail. Propellor will continue to the next property.
 errorMessage :: MonadIO m => String -> m a
 errorMessage s = liftIO $ do
-	outputConcurrent =<< colorLine Vivid Red ("** error: " ++ s)
+	errorConcurrent =<< colorLine Vivid Red ("** error: " ++ s)
 	-- Normally this exception gets caught and is not displayed,
 	-- and propellor continues. So it's only displayed if not
 	-- caught, and so we say, cannot continue.

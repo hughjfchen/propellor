@@ -1,3 +1,11 @@
+propellor (4.0.6) UNRELEASED; urgency=medium
+
+  * Fix bug that sometimes made --spin fail with 
+    "fatal: Couldn't find remote ref HEAD"
+  * Display error and warning messages to stderr, not stdout.
+
+ -- Joey Hess <id@joeyh.name>  Sun, 18 Jun 2017 16:19:41 -0400
+
 propellor (4.0.5) unstable; urgency=medium
 
   * Switch cabal file from Extensions to Default-Extensions to fix

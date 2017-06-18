@@ -59,7 +59,7 @@ linuxbox = host "linuxbox.example.com" $ props
 -- A generic webserver in a Docker container.
 webserverContainer :: Docker.Container
 webserverContainer = Docker.container "webserver" (Docker.latestImage "debian") $ props
-	& osDebian' KFreeBSD (Stable "jessie") X86_64
+	& osDebian' KFreeBSD (Stable "stretch") X86_64
 	& Apt.stdSourcesList
 	& Docker.publish "80:80"
 	& Docker.volume "/var/www:/var/www"

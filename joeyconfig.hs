@@ -50,7 +50,6 @@ hosts =                 --                  (o)  `
 	, gnu
 	, dragon
 	, clam
-	, mayfly
 	, orca
 	, baleen
 	, honeybee
@@ -124,7 +123,7 @@ clam :: Host
 clam = host "clam.kitenet.net" $ props
 	& standardSystem Unstable X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "64.137.231.62"
+	& ipv4 "64.137.239.3"
 
 	& CloudAtCost.decruft
 	& Ssh.hostKeys hostContext
@@ -133,7 +132,6 @@ clam = host "clam.kitenet.net" $ props
 		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPhfvcOuw0Yt+MnsFc4TI2gWkKi62Eajxz+TgbHMO/uRTYF8c5V8fOI3o+J/3m5+lT0S5o8j8a7xIC3COvi+AVw=")
 		]
 	& Apt.unattendedUpgrades
-	& Network.ipv6to4
 	& Systemd.persistentJournal
 	& Journald.systemMaxUse "50MiB"
 
@@ -146,22 +144,6 @@ clam = host "clam.kitenet.net" $ props
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
 	& alias "us.scroll.joeyh.name"
-
-mayfly :: Host
-mayfly = host "mayfly.kitenet.net" $ props
-	& standardSystem (Stable "jessie") X86_64
-		[ "Scratch VM. Contents can change at any time!" ]
-	& ipv4 "167.88.36.193"
-
-	& CloudAtCost.decruft
-	& Apt.unattendedUpgrades
-	& Network.ipv6to4
-	& Systemd.persistentJournal
-	& Journald.systemMaxUse "500MiB"
-
-	& Tor.isRelay
-	& Tor.named "kite3"
-	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
 
 baleen :: Host
 baleen = host "baleen.kitenet.net" $ props
@@ -468,6 +450,7 @@ pell = host "pell.branchable.com" $ props
 	& alias "dist-bugs.kitenet.net"
 	& alias "family.kitenet.net"
 
+	& osDebian (Stable "jessie") X86_64
 	& Apt.installed ["linux-image-amd64"]
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
@@ -478,7 +461,7 @@ keysafe :: Host
 keysafe = host "keysafe.joeyh.name" $ props
 	& ipv4 "139.59.17.168"
 	& Hostname.sane
-	& osDebian (Stable "jessie") X86_64
+	& osDebian (Stable "stretch") X86_64
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.unattendedUpgrades
 	& DigitalOcean.distroKernel
@@ -567,7 +550,7 @@ oldusenetShellBox = Systemd.debContainer "oldusenet-shellbox" $ props
 
 kiteShellBox :: Systemd.Container
 kiteShellBox = Systemd.debContainer "kiteshellbox" $ props
-	& standardContainer (Stable "jessie")
+	& standardContainer (Stable "stretch")
 	& JoeySites.kiteShellBox
 
 type Motd = [String]

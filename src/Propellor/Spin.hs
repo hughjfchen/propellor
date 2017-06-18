@@ -178,34 +178,16 @@ getSshTarget target hst
 update :: Maybe HostName -> IO ()
 update forhost = do
 	whenM hasGitRepo $
-		req NeedRepoUrl repoUrlMarker setRepoUrl
+		reqMarked NeedRepoUrl repoUrlMarker setRepoUrl
 
 	makePrivDataDir
 	createDirectoryIfMissing True (takeDirectory privfile)
-	req NeedPrivData privDataMarker $
+	reqMarked NeedPrivData privDataMarker $
 		writeFileProtected privfile
 
 	whenM hasGitRepo $
-		req NeedGitPush gitPushMarker $ \_ -> do
-			hin <- dup stdInput
-			hout <- dup stdOutput
-			hClose stdin
-			hClose stdout
-			-- Not using git pull because git 2.5.0 badly
-			-- broke its option parser.
-			unlessM (boolSystemNonConcurrent "git" (pullparams hin hout)) $
-				errorMessage "git fetch from client failed"
-			unlessM (boolSystemNonConcurrent "git" [Param "merge", Param "FETCH_HEAD"]) $
-				errorMessage "git merge from client failed"
+		gitPullFromUpdateServer
   where
-	pullparams hin hout =
-		[ Param "fetch"
-		, Param "--progress"
-		, Param "--upload-pack"
-		, Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout
-		, Param "."
-		]
-
 	-- When --spin --relay is run, get a privdata file
 	-- to be relayed to the target host.
 	privfile = maybe privDataLocal privDataRelay forhost
@@ -336,31 +318,6 @@ sendPrecompiled hn = void $ actionMessage "Uploading locally compiled propellor 
 		, "rm -f " ++ remotetarball
 		]
 
--- Shim for git push over the propellor ssh channel.
--- Reads from stdin and sends it to hout;
--- reads from hin and sends it to stdout.
-gitPushHelper :: Fd -> Fd -> IO ()
-gitPushHelper hin hout = void $ fromstdin `concurrently` tostdout
-  where
-	fromstdin = do
-		h <- fdToHandle hout
-		connect stdin h
-	tostdout = do
-		h <- fdToHandle hin
-		connect h stdout
-	connect fromh toh = do
-		hSetBinaryMode fromh True
-		hSetBinaryMode toh True
-		b <- B.hGetSome fromh 40960
-		if B.null b
-			then do
-				hClose fromh
-				hClose toh
-			else do
-				B.hPut toh b
-				hFlush toh
-				connect fromh toh
-
 mergeSpin :: IO ()
 mergeSpin = do
 	branch <- getCurrentBranch
@@ -388,3 +345,56 @@ findLastNonSpinCommit = do
 
 spinCommitMessage :: String
 spinCommitMessage = "propellor spin"
+
+-- Stdin and stdout are connected to the updateServer over ssh.
+-- Request that it run git upload-pack, and connect that up to a git fetch
+-- to receive the data.
+gitPullFromUpdateServer :: IO ()
+gitPullFromUpdateServer = reqMarked NeedGitPush gitPushMarker $ \_ -> do
+	-- Note that this relies on data not being buffered in the stdin
+	-- Handle, since such buffered data would not be available in the
+	-- FD passed to git fetch. 
+	hin <- dup stdInput
+	hout <- dup stdOutput
+	hClose stdin
+	hClose stdout
+	-- Not using git pull because git 2.5.0 badly
+	-- broke its option parser.
+	unlessM (boolSystemNonConcurrent "git" (fetchparams hin hout)) $
+		errorMessage "git fetch from client failed"
+	unlessM (boolSystemNonConcurrent "git" [Param "merge", Param "FETCH_HEAD"]) $
+		errorMessage "git merge from client failed"
+  where
+	fetchparams hin hout =
+		[ Param "fetch"
+		, Param "--progress"
+		, Param "--upload-pack"
+		, Param $ "./propellor --gitpush " ++ show hin ++ " " ++ show hout
+		, Param "."
+		]
+
+-- Shim for git push over the propellor ssh channel.
+-- Reads from stdin and sends it to hout;
+-- reads from hin and sends it to stdout.
+gitPushHelper :: Fd -> Fd -> IO ()
+gitPushHelper hin hout = void $ fromstdin `concurrently` tostdout
+  where
+	fromstdin = do
+		h <- fdToHandle hout
+		stdin *>* h
+	tostdout = do
+		h <- fdToHandle hin
+		h *>* stdout
+
+-- Forward data from one handle to another.
+(*>*) :: Handle -> Handle -> IO ()
+fromh *>* toh = do
+	b <- B.hGetSome fromh 40960
+	if B.null b
+		then do
+			hClose fromh
+			hClose toh
+		else do
+			B.hPut toh b
+			hFlush toh
+			fromh *>* toh

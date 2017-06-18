@@ -59,7 +59,7 @@ data DebianKernel = Linux | KFreeBSD | Hurd
 	deriving (Show, Eq)
 
 -- | Debian has several rolling suites, and a number of stable releases,
--- such as Stable "jessie".
+-- such as Stable "stretch".
 data DebianSuite = Experimental | Unstable | Testing | Stable Release
 	deriving (Show, Eq)
 
