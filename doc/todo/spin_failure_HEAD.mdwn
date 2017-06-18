@@ -51,7 +51,6 @@ Sending privdata (73139 bytes) to kite.kitenet.net ... done
 [2017-06-18 16:27:13 EDT] received marked GITPUSH
 [2017-06-18 16:27:13 EDT] command line:  GitPush 11 12
 16:27:13.953638 pkt-line.c:80           packet:        fetch< 3a3c8a731d169a2768dd243581803dcb7b275049 HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/joeyconfig agent=git/2.11.0
-16:27:13.953638 pkt-line.c:80           packet:        fetch< 3a3c8a731d169a2768dd243581803dcb7b275049 HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/joeyconfig agent=git/2.11.0
 16:27:13.953781 pkt-line.c:80           packet:        fetch< 86b077b7a21efd5484dfaeee3c31fc5f3c151f6c refs/heads/confpairs
 16:27:13.953789 pkt-line.c:80           packet:        fetch< e03e4bf0f1e557f87d1fe7e01a6de7866296fce6 refs/heads/d-i
 16:27:13.953795 pkt-line.c:80           packet:        fetch< 3a3c8a731d169a2768dd243581803dcb7b275049 refs/heads/joeyconfig
@@ -95,7 +94,11 @@ Sending privdata (73139 bytes) to kite.kitenet.net ... done
 > >   some of the first lines somehow?
 > > * Could be something on the remote side is consuming stdin
 > >   that is not supposed to, and eats some of the protocol.
-
+> > 
 > > 
 > > I added debug dumping to gitPushHelper, and it seems to be
-> > reading the same truncated data.
+> > reading the same truncated data, so it seems ok.
+> > 
+> > Just after the gitPushMarker is sent, I made it read
+> > a line from stdin, and it got the first line of the protocol.
+> > 
