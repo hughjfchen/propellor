@@ -550,7 +550,7 @@ oldusenetShellBox = Systemd.debContainer "oldusenet-shellbox" $ props
 
 kiteShellBox :: Systemd.Container
 kiteShellBox = Systemd.debContainer "kiteshellbox" $ props
-	& standardContainer (Stable "jessie")
+	& standardContainer (Stable "stretch")
 	& JoeySites.kiteShellBox
 
 type Motd = [String]
