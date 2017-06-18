@@ -104,7 +104,7 @@ Sending privdata (73139 bytes) to kite.kitenet.net ... done
 > > So the data is being sent over the ssh connection ok, and
 > > the mangling must happening after that point and before gitPushHelper.
 > > 
-> > Aha! The problem seems to come from using dup and closing stdin!
+> > Aha! The problem seems to have to do with the dupping of stdin.
 
 		req NeedGitPush gitPushMarker $ \_ -> do
 			hin <- dup stdInput
@@ -114,5 +114,4 @@ Sending privdata (73139 bytes) to kite.kitenet.net ... done
 
 > > A line read from stdin just before the dup gets the first line of the protocol
 > > as expected. A line read from hin afterwards does not. Could
-> > it be that multiple lines get read from stdin and buffered, and 
-> > so are not available in the dupped handle?
+> > is be a handle buffering issue?
