@@ -132,7 +132,6 @@ clam = host "clam.kitenet.net" $ props
 		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPhfvcOuw0Yt+MnsFc4TI2gWkKi62Eajxz+TgbHMO/uRTYF8c5V8fOI3o+J/3m5+lT0S5o8j8a7xIC3COvi+AVw=")
 		]
 	& Apt.unattendedUpgrades
-	& Network.ipv6to4
 	& Systemd.persistentJournal
 	& Journald.systemMaxUse "50MiB"
 
@@ -462,7 +461,7 @@ keysafe :: Host
 keysafe = host "keysafe.joeyh.name" $ props
 	& ipv4 "139.59.17.168"
 	& Hostname.sane
-	& osDebian (Stable "jessie") X86_64
+	& osDebian (Stable "stretch") X86_64
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.unattendedUpgrades
 	& DigitalOcean.distroKernel
