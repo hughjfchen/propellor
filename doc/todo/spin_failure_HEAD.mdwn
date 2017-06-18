@@ -94,7 +94,8 @@ Sending privdata (73139 bytes) to kite.kitenet.net ... done
 > > * Could be in gitPushHelper, perhaps it's failing to write
 > >   some of the first lines somehow?
 > > * Could be something on the remote side is consuming stdin
-> >   that is not supposed to, and eats some of the protocol.a
+> >   that is not supposed to, and eats some of the protocol.
+
 > > 
 > > I added debug dumping to gitPushHelper, and it seems to be
 > > reading the same truncated data.
