@@ -39,4 +39,22 @@ but the rest of the propellor runs doesn't happen. --[[Joey]]
 > > outputConcurrent. After I fixed it to use errorConcurrent,
 > > it displayed the "git fetch from client failed" error message instead.
 > > 
-> > 
+> > Next step is probably to enable `GIT_TRACE_PACKET` debugging.
+> > I did so on kite, but then propellor --spin succeeded.
+> > Here's the debug output I got when it worked, for later comparison
+> > next time it fails. Note the HEAD ref is given first thing.
+
+<pre>
+Sending privdata (73139 bytes) to kite.kitenet.net ... done
+[2017-06-18 16:27:12 EDT] received marked PRIVDATA 
+[2017-06-18 16:27:12 EDT] requested marked GITPUSH
+[2017-06-18 16:27:13 EDT] received marked GITPUSH
+[2017-06-18 16:27:13 EDT] command line:  GitPush 11 12
+16:27:13.953638 pkt-line.c:80           packet:        fetch< 3a3c8a731d169a2768dd243581803dcb7b275049 HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/joeyconfig agent=git/2.11.0
+(omitted 364 lines of refs)
+16:27:14.352945 pkt-line.c:80           packet:        fetch< 0000
+From .
+ * branch              HEAD       -> FETCH_HEAD
+16:27:14.379922 pkt-line.c:80           packet:        fetch> 0000
+Sending git update to kite.kitenet.net ... done
+</pre>
