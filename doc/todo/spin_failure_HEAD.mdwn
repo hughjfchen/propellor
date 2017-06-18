@@ -103,5 +103,16 @@ Sending privdata (73139 bytes) to kite.kitenet.net ... done
 > > a line from stdin, and it got the first line of the protocol.
 > > So the data is being sent over the ssh connection ok, and
 > > the mangling must happening after that point and before gitPushHelper.
-> > ... Could it be that git fetch itself is eating some of stdin? Or
-> > that "propellor --gitpush" is before it runs gitPushHelper?
+> > 
+> > Aha! The problem seems to come from using dup and closing stdin!
+
+		req NeedGitPush gitPushMarker $ \_ -> do
+			hin <- dup stdInput
+			hout <- dup stdOutput
+			hClose stdin
+			hClose stdout
+
+> > A line read from stdin just before the dup gets the first line of the protocol
+> > as expected. A line read from hin afterwards does not. Could
+> > it be that multiple lines get read from stdin and buffered, and 
+> > so are not available in the dupped handle?
