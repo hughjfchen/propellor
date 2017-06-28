@@ -53,7 +53,7 @@ mylaptop = host "mylaptop.example.com" $ props
 
 myserver :: Host
 myserver = host "server.example.com" $ props
-	& osDebian (Stable "jessie") X86_64
+	& osDebian (Stable "stretch") X86_64
 	& Apt.stdSourcesList
 	& Apt.installed ["ssh"]
 """]]
