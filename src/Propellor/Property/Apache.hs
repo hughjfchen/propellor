@@ -189,7 +189,7 @@ httpsVirtualHost' domain docroot letos addedcfg = setup <!> teardown
 		`requires` modEnabled "ssl"
 		`before` setuphttps
 	teardown = siteDisabled domain
-	setuphttp = siteEnabled' domain $
+	setuphttp = (siteEnabled' domain $
 		-- The sslconffile is only created after letsencrypt gets
 		-- the cert. The "*" is needed to make apache not error
 		-- when the file doesn't exist.
@@ -201,23 +201,23 @@ httpsVirtualHost' domain docroot letos addedcfg = setup <!> teardown
 			, "RewriteRule ^/.well-known/(.*) - [L]"
 			-- Everything else redirects to https
 			, "RewriteRule ^/(.*) https://" ++ domain ++ "/$1 [L,R,NE]"
-			]
+			])
+		`requires` File.dirExists (takeDirectory cf)
 	setuphttps = LetsEncrypt.letsEncrypt letos domain docroot
 		`onChange` postsetuphttps
 	postsetuphttps = combineProperties (domain ++ " ssl cert installed") $ props
-		& File.dirExists (takeDirectory cf)
 		& File.hasContent cf sslvhost
 			`onChange` reloaded
 		-- always reload since the cert has changed
 		& reloaded
 	  where
-		cf = sslconffile "letsencrypt"
 		sslvhost = vhost (Port 443)
 			[ "SSLEngine on"
 			, "SSLCertificateFile " ++ LetsEncrypt.certFile domain
 			, "SSLCertificateKeyFile " ++ LetsEncrypt.privKeyFile domain
 			, "SSLCertificateChainFile " ++ LetsEncrypt.chainFile domain
 			]
+	cf = sslconffile "letsencrypt"
 	sslconffile s = "/etc/apache2/sites-available/ssl/" ++ domain ++ "/" ++ s ++ ".conf"
 	vhost p ls =
 		[ "<VirtualHost *:" ++ val p ++">"
