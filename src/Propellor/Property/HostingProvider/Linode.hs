@@ -17,6 +17,7 @@ serialGrub = "/etc/default/grub" `File.containsLines`
 	]
 	`onChange` Grub.mkConfig
 	`requires` Grub.installed Grub.PC
+	`describe` "GRUB configured for Linode serial console"
 
 -- | Linode's pv-grub-x86_64 (only used for its older XEN instances)
 -- does not support booting recent Debian kernels compressed
