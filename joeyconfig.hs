@@ -521,7 +521,7 @@ keysafe = host "keysafe.joeyh.name" $ props
 -- and administrative sanity.
 openidProvider :: Systemd.Container
 openidProvider = Systemd.debContainer "openid-provider" $ props
-	& standardContainer (Stable "jessie")
+	& standardContainer (Stable "stretch")
 	& alias hn
 	& OpenId.providerFor [User "joey", User "liw"] hn (Just (Port 8081))
   where
@@ -530,7 +530,7 @@ openidProvider = Systemd.debContainer "openid-provider" $ props
 -- Exhibit: kite's 90's website on port 1994.
 ancientKitenet :: Systemd.Container
 ancientKitenet = Systemd.debContainer "ancient-kitenet" $ props
-	& standardContainer (Stable "jessie")
+	& standardContainer (Stable "stretch")
 	& alias hn
 	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www/html"
 		(Just "remotes/origin/old-kitenet.net")
@@ -544,7 +544,7 @@ ancientKitenet = Systemd.debContainer "ancient-kitenet" $ props
 
 oldusenetShellBox :: Systemd.Container
 oldusenetShellBox = Systemd.debContainer "oldusenet-shellbox" $ props
-	& standardContainer (Stable "jessie")
+	& standardContainer (Stable "stretch")
 	& alias "shell.olduse.net"
 	& JoeySites.oldUseNetShellBox
 
