@@ -412,9 +412,10 @@ elephant = host "elephant.kitenet.net" $ props
 beaver :: Host
 beaver = host "beaver.kitenet.net" $ props
 	& ipv6 "2001:4830:1600:195::2"
-	& Apt.serviceInstalledRunning "aiccu"
 	& Apt.installed ["ssh"]
 	& Ssh.hostPubKey SshDsa "ssh-dss AAAAB3NzaC1kc3MAAACBAIrLX260fY0Jjj/p0syNhX8OyR8hcr6feDPGOj87bMad0k/w/taDSOzpXe0Wet7rvUTbxUjH+Q5wPd4R9zkaSDiR/tCb45OdG6JsaIkmqncwe8yrU+pqSRCxttwbcFe+UU+4AAcinjVedZjVRDj2rRaFPc9BXkPt7ffk8GwEJ31/AAAAFQCG/gOjObsr86vvldUZHCteaJttNQAAAIB5nomvcqOk/TD07DLaWKyG7gAcW5WnfY3WtnvLRAFk09aq1EuiJ6Yba99Zkb+bsxXv89FWjWDg/Z3Psa22JMyi0HEDVsOevy/1sEQ96AGH5ijLzFInfXAM7gaJKXASD7hPbVdjySbgRCdwu0dzmQWHtH+8i1CMVmA2/a5Y/wtlJAAAAIAUZj2US2D378jBwyX1Py7e4sJfea3WSGYZjn4DLlsLGsB88POuh32aOChd1yzF6r6C2sdoPBHQcWBgNGXcx4gF0B5UmyVHg3lIX2NVSG1ZmfuLNJs9iKNu4cHXUmqBbwFYQJBvB69EEtrOw4jSbiTKwHFmqdA/mw1VsMB+khUaVw=="
+	& tor.installed
+	& tor.hiddenserviceavailable "ssh" (port 22)
 	& alias "usbackup.kitenet.net"
 	& JoeySites.backupsBackedupFrom hosts "eubackup.kitenet.net" "/home/joey/lib/backup"
 	& Apt.serviceInstalledRunning "anacron"
@@ -424,9 +425,9 @@ beaver = host "beaver.kitenet.net" $ props
 mouse :: Host
 mouse = host "mouse.kitenet.net" $ props
 	& ipv4 "67.223.19.96"
-	& Apt.installed ["ssh"]
-	& Tor.installed
-	& Tor.hiddenServiceAvailable "ssh" (Port 22)
+	& apt.installed ["ssh"]
+	& tor.installed
+	& tor.hiddenserviceavailable "ssh" (port 22)
 
 -- Branchable is not completely deployed with propellor yet.
 pell :: Host
