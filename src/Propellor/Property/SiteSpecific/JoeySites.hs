@@ -248,7 +248,7 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		]
 		`describe` "cgit configured"
 	-- I keep the website used for git.kitenet.net/git.joeyh.name checked into git..
-	& Git.cloned (User "root") "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
+	& Git.cloned (User "joey") "/srv/git/joey/git.kitenet.net.git" "/srv/web/git.kitenet.net" Nothing
 	-- Don't need global apache configuration for cgit.
 	! Apache.confEnabled "cgit"
 	& website "git.kitenet.net"
