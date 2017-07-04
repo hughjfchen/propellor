@@ -17,17 +17,17 @@ data RepoSource
 -- | Bootstraps a propellor installation into
 -- /usr/local/propellor/
 --
--- Normally, propellor is already bootstrapped when it runs, so this
--- property is not useful. However, this can be useful inside a
--- chroot used to build a disk image, to make the disk image
--- have propellor installed.
+-- This property only does anything when used inside a chroot.
+-- This is particularly useful inside a chroot used to build a
+-- disk image, to make the disk image have propellor installed.
 --
 -- The git repository is cloned (or pulled to update if it already exists).
 --
 -- All build dependencies are installed, using distribution packages
 -- or falling back to using cabal.
 bootstrappedFrom :: RepoSource -> Property Linux
-bootstrappedFrom reposource = go `requires` clonedFrom reposource
+bootstrappedFrom reposource = check inChroot $
+	go `requires` clonedFrom reposource
   where
 	go :: Property Linux
 	go = property "Propellor bootstrapped" $ do
