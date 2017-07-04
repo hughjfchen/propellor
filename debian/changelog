@@ -10,6 +10,8 @@ propellor (4.0.7) UNRELEASED; urgency=medium
   * Diskimage.imageExists: Align disk image size to multiple of 4096
     sector size, since some programs (such as VBoxManage convertdd)
     refuse to operate on disk images not aligned to a sector size.
+  * Bootstrap.bootstrappedFrom: Fix bug that caused propellor to only
+    be built from the bootstrapped config the first time.
 
  -- Joey Hess <id@joeyh.name>  Tue, 20 Jun 2017 10:55:37 -0400
 

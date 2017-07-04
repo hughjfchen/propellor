@@ -35,7 +35,8 @@ bootstrappedFrom reposource = go `requires` clonedFrom reposource
 		assumeChange $ exposeTrueLocaldir $ const $ 
 			runShellCommand $ buildShellCommand
 				[ "cd " ++ localdir
-				, bootstrapPropellorCommand system
+				, checkDepsCommand system
+				, buildCommand
 				]
 
 -- | Clones the propellor repeository into /usr/local/propellor/
