@@ -247,7 +247,7 @@ getMountSz szm l (Just mntpt) =
 --
 -- If the file is too large, truncates it down to the specified size.
 imageExists :: FilePath -> ByteSize -> Property Linux
-imageExists img sz = property ("disk image exists" ++ img) $ liftIO $ do
+imageExists img isz = property ("disk image exists" ++ img) $ liftIO $ do
 	ms <- catchMaybeIO $ getFileStatus img
 	case ms of
 		Just s
@@ -258,6 +258,12 @@ imageExists img sz = property ("disk image exists" ++ img) $ liftIO $ do
 		_ -> do
 			L.writeFile img (L.replicate (fromIntegral sz) 0)
 			return MadeChange
+  where
+	sz = ceiling (fromInteger isz / sectorsize) * ceiling sectorsize
+	-- Disks have a sector size, and making a disk image not
+	-- aligned to a sector size will confuse some programs.
+	-- Common sector sizes are 512 and 4096; use 4096 as it's larger.
+	sectorsize = 4096 :: Double
 
 -- | A pair of properties. The first property is satisfied within the
 -- chroot, and is typically used to download the boot loader.

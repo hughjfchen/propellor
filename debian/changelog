@@ -7,6 +7,9 @@ propellor (4.0.7) UNRELEASED; urgency=medium
     Thanks, Sean Whitton.
   * Bootstrap.clonedFrom: Fix bug that broke copying .git/config into
     chroot.
+  * Diskimage.imageExists: Align disk image size to multiple of 4096
+    sector size, since some programs (such as VBoxManage convertdd)
+    refuse to operate on disk images not aligned to a sector size.
 
  -- Joey Hess <id@joeyh.name>  Tue, 20 Jun 2017 10:55:37 -0400
 
