@@ -47,6 +47,7 @@ main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
 hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                 --                  (o)  `
 	[ darkstar
+	, demo
 	, gnu
 	, dragon
 	, clam
@@ -94,20 +95,23 @@ darkstar = host "darkstar.kitenet.net" $ props
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
 
-	& imageBuilt "/srv/propellor-disk.img" c MSDOS (grubBooted PC)
+	& imageBuilt "/srv/propellor-disk.img"
+		(Chroot.hostChroot demo (Chroot.Debootstrapped mempty))
+		MSDOS (grubBooted PC)
 		[ partition EXT2 `mountedAt` "/boot"
 			`setFlag` BootFlag
 		, partition EXT4 `mountedAt` "/"
 			`mountOpt` errorReadonly
 		, swapPartition (MegaBytes 256)
 		]
-  where
-	c d = Chroot.debootstrapped mempty d $ props
-		& osDebian Unstable X86_64
-		& Hostname.setTo "demo"
-		& Apt.installed ["linux-image-amd64"]
-		& User "root" `User.hasInsecurePassword` "root"
-		& bootstrappedFrom GitRepoOutsideChroot
+
+demo :: Host
+demo = host "demo.kitenet.net" $ props
+	& osDebian Unstable X86_64
+	& Hostname.setTo "demo"
+	& Apt.installed ["linux-image-amd64"]
+	& User "root" `User.hasInsecurePassword` "root"
+	& bootstrappedFrom GitRepoOutsideChroot
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
