@@ -83,7 +83,7 @@ clonedFrom reposource = case reposource of
 	-- configuration.
 	copygitconfig :: Property Linux
 	copygitconfig = property ("Propellor repo git config copied from outside the chroot") $ do
-		let gitconfig = localdir <> ".git" <> "config"
+		let gitconfig = localdir </> ".git" </> "config"
 		cfg <- liftIO $ B.readFile gitconfig
 		exposeTrueLocaldir $ const $
 			liftIO $ B.writeFile gitconfig cfg

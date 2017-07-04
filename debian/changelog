@@ -5,6 +5,8 @@ propellor (4.0.7) UNRELEASED; urgency=medium
     exposed.
   * Bugfix: Apache.httpsVirtualHost' must create ssl/hn/ dir earlier
     Thanks, Sean Whitton.
+  * Bootstrap.clonedFrom: Fix bug that broke copying .git/config into
+    chroot.
 
  -- Joey Hess <id@joeyh.name>  Tue, 20 Jun 2017 10:55:37 -0400
 
