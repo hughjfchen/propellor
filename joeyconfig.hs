@@ -116,6 +116,7 @@ demo = host "demo" $ props
 	& Grub.installed PC
 	& bootstrappedFrom GitRepoOutsideChroot
 	& User.accountFor user
+	& User.hasDesktopGroups user
 	& root `User.hasInsecurePassword` "debian"
 	& user `User.hasInsecurePassword` "debian"
 	& XFCE.installedMin
