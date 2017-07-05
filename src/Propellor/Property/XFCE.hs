@@ -8,11 +8,13 @@ import qualified Propellor.Property.User as User
 
 installed :: Property DebianLike
 installed = Apt.installed ["task-xfce-desktop"]
+	`describe` "XFCE desktop installed"
 
 -- | Minimal install of XFCE, with a terminal emulator and panel,
 -- and X, but not any of the extras.
 installedMin :: Property DebianLike
 installedMin = Apt.installedMin ["xfce4", "xfce4-terminal", "task-desktop"]
+	`describe` "minimal XFCE desktop installed"
 
 -- | Normally at first login, XFCE asks what kind of panel the user wants.
 -- This enables the default configuration noninteractively.
