@@ -27,10 +27,12 @@ import System.IO.Unsafe (unsafePerformIO)
 import Control.Concurrent
 import System.Console.Concurrent
 import Control.Applicative
+import Control.Monad
 import Prelude
 
 import Propellor.Types
 import Propellor.Types.Exception
+import Propellor.Debug
 import Utility.PartialPrelude
 import Utility.Monad
 import Utility.Exception
@@ -147,21 +149,20 @@ colorLine intensity color msg = concat <$> sequence
 processChainOutput :: Handle -> IO Result
 processChainOutput h = go Nothing
   where
-	go lastline = do
+	go rval = do
 		v <- catchMaybeIO (hGetLine h)
+		debug ["chain process output", show v]
 		case v of
-			Nothing -> case lastline of
-				Nothing -> do
-					return FailedChange
-				Just l -> case readish l of
-					Just r -> pure r
-					Nothing -> do
-						outputConcurrent (l ++ "\n")
-						return FailedChange
+			Nothing -> case rval of
+				Nothing -> return FailedChange
+				Just r -> return r
 			Just s -> do
-				outputConcurrent $
-					maybe "" (\l -> if null l then "" else l ++ "\n") lastline
-				go (Just s)
+				case readish s of
+					Nothing -> do
+						unless (null s) $
+							outputConcurrent (s ++ "\n")
+						go rval
+					Just rval' -> go rval'
 
 -- | Called when all messages about properties have been printed.
 messagesDone :: IO ()
