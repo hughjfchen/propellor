@@ -154,7 +154,10 @@ f `isCopyOf` src = property desc $ go =<< (liftIO $ tryIO $ getFileStatus src)
   where
 	desc = f ++ " is copy of " ++ src
 	go (Right stat) = if isRegularFile stat
-		then gocmp =<< (liftIO $ cmp)
+		then ifM (liftIO $ doesFileExist f)
+			( gocmp =<< (liftIO $ cmp)
+			, doit
+			)
 		else warningMessage (src ++ " is not a regular file") >>
 			return FailedChange
 	go (Left e) = warningMessage (show e) >> return FailedChange
