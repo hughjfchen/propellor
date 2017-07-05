@@ -1,4 +1,4 @@
-propellor (4.0.7) UNRELEASED; urgency=medium
+propellor (4.1.0) UNRELEASED; urgency=medium
 
   * User.hasInsecurePassword makes sure shadow passwords are enabled,
     so if the insecure password is later changed, the new password won't be
@@ -16,6 +16,8 @@ propellor (4.0.7) UNRELEASED; urgency=medium
     chroot.
   * When provisioning a container, output was buffered until the whole
     process was done; now output will be displayed immediately.
+  * LightDM.autoLogin: Make it require LightDM.installed.
+    (minor API change as the type changed)
 
  -- Joey Hess <id@joeyh.name>  Tue, 20 Jun 2017 10:55:37 -0400
 
