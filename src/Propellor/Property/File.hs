@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 
 module Propellor.Property.File where
 
@@ -176,6 +176,20 @@ ownerGroup f (User owner) (Group group) = p `describe` (f ++ " owner " ++ og)
 	p = cmdProperty "chown" [og, f]
 		`changesFile` f
 	og = owner ++ ":" ++ group
+
+-- | Given a base directory, and a relative path under that
+-- directory, applies a property to each component of the path in turn, 
+-- starting with the base directory.
+--
+-- For example, to make a file owned by a user, making sure their home
+-- directory and the subdirectories to it are also owned by them:
+--
+-- > "/home/user/program/file" `hasContent` ["foo"]
+-- > 	`before` applyPath "/home/user" ".config/program/file" 
+-- > 		(\f -> ownerGroup f (User "user") (Group "user"))
+applyPath :: Monoid (Property metatypes) => FilePath -> FilePath -> (FilePath -> Property metatypes) -> Property metatypes
+applyPath basedir relpath mkp = mconcat $ 
+	map mkp (scanl (</>) basedir (splitPath relpath))
 
 -- | Ensures that a file/dir has the specfied mode.
 mode :: FilePath -> FileMode -> Property UnixLike

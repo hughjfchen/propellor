@@ -153,6 +153,7 @@ Library
     Propellor.Property.Unbound
     Propellor.Property.User
     Propellor.Property.Uwsgi
+    Propellor.Property.XFCE
     Propellor.Property.ZFS
     Propellor.Property.ZFS.Process
     Propellor.Property.ZFS.Properties

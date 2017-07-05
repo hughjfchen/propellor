@@ -18,6 +18,9 @@ propellor (4.1.0) UNRELEASED; urgency=medium
     process was done; now output will be displayed immediately.
   * LightDM.autoLogin: Make it require LightDM.installed.
     (minor API change as the type changed)
+  * Propellor.Property.XFCE added with some useful properties for the
+    desktop environment.
+  * Added File.applyPath property.
 
  -- Joey Hess <id@joeyh.name>  Tue, 20 Jun 2017 10:55:37 -0400
 

@@ -50,6 +50,7 @@ import Data.Monoid
 import Control.Monad.IfElse
 import "mtl" Control.Monad.RWS.Strict
 import System.Posix.Files
+import Data.Maybe
 import Data.List
 import Data.Hashable
 import Control.Applicative
