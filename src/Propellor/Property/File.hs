@@ -105,11 +105,11 @@ hasPrivContent' writemode source f context =
 
 -- | Replaces the content of a file with the transformed content of another file
 basedOn :: FilePath -> (FilePath, [Line] -> [Line]) -> Property UnixLike
-f `basedOn` (f', a) = property' desc $ \o -> do
-	tmpl <- liftIO $ readFile f'
+f `basedOn` (src, a) = property' desc $ \o -> do
+	tmpl <- liftIO $ readFile src
 	ensureProperty o $ fileProperty desc (\_ -> a $ lines $ tmpl) f
   where
-	desc = f ++ " is based on " ++ f'
+	desc = f ++ " is based on " ++ src
 
 -- | Removes a file. Does not remove symlinks or non-plain-files.
 notPresent :: FilePath -> Property UnixLike
@@ -150,23 +150,23 @@ link `isSymlinkedTo` (LinkTarget target) = property desc $
 
 -- | Ensures that a file is a copy of another (regular) file.
 isCopyOf :: FilePath -> FilePath -> Property UnixLike
-f `isCopyOf` f' = property desc $ go =<< (liftIO $ tryIO $ getFileStatus f')
+f `isCopyOf` src = property desc $ go =<< (liftIO $ tryIO $ getFileStatus src)
   where
-	desc = f ++ " is copy of " ++ f'
+	desc = f ++ " is copy of " ++ src
 	go (Right stat) = if isRegularFile stat
 		then gocmp =<< (liftIO $ cmp)
-		else warningMessage (f' ++ " is not a regular file") >>
+		else warningMessage (src ++ " is not a regular file") >>
 			return FailedChange
 	go (Left e) = warningMessage (show e) >> return FailedChange
 
-	cmp = safeSystem "cmp" [Param "-s", Param "--", File f, File f']
+	cmp = safeSystem "cmp" [Param "-s", Param "--", File f, File src]
 	gocmp ExitSuccess = noChange
 	gocmp (ExitFailure 1) = doit
 	gocmp _ = warningMessage "cmp failed" >> return FailedChange
 
-	doit = makeChange $ copy f' `viaStableTmp` f
-	copy src dest = unlessM (runcp src dest) $ errorMessage "cp failed"
-	runcp src dest = boolSystem "cp"
+	doit = makeChange $ copy `viaStableTmp` f
+	copy dest = unlessM (runcp dest) $ errorMessage "cp failed"
+	runcp dest = boolSystem "cp"
 		[Param "--preserve=all", Param "--", File src, File dest]
 
 -- | Ensures that a file/dir has the specified owner and group.
