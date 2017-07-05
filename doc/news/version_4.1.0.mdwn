@@ -1,0 +1,26 @@
+propellor 4.1.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * User.hasInsecurePassword makes sure shadow passwords are enabled,
+     so if the insecure password is later changed, the new password won't be
+     exposed.
+   * Bugfix: Apache.httpsVirtualHost' must create ssl/hn/ dir earlier
+     Thanks, Sean Whitton.
+   * Bootstrap.clonedFrom: Fix bug that broke copying .git/config into
+     chroot.
+   * Diskimage.imageExists: Align disk image size to multiple of 4096
+     sector size, since some programs (such as VBoxManage convertdd)
+     refuse to operate on disk images not aligned to a sector size.
+   * Bootstrap.bootstrappedFrom: Fix bug that caused propellor to only
+     be built from the bootstrapped config the first time.
+   * Bootstrap.bootstrappedFrom: Avoid doing anything when not run in a
+     chroot.
+   * When provisioning a container, output was buffered until the whole
+     process was done; now output will be displayed immediately.
+   * LightDM.autoLogin: Make it require LightDM.installed.
+     (minor API change as the type changed)
+   * Propellor.Property.XFCE added with some useful properties for the
+     desktop environment.
+   * Added File.applyPath property.
+   * Added File.checkOverwrite.
+   * File.isCopyOf: Fix bug that prevented this property from working
+     when the destination file did not yet exist."""]]

@@ -1,5 +1,0 @@
-propellor 4.0.6 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Fix bug that sometimes made --spin fail with
-     "fatal: Couldn't find remote ref HEAD"
-   * Display error and warning messages to stderr, not stdout."""]]
