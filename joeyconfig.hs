@@ -103,6 +103,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 			`setFlag` BootFlag
 		, partition EXT4 `mountedAt` "/"
 			`mountOpt` errorReadonly
+			`addFreeSpace` MegaBytes 256
 		, swapPartition (MegaBytes 256)
 		]
 
