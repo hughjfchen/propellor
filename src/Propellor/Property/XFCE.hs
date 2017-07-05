@@ -10,10 +10,15 @@ installed = Apt.installed ["task-xfce-desktop"]
 	`describe` "XFCE desktop installed"
 
 -- | Minimal install of XFCE, with a terminal emulator and panel,
--- and X, but not any of the extras.
+-- and X and network-manager, but not any of the extra apps.
 installedMin :: Property DebianLike
 installedMin = Apt.installedMin ["xfce4", "xfce4-terminal", "task-desktop"]
 	`describe` "minimal XFCE desktop installed"
+
+-- | Installs network-manager-gnome, which is the way to get
+-- network-manager to manage networking in XFCE too.
+networkManager :: Property DebianLike
+networkManager = Apt.installedMin ["network-manager-gnome"]
 
 -- | Normally at first login, XFCE asks what kind of panel the user wants.
 -- This enables the default configuration noninteractively.

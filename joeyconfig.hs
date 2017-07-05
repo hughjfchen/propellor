@@ -118,9 +118,10 @@ demo = host "demo" $ props
 	& root `User.hasInsecurePassword` "debian"
 	& user `User.hasInsecurePassword` "debian"
 	& XFCE.installedMin
+	& XFCE.networkManager
 	& XFCE.defaultPanelFor user File.OverwriteExisting
 	& LightDM.autoLogin user
-	& Apt.installed ["network-manager", "network-manager-gnome", "firefox"]
+	& Apt.installed ["firefox"]
   where
 	user = User "user"
 	root = User "root"
