@@ -22,6 +22,7 @@ import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.LightDM as LightDM
+import qualified Propellor.Property.XFCE as XFCE
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
@@ -106,6 +107,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 			`addFreeSpace` MegaBytes 256
 		, swapPartition (MegaBytes 256)
 		]
+		`before` File.ownerGroup "/srv/propellor-disk.img" (User "joey") (Group "joey")
 
 demo :: Host
 demo = host "demo.kitenet.net" $ props
@@ -113,11 +115,13 @@ demo = host "demo.kitenet.net" $ props
 	& Hostname.setTo "demo"
 	& Apt.installed ["linux-image-amd64"]
 	& bootstrappedFrom GitRepoOutsideChroot
-	& Apt.installed ["task-desktop", "xfce4", "xfce4-terminal", "firefox"]
 	& User.accountFor user
-	& LightDM.autoLogin user
-	& user `User.hasInsecurePassword` "debian"
 	& root `User.hasInsecurePassword` "debian"
+	& user `User.hasInsecurePassword` "debian"
+	& XFCE.installedMin
+	& XFCE.defaultPanelFor user
+	& LightDM.autoLogin user
+	& Apt.installed ["firefox"]
   where
 	user = User "user"
 	root = User "root"
