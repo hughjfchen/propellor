@@ -110,9 +110,8 @@ darkstar = host "darkstar.kitenet.net" $ props
 		`before` File.ownerGroup "/srv/propellor-disk.img" (User "joey") (Group "joey")
 
 demo :: Host
-demo = host "demo.kitenet.net" $ props
+demo = host "demo" $ props
 	& osDebian Unstable X86_64
-	& Hostname.setTo "demo"
 	& Apt.installed ["linux-image-amd64"]
 	& bootstrappedFrom GitRepoOutsideChroot
 	& User.accountFor user
