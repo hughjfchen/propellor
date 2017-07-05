@@ -118,7 +118,7 @@ demo = host "demo" $ props
 	& root `User.hasInsecurePassword` "debian"
 	& user `User.hasInsecurePassword` "debian"
 	& XFCE.installedMin
-	& XFCE.defaultPanelFor user
+	& XFCE.defaultPanelFor user OverwriteExisting
 	& LightDM.autoLogin user
 	& Apt.installed ["firefox"]
   where
