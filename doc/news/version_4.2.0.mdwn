@@ -1,0 +1,13 @@
+propellor 4.2.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * DiskImage.grubBooted no longer takes a BIOS parameter,
+     and no longer implicitly adds Grub.installed to the properties of
+     the disk image. If you used DiskImage.grubBooted, you'll need to update
+     your propellor configuration, removing the BIOS parameter from
+     grubBooted and adding a Grub.installed property to the disk image, eg:
+         &amp; Grub.installed PC
+     (API change)
+   * Grub.installed: Avoid running update-grub when used in a chroot, since
+     it will get confused.
+   * DiskImage.Finalization: Simplified this type since it does not need to
+     be used to install packages anymore. (API change)"""]]
