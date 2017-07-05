@@ -8,6 +8,8 @@ module Propellor.Engine (
 	fromHost,
 	fromHost',
 	onlyProcess,
+	chainPropellor,
+	runChainPropellor,
 ) where
 
 import System.Exit
@@ -17,7 +19,9 @@ import "mtl" Control.Monad.RWS.Strict
 import System.PosixCompat
 import System.Posix.IO
 import System.FilePath
+import System.Console.Concurrent
 import Control.Applicative
+import Control.Concurrent.Async
 import Prelude
 
 import Propellor.Types
@@ -28,6 +32,8 @@ import Propellor.Exception
 import Propellor.Info
 import Utility.Exception
 import Utility.Directory
+import Utility.Process
+import Utility.PartialPrelude
 
 -- | Gets the Properties of a Host, and ensures them all,
 -- with nice display of what's being done.
@@ -96,3 +102,53 @@ onlyProcess lockfile a = bracket lock unlock (const a)
 		return l
 	unlock = closeFd
 	alreadyrunning = error "Propellor is already running on this host!"
+
+-- | Chains to a propellor sub-Process, forwarding its output on to the
+-- display, except for the last line which is a Result.
+chainPropellor :: CreateProcess -> IO Result
+chainPropellor p = 
+	-- We want to use outputConcurrent to display output
+	-- as it's received. If only stdout were captured,
+	-- concurrent-output would buffer all outputConcurrent.
+	-- Also capturing stderr avoids that problem.
+	withOEHandles createProcessSuccess p $ \(outh, errh) -> do
+		(r, ()) <- processChainOutput outh
+			`concurrently` forwardChainError errh
+		return r
+
+-- | Reads and displays each line from the Handle, except for the last line
+-- which is a Result.
+processChainOutput :: Handle -> IO Result
+processChainOutput h = go Nothing
+  where
+	go lastline = do
+		v <- catchMaybeIO (hGetLine h)
+		case v of
+			Nothing -> case lastline of
+				Nothing -> do
+					return FailedChange
+				Just l -> case readish l of
+					Just r -> pure r
+					Nothing -> do
+						outputConcurrent (l ++ "\n")
+						return FailedChange
+			Just s -> do
+				outputConcurrent $
+					maybe "" (\l -> if null l then "" else l ++ "\n") lastline
+				go (Just s)
+
+forwardChainError :: Handle -> IO ()
+forwardChainError h = do
+	v <- catchMaybeIO (hGetLine h)
+	case v of
+		Nothing -> return ()
+		Just s -> do
+			errorConcurrent (s ++ "\n")
+			forwardChainError h
+
+-- | Used by propellor sub-Processes that are run by chainPropellor.
+runChainPropellor :: Host -> Propellor Result -> IO ()
+runChainPropellor h a = do
+	r <- runPropellor h a
+	flushConcurrentOutput
+	putStrLn $ "\n" ++ show r

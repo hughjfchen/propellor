@@ -14,7 +14,6 @@ module Propellor.Message (
 	infoMessage,
 	errorMessage,
 	stopPropellorMessage,
-	processChainOutput,
 	messagesDone,
 	createProcessConcurrent,
 	withConcurrentOutput,
@@ -31,7 +30,6 @@ import Prelude
 
 import Propellor.Types
 import Propellor.Types.Exception
-import Utility.PartialPrelude
 import Utility.Monad
 import Utility.Exception
 
@@ -141,27 +139,6 @@ colorLine intensity color msg = concat <$> sequence
 	-- the color set and reset happen in the same line.
 	, pure "\n"
 	]
-
--- | Reads and displays each line from the Handle, except for the last line
--- which is a Result.
-processChainOutput :: Handle -> IO Result
-processChainOutput h = go Nothing
-  where
-	go lastline = do
-		v <- catchMaybeIO (hGetLine h)
-		case v of
-			Nothing -> case lastline of
-				Nothing -> do
-					return FailedChange
-				Just l -> case readish l of
-					Just r -> pure r
-					Nothing -> do
-						outputConcurrent (l ++ "\n")
-						return FailedChange
-			Just s -> do
-				outputConcurrent $
-					maybe "" (\l -> if null l then "" else l ++ "\n") lastline
-				go (Just s)
 
 -- | Called when all messages about properties have been printed.
 messagesDone :: IO ()

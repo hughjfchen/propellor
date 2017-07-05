@@ -3,6 +3,8 @@ module Propellor.Bootstrap (
 	checkBinaryCommand,
 	installGitCommand,
 	buildPropellor,
+	checkDepsCommand,
+	buildCommand,
 ) where
 
 import Propellor.Base

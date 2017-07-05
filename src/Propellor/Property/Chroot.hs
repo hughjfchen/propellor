@@ -37,7 +37,6 @@ import Utility.Split
 
 import qualified Data.Map as M
 import System.Posix.Directory
-import System.Console.Concurrent
 
 -- | Specification of a chroot. Normally you'll use `debootstrapped` or
 -- `bootstrapped` to construct a Chroot value.
@@ -201,9 +200,7 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 			, "--continue"
 			, show cmd
 			]
-		let p' = p { env = Just pe }
-		r <- liftIO $ withHandle StdoutHandle createProcessSuccess p'
-			processChainOutput
+		r <- liftIO $ chainPropellor (p { env = Just pe })
 		liftIO cleanup
 		return r
 
@@ -223,13 +220,12 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 	go h = do
 		changeWorkingDirectory localdir
 		when onconsole forceConsole
-		onlyProcess (provisioningLock loc) $ do
-			r <- runPropellor (setInChroot h) $ ensureChildProperties $
-				if systemdonly
-					then [toChildProperty Systemd.installed]
-					else hostProperties h
-			flushConcurrentOutput
-			putStrLn $ "\n" ++ show r
+		onlyProcess (provisioningLock loc) $
+			runChainPropellor (setInChroot h) $
+				ensureChildProperties $
+					if systemdonly
+						then [toChildProperty Systemd.installed]
+						else hostProperties h
 chain _ _ = errorMessage "bad chain command"
 
 inChrootProcess :: Bool -> Chroot -> [String] -> IO (CreateProcess, IO ())
