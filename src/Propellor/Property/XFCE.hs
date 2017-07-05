@@ -26,13 +26,15 @@ defaultPanelFor u@(User username) = property' desc $ \w -> do
 	ensureProperty w (go home)
   where
 	desc = "default XFCE panel for " ++ username
-	cf = ".config" </> "xfce4" </> "xfconf"
+	basecf = ".config" </> "xfce4" </> "xfconf"
 		</> "xfce-perchannel-xml" </> "xfce4-panel.xml"
 	-- This location is probably Debian-specific.
 	defcf = "/etc/xdg/xfce4/panel/default.xml"
 	go :: FilePath -> Property DebianLike
-	go home = tightenTargets $
-		(home </> cf) `File.isCopyOf` defcf
-			`before` File.applyPath home cf
+	go home = tightenTargets $ check (not <$> doesFileExist cf) $
+		cf `File.isCopyOf` defcf
+			`before` File.applyPath home basecf
 				(\f -> File.ownerGroup f u (userGroup u))
 			`requires` Apt.installed ["xfce4-panel"]
+	  where
+		cf = home </> basecf
