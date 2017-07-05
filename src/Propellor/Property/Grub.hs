@@ -3,6 +3,7 @@ module Propellor.Property.Grub where
 import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
+import Propellor.Property.Chroot (inChroot)
 
 -- | Eg, \"hd0,0\" or \"xen/xvda1\"
 type GrubDevice = String
@@ -18,9 +19,10 @@ data BIOS = PC | EFI64 | EFI32 | Coreboot | Xen
 -- | Installs the grub package. This does not make grub be used as the
 -- bootloader.
 --
--- This includes running update-grub.
+-- This includes running update-grub, unless it's run in a chroot.
 installed :: BIOS -> Property DebianLike
-installed bios = installed' bios `onChange` mkConfig
+installed bios = installed' bios 
+	`onChange` (check (not <$> inChroot) mkConfig)
 
 -- Run update-grub, to generate the grub boot menu. It will be
 -- automatically updated when kernel packages are installed.

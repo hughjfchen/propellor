@@ -99,7 +99,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 
 	& imageBuilt "/srv/propellor-disk.img"
 		(Chroot.hostChroot demo (Chroot.Debootstrapped mempty))
-		MSDOS (grubBooted PC)
+		MSDOS grubBooted
 		[ partition EXT2 `mountedAt` "/boot"
 			`setFlag` BootFlag
 		, partition EXT4 `mountedAt` "/"
@@ -113,6 +113,7 @@ demo :: Host
 demo = host "demo" $ props
 	& osDebian Unstable X86_64
 	& Apt.installed ["linux-image-amd64"]
+	& Grub.installed PC
 	& bootstrappedFrom GitRepoOutsideChroot
 	& User.accountFor user
 	& root `User.hasInsecurePassword` "debian"

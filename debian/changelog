@@ -1,3 +1,19 @@
+propellor (4.2.0) UNRELEASED; urgency=medium
+
+  * DiskImage.grubBooted no longer takes a BIOS parameter,
+    and no longer implicitly adds Grub.installed to the properties of
+    the disk image. If you used DiskImage.grubBooted, you'll need to update
+    your propellor configuration, removing the BIOS parameter from
+    grubBooted and adding a Grub.installed property to the disk image, eg:
+        & Grub.installed PC
+    (API change)
+  * Grub.installed: Avoid running update-grub when used in a chroot, since
+    it will get confused.
+  * DiskImage.Finalization: Simplified this type since it does not need to
+    be used to install packages anymore. (API change)
+
+ -- Joey Hess <id@joeyh.name>  Wed, 05 Jul 2017 17:43:26 -0400
+
 propellor (4.1.0) unstable; urgency=medium
 
   * User.hasInsecurePassword makes sure shadow passwords are enabled,

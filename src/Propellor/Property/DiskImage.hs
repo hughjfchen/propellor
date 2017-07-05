@@ -71,7 +71,7 @@ type DiskImage = FilePath
 -- > 
 -- > foo = host "foo.example.com" $ props
 -- > 	& imageBuilt "/srv/diskimages/disk.img" mychroot
--- >		MSDOS (grubBooted PC)
+-- >		MSDOS grubBooted
 -- >		[ partition EXT2 `mountedAt` "/boot"
 -- >			`setFlag` BootFlag
 -- >		, partition EXT4 `mountedAt` "/"
@@ -83,6 +83,7 @@ type DiskImage = FilePath
 -- >	mychroot d = debootstrapped mempty d $ props
 -- >		& osDebian Unstable X86_64
 -- >		& Apt.installed ["linux-image-amd64"]
+-- >		& Grub.installed PC
 -- >		& User.hasPassword (User "root")
 -- >		& User.accountFor (User "demo")
 -- > 		& User.hasPassword (User "demo")
@@ -96,7 +97,7 @@ type DiskImage = FilePath
 -- > foo = host "foo.example.com" $ props
 -- >	& imageBuilt "/srv/diskimages/bar-disk.img"
 -- >		(hostChroot bar (Debootstrapped mempty))
--- >		MSDOS (grubBooted PC)
+-- >		MSDOS grubBooted
 -- >		[ partition EXT2 `mountedAt` "/boot"
 -- >			`setFlag` BootFlag
 -- >		, partition EXT4 `mountedAt` "/"
@@ -108,6 +109,7 @@ type DiskImage = FilePath
 -- > bar = host "bar.example.com" $ props
 -- >	& osDebian Unstable X86_64
 -- >	& Apt.installed ["linux-image-amd64"]
+-- >	& Grub.installed PC
 -- >	& hasPassword (User "root")
 imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageBuilt = imageBuilt' False
@@ -139,8 +141,6 @@ imageBuilt' rebuild img mkchroot tabletype final partspec =
 			-- Before ensuring any other properties of the chroot,
 			-- avoid starting services. Reverted by imageFinalized.
 			&^ Chroot.noServices
-			-- First stage finalization.
-			& fst final
 			& cachesCleaned
 	-- Only propagate privdata Info from this chroot, nothing else.
 	propprivdataonly (Chroot.Chroot d b ip h) =
@@ -269,20 +269,17 @@ imageExists img isz = property ("disk image exists" ++ img) $ liftIO $ do
 	-- Common sector sizes are 512 and 4096; use 4096 as it's larger.
 	sectorsize = 4096 :: Double
 
--- | A pair of properties. The first property is satisfied within the
--- chroot, and is typically used to download the boot loader.
+-- | A property that is run after the disk image is created, with
+-- its populated partition tree mounted in the provided
+-- location from the provided loop devices. This is typically used to
+-- install a boot loader in the image's superblock.
 --
--- The second property is run after the disk image is created,
--- with its populated partition tree mounted in the provided
--- location from the provided loop devices. This will typically
--- take care of installing the boot loader to the image.
---
--- It's ok if the second property leaves additional things mounted
+-- It's ok if the property leaves additional things mounted
 -- in the partition tree.
-type Finalization = (Property Linux, (FilePath -> [LoopDev] -> Property Linux))
+type Finalization = (FilePath -> [LoopDev] -> Property Linux)
 
 imageFinalized :: Finalization -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> PartTable -> Property Linux
-imageFinalized (_, final) mnts mntopts devs (PartTable _ parts) =
+imageFinalized final mnts mntopts devs (PartTable _ parts) =
 	property' "disk image finalized" $ \w ->
 		withTmpDir "mnt" $ \top ->
 			go w top `finally` liftIO (unmountall top)
@@ -327,47 +324,48 @@ imageFinalized (_, final) mnts mntopts devs (PartTable _ parts) =
 	allowservices top = nukeFile (top ++ "/usr/sbin/policy-rc.d")
 
 noFinalization :: Finalization
-noFinalization = (doNothing, \_ _ -> doNothing)
+noFinalization = \_ _ -> doNothing
 
 -- | Makes grub be the boot loader of the disk image.
-grubBooted :: Grub.BIOS -> Finalization
-grubBooted bios = (Grub.installed' bios, boots)
+--
+-- This does not install the grub package. You will need to add
+-- the `Grub.installed` property to the chroot.
+grubBooted :: Finalization
+grubBooted mnt loopdevs = combineProperties "disk image boots using grub" $ props
+	-- bind mount host /dev so grub can access the loop devices
+	& bindMount "/dev" (inmnt "/dev")
+	& mounted "proc" "proc" (inmnt "/proc") mempty
+	& mounted "sysfs" "sys" (inmnt "/sys") mempty
+	-- update the initramfs so it gets the uuid of the root partition
+	& inchroot "update-initramfs" ["-u"]
+		`assume` MadeChange
+	-- work around for http://bugs.debian.org/802717
+	& check haveosprober (inchroot "chmod" ["-x", osprober])
+	& inchroot "update-grub" []
+		`assume` MadeChange
+	& check haveosprober (inchroot "chmod" ["+x", osprober])
+	& inchroot "grub-install" [wholediskloopdev]
+		`assume` MadeChange
+	-- sync all buffered changes out to the disk image
+	-- may not be necessary, but seemed needed sometimes
+	-- when using the disk image right away.
+	& cmdProperty "sync" []
+		`assume` NoChange
   where
-	boots mnt loopdevs = combineProperties "disk image boots using grub" $ props
-		-- bind mount host /dev so grub can access the loop devices
-		& bindMount "/dev" (inmnt "/dev")
-		& mounted "proc" "proc" (inmnt "/proc") mempty
-		& mounted "sysfs" "sys" (inmnt "/sys") mempty
-		-- update the initramfs so it gets the uuid of the root partition
-		& inchroot "update-initramfs" ["-u"]
-			`assume` MadeChange
-		-- work around for http://bugs.debian.org/802717
-		& check haveosprober (inchroot "chmod" ["-x", osprober])
-		& inchroot "update-grub" []
-			`assume` MadeChange
-		& check haveosprober (inchroot "chmod" ["+x", osprober])
-		& inchroot "grub-install" [wholediskloopdev]
-			`assume` MadeChange
-		-- sync all buffered changes out to the disk image
-		-- may not be necessary, but seemed needed sometimes
-		-- when using the disk image right away.
-		& cmdProperty "sync" []
-			`assume` NoChange
-	  where
-	  	-- cannot use </> since the filepath is absolute
-		inmnt f = mnt ++ f
+  	-- cannot use </> since the filepath is absolute
+	inmnt f = mnt ++ f
 
-		inchroot cmd ps = cmdProperty "chroot" ([mnt, cmd] ++ ps)
+	inchroot cmd ps = cmdProperty "chroot" ([mnt, cmd] ++ ps)
 
-		haveosprober = doesFileExist (inmnt osprober)
-		osprober = "/etc/grub.d/30_os-prober"
+	haveosprober = doesFileExist (inmnt osprober)
+	osprober = "/etc/grub.d/30_os-prober"
 
-		-- It doesn't matter which loopdev we use; all
-		-- come from the same disk image, and it's the loop dev
-		-- for the whole disk image we seek.
-		wholediskloopdev = case loopdevs of
-			(l:_) -> wholeDiskLoopDev l
-			[] -> error "No loop devs provided!"
+	-- It doesn't matter which loopdev we use; all
+	-- come from the same disk image, and it's the loop dev
+	-- for the whole disk image we seek.
+	wholediskloopdev = case loopdevs of
+		(l:_) -> wholeDiskLoopDev l
+		[] -> error "No loop devs provided!"
 
 isChild :: FilePath -> Maybe MountPoint -> Bool
 isChild mntpt (Just d)
