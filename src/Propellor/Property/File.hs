@@ -307,3 +307,12 @@ readConfigFileName = readish . unescape
 			Nothing -> '_' : ns ++ unescape cs'
 			Just n -> chr n : unescape cs'
 	unescape (c:cs) = c : unescape cs
+
+data Overwrite = OverwriteExisting | PreserveExisting
+
+-- | When passed PreserveExisting, only ensures the property when the file
+-- does not exist.
+checkOverwrite :: Overwrite -> FilePath -> (FilePath -> Property i) -> Property i
+checkOverwrite OverwriteExisting f mkp = mkp f
+checkOverwrite PreserveExisting f mkp = 
+	check (not <$> doesFileExist f) (mkp f)

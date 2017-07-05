@@ -21,6 +21,7 @@ propellor (4.1.0) UNRELEASED; urgency=medium
   * Propellor.Property.XFCE added with some useful properties for the
     desktop environment.
   * Added File.applyPath property.
+  * Added File.checkOverwrite.
   * File.isCopyOf: Fix bug that prevented this property from working
     when the destination file did not yet exist.
 

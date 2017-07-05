@@ -15,11 +15,9 @@ installedMin :: Property DebianLike
 installedMin = Apt.installedMin ["xfce4", "xfce4-terminal", "task-desktop"]
 	`describe` "minimal XFCE desktop installed"
 
-data Overwrite = OverwriteExisting | PreserveExisting
-
 -- | Normally at first login, XFCE asks what kind of panel the user wants.
 -- This enables the default configuration noninteractively.
-defaultPanelFor :: User -> Overwrite -> Property DebianLike
+defaultPanelFor :: User -> File.Overwrite -> Property DebianLike
 defaultPanelFor u@(User username) overwrite = property' desc $ \w -> do
 	home <- liftIO $ User.homedir u
 	ensureProperty w (go home)
@@ -30,13 +28,9 @@ defaultPanelFor u@(User username) overwrite = property' desc $ \w -> do
 	-- This location is probably Debian-specific.
 	defcf = "/etc/xdg/xfce4/panel/default.xml"
 	go :: FilePath -> Property DebianLike
-	go home = tightenTargets $ checkoverwrite cf
-		cf `File.isCopyOf` defcf
-			`before` File.applyPath home basecf
-				(\f -> File.ownerGroup f u (userGroup u))
-			`requires` Apt.installed ["xfce4-panel"]
-	  where
-		cf = home </> basecf
-	checkoverwrite cf p = case overwrite of
-		OverwriteExisting -> p
-		PreserveExisting -> check (not <$> doesFileExist cf) p
+	go home = tightenTargets $ 
+		File.checkOverwrite overwrite (home </> basecf) $ \cf ->
+			cf `File.isCopyOf` defcf
+				`before` File.applyPath home basecf
+					(\f -> File.ownerGroup f u (userGroup u))
+				`requires` Apt.installed ["xfce4-panel"]
