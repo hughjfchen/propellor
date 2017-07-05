@@ -120,7 +120,7 @@ demo = host "demo" $ props
 	& XFCE.installedMin
 	& XFCE.defaultPanelFor user File.OverwriteExisting
 	& LightDM.autoLogin user
-	& Apt.installed ["firefox"]
+	& Apt.installed ["network-manager", "network-manager-gnome", "firefox"]
   where
 	user = User "user"
 	root = User "root"
