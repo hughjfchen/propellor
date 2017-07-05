@@ -112,6 +112,8 @@ demo = host "demo.kitenet.net" $ props
 	& Apt.installed ["linux-image-amd64"]
 	& User "root" `User.hasInsecurePassword` "root"
 	& bootstrappedFrom GitRepoOutsideChroot
+	& Apt.installedMin ["task-desktop"]
+	& Apt.installed ["xfce4", "lightdm", "xfce4-terminal", "firefox"]
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
