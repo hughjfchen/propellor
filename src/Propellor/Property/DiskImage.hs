@@ -49,7 +49,11 @@ type DiskImage = FilePath
 -- First the specified Chroot is set up, and its properties are satisfied.
 --
 -- Then, the disk image is set up, and the chroot is copied into the
--- appropriate partition(s) of it.
+-- appropriate partition(s) of it. 
+--
+-- The partitions default to being sized just large enough to fit the files
+-- from the chroot. You can use `addFreeSpace` to make them a bit larger
+-- than that, or `setSize` to use a fixed size.
 -- 
 -- Note that the disk image file is reused if it already exists,
 -- to avoid expensive IO to generate a new one. And, it's updated in-place,

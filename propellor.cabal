@@ -1,5 +1,5 @@
 Name: propellor
-Version: 4.0.6
+Version: 4.1.0
 Cabal-Version: >= 1.20
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
@@ -153,6 +153,7 @@ Library
     Propellor.Property.Unbound
     Propellor.Property.User
     Propellor.Property.Uwsgi
+    Propellor.Property.XFCE
     Propellor.Property.ZFS
     Propellor.Property.ZFS.Process
     Propellor.Property.ZFS.Properties

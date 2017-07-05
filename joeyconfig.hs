@@ -21,6 +21,8 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
+import qualified Propellor.Property.LightDM as LightDM
+import qualified Propellor.Property.XFCE as XFCE
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
@@ -102,18 +104,27 @@ darkstar = host "darkstar.kitenet.net" $ props
 			`setFlag` BootFlag
 		, partition EXT4 `mountedAt` "/"
 			`mountOpt` errorReadonly
+			`addFreeSpace` MegaBytes 256
 		, swapPartition (MegaBytes 256)
 		]
+		`before` File.ownerGroup "/srv/propellor-disk.img" (User "joey") (Group "joey")
 
 demo :: Host
-demo = host "demo.kitenet.net" $ props
+demo = host "demo" $ props
 	& osDebian Unstable X86_64
-	& Hostname.setTo "demo"
 	& Apt.installed ["linux-image-amd64"]
-	& User "root" `User.hasInsecurePassword` "root"
 	& bootstrappedFrom GitRepoOutsideChroot
-	& Apt.installedMin ["task-desktop"]
-	& Apt.installed ["xfce4", "lightdm", "xfce4-terminal", "firefox"]
+	& User.accountFor user
+	& root `User.hasInsecurePassword` "debian"
+	& user `User.hasInsecurePassword` "debian"
+	& XFCE.installedMin
+	& XFCE.networkManager
+	& XFCE.defaultPanelFor user File.OverwriteExisting
+	& LightDM.autoLogin user
+	& Apt.installed ["firefox"]
+  where
+	user = User "user"
+	root = User "root"
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
