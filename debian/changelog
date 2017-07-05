@@ -1,4 +1,4 @@
-propellor (4.2.0) UNRELEASED; urgency=medium
+propellor (4.2.0) unstable; urgency=medium
 
   * DiskImage.grubBooted no longer takes a BIOS parameter,
     and no longer implicitly adds Grub.installed to the properties of
@@ -12,7 +12,7 @@ propellor (4.2.0) UNRELEASED; urgency=medium
   * DiskImage.Finalization: Simplified this type since it does not need to
     be used to install packages anymore. (API change)
 
- -- Joey Hess <id@joeyh.name>  Wed, 05 Jul 2017 17:43:26 -0400
+ -- Joey Hess <id@joeyh.name>  Wed, 05 Jul 2017 18:10:49 -0400
 
 propellor (4.1.0) unstable; urgency=medium
 
