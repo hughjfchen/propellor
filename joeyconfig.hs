@@ -21,6 +21,7 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
+import qualified Propellor.Property.LightDM as LightDM
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
@@ -110,10 +111,15 @@ demo = host "demo.kitenet.net" $ props
 	& osDebian Unstable X86_64
 	& Hostname.setTo "demo"
 	& Apt.installed ["linux-image-amd64"]
-	& User "root" `User.hasInsecurePassword` "root"
 	& bootstrappedFrom GitRepoOutsideChroot
-	& Apt.installedMin ["task-desktop"]
-	& Apt.installed ["xfce4", "lightdm", "xfce4-terminal", "firefox"]
+	& Apt.installed ["task-desktop", "xfce4", "xfce4-terminal", "firefox"]
+	& User.accountFor user
+	& LightDM.autoLogin user
+	& user `User.hasInsecurePassword` "debian"
+	& root `User.hasInsecurePassword` "debian"
+  where
+	user = User "user"
+	root = User "root"
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
