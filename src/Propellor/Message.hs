@@ -151,7 +151,6 @@ processChainOutput h = go Nothing
   where
 	go rval = do
 		v <- catchMaybeIO (hGetLine h)
-		debug ["chain process output", show v]
 		case v of
 			Nothing -> case rval of
 				Nothing -> return FailedChange
@@ -159,7 +158,8 @@ processChainOutput h = go Nothing
 			Just s -> do
 				case readish s of
 					Nothing -> do
-						unless (null s) $
+						unless (null s) $ do
+							debug ["chain process output", show v]
 							outputConcurrent (s ++ "\n")
 						go rval
 					Just rval' -> go rval'
