@@ -576,8 +576,7 @@ provisionContainer cid = containerDesc cid $ property "provisioned" $ liftIO $ d
 	let p = inContainerProcess cid
 		(if isConsole msgh then ["-it"] else [])
 		(shim : params)
-	r <- withHandle StdoutHandle createProcessSuccess p $
-		processChainOutput
+	r <- chainPropellor p
 	when (r /= FailedChange) $
 		setProvisionedFlag cid
 	return r
@@ -596,10 +595,9 @@ chain hostlist hn s = case toContainerId s of
   where
 	go cid h = do
 		changeWorkingDirectory localdir
-		onlyProcess (provisioningLock cid) $ do
-			r <- runPropellor h $ ensureChildProperties $ hostProperties h
-			flushConcurrentOutput
-			putStrLn $ "\n" ++ show r
+		onlyProcess (provisioningLock cid) $
+			runChainPropellor h $ 
+				ensureChildProperties $ hostProperties h
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]

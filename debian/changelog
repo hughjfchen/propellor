@@ -14,6 +14,8 @@ propellor (4.0.7) UNRELEASED; urgency=medium
     be built from the bootstrapped config the first time.
   * Bootstrap.bootstrappedFrom: Avoid doing anything when not run in a
     chroot.
+  * When provisioning a container, output was buffered until the whole
+    process was done; now output will be displayed immediately.
 
  -- Joey Hess <id@joeyh.name>  Tue, 20 Jun 2017 10:55:37 -0400
 
