@@ -1,0 +1,4 @@
+propellor 4.3.1 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Added Propellor.Property.FreeDesktop module.
+   * Added reservedSpacePercentage to the PartSpec EDSL."""]]
