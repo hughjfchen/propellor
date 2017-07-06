@@ -11,6 +11,7 @@ module Propellor.Property.ConfFile (
 	containsIniSetting,
 	hasIniSection,
 	lacksIniSection,
+	iniFileContains,
 ) where
 
 import Propellor.Base
@@ -114,3 +115,13 @@ lacksIniSection f header = adjustIniSection
 	(const []) -- remove all lines of section
 	id -- add no lines if section is missing
 	f
+
+-- | Specifies the whole content of a .ini file.
+--
+-- Revertijg this causes the file not to exist.
+iniFileContains :: FilePath -> [(IniSection, [(IniKey, String)])] -> RevertableProperty UnixLike UnixLike
+iniFileContains f l = f `hasContent` content <!> notPresent f
+  where
+	content = concatMap sectioncontent l
+	sectioncontent (section, keyvalues) = iniHeader section :
+		map (\(key, value) -> key ++ "=" ++ value) keyvalues

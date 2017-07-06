@@ -22,6 +22,7 @@ import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.LightDM as LightDM
+import qualified Propellor.Property.FreeDesktop as FreeDesktop
 import qualified Propellor.Property.XFCE as XFCE
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
@@ -123,7 +124,9 @@ demo = host "demo" $ props
 	& XFCE.networkManager
 	& XFCE.defaultPanelFor user File.OverwriteExisting
 	& LightDM.autoLogin user
-	& Apt.installed ["firefox"]
+	& FreeDesktop.autostart "installer" "Installer"
+		"firefox http://127.0.0.1:8023/"
+		`requires` Apt.installed ["firefox"]
   where
 	user = User "user"
 	root = User "root"
