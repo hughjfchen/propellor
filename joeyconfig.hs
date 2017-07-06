@@ -21,15 +21,11 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
-import qualified Propellor.Property.LightDM as LightDM
-import qualified Propellor.Property.FreeDesktop as FreeDesktop
-import qualified Propellor.Property.XFCE as XFCE
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
-import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.Aiccu as Aiccu
 import qualified Propellor.Property.OS as OS
@@ -40,8 +36,6 @@ import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.Branchable as Branchable
 import qualified Propellor.Property.SiteSpecific.JoeySites as JoeySites
-import Propellor.Property.DiskImage
-import Propellor.Property.Bootstrap
 
 main :: IO ()           --     _         ______`|                       ,-.__
 main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
@@ -50,7 +44,6 @@ main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
 hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                 --                  (o)  `
 	[ darkstar
-	, demo
 	, gnu
 	, dragon
 	, clam
@@ -97,40 +90,6 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Ssh.userKeys (User "joey") hostContext
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
-
-	& imageBuilt "/srv/propellor-disk.img"
-		(Chroot.hostChroot demo (Chroot.Debootstrapped mempty))
-		MSDOS
-		[ partition EXT2 `mountedAt` "/boot"
-			`setFlag` BootFlag
-		, partition EXT4 `mountedAt` "/"
-			`mountOpt` errorReadonly
-			`addFreeSpace` MegaBytes 256
-		, swapPartition (MegaBytes 256)
-		]
-		`before` File.ownerGroup "/srv/propellor-disk.img" (User "joey") (Group "joey")
-
-demo :: Host
-demo = host "demo" $ props
-	& osDebian Unstable X86_64
-	& Apt.installed ["linux-image-amd64"]
-	& Grub.installed PC
-	& bootstrappedFrom GitRepoOutsideChroot
-	& User.accountFor user
-	& User.hasDesktopGroups user
-	& root `User.hasInsecurePassword` "debian"
-	& user `User.hasInsecurePassword` "debian"
-	& XFCE.installedMin
-	& XFCE.networkManager
-	& XFCE.defaultPanelFor user File.OverwriteExisting
-	& LightDM.autoLogin user
-	& FreeDesktop.autostart (FreeDesktop.desktopFile "installer")
-		"Installer"
-		"firefox http://127.0.0.1:8023/"
-		`requires` Apt.installed ["firefox"]
-  where
-	user = User "user"
-	root = User "root"
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
