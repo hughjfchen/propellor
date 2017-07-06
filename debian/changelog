@@ -1,9 +1,9 @@
-propellor (4.3.1) UNRELEASED; urgency=medium
+propellor (4.3.1) unstable; urgency=medium
 
   * Added Propellor.Property.FreeDesktop module.
   * Added reservedSpacePercentage to the PartSpec EDSL.
 
- -- Joey Hess <id@joeyh.name>  Wed, 05 Jul 2017 22:57:42 -0400
+ -- Joey Hess <id@joeyh.name>  Thu, 06 Jul 2017 17:03:15 -0400
 
 propellor (4.3.0) unstable; urgency=medium
 
