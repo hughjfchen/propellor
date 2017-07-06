@@ -69,6 +69,14 @@ addFreeSpace (mp, o, p) freesz = (mp, o, \sz -> p (sz <> freesz))
 setSize :: PartSpec -> PartSize -> PartSpec
 setSize (mp, o, p) sz = (mp, o, const (p sz))
 
+-- | Sets the percent of the filesystem blocks reserved for the super-user.
+--
+-- The default is 5% for ext2 and ext4. Some filesystems may not support
+-- this.
+reservedSpacePercentage :: PartSpec -> Int -> PartSpec
+reservedSpacePercentage s percent = adjustp s $ \p -> 
+	p { partMkFsOpts = ("-m"):show percent:partMkFsOpts p }
+
 -- | Sets a flag on the partition.
 setFlag :: PartSpec -> PartFlag -> PartSpec
 setFlag s f = adjustp s $ \p -> p { partFlags = (f, True):partFlags p }
