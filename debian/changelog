@@ -1,3 +1,12 @@
+propellor (4.3.0) UNRELEASED; urgency=medium
+
+  * DiskImage: Removed grubBooted; properties that used to need it as a
+    parameter now look at Info about the bootloader that is installed in
+    the chroot that the disk image is created from.
+    (API change)
+
+ -- Joey Hess <id@joeyh.name>  Wed, 05 Jul 2017 20:17:32 -0400
+
 propellor (4.2.0) unstable; urgency=medium
 
   * DiskImage.grubBooted no longer takes a BIOS parameter,

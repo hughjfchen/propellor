@@ -4,6 +4,8 @@ import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Chroot (inChroot)
+import Propellor.Types.Info
+import Propellor.Types.Bootloader
 
 -- | Eg, \"hd0,0\" or \"xen/xvda1\"
 type GrubDevice = String
@@ -20,7 +22,7 @@ data BIOS = PC | EFI64 | EFI32 | Coreboot | Xen
 -- bootloader.
 --
 -- This includes running update-grub, unless it's run in a chroot.
-installed :: BIOS -> Property DebianLike
+installed :: BIOS -> Property (HasInfo + DebianLike)
 installed bios = installed' bios 
 	`onChange` (check (not <$> inChroot) mkConfig)
 
@@ -31,11 +33,11 @@ mkConfig = tightenTargets $ cmdProperty "update-grub" []
 	`assume` MadeChange
 
 -- | Installs grub; does not run update-grub.
-installed' :: BIOS -> Property Linux
-installed' bios = (aptinstall `pickOS` unsupportedOS)
+installed' :: BIOS -> Property (HasInfo + DebianLike)
+installed' bios = setInfoProperty aptinstall
+	(toInfo [GrubInstalled])
 	`describe` "grub package installed"
   where
-	aptinstall :: Property DebianLike
 	aptinstall = Apt.installed [debpkg]
 	debpkg = case bios of
 		PC -> "grub-pc"
@@ -66,7 +68,7 @@ boots dev = tightenTargets $ cmdProperty "grub-install" [dev]
 --
 -- The rootdev should be in the form "hd0", while the bootdev is in the form
 -- "xen/xvda".
-chainPVGrub :: GrubDevice -> GrubDevice -> TimeoutSecs -> Property DebianLike
+chainPVGrub :: GrubDevice -> GrubDevice -> TimeoutSecs -> Property (HasInfo + DebianLike)
 chainPVGrub rootdev bootdev timeout = combineProperties desc $ props
 	& File.dirExists "/boot/grub"
 	& "/boot/grub/menu.lst" `File.hasContent`

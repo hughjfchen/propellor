@@ -1,5 +1,5 @@
 Name: propellor
-Version: 4.2.0
+Version: 4.3.0
 Cabal-Version: >= 1.20
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
@@ -177,6 +177,7 @@ Library
     Propellor.EnsureProperty
     Propellor.Exception
     Propellor.Types
+    Propellor.Types.Bootloader
     Propellor.Types.ConfigurableValue
     Propellor.Types.Core
     Propellor.Types.Chroot

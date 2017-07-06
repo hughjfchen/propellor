@@ -13,16 +13,12 @@ module Propellor.Property.DiskImage (
 	imageRebuilt,
 	imageBuiltFrom,
 	imageExists,
-	-- * Finalization
-	Finalization,
-	grubBooted,
 	Grub.BIOS(..),
-	noFinalization,
 ) where
 
 import Propellor.Base
 import Propellor.Property.DiskImage.PartSpec
-import Propellor.Property.Chroot (Chroot)
+import Propellor.Property.Chroot (Chroot, chrootInfo)
 import Propellor.Property.Chroot.Util (removeChroot)
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Grub as Grub
@@ -33,6 +29,8 @@ import Propellor.Property.Mount
 import Propellor.Property.Fstab (SwapPartition(..), genFstab)
 import Propellor.Property.Partition
 import Propellor.Property.Rsync
+import Propellor.Types.Info
+import Propellor.Types.Bootloader
 import Propellor.Container
 import Utility.Path
 
@@ -71,7 +69,7 @@ type DiskImage = FilePath
 -- > 
 -- > foo = host "foo.example.com" $ props
 -- > 	& imageBuilt "/srv/diskimages/disk.img" mychroot
--- >		MSDOS grubBooted
+-- >		MSDOS
 -- >		[ partition EXT2 `mountedAt` "/boot"
 -- >			`setFlag` BootFlag
 -- >		, partition EXT4 `mountedAt` "/"
@@ -97,7 +95,7 @@ type DiskImage = FilePath
 -- > foo = host "foo.example.com" $ props
 -- >	& imageBuilt "/srv/diskimages/bar-disk.img"
 -- >		(hostChroot bar (Debootstrapped mempty))
--- >		MSDOS grubBooted
+-- >		MSDOS
 -- >		[ partition EXT2 `mountedAt` "/boot"
 -- >			`setFlag` BootFlag
 -- >		, partition EXT4 `mountedAt` "/"
@@ -111,17 +109,17 @@ type DiskImage = FilePath
 -- >	& Apt.installed ["linux-image-amd64"]
 -- >	& Grub.installed PC
 -- >	& hasPassword (User "root")
-imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageRebuilt = imageBuilt' True
 
-imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> Finalization -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
-imageBuilt' rebuild img mkchroot tabletype final partspec =
+imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageBuilt' rebuild img mkchroot tabletype partspec =
 	imageBuiltFrom img chrootdir tabletype final partspec
 		`requires` Chroot.provisioned chroot
 		`requires` (cleanrebuild <!> (doNothing :: Property UnixLike))
@@ -145,6 +143,12 @@ imageBuilt' rebuild img mkchroot tabletype final partspec =
 	-- Only propagate privdata Info from this chroot, nothing else.
 	propprivdataonly (Chroot.Chroot d b ip h) =
 		Chroot.Chroot d b (\c _ -> ip c onlyPrivData) h
+	-- Pick boot loader finalization based on which bootloader is
+	-- installed.
+	final = case fromInfo (chrootInfo chroot) of
+		[GrubInstalled] -> grubBooted
+		[] -> unbootable "no bootloader is installed"
+		_ -> unbootable "multiple bootloaders are installed; don't know which to use"
 
 -- | This property is automatically added to the chroot when building a
 -- disk image. It cleans any caches of information that can be omitted;
@@ -323,8 +327,12 @@ imageFinalized final mnts mntopts devs (PartTable _ parts) =
 
 	allowservices top = nukeFile (top ++ "/usr/sbin/policy-rc.d")
 
-noFinalization :: Finalization
-noFinalization = \_ _ -> doNothing
+unbootable :: String -> Finalization
+unbootable msg = \_ _ -> property desc $ do
+	warningMessage (desc ++ ": " ++ msg)
+	return FailedChange
+  where
+	desc = "image is not bootable"
 
 -- | Makes grub be the boot loader of the disk image.
 --

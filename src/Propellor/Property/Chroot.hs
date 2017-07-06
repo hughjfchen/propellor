@@ -15,6 +15,7 @@ module Propellor.Property.Chroot (
 	-- * Internal use
 	provisioned',
 	propagateChrootInfo,
+	chrootInfo,
 	propellChroot,
 	chain,
 	chrootSystem,

@@ -99,7 +99,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 
 	& imageBuilt "/srv/propellor-disk.img"
 		(Chroot.hostChroot demo (Chroot.Debootstrapped mempty))
-		MSDOS grubBooted
+		MSDOS
 		[ partition EXT2 `mountedAt` "/boot"
 			`setFlag` BootFlag
 		, partition EXT4 `mountedAt` "/"
