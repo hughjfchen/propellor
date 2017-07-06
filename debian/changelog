@@ -1,3 +1,9 @@
+propellor (4.3.2) UNRELEASED; urgency=medium
+
+  * Really include Propellor.Property.FreeDesktop.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 06 Jul 2017 17:28:37 -0400
+
 propellor (4.3.1) unstable; urgency=medium
 
   * Added Propellor.Property.FreeDesktop module.
