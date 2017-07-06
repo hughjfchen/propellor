@@ -124,7 +124,8 @@ demo = host "demo" $ props
 	& XFCE.networkManager
 	& XFCE.defaultPanelFor user File.OverwriteExisting
 	& LightDM.autoLogin user
-	& FreeDesktop.autostart "installer" "Installer"
+	& FreeDesktop.autostart (FreeDesktop.desktopFile "installer")
+		"Installer"
 		"firefox http://127.0.0.1:8023/"
 		`requires` Apt.installed ["firefox"]
   where
