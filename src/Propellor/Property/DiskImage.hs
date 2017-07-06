@@ -18,7 +18,7 @@ module Propellor.Property.DiskImage (
 
 import Propellor.Base
 import Propellor.Property.DiskImage.PartSpec
-import Propellor.Property.Chroot (Chroot, chrootInfo)
+import Propellor.Property.Chroot (Chroot)
 import Propellor.Property.Chroot.Util (removeChroot)
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Grub as Grub
@@ -145,7 +145,7 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 		Chroot.Chroot d b (\c _ -> ip c onlyPrivData) h
 	-- Pick boot loader finalization based on which bootloader is
 	-- installed.
-	final = case fromInfo (chrootInfo chroot) of
+	final = case fromInfo (containerInfo chroot) of
 		[GrubInstalled] -> grubBooted
 		[] -> unbootable "no bootloader is installed"
 		_ -> unbootable "multiple bootloaders are installed; don't know which to use"
