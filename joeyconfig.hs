@@ -75,7 +75,7 @@ testvm = host "testvm.kitenet.net" $ props
 	& Apt.installed ["ssh"]
 	& User.hasPassword (User "root")
   where
-	postinstall :: Property DebianLike
+	postinstall :: Property (HasInfo + DebianLike)
 	postinstall = propertyList "fixing up after clean install" $ props
 		& OS.preserveRootSshAuthorized
 		& OS.preserveResolvConf
