@@ -1,0 +1,3 @@
+propellor 4.3.2 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Really include Propellor.Property.FreeDesktop."""]]

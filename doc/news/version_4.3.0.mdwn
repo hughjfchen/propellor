@@ -1,6 +1,0 @@
-propellor 4.3.0 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * DiskImage: Removed grubBooted; properties that used to need it as a
-     parameter now look at Info about the bootloader that is installed in
-     the chroot that the disk image is created from.
-     (API change)"""]]
