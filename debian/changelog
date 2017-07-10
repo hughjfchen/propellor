@@ -1,5 +1,7 @@
 propellor (4.3.3) UNRELEASED; urgency=medium
 
+  * User: add systemGroup and use it for systemAccountFor'
+    Thanks, Félix Sipma. 
   * Export a Restic.backup' property.
     Thanks, Félix Sipma. 
 
