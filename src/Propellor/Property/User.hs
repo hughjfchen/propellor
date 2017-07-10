@@ -22,17 +22,18 @@ systemAccountFor :: User -> Property DebianLike
 systemAccountFor user@(User u) = systemAccountFor' user Nothing (Just (Group u))
 
 systemAccountFor' :: User -> Maybe FilePath -> Maybe Group -> Property DebianLike
-systemAccountFor' (User u) mhome mgroup = tightenTargets $ check nouser go
+systemAccountFor' (User u) mhome mgroup = case mgroup of
+	Nothing -> prop
+	Just g -> prop
+		`requires` systemGroup g
 	`describe` ("system account for " ++ u)
   where
+	prop = tightenTargets $ check nouser go
 	nouser = isNothing <$> catchMaybeIO (getUserEntryForName u)
 	go = cmdProperty "adduser" $
-		[ "--system" ]
+		[ "--system", "--home" ]
 		++
-		"--home" : maybe
-			["/nonexistent", "--no-create-home"]
-			( \h -> [ h ] )
-			mhome
+		maybe ["/nonexistent", "--no-create-home"] ( \h -> [h] ) mhome
 		++
 		maybe [] ( \(Group g) -> ["--ingroup", g] ) mgroup
 		++
@@ -40,6 +41,16 @@ systemAccountFor' (User u) mhome mgroup = tightenTargets $ check nouser go
 		, "--disabled-login"
 		, "--disabled-password"
 		, u
+		]
+
+systemGroup :: Group -> Property UnixLike
+systemGroup (Group g) = check nogroup go
+	`describe` ("system account for " ++ g)
+  where
+	nogroup = isNothing <$> catchMaybeIO (getGroupEntryForName g)
+	go = cmdProperty "addgroup"
+		[ "--system"
+		, g
 		]
 
 -- | Removes user home directory!! Use with caution.
@@ -111,7 +122,7 @@ chpasswd (User user) v ps = makeChange $ withHandle StdinHandle createProcessSuc
 		hClose h
 
 lockedPassword :: User -> Property DebianLike
-lockedPassword user@(User u) = tightenTargets $ 
+lockedPassword user@(User u) = tightenTargets $
 	check (not <$> isLockedPassword user) go
 		`describe` ("locked " ++ u ++ " password")
   where
