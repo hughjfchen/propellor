@@ -93,6 +93,9 @@ spin' mprivdata relay target hst = do
 	sys = case fromInfo (hostInfo hst) of
 		InfoVal o -> Just o
 		NoInfoVal -> Nothing
+	bootstrapper = case fromInfo (hostInfo hst) of
+		NoInfoVal -> defaultBootstrapper
+		InfoVal bs -> bs
 
 	relaying = relay == Just target
 	viarelay = isJust relay && not relaying
@@ -109,7 +112,7 @@ spin' mprivdata relay target hst = do
 
 	updatecmd = intercalate " && "
 		[ "cd " ++ localdir
-		, bootstrapPropellorCommand sys
+		, bootstrapPropellorCommand bootstrapper sys
 		, if viarelay
 			then "./propellor --continue " ++
 				shellEscape (show (Relay target))

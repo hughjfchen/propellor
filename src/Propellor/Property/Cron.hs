@@ -80,7 +80,8 @@ niceJob desc times user cddir command = job desc times user cddir
 
 -- | Installs a cron job to run propellor.
 runPropellor :: Times -> Property UnixLike
-runPropellor times = withOS "propellor cron job" $ \w o -> 
+runPropellor times = withOS "propellor cron job" $ \w o -> do
+	bootstrapper <- getBootstrapper
 	ensureProperty w $
 		niceJob "propellor" times (User "root") localdir
-			(bootstrapPropellorCommand o ++ "; ./propellor")
+			(bootstrapPropellorCommand bootstrapper o ++ "; ./propellor")
