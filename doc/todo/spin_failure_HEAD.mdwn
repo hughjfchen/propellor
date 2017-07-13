@@ -124,4 +124,5 @@ Sending privdata (73139 bytes) to kite.kitenet.net ... done
 	        l2 <- hGetLine bob
 	        print l2
 
-> > [[fixed|done]] --[[Joey]]
+> > > I thought I'd fixed this by disabling buffering of stdin, but 
+> > > it seems not.
