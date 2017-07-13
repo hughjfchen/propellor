@@ -362,8 +362,13 @@ gitPullFromUpdateServer = req NeedGitPush gitPushMarker $ \_ -> do
 	-- To do so, create a pipe, and forward stdin, including any
 	-- buffered part, through it.
 	(pread, pwrite) <- System.Posix.IO.createPipe
+	-- Note that there is a race between the createPipe and setting
+	-- CloseOnExec. Another processess forked here would inherit
+	-- pwrite and perhaps keep it open. However, propellor is not
+	-- running concurrent threads at this point, so this is ok.
+	setFdOption pwrite CloseOnExec True
 	hwrite <- fdToHandle pwrite
-	forwarder <- async $ stdin *>*! hwrite
+	forwarder <- async $ stdin *>* hwrite
 	let hin = pread
 	hout <- dup stdOutput
 	hClose stdout
@@ -408,18 +413,3 @@ fromh *>* toh = do
 			B.hPut toh b
 			hFlush toh
 			fromh *>* toh
-
-(*>*!) :: Handle -> Handle -> IO ()
-fromh *>*! toh = do
-	b <- B.hGetSome fromh 40960
-	if B.null b
-		then do
-			hPutStrLn stderr "EOF on forwarded input"
-			hClose fromh
-			hClose toh
-		else do
-			hPutStrLn stderr "forwarding input:"
-			B.hPut stderr b
-			B.hPut toh b
-			hFlush toh
-			fromh *>*! toh
