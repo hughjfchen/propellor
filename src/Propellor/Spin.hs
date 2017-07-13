@@ -181,11 +181,11 @@ getSshTarget target hst
 update :: Maybe HostName -> IO ()
 update forhost = do
 	whenM hasGitRepo $
-		reqMarked NeedRepoUrl repoUrlMarker setRepoUrl
+		req NeedRepoUrl repoUrlMarker setRepoUrl
 
 	makePrivDataDir
 	createDirectoryIfMissing True (takeDirectory privfile)
-	reqMarked NeedPrivData privDataMarker $
+	req NeedPrivData privDataMarker $
 		writeFileProtected privfile
 
 	whenM hasGitRepo $
@@ -353,18 +353,25 @@ spinCommitMessage = "propellor spin"
 -- Request that it run git upload-pack, and connect that up to a git fetch
 -- to receive the data.
 gitPullFromUpdateServer :: IO ()
-gitPullFromUpdateServer = reqMarked NeedGitPush gitPushMarker $ \_ -> do
-	-- Note that this relies on data not being buffered in the stdin
-	-- Handle, since such buffered data would not be available in the
-	-- FD passed to git fetch. 
-	hin <- dup stdInput
+gitPullFromUpdateServer = req NeedGitPush gitPushMarker $ \_ -> do
+	-- IO involving stdin can cause data to be buffered in the Handle
+	-- (even when it's set NoBuffering), but we need to pass a FD to 
+	-- git fetch containing all of stdin after the gitPushMarker,
+	-- including any that has been buffered.
+	--
+	-- To do so, create a pipe, and forward stdin, including any
+	-- buffered part, through it.
+	(pread, pwrite) <- System.Posix.IO.createPipe
+	hwrite <- fdToHandle pwrite
+	forwarder <- async $ stdin *>*! hwrite
+	let hin = pread
 	hout <- dup stdOutput
-	hClose stdin
 	hClose stdout
 	-- Not using git pull because git 2.5.0 badly
 	-- broke its option parser.
 	unlessM (boolSystemNonConcurrent "git" (fetchparams hin hout)) $
 		errorMessage "git fetch from client failed"
+	wait forwarder
 	unlessM (boolSystemNonConcurrent "git" [Param "merge", Param "FETCH_HEAD"]) $
 		errorMessage "git merge from client failed"
   where
@@ -401,3 +408,18 @@ fromh *>* toh = do
 			B.hPut toh b
 			hFlush toh
 			fromh *>* toh
+
+(*>*!) :: Handle -> Handle -> IO ()
+fromh *>*! toh = do
+	b <- B.hGetSome fromh 40960
+	if B.null b
+		then do
+			hPutStrLn stderr "EOF on forwarded input"
+			hClose fromh
+			hClose toh
+		else do
+			hPutStrLn stderr "forwarding input:"
+			B.hPut stderr b
+			B.hPut toh b
+			hFlush toh
+			fromh *>*! toh
