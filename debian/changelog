@@ -9,6 +9,9 @@ propellor (4.3.1) UNRELEASED; urgency=medium
     only packages installed from the operating system. This
     will work on eg Debian:
 	& bootstrapWith OSOnly
+  * Iproved fix for bug that sometimes made --spin fail with
+    "fatal: Couldn't find remote ref HEAD". The previous fix didn't work
+    reliably.
 
  -- Joey Hess <id@joeyh.name>  Wed, 05 Jul 2017 22:57:42 -0400
 
