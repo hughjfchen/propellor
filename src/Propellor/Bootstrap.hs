@@ -86,13 +86,12 @@ buildCommand bs = intercalate " && " (go (getBuilder bs))
 		, "ln -sf $(stack path --dist-dir)/build/propellor-config propellor"
 		]
 
--- Run cabal configure to check if all dependencies are installed;
--- if not, run the depsCommand.
+-- Check if all dependencies are installed; if not, run the depsCommand.
 checkDepsCommand :: Bootstrapper -> Maybe System -> ShellCommand
 checkDepsCommand bs sys = go (getBuilder bs)
   where
 	go Cabal = "if ! cabal configure >/dev/null 2>&1; then " ++ depsCommand bs sys ++ "; fi"
-	go Stack = "if ! stack --version >/dev/null 2>&1; then " ++ depsCommand bs sys ++ "; fi"
+	go Stack = "if ! stack build --dry-run >/dev/null 2>&1; then " ++ depsCommand bs sys ++ "; fi"
 
 -- Install build dependencies of propellor, using the specified
 -- Bootstrapper.
