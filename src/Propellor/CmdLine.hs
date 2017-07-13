@@ -111,7 +111,6 @@ data CanRebuild = CanRebuild | NoRebuild
 defaultMain :: [Host] -> IO ()
 defaultMain hostlist = withConcurrentOutput $ do
 	useFileSystemEncoding
-	updatePrepare
 	Shim.cleanEnv
 	checkDebugMode
 	cmdline <- processCmdLine
