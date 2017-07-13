@@ -83,7 +83,7 @@ buildCommand bs = intercalate " && " (go (getBuilder bs))
 		]
 	go Stack =
 		[ "stack build :propellor-config"
-		, "ln -sf $(stack path --dist-dir)/build/propellor-config propellor"
+		, "ln -sf $(stack path --dist-dir)/build/propellor-config/propellor-config propellor"
 		]
 
 -- Check if all dependencies are installed; if not, run the depsCommand.
