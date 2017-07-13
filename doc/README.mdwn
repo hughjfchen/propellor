@@ -41,6 +41,8 @@ see [configuration for the Haskell newbie](https://propellor.branchable.com/hask
 1. Get propellor installed on your development machine (ie, laptop).
      `cabal install propellor`
           or
+     `stack install propellor`
+          or
      `apt-get install propellor`
 2. Run `propellor --init` ; this will set up a `~/.propellor/` git
    repository for you.

@@ -93,6 +93,9 @@ spin' mprivdata relay target hst = do
 	sys = case fromInfo (hostInfo hst) of
 		InfoVal o -> Just o
 		NoInfoVal -> Nothing
+	bootstrapper = case fromInfo (hostInfo hst) of
+		NoInfoVal -> defaultBootstrapper
+		InfoVal bs -> bs
 
 	relaying = relay == Just target
 	viarelay = isJust relay && not relaying
@@ -109,7 +112,7 @@ spin' mprivdata relay target hst = do
 
 	updatecmd = intercalate " && "
 		[ "cd " ++ localdir
-		, bootstrapPropellorCommand sys
+		, bootstrapPropellorCommand bootstrapper sys
 		, if viarelay
 			then "./propellor --continue " ++
 				shellEscape (show (Relay target))
@@ -178,11 +181,11 @@ getSshTarget target hst
 update :: Maybe HostName -> IO ()
 update forhost = do
 	whenM hasGitRepo $
-		reqMarked NeedRepoUrl repoUrlMarker setRepoUrl
+		req NeedRepoUrl repoUrlMarker setRepoUrl
 
 	makePrivDataDir
 	createDirectoryIfMissing True (takeDirectory privfile)
-	reqMarked NeedPrivData privDataMarker $
+	req NeedPrivData privDataMarker $
 		writeFileProtected privfile
 
 	whenM hasGitRepo $
@@ -350,18 +353,30 @@ spinCommitMessage = "propellor spin"
 -- Request that it run git upload-pack, and connect that up to a git fetch
 -- to receive the data.
 gitPullFromUpdateServer :: IO ()
-gitPullFromUpdateServer = reqMarked NeedGitPush gitPushMarker $ \_ -> do
-	-- Note that this relies on data not being buffered in the stdin
-	-- Handle, since such buffered data would not be available in the
-	-- FD passed to git fetch. 
-	hin <- dup stdInput
+gitPullFromUpdateServer = req NeedGitPush gitPushMarker $ \_ -> do
+	-- IO involving stdin can cause data to be buffered in the Handle
+	-- (even when it's set NoBuffering), but we need to pass a FD to 
+	-- git fetch containing all of stdin after the gitPushMarker,
+	-- including any that has been buffered.
+	--
+	-- To do so, create a pipe, and forward stdin, including any
+	-- buffered part, through it.
+	(pread, pwrite) <- System.Posix.IO.createPipe
+	-- Note that there is a race between the createPipe and setting
+	-- CloseOnExec. Another processess forked here would inherit
+	-- pwrite and perhaps keep it open. However, propellor is not
+	-- running concurrent threads at this point, so this is ok.
+	setFdOption pwrite CloseOnExec True
+	hwrite <- fdToHandle pwrite
+	forwarder <- async $ stdin *>* hwrite
+	let hin = pread
 	hout <- dup stdOutput
-	hClose stdin
 	hClose stdout
 	-- Not using git pull because git 2.5.0 badly
 	-- broke its option parser.
 	unlessM (boolSystemNonConcurrent "git" (fetchparams hin hout)) $
 		errorMessage "git fetch from client failed"
+	wait forwarder
 	unlessM (boolSystemNonConcurrent "git" [Param "merge", Param "FETCH_HEAD"]) $
 		errorMessage "git merge from client failed"
   where

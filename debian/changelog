@@ -17,6 +17,16 @@ propellor (4.3.1) unstable; urgency=medium
 
   * Added Propellor.Property.FreeDesktop module.
   * Added reservedSpacePercentage to the PartSpec EDSL.
+  * Hosts can be configured to build propellor using stack, by adding
+    a property:
+	& bootstrapWith (Robustly Stack)
+  * Hosts can be configured to build propellor using cabal, but using
+    only packages installed from the operating system. This
+    will work on eg Debian:
+	& bootstrapWith OSOnly
+  * Iproved fix for bug that sometimes made --spin fail with
+    "fatal: Couldn't find remote ref HEAD". The previous fix didn't work
+    reliably.
 
  -- Joey Hess <id@joeyh.name>  Thu, 06 Jul 2017 17:03:15 -0400
 
@@ -488,7 +498,8 @@ propellor (3.0.0) unstable; urgency=medium
     a clone of propellor's git repository, or a minimal config, and will
     configure propellor to use a gpg key.
   * Stack support. "git config propellor.buildsystem stack" will make
-    propellor build its config using stack.
+    propellor build its config using stack. (This does not affect
+    how propellor is bootstrapped on a host by "propellor --spin host".)
   * When propellor is installed using stack, propellor --init will
     automatically set propellor.buildsystem=stack.
 
