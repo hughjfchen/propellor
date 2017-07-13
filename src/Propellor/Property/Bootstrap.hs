@@ -3,6 +3,7 @@
 
 module Propellor.Property.Bootstrap (
 	Bootstrapper(..),
+	Builder(..),
 	bootstrapWith,
 	RepoSource(..),
 	bootstrappedFrom,

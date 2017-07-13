@@ -4,6 +4,7 @@ module Main where
 
 import Propellor
 import Propellor.Property.Scheduled
+import Propellor.Property.Bootstrap
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
@@ -79,6 +80,7 @@ testvm = host "testvm.kitenet.net" $ props
 
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net" $ props
+	& bootstrapWith (Robustly Stack)
 	& osDebian Unstable X86_64
 	& ipv6 "2001:4830:1600:187::2"
 	& Aiccu.hasConfig "T18376" "JHZ2-SIXXS"
