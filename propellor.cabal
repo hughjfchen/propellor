@@ -55,7 +55,7 @@ Executable propellor
 
 Executable propellor-config
   Default-Language: Haskell98
-  Main-Is: config.hs
+  Main-Is: propellor-config.hs
   GHC-Options: -threaded -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
     GHC-Options: -fno-warn-redundant-constraints
