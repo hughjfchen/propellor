@@ -126,3 +126,5 @@ Sending privdata (73139 bytes) to kite.kitenet.net ... done
 
 > > > I thought I'd fixed this by disabling buffering of stdin, but 
 > > > it seems not.
+
+> > > > Seems really [[done]] at last! --[[Joey]]
