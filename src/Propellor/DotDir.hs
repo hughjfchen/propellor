@@ -316,7 +316,7 @@ minimalConfig = do
 		]
 
 stackResolver :: String
-stackResolver = "lts-7.16"
+stackResolver = "lts-8.22"
 
 fullClone :: IO Result
 fullClone = do

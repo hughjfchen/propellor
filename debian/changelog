@@ -14,6 +14,7 @@ propellor (4.3.3) UNRELEASED; urgency=medium
     Thanks, Félix Sipma. 
   * Export a Restic.backup' property.
     Thanks, Félix Sipma. 
+  * Updated stack config to lts-8.22.
 
  -- Joey Hess <id@joeyh.name>  Mon, 10 Jul 2017 11:57:49 -0400
 
