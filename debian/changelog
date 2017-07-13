@@ -1,5 +1,15 @@
 propellor (4.3.3) UNRELEASED; urgency=medium
 
+  * Hosts can be configured to build propellor using stack, by adding
+    a property:
+	& bootstrapWith (Robustly Stack)
+  * Hosts can be configured to build propellor using cabal, but using
+    only packages installed from the operating system. This
+    will work on eg Debian:
+	& bootstrapWith OSOnly
+  * Iproved fix for bug that sometimes made --spin fail with
+    "fatal: Couldn't find remote ref HEAD". The previous fix didn't work
+    reliably.
   * User: add systemGroup and use it for systemAccountFor'
     Thanks, Félix Sipma. 
   * Export a Restic.backup' property.
@@ -17,16 +27,6 @@ propellor (4.3.1) unstable; urgency=medium
 
   * Added Propellor.Property.FreeDesktop module.
   * Added reservedSpacePercentage to the PartSpec EDSL.
-  * Hosts can be configured to build propellor using stack, by adding
-    a property:
-	& bootstrapWith (Robustly Stack)
-  * Hosts can be configured to build propellor using cabal, but using
-    only packages installed from the operating system. This
-    will work on eg Debian:
-	& bootstrapWith OSOnly
-  * Iproved fix for bug that sometimes made --spin fail with
-    "fatal: Couldn't find remote ref HEAD". The previous fix didn't work
-    reliably.
 
  -- Joey Hess <id@joeyh.name>  Thu, 06 Jul 2017 17:03:15 -0400
 
