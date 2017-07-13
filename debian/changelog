@@ -2,11 +2,11 @@ propellor (4.3.3) unstable; urgency=medium
 
   * Hosts can be configured to build propellor using stack, by adding
     a property:
-	& bootstrapWith (Robustly Stack)
+        & bootstrapWith (Robustly Stack)
   * Hosts can be configured to build propellor using cabal, but using
     only packages installed from the operating system. This
     will work on eg Debian:
-	& bootstrapWith OSOnly
+        & bootstrapWith OSOnly
   * Iproved fix for bug that sometimes made --spin fail with
     "fatal: Couldn't find remote ref HEAD". The previous fix didn't work
     reliably.
