@@ -53,11 +53,7 @@ sendMarked' h marker s = do
 	hFlush h
 
 getMarked :: Handle -> Marker -> IO (Maybe String)
-getMarked h marker = do
-	-- Avoid buffering anything in Handle, so that the data after
-	-- the marker will be available to be read from the underlying Fd.
-	hSetBuffering stdin NoBuffering
-	go =<< catchMaybeIO (hGetLine h)
+getMarked h marker = go =<< catchMaybeIO (hGetLine h)
   where
 	go Nothing = return Nothing
 	go (Just l) = case fromMarked marker l of

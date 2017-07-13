@@ -5,6 +5,7 @@ module Propellor.Spin (
 	spin,
 	spin',
 	update,
+	updatePrepare,
 	gitPushHelper,
 	mergeSpin,
 ) where
@@ -349,14 +350,20 @@ findLastNonSpinCommit = do
 spinCommitMessage :: String
 spinCommitMessage = "propellor spin"
 
+-- Avoid buffering anything read from stdin, so that
+-- when gitPullFromUpdateServer runs git fetch, it sees all the data
+-- it expects to.
+--
+-- Should be called very early in propellor start, before anything reads
+-- from stdin.
+updatePrepare :: IO ()
+updatePrepare = hSetBuffering stdin NoBuffering
+
 -- Stdin and stdout are connected to the updateServer over ssh.
 -- Request that it run git upload-pack, and connect that up to a git fetch
 -- to receive the data.
 gitPullFromUpdateServer :: IO ()
 gitPullFromUpdateServer = reqMarked NeedGitPush gitPushMarker $ \_ -> do
-	-- Note that this relies on data not being buffered in the stdin
-	-- Handle, since such buffered data would not be available in the
-	-- FD passed to git fetch. 
 	hin <- dup stdInput
 	hout <- dup stdOutput
 	hClose stdin
