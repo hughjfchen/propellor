@@ -99,7 +99,7 @@ fooisfoo = foo ==# foo
 Is, perhaps:
 
 	data Version = A | B | C
-		deriving (Ord)
+		deriving (Enum, Ord)
 
 	foo :: Versioned Host
 	foo = versionedHost "foo" $ do
@@ -112,9 +112,11 @@ That's ... pretty ok, would hit as least some of the use cases described
 above. Seems to need a Reader+Writer monad to implement it,
 without passing the Version around explicitly. 
 
-Note that it's allowable for `somethingelse` to not be revertable,
-since once `foo` gets that property, it is never removed.
-So, `inVersion` has to accept both `RevertableProperty` and `Property`.
+Is it allowable for `somethingelse` to not be revertable?
+Once `foo` gets that property, it is never removed if we're moving only
+forwars. On the other hand, perhaps the user will want to roll back to
+version A. Allowing rollbacks seems good, so `inVersion` should only
+accept `RevertableProperty`.
 
 Here's another situation where reversion is not needed:
 
