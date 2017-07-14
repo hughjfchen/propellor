@@ -91,3 +91,63 @@ foo = do
 fooisfoo :: Bool
 fooisfoo = foo ==# foo
 </pre>
+
+-----
+
+## the best we can do without Eq
+
+Is, perhaps:
+
+	data Version = A | B | C
+		deriving (Ord)
+
+	foo :: Versioned Host
+	foo = versionedHost "foo" $ do
+		ver A someprop
+			<|> inVersion [B, C] otherprop
+		ver A somerevertableprop
+		ver [B, C] somethingelse
+
+That's ... pretty ok, would hit as least some of the use cases described
+above. Seems to need a Reader+Writer monad to implement it,
+without passing the Version around explicitly. 
+
+Note that it's allowable for `somethingelse` to not be revertable,
+since once `foo` gets that property, it is never removed.
+So, `inVersion` has to accept both `RevertableProperty` and `Property`.
+
+Here's another situation where reversion is not needed:
+
+	foo = versionedHost "foo" $ do
+		ver A (someprop :: Property)
+			<|> ver [B, C] (someprop :: Property)
+
+That feels like an edge case.. And the only way that propellor could tell
+reversion is not needed there is if it could compare the two sides of the
+`<|>`, and there's no Eq.
+
+Another interesting case is this:
+
+	foo = versionedHost "foo" $ do
+		ver A bar
+		always otherprop
+		ver [B, C] bar
+	
+Is version A of foo identical to verion B? If so, this should be allowed to
+compile even when `bar` cannot be reverted. On the other hand, perhaps
+ordering of the properties matters, in which case the systems are subtly
+different, and there's no way to get from A to B.
+
+It's certianly possible for ordering to matter in propellor properties, 
+although it's generally a bug when it does. So, it seems ok for this
+case to be rejected.
+
+As well as `Versioned Host`, it would be possible to have 
+`Versioned (Property metatypes)`.
+Indeed, that would make sense to he used internally in the 
+examples above. And that allows composition of properties with versioning:
+
+	someprop :: Versioned (Property DebianLike)
+	someprop = versionedProperty $ do
+		ver A foo
+		ver [B, C] bar
