@@ -245,13 +245,16 @@ built s@(SbuildSchroot suite arch) mirror cc =
 
 	-- clean up config from earlier versions of this module
 	cleanupOldConfig :: Property UnixLike
-	cleanupOldConfig = property' "old sbuild module config cleaned up" $ \w -> do
-		void $ ensureProperty w $
-			check (doesFileExist fstab) (File.lacksLine fstab aptCacheLine)
-		liftIO $ removeDirectoryRecursive "/etc/schroot/piuparts"
-		makeChange $ nukeFile (schrootPiupartsConf s)
+	cleanupOldConfig =
+ 		property' "old sbuild module config cleaned up" $ \w -> do
+			void $ ensureProperty w $
+				check (doesFileExist fstab)
+				(File.lacksLine fstab aptCacheLine)
+			void $ liftIO . tryIO $ removeDirectoryRecursive profile
+			makeChange $ nukeFile (schrootPiupartsConf s)
 	  where
 		fstab = "/etc/schroot/sbuild/fstab"
+		profile = "/etc/schroot/piuparts"
 
 	-- A failed debootstrap run will leave a debootstrap directory;
 	-- recover by deleting it and trying again.
