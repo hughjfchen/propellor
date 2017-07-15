@@ -18,11 +18,11 @@
 -- 
 -- > demo :: Versioned Int (RevertableProperty DebianLike DebianLike)
 -- > demo ver =
--- >    ver (   (== 1) --> Apache.modEnabled "foo"
+-- > 	ver (   (== 1) --> Apache.modEnabled "foo"
 -- >		`requires` Apache.modEnabled "foosupport"
 -- >	    <|> (== 2) --> Apache.modEnabled "bar"
 -- > 	    <|> (> 2)  --> Apache.modEnabled "baz"
--- >        )
+-- > 	    )
 -- >
 -- > foo :: Host
 -- > foo = host "foo.example.com" $ props
