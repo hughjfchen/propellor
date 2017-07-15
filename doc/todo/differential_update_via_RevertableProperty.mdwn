@@ -101,32 +101,22 @@ Is, perhaps:
 	data Version = A | B | C
 		deriving (Enum, Ord)
 
-	foo :: Versioned Host
+	foo :: Versioned Hoso
 	foo = versionedHost "foo" $ do
 		ver A someprop
-			<|> inVersion [B, C] otherprop
+			<|> othervers otherprop
 		ver A somerevertableprop
-		ver [B, C] somethingelse
+		ver [B, C] newprop
 
 That's ... pretty ok, would hit as least some of the use cases described
 above. Seems to need a Reader+Writer monad to implement it,
 without passing the Version around explicitly. 
 
-Is it allowable for `somethingelse` to not be revertable?
+Is it allowable for `newprop` to not be revertable?
 Once `foo` gets that property, it is never removed if we're moving only
-forwars. On the other hand, perhaps the user will want to roll back to
+forwards. On the other hand, perhaps the user will want to roll back to
 version A. Allowing rollbacks seems good, so `inVersion` should only
 accept `RevertableProperty`.
-
-Here's another situation where reversion is not needed:
-
-	foo = versionedHost "foo" $ do
-		ver A (someprop :: Property)
-			<|> ver [B, C] (someprop :: Property)
-
-That feels like an edge case.. And the only way that propellor could tell
-reversion is not needed there is if it could compare the two sides of the
-`<|>`, and there's no Eq.
 
 Another interesting case is this:
 
@@ -151,5 +141,6 @@ examples above. And that allows composition of properties with versioning:
 
 	someprop :: Versioned (Property DebianLike)
 	someprop = versionedProperty $ do
-		ver A foo
-		ver [B, C] bar
+		ver A foo <|> ver [B, C] bar
+
+> [[done]] in Propellor.Property.Versioned. --[[Joey]]
