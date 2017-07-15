@@ -84,6 +84,7 @@ module Propellor.Property.Sbuild (
 ) where
 
 import Propellor.Base
+import Propellor.Types.Info
 import Propellor.Property.Debootstrap (extractSuite)
 import Propellor.Property.Chroot.Util
 import qualified Propellor.Property.Apt as Apt
@@ -177,12 +178,29 @@ built s@(SbuildSchroot suite arch) mirror cc =
 	enhancedConf =
 		combineProperties ("enhanced schroot conf for " ++ val s) $ props
 			& aliasesLine
+			-- set up an apt proxy/cacher
+			& proxyCacher
 			-- enable ccache and eatmydata for speed
 			& ConfFile.containsIniSetting (schrootConf s)
 				( val s ++ "-sbuild"
 				, "command-prefix"
 				, intercalate "," commandPrefix
 				)
+
+	proxyCacher :: Property DebianLike
+	proxyCacher = property' "set schroot apt proxy" $ \w -> do
+		proxyInfo <- getProxyInfo
+		ensureProperty w $ case proxyInfo of
+			Just (Apt.HostAptProxy u) -> setChrootProxy u
+			Nothing -> (Apt.serviceInstalledRunning "apt-cacher-ng"
+				`before` setChrootProxy "http://localhost:3142")
+	  where
+		getProxyInfo :: Propellor (Maybe Apt.HostAptProxy)
+		getProxyInfo = fromInfoVal <$> askInfo
+		setChrootProxy :: Apt.Url -> Property DebianLike
+		setChrootProxy u = tightenTargets $ File.hasContent
+			(schrootRoot s </> "etc/apt/apt.conf.d/20proxy")
+			[ "Acquire::HTTP::Proxy \"" ++ u ++ "\";" ]
 
 	-- if we're building a sid chroot, add useful aliases
 	-- In order to avoid more than one schroot getting the same aliases, we
