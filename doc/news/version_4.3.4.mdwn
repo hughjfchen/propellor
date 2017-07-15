@@ -1,0 +1,7 @@
+propellor 4.3.4 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Propellor.Property.Versioned: New module which allows different
+     versions of a property or host to be written down in a propellor config
+     file. Has many applications, including staged upgrades and rollbacks.
+   * LightDM.autoLogin: Use [Seat:*] rather than the old [SeatDefaults].
+     The new name has been supported since lightdm 1.15."""]]
