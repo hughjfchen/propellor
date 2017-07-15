@@ -22,10 +22,8 @@ Suggested usage in @config.hs@:
 
 >  & Apt.installed ["piuparts", "autopkgtest"]
 >  & Sbuild.builtFor (System (Debian Linux Unstable) X86_32) Sbuild.UseCcache
->  & Sbuild.piupartsConfFor (System (Debian Linux Unstable) X86_32)
 >  & Sbuild.updatedFor (System (Debian Linux Unstable) X86_32) `period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
->  & Sbuild.shareAptCache
 >  & Schroot.overlaysInTmpfs
 
 If you are using sbuild older than 0.70.0, you also need:
@@ -37,7 +35,8 @@ In @~/.sbuildrc@ (sbuild 0.71.0 or newer):
 >  $run_piuparts = 1;
 >  $piuparts_opts = [
 >      '--schroot',
->      '%r-%a-piuparts',
+>      '--no-eatmydata',
+>      '%r-%a-sbuild',
 >      '--fail-if-inadequate',
 >      '--fail-on-broken-symlinks',
 >      ];
@@ -74,16 +73,13 @@ module Propellor.Property.Sbuild (
 	UseCcache(..),
 	built,
 	updated,
-	piupartsConf,
 	builtFor,
 	updatedFor,
-	piupartsConfFor,
 	-- * Global sbuild configuration
 	-- blockNetwork,
 	installed,
 	keypairGenerated,
 	keypairInsecurelyGenerated,
-	shareAptCache,
 	usableBy,
 ) where
 
@@ -147,7 +143,8 @@ built s@(SbuildSchroot suite arch) mirror cc =
 	((go `before` enhancedConf)
 	`requires` ccacheMaybePrepared cc
 	`requires` installed
-	`requires` overlaysKernel)
+	`requires` overlaysKernel
+	`requires` cleanupOldConfig)
 	<!> deleted
   where
 	go :: Property DebianLike
@@ -217,6 +214,16 @@ built s@(SbuildSchroot suite arch) mirror cc =
 			then ensureProperty w $
 				Reboot.toKernelNewerThan "3.18"
 			else noChange
+
+	-- clean up config from earlier versions of this module
+	cleanupOldConfig :: Property UnixLike
+	cleanupOldConfig = property' "old sbuild module config cleaned up" $ \w -> do
+		void $ ensureProperty w $
+			check (doesFileExist fstab) (File.lacksLine fstab aptCacheLine)
+		liftIO $ removeDirectoryRecursive "/etc/schroot/piuparts"
+		makeChange $ nukeFile (schrootPiupartsConf s)
+	  where
+		fstab = "/etc/schroot/sbuild/fstab"
 
 	-- A failed debootstrap run will leave a debootstrap directory;
 	-- recover by deleting it and trying again.
@@ -299,92 +306,6 @@ fixConfFile s@(SbuildSchroot suite arch) =
 	tempPrefix = dir </> suite ++ "-" ++ architectureToDebianArchString arch ++ "-propellor-"
 	munge = replace "-propellor]" "-sbuild]"
 
--- | Create a corresponding schroot config file for use with piuparts
---
--- This function is a convenience wrapper around 'piupartsConf', allowing the
--- user to identify the schroot using the 'System' type.  See that function's
--- documentation for why you might want to use this property, and sample config.
-piupartsConfFor :: System -> Property DebianLike
-piupartsConfFor sys = property' ("piuparts schroot conf for " ++ show sys) $
-	\w -> case schrootFromSystem sys of
-			Just s -> ensureProperty w $ piupartsConf s
-			_ -> errorMessage
-				("don't know how to debootstrap " ++ show sys)
-
--- | Create a corresponding schroot config file for use with piuparts
---
--- This is useful because:
---
--- - piuparts will clear out the apt cache which makes 'shareAptCache' much less
---   useful
---
--- - piuparts itself invokes eatmydata, so the command-prefix setting in our
---   regular schroot config would force the user to pass @--no-eatmydata@ to
---   piuparts in their @~/.sbuildrc@, which is inconvenient.
---
--- To make use of this new schroot config, you can put something like this in
--- your ~/.sbuildrc (sbuild 0.71.0 or newer):
---
---  >  $run_piuparts = 1;
---  >  $piuparts_opts = [
---  >      '--schroot',
---  >      '%r-%a-piuparts',
---  >      '--fail-if-inadequate',
---  >      '--fail-on-broken-symlinks',
---  >      ];
---
--- This property has no effect if the corresponding sbuild schroot does not
--- exist (i.e. you also need 'Sbuild.built' or 'Sbuild.builtFor').
-piupartsConf :: SbuildSchroot -> Property DebianLike
-piupartsConf s@(SbuildSchroot _ arch) =
-	check (doesFileExist (schrootConf s)) go
-	`requires` installed
-  where
-	go :: Property DebianLike
-	go = property' desc $ \w -> do
-		aliases <- aliasesLine
-		ensureProperty w $ combineProperties desc $ props
-			& check (not <$> doesFileExist f)
-				(File.basedOn f (schrootConf s, map munge))
-			& ConfFile.containsIniSetting f
-				(sec, "profile", "piuparts")
-			& ConfFile.containsIniSetting f
-				(sec, "aliases", aliases)
-			& ConfFile.containsIniSetting f
-				(sec, "command-prefix", "")
-			& File.dirExists dir
-			& File.isSymlinkedTo (dir </> "copyfiles")
-				(File.LinkTarget $ orig </> "copyfiles")
-			& File.isSymlinkedTo (dir </> "nssdatabases")
-				(File.LinkTarget $ orig </> "nssdatabases")
-			& File.basedOn (dir </> "fstab")
-				(orig </> "fstab", filter (/= aptCacheLine))
-
-	orig = "/etc/schroot/sbuild"
-	dir = "/etc/schroot/piuparts"
-	sec = val s ++ "-piuparts"
-	f = schrootPiupartsConf s
-	munge = replace "-sbuild]" "-piuparts]"
-	desc = "piuparts schroot conf for " ++ val s
-
-	-- normally the piuparts schroot conf has no aliases, but we have to add
-	-- one, for dgit compatibility, if this is the default sid chroot
-	aliasesLine = sidHostArchSchroot s >>= \isSidHostArchSchroot ->
-			return $ if isSidHostArchSchroot
-			then "UNRELEASED-"
-				++ architectureToDebianArchString arch
-				++ "-piuparts"
-			else ""
-
--- | Bind-mount /var/cache/apt/archives in all sbuild chroots so that the host
--- system and the chroot share the apt cache
---
--- This speeds up builds by avoiding unnecessary downloads of build
--- dependencies.
-shareAptCache :: Property DebianLike
-shareAptCache = File.containsLine "/etc/schroot/sbuild/fstab" aptCacheLine
-	`requires` installed
-	`describe` "sbuild schroots share host apt cache"
 
 aptCacheLine :: String
 aptCacheLine = "/var/cache/apt/archives /var/cache/apt/archives none rw,bind 0 0"
