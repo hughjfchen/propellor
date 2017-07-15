@@ -511,4 +511,4 @@ proxy u = tightenTargets $
 useLocalCacher :: Property (HasInfo + DebianLike)
 useLocalCacher = proxy "http://localhost:3142"
 	`requires` serviceInstalledRunning "apt-cacher-ng"
-
+	`describe` "apt uses local apt cacher"
