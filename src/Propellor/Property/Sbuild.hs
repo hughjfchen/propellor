@@ -52,9 +52,9 @@ propellor spin pulls in a lot of dependencies.  This could defeat
 using sbuild to determine if you've included all necessary build
 dependencies in your source package control file.
 
-Nevertheless, the chroot that @sbuild-createchroot(1)@ creates might
-not meet your needs.  For example, you might need to enable an apt
-cacher.  In that case you can do something like this in @config.hs@:
+Nevertheless, the chroot that @sbuild-createchroot(1)@ creates might not meet
+your needs.  For example, you might need to enable apt's https support.  In that
+case you can do something like this in @config.hs@:
 
 >  & Sbuild.built (System (Debian Linux Unstable) X86_32) `before` mySetup
 >    where
