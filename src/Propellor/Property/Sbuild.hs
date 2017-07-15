@@ -187,6 +187,16 @@ built s@(SbuildSchroot suite arch) mirror cc =
 				, intercalate "," commandPrefix
 				)
 
+	-- set the apt proxy inside the chroot.  If the host has an apt proxy
+	-- set, assume that it does some sort of caching.  Otherwise, set up a
+	-- local apt-cacher-ng instance
+	--
+	-- (if we didn't assume that the apt proxy does some sort of caching,
+	-- we'd need to complicate the Apt.HostAptProxy type to indicate whether
+	-- the proxy caches, and if it doesn't, set up apt-cacher-ng as an
+	-- intermediary proxy between the chroot's apt and the Apt.HostAptProxy
+	-- proxy.  This complexity is more likely to cause problems than help
+	-- anyone)
 	proxyCacher :: Property DebianLike
 	proxyCacher = property' "set schroot apt proxy" $ \w -> do
 		proxyInfo <- getProxyInfo
