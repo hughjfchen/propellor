@@ -472,7 +472,7 @@ schrootPiupartsConf (SbuildSchroot s a) =
 sidHostArchSchroot :: SbuildSchroot -> Propellor Bool
 sidHostArchSchroot (SbuildSchroot suite arch) = do
 	maybeOS <- getOS
-	case maybeOS of
-		Nothing -> return False
+	return $ case maybeOS of
+		Nothing -> False
 		Just (System _ hostArch) ->
-			return $ suite == "unstable" && hostArch == arch
+			suite == "unstable" && hostArch == arch
