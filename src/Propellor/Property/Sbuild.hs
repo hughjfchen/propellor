@@ -34,8 +34,8 @@ In @~/.sbuildrc@ (sbuild 0.71.0 or newer):
 
 >  $run_piuparts = 1;
 >  $piuparts_opts = [
->      '--schroot',
 >      '--no-eatmydata',
+>      '--schroot',
 >      '%r-%a-sbuild',
 >      '--fail-if-inadequate',
 >      '--fail-on-broken-symlinks',
