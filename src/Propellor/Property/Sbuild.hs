@@ -20,7 +20,7 @@ Debian stretch, which older sbuild can't handle.
 
 Suggested usage in @config.hs@:
 
->  & Apt.installed ["piuparts", "autopkgtest"]
+>  & Apt.installed ["piuparts", "autopkgtest", "lintian"]
 >  & Sbuild.builtFor (System (Debian Linux Unstable) X86_32) Sbuild.UseCcache
 >  & Sbuild.updatedFor (System (Debian Linux Unstable) X86_32) `period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
