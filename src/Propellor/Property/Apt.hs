@@ -23,7 +23,7 @@ data HostMirror = HostMirror Url
 data HostAptProxy = HostAptProxy Url
 	deriving (Eq, Show, Typeable)
 
--- | Indicate host's preferred apt mirror (e.g. an apt cacher on the host's LAN)
+-- | Indicate host's preferred apt mirror
 mirror :: Url -> Property (HasInfo + UnixLike)
 mirror u = pureInfoProperty (u ++ " apt mirror selected")
 	     (InfoVal (HostMirror u))
