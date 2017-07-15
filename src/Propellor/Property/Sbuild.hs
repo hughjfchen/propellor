@@ -246,12 +246,14 @@ built s@(SbuildSchroot suite arch) mirror cc =
 	-- clean up config from earlier versions of this module
 	cleanupOldConfig :: Property UnixLike
 	cleanupOldConfig =
- 		property' "old sbuild module config cleaned up" $ \w -> do
+		property' "old sbuild module config cleaned up" $ \w -> do
 			void $ ensureProperty w $
 				check (doesFileExist fstab)
 				(File.lacksLine fstab aptCacheLine)
 			void $ liftIO . tryIO $ removeDirectoryRecursive profile
-			makeChange $ nukeFile (schrootPiupartsConf s)
+			void $ liftIO $ nukeFile (schrootPiupartsConf s)
+			-- assume this did nothing
+			noChange
 	  where
 		fstab = "/etc/schroot/sbuild/fstab"
 		profile = "/etc/schroot/piuparts"
