@@ -11,7 +11,7 @@ type Timezone = String
 
 -- | Sets the system's timezone
 configured :: Timezone -> Property DebianLike
-configured zone = File.hasContent "/etc/timezone" zone
+configured zone = File.hasContent "/etc/timezone" [zone]
 	`onChange` update
 	`describe` (zone ++ " timezone configured")
   where
