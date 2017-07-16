@@ -4,6 +4,7 @@ module Propellor.Property.Timezone where
 
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.File as File
 
 type Timezone = String
 
