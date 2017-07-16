@@ -6,6 +6,7 @@ import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
 
+-- | A timezone from /usr/share/zoneinfo
 type Timezone = String
 
 -- | Sets the system's timezone
