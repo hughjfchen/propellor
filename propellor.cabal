@@ -150,6 +150,7 @@ Library
     Propellor.Property.Sudo
     Propellor.Property.Systemd
     Propellor.Property.Systemd.Core
+    Propellor.Property.Timezone
     Propellor.Property.Tor
     Propellor.Property.Unbound
     Propellor.Property.User

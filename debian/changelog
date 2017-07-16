@@ -1,3 +1,9 @@
+propellor (4.3.5) UNRELEASED; urgency=medium
+
+  * Propellor.Property.Timezone: New module, contributed by Sean Whitton.
+
+ -- Joey Hess <id@joeyh.name>  Sun, 16 Jul 2017 12:07:15 -0400
+
 propellor (4.3.4) unstable; urgency=medium
 
   * Propellor.Property.Versioned: New module which allows different
