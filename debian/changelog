@@ -1,6 +1,8 @@
-propellor (4.3.5) UNRELEASED; urgency=medium
+propellor (4.4.0) UNRELEASED; urgency=medium
 
   * Propellor.Property.Timezone: New module, contributed by Sean Whitton.
+  * Propellor.Property.Sudo.enabledFor: Made revertable.
+    (minor API change)
 
  -- Joey Hess <id@joeyh.name>  Sun, 16 Jul 2017 12:07:15 -0400
 
