@@ -9,6 +9,7 @@ module Propellor.Property.ConfFile (
 	IniSection,
 	IniKey,
 	containsIniSetting,
+	lacksIniSetting,
 	hasIniSection,
 	lacksIniSection,
 	iniFileContains,
@@ -92,6 +93,19 @@ containsIniSetting f (header, key, value) = adjustIniSection
 	go []      = [confline]
 	go (l:ls)  = if isKeyVal l then confline : ls else l : go ls
 	isKeyVal x = (filter (/= ' ') . takeWhile (/= '=')) x `elem` [key, '#':key]
+
+-- | Removes a key=value setting from a section of an .ini file.
+-- Note that the section heading is left in the file, so this is not a
+-- perfect reversion of containsIniSetting.
+lacksIniSetting :: FilePath -> (IniSection, IniKey, String) -> Property UnixLike
+lacksIniSetting f (header, key, value) = adjustIniSection
+	(f ++ " section [" ++ header ++ "] lacks " ++ key ++ "=" ++ value)
+	header
+	(filter (/= confline))
+	id
+	f
+  where
+	confline = key ++ "=" ++ value
 
 -- | Ensures that a .ini file exists and contains a section
 -- with a given key=value list of settings.
