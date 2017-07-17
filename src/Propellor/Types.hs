@@ -107,6 +107,10 @@ adjustPropertySatisfy (Property t d s i c) f = Property t d (f <$> s) i c
 
 -- | A property that can be reverted. The first Property is run
 -- normally and the second is run when it's reverted.
+--
+-- See `Propellor.Property.Versioned.Versioned` 
+-- for a way to use RevertableProperty to define different
+-- versions of a host.
 data RevertableProperty setupmetatypes undometatypes = RevertableProperty
 	{ setupRevertableProperty :: Property setupmetatypes
 	, undoRevertableProperty :: Property undometatypes

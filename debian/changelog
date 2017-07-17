@@ -1,4 +1,15 @@
-propellor (4.3.4) UNRELEASED; urgency=medium
+propellor (4.4.0) unstable; urgency=medium
+
+  * Propellor.Property.Timezone: New module, contributed by Sean Whitton.
+  * Propellor.Property.Sudo.enabledFor: Made revertable.
+    (minor API change)
+  * Propellor.Property.LightDM.autoLogin: Made revertable.
+    (minor API change)
+  * Propellor.Property.Conffile: Added lacksIniSetting.
+
+ -- Joey Hess <id@joeyh.name>  Mon, 17 Jul 2017 12:55:02 -0400
+
+propellor (4.3.4) unstable; urgency=medium
 
   * Propellor.Property.Versioned: New module which allows different
     versions of a property or host to be written down in a propellor config
@@ -6,7 +17,7 @@ propellor (4.3.4) UNRELEASED; urgency=medium
   * LightDM.autoLogin: Use [Seat:*] rather than the old [SeatDefaults].
     The new name has been supported since lightdm 1.15.
 
- -- Joey Hess <id@joeyh.name>  Thu, 13 Jul 2017 15:52:24 -0400
+ -- Joey Hess <id@joeyh.name>  Sat, 15 Jul 2017 17:22:53 -0400
 
 propellor (4.3.3) unstable; urgency=medium
 
