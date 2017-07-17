@@ -83,6 +83,8 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& ipv6 "2001:4830:1600:187::2"
 	& Aiccu.hasConfig "T18376" "JHZ2-SIXXS"
 
+	& User.nuked (User "nosuchuser") User.YesReallyDeleteHome
+
 	& JoeySites.dkimMilter
 	& JoeySites.postfixSaslPasswordClient
 	-- & JoeySites.alarmClock "*-*-* 7:30" (User "joey")
