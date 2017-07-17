@@ -55,6 +55,9 @@
 module Propellor.Property.Versioned (Versioned, version, (-->), (<|>)) where
 
 import Propellor
+import Propellor.Types.Core
+
+import Data.List
 
 -- | Something that has multiple versions of type `v`.
 type Versioned v t = VersionedBy v -> t
@@ -89,12 +92,21 @@ processVerSpec
 	=> v
 	-> VerSpec v metatypes
 	-> RevertableProperty metatypes metatypes
-processVerSpec v (Base (c, p))
-	| c v = p
-	| otherwise = revert p
-processVerSpec v (More (c, p) vs)
-	| c v = processVerSpec v vs `before` p
-	| otherwise = revert p `before` processVerSpec v vs
+processVerSpec v s = combinedp s
+	`describe` intercalate " and " (combineddesc s [])
+  where
+	combinedp (Base (c, p))
+		| c v = p
+		| otherwise = revert p
+	combinedp (More (c, p) vs)
+		| c v = combinedp vs `before` p
+		| otherwise = revert p `before` combinedp vs
+	combineddesc (Base (c, p)) l
+		| c v = getDesc p : l
+		| otherwise = getDesc (revert p) : l
+	combineddesc (More (c, p) vs) l
+		| c v = getDesc p : combineddesc vs l
+		| otherwise = getDesc (revert p) : combineddesc vs l
 
 -- | Specify a function that checks the version, and what
 -- `RevertableProperty` to use if the version matches.
