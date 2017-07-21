@@ -1,4 +1,4 @@
-propellor (4.5.0) UNRELEASED; urgency=medium
+propellor (4.5.0) unstable; urgency=medium
 
   * Generalized the PartSpec DSL, so it can be used for both
     disk image partitioning, and disk device partitioning, with
@@ -8,7 +8,7 @@ propellor (4.5.0) UNRELEASED; urgency=medium
     PartSpec DiskPart, and a useDiskSpace combinator.
   * Generate a better description for versioned properties.
 
- -- Joey Hess <id@joeyh.name>  Mon, 17 Jul 2017 16:51:11 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 21 Jul 2017 16:40:13 -0400
 
 propellor (4.4.0) unstable; urgency=medium
 
