@@ -20,12 +20,12 @@ import Propellor.Base
 import Propellor.Property.DiskImage.PartSpec
 import Propellor.Property.Chroot (Chroot)
 import Propellor.Property.Chroot.Util (removeChroot)
+import Propellor.Property.Mount
 import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Parted
-import Propellor.Property.Mount
 import Propellor.Property.Fstab (SwapPartition(..), genFstab)
 import Propellor.Property.Partition
 import Propellor.Property.Rsync
@@ -34,7 +34,7 @@ import Propellor.Types.Bootloader
 import Propellor.Container
 import Utility.Path
 
-import Data.List (isPrefixOf, isInfixOf, sortBy)
+import Data.List (isPrefixOf, isInfixOf, sortBy, unzip4)
 import Data.Function (on)
 import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Lazy as L
@@ -109,16 +109,16 @@ type DiskImage = FilePath
 -- >	& Apt.installed ["linux-image-amd64"]
 -- >	& Grub.installed PC
 -- >	& hasPassword (User "root")
-imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageRebuilt = imageBuilt' True
 
-imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageBuilt' rebuild img mkchroot tabletype partspec =
 	imageBuiltFrom img chrootdir tabletype final partspec
 		`requires` Chroot.provisioned chroot
@@ -159,7 +159,7 @@ cachesCleaned = "cache cleaned" ==> (Apt.cacheCleaned `pickOS` skipit)
 	skipit = doNothing :: Property UnixLike
 
 -- | Builds a disk image from the contents of a chroot.
-imageBuiltFrom :: DiskImage -> FilePath -> TableType -> Finalization -> [PartSpec] -> RevertableProperty (HasInfo + DebianLike) UnixLike
+imageBuiltFrom :: DiskImage -> FilePath -> TableType -> Finalization -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) UnixLike
 imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
   where
 	desc = img ++ " built from " ++ chrootdir
@@ -214,10 +214,10 @@ partitionsPopulated chrootdir mnts mntopts devs = property' desc $ \w ->
 
 -- The constructor for each Partition is passed the size of the files
 -- from the chroot that will be put in that partition.
-fitChrootSize :: TableType -> [PartSpec] -> [PartSize] -> ([Maybe MountPoint], [MountOpts], PartTable)
+fitChrootSize :: TableType -> [PartSpec ()] -> [PartSize] -> ([Maybe MountPoint], [MountOpts], PartTable)
 fitChrootSize tt l basesizes = (mounts, mountopts, parttable)
   where
-	(mounts, mountopts, sizers) = unzip3 l
+	(mounts, mountopts, sizers, _) = unzip4 l
 	parttable = PartTable tt (zipWith id sizers basesizes)
 
 -- | Generates a map of the sizes of the contents of

@@ -1,5 +1,5 @@
 Name: propellor
-Version: 4.4.0
+Version: 4.5.0
 Cabal-Version: >= 1.20
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
@@ -135,6 +135,7 @@ Library
     Propellor.Property.OS
     Propellor.Property.Pacman
     Propellor.Property.Parted
+    Propellor.Property.Parted.Types
     Propellor.Property.Partition
     Propellor.Property.Postfix
     Propellor.Property.PropellorRepo
@@ -193,6 +194,7 @@ Library
     Propellor.Types.Info
     Propellor.Types.MetaTypes
     Propellor.Types.OS
+    Propellor.Types.PartSpec
     Propellor.Types.PrivData
     Propellor.Types.Result
     Propellor.Types.ResultCheck
