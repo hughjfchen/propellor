@@ -164,8 +164,8 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
   where
 	desc = img ++ " built from " ++ chrootdir
 	mkimg = property' desc $ \w -> do
-		-- unmount helper filesystems such as proc from the chroot
-		-- before getting sizes
+		-- Unmount helper filesystems such as proc from the chroot
+		-- first; don't want to include the contents of those.
 		liftIO $ unmountBelow chrootdir
 		szm <- M.mapKeys (toSysDir chrootdir) . M.map toPartSize
 			<$> liftIO (dirSizes chrootdir)
