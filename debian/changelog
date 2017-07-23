@@ -1,3 +1,11 @@
+propellor (4.5.1) UNRELEASED; urgency=medium
+
+  * Reboot.toKernelNewerThan: If running kernel is new enough, avoid
+    looking at what kernels are installed.
+    Thanks, Sean Whitton.
+
+ -- Joey Hess <id@joeyh.name>  Sun, 23 Jul 2017 09:41:58 -0400
+
 propellor (4.5.0) unstable; urgency=medium
 
   * Generalized the PartSpec DSL, so it can be used for both
