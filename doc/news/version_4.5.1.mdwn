@@ -1,0 +1,7 @@
+propellor 4.5.1 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Reboot.toKernelNewerThan: If running kernel is new enough, avoid
+     looking at what kernels are installed.
+     Thanks, Sean Whitton.
+   * DiskImage: Avoid re-partitioning disk image unncessarily, for a large
+     speedup."""]]
