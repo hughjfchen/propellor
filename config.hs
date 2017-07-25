@@ -1,1 +1,1 @@
-config-simple.hs
+joeyconfig.hs
