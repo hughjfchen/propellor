@@ -174,14 +174,15 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 		let (mnts, mntopts, parttable) = fitChrootSize tabletype partspec $
 			map (calcsz mnts) mnts
 		ensureProperty w $
-			imageSetup img parttable
+			imageExists' img parttable
 				`before`
 			kpartx img (mkimg' mnts mntopts parttable)
 	mkimg' mnts mntopts parttable devs =
 		partitionsPopulated chrootdir mnts mntopts devs
 			`before`
 		imageFinalized final mnts mntopts devs parttable
-	rmimg = File.notPresent img
+	rmimg = undoRevertableProperty (imageExists' img dummyparttable)
+	dummyparttable = PartTable tabletype []
 
 partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> Property DebianLike
 partitionsPopulated chrootdir mnts mntopts devs = property' desc $ \w ->
@@ -275,19 +276,24 @@ imageExists img isz = property ("disk image exists" ++ img) $ liftIO $ do
 --
 -- Avoids repartitioning the disk image, when a file of the right size
 -- already exists, and it has the same PartTable.
-imageSetup :: FilePath -> PartTable -> Property DebianLike
-imageSetup img parttable = property' ("disk image set up " ++ img) $ \w -> do
-	oldparttable <- liftIO $ catchDefaultIO "" $ readFile parttablefile
-	res <- ensureProperty w $ imageExists img (partTableSize parttable)
-	if res == NoChange && oldparttable == show parttable
-		then return NoChange
-		else if res == FailedChange
-			then return FailedChange
-			else do
-				liftIO $ writeFile parttablefile (show parttable)
-				ensureProperty w $ partitioned YesReallyDeleteDiskContents img parttable
+imageExists' :: FilePath -> PartTable -> RevertableProperty DebianLike UnixLike
+imageExists' img parttable = (setup <!> cleanup) `describe` desc
   where
+	desc = "disk image exists " ++ img
 	parttablefile = img ++ ".parttable"
+	setup = property' desc $ \w -> do
+		oldparttable <- liftIO $ catchDefaultIO "" $ readFile parttablefile
+		res <- ensureProperty w $ imageExists img (partTableSize parttable)
+		if res == NoChange && oldparttable == show parttable
+			then return NoChange
+			else if res == FailedChange
+				then return FailedChange
+				else do
+					liftIO $ writeFile parttablefile (show parttable)
+					ensureProperty w $ partitioned YesReallyDeleteDiskContents img parttable
+	cleanup = File.notPresent img
+		`before`
+		File.notPresent parttablefile
 
 -- | A property that is run after the disk image is created, with
 -- its populated partition tree mounted in the provided
