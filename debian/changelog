@@ -1,4 +1,4 @@
-propellor (4.5.1) UNRELEASED; urgency=medium
+propellor (4.5.1) unstable; urgency=medium
 
   * Reboot.toKernelNewerThan: If running kernel is new enough, avoid
     looking at what kernels are installed.
@@ -6,7 +6,7 @@ propellor (4.5.1) UNRELEASED; urgency=medium
   * DiskImage: Avoid re-partitioning disk image unncessarily, for a large
     speedup.
 
- -- Joey Hess <id@joeyh.name>  Sun, 23 Jul 2017 09:41:58 -0400
+ -- Joey Hess <id@joeyh.name>  Tue, 25 Jul 2017 15:51:33 -0400
 
 propellor (4.5.0) unstable; urgency=medium
 
