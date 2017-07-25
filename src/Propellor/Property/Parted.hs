@@ -111,7 +111,7 @@ partitionTableOverhead = MegaBytes 1
 --
 -- For example:
 --
--- >	calcPartTable (1024 * 1024 * 1024 * 100) MSDOS
+-- >	calcPartTable (DiskSize (1024 * 1024 * 1024 * 100)) MSDOS
 -- > 		[ partition EXT2 `mountedAt` "/boot"
 -- > 			`setSize` MegaBytes 256
 -- > 			`setFlag` BootFlag

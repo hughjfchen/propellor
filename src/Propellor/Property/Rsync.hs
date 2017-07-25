@@ -60,4 +60,7 @@ syncDirFiltered filters src dest = rsync $
 rsync :: [String] -> Property (DebianLike + ArchLinux)
 rsync ps = cmdProperty "rsync" ps
 	`assume` MadeChange
-	`requires` Apt.installed ["rsync"] `pickOS` Pacman.installed ["rsync"]
+	`requires` installed
+
+installed :: Property (DebianLike + ArchLinux)
+installed = Apt.installed ["rsync"] `pickOS` Pacman.installed ["rsync"]

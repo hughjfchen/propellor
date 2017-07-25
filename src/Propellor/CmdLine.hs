@@ -204,7 +204,7 @@ updateFirst h canrebuild cmdline next = ifM hasOrigin
 	, next
 	)
 
--- If changes can be fetched from origin,  Builds propellor (when allowed)
+-- If changes can be fetched from origin, builds propellor (when allowed)
 -- and re-execs the updated propellor binary to continue.
 -- Otherwise, runs the IO action to continue.
 updateFirst' :: Maybe Host -> CanRebuild -> CmdLine -> IO () -> IO ()
