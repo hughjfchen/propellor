@@ -1,0 +1,5 @@
+propellor 4.5.2 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Added Rsync.installed property.
+   * Added DiskImage.vmdkBuiltFor property which is useful for booting
+     a disk image in VirtualBox."""]]
