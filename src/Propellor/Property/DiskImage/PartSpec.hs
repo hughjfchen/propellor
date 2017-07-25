@@ -8,11 +8,15 @@
 module Propellor.Property.DiskImage.PartSpec (
 	module Propellor.Types.PartSpec,
 	module Propellor.Property.DiskImage.PartSpec,
+	module Propellor.Property.Parted.Types,
+	module Propellor.Property.Partition,
 ) where
 
 import Propellor.Base
 import Propellor.Property.Parted
 import Propellor.Types.PartSpec
+import Propellor.Property.Parted.Types
+import Propellor.Property.Partition (Fs(..))
 
 -- | Adds additional free space to the partition.
 addFreeSpace :: PartSpec t -> PartSize -> PartSpec t

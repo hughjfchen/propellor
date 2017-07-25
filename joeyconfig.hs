@@ -4,6 +4,8 @@ module Main where
 
 import Propellor
 import Propellor.Property.Scheduled
+import Propellor.Property.DiskImage
+import Propellor.Property.Chroot
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
@@ -92,6 +94,16 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Ssh.userKeys (User "joey") hostContext
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
+	& imageBuilt "/srv/test.img" mychroot MSDOS
+		[ partition EXT2 `mountedAt` "/boot"
+		, partition EXT4 `mountedAt` "/"
+		, swapPartition (MegaBytes 256)
+		]
+  where
+	mychroot d = debootstrapped mempty d $ props
+		& osDebian Unstable X86_64
+		& Apt.installed ["linux-image-amd64"]
+		& Grub.installed PC
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
