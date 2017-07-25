@@ -426,4 +426,5 @@ vmdkBuiltFor diskimage = (setup <!> cleanup)
 		`changesFile` vmdkfile
 		`onChange` File.mode vmdkfile (combineModes (ownerWriteMode : readModes))
 		`requires` Apt.installed ["virtualbox"]
+		`requires` File.notPresent vmdkfile
 	cleanup = File.notPresent vmdkfile
