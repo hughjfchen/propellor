@@ -78,15 +78,16 @@ toKernelNewerThan ver =
 	property' ("reboot to kernel newer than " ++ ver) $ \w -> do
 		wantV <- tryReadVersion ver
 		runningV <- tryReadVersion =<< liftIO runningKernelVersion
-		installedV <- maximum <$>
-			(mapM tryReadVersion =<< liftIO installedKernelVersions)
 		if runningV >= wantV then noChange
-			else if installedV >= wantV
-				then ensureProperty w now
-				else errorMessage $
-					"kernel newer than "
-					++ ver
-					++ " not installed"
+			else maximum <$> installedVs >>= \installedV ->
+				if installedV >= wantV
+					then ensureProperty w now
+					else errorMessage $
+						"kernel newer than "
+						++ ver
+						++ " not installed"
+  where
+	installedVs = mapM tryReadVersion =<< liftIO installedKernelVersions
 
 runningInstalledKernel :: IO Bool
 runningInstalledKernel = do

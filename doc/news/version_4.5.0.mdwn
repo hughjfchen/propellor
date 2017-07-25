@@ -1,0 +1,9 @@
+propellor 4.5.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Generalized the PartSpec DSL, so it can be used for both
+     disk image partitioning, and disk device partitioning, with
+     different partition sizing methods as appropriate for the different
+     uses. (minor API change)
+   * Propellor.Property.Parted: Added calcPartTable function which uses
+     PartSpec DiskPart, and a useDiskSpace combinator.
+   * Generate a better description for versioned properties."""]]
