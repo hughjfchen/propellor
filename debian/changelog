@@ -1,7 +1,7 @@
 propellor (4.5.2) UNRELEASED; urgency=medium
 
   * Added Rsync.installed property.
-  * Added DiskImage.vmdkBuilt property which is useful for booting
+  * Added DiskImage.vmdkBuiltFor property which is useful for booting
     a disk image in VirtualBox.
 
  -- Joey Hess <id@joeyh.name>  Tue, 25 Jul 2017 17:08:52 -0400

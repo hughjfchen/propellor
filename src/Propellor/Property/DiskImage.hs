@@ -13,7 +13,7 @@ module Propellor.Property.DiskImage (
 	imageRebuilt,
 	imageBuiltFrom,
 	imageExists,
-	vmdkBuilt,
+	vmdkBuiltFor,
 	Grub.BIOS(..),
 ) where
 
@@ -412,8 +412,8 @@ toSysDir chrootdir d = case makeRelative chrootdir d of
 		sysdir -> "/" ++ sysdir
 
 -- | Builds a VirtualBox .vmdk file for the specified disk image file.
-vmdkBuilt :: FilePath -> RevertableProperty DebianLike UnixLike
-vmdkBuilt diskimage = (setup <!> cleanup)
+vmdkBuiltFor :: FilePath -> RevertableProperty DebianLike UnixLike
+vmdkBuiltFor diskimage = (setup <!> cleanup)
 	`describe` (vmdkfile ++ " built")
   where
 	vmdkfile = diskimage ++ ".vmdk"

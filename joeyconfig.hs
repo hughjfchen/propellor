@@ -99,6 +99,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 		, partition EXT4 `mountedAt` "/"
 		, swapPartition (MegaBytes 256)
 		]
+		`before` vmdkBuiltFor "/srv/test.img"
   where
 	mychroot d = debootstrapped mempty d $ props
 		& osDebian Unstable X86_64
