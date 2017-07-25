@@ -34,6 +34,7 @@ import Propellor.Types.Info
 import Propellor.Types.Bootloader
 import Propellor.Container
 import Utility.Path
+import Utility.FileMode
 
 import Data.List (isPrefixOf, isInfixOf, sortBy, unzip4)
 import Data.Function (on)
@@ -423,5 +424,6 @@ vmdkBuiltFor diskimage = (setup <!> cleanup)
 		, "-rawdisk", diskimage
 		]
 		`changesFile` vmdkfile
+		`onChange` File.mode vmdkfile (combineModes (ownerWriteMode : readModes))
 		`requires` Apt.installed ["virtualbox"]
 	cleanup = File.notPresent vmdkfile
