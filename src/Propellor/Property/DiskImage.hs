@@ -174,9 +174,7 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 		let (mnts, mntopts, parttable) = fitChrootSize tabletype partspec $
 			map (calcsz mnts) mnts
 		ensureProperty w $
-			imageExists img (partTableSize parttable)
-				`before`
-			partitioned YesReallyDeleteDiskContents img parttable
+			imageSetup img parttable
 				`before`
 			kpartx img (mkimg' mnts mntopts parttable)
 	mkimg' mnts mntopts parttable devs =
@@ -272,6 +270,24 @@ imageExists img isz = property ("disk image exists" ++ img) $ liftIO $ do
 	-- aligned to a sector size will confuse some programs.
 	-- Common sector sizes are 512 and 4096; use 4096 as it's larger.
 	sectorsize = 4096 :: Double
+
+-- | Ensure that disk image file exists and is partitioned.
+--
+-- Avoids repartitioning the disk image, when a file of the right size
+-- already exists, and it has the same PartTable.
+imageSetup :: FilePath -> PartTable -> Property DebianLike
+imageSetup img parttable = property' ("disk image set up " ++ img) $ \w -> do
+	oldparttable <- liftIO $ catchDefaultIO "" $ readFile parttablefile
+	res <- ensureProperty w $ imageExists img (partTableSize parttable)
+	if res == NoChange && oldparttable == show parttable
+		then return NoChange
+		else if res == FailedChange
+			then return FailedChange
+			else do
+				liftIO $ writeFile parttablefile (show parttable)
+				ensureProperty w $ partitioned YesReallyDeleteDiskContents img parttable
+  where
+	parttablefile = img ++ ".parttable"
 
 -- | A property that is run after the disk image is created, with
 -- its populated partition tree mounted in the provided

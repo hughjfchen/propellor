@@ -3,6 +3,8 @@ propellor (4.5.1) UNRELEASED; urgency=medium
   * Reboot.toKernelNewerThan: If running kernel is new enough, avoid
     looking at what kernels are installed.
     Thanks, Sean Whitton.
+  * DiskImage: Avoid re-partitioning disk image unncessarily, for a large
+    speedup.
 
  -- Joey Hess <id@joeyh.name>  Sun, 23 Jul 2017 09:41:58 -0400
 
