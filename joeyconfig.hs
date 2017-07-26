@@ -221,8 +221,15 @@ honeybee = host "honeybee.kitenet.net" $ props
 			, "bogus-priv"
 			, "interface=wlan0"
 			, "domain=kitenet.net"
-			, "no-hosts"
 			, "dhcp-range=10.1.1.100,10.1.1.150,24h"
+			, "no-hosts"
+			, "address=/honeybee.kitenet.net/10.1.1.1"
+			]
+		`requires` File.hasContent "/etc/resolv.conf"
+			[ "domain kitenet.net"
+			, "search kitenet.net"
+			, "nameserver 8.8.8.8"
+			, "nameserver 8.8.4.4"
 			]
 	& JoeySites.ipmasq "eth0" "wlan0"
 	& Apt.installed ["ppp", "mtr", "iftop", "git-annex", "screen"]
