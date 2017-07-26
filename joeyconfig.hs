@@ -182,42 +182,40 @@ orca = host "orca.kitenet.net" $ props
 
 honeybee :: Host
 honeybee = host "honeybee.kitenet.net" $ props
-	& standardSystem Testing ARMHF [ "Arm git-annex build box." ]
+	& standardSystem Testing ARMHF [ "Home router and arm git-annex build box." ]
 
-	-- I have to travel to get console access, so no automatic
-	-- upgrades, and try to be robust.
+	-- Hard to get console access, so no automatic upgrades,
+	-- and try to be robust.
 	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
 
 	& Apt.installed ["flash-kernel"]
 	& "/etc/flash-kernel/machine" `File.hasContent` ["Cubietech Cubietruck"]
 	& Apt.installed ["linux-image-armmp"]
-	& Network.dhcp "eth0" `requires` Network.cleanInterfacesFile
 	& Postfix.satellite
-
-	-- ipv6 used for remote access thru firewalls
-	& Apt.serviceInstalledRunning "aiccu"
-	& ipv6 "2001:4830:1600:187::2"
-	-- restart to deal with failure to connect, tunnel issues, etc
-	& Cron.job "aiccu restart daily" Cron.Daily (User "root") "/"
-		"service aiccu stop; service aiccu start"
-
-	-- In case compiler needs more than available ram
-	& Apt.serviceInstalledRunning "swapspace"
 
 	-- No hardware clock.
 	& Apt.serviceInstalledRunning "ntp"
 
-	-- Runs only on weekdays.
+	-- Home router
+	& Network.dhcp "eth0" `requires` Network.cleanInterfacesFile
+	-- todo configure wlan0 on ip 10.1.1.1
+	& Apt.serviceInstalledRunning "hostapd" -- todo write hostapd.conf 1st
+	& Apt.serviceInstalledRunning "dnsmasq" -- todo write dnsmasq.conf file
+	& JoeySites.ipmasq "eth0" "wlan0"
+
+	-- Autobuild runs only on weekdays.
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.armAutoBuilder
-		Unstable ARMEL Nothing weekends "23h")
-	-- Runs only on weekends.
+		Unstable ARMEL Nothing weekends "10h")
+	-- Autobuild runs only on weekends.
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.stackAutoBuilder
-		(Stable "jessie") ARMEL (Just "ancient") weekdays "23h")
+		(Stable "jessie") ARMEL (Just "ancient") weekdays "10h")
+	-- In case compiler needs more than available ram
+	& Apt.serviceInstalledRunning "swapspace"
   where
-	weekdays = Cron.Times "15 6 * * 2-5"
-	weekends = Cron.Times "15 6 * * 6-7"
+	weekdays = Cron.Times "15 10 * * 2-5"
+	weekends = Cron.Times "15 10 * * 6-7"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed

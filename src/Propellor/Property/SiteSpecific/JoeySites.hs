@@ -929,3 +929,22 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 	& Systemd.started "goodmorning.timer"
 	& "/etc/systemd/logind.conf" `ConfFile.containsIniSetting`
 		("Login", "LidSwitchIgnoreInhibited", "no")
+
+-- | Enable IP masqerading, from the intif to the extif.
+ipmasq :: String -> String -> Property DebianLike
+ipmasq extif intif = script `File.hasContent`
+	[ "#!/bin/sh"
+	, "EXTIF=" ++ extif
+	, "INTIF=" ++ intif
+	, "if [ \"$IFACE\" != $EXTIF; then"
+	, "exit 0"
+	, "fi"
+	, "iptables -A FORWARD -i $EXTIF -o $INTIF -m state --state ESTABLISHED,RELATED -j ACCEPT"
+	, "iptables -A FORWARD -i $INTIF -o $EXTIF -j ACCEPT"
+	, "iptables -t nat -A POSTROUTING -o $EXTIF -j MASQUERADE"
+	, "echo 1 > /proc/sys/net/ipv4/ip_forward"
+	]
+	`requires` Apt.installed ["iptables"]
+	`before` (script `File.mode` combineModes (readModes ++ executeModes))
+  where
+	script = "/etc/network/if-up.d/ipmasq"
