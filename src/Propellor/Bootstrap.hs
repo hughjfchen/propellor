@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Propellor.Bootstrap (
 	Bootstrapper(..),
 	Builder(..),
@@ -34,7 +36,7 @@ data Bootstrapper = Robustly Builder | OSOnly
 	deriving (Show)
 
 data Builder = Cabal | Stack
-	deriving (Show)
+	deriving (Show, Typeable)
 
 defaultBootstrapper :: Bootstrapper
 defaultBootstrapper = Robustly Cabal
