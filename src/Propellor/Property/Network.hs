@@ -39,7 +39,30 @@ dhcp iface = tightenTargets $ hasContent (interfaceDFile iface)
 	`describe` ("dhcp " ++ iface)
 	`requires` interfacesDEnabled
 
--- | Writes a static interface file for the specified interface.
+newtype Gateway = Gateway IPAddr
+
+-- | Configures an interface with a static address and gateway.
+static :: Interface -> IPAddr -> Maybe Gateway-> Property DebianLike
+static iface addr gateway = 
+	tightenTargets $ hasContent (interfaceDFile iface) ls
+	`describe` ("static IP address for " ++ iface)
+	`requires` interfacesDEnabled
+  where
+	ls = catMaybes
+		[ Just $ "auto " ++ iface
+		, Just $ "iface " ++ iface ++ " " ++ inet ++ " static"
+		, Just $ "\taddress" ++ val addr
+		, case gateway of
+			Just (Gateway gaddr) -> 
+				Just $ "\tgateway" ++ val gaddr
+			Nothing -> Nothing
+		]
+	inet = case addr of
+		IPv4 _ -> "inet"
+		IPv6 _ -> "inet6"
+
+-- | Writes a static interface file for the specified interface
+-- to preserve its current configuration.
 --
 -- The interface has to be up already. It could have been brought up by
 -- DHCP, or by other means. The current ipv4 addresses
@@ -50,8 +73,8 @@ dhcp iface = tightenTargets $ hasContent (interfaceDFile iface)
 --
 -- (ipv6 addresses are not included because it's assumed they come up
 -- automatically in most situations.)
-static :: Interface -> Property DebianLike
-static iface = tightenTargets $ 
+preserveStatic :: Interface -> Property DebianLike
+preserveStatic iface = tightenTargets $ 
 	check (not <$> doesFileExist f) setup
 		`describe` desc
 		`requires` interfacesDEnabled

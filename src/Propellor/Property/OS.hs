@@ -207,7 +207,7 @@ preserveNetwork = go `requires` Network.cleanInterfacesFile
 			["route", "list", "scope", "global"]
 		case words <$> headMaybe ls of
 			Just ("default":"via":_:"dev":iface:_) ->
-				ensureProperty w $ Network.static iface
+				ensureProperty w $ Network.preserveStatic iface
 			_ -> do
 				warningMessage "did not find any default ipv4 route"
 				return FailedChange

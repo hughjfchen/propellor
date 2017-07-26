@@ -1,7 +1,11 @@
-propellor (4.5.3) UNRELEASED; urgency=medium
+propellor (4.6.0) UNRELEASED; urgency=medium
 
   * Add Typeable instance to Bootstrapper, fixing build with old versions
     of ghc.
+  * Network.static changed to take address and gateway parameters.
+    If you used the old Network.static property, it has been renamed to
+    Network.preserveStatic.
+    (Minor API change)
 
  -- Joey Hess <id@joeyh.name>  Tue, 25 Jul 2017 21:01:23 -0400
 

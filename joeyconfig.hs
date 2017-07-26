@@ -197,8 +197,10 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "ntp"
 
 	-- Home router
-	& Network.dhcp "eth0" `requires` Network.cleanInterfacesFile
-	-- todo configure wlan0 on ip 10.1.1.1
+	& Network.dhcp "eth0"
+		`requires` Network.cleanInterfacesFile
+	& Network.static "wlan0" (IPv4 "10.1.1.1") Nothing
+		`requires` Network.cleanInterfacesFile
 	& Apt.serviceInstalledRunning "hostapd" -- todo write hostapd.conf 1st
 	& Apt.serviceInstalledRunning "dnsmasq" -- todo write dnsmasq.conf file
 	& JoeySites.ipmasq "eth0" "wlan0"
@@ -234,7 +236,7 @@ kite = host "kite.kitenet.net" $ props
 		, (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFZftKMnH/zH29BHMKbcBO4QsgTrstYFVhbrzrlRzBO3")
 		]
 
-	& Network.static "eth0" `requires` Network.cleanInterfacesFile
+	& Network.preserveStatic "eth0" `requires` Network.cleanInterfacesFile
 	& Apt.installed ["linux-image-amd64"]
 	& Linode.serialGrub
 	& Linode.mlocateEnabled
