@@ -51,10 +51,10 @@ static iface addr gateway =
 	ls = catMaybes
 		[ Just $ "auto " ++ iface
 		, Just $ "iface " ++ iface ++ " " ++ inet ++ " static"
-		, Just $ "\taddress" ++ val addr
+		, Just $ "\taddress " ++ val addr
 		, case gateway of
 			Just (Gateway gaddr) -> 
-				Just $ "\tgateway" ++ val gaddr
+				Just $ "\tgateway " ++ val gaddr
 			Nothing -> Nothing
 		]
 	inet = case addr of
