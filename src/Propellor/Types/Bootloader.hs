@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, DeriveDataTypeable #-}
 
 module Propellor.Types.Bootloader where
 
