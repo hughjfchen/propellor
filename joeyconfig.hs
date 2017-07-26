@@ -182,28 +182,51 @@ orca = host "orca.kitenet.net" $ props
 
 honeybee :: Host
 honeybee = host "honeybee.kitenet.net" $ props
-	& standardSystem Testing ARMHF [ "Home router and arm git-annex build box." ]
+	& standardSystem Testing ARMHF
+		[ "Home router and arm git-annex build box." ]
 
 	-- Hard to get console access, so no automatic upgrades,
 	-- and try to be robust.
 	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
 
+	-- Cubietruck
 	& Apt.installed ["flash-kernel"]
 	& "/etc/flash-kernel/machine" `File.hasContent` ["Cubietech Cubietruck"]
 	& Apt.installed ["linux-image-armmp"]
-	& Postfix.satellite
+	& Apt.installed ["firmware-brcm80211"]
+		-- Workaround for https://bugs.debian.org/844056
+		`requires` File.hasPrivContent "/lib/firmware/brcm/brcmfmac43362-sdio.txt" anyContext
+		`requires` File.dirExists "/lib/firmware/brcm"
 
-	-- No hardware clock.
+	-- No hardware clock
 	& Apt.serviceInstalledRunning "ntp"
 
 	-- Home router
-	& Network.dhcp "eth0"
+	& Network.static "eth0" (IPv4 "192.168.1.42")
+		(Just (Network.Gateway (IPv4 "192.168.1.1")))
 		`requires` Network.cleanInterfacesFile
 	& Network.static "wlan0" (IPv4 "10.1.1.1") Nothing
 		`requires` Network.cleanInterfacesFile
-	& Apt.serviceInstalledRunning "hostapd" -- todo write hostapd.conf 1st
-	& Apt.serviceInstalledRunning "dnsmasq" -- todo write dnsmasq.conf file
+	& Apt.serviceInstalledRunning "hostapd"
+		`requires` File.hasContent "/etc/hostapd/hostapd.conf"
+			[ "interface=wlan0"
+			, "ssid=house"
+			, "hw_mode=g"
+			, "channel=8"
+			]
+		`requires` File.dirExists "/lib/hostapd"
+	& Apt.serviceInstalledRunning "dnsmasq"
+		`requires` File.hasContent "/etc/dnsmasq.conf"
+			[ "domain-needed"
+			, "bogus-priv"
+			, "interface=wlan0"
+			, "domain=kitenet.net"
+			, "no-hosts"
+			, "dhcp-range=10.1.1.100,10.1.1.150,24h"
+			]
 	& JoeySites.ipmasq "eth0" "wlan0"
+	& Apt.installed ["ppp", "mtr", "iftop", "git-annex", "screen"]
+	& Postfix.satellite
 
 	-- Autobuild runs only on weekdays.
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
