@@ -201,53 +201,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 	-- No hardware clock
 	& Apt.serviceInstalledRunning "ntp"
 
-	-- Home router
-	& Network.static "wlan0" (IPv4 "10.1.1.1") Nothing
-		`requires` Network.cleanInterfacesFile
-	& Apt.serviceInstalledRunning "hostapd"
-		`requires` File.hasContent "/etc/hostapd/hostapd.conf"
-			[ "interface=wlan0"
-			, "ssid=house"
-			, "hw_mode=g"
-			, "channel=8"
-			]
-		`requires` File.dirExists "/lib/hostapd"
-	& Apt.serviceInstalledRunning "dnsmasq"
-		`requires` File.hasContent "/etc/dnsmasq.conf"
-			[ "domain-needed"
-			, "bogus-priv"
-			, "interface=wlan0"
-			, "domain=kitenet.net"
-			, "dhcp-range=10.1.1.100,10.1.1.150,24h"
-			, "no-hosts"
-			, "address=/honeybee.kitenet.net/10.1.1.1"
-			]
-		`requires` File.hasContent "/etc/resolv.conf"
-			[ "domain kitenet.net"
-			, "search kitenet.net"
-			, "nameserver 8.8.8.8"
-			, "nameserver 8.8.4.4"
-			]
-	& JoeySites.ipmasq "wlan0"
-	& Network.static' "eth0" (IPv4 "192.168.1.42")
-		(Just (Network.Gateway (IPv4 "192.168.1.1")))
-		-- When satellite is down, fall back to dialup
-		[ ("pre-up", "poff -a || true")
-		, ("post-down", "pon")
-		]
-		`requires` Network.cleanInterfacesFile
-	& Apt.installed ["ppp"]
-		`before` File.hasContent "/etc/ppp/peers/provider"
-			[ "user \"joeyh@arczip.com\""
-			, "connect \"/usr/sbin/chat -v -f /etc/chatscripts/pap -T 9734111\""
-			, "/dev/ttyACM0"
-			, "115200"
-			, "noipdefault"
-			, "defaultroute"
-			, "persist"
-			, "noauth"
-			]
-		`before` File.hasPrivContent "/etc/ppp/pap-secrets" (Context "joeyh@arczip.com")
+	& JoeySites.homeRouter
 	& Apt.installed ["mtr-tiny", "iftop", "screen"]
 	& Postfix.satellite
 
