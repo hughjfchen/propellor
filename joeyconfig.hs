@@ -231,8 +231,20 @@ honeybee = host "honeybee.kitenet.net" $ props
 			, "nameserver 8.8.8.8"
 			, "nameserver 8.8.4.4"
 			]
-	& JoeySites.ipmasq "eth0" "wlan0"
-	& Apt.installed ["ppp", "mtr", "iftop", "git-annex", "screen"]
+	& JoeySites.ipmasq "wlan0"
+	& Apt.installed ["ppp"]
+		`before` File.hasContent "/etc/ppp/peers/provider"
+			[ "user \"joeyh@arczip.com\""
+			, "connect \"/usr/sbin/chat -v -f /etc/chatscripts/pap -T 9734111\""
+			, "/dev/ttyACM0"
+			, "115200"
+			, "noipdefault"
+			, "defaultroute"
+			, "persist"
+			, "noauth"
+			]
+		`before` File.hasPrivContent "/etc/ppp/pap-secrets" (Context "joeyh@arczip.com")
+	& Apt.installed ["mtr", "iftop", "git-annex", "screen"]
 	& Postfix.satellite
 
 	-- Autobuild runs only on weekdays.
