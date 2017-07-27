@@ -1,4 +1,4 @@
-propellor (4.6.1) UNRELEASED; urgency=medium
+propellor (4.6.1) unstable; urgency=medium
 
   * Added Network.dhcp' and Network.static', which allow specifying
     additional options for interfaces files.
@@ -6,7 +6,7 @@ propellor (4.6.1) UNRELEASED; urgency=medium
     Thanks, Sergei Trofimovich.
   * DiskImage: Fix strictness bug in .parttable read/write sequence.
 
- -- Joey Hess <id@joeyh.name>  Wed, 26 Jul 2017 23:40:48 -0400
+ -- Joey Hess <id@joeyh.name>  Thu, 27 Jul 2017 09:17:32 -0400
 
 propellor (4.6.0) unstable; urgency=medium
 
