@@ -293,6 +293,8 @@ nspawnService (Container name _ _) cfg = setup <!> teardown
 	overridefile = overridedir </> "local.conf"
 	overridecontent = 
 		[ "[Service]"
+		, "# Reset ExecStart from the template"
+		, "ExecStart="
 		, "ExecStart=/usr/bin/systemd-nspawn " ++ unwords nspawnparams
 		]
 	nspawnparams = 
