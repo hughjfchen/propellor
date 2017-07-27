@@ -1,3 +1,0 @@
-propellor 3.4.1 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Fixed https url to propellor git repository."""]]
