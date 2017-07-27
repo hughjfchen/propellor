@@ -30,7 +30,7 @@ import qualified Data.ByteString as B
 bootstrapWith :: Bootstrapper -> Property (HasInfo + UnixLike)
 bootstrapWith b = pureInfoProperty desc (InfoVal b)
   where
-	desc = "bootstrapped with " ++ case b of
+	desc = "propellor bootstrapped with " ++ case b of
 		Robustly Stack -> "stack"
 		Robustly Cabal -> "cabal"
 		OSOnly -> "OS packages only"
