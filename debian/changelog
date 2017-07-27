@@ -1,3 +1,10 @@
+propellor (4.6.1) UNRELEASED; urgency=medium
+
+  * Added Network.dhcp' and Network.static', which allow specifying
+    additional options for interfaces files.
+
+ -- Joey Hess <id@joeyh.name>  Wed, 26 Jul 2017 23:40:48 -0400
+
 propellor (4.6.0) unstable; urgency=medium
 
   * Add Typeable instance to Bootstrapper, fixing build with old versions

@@ -202,9 +202,6 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "ntp"
 
 	-- Home router
-	& Network.static "eth0" (IPv4 "192.168.1.42")
-		(Just (Network.Gateway (IPv4 "192.168.1.1")))
-		`requires` Network.cleanInterfacesFile
 	& Network.static "wlan0" (IPv4 "10.1.1.1") Nothing
 		`requires` Network.cleanInterfacesFile
 	& Apt.serviceInstalledRunning "hostapd"
@@ -232,6 +229,13 @@ honeybee = host "honeybee.kitenet.net" $ props
 			, "nameserver 8.8.4.4"
 			]
 	& JoeySites.ipmasq "wlan0"
+	& Network.static' "eth0" (IPv4 "192.168.1.42")
+		(Just (Network.Gateway (IPv4 "192.168.1.1")))
+		-- When satellite is down, fall back to dialup
+		[ ("pre-up", "poff -a || true")
+		, ("post-down", "pon")
+		]
+		`requires` Network.cleanInterfacesFile
 	& Apt.installed ["ppp"]
 		`before` File.hasContent "/etc/ppp/peers/provider"
 			[ "user \"joeyh@arczip.com\""
