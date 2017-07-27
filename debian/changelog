@@ -4,6 +4,7 @@ propellor (4.6.1) UNRELEASED; urgency=medium
     additional options for interfaces files.
   * Fix build failure on ghc-8.2.1
     Thanks, Sergei Trofimovich.
+  * DiskImage: Fix strictness bug in .parttable read/write sequence.
 
  -- Joey Hess <id@joeyh.name>  Wed, 26 Jul 2017 23:40:48 -0400
 

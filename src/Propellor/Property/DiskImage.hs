@@ -284,7 +284,7 @@ imageExists' img parttable = (setup <!> cleanup) `describe` desc
 	desc = "disk image exists " ++ img
 	parttablefile = img ++ ".parttable"
 	setup = property' desc $ \w -> do
-		oldparttable <- liftIO $ catchDefaultIO "" $ readFile parttablefile
+		oldparttable <- liftIO $ catchDefaultIO "" $ readFileStrict parttablefile
 		res <- ensureProperty w $ imageExists img (partTableSize parttable)
 		if res == NoChange && oldparttable == show parttable
 			then return NoChange
