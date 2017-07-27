@@ -1,3 +1,12 @@
+propellor (4.6.2) UNRELEASED; urgency=medium
+
+  * Systemd.nspawned: Recent systemd versions such as 234 ignore
+    non-symlinks in /etc/systemd/system/multi-user.target.wants,
+    which was used to configure systemd-nspawn parameters. Instead,
+    use a service.d/local.conf file to configure that.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 27 Jul 2017 16:34:37 -0400
+
 propellor (4.6.1) unstable; urgency=medium
 
   * Added Network.dhcp' and Network.static', which allow specifying
