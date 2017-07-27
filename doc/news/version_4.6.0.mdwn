@@ -1,0 +1,8 @@
+propellor 4.6.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Add Typeable instance to Bootstrapper, fixing build with old versions
+     of ghc.
+   * Network.static changed to take address and gateway parameters.
+     If you used the old Network.static property, it has been renamed to
+     Network.preserveStatic.
+     (Minor API change)"""]]

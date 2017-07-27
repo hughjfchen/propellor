@@ -1,4 +1,4 @@
-propellor (4.6.0) UNRELEASED; urgency=medium
+propellor (4.6.0) unstable; urgency=medium
 
   * Add Typeable instance to Bootstrapper, fixing build with old versions
     of ghc.
@@ -7,7 +7,7 @@ propellor (4.6.0) UNRELEASED; urgency=medium
     Network.preserveStatic.
     (Minor API change)
 
- -- Joey Hess <id@joeyh.name>  Tue, 25 Jul 2017 21:01:23 -0400
+ -- Joey Hess <id@joeyh.name>  Wed, 26 Jul 2017 20:02:50 -0400
 
 propellor (4.5.2) unstable; urgency=medium
 
