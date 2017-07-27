@@ -930,18 +930,18 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 	& "/etc/systemd/logind.conf" `ConfFile.containsIniSetting`
 		("Login", "LidSwitchIgnoreInhibited", "no")
 
--- | Enable IP masqerading, from the intif to the extif.
-ipmasq :: String -> String -> Property DebianLike
-ipmasq extif intif = script `File.hasContent`
+-- | Enable IP masqerading, on whatever other interfaces come up.
+ipmasq :: String -> Property DebianLike
+ipmasq intif = script `File.hasContent`
 	[ "#!/bin/sh"
-	, "EXTIF=" ++ extif
 	, "INTIF=" ++ intif
-	, "if [ \"$IFACE\" != $EXTIF; then"
+	, "if [ \"$IFACE\" = $INTIF ] || [ \"$IFACE\" = lo ]; then"
 	, "exit 0"
 	, "fi"
-	, "iptables -A FORWARD -i $EXTIF -o $INTIF -m state --state ESTABLISHED,RELATED -j ACCEPT"
-	, "iptables -A FORWARD -i $INTIF -o $EXTIF -j ACCEPT"
-	, "iptables -t nat -A POSTROUTING -o $EXTIF -j MASQUERADE"
+	, "iptables -F"
+	, "iptables -A FORWARD -i $IFACE -o $INTIF -m state --state ESTABLISHED,RELATED -j ACCEPT"
+	, "iptables -A FORWARD -i $INTIF -o $IFACE -j ACCEPT"
+	, "iptables -t nat -A POSTROUTING -o $IFACE -j MASQUERADE"
 	, "echo 1 > /proc/sys/net/ipv4/ip_forward"
 	]
 	`requires` Apt.installed ["iptables"]
