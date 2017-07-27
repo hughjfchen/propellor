@@ -247,19 +247,19 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Apt.installed ["mtr-tiny", "iftop", "screen"]
 	& Postfix.satellite
 
-	-- Autobuild runs only on weekdays.
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.armAutoBuilder
-		Unstable ARMEL Nothing weekends "10h")
-	-- Autobuild runs only on weekends.
-	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		Unstable ARMEL Nothing (Cron.Times "15 10 * * *") "10h")
+	-- Disabled because it does not work, and the old systemd
+	-- in the container uses a ton of CPU
+	! Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.stackAutoBuilder
 		(Stable "jessie") ARMEL (Just "ancient") weekdays "10h")
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
   where
 	weekdays = Cron.Times "15 10 * * 2-5"
-	weekends = Cron.Times "15 10 * * 6-7"
+	-- weekends = Cron.Times "15 10 * * 6-7"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
