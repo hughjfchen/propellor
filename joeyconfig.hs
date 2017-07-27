@@ -244,7 +244,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 			, "noauth"
 			]
 		`before` File.hasPrivContent "/etc/ppp/pap-secrets" (Context "joeyh@arczip.com")
-	& Apt.installed ["mtr", "iftop", "git-annex", "screen"]
+	& Apt.installed ["mtr", "iftop", "screen"]
 	& Postfix.satellite
 
 	-- Autobuild runs only on weekdays.

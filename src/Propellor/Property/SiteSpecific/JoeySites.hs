@@ -938,6 +938,7 @@ ipmasq intif = script `File.hasContent`
 	, "if [ \"$IFACE\" = $INTIF ] || [ \"$IFACE\" = lo ]; then"
 	, "exit 0"
 	, "fi"
+	, "iptables -F"
 	, "iptables -A FORWARD -i $IFACE -o $INTIF -m state --state ESTABLISHED,RELATED -j ACCEPT"
 	, "iptables -A FORWARD -i $INTIF -o $IFACE -j ACCEPT"
 	, "iptables -t nat -A POSTROUTING -o $IFACE -j MASQUERADE"
