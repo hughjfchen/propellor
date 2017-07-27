@@ -934,7 +934,7 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 -- My home router, running hostapd and dnsmasq for wlan0,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
 homeRouter :: Property (HasInfo + DebianLike)
-homeRouter = combineProperties "home router" $ props
+homeRouter = propertyList "home router" $ props
 	& Network.static "wlan0" (IPv4 "10.1.1.1") Nothing
 		`requires` Network.cleanInterfacesFile
 	& Apt.serviceInstalledRunning "hostapd"
