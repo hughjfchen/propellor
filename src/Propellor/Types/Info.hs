@@ -17,6 +17,7 @@ module Propellor.Types.Info (
 import Data.Dynamic
 import Data.Maybe
 import Data.Monoid
+import qualified Data.Typeable as T
 import Prelude
 
 -- | Information about a Host, which can be provided by its properties.
@@ -35,7 +36,7 @@ instance Show InfoEntry where
 -- Extracts the value from an InfoEntry but only when
 -- it's of the requested type.
 extractInfoEntry :: Typeable v => InfoEntry -> Maybe v
-extractInfoEntry (InfoEntry v) = cast v
+extractInfoEntry (InfoEntry v) = T.cast v
 
 -- | Values stored in Info must be members of this class.
 --
