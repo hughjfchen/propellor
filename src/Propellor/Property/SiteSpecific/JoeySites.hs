@@ -983,9 +983,10 @@ homeRouter = combineProperties "home router" $ props
 			]
 		`before` File.hasPrivContent "/etc/ppp/pap-secrets" (Context "joeyh@arczip.com")
 
--- | Enable IP masqerading, on whatever other interfaces come up.
+-- | Enable IP masqerading, on whatever other interfaces come up than the
+-- provided intif.
 ipmasq :: String -> Property DebianLike
-ipmasq intif = script `File.hasContent`
+ipmasq intif = File.hasContent ifupscript
 	[ "#!/bin/sh"
 	, "INTIF=" ++ intif
 	, "if [ \"$IFACE\" = $INTIF ] || [ \"$IFACE\" = lo ]; then"
@@ -997,7 +998,14 @@ ipmasq intif = script `File.hasContent`
 	, "iptables -t nat -A POSTROUTING -o $IFACE -j MASQUERADE"
 	, "echo 1 > /proc/sys/net/ipv4/ip_forward"
 	]
+	`before` scriptmode ifupscript
+	`before` File.hasContent pppupscript
+		[ "#!/bin/sh"
+		, "IFACE=$PPP_IFACE " ++ ifupscript
+		]
+	`before` scriptmode pppupscript
 	`requires` Apt.installed ["iptables"]
-	`before` (script `File.mode` combineModes (readModes ++ executeModes))
   where
-	script = "/etc/network/if-up.d/ipmasq"
+	ifupscript = "/etc/network/if-up.d/ipmasq"
+	pppupscript = "/etc/ppp/ip-up.d/ipmasq"
+	scriptmode f = f `File.mode` combineModes (readModes ++ executeModes)
