@@ -1,0 +1,8 @@
+propellor 4.6.2 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Systemd.nspawned: Recent systemd versions such as 234 ignore
+     non-symlinks in /etc/systemd/system/multi-user.target.wants,
+     which was used to configure systemd-nspawn parameters. Instead,
+     use a service.d/local.conf file to configure that.
+   * Grub: Added bootsMounted property, a generalization of
+     DiskImage.grubBooted"""]]
