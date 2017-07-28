@@ -1,4 +1,4 @@
-propellor (4.6.2) UNRELEASED; urgency=medium
+propellor (4.6.2) unstable; urgency=medium
 
   * Systemd.nspawned: Recent systemd versions such as 234 ignore
     non-symlinks in /etc/systemd/system/multi-user.target.wants,
@@ -7,7 +7,7 @@ propellor (4.6.2) UNRELEASED; urgency=medium
   * Grub: Added bootsMounted property, a generalization of
     DiskImage.grubBooted
 
- -- Joey Hess <id@joeyh.name>  Thu, 27 Jul 2017 16:34:37 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 28 Jul 2017 15:48:32 -0400
 
 propellor (4.6.1) unstable; urgency=medium
 
