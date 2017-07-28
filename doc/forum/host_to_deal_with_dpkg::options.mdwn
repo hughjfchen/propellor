@@ -1,3 +1,5 @@
+[[!meta title "how to deal with dpkg::options"]]
+
 Hello
 
 I try to create a distUpgrade property in order to migrate one of my computer from jessie -> stretch
