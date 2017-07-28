@@ -3,6 +3,7 @@ module Propellor.Property.Grub where
 import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
+import Propellor.Property.Mount
 import Propellor.Property.Chroot (inChroot)
 import Propellor.Types.Info
 import Propellor.Types.Bootloader
@@ -89,3 +90,46 @@ chainPVGrub rootdev bootdev timeout = combineProperties desc $ props
 	xenshim = scriptProperty ["grub-mkimage --prefix '(" ++ bootdev ++ ")/boot/grub' -c /boot/load.cf -O x86_64-xen /usr/lib/grub/x86_64-xen/*.mod > /boot/xen-shim"]
 		`assume` MadeChange
 		`describe` "/boot-xen-shim"
+
+-- | This is a version of `boots` that makes grub boot the system mounted
+-- at a particular directory. The OSDevice should be the underlying disk
+-- device that grub will be installed to (generally a whole disk, 
+-- not a partition).
+bootsMounted :: FilePath -> OSDevice -> Property Linux
+bootsMounted mnt wholediskdev = combineProperties desc $ props
+	-- bind mount host /dev so grub can access the loop devices
+	& bindMount "/dev" (inmnt "/dev")
+	& mounted "proc" "proc" (inmnt "/proc") mempty
+	& mounted "sysfs" "sys" (inmnt "/sys") mempty
+	-- update the initramfs so it gets the uuid of the root partition
+	& inchroot "update-initramfs" ["-u"]
+		`assume` MadeChange
+	-- work around for http://bugs.debian.org/802717
+	& check haveosprober (inchroot "chmod" ["-x", osprober])
+	& inchroot "update-grub" []
+		`assume` MadeChange
+	& check haveosprober (inchroot "chmod" ["+x", osprober])
+	& inchroot "grub-install" [wholediskdev]
+		`assume` MadeChange
+	& cleanupmounts
+	-- sync all buffered changes out to the disk in case it's
+	-- used right away
+	& cmdProperty "sync" []
+		`assume` NoChange
+  where
+	desc = "grub boots " ++ wholediskdev
+
+  	-- cannot use </> since the filepath is absolute
+	inmnt f = mnt ++ f
+
+	inchroot cmd ps = cmdProperty "chroot" ([mnt, cmd] ++ ps)
+
+	haveosprober = doesFileExist (inmnt osprober)
+	osprober = "/etc/grub.d/30_os-prober"
+
+	cleanupmounts :: Property Linux
+	cleanupmounts = property desc $ liftIO $ do
+		umountLazy (inmnt "/sys")
+		umountLazy (inmnt "/proc")
+		umountLazy (inmnt "/dev")
+		return NoChange
