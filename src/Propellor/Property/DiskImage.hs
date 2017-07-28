@@ -363,35 +363,9 @@ unbootable msg = \_ _ -> property desc $ do
 -- This does not install the grub package. You will need to add
 -- the `Grub.installed` property to the chroot.
 grubBooted :: Finalization
-grubBooted mnt loopdevs = combineProperties "disk image boots using grub" $ props
-	-- bind mount host /dev so grub can access the loop devices
-	& bindMount "/dev" (inmnt "/dev")
-	& mounted "proc" "proc" (inmnt "/proc") mempty
-	& mounted "sysfs" "sys" (inmnt "/sys") mempty
-	-- update the initramfs so it gets the uuid of the root partition
-	& inchroot "update-initramfs" ["-u"]
-		`assume` MadeChange
-	-- work around for http://bugs.debian.org/802717
-	& check haveosprober (inchroot "chmod" ["-x", osprober])
-	& inchroot "update-grub" []
-		`assume` MadeChange
-	& check haveosprober (inchroot "chmod" ["+x", osprober])
-	& inchroot "grub-install" [wholediskloopdev]
-		`assume` MadeChange
-	-- sync all buffered changes out to the disk image
-	-- may not be necessary, but seemed needed sometimes
-	-- when using the disk image right away.
-	& cmdProperty "sync" []
-		`assume` NoChange
+grubBooted mnt loopdevs = Grub.bootsMounted mnt wholediskloopdev
+	`describe` "disk image boots using grub"
   where
-  	-- cannot use </> since the filepath is absolute
-	inmnt f = mnt ++ f
-
-	inchroot cmd ps = cmdProperty "chroot" ([mnt, cmd] ++ ps)
-
-	haveosprober = doesFileExist (inmnt osprober)
-	osprober = "/etc/grub.d/30_os-prober"
-
 	-- It doesn't matter which loopdev we use; all
 	-- come from the same disk image, and it's the loop dev
 	-- for the whole disk image we seek.

@@ -4,6 +4,8 @@ propellor (4.6.2) UNRELEASED; urgency=medium
     non-symlinks in /etc/systemd/system/multi-user.target.wants,
     which was used to configure systemd-nspawn parameters. Instead,
     use a service.d/local.conf file to configure that.
+  * Grub: Added bootsMounted property, a generalization of
+    DiskImage.grubBooted
 
  -- Joey Hess <id@joeyh.name>  Thu, 27 Jul 2017 16:34:37 -0400
 
