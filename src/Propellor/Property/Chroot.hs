@@ -39,7 +39,7 @@ import qualified Data.Map as M
 import System.Posix.Directory
 
 -- | Specification of a chroot. Normally you'll use `debootstrapped` or
--- `bootstrapped` to construct a Chroot value.
+-- `bootstrapped` or `hostChroot` to construct a Chroot value.
 data Chroot where
 	Chroot :: ChrootBootstrapper b => FilePath -> b -> InfoPropagator -> Host -> Chroot
 
