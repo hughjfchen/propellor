@@ -97,6 +97,9 @@ chainPVGrub rootdev bootdev timeout = combineProperties desc $ props
 -- not a partition).
 bootsMounted :: FilePath -> OSDevice -> Property Linux
 bootsMounted mnt wholediskdev = combineProperties desc $ props
+	-- remove mounts that are done below to make sure the right thing
+	-- gets mounted
+	& cleanupmounts
 	-- bind mount host /dev so grub can access the loop devices
 	& bindMount "/dev" (inmnt "/dev")
 	& mounted "proc" "proc" (inmnt "/proc") mempty

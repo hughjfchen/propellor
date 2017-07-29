@@ -20,6 +20,8 @@ propellor (4.7.0) UNRELEASED; urgency=medium
   * Sbuild: Updated sample config in haddock for Propellor.Property.Sbuild.
     If you use this module, please compare both your config.hs and
     your ~/.sbuildrc with the haddock documentation.
+  * Grub.bootsMounted: Avoid failing when proc sys etc are already mounted
+    within the chroot.
 
  -- Joey Hess <id@joeyh.name>  Fri, 28 Jul 2017 20:13:58 -0400
 
