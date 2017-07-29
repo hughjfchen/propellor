@@ -1,8 +1,8 @@
-propellor (4.7.3) UNRELEASED; urgency=medium
+propellor (4.7.3) unstable; urgency=medium
 
   * Expand the Trace data type.
 
- -- Joey Hess <id@joeyh.name>  Sat, 29 Jul 2017 17:23:44 -0400
+ -- Joey Hess <id@joeyh.name>  Sat, 29 Jul 2017 17:26:32 -0400
 
 propellor (4.7.2) unstable; urgency=medium
 
