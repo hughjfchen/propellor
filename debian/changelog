@@ -1,3 +1,28 @@
+propellor (4.7.0) UNRELEASED; urgency=medium
+
+  * Add Apt.proxy property to set a host's apt proxy.
+    Thanks, Sean Whitton.
+  * Add Apt.useLocalCacher property to set up apt-cacher-ng.
+    Thanks, Sean Whitton.
+  * Rework Sbuild properties to use apt proxies/cachers instead of
+    bind-mounting the host's apt cache. This makes it possible to run more
+    than one build at a time, and lets sbuild run even if apt's cache is
+    locked by the host's apt.
+    Thanks, Sean Whitton.
+  * Sbuild: When Apt.proxy is set, it is assumed that the proxy does some
+    sort of caching, and sbuild chroots are set up to use the same proxy.
+  * Sbuild: When Apt.proxy is not set, install apt-cacher-ng, and point
+    sbuild chroots at the local apt cacher.
+  * Sbuild: Droped Sbuild.piupartsConfFor, Sbuild.piupartsConf,
+    Sbuild.shareAptCache
+    (API change)
+    No longer needed now that we are using apt proxies/cachers.
+  * Sbuild: Updated sample config in haddock for Propellor.Property.Sbuild.
+    If you use this module, please compare both your config.hs and
+    your ~/.sbuildrc with the haddock documentation.
+
+ -- Joey Hess <id@joeyh.name>  Fri, 28 Jul 2017 20:13:58 -0400
+
 propellor (4.6.2) unstable; urgency=medium
 
   * Systemd.nspawned: Recent systemd versions such as 234 ignore

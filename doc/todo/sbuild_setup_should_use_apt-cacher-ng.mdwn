@@ -18,3 +18,5 @@ Sample text for changelog/description of changes:
         Please compare both your config.hs and your ~/.sbuildrc against the haddock.
 
 --spwhitton
+
+> merge [[done]] --[[Joey]]
