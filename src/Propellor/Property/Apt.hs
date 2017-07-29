@@ -20,7 +20,10 @@ import Propellor.Types.Info
 data HostMirror = HostMirror Url
 	deriving (Eq, Show, Typeable)
 
--- | Indicate host's preferred apt mirror (e.g. an apt cacher on the host's LAN)
+data HostAptProxy = HostAptProxy Url
+	deriving (Eq, Show, Typeable)
+
+-- | Indicate host's preferred apt mirror
 mirror :: Url -> Property (HasInfo + UnixLike)
 mirror u = pureInfoProperty (u ++ " apt mirror selected")
 	     (InfoVal (HostMirror u))
@@ -493,3 +496,19 @@ suitePinBlock p suite pin =
 
 dpkgStatus :: FilePath
 dpkgStatus = "/var/lib/dpkg/status"
+
+-- | Set apt's proxy
+proxy :: Url -> Property (HasInfo + DebianLike)
+proxy u = tightenTargets $
+	proxyInfo `before` proxyConfig `describe` desc
+  where
+	proxyInfo = pureInfoProperty desc (InfoVal (HostAptProxy u))
+	proxyConfig = "/etc/apt/apt.conf.d/20proxy" `File.hasContent`
+		[ "Acquire::HTTP::Proxy \"" ++ u ++ "\";" ]
+	desc = (u ++ " apt proxy selected")
+
+-- | Cause apt to proxy downloads via an apt cacher on localhost
+useLocalCacher :: Property (HasInfo + DebianLike)
+useLocalCacher = proxy "http://localhost:3142"
+	`requires` serviceInstalledRunning "apt-cacher-ng"
+	`describe` "apt uses local apt cacher"
