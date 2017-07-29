@@ -1,4 +1,4 @@
-propellor (4.7.0) UNRELEASED; urgency=medium
+propellor (4.7.0) unstable; urgency=medium
 
   * Add Apt.proxy property to set a host's apt proxy.
     Thanks, Sean Whitton.
@@ -23,7 +23,7 @@ propellor (4.7.0) UNRELEASED; urgency=medium
   * Grub.bootsMounted: Avoid failing when proc sys etc are already mounted
     within the chroot.
 
- -- Joey Hess <id@joeyh.name>  Fri, 28 Jul 2017 20:13:58 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 28 Jul 2017 20:42:35 -0400
 
 propellor (4.6.2) unstable; urgency=medium
 
