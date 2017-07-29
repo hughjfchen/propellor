@@ -98,10 +98,9 @@ actionMessage' :: (MonadIO m, ActionResult r, ToResult r) => Maybe HostName -> D
 actionMessage' mhn desc a = do
 	liftIO $ outputConcurrent
 		=<< whenConsole (setTitleCode $ "propellor: " ++ desc)
-
 	liftIO $ trace $ ActionStart mhn desc
+
 	r <- a
-	liftIO $ trace $ ActionEnd $ toResult r
 
 	liftIO $ outputConcurrent . concat =<< sequence
 		[ whenConsole $
@@ -111,6 +110,7 @@ actionMessage' mhn desc a = do
 		, let (msg, intensity, color) = getActionResult r
 		  in colorLine intensity color msg
 		]
+	liftIO $ trace $ ActionEnd $ toResult r
 
 	return r
   where
