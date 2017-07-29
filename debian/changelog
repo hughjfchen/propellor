@@ -1,3 +1,9 @@
+propellor (4.7.3) UNRELEASED; urgency=medium
+
+  * Expand the Trace data type.
+
+ -- Joey Hess <id@joeyh.name>  Sat, 29 Jul 2017 17:23:44 -0400
+
 propellor (4.7.2) unstable; urgency=medium
 
   * Added PROPELLOR_TRACE environment variable, which can be set to 1 to

@@ -42,7 +42,7 @@ import Utility.PartialPrelude
 -- make propellor emit these to stdout, in addition to its other output.
 data Trace 
 	= ActionStart (Maybe HostName) Desc
-	| ActionEnd Result
+	| ActionEnd (Maybe HostName) Desc Result
 	deriving (Read, Show)
 
 -- | Given a line read from propellor, if it's a serialized Trace,
@@ -101,7 +101,7 @@ actionMessage' mhn desc a = do
 
 	liftIO $ trace $ ActionStart mhn desc
 	r <- a
-	liftIO $ trace $ ActionEnd $ toResult r
+	liftIO $ trace $ ActionEnd mhn desc (toResult r)
 
 	liftIO $ outputConcurrent . concat =<< sequence
 		[ whenConsole $
