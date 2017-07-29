@@ -78,6 +78,10 @@ mount fs src mnt opts = boolSystem "mount" $
 mountPoints :: IO [MountPoint]
 mountPoints = lines <$> readProcess "findmnt" ["-rn", "--output", "target"]
 
+-- | Checks if anything is mounted at the MountPoint.
+isMounted :: MountPoint -> IO Bool
+isMounted mnt = isJust <$> getFsType mnt
+
 -- | Finds all filesystems mounted inside the specified directory.
 mountPointsBelow :: FilePath -> IO [MountPoint]
 mountPointsBelow target = filter (\p -> simplifyPath p /= simplifyPath target)
@@ -129,12 +133,15 @@ blkidTag tag dev = catchDefaultIO Nothing $
 
 -- | Unmounts a device or mountpoint,
 -- lazily so any running processes don't block it.
+--
+-- Note that this will fail if it's not mounted.
 umountLazy :: FilePath -> IO ()
 umountLazy mnt =  
 	unlessM (boolSystem "umount" [ Param "-l", Param mnt ]) $
 		stopPropellorMessage $ "failed unmounting " ++ mnt
 
--- | Unmounts anything mounted inside the specified directory.
+-- | Unmounts anything mounted inside the specified directory,
+-- not including the directory itself.
 unmountBelow :: FilePath -> IO ()
 unmountBelow d = do
 	submnts <- mountPointsBelow d

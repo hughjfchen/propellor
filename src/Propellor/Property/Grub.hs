@@ -132,7 +132,12 @@ bootsMounted mnt wholediskdev = combineProperties desc $ props
 
 	cleanupmounts :: Property Linux
 	cleanupmounts = property desc $ liftIO $ do
-		umountLazy (inmnt "/sys")
-		umountLazy (inmnt "/proc")
-		umountLazy (inmnt "/dev")
+		cleanup "/sys"
+		cleanup "/proc"
+		cleanup "/dev"
 		return NoChange
+	  where
+		cleanup m = 
+			let mp = inmnt m
+			in whenM (isMounted mp) $
+				umountLazy mp

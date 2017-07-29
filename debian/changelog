@@ -1,3 +1,10 @@
+propellor (4.7.1) UNRELEASED; urgency=medium
+
+  * Added Mount.isMounted.
+  * Grub.bootsMounted: Bugfix.
+
+ -- Joey Hess <id@joeyh.name>  Fri, 28 Jul 2017 22:18:07 -0400
+
 propellor (4.7.0) unstable; urgency=medium
 
   * Add Apt.proxy property to set a host's apt proxy.
