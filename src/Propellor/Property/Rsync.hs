@@ -54,7 +54,7 @@ syncDirFiltered filters src dest = rsync $
 	, addTrailingPathSeparator dest
 	, "--delete"
 	, "--delete-excluded"
-	, "--quiet"
+	, "--info=progress2"
 	] ++ map toRsync filters
 
 rsync :: [String] -> Property (DebianLike + ArchLinux)
