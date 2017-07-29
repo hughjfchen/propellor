@@ -5,6 +5,8 @@
 -- the messages will be displayed sequentially.
 
 module Propellor.Message (
+	Trace(..),
+	parseTrace,
 	getMessageHandle,
 	isConsole,
 	forceConsole,
@@ -21,6 +23,7 @@ module Propellor.Message (
 
 import System.Console.ANSI
 import System.IO
+import Control.Monad.IfElse
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import System.IO.Unsafe (unsafePerformIO)
 import Control.Concurrent
@@ -31,10 +34,25 @@ import Prelude
 import Propellor.Types
 import Propellor.Types.Exception
 import Utility.Monad
+import Utility.Env
 import Utility.Exception
+import Utility.PartialPrelude
+
+-- | Serializable tracing. Export `PROPELLOR_TRACE=1` in the environment to
+-- make propellor emit these to stdout, in addition to its other output.
+data Trace 
+	= ActionStart (Maybe HostName) Desc
+	| ActionEnd Result
+	deriving (Read, Show)
+
+-- | Given a line read from propellor, if it's a serialized Trace,
+-- parses it.
+parseTrace :: String -> Maybe Trace
+parseTrace = readish
 
 data MessageHandle = MessageHandle
 	{ isConsole :: Bool
+	, traceEnabled :: Bool
 	}
 
 -- | A shared global variable for the MessageHandle.
@@ -43,10 +61,15 @@ globalMessageHandle :: MVar MessageHandle
 globalMessageHandle = unsafePerformIO $ 
 	newMVar =<< MessageHandle
 		<$> catchDefaultIO False (hIsTerminalDevice stdout)
+		<*> ((== Just "1") <$> getEnv "PROPELLOR_TRACE")
 
 -- | Gets the global MessageHandle.
 getMessageHandle :: IO MessageHandle
 getMessageHandle = readMVar globalMessageHandle
+
+trace :: Trace -> IO ()
+trace t = whenM (traceEnabled <$> getMessageHandle) $
+	putStrLn $ show t
 
 -- | Force console output. This can be used when stdout is not directly
 -- connected to a console, but is eventually going to be displayed at a
@@ -63,20 +86,22 @@ whenConsole s = ifM (isConsole <$> getMessageHandle)
 
 -- | Shows a message while performing an action, with a colored status
 -- display.
-actionMessage :: (MonadIO m, MonadMask m, ActionResult r) => Desc -> m r -> m r
+actionMessage :: (MonadIO m, MonadMask m, ActionResult r, ToResult r) => Desc -> m r -> m r
 actionMessage = actionMessage' Nothing
 
 -- | Shows a message while performing an action on a specified host,
 -- with a colored status display.
-actionMessageOn :: (MonadIO m, MonadMask m, ActionResult r) => HostName -> Desc -> m r -> m r
+actionMessageOn :: (MonadIO m, MonadMask m, ActionResult r, ToResult r) => HostName -> Desc -> m r -> m r
 actionMessageOn = actionMessage' . Just
 
-actionMessage' :: (MonadIO m, ActionResult r) => Maybe HostName -> Desc -> m r -> m r
+actionMessage' :: (MonadIO m, ActionResult r, ToResult r) => Maybe HostName -> Desc -> m r -> m r
 actionMessage' mhn desc a = do
 	liftIO $ outputConcurrent
 		=<< whenConsole (setTitleCode $ "propellor: " ++ desc)
 
+	liftIO $ trace $ ActionStart mhn desc
 	r <- a
+	liftIO $ trace $ ActionEnd $ toResult r
 
 	liftIO $ outputConcurrent . concat =<< sequence
 		[ whenConsole $

@@ -1,5 +1,8 @@
 propellor (4.7.2) UNRELEASED; urgency=medium
 
+  * Added PROPELLOR_TRACE environment variable, which can be set to 1 to
+    make propellor output serialized Propellor.Message.Trace values,
+    for consumption by another program.
   * Rsync: Make rsync display its progress, in a minimal format to avoid
     scrolling each file down the screen.
 

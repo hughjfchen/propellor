@@ -24,6 +24,9 @@ instance ToResult Bool where
 	toResult False = FailedChange
 	toResult True = MadeChange
 
+instance ToResult Result where
+	toResult = id
+
 -- | Results of actions, with color.
 class ActionResult a where
 	getActionResult :: a -> (String, ColorIntensity, Color)
