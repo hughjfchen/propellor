@@ -1,0 +1,7 @@
+propellor 4.7.2 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Added PROPELLOR\_TRACE environment variable, which can be set to 1 to
+     make propellor output serialized Propellor.Message.Trace values,
+     for consumption by another program.
+   * Rsync: Make rsync display its progress, in a minimal format to avoid
+     scrolling each file down the screen."""]]
