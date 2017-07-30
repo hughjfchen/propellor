@@ -1,3 +1,9 @@
+propellor (4.7.4) UNRELEASED; urgency=medium
+
+  * Rsync: Make rsync display less verbose.
+
+ -- Joey Hess <id@joeyh.name>  Sat, 29 Jul 2017 20:02:32 -0400
+
 propellor (4.7.3) unstable; urgency=medium
 
   * Expand the Trace data type.
