@@ -1,6 +1,8 @@
 module Propellor.Gpg where
 
 import System.IO
+import System.Posix.IO
+import System.Posix.Terminal
 import Data.Maybe
 import Control.Monad
 import Control.Applicative
@@ -18,6 +20,25 @@ import Utility.Tmp
 import Utility.Env
 import Utility.Directory
 import Utility.Split
+
+-- | When at a tty, set GPG_TTY to point to the tty device. This is needed
+-- so that when gpg is run with stio connected to a pipe, it is still able
+-- to display password prompts at the console.
+--
+-- This should not prevent gpg from using the GUI for prompting when one is
+-- available.
+setupGpgEnv :: IO ()
+setupGpgEnv = checkhandles [stdInput, stdOutput, stdError]
+  where
+	checkhandles [] = return ()
+	checkhandles (h:hs) = do
+		isterm <- queryTerminal h
+		if isterm
+			then do
+				ttyname <- getTerminalName h
+				-- do not overwrite
+				setEnv "GPG_TTY" ttyname False
+			else checkhandles hs
 
 type KeyId = String
 
