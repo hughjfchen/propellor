@@ -46,7 +46,7 @@ newtype Pattern = Pattern String
 -- is found, the file is processed.
 syncDirFiltered :: [Filter] -> Src -> Dest -> Property (DebianLike + ArchLinux)
 syncDirFiltered filters src dest = rsync $
-	[ "-av"
+	[ "-a"
 	-- Add trailing '/' to get rsync to sync the Dest directory,
 	-- rather than a subdir inside it, which it will do without a
 	-- trailing '/'.
