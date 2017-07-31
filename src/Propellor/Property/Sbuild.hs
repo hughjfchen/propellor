@@ -37,7 +37,6 @@ In @~/.sbuildrc@ (sbuild 0.71.0 or newer):
 >      '--schroot',
 >      '%r-%a-sbuild',
 >      '--fail-if-inadequate',
->      '--fail-on-broken-symlinks',
 >      ];
 >
 >  $autopkgtest_root_args = "";
