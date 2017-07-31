@@ -32,7 +32,6 @@ If you are using sbuild older than 0.70.0, you also need:
 
 In @~/.sbuildrc@ (sbuild 0.71.0 or newer):
 
->  $run_piuparts = 1;
 >  $piuparts_opts = [
 >      '--no-eatmydata',
 >      '--schroot',
@@ -41,7 +40,6 @@ In @~/.sbuildrc@ (sbuild 0.71.0 or newer):
 >      '--fail-on-broken-symlinks',
 >      ];
 >
->  $run_autopkgtest = 1;
 >  $autopkgtest_root_args = "";
 >  $autopkgtest_opts = ["--", "schroot", "%r-%a-sbuild"];
 
