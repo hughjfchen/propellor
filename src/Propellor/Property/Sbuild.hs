@@ -453,11 +453,12 @@ ccachePrepared = propertyList "sbuild group ccache configured" $ props
 -- this property is handy for quickly setting up build boxes.
 userConfig :: User -> Property DebianLike
 userConfig user@(User u) = go
-	`requires` usableBy
+	`requires` usableBy user
 	`requires` Apt.installed ["piuparts", "autopkgtest", "lintian"]
   where
+	go :: Property DebianLike
 	go = property' ("~/.sbuildrc for " ++ u) $ \w -> do
-    		h <- liftIO (homedir user)
+    		h <- liftIO (User.homedir user)
     		ensureProperty w $ File.hasContent (h </> ".sbuildrc")
 			[ "$run_lintian = 1;"
 			, ""
