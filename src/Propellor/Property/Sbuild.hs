@@ -78,6 +78,7 @@ module Propellor.Property.Sbuild (
 	keypairGenerated,
 	keypairInsecurelyGenerated,
 	usableBy,
+	userConfig,
 ) where
 
 import Propellor.Base
@@ -444,6 +445,34 @@ ccachePrepared = propertyList "sbuild group ccache configured" $ props
 -- 	<> Firewall.NotDestination
 -- 		[Firewall.IPWithNumMask (IPv4 "127.0.0.1") 8])
 -- 	`requires` installed 	-- sbuild group must exist
+
+-- | Maintain recommended ~/.sbuildrc for a user, and adds them to the
+-- sbuild group
+--
+-- You probably want a custom ~/.sbuildrc on your workstation, but
+-- this property is handy for quickly setting up build boxes.
+userConfig :: User -> Property DebianLike
+userConfig user@(User u) = go
+	`requires` usableBy
+	`requires` Apt.installed ["piuparts", "autopkgtest", "lintian"]
+  where
+	go = property' ("~/.sbuildrc for " ++ u) $ \w -> do
+    		h <- liftIO (homedir user)
+    		ensureProperty w $ File.hasContent (h </> ".sbuildrc")
+			[ "$run_lintian = 1;"
+			, ""
+			, "$run_piuparts = 1;"
+			, "$piuparts_opts = ["
+			, "    '--no-eatmydata',"
+			, "    '--schroot',"
+			, "    '%r-%a-sbuild',"
+			, "    '--fail-if-inadequate',"
+			, "    ];"
+			, ""
+			, "$run_autopkgtest = 1;"
+			, "$autopkgtest_root_args = \"\";"
+			, "$autopkgtest_opts = [\"--\", \"schroot\", \"%r-%a-sbuild\"];"
+			]
 
 -- ==== utility functions ====
 
