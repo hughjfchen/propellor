@@ -1,8 +1,8 @@
-propellor (4.7.5) UNRELEASED; urgency=medium
+propellor (4.7.5) unstable; urgency=medium
 
   * Avoid crashing when getTerminalName fails due to eg, being in a chroot.
 
- -- Joey Hess <id@joeyh.name>  Tue, 01 Aug 2017 15:28:32 -0400
+ -- Joey Hess <id@joeyh.name>  Tue, 01 Aug 2017 15:28:58 -0400
 
 propellor (4.7.4) unstable; urgency=medium
 
