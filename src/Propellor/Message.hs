@@ -96,9 +96,9 @@ actionMessageOn = actionMessage' . Just
 
 actionMessage' :: (MonadIO m, ActionResult r, ToResult r) => Maybe HostName -> Desc -> m r -> m r
 actionMessage' mhn desc a = do
+	liftIO $ trace $ ActionStart mhn desc
 	liftIO $ outputConcurrent
 		=<< whenConsole (setTitleCode $ "propellor: " ++ desc)
-	liftIO $ trace $ ActionStart mhn desc
 
 	r <- a
 
