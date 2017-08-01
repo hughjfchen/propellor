@@ -1,11 +1,11 @@
-propellor (4.7.6) UNRELEASED; urgency=medium
+propellor (4.7.6) unstable; urgency=medium
 
   * Sbuild: Add Sbuild.userConfig property.
     Thanks, Sean Whitton
   * Locale: Make sure that the locales package is installed when enabling
     locales.
 
- -- Joey Hess <id@joeyh.name>  Tue, 01 Aug 2017 15:33:49 -0400
+ -- Joey Hess <id@joeyh.name>  Tue, 01 Aug 2017 17:59:07 -0400
 
 propellor (4.7.5) unstable; urgency=medium
 
