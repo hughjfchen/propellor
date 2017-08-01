@@ -1,4 +1,0 @@
-propellor 4.7.1 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Added Mount.isMounted.
-   * Grub.bootsMounted: Bugfix."""]]
