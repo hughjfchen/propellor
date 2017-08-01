@@ -1,0 +1,3 @@
+propellor 4.7.5 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Avoid crashing when getTerminalName fails due to eg, being in a chroot."""]]
