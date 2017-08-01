@@ -1,0 +1,7 @@
+propellor 4.7.4 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Set GPG\_TTY when run at a terminal, so that gpg can do password
+     prompting despite being connected by pipes to propellor (or git).
+   * Rsync: Make rsync display less verbose.
+   * Improve PROPELLOR\_TRACE output so serialized trace values always
+     come on their own line, not mixed with title setting."""]]
