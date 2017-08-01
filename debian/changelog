@@ -1,3 +1,9 @@
+propellor (4.7.5) UNRELEASED; urgency=medium
+
+  * Avoid crashing when getTerminalName fails due to eg, being in a chroot.
+
+ -- Joey Hess <id@joeyh.name>  Tue, 01 Aug 2017 15:28:32 -0400
+
 propellor (4.7.4) unstable; urgency=medium
 
   * Set GPG_TTY when run at a terminal, so that gpg can do password

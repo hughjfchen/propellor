@@ -20,6 +20,7 @@ import Utility.Tmp
 import Utility.Env
 import Utility.Directory
 import Utility.Split
+import Utility.Exception
 
 -- | When at a tty, set GPG_TTY to point to the tty device. This is needed
 -- so that when gpg is run with stio connected to a pipe, it is still able
@@ -35,9 +36,12 @@ setupGpgEnv = checkhandles [stdInput, stdOutput, stdError]
 		isterm <- queryTerminal h
 		if isterm
 			then do
-				ttyname <- getTerminalName h
-				-- do not overwrite
-				setEnv "GPG_TTY" ttyname False
+				v <- tryNonAsync $ getTerminalName h
+				case v of
+					Right ttyname -> 
+						-- do not overwrite
+						setEnv "GPG_TTY" ttyname False
+					Left _ -> checkhandles hs
 			else checkhandles hs
 
 type KeyId = String
