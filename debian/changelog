@@ -2,6 +2,8 @@ propellor (4.7.6) UNRELEASED; urgency=medium
 
   * Sbuild: Add Sbuild.userConfig property.
     Thanks, Sean Whitton
+  * Locale: Make sure that the locales package is installed when enabling
+    locales.
 
  -- Joey Hess <id@joeyh.name>  Tue, 01 Aug 2017 15:33:49 -0400
 
