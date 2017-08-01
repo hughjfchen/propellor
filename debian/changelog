@@ -1,3 +1,10 @@
+propellor (4.7.6) UNRELEASED; urgency=medium
+
+  * Sbuild: Add Sbuild.userConfig property.
+    Thanks, Sean Whitton
+
+ -- Joey Hess <id@joeyh.name>  Tue, 01 Aug 2017 15:33:49 -0400
+
 propellor (4.7.5) unstable; urgency=medium
 
   * Avoid crashing when getTerminalName fails due to eg, being in a chroot.
