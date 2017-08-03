@@ -795,6 +795,15 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "# Redirect all to joeyh.name."
 		, "rewriterule (.*) http://joeyh.name$1 [r]"
 		]
+	& alias "homepower.joeyh.name"
+	& apacheSite "homepower.joeyh.name"
+		[ "DocumentRoot /srv/web/homepower.joeyh.name"
+		, "<Directory /srv/web/homepower.joeyh.name>"
+		, "  Options Indexes ExecCGI"
+		, "  AllowOverride None"
+		, Apache.allowAll
+		, "</Directory>"
+		]
   where
 	kitenetcfg =
 		-- /var/www is empty
