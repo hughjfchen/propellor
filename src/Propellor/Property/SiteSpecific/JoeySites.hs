@@ -937,10 +937,12 @@ homePowerMonitor = propertyList "home power monitor" $ props
 	& Apache.installed
 	& Apt.installed ["python2", "python-pymodbus"]
 	& Apt.installed ["ghc", "make"]
+	& File.ownerGroup "/var/www/html" (User "joey") (Group "joey")
 	& Git.cloned (User "joey") "git://git.kitenet.net/joey/homepower" d Nothing
 		`onChange` buildpoller
 	& Systemd.enabled servicename
 		`requires` serviceinstalled
+		`onChange` Systemd.started servicename
   where
 	d = "/var/www/html/homepower"
 	buildpoller = userScriptProperty (User "joey")
