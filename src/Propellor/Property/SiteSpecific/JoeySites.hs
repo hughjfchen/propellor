@@ -796,7 +796,7 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "rewriterule (.*) http://joeyh.name$1 [r]"
 		]
 	& alias "homepower.joeyh.name"
-	& apacheSite "homepower.joeyh.name"
+	& Apache.httpsVirtualHost' "homepower.joeyh.name" "/var/www" letos
 		[ "DocumentRoot /srv/web/homepower.joeyh.name"
 		, "<Directory /srv/web/homepower.joeyh.name>"
 		, "  Options Indexes ExecCGI"
