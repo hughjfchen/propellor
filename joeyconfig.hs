@@ -201,6 +201,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 	-- No hardware clock
 	& Apt.serviceInstalledRunning "ntp"
 
+	& JoeySites.homePowerMonitor
 	& JoeySites.homeRouter
 	& Apt.installed ["mtr-tiny", "iftop", "screen"]
 	& Postfix.satellite

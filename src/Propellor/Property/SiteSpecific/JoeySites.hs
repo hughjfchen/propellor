@@ -931,6 +931,39 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 	& "/etc/systemd/logind.conf" `ConfFile.containsIniSetting`
 		("Login", "LidSwitchIgnoreInhibited", "no")
 
+-- My home power monitor.
+homePowerMonitor :: Property DebianLike
+homePowerMonitor = propertyList "home power monitor" $ props
+	& Apache.installed
+	& Apt.installed ["python2", "python-pymodbus"]
+	& Apt.installed ["ghc", "make"]
+	& Git.cloned (User "joey") "git://git.kitenet.net/joey/homepower" d Nothing
+		`onChange` buildpoller
+	& Systemd.enabled servicename
+		`requires` serviceinstalled
+  where
+	d = "/var/www/html/homepower"
+	buildpoller = userScriptProperty (User "joey")
+		[ "cd " ++ d
+		, "make"
+		]
+		`assume` MadeChange
+	servicename = "homepower"
+	servicefile = "/etc/systemd/system/" ++ servicename ++ ".service"
+	serviceinstalled = servicefile `File.hasContent`
+		[ "[Unit]"
+		, "Description=home power monitor"
+		, ""
+		, "[Service]"
+		, "ExecStart=" ++ d ++ "/poller"
+		, "WorkingDirectory=" ++ d
+		, "User=joey"
+		, "Group=joey"
+		, ""
+		, "[Install]"
+		, "WantedBy=multi-user.target"
+		]
+
 -- My home router, running hostapd and dnsmasq for wlan0,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
 homeRouter :: Property (HasInfo + DebianLike)
