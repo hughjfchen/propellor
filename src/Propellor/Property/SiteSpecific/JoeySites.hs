@@ -936,7 +936,6 @@ homePowerMonitor :: Property DebianLike
 homePowerMonitor = propertyList "home power monitor" $ props
 	& Apache.installed
 	& Apt.installed ["python2", "python-pymodbus"]
-	& Apt.installed ["ghc", "make"]
 	& File.ownerGroup "/var/www/html" (User "joey") (Group "joey")
 	& Git.cloned (User "joey") "git://git.kitenet.net/joey/homepower" d Nothing
 		`onChange` buildpoller
@@ -950,6 +949,7 @@ homePowerMonitor = propertyList "home power monitor" $ props
 		, "make"
 		]
 		`assume` MadeChange
+		`requires` Apt.installed ["ghc", "make"]
 	servicename = "homepower"
 	servicefile = "/etc/systemd/system/" ++ servicename ++ ".service"
 	serviceinstalled = servicefile `File.hasContent`
