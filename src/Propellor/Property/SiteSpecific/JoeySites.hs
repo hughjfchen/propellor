@@ -941,18 +941,22 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 		("Login", "LidSwitchIgnoreInhibited", "no")
 
 -- My home power monitor.
-homePowerMonitor :: Property DebianLike
-homePowerMonitor = propertyList "home power monitor" $ props
+homePowerMonitor :: IsContext c => User -> c -> (SshKeyType, Ssh.PubKeyText) -> Property (HasInfo + DebianLike)
+homePowerMonitor user ctx sshkey = propertyList "home power monitor" $ props
 	& Apache.installed
 	& Apt.installed ["python2", "python-pymodbus"]
-	& File.ownerGroup "/var/www/html" (User "joey") (Group "joey")
-	& Git.cloned (User "joey") "git://git.kitenet.net/joey/homepower" d Nothing
+	& File.ownerGroup "/var/www/html" user (userGroup user)
+	& Git.cloned user "git://git.kitenet.net/joey/homepower" d Nothing
 		`onChange` buildpoller
 	& Systemd.enabled servicename
 		`requires` serviceinstalled
 		`onChange` Systemd.started servicename
+	& Cron.niceJob "homepower upload"
+		(Cron.Times "1 * * * *") user d rsynccommand
+		`requires` Ssh.userKeyAt (Just sshkeyfile) user ctx sshkey
   where
 	d = "/var/www/html/homepower"
+	sshkeyfile = d </> ".ssh/key"
 	buildpoller = userScriptProperty (User "joey")
 		[ "cd " ++ d
 		, "make"
@@ -974,6 +978,10 @@ homePowerMonitor = propertyList "home power monitor" $ props
 		, "[Install]"
 		, "WantedBy=multi-user.target"
 		]
+	-- Only upload when eth0 is up; eg the satellite internet is up.
+	-- Any changes to the rsync command will need my .authorized_keys
+	-- rsync server command to be updated too.
+	rsynccommand = "if ip route | grep '^default' | grep -q eth0; then rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/recent/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/recent/; fi"
 
 -- My home router, running hostapd and dnsmasq for wlan0,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
