@@ -4,6 +4,8 @@ propellor (4.7.6) UNRELEASED; urgency=medium
     Thanks, Sean Whitton
   * Locale: Make sure that the locales package is installed when enabling
     locales.
+  * Locale: Display an error message when /etc/locale.gen does not contain
+    the requested locale.
 
  -- Joey Hess <id@joeyh.name>  Tue, 01 Aug 2017 15:33:49 -0400
 
