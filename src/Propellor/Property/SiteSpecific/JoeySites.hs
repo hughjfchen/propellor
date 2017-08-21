@@ -520,7 +520,6 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 
 	& "/etc/aliases" `File.hasPrivContentExposed` ctx
 		`onChange` Postfix.newaliases
-	& hasPostfixCert ctx
 
 	& "/etc/postfix/mydomain" `File.containsLines`
 		[ "/.*\\.kitenet\\.net/\tOK"
@@ -583,9 +582,9 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "milter_default_action = accept"
 
 		, "# TLS setup -- server"
-		, "smtpd_tls_CAfile = /etc/ssl/certs/joeyca.pem"
-		, "smtpd_tls_cert_file = /etc/ssl/certs/postfix.pem"
-		, "smtpd_tls_key_file = /etc/ssl/private/postfix.pem"
+		, "smtpd_tls_CAfile = /etc/letsencrypt/live/kitenet.net/fullchain.pem"
+		, "smtpd_tls_cert_file = /etc/letsencrypt/live/kitenet.net/cert.pem"
+		, "smtpd_tls_key_file = /etc/letsencrypt/live/kitenet.net/privkey.pem"
 		, "smtpd_tls_loglevel = 1"
 		, "smtpd_tls_received_header = yes"
 		, "smtpd_use_tls = yes"
@@ -593,9 +592,9 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "smtpd_tls_session_cache_database = sdbm:/etc/postfix/smtpd_scache"
 
 		, "# TLS setup -- client"
-		, "smtp_tls_CAfile = /etc/ssl/certs/joeyca.pem"
-		, "smtp_tls_cert_file = /etc/ssl/certs/postfix.pem"
-		, "smtp_tls_key_file = /etc/ssl/private/postfix.pem"
+		, "smtp_tls_CAfile = /etc/letsencrypt/live/kitenet.net/fullchain.pem"
+		, "smtp_tls_cert_file = /etc/letsencrypt/live/kitenet.net/cert.pem"
+		, "smtp_tls_key_file = /etc/letsencrypt/live/kitenet.net/privkey.pem"
 		, "smtp_tls_loglevel = 1"
 		, "smtp_use_tls = yes"
 		, "smtp_tls_session_cache_database = sdbm:/etc/postfix/smtp_scache"
@@ -715,11 +714,6 @@ postfixSaslPasswordClient = combineProperties "postfix uses SASL password to aut
 		, "smtp_tls_fingerprint_cert_match = 13:B0:0C:F3:11:83:A5:EB:A9:37:C6:C5:ED:16:60:86"
 		]
 		`onChange` Postfix.reloaded
-
-hasPostfixCert :: Context -> Property (HasInfo + UnixLike)
-hasPostfixCert ctx = combineProperties "postfix tls cert installed" $ props
-	& "/etc/ssl/certs/postfix.pem" `File.hasPrivContentExposed` ctx
-	& "/etc/ssl/private/postfix.pem" `File.hasPrivContent` ctx
 
 -- Legacy static web sites and redirections from kitenet.net to newer
 -- sites.
