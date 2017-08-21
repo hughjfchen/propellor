@@ -613,6 +613,12 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		"!include auth-passwdfile.conf.ext"
 		`onChange` Service.restarted "dovecot"
 		`describe` "dovecot auth.conf"
+	& "/etc/dovecot/conf.d/10-ssl.conf" `File.containsLines`
+		[ "ssl_cert = </etc/letsencrypt/live/kitenet.net/fullchain.pem"
+		, "ssl_key = </etc/letsencrypt/live/kitenet.net/privkey.pem"
+		]
+		`onChange` Service.restarted "dovecot"
+		`describe` "dovecot letsencrypt certs"
 	& File.hasPrivContent dovecotusers ctx
 		`onChange` (dovecotusers `File.mode`
 			combineModes [ownerReadMode, groupReadMode])
