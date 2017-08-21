@@ -716,8 +716,6 @@ postfixSaslPasswordClient = combineProperties "postfix uses SASL password to aut
 		, "smtp_sasl_tls_security_options = noanonymous"
 		, "relayhost = [kitenet.net]"
 		, "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd"
-		, "# kite's fingerprint"
-		, "smtp_tls_fingerprint_cert_match = 13:B0:0C:F3:11:83:A5:EB:A9:37:C6:C5:ED:16:60:86"
 		]
 		`onChange` Postfix.reloaded
 
