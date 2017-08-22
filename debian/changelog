@@ -6,6 +6,11 @@ propellor (4.7.6) UNRELEASED; urgency=medium
     locales.
   * Locale: Display an error message when /etc/locale.gen does not contain
     the requested locale.
+  * Attic module is deprecated and will warn when used.
+    Attic is no longer available in Debian and appears to have been
+    mostly supersceded by Borg.
+  * Obnam module is deprecated and will warn when used.
+    Obnam has been retired by its author.
 
  -- Joey Hess <id@joeyh.name>  Tue, 01 Aug 2017 15:33:49 -0400
 
