@@ -1,0 +1,6 @@
+propellor 4.7.6 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Sbuild: Add Sbuild.userConfig property.
+     Thanks, Sean Whitton
+   * Locale: Make sure that the locales package is installed when enabling
+     locales."""]]
