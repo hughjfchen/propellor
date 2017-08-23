@@ -7,6 +7,8 @@ propellor (4.7.7) UNRELEASED; urgency=medium
     mostly supersceded by Borg.
   * Obnam module is deprecated and will warn when used.
     Obnam has been retired by its author.
+  * Add Typeable instance to Bootstrapper, fixing build with old versions
+    of ghc. (Previous attempt was incomplete.)
 
  -- Joey Hess <id@joeyh.name>  Wed, 23 Aug 2017 11:41:01 -0400
 
