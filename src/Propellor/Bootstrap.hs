@@ -33,7 +33,7 @@ type ShellCommand = String
 -- `OSOnly` uses the OS's native packages of Cabal and all of propellor's
 -- build dependencies. It may not work on all systems.
 data Bootstrapper = Robustly Builder | OSOnly
-	deriving (Show)
+	deriving (Show, Typeable)
 
 data Builder = Cabal | Stack
 	deriving (Show, Typeable)

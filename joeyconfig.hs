@@ -120,7 +120,7 @@ clam :: Host
 clam = host "clam.kitenet.net" $ props
 	& standardSystem Unstable X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "64.137.182.29"
+	& ipv4 "45.62.211.6"
 
 	& CloudAtCost.decruft
 	& Ssh.hostKeys hostContext
@@ -201,6 +201,10 @@ honeybee = host "honeybee.kitenet.net" $ props
 	-- No hardware clock
 	& Apt.serviceInstalledRunning "ntp"
 
+	& JoeySites.homePowerMonitor
+		(User "joey")
+		(Context "homepower.joeyh.name")
+		(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAmVYddg/RgCbIj+cLcEiddeFXaYFnbEJ3uGj9G/EyV joey@honeybee")
 	& JoeySites.homeRouter
 	& Apt.installed ["mtr-tiny", "iftop", "screen"]
 	& Postfix.satellite
@@ -226,7 +230,7 @@ kite :: Host
 kite = host "kite.kitenet.net" $ props
 	& standardSystemUnhardened Testing X86_64 [ "Welcome to kite!" ]
 	& ipv4 "66.228.36.95"
-	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
+	-- & ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 	& alias "kitenet.net"
 	& alias "wren.kitenet.net" -- temporary
 	& Ssh.hostKeys (Context "kitenet.net")

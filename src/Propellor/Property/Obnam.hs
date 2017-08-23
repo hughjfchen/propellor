@@ -1,6 +1,9 @@
 -- | Support for the Obnam backup tool <http://obnam.org/>
+--
+-- This module is deprecated because Obnam has been retired by its
+-- author.
 
-module Propellor.Property.Obnam where
+module Propellor.Property.Obnam {-# DEPRECATED "Obnam has been retired; time to transition to something else" #-} where
 
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt

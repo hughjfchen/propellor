@@ -63,7 +63,7 @@ available locale = ensureAvailable `requires` Apt.installed ["locales"]
 			then ensureProperty w $
 				fileProperty desc (foldr uncomment []) f
 					`onChange` regenerate
-			else return FailedChange -- locale unavailable for generation
+			else error $ "locale " ++ locale ++ " is not present in /etc/locale.gen, even in commented out form; cannot generate"
 	ensureUnavailable :: Property DebianLike
 	ensureUnavailable = tightenTargets $ 
 		fileProperty (locale ++ " locale not generated") (foldr comment []) f

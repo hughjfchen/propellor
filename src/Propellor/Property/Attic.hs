@@ -1,8 +1,12 @@
 -- | Maintainer: Félix Sipma <felix+propellor@gueux.org>
 --
 -- Support for the Attic backup tool <https://attic-backup.org/>
+--
+-- This module is deprecated because Attic is not available in debian
+-- stable any longer (so the installed property no longer works), and it
+-- appears to have been mostly supersceded by Borg.
 
-module Propellor.Property.Attic
+module Propellor.Property.Attic {-# DEPRECATED "Use Borg instead" #-}
 	( installed
 	, repoExists
 	, init
