@@ -1,9 +1,5 @@
-propellor (4.7.6) unstable; urgency=medium
+propellor (4.7.7) UNRELEASED; urgency=medium
 
-  * Sbuild: Add Sbuild.userConfig property.
-    Thanks, Sean Whitton
-  * Locale: Make sure that the locales package is installed when enabling
-    locales.
   * Locale: Display an error message when /etc/locale.gen does not contain
     the requested locale.
   * Attic module is deprecated and will warn when used.
@@ -11,6 +7,15 @@ propellor (4.7.6) unstable; urgency=medium
     mostly supersceded by Borg.
   * Obnam module is deprecated and will warn when used.
     Obnam has been retired by its author.
+
+ -- Joey Hess <id@joeyh.name>  Wed, 23 Aug 2017 11:41:01 -0400
+
+propellor (4.7.6) unstable; urgency=medium
+
+  * Sbuild: Add Sbuild.userConfig property.
+    Thanks, Sean Whitton
+  * Locale: Make sure that the locales package is installed when enabling
+    locales.
 
  -- Joey Hess <id@joeyh.name>  Tue, 01 Aug 2017 17:59:07 -0400
 
