@@ -8,12 +8,13 @@ module Propellor.Property.DiskImage (
 	-- * Partition specification
 	module Propellor.Property.DiskImage.PartSpec,
 	-- * Properties
-	DiskImage,
+	DiskImage(..),
+	RawDiskImage(..),
+	VirtualBoxPointer(..),
 	imageBuilt,
 	imageRebuilt,
 	imageBuiltFrom,
 	imageExists,
-	vmdkBuiltFor,
 	Grub.BIOS(..),
 ) where
 
@@ -42,7 +43,48 @@ import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Lazy as L
 import System.Posix.Files
 
-type DiskImage = FilePath
+-- | Type class of disk image formats.
+class DiskImage d where
+	-- | Get the location where the raw disk image should be stored.
+	rawDiskImage :: d -> RawDiskImage
+	-- | Describe the disk image (for display to the user)
+	describeDiskImage :: d -> String
+	-- | Convert the raw disk image file in the
+	-- `rawDiskImage` location into the desired disk image format.
+	-- For best efficiency, the raw disk imasge file should be left
+	-- unchanged on disk.
+	buildDiskImage :: d -> RevertableProperty DebianLike Linux
+
+-- | A raw disk image, that can be written directly out to a disk.
+newtype RawDiskImage = RawDiskImage FilePath
+
+instance DiskImage RawDiskImage where
+	rawDiskImage = id
+	describeDiskImage (RawDiskImage f) = f
+	buildDiskImage (RawDiskImage _) = doNothing <!> doNothing
+
+-- | A virtualbox .vmdk file, which contains a pointer to the raw disk
+-- image. This can be built very quickly.
+newtype VirtualBoxPointer = VirtualBoxPointer FilePath
+
+instance DiskImage VirtualBoxPointer where
+	rawDiskImage (VirtualBoxPointer f) = RawDiskImage $
+		dropExtension f ++ ".img"
+	describeDiskImage (VirtualBoxPointer f) = f
+	buildDiskImage (VirtualBoxPointer vmdkfile) = (setup <!> cleanup)
+		`describe` (vmdkfile ++ " built")
+	  where
+		setup = cmdProperty "VBoxManage"
+			[ "internalcommands", "createrawvmdk"
+			, "-filename", vmdkfile
+			, "-rawdisk", diskimage
+			]
+			`changesFile` vmdkfile
+			`onChange` File.mode vmdkfile (combineModes (ownerWriteMode : readModes))
+			`requires` Apt.installed ["virtualbox"]
+			`requires` File.notPresent vmdkfile
+		cleanup = tightenTargets $ File.notPresent vmdkfile
+		RawDiskImage diskimage = rawDiskImage (VirtualBoxPointer vmdkfile)
 
 -- | Creates a bootable disk image.
 --
@@ -70,7 +112,7 @@ type DiskImage = FilePath
 -- > import Propellor.Property.Chroot
 -- > 
 -- > foo = host "foo.example.com" $ props
--- > 	& imageBuilt "/srv/diskimages/disk.img" mychroot
+-- > 	& imageBuilt (RawDiskImage "/srv/diskimages/disk.img") mychroot
 -- >		MSDOS
 -- >		[ partition EXT2 `mountedAt` "/boot"
 -- >			`setFlag` BootFlag
@@ -95,7 +137,7 @@ type DiskImage = FilePath
 --
 -- > foo :: Host
 -- > foo = host "foo.example.com" $ props
--- >	& imageBuilt "/srv/diskimages/bar-disk.img"
+-- >	& imageBuilt (RawDiskImage "/srv/diskimages/bar-disk.img")
 -- >		(hostChroot bar (Debootstrapped mempty))
 -- >		MSDOS
 -- >		[ partition EXT2 `mountedAt` "/boot"
@@ -111,30 +153,31 @@ type DiskImage = FilePath
 -- >	& Apt.installed ["linux-image-amd64"]
 -- >	& Grub.installed PC
 -- >	& hasPassword (User "root")
-imageBuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageBuilt :: DiskImage d => d -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageBuilt = imageBuilt' False
 
 -- | Like 'built', but the chroot is deleted and rebuilt from scratch each
 -- time. This is more expensive, but useful to ensure reproducible results
 -- when the properties of the chroot have been changed.
-imageRebuilt :: DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageRebuilt :: DiskImage d => d -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageRebuilt = imageBuilt' True
 
-imageBuilt' :: Bool -> DiskImage -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageBuilt' :: DiskImage d => Bool -> d -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageBuilt' rebuild img mkchroot tabletype partspec =
 	imageBuiltFrom img chrootdir tabletype final partspec
 		`requires` Chroot.provisioned chroot
 		`requires` (cleanrebuild <!> (doNothing :: Property UnixLike))
 		`describe` desc
   where
-	desc = "built disk image " ++ img
+	desc = "built disk image " ++ describeDiskImage img
+	RawDiskImage imgfile = rawDiskImage img
 	cleanrebuild :: Property Linux
 	cleanrebuild
 		| rebuild = property desc $ do
 			liftIO $ removeChroot chrootdir
 			return MadeChange
 		| otherwise = doNothing
-	chrootdir = img ++ ".chroot"
+	chrootdir = imgfile ++ ".chroot"
 	chroot =
 		let c = propprivdataonly $ mkchroot chrootdir
 		in setContainerProps c $ containerProps c
@@ -161,10 +204,11 @@ cachesCleaned = "cache cleaned" ==> (Apt.cacheCleaned `pickOS` skipit)
 	skipit = doNothing :: Property UnixLike
 
 -- | Builds a disk image from the contents of a chroot.
-imageBuiltFrom :: DiskImage -> FilePath -> TableType -> Finalization -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) UnixLike
+imageBuiltFrom :: DiskImage d => d -> FilePath -> TableType -> Finalization -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
   where
-	desc = img ++ " built from " ++ chrootdir
+	desc = describeDiskImage img ++ " built from " ++ chrootdir
+	dest@(RawDiskImage imgfile) = rawDiskImage img
 	mkimg = property' desc $ \w -> do
 		-- Unmount helper filesystems such as proc from the chroot
 		-- first; don't want to include the contents of those.
@@ -176,14 +220,17 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 		let (mnts, mntopts, parttable) = fitChrootSize tabletype partspec $
 			map (calcsz mnts) mnts
 		ensureProperty w $
-			imageExists' img parttable
+			imageExists' dest parttable
 				`before`
-			kpartx img (mkimg' mnts mntopts parttable)
+			kpartx imgfile (mkimg' mnts mntopts parttable)
+				`before`
+			buildDiskImage img
 	mkimg' mnts mntopts parttable devs =
 		partitionsPopulated chrootdir mnts mntopts devs
 			`before`
 		imageFinalized final mnts mntopts devs parttable
-	rmimg = undoRevertableProperty (imageExists' img dummyparttable)
+	rmimg = undoRevertableProperty (buildDiskImage img)
+		`before` undoRevertableProperty (imageExists' dest dummyparttable)
 	dummyparttable = PartTable tabletype []
 
 partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> Property DebianLike
@@ -255,8 +302,8 @@ getMountSz szm l (Just mntpt) =
 -- If the file doesn't exist, or is too small, creates a new one, full of 0's.
 --
 -- If the file is too large, truncates it down to the specified size.
-imageExists :: FilePath -> ByteSize -> Property Linux
-imageExists img isz = property ("disk image exists" ++ img) $ liftIO $ do
+imageExists :: RawDiskImage -> ByteSize -> Property Linux
+imageExists (RawDiskImage img) isz = property ("disk image exists" ++ img) $ liftIO $ do
 	ms <- catchMaybeIO $ getFileStatus img
 	case ms of
 		Just s
@@ -278,14 +325,14 @@ imageExists img isz = property ("disk image exists" ++ img) $ liftIO $ do
 --
 -- Avoids repartitioning the disk image, when a file of the right size
 -- already exists, and it has the same PartTable.
-imageExists' :: FilePath -> PartTable -> RevertableProperty DebianLike UnixLike
-imageExists' img parttable = (setup <!> cleanup) `describe` desc
+imageExists' :: RawDiskImage -> PartTable -> RevertableProperty DebianLike UnixLike
+imageExists' dest@(RawDiskImage img) parttable = (setup <!> cleanup) `describe` desc
   where
 	desc = "disk image exists " ++ img
 	parttablefile = img ++ ".parttable"
 	setup = property' desc $ \w -> do
 		oldparttable <- liftIO $ catchDefaultIO "" $ readFileStrict parttablefile
-		res <- ensureProperty w $ imageExists img (partTableSize parttable)
+		res <- ensureProperty w $ imageExists dest (partTableSize parttable)
 		if res == NoChange && oldparttable == show parttable
 			then return NoChange
 			else if res == FailedChange
@@ -385,20 +432,3 @@ toSysDir :: FilePath -> FilePath -> FilePath
 toSysDir chrootdir d = case makeRelative chrootdir d of
 		"." -> "/"
 		sysdir -> "/" ++ sysdir
-
--- | Builds a VirtualBox .vmdk file for the specified disk image file.
-vmdkBuiltFor :: FilePath -> RevertableProperty DebianLike UnixLike
-vmdkBuiltFor diskimage = (setup <!> cleanup)
-	`describe` (vmdkfile ++ " built")
-  where
-	vmdkfile = diskimage ++ ".vmdk"
-	setup = cmdProperty "VBoxManage"
-		[ "internalcommands", "createrawvmdk"
-		, "-filename", vmdkfile
-		, "-rawdisk", diskimage
-		]
-		`changesFile` vmdkfile
-		`onChange` File.mode vmdkfile (combineModes (ownerWriteMode : readModes))
-		`requires` Apt.installed ["virtualbox"]
-		`requires` File.notPresent vmdkfile
-	cleanup = File.notPresent vmdkfile

@@ -1,3 +1,16 @@
+propellor (4.8.0) UNRELEASED; urgency=medium
+
+  * DiskImage: Made a DiskImage type class, so that different disk image
+    formats can be implemented. The properties in this module can generate
+    any type that is a member of DiskImage. (API change)
+    (To convert existing configs, convert the filename of the disk image
+    to RawDiskImage filename.)
+  * Removed DiskImage.vmdkBuiltFor property. (API change)
+    Instead, use VirtualBoxPointer in the property that creates the disk
+    image.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 24 Aug 2017 11:00:19 -0400
+
 propellor (4.7.7) unstable; urgency=medium
 
   * Locale: Display an error message when /etc/locale.gen does not contain
