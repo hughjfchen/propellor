@@ -108,7 +108,7 @@ backup' dir backupdir crontimes extraargs kp = cronjob
   where
 	desc = backupdir ++ " attic backup"
 	cronjob = Cron.niceJob ("attic_backup" ++ dir) crontimes (User "root") "/" $
-		"flock " ++ shellEscape lockfile ++ " sh -c " ++ backupcmd
+		"flock " ++ shellEscape lockfile ++ " sh -c " ++ shellEscape backupcmd
 	lockfile = "/var/lock/propellor-attic.lock"
 	backupcmd = intercalate ";" $
 		createCommand
