@@ -8,6 +8,8 @@ import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Sudo as Sudo
+import qualified Propellor.Property.Borg as Borg
+import qualified Propellor.Property.Cron as Cron
 
 server :: [Host] -> Property (HasInfo + DebianLike)
 server hosts = propertyList "branchable server" $ props
@@ -37,18 +39,24 @@ server hosts = propertyList "branchable server" $ props
 	& Postfix.installed
 	& Postfix.mainCf ("mailbox_command", "procmail -a \"$EXTENSION\"")
 	
-	-- Obnam is run by a cron job in ikiwiki-hosting.
-	& "/etc/obnam.conf" `File.hasContent`
-		[ "[config]"
-		, "repository = sftp://joey@eubackup.kitenet.net/home/joey/lib/backup/pell.obnam"
-		, "log = /var/log/obnam.log"
-		, "encrypt-with = " ++ obnamkey
-		, "log-level = info"
-		, "log-max = 1048576"
-		, "keep = 7d,5w,12m"
-		, "upload-queue-size = 128"
-		, "lru-size = 128"
+	& Borg.backup "/" "joey@eubackup.kitenet.net:/home/joey/lib/backup/branchable/pell.borg" Cron.Daily
+		[ "--exclude=/proc/*"
+		, "--exclude=/sys/*"
+		, "--exclude=/run/*"
+		, "--exclude=/tmp/*"
+		, "--exclude=/var/tmp/*"
+		, "--exclude=/var/backups/ikiwiki-hosting-web/*"
+		, "--exclude=/var/cache/*"
+		, "--exclude=/home/*/source/*"
+		, "--exclude=/home/*/public_html/*"
+		, "--exclude=/home/*/.git/*"
 		]
+		[ Borg.KeepDays 7
+		, Borg.KeepWeeks 5
+		, Borg.KeepMonths 12
+		, Borg.KeepYears 1
+		]
+	-- gpg key that can be used to decrypt the borg backup key
 	& Gpg.keyImported (Gpg.GpgKeyId obnamkey) (User "root")
 	& Ssh.userKeys (User "root") (Context "branchable.com")
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC2PqTSupwncqeffNwZQXacdEWp7L+TxllIxH7WjfRMb3U74mQxWI0lwqLVW6Fox430DvhSqF1y5rJBvTHh4i49Tc9lZ7mwAxA6jNOP6bmdfteaKKYmUw5qwtJW0vISBFu28qBO11Nq3uJ1D3Oj6N+b3mM/0D3Y3NoGgF8+2dLdi81u9+l6AQ5Jsnozi2Ni/Osx2oVGZa+IQDO6gX8VEP4OrcJFNJe8qdnvItcGwoivhjbIfzaqNNvswKgGzhYLOAS5KT8HsjvIpYHWkyQ5QUX7W/lqGSbjP+6B8C3tkvm8VLXbmaD+aSkyCaYbuoXC2BoJdS7Jh8phKMwPJmdYVepn")

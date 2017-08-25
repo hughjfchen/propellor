@@ -92,8 +92,8 @@ restored dir backupdir = go `requires` installed
 -- >		["--exclude=/srv/git/tobeignored"]
 -- >		[Borg.KeepDays 7, Borg.KeepWeeks 4, Borg.KeepMonths 6, Borg.KeepYears 1]
 --
--- Note that this property does not make borg encrypt the backup
--- repository.
+-- Note that this property does not initialize the backup repository,
+-- so that will need to be done once, before-hand.
 --
 -- Since borg uses a fair amount of system resources, only one borg
 -- backup job will be run at a time. Other jobs will wait their turns to
