@@ -373,7 +373,7 @@ elephant = host "elephant.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "swapspace"
 
 	& alias "eubackup.kitenet.net"
-	& Apt.installed ["obnam", "sshfs", "rsync"]
+	& Apt.installed ["obnam", "sshfs", "rsync", "borgbackup"]
 	& JoeySites.obnamRepos ["pell", "kite"]
 	& JoeySites.githubBackup
 	& JoeySites.rsyncNetBackup hosts
