@@ -8,6 +8,7 @@ propellor (4.8.0) UNRELEASED; urgency=medium
   * Removed DiskImage.vmdkBuiltFor property. (API change)
     Instead, use VirtualBoxPointer in the property that creates the disk
     image.
+  * Borg: Fix broken shell escaping in borg cron job.
 
  -- Joey Hess <id@joeyh.name>  Thu, 24 Aug 2017 11:00:19 -0400
 
