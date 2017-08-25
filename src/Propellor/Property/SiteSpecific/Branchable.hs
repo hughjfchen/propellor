@@ -9,6 +9,7 @@ import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.Borg as Borg
+import qualified Propellor.Property.Cron as Cron
 
 server :: [Host] -> Property (HasInfo + DebianLike)
 server hosts = propertyList "branchable server" $ props
