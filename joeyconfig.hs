@@ -335,7 +335,7 @@ kite = host "kite.kitenet.net" $ props
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 	-- Use its own name server (amoung other things this avoids
 	-- spamassassin URIBL_BLOCKED.
-	& "/etc/resolv.conf" `File.containsLines`
+	& "/etc/resolv.conf" `File.hasContent`
 		[ "nameserver 127.0.0.1"
 		, "domain kitenet.net"
 		, "search kitenet.net"
