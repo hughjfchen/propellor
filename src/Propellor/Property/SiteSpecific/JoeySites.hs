@@ -440,16 +440,6 @@ backupsBackedupFrom hosts srchost destdir = Cron.niceJob desc
 	desc = "backups copied from " ++ srchost ++ " on boot"
 	cmd = "sleep 30m && rsync -az --bwlimit=300K --partial --delete " ++ srchost ++ ":lib/backup/ " ++ destdir </> srchost
 
-obnamRepos :: [String] -> Property UnixLike
-obnamRepos rs = propertyList ("obnam repos for " ++ unwords rs) $
-	toProps (mkbase : map mkrepo rs)
-  where
-	mkbase = mkdir "/home/joey/lib/backup"
-		`requires` mkdir "/home/joey/lib"
-	mkrepo r = mkdir ("/home/joey/lib/backup/" ++ r ++ ".obnam")
-	mkdir d = File.dirExists d
-		`before` File.ownerGroup d (User "joey") (Group "joey")
-
 podcatcher :: Property DebianLike
 podcatcher = Cron.niceJob "podcatcher run hourly" (Cron.Times "55 * * * *")
 	(User "joey") "/home/joey/lib/sound/podcasts"
