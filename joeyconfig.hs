@@ -333,7 +333,13 @@ kite = host "kite.kitenet.net" $ props
 	& alias "ns4.branchable.com"
 	& branchableSecondary
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
-
+	-- Use its own name server (amoung other things this avoids
+	-- spamassassin URIBL_BLOCKED.
+	& "/etc/resolv.conf" `File.hasContent`
+		[ "nameserver 127.0.0.1"
+		, "domain kitenet.net"
+		, "search kitenet.net"
+		]
 	& alias "debug-me.joeyh.name"
 	-- debug-me installed manually until package is available
 	& Systemd.enabled "debug-me"
