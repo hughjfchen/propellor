@@ -55,13 +55,14 @@ lvFormatted YesReallyFormatLogicalVolume lv sz fs =
 				$ "can not get extent size, does volume group "
 				++ vgname ++ " exists?"
 			Just extentSize -> do
-				case parseSize extentSize of
+				case parseSize of
 					Nothing -> errorMessage
 						$ "can not parse volume group size"
 					Just size -> do
 						state <- liftIO $ lvState lv
+						let rsize = roundSize extentSize size
 						ensureProperty w
-							$ setupprop size state
+							$ setupprop rsize state
 
 	cleanup :: Property UnixLike
 	cleanup = property' ("removed logical volume " ++ (vglv lv)) $ \w -> do
@@ -70,11 +71,14 @@ lvFormatted YesReallyFormatLogicalVolume lv sz fs =
 			then removedprop
 			else doNothing
 
-	-- Parse size and round to next extent size multiple.
-	parseSize :: Integer -> Maybe Integer
-	parseSize extentSize = do
-		s <- readSize dataUnits sz
-		return $ (s + extentSize - 1) `div` extentSize * extentSize
+	-- Parse size.
+	parseSize :: Maybe Integer
+	parseSize = readSize dataUnits sz
+
+	-- Round size to next extent size multiple.
+	roundSize :: Integer -> Integer -> Integer
+	roundSize extentSize s =
+		(s + extentSize - 1) `div` extentSize * extentSize
 
 	-- Dispatch to the right props.
 	setupprop :: Integer -> (Maybe LvState) -> Property DebianLike
