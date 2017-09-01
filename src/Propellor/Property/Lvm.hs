@@ -4,8 +4,10 @@
 
 module Propellor.Property.Lvm (
 	lvFormatted,
-	Eep(..),
 	installed,
+	Eep(..),
+	VolumeGroup(..),
+	LogicalVolume(..),
 ) where
 
 import Propellor
@@ -19,8 +21,8 @@ data Eep = YesReallyFormatLogicalVolume
 
 type DataSize = String
 
-type VolumeGroup = String
-type LogicalVolume = String
+newtype VolumeGroup = VolumeGroup String
+data LogicalVolume = LogicalVolume String VolumeGroup
 
 -- | Create or resize a logical volume, and make sure it is formatted.  When
 -- reverted, remove the logical volume.
@@ -29,7 +31,8 @@ type LogicalVolume = String
 --
 -- > import qualified Propellor.Property.Lvm as Lvm
 -- > import qualified Propellor.Property.Partition as Partition
--- > Lvm.lvFormatted Lvm.YesReallyFormatLogicalVolume "vg0" "test" "16m"
+-- > Lvm.lvFormatted Lvm.YesReallyFormatLogicalVolume
+-- >         (Lvm.LogicalVolume "test" (Lvm.VolumeGroup "vg0")) "16m"
 -- >         Partition.EXT4
 --
 -- If size and filesystem match, nothing is done.
@@ -37,33 +40,32 @@ type LogicalVolume = String
 -- Volume group must have been created yet.
 lvFormatted
 	:: Eep
-	-> VolumeGroup
 	-> LogicalVolume
 	-> DataSize
 	-> Partition.Fs
 	-> RevertableProperty DebianLike UnixLike
-lvFormatted YesReallyFormatLogicalVolume vg lv sz fs =
+lvFormatted YesReallyFormatLogicalVolume lv sz fs =
 	setup <!> cleanup
   where
 	setup :: Property DebianLike
-	setup = property' ("formatted logical volume " ++ lv) $ \w -> do
+	setup = property' ("formatted logical volume " ++ (vglv lv)) $ \w -> do
 		es <- liftIO $ vgExtentSize vg
 		case es of
 			Nothing -> errorMessage
 				$ "can not get extent size, does volume group "
-				++ vg ++ " exists?"
+				++ vgname ++ " exists?"
 			Just extentSize -> do
 				case parseSize extentSize of
 					Nothing -> errorMessage
 						$ "can not parse volume group size"
 					Just size -> do
-						state <- liftIO $ lvState vg lv
+						state <- liftIO $ lvState lv
 						ensureProperty w
 							$ setupprop size state
 
 	cleanup :: Property UnixLike
-	cleanup = property' ("removed logical volume " ++ lv) $ \w -> do
-		exists <- liftIO $ lvExist vg lv
+	cleanup = property' ("removed logical volume " ++ (vglv lv)) $ \w -> do
+		exists <- liftIO $ lvExist lv
 		ensureProperty w $ if exists
 			then removedprop
 			else doNothing
@@ -86,26 +88,25 @@ lvFormatted YesReallyFormatLogicalVolume vg lv sz fs =
 	createdprop :: Integer -> Property UnixLike
 	createdprop size =
 		cmdProperty "lvcreate"
-			(bytes size $ [ "-n", lv, "--yes", vg ])
+			(bytes size $ [ "-n", lvname, "--yes", vgname ])
 			`assume` MadeChange
 
 	resizedprop :: Integer -> Bool -> Property UnixLike
 	resizedprop size rfs =
 		cmdProperty "lvresize"
-			(resizeFs rfs $ bytes size $ [ vg </> lv ])
+			(resizeFs rfs $ bytes size $ [ vglv lv ])
 			`assume` MadeChange
 	  where
 		resizeFs True l = "-r" : l
 		resizeFs False l = l
 
 	removedprop :: Property UnixLike
-	removedprop = cmdProperty "lvremove" [ "-f", vg </> lv ]
+	removedprop = cmdProperty "lvremove" [ "-f", vglv lv ]
 		`assume` MadeChange
 
 	formatprop :: Property DebianLike
-	formatprop = Partition.formatted Partition.YesReallyFormatPartition fs path
-
-	path = "/dev" </> vg </> lv
+	formatprop = Partition.formatted Partition.YesReallyFormatPartition
+		fs (path lv)
 
 	fsMatch :: Partition.Fs -> Maybe String -> Bool
 	fsMatch Partition.EXT2 (Just "ext2") = True
@@ -122,6 +123,8 @@ lvFormatted YesReallyFormatLogicalVolume vg lv sz fs =
 
 	bytes size l = "-L" : ((show size) ++ "b") : l
 
+	(LogicalVolume lvname vg@(VolumeGroup vgname)) = lv
+
 -- | Make sure needed tools are installed.
 installed :: RevertableProperty DebianLike DebianLike
 installed = install <!> remove
@@ -132,17 +135,14 @@ installed = install <!> remove
 data LvState = LvState Integer (Maybe String)
 
 -- Check for logical volume existance.
-lvExist :: VolumeGroup -> LogicalVolume -> IO Bool
-lvExist vg lv =
-	doesFileExist path
-  where
-	path = "/dev" </> vg </> lv
+lvExist :: LogicalVolume -> IO Bool
+lvExist lv = doesFileExist (path lv)
 
 -- Return Nothing if logical volume does not exists (or error), else return
 -- its size and maybe file system.
-lvState :: VolumeGroup -> LogicalVolume -> IO (Maybe LvState)
-lvState vg lv = do
-	exists <- lvExist vg lv
+lvState :: LogicalVolume -> IO (Maybe LvState)
+lvState lv = do
+	exists <- lvExist lv
 	if not exists
 		then return Nothing
 		else do
@@ -152,19 +152,27 @@ lvState vg lv = do
 				size <- s
 				return $ LvState size $ takeWhile (/= '\n') <$> fs
   where
-	path = "/dev" </> vg </> lv
 	readLvSize = catchDefaultIO Nothing
 		$ readish
 		<$> readProcess "lvs" [ "-o", "size", "--noheadings",
-			"--nosuffix", "--units", "b", path ]
-	readFs = Mount.blkidTag "TYPE" path
+			"--nosuffix", "--units", "b", vglv lv ]
+	readFs = Mount.blkidTag "TYPE" (path lv)
 
 -- Read extent size (or Nothing on error).
 vgExtentSize :: VolumeGroup -> IO (Maybe Integer)
-vgExtentSize vg =
+vgExtentSize (VolumeGroup vgname) =
 	catchDefaultIO Nothing
 		$ readish
 		<$> readProcess "vgs" [ "-o", "vg_extent_size",
-			"--noheadings", "--nosuffix", "--units", "b", path ]
+			"--noheadings", "--nosuffix", "--units", "b", vgname ]
+
+-- Give "vgname/lvname" for a LogicalVolume.
+vglv :: LogicalVolume -> String
+vglv lv =
+	vgname </> lvname
   where
-	path = "/dev" </> vg
+	(LogicalVolume lvname (VolumeGroup vgname)) = lv
+
+-- Give device path.
+path :: LogicalVolume -> String
+path lv = "/dev" </> (vglv lv)
