@@ -97,6 +97,7 @@ onlyProcess lockfile a = bracket lock unlock (const a)
 	lock = do
 		createDirectoryIfMissing True (takeDirectory lockfile)
 		l <- createFile lockfile stdFileMode
+		setFdOption l CloseOnExec True
 		setLock l (WriteLock, AbsoluteSeek, 0, 0)
 			`catchIO` const alreadyrunning
 		return l

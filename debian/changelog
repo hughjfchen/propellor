@@ -10,6 +10,7 @@ propellor (4.8.0) UNRELEASED; urgency=medium
     image.
   * Borg: Fix broken shell escaping in borg cron job.
   * Attic: Fix broken shell escaping in attic cron job.
+  * Make lock file descriptors close-on-exec.
 
  -- Joey Hess <id@joeyh.name>  Thu, 24 Aug 2017 11:00:19 -0400
 
