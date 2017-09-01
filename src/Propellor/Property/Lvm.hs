@@ -108,17 +108,8 @@ lvFormatted YesReallyFormatLogicalVolume lv sz fs =
 	formatprop = Partition.formatted Partition.YesReallyFormatPartition
 		fs (path lv)
 
-	fsMatch :: Partition.Fs -> Maybe String -> Bool
-	fsMatch Partition.EXT2 (Just "ext2") = True
-	fsMatch Partition.EXT3 (Just "ext3") = True
-	fsMatch Partition.EXT4 (Just "ext4") = True
-	fsMatch Partition.BTRFS (Just "btrfs") = True
-	fsMatch Partition.REISERFS (Just "reiserfs") = True
-	fsMatch Partition.XFS (Just "xfs") = True
-	fsMatch Partition.FAT (Just "fat") = True
-	fsMatch Partition.VFAT (Just "vfat") = True
-	fsMatch Partition.NTFS (Just "ntfs") = True
-	fsMatch Partition.LinuxSwap (Just "swap") = True
+	fsMatch :: Partition.Fs -> Maybe Partition.Fs -> Bool
+	fsMatch a (Just b) = a == b
 	fsMatch _ _ = False
 
 	bytes size l = "-L" : ((show size) ++ "b") : l
@@ -132,7 +123,7 @@ installed = install <!> remove
 	install = Apt.installed ["lvm2"]
 	remove = Apt.removed ["lvm2"]
 
-data LvState = LvState Integer (Maybe String)
+data LvState = LvState Integer (Maybe Partition.Fs)
 
 -- Check for logical volume existance.
 lvExist :: LogicalVolume -> IO Bool
@@ -150,13 +141,25 @@ lvState lv = do
 			fs <- readFs
 			return $ do
 				size <- s
-				return $ LvState size $ takeWhile (/= '\n') <$> fs
+				return $ LvState size $ parseFs
+					$ takeWhile (/= '\n') <$> fs
   where
 	readLvSize = catchDefaultIO Nothing
 		$ readish
 		<$> readProcess "lvs" [ "-o", "size", "--noheadings",
 			"--nosuffix", "--units", "b", vglv lv ]
 	readFs = Mount.blkidTag "TYPE" (path lv)
+	parseFs (Just "ext2") = Just Partition.EXT2
+	parseFs (Just "ext3") = Just Partition.EXT3
+	parseFs (Just "ext4") = Just Partition.EXT4
+	parseFs (Just "btrfs") = Just Partition.BTRFS
+	parseFs (Just "reiserfs") = Just Partition.REISERFS
+	parseFs (Just "xfs") = Just Partition.XFS
+	parseFs (Just "fat") = Just Partition.FAT
+	parseFs (Just "vfat") = Just Partition.VFAT
+	parseFs (Just "ntfs") = Just Partition.NTFS
+	parseFs (Just "swap") = Just Partition.LinuxSwap
+	parseFs _ = Nothing
 
 -- Read extent size (or Nothing on error).
 vgExtentSize :: VolumeGroup -> IO (Maybe Integer)
