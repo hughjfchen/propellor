@@ -11,6 +11,8 @@ propellor (4.8.0) UNRELEASED; urgency=medium
   * Borg: Fix broken shell escaping in borg cron job.
   * Attic: Fix broken shell escaping in attic cron job.
   * Make lock file descriptors close-on-exec.
+  * Lvm: New module for setting up LVM volumes.
+    Thanks, Nicolas Schodet
 
  -- Joey Hess <id@joeyh.name>  Thu, 24 Aug 2017 11:00:19 -0400
 
