@@ -127,6 +127,7 @@ Library
     Propellor.Property.LightDM
     Propellor.Property.Locale
     Propellor.Property.Logcheck
+    Propellor.Property.Lvm
     Propellor.Property.Mount
     Propellor.Property.Network
     Propellor.Property.Nginx
