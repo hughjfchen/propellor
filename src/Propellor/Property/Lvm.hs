@@ -142,7 +142,7 @@ lvState lv = do
 		then return Nothing
 		else do
 			s <- readLvSize
-			fs <- maybe Nothing (Partition.parseFs . takeWhile (/= '\n')) <$> readFs
+			fs <- maybe Nothing Partition.parseFs <$> readFs
 			return $ do
 				size <- s
 				return $ LvState size fs
