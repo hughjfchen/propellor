@@ -15,6 +15,20 @@ import Data.Char
 data Fs = EXT2 | EXT3 | EXT4 | BTRFS | REISERFS | XFS | FAT | VFAT | NTFS | LinuxSwap
 	deriving (Show, Eq)
 
+-- | Parse commonly used names of filesystems.
+parseFs :: String -> Maybe Fs
+parseFs "ext2" = Just EXT2
+parseFs "ext3" = Just EXT3
+parseFs "ext4" = Just EXT4
+parseFs "btrfs" = Just BTRFS
+parseFs "reiserfs" = Just REISERFS
+parseFs "xfs" = Just XFS
+parseFs "fat" = Just FAT
+parseFs "vfat" = Just VFAT
+parseFs "ntfs" = Just NTFS
+parseFs "swap" = Just LinuxSwap
+parseFs _ = Nothing
+
 data Eep = YesReallyFormatPartition
 
 -- | Formats a partition.

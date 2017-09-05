@@ -142,27 +142,15 @@ lvState lv = do
 		then return Nothing
 		else do
 			s <- readLvSize
-			fs <- readFs
+			fs <- maybe Nothing (Partition.parseFs . takeWhile (/= '\n')) <$> readFs
 			return $ do
 				size <- s
-				return $ LvState size $ parseFs $
-					takeWhile (/= '\n') <$> fs
+				return $ LvState size fs
   where
 	readLvSize = catchDefaultIO Nothing $ readish
 		<$> readProcess "lvs" [ "-o", "size", "--noheadings",
 			"--nosuffix", "--units", "b", vglv lv ]
 	readFs = Mount.blkidTag "TYPE" (path lv)
-	parseFs (Just "ext2") = Just Partition.EXT2
-	parseFs (Just "ext3") = Just Partition.EXT3
-	parseFs (Just "ext4") = Just Partition.EXT4
-	parseFs (Just "btrfs") = Just Partition.BTRFS
-	parseFs (Just "reiserfs") = Just Partition.REISERFS
-	parseFs (Just "xfs") = Just Partition.XFS
-	parseFs (Just "fat") = Just Partition.FAT
-	parseFs (Just "vfat") = Just Partition.VFAT
-	parseFs (Just "ntfs") = Just Partition.NTFS
-	parseFs (Just "swap") = Just Partition.LinuxSwap
-	parseFs _ = Nothing
 
 -- Read extent size (or Nothing on error).
 vgExtentSize :: VolumeGroup -> IO (Maybe Integer)
