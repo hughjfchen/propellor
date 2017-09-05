@@ -37,7 +37,7 @@ data LogicalVolume = LogicalVolume String VolumeGroup
 --
 -- If size and filesystem match, nothing is done.
 --
--- Volume group must have been created yet.
+-- Volume group must have been created already.
 lvFormatted
 	:: Eep
 	-> LogicalVolume
@@ -51,22 +51,22 @@ lvFormatted YesReallyFormatLogicalVolume lv sz fs =
 	setup = property' ("formatted logical volume " ++ (vglv lv)) $ \w -> do
 		es <- liftIO $ vgExtentSize vg
 		case es of
-			Nothing -> errorMessage
-				$ "can not get extent size, does volume group "
-				++ vgname ++ " exists?"
+			Nothing -> errorMessage $
+				"can not get extent size, does volume group "
+				++ vgname ++ " exist?"
 			Just extentSize -> do
 				case parseSize of
-					Nothing -> errorMessage
-						$ "can not parse volume group size"
+					Nothing -> errorMessage 
+						"can not parse volume group size"
 					Just size -> do
 						state <- liftIO $ lvState lv
 						let rsize = roundSize extentSize size
-						ensureProperty w
-							$ setupprop rsize state
+						ensureProperty w $
+							setupprop rsize state
 
 	cleanup :: Property UnixLike
 	cleanup = property' ("removed logical volume " ++ (vglv lv)) $ \w -> do
-		exists <- liftIO $ lvExist lv
+		exists <- liftIO $ lvExists lv
 		ensureProperty w $ if exists
 			then removedprop
 			else doNothing
@@ -130,14 +130,14 @@ installed = install <!> remove
 data LvState = LvState Integer (Maybe Partition.Fs)
 
 -- Check for logical volume existance.
-lvExist :: LogicalVolume -> IO Bool
-lvExist lv = doesFileExist (path lv)
+lvExists :: LogicalVolume -> IO Bool
+lvExists lv = doesFileExist (path lv)
 
 -- Return Nothing if logical volume does not exists (or error), else return
 -- its size and maybe file system.
 lvState :: LogicalVolume -> IO (Maybe LvState)
 lvState lv = do
-	exists <- lvExist lv
+	exists <- lvExists lv
 	if not exists
 		then return Nothing
 		else do
@@ -145,11 +145,10 @@ lvState lv = do
 			fs <- readFs
 			return $ do
 				size <- s
-				return $ LvState size $ parseFs
-					$ takeWhile (/= '\n') <$> fs
+				return $ LvState size $ parseFs $
+					takeWhile (/= '\n') <$> fs
   where
-	readLvSize = catchDefaultIO Nothing
-		$ readish
+	readLvSize = catchDefaultIO Nothing $ readish
 		<$> readProcess "lvs" [ "-o", "size", "--noheadings",
 			"--nosuffix", "--units", "b", vglv lv ]
 	readFs = Mount.blkidTag "TYPE" (path lv)
@@ -168,8 +167,7 @@ lvState lv = do
 -- Read extent size (or Nothing on error).
 vgExtentSize :: VolumeGroup -> IO (Maybe Integer)
 vgExtentSize (VolumeGroup vgname) =
-	catchDefaultIO Nothing
-		$ readish
+	catchDefaultIO Nothing $ readish
 		<$> readProcess "vgs" [ "-o", "vg_extent_size",
 			"--noheadings", "--nosuffix", "--units", "b", vgname ]
 
@@ -181,5 +179,5 @@ vglv lv =
 	(LogicalVolume lvname (VolumeGroup vgname)) = lv
 
 -- Give device path.
-path :: LogicalVolume -> String
+path :: LogicalVolume -> FilePath
 path lv = "/dev" </> (vglv lv)
