@@ -229,7 +229,7 @@ kite :: Host
 kite = host "kite.kitenet.net" $ props
 	& standardSystemUnhardened Testing X86_64 [ "Welcome to kite!" ]
 	& ipv4 "66.228.36.95"
-	-- & ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
+	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 	& alias "kitenet.net"
 	& alias "wren.kitenet.net" -- temporary
 	& Ssh.hostKeys (Context "kitenet.net")
