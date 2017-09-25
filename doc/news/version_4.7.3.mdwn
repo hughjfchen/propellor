@@ -1,3 +1,0 @@
-propellor 4.7.3 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Expand the Trace data type."""]]

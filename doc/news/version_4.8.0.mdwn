@@ -1,0 +1,21 @@
+propellor 4.8.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * DiskImage: Made a DiskImage type class, so that different disk image
+     formats can be implemented. The properties in this module can generate
+     any type that is a member of DiskImage. (API change)
+     (To convert existing configs, convert the filename of the disk image
+     to RawDiskImage filename.)
+   * Removed DiskImage.vmdkBuiltFor property. (API change)
+     Instead, use VirtualBoxPointer in the property that creates the disk
+     image.
+   * Apt.isInstalled: Fix handling of packages that are not known at all
+     to apt.
+   * Borg: Converted BorgRepo from a String alias to a data type.
+     (API change)
+   * Borg: Allow specifying ssh private key to use when accessing a borg
+     repo by using the BorgRepoUsing constructor with UseSshKey.
+   * Borg: Fix broken shell escaping in borg cron job.
+   * Attic: Fix broken shell escaping in attic cron job.
+   * Make lock file descriptors close-on-exec.
+   * Lvm: New module for setting up LVM volumes.
+     Thanks, Nicolas Schodet"""]]
