@@ -331,7 +331,9 @@ isInstalled :: Package -> IO Bool
 isInstalled p = isInstalled' [p]
 
 isInstalled' :: [Package] -> IO Bool
-isInstalled' ps = all (== IsInstalled) <$> getInstallStatus ps
+isInstalled' ps = do
+	is <- getInstallStatus ps
+	return $ all (== IsInstalled) is && length is == length ps
 
 data InstallStatus = IsInstalled | NotInstalled
 	deriving (Show, Eq)

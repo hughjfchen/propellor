@@ -10,6 +10,8 @@ propellor (4.8.0) UNRELEASED; urgency=medium
     image.
   * Borg: Fix broken shell escaping in borg cron job.
   * Attic: Fix broken shell escaping in attic cron job.
+  * Apt.isInstalled: Fix handling of packages that are not known at all
+    to apt.
 
  -- Joey Hess <id@joeyh.name>  Thu, 24 Aug 2017 11:00:19 -0400
 
