@@ -1,9 +1,9 @@
-propellor (4.8.1) UNRELEASED; urgency=medium
+propellor (4.8.1) unstable; urgency=medium
 
   * Borg: Fix propigation of exit status of borg backup.
   * Borg: Fix handling of UseSshKey.
 
- -- Joey Hess <id@joeyh.name>  Mon, 25 Sep 2017 16:38:17 -0400
+ -- Joey Hess <id@joeyh.name>  Mon, 25 Sep 2017 17:19:49 -0400
 
 propellor (4.8.0) unstable; urgency=medium
 
