@@ -25,6 +25,7 @@ import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Obnam as Obnam
+import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
@@ -253,30 +254,24 @@ kite = host "kite.kitenet.net" $ props
 	& Ssh.setSshdConfig "GatewayPorts" "clientspecified"
 	& Apt.serviceInstalledRunning "ntp"
 	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
-
-	& Obnam.backupEncrypted "/" (Cron.Times "33 1 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/kite-root.obnam"
-		, "--client-name=kitenet.net"
-		, "--exclude=/home"
-		, "--exclude=/var/cache"
-		, "--exclude=/var/tmp"
+	
+	& Borg.backup "/" "joey@eubackup.kitenet.net:/home/joey/lib/backup/kite/kite.borg" Cron.Daily
+		[ "--exclude=/proc/*"
+		, "--exclude=/sys/*"
+		, "--exclude=/run/*"
+		, "--exclude=/tmp/*"
+		, "--exclude=/var/tmp/*"
+		, "--exclude=/var/cache/*"
+		, "--exclude=/home/joey/lib"
+		-- These directories are backed up and restored separately.
 		, "--exclude=/srv/git"
 		, "--exclude=/var/spool/oldusenet"
-		, "--exclude=.*/tmp/"
-		, "--one-file-system"
-		, Obnam.keepParam [Obnam.KeepDays 7, Obnam.KeepWeeks 4, Obnam.KeepMonths 6]
-		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
-		`requires` rootsshkey
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
-	& Obnam.backupEncrypted "/home" (Cron.Times "33 3 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/kite-home.obnam"
-		, "--client-name=kitenet.net"
-		, "--exclude=/home/joey/lib"
-		, "--one-file-system"
-		, Obnam.keepParam [Obnam.KeepDays 7, Obnam.KeepWeeks 4, Obnam.KeepMonths 6]
-		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
-		`requires` rootsshkey
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
+		]
+		[ Borg.KeepDays 7
+		, Borg.KeepWeeks 4
+		, Borg.KeepMonths 6
+		]
+		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
 
 	& alias "smtp.kitenet.net"
 	& alias "imap.kitenet.net"
@@ -379,7 +374,7 @@ elephant = host "elephant.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "swapspace"
 
 	& alias "eubackup.kitenet.net"
-	& Apt.installed ["obnam", "sshfs", "rsync", "borgbackup"]
+	& Apt.installed ["sshfs", "rsync", "borgbackup"]
 	& JoeySites.githubBackup
 	& JoeySites.rsyncNetBackup hosts
 
