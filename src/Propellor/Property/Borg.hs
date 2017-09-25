@@ -148,7 +148,7 @@ backup' dir repo crontimes extraargs kp = cronjob
 	cronjob = Cron.niceJob ("borg_backup" ++ dir) crontimes (User "root") "/" $
 		"flock " ++ shellEscape lockfile ++ " sh -c " ++ shellEscape backupcmd
 	lockfile = "/var/lock/propellor-borg.lock"
-	backupcmd = intercalate ";" $ concat
+	backupcmd = intercalate "&&" $ concat
 		[ concatMap exportenv (runBorgEnv repo)
 		, [createCommand]
 		, if null kp then [] else [pruneCommand]
