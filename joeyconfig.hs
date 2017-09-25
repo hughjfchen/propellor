@@ -130,6 +130,7 @@ clam = host "clam.kitenet.net" $ props
 	& Apt.unattendedUpgrades
 	& Systemd.persistentJournal
 	& Journald.systemMaxUse "50MiB"
+	& Apt.serviceInstalledRunning "swapspace"
 
 	& Tor.isRelay
 	& Tor.named "kite1"
