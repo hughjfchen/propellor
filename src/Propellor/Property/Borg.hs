@@ -3,7 +3,10 @@
 -- Support for the Borg backup tool <https://github.com/borgbackup>
 
 module Propellor.Property.Borg
-	( installed
+	( BorgParam
+	, BorgRepo(..)
+	, BorgRepoOpt(..)
+	, installed
 	, repoExists
 	, init
 	, restored
@@ -17,9 +20,39 @@ import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
 import Data.List (intercalate)
 
+-- | Parameter to pass to a borg command.
 type BorgParam = String
 
-type BorgRepo = FilePath
+-- | A borg repository.
+data BorgRepo
+	-- | Location of the repository, eg
+	-- `BorgRepo "root@myserver:/mnt/backup/git.borg"`
+	= BorgRepo String
+	-- | Location of the repository, and additional options to use
+	-- when accessing the repository.
+	| BorgRepoUsing [BorgRepoOpt] String
+
+data BorgRepoOpt 
+	-- | Use to specify a ssh private key to use when accessing a
+	-- BorgRepo.
+	= UseSshKey FilePath
+
+repoLoc :: BorgRepo -> String
+repoLoc (BorgRepo s) = s
+repoLoc (BorgRepoUsing _ s) = s
+
+runBorg :: BorgRepo -> [CommandParam] -> IO Bool
+runBorg repo ps = case runBorgEnv repo of
+	[] -> boolSystem "borg" ps
+	environ -> do
+		environ' <- addEntries environ <$> getEnvironment
+		boolSystemEnv "borg" ps (Just environ')
+
+runBorgEnv :: BorgRepo -> [(String, String)]
+runBorgEnv (BorgRepo _) = []
+runBorgEnv (BorgRepoUsing os _) = map go os
+  where
+	go (UseSshKey k) = ("BORG_RSH", k)
 
 installed :: Property DebianLike
 installed = withOS desc $ \w o -> case o of
@@ -31,19 +64,20 @@ installed = withOS desc $ \w o -> case o of
         desc = "installed borgbackup"
 
 repoExists :: BorgRepo -> IO Bool
-repoExists repo = boolSystem "borg" [Param "list", Param repo]
+repoExists repo = runBorg repo [Param "list", Param (repoLoc repo)]
 
 -- | Inits a new borg repository
 init :: BorgRepo -> Property DebianLike
-init repo = check (not <$> repoExists repo) (cmdProperty "borg" initargs)
-	`requires` installed
+init repo = check (not <$> repoExists repo)
+	(cmdPropertyEnv "borg" initargs (runBorgEnv repo))
+		`requires` installed
   where
 	initargs =
 		[ "init"
-		, repo
+		, repoLoc repo
 		]
 
--- | Restores a directory from an borg backup.
+-- | Restores a directory from a borg backup.
 --
 -- Only does anything if the directory does not exist, or exists,
 -- but is completely empty.
@@ -64,9 +98,9 @@ restored dir repo = go `requires` installed
 	needsRestore = null <$> catchDefaultIO [] (dirContents dir)
 
 	restore = withTmpDirIn (takeDirectory dir) "borg-restore" $ \tmpdir -> do
-		ok <- boolSystem "borg" $
+		ok <- runBorg repo $
 			[ Param "extract"
-			, Param repo
+			, Param (repoLoc repo)
 			, Param tmpdir
 			]
 		let restoreddir = tmpdir ++ "/" ++ dir
@@ -88,7 +122,9 @@ restored dir repo = go `requires` installed
 -- to a host, while also ensuring any changes made to it get backed up.
 -- For example:
 --
--- >	& Borg.backup "/srv/git" "root@myserver:/mnt/backup/git.borg" Cron.Daily
+-- >	& Borg.backup "/srv/git"
+-- >		(BorgRepo "root@myserver:/mnt/backup/git.borg") 
+-- >		Cron.Daily
 -- >		["--exclude=/srv/git/tobeignored"]
 -- >		[Borg.KeepDays 7, Borg.KeepWeeks 4, Borg.KeepMonths 6, Borg.KeepYears 1]
 --
@@ -108,33 +144,39 @@ backup' dir repo crontimes extraargs kp = cronjob
 	`describe` desc
 	`requires` installed
   where
-	desc = repo ++ " borg backup"
+	desc = repoLoc repo ++ " borg backup"
 	cronjob = Cron.niceJob ("borg_backup" ++ dir) crontimes (User "root") "/" $
 		"flock " ++ shellEscape lockfile ++ " sh -c " ++ shellEscape backupcmd
 	lockfile = "/var/lock/propellor-borg.lock"
-	backupcmd = intercalate ";" $
-		createCommand
-		: if null kp then [] else [pruneCommand]
+	backupcmd = intercalate ";" $ concat
+		[ concatMap exportenv (runBorgEnv repo)
+		, [createCommand]
+		, if null kp then [] else [pruneCommand]
+		]
+	exportenv (k, v) = 
+		[ k ++ "=" ++ shellEscape v
+		, "export " ++ k
+		]
 	createCommand = unwords $
 		[ "borg"
 		, "create"
 		, "--stats"
 		]
 		++ map shellEscape extraargs ++
-		[ shellEscape repo ++ "::" ++ "$(date --iso-8601=ns --utc)"
+		[ shellEscape (repoLoc repo) ++ "::" ++ "$(date --iso-8601=ns --utc)"
 		, shellEscape dir
 		]
 	pruneCommand = unwords $
 		[ "borg"
 		, "prune"
-		, shellEscape repo
+		, shellEscape (repoLoc repo)
 		]
 		++
 		map keepParam kp
 
 -- | Constructs an BorgParam that specifies which old backup generations to
 -- keep. By default, all generations are kept. However, when this parameter is
--- passed to the `backup` property, they will run borg prune to clean out
+-- passed to the `backup` property, it will run borg prune to clean out
 -- generations not specified here.
 keepParam :: KeepPolicy -> BorgParam
 keepParam (KeepHours n) = "--keep-hourly=" ++ val n

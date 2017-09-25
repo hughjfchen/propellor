@@ -24,7 +24,6 @@ import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Grub as Grub
-import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
@@ -255,7 +254,7 @@ kite = host "kite.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "ntp"
 	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
 	
-	& Borg.backup "/" "joey@eubackup.kitenet.net:/home/joey/lib/backup/kite/kite.borg" Cron.Daily
+	& Borg.backup "/" (Borg.BorgRepo "joey@eubackup.kitenet.net:/home/joey/lib/backup/kite/kite.borg") Cron.Daily
 		[ "--exclude=/proc/*"
 		, "--exclude=/sys/*"
 		, "--exclude=/run/*"

@@ -16,6 +16,7 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Obnam as Obnam
+import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Systemd as Systemd
@@ -141,17 +142,17 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 		)
 
 	oldUseNetBackup :: Property (HasInfo + DebianLike)
-	oldUseNetBackup = Obnam.backup datadir (Cron.Times "33 4 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/olduse.net"
-		, "--client-name=spool"
-		, "--ssh-key=" ++ keyfile
-		, Obnam.keepParam [Obnam.KeepDays 30]
-		] Obnam.OnlyClient
+	oldUseNetBackup = Borg.backup datadir borgrepo 
+		(Cron.Times "33 4 * * *")
+		[]
+		[Borg.KeepDays 30]
 		`requires` Ssh.userKeyAt (Just keyfile)
 			(User "root")
 			(Context "olduse.net")
 			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD0F6L76SChMCIGmeyGhlFMUTgZ3BoTbATiOSs0A7KXQoI1LTE5ZtDzzUkrQRJVpJ640pfMR7cQZyBm8tv+kYIPp0238GrX43c1vgm0L78agDnBU7r2iNMyWIwhssK8O3ZAhp8Q4KCz1r8hP2nIiD0y1D1VWW8h4KWOS7I1XCEAjOTvFvEjTh6a9MyHrcIkv7teUUzTBRjNrsyijCFRk1+pEET54RueoOmEjQcWd/sK1tYRiMZjegRLBOus2wUWsUOvznJ2iniLONUTGAWRnEV+O7hLN6CD44osJ+wkZk8bPAumTS0zcSLckX1jpdHJicmAyeniWSd4FCqm1YE6/xDD")
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
+		`requires` Ssh.knownHost hosts "joey@eubackup.kitenet.net" (User "root")
+	borgrepo = Borg.BorgRepoUsing [Borg.UseSshKey keyfile]
+		"joey@eubackup.kitenet.net:/home/joey/lib/backup/olduse.net/olduse.net.borg"
 	keyfile = "/root/.ssh/olduse.net.key"
 
 oldUseNetShellBox :: Property DebianLike
