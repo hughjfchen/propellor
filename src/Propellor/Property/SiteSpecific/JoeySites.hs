@@ -15,7 +15,6 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
-import qualified Propellor.Property.Obnam as Obnam
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
@@ -197,19 +196,17 @@ kgbServer = propertyList desc $ props
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property (HasInfo + DebianLike)
 gitServer hosts = propertyList "git.kitenet.net setup" $ props
-	& Obnam.backupEncrypted "/srv/git" (Cron.Times "33 3 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
-		, "--ssh-key=" ++ sshkey
-		, "--client-name=wren" -- historical
-		, Obnam.keepParam [Obnam.KeepDays 30]
-		] Obnam.OnlyClient (Gpg.GpgKeyId "1B169BE1")
+	& Borg.backup "/srv/git" borgrepo
+		(Cron.Times "33 3 * * *")
+		[]
+		[Borg.KeepDays 30]
 		`requires` Ssh.userKeyAt (Just sshkey)
 			(User "root")
 			(Context "git.kitenet.net")
-			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD0F6L76SChMCIGmeyGhlFMUTgZ3BoTbATiOSs0A7KXQoI1LTE5ZtDzzUkrQRJVpJ640pfMR7cQZyBm8tv+kYIPp0238GrX43c1vgm0L78agDnBU7r2iNMyWIwhssK8O3ZAhp8Q4KCz1r8hP2nIiD0y1D1VWW8h4KWOS7I1XCEAjOTvFvEjTh6a9MyHrcIkv7teUUzTBRjNrsyijCFRk1+pEET54RueoOmEjQcWd/sK1tYRiMZjegRLBOus2wUWsUOvznJ2iniLONUTGAWRnEV+O7hLN6CD44osJ+wkZk8bPAumTS0zcSLckX1jpdHJicmAyeniWSd4FCqm1YE6/xDD")
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
-		`requires` Ssh.authorizedKeys (User "family") (Context "git.kitenet.net")
-		`requires` User.accountFor (User "family")
+			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLwUUkpkI9c2Wcnv/E4v9bJ7WcpiNkToltXfzRDd1F31AYrucfSMgzu3rtDpEL+wSnQLua/taJkWUWT/pyXOAh+90K6O/YeBZmY5CK01rYDz3kSTAtwHkMqednsRjdQS6NNJsuWc1reO8a4pKtsToJ3G9VAKufCkt2b8Nhqz0yLvLYwwU/mdI8DmfX6IgXhdy9njVEG/jsQnLFXY6QEfwKbIPs9O6qo4iFJg3defXX+zVMLsh3NE1P2i2VxMjxJEQdPdy9Z1sVpkiQM+mgJuylQQ5flPK8sxhO9r4uoK/JROkjPJNYoJMlsN+QlK04ABb7JV2JwhAL/Y8ypjQ13JdT")
+		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
+	& Ssh.authorizedKeys (User "family") (Context "git.kitenet.net")
+	& User.accountFor (User "family")
 	& Apt.installed ["git", "rsync", "cgit"]
 	& Apt.installed ["git-annex"]
 	& Apt.installed ["kgb-client"]
@@ -238,6 +235,8 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 	& Apache.modEnabled "cgi"
   where
 	sshkey = "/root/.ssh/git.kitenet.net.key"
+	borgrepo = Borg.BorgRepoUsing [Borg.UseSshKey sshkey]
+		"joey@eubackup.kitenet.net:/home/joey/lib/backup/git.kitenet.net/git.kitenet.net.borg"
 	website hn = Apache.httpsVirtualHost' hn "/srv/web/git.kitenet.net/" letos
 		[ Apache.iconDir
 		, "  <Directory /srv/web/git.kitenet.net/>"
