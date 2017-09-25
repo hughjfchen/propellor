@@ -24,7 +24,7 @@ import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Grub as Grub
-import qualified Propellor.Property.Obnam as Obnam
+import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
@@ -130,6 +130,7 @@ clam = host "clam.kitenet.net" $ props
 	& Apt.unattendedUpgrades
 	& Systemd.persistentJournal
 	& Journald.systemMaxUse "50MiB"
+	& Apt.serviceInstalledRunning "swapspace"
 
 	& Tor.isRelay
 	& Tor.named "kite1"
@@ -229,7 +230,7 @@ kite :: Host
 kite = host "kite.kitenet.net" $ props
 	& standardSystemUnhardened Testing X86_64 [ "Welcome to kite!" ]
 	& ipv4 "66.228.36.95"
-	-- & ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
+	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 	& alias "kitenet.net"
 	& alias "wren.kitenet.net" -- temporary
 	& Ssh.hostKeys (Context "kitenet.net")
@@ -253,30 +254,28 @@ kite = host "kite.kitenet.net" $ props
 	& Ssh.setSshdConfig "GatewayPorts" "clientspecified"
 	& Apt.serviceInstalledRunning "ntp"
 	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
-
-	& Obnam.backupEncrypted "/" (Cron.Times "33 1 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/kite-root.obnam"
-		, "--client-name=kitenet.net"
-		, "--exclude=/home"
-		, "--exclude=/var/cache"
-		, "--exclude=/var/tmp"
+	
+	& Borg.backup "/" (Borg.BorgRepo "joey@eubackup.kitenet.net:/home/joey/lib/backup/kite/kite.borg") Cron.Daily
+		[ "--exclude=/proc/*"
+		, "--exclude=/sys/*"
+		, "--exclude=/run/*"
+		, "--exclude=/tmp/*"
+		, "--exclude=/var/tmp/*"
+		, "--exclude=/var/cache/*"
+		, "--exclude=/home/joey/lib"
+		-- These directories are backed up and restored separately.
 		, "--exclude=/srv/git"
 		, "--exclude=/var/spool/oldusenet"
-		, "--exclude=.*/tmp/"
-		, "--one-file-system"
-		, Obnam.keepParam [Obnam.KeepDays 7, Obnam.KeepWeeks 4, Obnam.KeepMonths 6]
-		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
-		`requires` rootsshkey
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
-	& Obnam.backupEncrypted "/home" (Cron.Times "33 3 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/kite-home.obnam"
-		, "--client-name=kitenet.net"
-		, "--exclude=/home/joey/lib"
-		, "--one-file-system"
-		, Obnam.keepParam [Obnam.KeepDays 7, Obnam.KeepWeeks 4, Obnam.KeepMonths 6]
-		] Obnam.OnlyClient (Gpg.GpgKeyId "98147487")
-		`requires` rootsshkey
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
+		]
+		[ Borg.KeepDays 7
+		, Borg.KeepWeeks 4
+		, Borg.KeepMonths 6
+		]
+		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
+		`requires` Ssh.userKeys (User "root")
+			(Context "kite.kitenet.net")
+			[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC5Gza2sNqSKfNtUN4dN/Z3rlqw18nijmXFx6df2GtBoZbkIak73uQfDuZLP+AXlyfHocwdkdHEf/zrxgXS4EokQMGLZhJ37Pr3edrEn/NEnqroiffw7kyd7EqaziA6UOezcLTjWGv+Zqg9JhitYs4WWTpNzrPH3yQf1V9FunZnkzb4gJGndts13wGmPEwSuf+QHbgQvjMOMCJwWSNcJGdhDR66hFlxfG26xx50uIczXYAbgLfHp5W6WuR/lcaS9J6i7HAPwcsPDA04XDinrcpl29QwsMW1HyGS/4FSCgrDqNZ2jzP49Bka78iCLRqfl1efyYas/Zo1jQ0x+pxq2RMr root@kite")
+			]
 
 	& alias "smtp.kitenet.net"
 	& alias "imap.kitenet.net"
@@ -349,10 +348,6 @@ kite = host "kite.kitenet.net" $ props
 		(LetsEncrypt.AgreeTOS (Just "id@joeyh.name"))
 	& alias "letsencrypt.joeyh.name"
   where
-	rootsshkey = Ssh.userKeys (User "root")
-		(Context "kite.kitenet.net")
-		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC5Gza2sNqSKfNtUN4dN/Z3rlqw18nijmXFx6df2GtBoZbkIak73uQfDuZLP+AXlyfHocwdkdHEf/zrxgXS4EokQMGLZhJ37Pr3edrEn/NEnqroiffw7kyd7EqaziA6UOezcLTjWGv+Zqg9JhitYs4WWTpNzrPH3yQf1V9FunZnkzb4gJGndts13wGmPEwSuf+QHbgQvjMOMCJwWSNcJGdhDR66hFlxfG26xx50uIczXYAbgLfHp5W6WuR/lcaS9J6i7HAPwcsPDA04XDinrcpl29QwsMW1HyGS/4FSCgrDqNZ2jzP49Bka78iCLRqfl1efyYas/Zo1jQ0x+pxq2RMr root@kite")
-		]
 
 elephant :: Host
 elephant = host "elephant.kitenet.net" $ props
@@ -379,7 +374,7 @@ elephant = host "elephant.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "swapspace"
 
 	& alias "eubackup.kitenet.net"
-	& Apt.installed ["obnam", "sshfs", "rsync", "borgbackup"]
+	& Apt.installed ["sshfs", "rsync", "borgbackup"]
 	& JoeySites.githubBackup
 	& JoeySites.rsyncNetBackup hosts
 
@@ -390,9 +385,6 @@ elephant = host "elephant.kitenet.net" $ props
 	& JoeySites.ircBouncer
 	& alias "kgb.kitenet.net"
 	& JoeySites.kgbServer
-
-	& alias "mumble.kitenet.net"
-	& JoeySites.mumbleServer hosts
 
 	& alias "ns3.kitenet.net"
 	& myDnsSecondary

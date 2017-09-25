@@ -39,7 +39,7 @@ server hosts = propertyList "branchable server" $ props
 	& Postfix.installed
 	& Postfix.mainCf ("mailbox_command", "procmail -a \"$EXTENSION\"")
 	
-	& Borg.backup "/" "joey@eubackup.kitenet.net:/home/joey/lib/backup/branchable/pell.borg" Cron.Daily
+	& Borg.backup "/" (Borg.BorgRepo "joey@eubackup.kitenet.net:/home/joey/lib/backup/branchable/pell.borg") Cron.Daily
 		[ "--exclude=/proc/*"
 		, "--exclude=/sys/*"
 		, "--exclude=/run/*"

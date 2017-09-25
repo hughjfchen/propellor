@@ -15,7 +15,7 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
-import qualified Propellor.Property.Obnam as Obnam
+import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Systemd as Systemd
@@ -141,17 +141,17 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 		)
 
 	oldUseNetBackup :: Property (HasInfo + DebianLike)
-	oldUseNetBackup = Obnam.backup datadir (Cron.Times "33 4 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/olduse.net"
-		, "--client-name=spool"
-		, "--ssh-key=" ++ keyfile
-		, Obnam.keepParam [Obnam.KeepDays 30]
-		] Obnam.OnlyClient
+	oldUseNetBackup = Borg.backup datadir borgrepo 
+		(Cron.Times "33 4 * * *")
+		[]
+		[Borg.KeepDays 30]
 		`requires` Ssh.userKeyAt (Just keyfile)
 			(User "root")
 			(Context "olduse.net")
 			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD0F6L76SChMCIGmeyGhlFMUTgZ3BoTbATiOSs0A7KXQoI1LTE5ZtDzzUkrQRJVpJ640pfMR7cQZyBm8tv+kYIPp0238GrX43c1vgm0L78agDnBU7r2iNMyWIwhssK8O3ZAhp8Q4KCz1r8hP2nIiD0y1D1VWW8h4KWOS7I1XCEAjOTvFvEjTh6a9MyHrcIkv7teUUzTBRjNrsyijCFRk1+pEET54RueoOmEjQcWd/sK1tYRiMZjegRLBOus2wUWsUOvznJ2iniLONUTGAWRnEV+O7hLN6CD44osJ+wkZk8bPAumTS0zcSLckX1jpdHJicmAyeniWSd4FCqm1YE6/xDD")
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
+		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
+	borgrepo = Borg.BorgRepoUsing [Borg.UseSshKey keyfile]
+		"joey@eubackup.kitenet.net:/home/joey/lib/backup/olduse.net/olduse.net.borg"
 	keyfile = "/root/.ssh/olduse.net.key"
 
 oldUseNetShellBox :: Property DebianLike
@@ -162,13 +162,13 @@ oldUseNetShellBox = propertyList "olduse.net shellbox" $ props
 oldUseNetInstalled :: Apt.Package -> Property DebianLike
 oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 	propertyList ("olduse.net " ++ pkg) $ props
-		& Apt.installed (words "build-essential devscripts debhelper git libncursesw5-dev libpcre3-dev pkg-config bison libicu-dev libidn11-dev libcanlock2-dev libuu-dev ghc libghc-strptime-dev libghc-hamlet-dev libghc-ifelse-dev libghc-hxt-dev libghc-utf8-string-dev libghc-missingh-dev libghc-sha-dev")
+		& Apt.installed (words "build-essential devscripts debhelper git libncursesw5-dev libpcre3-dev pkg-config bison libicu-dev libidn11-dev libcanlock2-dev libuu-dev ghc libghc-ifelse-dev libghc-hxt-dev libghc-utf8-string-dev libghc-missingh-dev libghc-sha-dev haskell-stack")
 			`describe` "olduse.net build deps"
 		& scriptProperty
 			[ "rm -rf /root/tmp/oldusenet" -- idenpotency
 			, "git clone git://olduse.net/ /root/tmp/oldusenet/source"
 			, "cd /root/tmp/oldusenet/source/"
-			, "dpkg-buildpackage -us -uc"
+			, "HOME=/root dpkg-buildpackage -us -uc"
 			, "dpkg -i ../" ++ pkg ++ "_*.deb || true"
 			, "apt-get -fy install" -- dependencies
 			, "rm -rf /root/tmp/oldusenet"
@@ -193,42 +193,20 @@ kgbServer = propertyList desc $ props
 					`onChange` Service.running "kgb-bot"
 		_ -> error "kgb server needs Debian unstable (for kgb-bot 1.31+)"
 
-mumbleServer :: [Host] -> Property (HasInfo + DebianLike)
-mumbleServer hosts = combineProperties hn $ props
-	& Apt.serviceInstalledRunning "mumble-server"
-	& Obnam.backup "/var/lib/mumble-server" (Cron.Times "55 5 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/" ++ hn ++ ".obnam"
-		, "--ssh-key=" ++ sshkey
-		, "--client-name=mumble"
-		, Obnam.keepParam [Obnam.KeepDays 30]
-		] Obnam.OnlyClient
-		`requires` Ssh.userKeyAt (Just sshkey)
-			(User "root")
- 			(Context hn)
-			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSXXSM3mM8SNu+qel9R/LkDIkjpV3bfpUtRtYv2PTNqicHP+DdoThrr0ColFCtLH+k2vQJvR2n8uMzHn53Dq2IO3TtD27+7rJSsJwAZ8oftNzuTir8IjAwX5g6JYJs+L0Ny4RB0ausd+An0k/CPMRl79zKxpZd2MBMDNXt8hyqu0vS0v1ohq5VBEVhBBvRvmNQvWOCj7PdrKQXpUBHruZOeVVEdUUXZkVc1H0t7LVfJnE+nGKyWbw2jM+7r3Rn5Semc4R1DxsfaF8lKkZyE88/5uZQ/ddomv8ptz6YZ5b+Bg6wfooWPC3RWAALjxnHaC2yN1VONAvHmT0uNn1o6v0b")
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
-	& cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
-		`assume` NoChange
-  where
-	hn = "mumble.debian.net"
-	sshkey = "/root/.ssh/mumble.debian.net.key"
-
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property (HasInfo + DebianLike)
 gitServer hosts = propertyList "git.kitenet.net setup" $ props
-	& Obnam.backupEncrypted "/srv/git" (Cron.Times "33 3 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/git.kitenet.net"
-		, "--ssh-key=" ++ sshkey
-		, "--client-name=wren" -- historical
-		, Obnam.keepParam [Obnam.KeepDays 30]
-		] Obnam.OnlyClient (Gpg.GpgKeyId "1B169BE1")
+	& Borg.backup "/srv/git" borgrepo
+		(Cron.Times "33 3 * * *")
+		[]
+		[Borg.KeepDays 30]
 		`requires` Ssh.userKeyAt (Just sshkey)
 			(User "root")
 			(Context "git.kitenet.net")
-			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD0F6L76SChMCIGmeyGhlFMUTgZ3BoTbATiOSs0A7KXQoI1LTE5ZtDzzUkrQRJVpJ640pfMR7cQZyBm8tv+kYIPp0238GrX43c1vgm0L78agDnBU7r2iNMyWIwhssK8O3ZAhp8Q4KCz1r8hP2nIiD0y1D1VWW8h4KWOS7I1XCEAjOTvFvEjTh6a9MyHrcIkv7teUUzTBRjNrsyijCFRk1+pEET54RueoOmEjQcWd/sK1tYRiMZjegRLBOus2wUWsUOvznJ2iniLONUTGAWRnEV+O7hLN6CD44osJ+wkZk8bPAumTS0zcSLckX1jpdHJicmAyeniWSd4FCqm1YE6/xDD")
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
-		`requires` Ssh.authorizedKeys (User "family") (Context "git.kitenet.net")
-		`requires` User.accountFor (User "family")
+			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLwUUkpkI9c2Wcnv/E4v9bJ7WcpiNkToltXfzRDd1F31AYrucfSMgzu3rtDpEL+wSnQLua/taJkWUWT/pyXOAh+90K6O/YeBZmY5CK01rYDz3kSTAtwHkMqednsRjdQS6NNJsuWc1reO8a4pKtsToJ3G9VAKufCkt2b8Nhqz0yLvLYwwU/mdI8DmfX6IgXhdy9njVEG/jsQnLFXY6QEfwKbIPs9O6qo4iFJg3defXX+zVMLsh3NE1P2i2VxMjxJEQdPdy9Z1sVpkiQM+mgJuylQQ5flPK8sxhO9r4uoK/JROkjPJNYoJMlsN+QlK04ABb7JV2JwhAL/Y8ypjQ13JdT")
+		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
+	& Ssh.authorizedKeys (User "family") (Context "git.kitenet.net")
+	& User.accountFor (User "family")
 	& Apt.installed ["git", "rsync", "cgit"]
 	& Apt.installed ["git-annex"]
 	& Apt.installed ["kgb-client"]
@@ -257,6 +235,8 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 	& Apache.modEnabled "cgi"
   where
 	sshkey = "/root/.ssh/git.kitenet.net.key"
+	borgrepo = Borg.BorgRepoUsing [Borg.UseSshKey sshkey]
+		"joey@eubackup.kitenet.net:/home/joey/lib/backup/git.kitenet.net/git.kitenet.net.borg"
 	website hn = Apache.httpsVirtualHost' hn "/srv/web/git.kitenet.net/" letos
 		[ Apache.iconDir
 		, "  <Directory /srv/web/git.kitenet.net/>"
