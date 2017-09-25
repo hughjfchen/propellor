@@ -31,16 +31,16 @@ installed = withOS desc $ \w o -> case o of
         desc = "installed borgbackup"
 
 repoExists :: BorgRepo -> IO Bool
-repoExists repo = boolSystem "borg" [Param "list", File repo]
+repoExists repo = boolSystem "borg" [Param "list", Param repo]
 
 -- | Inits a new borg repository
 init :: BorgRepo -> Property DebianLike
-init backupdir = check (not <$> repoExists backupdir) (cmdProperty "borg" initargs)
+init repo = check (not <$> repoExists repo) (cmdProperty "borg" initargs)
 	`requires` installed
   where
 	initargs =
 		[ "init"
-		, backupdir
+		, repo
 		]
 
 -- | Restores a directory from an borg backup.
@@ -51,7 +51,7 @@ init backupdir = check (not <$> repoExists backupdir) (cmdProperty "borg" initar
 -- The restore is performed atomically; restoring to a temp directory
 -- and then moving it to the directory.
 restored :: FilePath -> BorgRepo -> Property DebianLike
-restored dir backupdir = go `requires` installed
+restored dir repo = go `requires` installed
   where
 	go :: Property DebianLike
 	go = property (dir ++ " restored by borg") $ ifM (liftIO needsRestore)
@@ -66,7 +66,7 @@ restored dir backupdir = go `requires` installed
 	restore = withTmpDirIn (takeDirectory dir) "borg-restore" $ \tmpdir -> do
 		ok <- boolSystem "borg" $
 			[ Param "extract"
-			, Param backupdir
+			, Param repo
 			, Param tmpdir
 			]
 		let restoreddir = tmpdir ++ "/" ++ dir
@@ -99,16 +99,16 @@ restored dir backupdir = go `requires` installed
 -- backup job will be run at a time. Other jobs will wait their turns to
 -- run.
 backup :: FilePath -> BorgRepo -> Cron.Times -> [BorgParam] -> [KeepPolicy] -> Property DebianLike
-backup dir backupdir crontimes extraargs kp = backup' dir backupdir crontimes extraargs kp
-	`requires` restored dir backupdir
+backup dir repo crontimes extraargs kp = backup' dir repo crontimes extraargs kp
+	`requires` restored dir repo
 
 -- | Does a backup, but does not automatically restore.
 backup' :: FilePath -> BorgRepo -> Cron.Times -> [BorgParam] -> [KeepPolicy] -> Property DebianLike
-backup' dir backupdir crontimes extraargs kp = cronjob
+backup' dir repo crontimes extraargs kp = cronjob
 	`describe` desc
 	`requires` installed
   where
-	desc = backupdir ++ " borg backup"
+	desc = repo ++ " borg backup"
 	cronjob = Cron.niceJob ("borg_backup" ++ dir) crontimes (User "root") "/" $
 		"flock " ++ shellEscape lockfile ++ " sh -c " ++ shellEscape backupcmd
 	lockfile = "/var/lock/propellor-borg.lock"
@@ -121,13 +121,13 @@ backup' dir backupdir crontimes extraargs kp = cronjob
 		, "--stats"
 		]
 		++ map shellEscape extraargs ++
-		[ shellEscape backupdir ++ "::" ++ "$(date --iso-8601=ns --utc)"
+		[ shellEscape repo ++ "::" ++ "$(date --iso-8601=ns --utc)"
 		, shellEscape dir
 		]
 	pruneCommand = unwords $
 		[ "borg"
 		, "prune"
-		, shellEscape backupdir
+		, shellEscape repo
 		]
 		++
 		map keepParam kp
