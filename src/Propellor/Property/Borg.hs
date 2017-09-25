@@ -52,7 +52,7 @@ runBorgEnv :: BorgRepo -> [(String, String)]
 runBorgEnv (BorgRepo _) = []
 runBorgEnv (BorgRepoUsing os _) = map go os
   where
-	go (UseSshKey k) = ("BORG_RSH", k)
+	go (UseSshKey k) = ("BORG_RSH", "ssh -i " ++ k)
 
 installed :: Property DebianLike
 installed = withOS desc $ \w o -> case o of
