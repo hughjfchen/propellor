@@ -162,7 +162,7 @@ oldUseNetShellBox = propertyList "olduse.net shellbox" $ props
 oldUseNetInstalled :: Apt.Package -> Property DebianLike
 oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 	propertyList ("olduse.net " ++ pkg) $ props
-		& Apt.installed (words "build-essential devscripts debhelper git libncursesw5-dev libpcre3-dev pkg-config bison libicu-dev libidn11-dev libcanlock2-dev libuu-dev ghc libghc-strptime-dev libghc-hamlet-dev libghc-ifelse-dev libghc-hxt-dev libghc-utf8-string-dev libghc-missingh-dev libghc-sha-dev")
+		& Apt.installed (words "build-essential devscripts debhelper git libncursesw5-dev libpcre3-dev pkg-config bison libicu-dev libidn11-dev libcanlock2-dev libuu-dev ghc libghc-ifelse-dev libghc-hxt-dev libghc-utf8-string-dev libghc-missingh-dev libghc-sha-dev")
 			`describe` "olduse.net build deps"
 		& scriptProperty
 			[ "rm -rf /root/tmp/oldusenet" -- idenpotency
