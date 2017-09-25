@@ -168,7 +168,7 @@ oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 			[ "rm -rf /root/tmp/oldusenet" -- idenpotency
 			, "git clone git://olduse.net/ /root/tmp/oldusenet/source"
 			, "cd /root/tmp/oldusenet/source/"
-			, "dpkg-buildpackage -us -uc"
+			, "HOME=/root dpkg-buildpackage -us -uc"
 			, "dpkg -i ../" ++ pkg ++ "_*.deb || true"
 			, "apt-get -fy install" -- dependencies
 			, "rm -rf /root/tmp/oldusenet"
