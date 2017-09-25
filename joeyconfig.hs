@@ -385,9 +385,6 @@ elephant = host "elephant.kitenet.net" $ props
 	& alias "kgb.kitenet.net"
 	& JoeySites.kgbServer
 
-	& alias "mumble.kitenet.net"
-	& JoeySites.mumbleServer hosts
-
 	& alias "ns3.kitenet.net"
 	& myDnsSecondary
 

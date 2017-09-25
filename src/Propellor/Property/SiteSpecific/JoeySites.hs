@@ -194,26 +194,6 @@ kgbServer = propertyList desc $ props
 					`onChange` Service.running "kgb-bot"
 		_ -> error "kgb server needs Debian unstable (for kgb-bot 1.31+)"
 
-mumbleServer :: [Host] -> Property (HasInfo + DebianLike)
-mumbleServer hosts = combineProperties hn $ props
-	& Apt.serviceInstalledRunning "mumble-server"
-	& Obnam.backup "/var/lib/mumble-server" (Cron.Times "55 5 * * *")
-		[ "--repository=sftp://2318@usw-s002.rsync.net/~/" ++ hn ++ ".obnam"
-		, "--ssh-key=" ++ sshkey
-		, "--client-name=mumble"
-		, Obnam.keepParam [Obnam.KeepDays 30]
-		] Obnam.OnlyClient
-		`requires` Ssh.userKeyAt (Just sshkey)
-			(User "root")
- 			(Context hn)
-			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSXXSM3mM8SNu+qel9R/LkDIkjpV3bfpUtRtYv2PTNqicHP+DdoThrr0ColFCtLH+k2vQJvR2n8uMzHn53Dq2IO3TtD27+7rJSsJwAZ8oftNzuTir8IjAwX5g6JYJs+L0Ny4RB0ausd+An0k/CPMRl79zKxpZd2MBMDNXt8hyqu0vS0v1ohq5VBEVhBBvRvmNQvWOCj7PdrKQXpUBHruZOeVVEdUUXZkVc1H0t7LVfJnE+nGKyWbw2jM+7r3Rn5Semc4R1DxsfaF8lKkZyE88/5uZQ/ddomv8ptz6YZ5b+Bg6wfooWPC3RWAALjxnHaC2yN1VONAvHmT0uNn1o6v0b")
-		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
-	& cmdProperty "chown" ["-R", "mumble-server:mumble-server", "/var/lib/mumble-server"]
-		`assume` NoChange
-  where
-	hn = "mumble.debian.net"
-	sshkey = "/root/.ssh/mumble.debian.net.key"
-
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property (HasInfo + DebianLike)
 gitServer hosts = propertyList "git.kitenet.net setup" $ props
