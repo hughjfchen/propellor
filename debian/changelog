@@ -1,4 +1,4 @@
-propellor (4.8.0) UNRELEASED; urgency=medium
+propellor (4.8.0) unstable; urgency=medium
 
   * DiskImage: Made a DiskImage type class, so that different disk image
     formats can be implemented. The properties in this module can generate
@@ -20,7 +20,7 @@ propellor (4.8.0) UNRELEASED; urgency=medium
   * Lvm: New module for setting up LVM volumes.
     Thanks, Nicolas Schodet
 
- -- Joey Hess <id@joeyh.name>  Thu, 24 Aug 2017 11:00:19 -0400
+ -- Joey Hess <id@joeyh.name>  Mon, 25 Sep 2017 14:37:52 -0400
 
 propellor (4.7.7) unstable; urgency=medium
 
