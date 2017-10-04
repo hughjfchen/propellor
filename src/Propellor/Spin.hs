@@ -29,6 +29,7 @@ import Propellor.Gpg
 import Propellor.Bootstrap
 import Propellor.Types.CmdLine
 import Propellor.Types.Info
+import Propellor.Property.PropellorRepo (OriginUrl(..))
 import qualified Propellor.Shim as Shim
 import Utility.FileMode
 import Utility.SafeCommand
@@ -220,7 +221,7 @@ updateServer target relay hst connect haveprecompiled privdata = do
 		v <- maybe Nothing readish <$> getMarked fromh statusMarker
 		case v of
 			(Just NeedRepoUrl) -> do
-				sendRepoUrl toh
+				sendRepoUrl hst toh
 				loop
 			(Just NeedPrivData) -> do
 				sendPrivData hn toh privdata
@@ -242,8 +243,12 @@ updateServer target relay hst connect haveprecompiled privdata = do
 				done
 			Nothing -> done
 
-sendRepoUrl :: Handle -> IO ()
-sendRepoUrl toh = sendMarked toh repoUrlMarker =<< (fromMaybe "" <$> getRepoUrl)
+sendRepoUrl :: Host -> Handle -> IO ()
+sendRepoUrl hst toh = sendMarked toh repoUrlMarker =<< geturl
+  where
+	geturl = case fromInfoVal (fromInfo (hostInfo hst)) of
+		Nothing -> fromMaybe "" <$> getRepoUrl
+		Just (OriginUrl u) -> return u
 
 sendPrivData :: HostName -> Handle -> PrivMap -> IO ()
 sendPrivData hn toh privdata = void $ actionMessage msg $ do
