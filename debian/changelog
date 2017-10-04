@@ -1,3 +1,15 @@
+propellor (4.9.0) UNRELEASED; urgency=medium
+
+  * When the ipv4 and ipv6 properties are used with a container, avoid
+    propagating the address out to the host.
+  * DnsInfo has been replaced with DnsInfoPropagated and
+    DnsInfoUnpropagated. (API change)
+  * Code that used fromDnsInfo . fromInfo changes to use getDnsInfo.
+  * addDNS takes an additional Bool parameter to control whether
+    the DNS info should propagate out of containers. (API change)
+
+ -- Joey Hess <id@joeyh.name>  Wed, 04 Oct 2017 12:46:23 -0400
+
 propellor (4.8.1) unstable; urgency=medium
 
   * Borg: Fix propigation of exit status of borg backup.

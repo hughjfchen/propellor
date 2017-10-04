@@ -128,11 +128,11 @@ getOS = fromInfoVal <$> askInfo
 -- if the host's IP Property matches the DNS. If the DNS is missing or
 -- out of date, the host will instead be contacted directly by IP address.
 ipv4 :: String -> Property (HasInfo + UnixLike)
-ipv4 = addDNS . Address . IPv4
+ipv4 = addDNS False . Address . IPv4
 
 -- | Indicate that a host has an AAAA record in the DNS.
 ipv6 :: String -> Property (HasInfo + UnixLike)
-ipv6 = addDNS . Address . IPv6
+ipv6 = addDNS False . Address . IPv6
 
 -- | Indicates another name for the host in the DNS.
 --
@@ -145,11 +145,21 @@ alias d = pureInfoProperty' ("alias " ++ d) $ mempty
 	`addInfo` toAliasesInfo [d]
 	-- A CNAME is added here, but the DNS setup code converts it to an
 	-- IP address when that makes sense.
-	`addInfo` (toDnsInfo $ S.singleton $ CNAME $ AbsDomain d)
+	`addInfo` (toDnsInfoPropagated $ S.singleton $ CNAME $ AbsDomain d)
 
-addDNS :: Record -> Property (HasInfo + UnixLike)
-addDNS r = pureInfoProperty (rdesc r) (toDnsInfo (S.singleton r))
+-- | Add a DNS Record.
+addDNS
+	:: Bool
+	-- ^ When used in a container, the DNS info will only
+	-- propagate out the the Host when this is True.
+	-> Record
+	-> Property (HasInfo + UnixLike)
+addDNS prop r
+	| prop = pureInfoProperty (rdesc r) (toDnsInfoPropagated s)
+	| otherwise = pureInfoProperty (rdesc r) (toDnsInfoUnpropagated s)
   where
+	s = S.singleton r
+
 	rdesc (CNAME d) = unwords ["alias", ddesc d]
 	rdesc (Address (IPv4 addr)) = unwords ["ipv4", addr]
 	rdesc (Address (IPv6 addr)) = unwords ["ipv6", addr]
@@ -182,7 +192,7 @@ findAlias :: [Host] -> HostName -> Maybe Host
 findAlias l hn = M.lookup hn (aliasMap l)
 
 getAddresses :: Info -> [IPAddr]
-getAddresses = mapMaybe getIPAddr . S.toList . fromDnsInfo . fromInfo
+getAddresses = mapMaybe getIPAddr . S.toList . getDnsInfo
 
 hostAddresses :: HostName -> [Host] -> [IPAddr]
 hostAddresses hn hosts = maybe [] (getAddresses . hostInfo) (findHost hosts hn)

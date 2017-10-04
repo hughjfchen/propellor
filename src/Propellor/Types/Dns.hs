@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Propellor.Types.Dns where
 
@@ -36,16 +37,36 @@ toAliasesInfo l = AliasesInfo (S.fromList l)
 fromAliasesInfo :: AliasesInfo -> [HostName]
 fromAliasesInfo (AliasesInfo s) = S.toList s
 
-newtype DnsInfo = DnsInfo { fromDnsInfo :: S.Set Record }
+-- | Use this for DNS Info that should propagate from a container to a
+-- host. For example, this can be used for CNAME to make aliases
+-- of the containers in the host be reflected in the DNS.
+newtype DnsInfoPropagated = DnsInfoPropagated
+	{ fromDnsInfoPropagated :: S.Set Record }
 	deriving (Show, Eq, Ord, Monoid, Typeable)
 
-toDnsInfo :: S.Set Record -> DnsInfo
-toDnsInfo = DnsInfo
+toDnsInfoPropagated :: S.Set Record -> DnsInfoPropagated
+toDnsInfoPropagated = DnsInfoPropagated
 
--- | DNS Info is propagated, so that eg, aliases of a container
--- are reflected in the dns for the host where it runs.
-instance IsInfo DnsInfo where
+instance IsInfo DnsInfoPropagated where
 	propagateInfo _ = PropagateInfo True
+
+-- | Use this for DNS Info that should not propagate from a container to a
+-- host. For example, an IP address of a container should not influence
+-- the host.
+newtype DnsInfoUnpropagated = DnsInfoUnpropagated
+	{ fromDnsInfoUnpropagated :: S.Set Record }
+	deriving (Show, Eq, Ord, Monoid, Typeable)
+
+toDnsInfoUnpropagated :: S.Set Record -> DnsInfoUnpropagated
+toDnsInfoUnpropagated = DnsInfoUnpropagated
+
+-- | Get all DNS Info.
+getDnsInfo :: Info -> S.Set Record
+getDnsInfo i = fromDnsInfoUnpropagated (fromInfo i)
+	`S.union` fromDnsInfoPropagated (fromInfo i)
+
+instance IsInfo DnsInfoUnpropagated where
+	propagateInfo _ = PropagateInfo False
 
 -- | Represents a bind 9 named.conf file.
 data NamedConf = NamedConf

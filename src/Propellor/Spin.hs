@@ -173,7 +173,7 @@ getSshTarget target hst
 					return ip
 
 	configips = map val $ mapMaybe getIPAddr $
-		S.toList $ fromDnsInfo $ fromInfo $ hostInfo hst
+		S.toList $ getDnsInfo $ hostInfo hst
 
 -- Update the privdata, repo url, and git repo over the ssh
 -- connection, talking to the user's local propellor instance which is

@@ -468,7 +468,7 @@ genZone inzdomain hostmap zdomain soa =
 	-- So we can just use the IPAddrs.
 	addcnames :: Host -> [Either WarningMessage (BindDomain, Record)]
 	addcnames h = concatMap gen $ filter (inDomain zdomain) $
-		mapMaybe getCNAME $ S.toList $ fromDnsInfo $ fromInfo info
+		mapMaybe getCNAME $ S.toList $ getDnsInfo info
 	  where
 		info = hostInfo h
 		gen c = case getAddresses info of
@@ -483,7 +483,7 @@ genZone inzdomain hostmap zdomain soa =
 	  where
 		info = hostInfo h
 		l = zip (repeat $ AbsDomain $ hostName h)
-			(S.toList $ S.filter (\r -> isNothing (getIPAddr r) && isNothing (getCNAME r)) (fromDnsInfo $ fromInfo info))
+			(S.toList $ S.filter (\r -> isNothing (getIPAddr r) && isNothing (getCNAME r)) (getDnsInfo info))
 
 	-- Simplifies the list of hosts. Remove duplicate entries.
 	-- Also, filter out any CHAMES where the same domain has an
@@ -531,7 +531,7 @@ genSSHFP domain h = concatMap mk . concat <$> (gen =<< get)
 	gen = liftIO . mapM genSSHFP' . M.elems . fromMaybe M.empty
 	mk r = mapMaybe (\d -> if inDomain domain d then Just (d, r) else Nothing)
 		(AbsDomain hostname : cnames)
-	cnames = mapMaybe getCNAME $ S.toList $ fromDnsInfo $ fromInfo info
+	cnames = mapMaybe getCNAME $ S.toList $ getDnsInfo info
 	hostname = hostName h
 	info = hostInfo h
 
