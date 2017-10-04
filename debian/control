@@ -19,7 +19,6 @@ Build-Depends:
 	libghc-stm-dev,
 	libghc-text-dev,
 	libghc-hashable-dev,
-	libghc-concurrent-output-dev,
 Maintainer: Joey Hess <id@joeyh.name>
 Standards-Version: 3.9.8
 Vcs-Git: git://git.joeyh.name/propellor
@@ -44,7 +43,6 @@ Depends: ${misc:Depends}, ${shlibs:Depends},
 	libghc-stm-dev,
 	libghc-text-dev,
 	libghc-hashable-dev,
-	libghc-concurrent-output-dev,
 	git,
 Description: property-based host configuration management in haskell
  Propellor ensures that the system it's run in satisfies a list of

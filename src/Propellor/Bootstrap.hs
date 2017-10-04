@@ -133,9 +133,9 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
 	pkginstall p = "ASSUME_ALWAYS_YES=yes pkg install " ++ p
 	pacmaninstall p = "pacman -S --noconfirm --needed " ++ p
 
-	-- This is the same deps listed in debian/control.
 	debdeps Cabal =
 		[ "gnupg"
+		-- Below are the same deps listed in debian/control.
 		, "ghc"
 		, "cabal-install"
 		, "libghc-async-dev"
