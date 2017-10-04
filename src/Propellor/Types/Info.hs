@@ -44,8 +44,7 @@ extractInfoEntry (InfoEntry v) = T.cast v
 -- as info, especially type aliases which coud easily lead to bugs.
 -- We want a little bit of dynamic types here, but not too far..
 class (Typeable v, Monoid v, Show v) => IsInfo v where
-	-- | Should info of this type be propagated out of a
-	-- container to its Host?
+	-- | Should this info be propagated out of a container to its Host?
 	propagateInfo :: v -> PropagateInfo
 
 data PropagateInfo
