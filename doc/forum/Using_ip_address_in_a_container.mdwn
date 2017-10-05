@@ -7,12 +7,13 @@ Previously I used lxc containers but I'm afraid adding lxc support is quite a
 large task.
 
 My previous setup includes:
- - static ip addresses per container (set using LXC, but
-   /etc/network/interface will do),
- - different hostname for each of the containers,
- - configuration of a bind zone for my local container network,
- - configuration of the firewall using ferm,
- - proxy from host to containers using nginx.
+
+- static ip addresses per container (set using LXC, but
+  /etc/network/interface will do),
+- different hostname for each of the containers,
+- configuration of a bind zone for my local container network,
+- configuration of the firewall using ferm,
+- proxy from host to containers using nginx.
 
 If I understand correctly, alias or ipv4 are propagated to the host and are
 not part of the container definition, is that right?
