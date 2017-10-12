@@ -26,7 +26,8 @@ import Utility.Table
 mounted :: FsType -> Source -> MountPoint -> MountOpts -> Property Linux
 mounted fs src mnt opts = tightenTargets $ 
 	listed fs src mnt opts
-		`onChange` mountnow
+		`before` mountnow
+		`requires` File.dirExists mnt
   where
 	-- This use of mountPoints, which is linux-only, is why this
 	-- property currently only supports linux.
