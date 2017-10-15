@@ -8,3 +8,5 @@ See [[forum/Fstab.mounted_does_not_mount_if_entry_exists]].
 Please pull `fstab-mounted` branch at `http://git.ni.fr.eu.org/nicolas/propellor.git`.
 
 Nicolas.
+
+> [[done]] thanks! --[[Joey]]

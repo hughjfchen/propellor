@@ -10,6 +10,9 @@ propellor (4.9.0) UNRELEASED; urgency=medium
   * Made the PropellorRepo.hasOriginUrl property override the repository
     url that --spin passes to a host.
   * PropellorRepo.hasOriginUrl type changed to include HasInfo. (API change)
+  * Fstab.mounted: Create mount point if necessary, and mount it
+    if it's not already mounted.
+    Thanks, Nicolas Schodet
 
  -- Joey Hess <id@joeyh.name>  Wed, 04 Oct 2017 12:46:23 -0400
 
