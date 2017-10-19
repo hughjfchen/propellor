@@ -42,6 +42,10 @@ dirCruft "." = True
 dirCruft ".." = True
 dirCruft _ = False
 
+fsCruft :: FilePath -> Bool
+fsCruft "lost+found" = True
+fsCruft d = dirCruft d
+
 {- Lists the contents of a directory.
  - Unlike getDirectoryContents, paths are not relative to the directory. -}
 dirContents :: FilePath -> IO [FilePath]
@@ -236,12 +240,23 @@ readDirectory hdl@(DirectoryHandle _ h fdat mv) = do
 -- True only when directory exists and contains nothing.
 -- Throws exception if directory does not exist.
 isDirectoryEmpty :: FilePath -> IO Bool
-isDirectoryEmpty d = bracket (openDirectory d) closeDirectory check
+isDirectoryEmpty d = testDirectory d dirCruft
+
+-- | True if the directory does not exists or contains nothing, ignoring
+-- "lost+found" which can exists in an empty filesystem.
+isUnpopulated :: FilePath -> IO Bool
+isUnpopulated d = catchDefaultIO True $ testDirectory d fsCruft
+
+-- | Run test on entries found in directory, return False as soon as the
+-- test returns False, else return True.  Throws exception if directory does
+-- not exist.
+testDirectory :: FilePath -> (FilePath -> Bool) -> IO Bool
+testDirectory d test = bracket (openDirectory d) closeDirectory check
   where
 	check h = do
 		v <- readDirectory h
 		case v of
 			Nothing -> return True
 			Just f
-				| not (dirCruft f) -> return False
+				| not (test f) -> return False
 				| otherwise -> check h
