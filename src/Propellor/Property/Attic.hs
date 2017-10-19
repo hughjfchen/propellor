@@ -59,7 +59,7 @@ restored dir backupdir = go `requires` installed
 		, noChange
 		)
 
-	needsRestore = null <$> catchDefaultIO [] (dirContents dir)
+	needsRestore = isUnpopulated dir
 
 	restore = withTmpDirIn (takeDirectory dir) "attic-restore" $ \tmpdir -> do
 		ok <- boolSystem "attic" $

@@ -97,7 +97,7 @@ restored dir repo = go
 		, noChange
 		)
 
-	needsRestore = null <$> catchDefaultIO [] (dirContents dir)
+	needsRestore = isUnpopulated dir
 
 	restore = withTmpDirIn (takeDirectory dir) "restic-restore" $ \tmpdir -> do
 		ok <- boolSystem "restic"

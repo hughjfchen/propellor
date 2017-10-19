@@ -113,7 +113,7 @@ restored dir params = go `requires` installed
 		, noChange
 		)
 
-	needsRestore = null <$> catchDefaultIO [] (dirContents dir)
+	needsRestore = isUnpopulated dir
 
 	restore = withTmpDirIn (takeDirectory dir) "obnam-restore" $ \tmpdir -> do
 		ok <- boolSystem "obnam" $
