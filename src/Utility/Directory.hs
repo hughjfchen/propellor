@@ -242,8 +242,8 @@ readDirectory hdl@(DirectoryHandle _ h fdat mv) = do
 isDirectoryEmpty :: FilePath -> IO Bool
 isDirectoryEmpty d = testDirectory d dirCruft
 
--- | True if the directory does not exists or contains nothing, ignoring
--- "lost+found" which can exists in an empty filesystem.
+-- | True if the directory does not exist or contains nothing.
+-- Ignores "lost+found" which can exist in an empty filesystem.
 isUnpopulated :: FilePath -> IO Bool
 isUnpopulated d = catchDefaultIO True $ testDirectory d fsCruft
 
