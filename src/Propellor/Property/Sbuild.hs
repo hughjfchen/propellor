@@ -147,7 +147,7 @@ built s@(SbuildSchroot suite arch) mirror cc =
 	<!> deleted
   where
 	go :: Property DebianLike
-	go = check (unpopulated (schrootRoot s) <||> ispartial) $
+	go = check (isUnpopulated (schrootRoot s) <||> ispartial) $
 		property' ("built sbuild schroot for " ++ val s) make
 	make w = do
 		de <- liftIO standardPathEnv
@@ -166,7 +166,7 @@ built s@(SbuildSchroot suite arch) mirror cc =
 			)
 	-- TODO we should kill any sessions still using the chroot
 	-- before destroying it (as suggested by sbuild-destroychroot)
-	deleted = check (not <$> unpopulated (schrootRoot s)) $
+	deleted = check (not <$> isUnpopulated (schrootRoot s)) $
 		property ("no sbuild schroot for " ++ val s) $ do
 			liftIO $ removeChroot $ schrootRoot s
 			liftIO $ nukeFile

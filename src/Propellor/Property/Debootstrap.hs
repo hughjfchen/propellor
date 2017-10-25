@@ -54,7 +54,7 @@ built' :: Property Linux -> FilePath -> System -> DebootstrapConfig -> Property 
 built' installprop target system@(System _ arch) config = 
 	go `before` oldpermfix
   where
-	go = check (unpopulated target <||> ispartial) setupprop
+	go = check (isUnpopulated target <||> ispartial) setupprop
 		`requires` installprop
 
 	setupprop :: Property Linux

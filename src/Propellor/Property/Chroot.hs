@@ -77,7 +77,7 @@ instance ChrootBootstrapper ChrootTarball where
 		tightenTargets $ extractTarball loc tb
 
 extractTarball :: FilePath -> FilePath -> Property UnixLike
-extractTarball target src = check (unpopulated target) $
+extractTarball target src = check (isUnpopulated target) $
 	cmdProperty "tar" params
 		`assume` MadeChange
 		`requires` File.dirExists target
@@ -151,7 +151,7 @@ provisioned' c@(Chroot loc bootstrapper infopropigator _) systemdonly =
 	cantbuild e = property (chrootDesc c "built") (error e)
 
 	teardown :: Property Linux
-	teardown = check (not <$> unpopulated loc) $
+	teardown = check (not <$> isUnpopulated loc) $
 		property ("removed " ++ loc) $
 			makeChange (removeChroot loc)
 

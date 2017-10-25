@@ -95,7 +95,7 @@ restored dir repo = go `requires` installed
 		, noChange
 		)
 
-	needsRestore = null <$> catchDefaultIO [] (dirContents dir)
+	needsRestore = isUnpopulated dir
 
 	restore = withTmpDirIn (takeDirectory dir) "borg-restore" $ \tmpdir -> do
 		ok <- runBorg repo $
