@@ -2,7 +2,6 @@ module Propellor.Property.Chroot.Util where
 
 import Propellor.Property.Mount
 
-import Utility.Exception
 import Utility.Env
 import Utility.Directory
 

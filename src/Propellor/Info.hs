@@ -165,9 +165,9 @@ addDNS prop r
 	rdesc (Address (IPv6 addr)) = unwords ["ipv6", addr]
 	rdesc (MX n d) = unwords ["MX", show n, ddesc d]
 	rdesc (NS d) = unwords ["NS", ddesc d]
-	rdesc (TXT s) = unwords ["TXT", s]
+	rdesc (TXT t) = unwords ["TXT", t]
 	rdesc (SRV x y z d) = unwords ["SRV", show x, show y, show z, ddesc d]
-	rdesc (SSHFP x y s) = unwords ["SSHFP", show x, show y, s]
+	rdesc (SSHFP x y t) = unwords ["SSHFP", show x, show y, t]
 	rdesc (INCLUDE f) = unwords ["$INCLUDE", f]
 	rdesc (PTR x) = unwords ["PTR", x]
 
