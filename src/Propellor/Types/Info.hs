@@ -55,16 +55,15 @@ data PropagateInfo
 
 -- | Any value in the `IsInfo` type class can be added to an Info.
 addInfo :: IsInfo v => Info -> v -> Info
-addInfo (Info l) v = Info (InfoEntry v:l)
+addInfo (Info l) v = Info (l++[InfoEntry v])
 
 -- | Converts any value in the `IsInfo` type class into an Info,
 -- which is otherwise empty.
 toInfo :: IsInfo v => v -> Info
 toInfo = addInfo mempty
 
--- The list is reversed here because addInfo builds it up in reverse order.
 fromInfo :: IsInfo v => Info -> v
-fromInfo (Info l) = mconcat (mapMaybe extractInfoEntry (reverse l))
+fromInfo (Info l) = mconcat (mapMaybe extractInfoEntry l)
 
 -- | Maps a function over all values stored in the Info that are of the
 -- appropriate type.

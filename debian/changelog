@@ -17,6 +17,10 @@ propellor (4.9.0) UNRELEASED; urgency=medium
     containing only "lost+found" as effectively empty, to support
     situations where the directory is a mount point of an EXT* filesystem.
     Thanks, Nicolas Schodet
+  * Make addInfo accumulate Info in order properties appear, not
+    reverse order.
+    This fixes a bug involving reverting Systemd.resolvConfed or
+    Systemd.linkJournal.
 
  -- Joey Hess <id@joeyh.name>  Wed, 04 Oct 2017 12:46:23 -0400
 
