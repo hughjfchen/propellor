@@ -13,6 +13,10 @@ propellor (4.9.0) UNRELEASED; urgency=medium
   * Fstab.mounted: Create mount point if necessary, and mount it
     if it's not already mounted.
     Thanks, Nicolas Schodet
+  * Properties that check for an empty directory now treat a directory
+    containing only "lost+found" as effectively empty, to support
+    situations where the directory is a mount point of an EXT* filesystem.
+    Thanks, Nicolas Schodet
 
  -- Joey Hess <id@joeyh.name>  Wed, 04 Oct 2017 12:46:23 -0400
 

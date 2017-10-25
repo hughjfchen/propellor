@@ -8,3 +8,5 @@ I made a patch to ignore this directory, do you see any bad side effect?
 You can pull the `ignore-lost-n-found` branch at `http://git.ni.fr.eu.org/nicolas/propellor.git`.
 
 Nicolas.
+
+> [[merged|done]] thank you! --[[Joey]]
