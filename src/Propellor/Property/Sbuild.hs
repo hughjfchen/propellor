@@ -63,7 +63,6 @@ module Propellor.Property.Sbuild (
 	updatedFor,
 	-- * Global sbuild configuration
 	-- blockNetwork,
-	installed,
 	keypairGenerated,
 	keypairInsecurelyGenerated,
 	usableBy,
@@ -130,7 +129,7 @@ built :: SbuildSchroot -> Apt.Url -> UseCcache -> RevertableProperty DebianLike 
 built s@(SbuildSchroot suite arch) mirror cc =
 	((go `before` enhancedConf)
 	`requires` ccacheMaybePrepared cc
-	`requires` installed
+	`requires` preReqsInstalled
 	`requires` overlaysKernel
 	`requires` cleanupOldConfig)
 	<!> deleted
@@ -292,7 +291,7 @@ updated :: SbuildSchroot -> Property DebianLike
 updated s@(SbuildSchroot suite arch) =
 	check (doesDirectoryExist (schrootRoot s)) $ go
 	`describe` ("updated schroot for " ++ val s)
-	`requires` installed
+	`requires` preReqsInstalled
   where
 	go :: Property DebianLike
 	go = tightenTargets $ cmdProperty
@@ -330,20 +329,20 @@ fixConfFile s@(SbuildSchroot suite arch) =
 aptCacheLine :: String
 aptCacheLine = "/var/cache/apt/archives /var/cache/apt/archives none rw,bind 0 0"
 
--- | Ensure that sbuild is installed
-installed :: Property DebianLike
-installed = Apt.installed ["sbuild"]
+-- | Ensure that sbuild and associated utilities are installed
+preReqsInstalled :: Property DebianLike
+preReqsInstalled = Apt.installed ["piuparts", "autopkgtest", "lintian", "sbuild"]
 
 -- | Add an user to the sbuild group in order to use sbuild
 usableBy :: User -> Property DebianLike
-usableBy u = User.hasGroup u (Group "sbuild") `requires` installed
+usableBy u = User.hasGroup u (Group "sbuild") `requires` preReqsInstalled
 
 -- | Generate the apt keys needed by sbuild
 --
 -- You only need this if you are using sbuild older than 0.70.0.
 keypairGenerated :: Property DebianLike
 keypairGenerated = check (not <$> doesFileExist secKeyFile) $ go
-	`requires` installed
+	`requires` preReqsInstalled
 	-- Work around Debian bug #792100 which is present in Jessie.
 	-- Since this is a harmless mkdir, don't actually check the OS
 	`requires` File.dirExists "/root/.gnupg"
@@ -443,7 +442,7 @@ ccachePrepared = propertyList "sbuild group ccache configured" $ props
 userConfig :: User -> Property DebianLike
 userConfig user@(User u) = go
 	`requires` usableBy user
-	`requires` Apt.installed ["piuparts", "autopkgtest", "lintian"]
+	`requires` preReqsInstalled
   where
 	go :: Property DebianLike
 	go = property' ("~/.sbuildrc for " ++ u) $ \w -> do
