@@ -6,23 +6,24 @@ Maintainer: Sean Whitton <spwhitton@spwhitton.name>
 
 Build and maintain schroots for use with sbuild.
 
-For convenience we set up several enhancements, such as ccache and
-eatmydata.  This means we have to make several assumptions:
+For convenience we set up several enhancements, such as ccache and eatmydata.
+This means we have to make several assumptions:
 
-1. you want to build for a Debian release strictly newer than squeeze,
-or for a Buntish release newer than or equal to trusty
+1. you want to build for a Debian release strictly newer than squeeze, or for a
+Buntish release newer than or equal to trusty
 
 2. if you want to build for Debian stretch or newer, you have sbuild 0.70.0 or
-newer (there is a backport to jessie)
+newer
 
-The latter is due to the migration from GnuPG v1 to GnuPG v2.1 in
-Debian stretch, which older sbuild can't handle.
+The latter is due to the migration from GnuPG v1 to GnuPG v2.1 in Debian
+stretch, which older sbuild can't handle.
 
 Suggested usage in @config.hs@:
 
->  & Apt.installed ["piuparts", "autopkgtest", "lintian"]
->  & Sbuild.builtFor (System (Debian Linux Unstable) X86_32) Sbuild.UseCcache
->  & Sbuild.updatedFor (System (Debian Linux Unstable) X86_32) `period` Weekly 1
+>  & Sbuild.builtFor (System (Debian Linux Unstable) X86_32)
+>  	Sbuild.UseCcache mempty
+>  & Sbuild.updatedFor (System (Debian Linux Unstable) X86_32)
+>  	`period` Weekly 1
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Schroot.overlaysInTmpfs
 
@@ -30,7 +31,16 @@ If you are using sbuild older than 0.70.0, you also need:
 
 >  & Sbuild.keypairGenerated
 
-In @~/.sbuildrc@ (sbuild 0.71.0 or newer):
+If you need propellor to ensure extra properties within the sbuild chroot, you
+can replace @mempty@ in the above.  For example,
+
+>  & Sbuild.builtFor (System (Debian Linux Unstable) X86_32)
+>  	Sbuild.UseCcache $ props
+>  		-- the extra configuration you need:
+>  		& Apt.installed ["apt-transport-https"]
+
+To take advantage of the piuparts and autopkgtest support, add to your
+@~/.sbuildrc@ (assumes sbuild 0.71.0 or newer):
 
 >  $piuparts_opts = [
 >      '--no-eatmydata',
@@ -41,28 +51,7 @@ In @~/.sbuildrc@ (sbuild 0.71.0 or newer):
 >
 >  $autopkgtest_root_args = "";
 >  $autopkgtest_opts = ["--", "schroot", "%r-%a-sbuild"];
-
-We use @sbuild-createchroot(1)@ to create a chroot to the
-specification of @sbuild-setup(7)@.  This avoids running propellor
-inside the chroot to set it up.  While that approach is flexible, a
-propellor spin pulls in a lot of dependencies.  This could defeat
-using sbuild to determine if you've included all necessary build
-dependencies in your source package control file.
-
-Nevertheless, the chroot that @sbuild-createchroot(1)@ creates might not meet
-your needs.  For example, you might need to enable apt's https support.  In that
-case you can do something like this in @config.hs@:
-
->  & Sbuild.built (System (Debian Linux Unstable) X86_32) `before` mySetup
->    where
->  	mySetup = Chroot.provisioned myChroot
->  	myChroot = Chroot.debootstrapped
->  		 	Debootstrap.BuilddD "/srv/chroot/unstable-i386"
->  		-- the extra configuration you need:
->  		& Apt.installed ["apt-transport-https"]
 -}
-
--- Also see the --setup-only option of sbuild-createchroot
 
 module Propellor.Property.Sbuild (
 	-- * Creating and updating sbuild schroots
@@ -103,7 +92,7 @@ type Suite = String
 -- | An sbuild schroot, such as would be listed by @schroot -l@
 --
 -- Parts of the sbuild toolchain cannot distinguish between schroots with both
--- the same suite and the same architecture, so neither do we
+-- the same suite and the same architecture, so neither does this module
 data SbuildSchroot = SbuildSchroot Suite Architecture
 
 instance ConfigurableValue SbuildSchroot where
