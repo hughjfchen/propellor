@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Propellor.Property.PropellorRepo where
 
 import Propellor.Base
@@ -24,4 +26,4 @@ hasOriginUrl u = setInfoProperty p (toInfo (InfoVal (OriginUrl u)))
 			else makeChange $ setRepoUrl u
 
 newtype OriginUrl = OriginUrl String
-	deriving (Show)
+	deriving (Show, Typeable)
