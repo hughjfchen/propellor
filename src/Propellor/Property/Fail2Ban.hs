@@ -43,10 +43,10 @@ jailConfigured name key value =
        jailConfFile name `containsIniSetting` (name, key, value)
 
 jailConfFile :: Jail -> FilePath
-jailConfFile name = "/etc/fail2ban/jail.d/" ++ name ++ ".conf"
+jailConfFile name = "/etc/fail2ban/jail.d/" ++ name ++ ".local"
 
 filterConfFile :: Filter -> FilePath
-filterConfFile name = "/etc/fail2ban/filter.d/" ++ name ++ ".conf"
+filterConfFile name = "/etc/fail2ban/filter.d/" ++ name ++ ".local"
 
 actionConfFile :: Action -> FilePath
-actionConfFile name = "/etc/fail2ban/action.d/" ++ name ++ ".conf"
+actionConfFile name = "/etc/fail2ban/action.d/" ++ name ++ ".local"
