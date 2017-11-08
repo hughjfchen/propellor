@@ -16,15 +16,27 @@ type Jail = String
 -- | By default, fail2ban only enables the ssh jail, but many others
 -- are available to be enabled, for example "postfix-sasl"
 jailEnabled :: Jail -> Property DebianLike
-jailEnabled name = jailConfigured name "enabled" "true"
+jailEnabled name = jailEnabled' name []
+	`onChange` reloaded
+
+jailEnabled' :: Jail -> [(IniKey, String)] -> Property DebianLike
+jailEnabled' name settings =
+	jailConfigured' name (("enabled", "true") : settings)
 	`onChange` reloaded
 
 -- | Configures a jail. For example:
 --
--- > jailConfigured "sshd" "port" "2222"
+-- > jailConfigured "sshd" [("port", "2222")]
+jailConfigured' :: Jail -> [(IniKey, String)] -> RevertableProperty UnixLike UnixLike
+jailConfigured' name settings =
+	jailConfFile name `iniFileContains` [(name, settings)]
+
+-- | Adds a setting to a given jail. For example:
+--
+-- > jailConfigured "sshd" "port"  "2222"
 jailConfigured :: Jail -> IniKey -> String -> Property UnixLike
-jailConfigured name key value = 
-	jailConfFile name `containsIniSetting` (name, key, value)
+jailConfigured name key value =
+       jailConfFile name `containsIniSetting` (name, key, value)
 
 jailConfFile :: Jail -> FilePath
 jailConfFile name = "/etc/fail2ban/jail.d/" ++ name ++ ".conf"
