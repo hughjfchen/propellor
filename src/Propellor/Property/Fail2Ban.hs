@@ -13,6 +13,10 @@ reloaded = Service.reloaded "fail2ban"
 
 type Jail = String
 
+type Filter = String
+
+type Action = String
+
 -- | By default, fail2ban only enables the ssh jail, but many others
 -- are available to be enabled, for example "postfix-sasl"
 jailEnabled :: Jail -> Property DebianLike
@@ -40,3 +44,9 @@ jailConfigured name key value =
 
 jailConfFile :: Jail -> FilePath
 jailConfFile name = "/etc/fail2ban/jail.d/" ++ name ++ ".conf"
+
+filterConfFile :: Filter -> FilePath
+filterConfFile name = "/etc/fail2ban/filter.d/" ++ name ++ ".conf"
+
+actionConfFile :: Action -> FilePath
+actionConfFile name = "/etc/fail2ban/action.d/" ++ name ++ ".conf"
