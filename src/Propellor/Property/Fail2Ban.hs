@@ -2,6 +2,7 @@ module Propellor.Property.Fail2Ban where
 
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Service as Service
 import Propellor.Property.ConfFile
 
@@ -30,17 +31,24 @@ jailEnabled' name settings =
 
 -- | Configures a jail. For example:
 --
--- > jailConfigured "sshd" [("port", "2222")]
-jailConfigured' :: Jail -> [(IniKey, String)] -> RevertableProperty UnixLike UnixLike
-jailConfigured' name settings =
-	jailConfFile name `iniFileContains` [(name, settings)]
+-- > jailConfigured' "sshd" [("port", "2222")]
+jailConfigured' :: Jail -> [(IniKey, String)] -> Property UnixLike
+jailConfigured' name settings = propertyList ("jail \"" ++ name ++ "\" configuration") $ props
+	& File.notPresent (oldJailConfFile name)
+	-- ^ removes .conf files added by old versions of Fail2Ban properties
+	& jailConfFile name `iniFileContains` [(name, settings)]
 
 -- | Adds a setting to a given jail. For example:
 --
 -- > jailConfigured "sshd" "port"  "2222"
 jailConfigured :: Jail -> IniKey -> String -> Property UnixLike
-jailConfigured name key value =
-       jailConfFile name `containsIniSetting` (name, key, value)
+jailConfigured name key value = propertyList ("jail \"" ++ name ++ "\" configuration") $ props
+	& File.notPresent (oldJailConfFile name)
+	-- ^ removes .conf files added by old versions of Fail2Ban properties
+	& jailConfFile name `containsIniSetting` (name, key, value)
+
+oldJailConfFile :: Jail -> FilePath
+oldJailConfFile name = "/etc/fail2ban/jail.d/" ++ name ++ ".conf"
 
 jailConfFile :: Jail -> FilePath
 jailConfFile name = "/etc/fail2ban/jail.d/" ++ name ++ ".local"
