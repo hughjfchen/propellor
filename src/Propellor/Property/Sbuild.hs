@@ -62,7 +62,6 @@ import Propellor.Base
 import Propellor.Types.Core
 import Propellor.Types.Info
 import Propellor.Property.Debootstrap (extractSuite)
-import Propellor.Property.Chroot.Util
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Ccache as Ccache
 import qualified Propellor.Property.Chroot as Chroot
@@ -74,7 +73,6 @@ import qualified Propellor.Property.Schroot as Schroot
 import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.User as User
 import Utility.FileMode
-import Utility.Split
 
 import Data.List
 
@@ -95,7 +93,7 @@ built
 built cc ps = case schrootSystem ps of
 	-- TODO should emit error and FailedChange
 	Nothing -> doNothing <!> doNothing
-	Just s@(System _ arch) -> case Debootstrap.extractSuite s of
+	Just s@(System _ arch) -> case extractSuite s of
 		-- TODO should emit error and FailedChange
 		Nothing -> doNothing <!> doNothing
 		Just suite -> built' cc ps suite
