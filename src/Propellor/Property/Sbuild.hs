@@ -102,8 +102,8 @@ built cc ps = case schrootSystem ps of
 			(architectureToDebianArchString arch)
   where
 	schrootSystem :: Props metatypes -> Maybe System
-	schrootSystem (Props ps) = fromInfoVal . fromInfo $
-		mconcat (map getInfo ps)
+	schrootSystem (Props ps') = fromInfoVal . fromInfo $
+		mconcat (map getInfo ps')
 
 built'
 	:: UseCcache
@@ -135,8 +135,8 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 	  where
 		desc = "no sbuild schroot for " ++ suiteArch
 
-	conf suite arch = propertyList "sbuild config file" $ props
-		& pair "description" (suite ++ "/" ++ arch ++ " autobuilder")
+	conf suite' arch' = propertyList "sbuild config file" $ props
+		& pair "description" (suite' ++ "/" ++ arch' ++ " autobuilder")
 		& pair "groups" "root,sbuild"
 		& pair "root-groups" "root,sbuild"
 		& pair "profile" "sbuild"
