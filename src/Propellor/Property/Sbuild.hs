@@ -111,7 +111,7 @@ built'
 	-> String
 	-> String
 	-> RevertableProperty (HasInfo + DebianLike) Linux
-built' cc ps suite arch = provisioned <!> deleted
+built' cc (Props ps) suite arch = provisioned <!> deleted
   where
 	provisioned :: Property (HasInfo + DebianLike)
 	provisioned = combineProperties desc $ props
@@ -224,11 +224,10 @@ built' cc ps suite arch = provisioned <!> deleted
 
 	-- the schroot itself
 	schroot = Chroot.debootstrapped Debootstrap.BuilddD
-			schrootRoot schrootProps
-	-- TODO need to prepend 'ps' to this list of props
-	schrootProps = props
-		& Apt.stdSourcesList
-		& Apt.installed ["eatmydata", "ccache"]
+			schrootRoot (Props schrootProps)
+	schrootProps =
+		ps ++ [toChildProperty Apt.stdSourcesList
+		, toChildProperty $ Apt.installed ["eatmydata", "ccache"]]
 
 	-- static values
 	suiteArch = suite ++ "-" ++ arch
