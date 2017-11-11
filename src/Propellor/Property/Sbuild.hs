@@ -93,11 +93,11 @@ built
 	-> Props metatypes
 	-> RevertableProperty (HasInfo + DebianLike) Linux
 built cc ps = case schrootSystem ps of
-	Nothing -> errorMessage
-	 	"sbuild schroot does not specify suite and/or architecture"
+	-- TODO should emit error and FailedChange
+	Nothing -> doNothing <!> doNothing
 	Just s@(System _ arch) -> case Debootstrap.extractSuite s of
-		Nothing -> errorMessage
-			"sbuild schroot does not specify suite"
+		-- TODO should emit error and FailedChange
+		Nothing -> doNothing <!> doNothing
 		Just suite -> built' cc ps suite
 			(architectureToDebianArchString arch)
   where
@@ -135,19 +135,18 @@ built' cc ps suite arch = provisioned <!> deleted
 	  where
 		desc = "no sbuild schroot for " ++ suiteArch
 
-	conf suite arch = map pair
-		[ ("description", (suite ++ "/" ++ arch ++ " autobuilder"))
-		, ("groups", "root,sbuild")
-		, ("root-groups", "root,sbuild")
-		, ("profile", "sbuild")
-		, ("type", "directory")
-		, ("directory", schrootRoot)
-		 -- TODO conditionalise (fold into overlayKernels prop?)
-		, ("union-type", "overlay")
-		, ("command-prefix", (intercalate "," commandPrefix))
-		]
+	conf suite arch = propertyList "sbuild config file" $ props
+		& pair "description" (suite ++ "/" ++ arch ++ " autobuilder")
+		& pair "groups" "root,sbuild"
+		& pair "root-groups" "root,sbuild"
+		& pair "profile" "sbuild"
+		& pair "type" "directory"
+		& pair "directory" schrootRoot
+		-- TODO conditionalise (fold into overlayKernels prop?)
+		& pair "union-type" "overlay"
+		& pair "command-prefix" (intercalate "," commandPrefix)
 	  where
-		pair (k, v) = ConfFile.containsIniSetting schrootConf
+		pair k v = ConfFile.containsIniSetting schrootConf
 			(suiteArch ++ "-sbuild", k, v)
 
 	compatSymlink = File.isSymlinkedTo
@@ -416,4 +415,5 @@ sidHostArchSchroot suite arch = do
 	return $ case maybeOS of
 		Nothing -> False
 		Just (System _ hostArch) ->
-			suite == "unstable" && hostArch == arch
+			let hostArch' = architectureToDebianArchString hostArch
+			in suite == "unstable" && hostArch' == arch
