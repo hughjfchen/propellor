@@ -32,6 +32,7 @@ module Propellor.Property (
 	, makeChange
 	, noChange
 	, doNothing
+	, impossible
 	, endAction
 	-- * Property result checking
 	, UncheckedProperty
@@ -62,6 +63,7 @@ import Propellor.Types.ResultCheck
 import Propellor.Types.MetaTypes
 import Propellor.Types.Singletons
 import Propellor.Info
+import Propellor.Message
 import Propellor.EnsureProperty
 import Utility.Exception
 import Utility.Monad
@@ -363,6 +365,12 @@ noChange = return NoChange
 -- This is the same as `mempty` from the `Monoid` instance.
 doNothing :: SingI t => Property (MetaTypes t)
 doNothing = mempty
+
+-- | In situations where it's not possible to provide a property that
+-- works, this can be used to make a property that always fails with an
+-- error message you provide.
+impossible :: SingI t => String -> Property (MetaTypes t)
+impossible msg = property "impossible" $ errorMessage msg
 
 -- | Registers an action that should be run at the very end, after
 -- propellor has checks all the properties of a host.
