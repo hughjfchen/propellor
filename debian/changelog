@@ -3,6 +3,10 @@ propellor (4.9.1) UNRELEASED; urgency=medium
   * Add Typeable instance to OriginUrl, fixing build with old versions
     of ghc.
   * Added Propellor.Property.impossible
+  * Fail2Ban: Added several additional properties.
+    Thanks, Félix Sipma.
+  * Fail2Ban: Renamed jail.d conf file to use .local.
+    Thanks, Félix Sipma.
 
  -- Joey Hess <id@joeyh.name>  Thu, 02 Nov 2017 10:28:44 -0400
 
