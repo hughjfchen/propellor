@@ -91,17 +91,19 @@ built
 	-> Props metatypes
 	-> RevertableProperty (HasInfo + DebianLike) Linux
 built cc ps = case schrootSystem ps of
-	Nothing -> emitError <!> doNothing
+	Nothing -> emitError
 	Just s@(System _ arch) -> case extractSuite s of
-		Nothing -> emitError <!> doNothing
+		Nothing -> emitError
 		Just suite -> built' cc ps suite
 			(architectureToDebianArchString arch)
   where
 	schrootSystem :: Props metatypes -> Maybe System
 	schrootSystem (Props ps') = fromInfoVal . fromInfo $
 		mconcat (map getInfo ps')
-	emitError = impossible
-		"sbuild schroot does not specify suite and/or architecture"
+
+	emitError :: RevertableProperty (HasInfo + DebianLike) Linux
+	emitError = impossible theError <!> impossible theError
+	theError = "sbuild schroot does not specify suite and/or architecture"
 
 built'
 	:: UseCcache
