@@ -142,12 +142,18 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 		& pair "profile" "sbuild"
 		& pair "type" "directory"
 		& pair "directory" schrootRoot
-		-- TODO conditionalise (fold into overlayKernels prop?)
-		& pair "union-type" "overlay"
+		& unionTypeOverlay
 		& pair "command-prefix" (intercalate "," commandPrefix)
 	  where
 		pair k v = ConfFile.containsIniSetting schrootConf
 			(suiteArch ++ "-sbuild", k, v)
+		unionTypeOverlay :: Property DebianLike
+		unionTypeOverlay = property' "add union-type = overlay" $ \w ->
+			Schroot.usesOverlays >>= \usesOverlays ->
+				if usesOverlays
+				then ensureProperty w $
+					pair "union-type" "overlay"
+				else noChange
 
 	compatSymlink = File.isSymlinkedTo
 		("/etc/sbuild/chroot" </> suiteArch ++ "-sbuild")
