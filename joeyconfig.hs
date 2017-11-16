@@ -24,7 +24,7 @@ import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Grub as Grub
-import qualified Propellor.Property.FlashKernel as FlashKernel
+import qualified Propellor.Property.Machine as Machine
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
@@ -103,8 +103,7 @@ darkstar = host "darkstar.kitenet.net" $ props
   where
 	mychroot d = debootstrapped mempty d $ props
 		& osDebian Unstable ARMHF
-		& Apt.installed ["linux-image-armmp", "u-boot"]
-		& FlashKernel.installed "Olimex A10-OLinuXino-LIME"
+		& Machine.Olimex_A10_OLinuXino_LIME
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
