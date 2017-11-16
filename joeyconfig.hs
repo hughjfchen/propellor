@@ -96,14 +96,13 @@ darkstar = host "darkstar.kitenet.net" $ props
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
 	& imageBuilt (RawDiskImage "/srv/test.img") mychroot MSDOS
-		[ partition EXT2 `mountedAt` "/boot"
-		, partition EXT4 `mountedAt` "/"
-		, swapPartition (MegaBytes 256)
+		[ partition EXT4 `mountedAt` "/"
+			`setSize` MegaBytes 4096
 		]
   where
 	mychroot d = debootstrapped mempty d $ props
 		& osDebian Unstable ARMHF
-		& Machine.Olimex_A10_OLinuXino_LIME
+		& Machine.olimex_A10_OLinuXino_LIME
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
@@ -189,10 +188,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 	-- and try to be robust.
 	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
 
-	-- Cubietruck
-	& Apt.installed ["flash-kernel"]
-	& "/etc/flash-kernel/machine" `File.hasContent` ["Cubietech Cubietruck"]
-	& Apt.installed ["linux-image-armmp"]
+	& Machine.cubietech_Cubietruck
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
 		`requires` File.hasPrivContent "/lib/firmware/brcm/brcmfmac43362-sdio.txt" anyContext

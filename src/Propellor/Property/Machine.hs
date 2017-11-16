@@ -7,19 +7,26 @@
 
 module Propellor.Property.Machine (
 	-- * ARM boards
-	Cubietech Cubietruck,
-	Olimex_A10_OLinuXino_LIME
-)
+	cubietech_Cubietruck,
+	olimex_A10_OLinuXino_LIME
+) where
+
+import Propellor.Base
+import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.FlashKernel as FlashKernel
 
 -- | Cubietech Cubietruck
-Cubietech_Cubietruck :: Property (HasInfo + DebianLike)
-Cubietech_Cubietruck = FlashKernel.installed "Cubietech Cubietruck"
+-- 
+-- Wifi needs non-free firmware-brcm80211, whicn is not installed by
+-- this property. Also, see https://bugs.debian.org/844056
+cubietech_Cubietruck :: Property (HasInfo + DebianLike)
+cubietech_Cubietruck = FlashKernel.installed "Cubietech Cubietruck"
 	`requires` sunixi
 	`requires` lpae
 
 -- | Olimex A10-OLinuXino-LIME
-Olimex_A10_OLinuXino_LIME :: Property (HasInfo + DebianLike)
-Olimex_A10_OLinuXino_LIME = FlashKernel.installed "Olimex A10-OLinuXino-LIME"
+olimex_A10_OLinuXino_LIME :: Property (HasInfo + DebianLike)
+olimex_A10_OLinuXino_LIME = FlashKernel.installed "Olimex A10-OLinuXino-LIME"
 	`requires` sunixi
 	`requires` armmp
 
