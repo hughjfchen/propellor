@@ -4,6 +4,11 @@
 -- to use them. Rather than needing to hunt down documentation about the
 -- kernel, bootloader, etc needed by a given machine, if there's a property
 -- in here for your machine, you can simply use it.
+--
+-- Sometime non-free firmware is needed to use a board. If the board won't
+-- be functional at all without it, its property will include the non-free
+-- firmware, but if the non-free firmware is only needed for non-critical
+-- functionality, it won't be included.
 
 module Propellor.Property.Machine (
 	-- * ARM boards
