@@ -12,6 +12,7 @@ propellor (4.9.1) UNRELEASED; urgency=medium
   * Qemu: New module.
   * FlashKernel: New module, can be used to create disk images for ARM
     boards using flash-kernel.
+  * Uboot: New module.
   * Machine: New module, machine-specific properties for ARM boards are
     being collected here.
 

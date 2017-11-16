@@ -191,10 +191,14 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 	-- Pick boot loader finalization based on which bootloader is
 	-- installed.
 	final = case fromInfo (containerInfo chroot) of
-		[GrubInstalled] -> grubBooted
-		[FlashKernelInstalled] -> \_ _ -> doNothing
 		[] -> unbootable "no bootloader is installed"
-		_ -> unbootable "multiple bootloaders are installed; don't know which to use"
+		l -> case filter ignorablefinal l of
+			[] -> \_ _ _ -> doNothing
+			[GrubInstalled] -> grubFinalized
+			[UbootInstalled p] -> ubootFinalized p
+			_ -> unbootable "multiple bootloaders are installed; don't know which to use"
+	ignorablefinal FlashKernelInstalled = True
+	ignorablefinal _ = False
 
 -- | This property is automatically added to the chroot when building a
 -- disk image. It cleans any caches of information that can be omitted;
@@ -229,7 +233,7 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 	mkimg' mnts mntopts parttable devs =
 		partitionsPopulated chrootdir mnts mntopts devs
 			`before`
-		imageFinalized final mnts mntopts devs parttable
+		imageFinalized final dest mnts mntopts devs parttable
 	rmimg = undoRevertableProperty (buildDiskImage img)
 		`before` undoRevertableProperty (imageExists' dest dummyparttable)
 	dummyparttable = PartTable tabletype []
@@ -352,10 +356,10 @@ imageExists' dest@(RawDiskImage img) parttable = (setup <!> cleanup) `describe` 
 --
 -- It's ok if the property leaves additional things mounted
 -- in the partition tree.
-type Finalization = (FilePath -> [LoopDev] -> Property Linux)
+type Finalization = (RawDiskImage -> FilePath -> [LoopDev] -> Property Linux)
 
-imageFinalized :: Finalization -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> PartTable -> Property Linux
-imageFinalized final mnts mntopts devs (PartTable _ parts) =
+imageFinalized :: Finalization -> RawDiskImage -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> PartTable -> Property Linux
+imageFinalized final img mnts mntopts devs (PartTable _ parts) =
 	property' "disk image finalized" $ \w ->
 		withTmpDir "mnt" $ \top ->
 			go w top `finally` liftIO (unmountall top)
@@ -364,7 +368,7 @@ imageFinalized final mnts mntopts devs (PartTable _ parts) =
 		liftIO $ mountall top
 		liftIO $ writefstab top
 		liftIO $ allowservices top
-		ensureProperty w $ final top devs
+		ensureProperty w $ final img top devs
 
 	-- Ordered lexographically by mount point, so / comes before /usr
 	-- comes before /usr/local
@@ -400,18 +404,14 @@ imageFinalized final mnts mntopts devs (PartTable _ parts) =
 	allowservices top = nukeFile (top ++ "/usr/sbin/policy-rc.d")
 
 unbootable :: String -> Finalization
-unbootable msg = \_ _ -> property desc $ do
+unbootable msg = \_ _ _ -> property desc $ do
 	warningMessage (desc ++ ": " ++ msg)
 	return FailedChange
   where
 	desc = "image is not bootable"
 
--- | Makes grub be the boot loader of the disk image.
---
--- This does not install the grub package. You will need to add
--- the `Grub.installed` property to the chroot.
-grubBooted :: Finalization
-grubBooted mnt loopdevs = Grub.bootsMounted mnt wholediskloopdev
+grubFinalized :: Finalization
+grubFinalized _img mnt loopdevs = Grub.bootsMounted mnt wholediskloopdev
 	`describe` "disk image boots using grub"
   where
 	-- It doesn't matter which loopdev we use; all
@@ -420,6 +420,9 @@ grubBooted mnt loopdevs = Grub.bootsMounted mnt wholediskloopdev
 	wholediskloopdev = case loopdevs of
 		(l:_) -> wholeDiskLoopDev l
 		[] -> error "No loop devs provided!"
+
+ubootFinalized :: (FilePath -> FilePath -> Property Linux) -> Finalization
+ubootFinalized p (RawDiskImage img) mnt _loopdevs = p img mnt
 
 isChild :: FilePath -> Maybe MountPoint -> Bool
 isChild mntpt (Just d)
