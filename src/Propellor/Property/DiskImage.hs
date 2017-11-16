@@ -196,7 +196,7 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 			[] -> \_ _ _ -> doNothing
 			[GrubInstalled] -> grubFinalized
 			[UbootInstalled p] -> ubootFinalized p
-			l -> unbootable $ "multiple bootloaders are installed; don't know which to use: " ++ show l
+			_ -> unbootable $ "multiple bootloaders are installed; don't know which to use: " ++ show l
 	ignorablefinal FlashKernelInstalled = True
 	ignorablefinal _ = False
 
