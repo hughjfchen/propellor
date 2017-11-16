@@ -7,6 +7,9 @@ propellor (4.9.1) UNRELEASED; urgency=medium
     Thanks, Félix Sipma.
   * Fail2Ban: Renamed jail.d conf file to use .local.
     Thanks, Félix Sipma.
+  * Debootstrap.built now supports bootstrapping chroots for foreign
+    OS's, using qemu-user-static.
+  * Qemu: New module.
 
  -- Joey Hess <id@joeyh.name>  Thu, 02 Nov 2017 10:28:44 -0400
 

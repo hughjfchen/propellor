@@ -141,6 +141,7 @@ Library
     Propellor.Property.Postfix
     Propellor.Property.PropellorRepo
     Propellor.Property.Prosody
+    Propellor.Property.Qemu
     Propellor.Property.Reboot
     Propellor.Property.Restic
     Propellor.Property.Rsync
