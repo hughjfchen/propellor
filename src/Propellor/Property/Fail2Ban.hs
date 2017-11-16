@@ -34,8 +34,8 @@ jailEnabled' name settings =
 -- > jailConfigured' "sshd" [("port", "2222")]
 jailConfigured' :: Jail -> [(IniKey, String)] -> Property UnixLike
 jailConfigured' name settings = propertyList ("jail \"" ++ name ++ "\" configuration") $ props
+	-- removes .conf files added by old versions of Fail2Ban properties
 	& File.notPresent (oldJailConfFile name)
-	-- ^ removes .conf files added by old versions of Fail2Ban properties
 	& jailConfFile name `iniFileContains` [(name, settings)]
 
 -- | Adds a setting to a given jail. For example:
@@ -43,8 +43,8 @@ jailConfigured' name settings = propertyList ("jail \"" ++ name ++ "\" configura
 -- > jailConfigured "sshd" "port"  "2222"
 jailConfigured :: Jail -> IniKey -> String -> Property UnixLike
 jailConfigured name key value = propertyList ("jail \"" ++ name ++ "\" configuration") $ props
+	-- removes .conf files added by old versions of Fail2Ban properties
 	& File.notPresent (oldJailConfFile name)
-	-- ^ removes .conf files added by old versions of Fail2Ban properties
 	& jailConfFile name `containsIniSetting` (name, key, value)
 
 oldJailConfFile :: Jail -> FilePath
