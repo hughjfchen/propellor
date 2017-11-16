@@ -192,11 +192,11 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 	-- installed.
 	final = case fromInfo (containerInfo chroot) of
 		[] -> unbootable "no bootloader is installed"
-		l -> case filter ignorablefinal l of
+		l -> case filter (not . ignorablefinal) l of
 			[] -> \_ _ _ -> doNothing
 			[GrubInstalled] -> grubFinalized
 			[UbootInstalled p] -> ubootFinalized p
-			_ -> unbootable "multiple bootloaders are installed; don't know which to use"
+			l -> unbootable $ "multiple bootloaders are installed; don't know which to use: " ++ show l
 	ignorablefinal FlashKernelInstalled = True
 	ignorablefinal _ = False
 
