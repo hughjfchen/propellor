@@ -26,8 +26,8 @@ sunxi boardname = setInfoProperty (check (not <$> inChroot) go) info
 	dd :: FilePath -> FilePath -> Property Linux
 	dd dev prefix = tightenTargets $ cmdProperty "dd"
 		[ "conv=fsync,notrunc"
-		, "if=" ++ prefix </> "/usr/lib/u-boot"
-			</> boardname </> "u-boot-sunxi-with-spl.bin"
+		, "if=" ++ prefix ++ "/usr/lib/u-boot/"
+			++ boardname ++ "/u-boot-sunxi-with-spl.bin"
 		, "of=" ++ dev
 		, "bs=1024"
 		, "seek=8"
