@@ -10,6 +10,8 @@ propellor (4.9.1) UNRELEASED; urgency=medium
   * Debootstrap.built now supports bootstrapping chroots for foreign
     OS's, using qemu-user-static.
   * Qemu: New module.
+  * FlashKernel: New module, can be used to create disk images for arm
+    boards using flash-kernel.
 
  -- Joey Hess <id@joeyh.name>  Thu, 02 Nov 2017 10:28:44 -0400
 

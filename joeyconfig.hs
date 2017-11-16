@@ -24,6 +24,7 @@ import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Grub as Grub
+import qualified Propellor.Property.FlashKernel as FlashKernel
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
@@ -94,16 +95,16 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Ssh.userKeys (User "joey") hostContext
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
-	& imageBuilt (VirtualBoxPointer "/srv/test.vmdk") mychroot MSDOS
+	& imageBuilt (RawDiskImage "/srv/test.img") mychroot MSDOS
 		[ partition EXT2 `mountedAt` "/boot"
 		, partition EXT4 `mountedAt` "/"
 		, swapPartition (MegaBytes 256)
 		]
   where
 	mychroot d = debootstrapped mempty d $ props
-		& osDebian Unstable X86_64
-		& Apt.installed ["linux-image-amd64"]
-		& Grub.installed PC
+		& osDebian Unstable ARMHF
+		& Apt.installed ["linux-image-armmp", "u-boot"]
+		& FlashKernel.installed "Olimex A10-OLinuXino-LIME"
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props

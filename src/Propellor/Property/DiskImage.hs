@@ -192,6 +192,7 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 	-- installed.
 	final = case fromInfo (containerInfo chroot) of
 		[GrubInstalled] -> grubBooted
+		[FlashKernelInstalled] -> \_ _ -> doNothing
 		[] -> unbootable "no bootloader is installed"
 		_ -> unbootable "multiple bootloaders are installed; don't know which to use"
 

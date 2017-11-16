@@ -111,6 +111,7 @@ Library
     Propellor.Property.File
     Propellor.Property.Firejail
     Propellor.Property.Firewall
+    Propellor.Property.FlashKernel
     Propellor.Property.FreeBSD
     Propellor.Property.FreeBSD.Pkg
     Propellor.Property.FreeBSD.Poudriere
