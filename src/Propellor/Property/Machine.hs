@@ -2,11 +2,14 @@
 --
 -- Many embedded computers have their own special configuration needed
 -- to use them. Rather than needing to hunt down documentation about the
--- kernel, bootloader, etc needed by a given machine, if there's a property
+-- kernel, bootloader, etc for a given machine, if there's a property
 -- in here for your machine, you can simply use it.
 --
+-- Not all machine properties have been tested yet. If one flagged as
+-- untested and you find it works, please let us know.
+--
 -- You will need to configure the `Host` with the right `Architecture`
--- for the machines. These properties do test at runtime that a supported
+-- for the machine. These properties do test at runtime that a supported
 -- Architecture was selected.
 --
 -- Sometimes non-free firmware is needed to use a board. If the board won't
@@ -19,7 +22,18 @@ module Propellor.Property.Machine (
 	Marvell_SheevaPlug_BootDevice(..),
 	marvell_SheevaPlug,
 	cubietech_Cubietruck,
-	olimex_A10_OLinuXino_LIME
+	olimex_A10_OLinuXino_LIME,
+	-- * ARM boards (untested)
+	cubietech_Cubieboard,
+	cubietech_Cubieboard2,
+	lemaker_Banana_Pi,
+	lemaker_Banana_Pro,
+	olimex_A10s_OLinuXino_Micro,
+	olimex_A20_OLinuXino_LIME,
+	olimex_A20_OLinuXino_LIME2,
+	olimex_A20_OLinuXino_Micro,
+	olimex_A20_SOM_EVB,
+	linkSprite_pcDuino3_Nano,
 ) where
 
 import Propellor.Base
@@ -47,20 +61,83 @@ marvell_SheevaPlug Marvell_SheevaPlug_ESATA =
 	FlashKernel.installed "Marvell eSATA SheevaPlug Reference Board"
 		`requires` marvell
 
--- | Cubietech Cubietruck (untested)
+-- | Cubietech Cubietruck
 -- 
--- Wifi needs non-free firmware-brcm80211, whicn is not installed by
+-- Wifi needs non-free firmware-brcm80211, which is not installed by
 -- this property. Also, see https://bugs.debian.org/844056
 cubietech_Cubietruck :: Property (HasInfo + DebianLike)
 cubietech_Cubietruck = FlashKernel.installed "Cubietech Cubietruck"
-		`requires` sunixi "Cubietruck"
-		`requires` lpae
+	`requires` sunixi "Cubietruck"
+	`requires` lpae
 
--- | Olimex A10-OLinuXino-LIME (untested)
+-- | Cubietech Cubieboard (untested)
+cubietech_Cubieboard :: Property (HasInfo + DebianLike)
+cubietech_Cubieboard = FlashKernel.installed "Cubietech Cubieboard"
+	`requires` sunixi "Cubieboard"
+	`requires` armmp
+
+-- | Cubietech Cubieboard2 (untested)
+cubietech_Cubieboard2 :: Property (HasInfo + DebianLike)
+cubietech_Cubieboard2 = FlashKernel.installed "Cubietech Cubieboard2"
+	`requires` sunixi "Cubieboard2"
+	`requires` lpae
+
+-- | LeMaker Banana Pi (untested)
+lemaker_Banana_Pi :: Property (HasInfo + DebianLike)
+lemaker_Banana_Pi = FlashKernel.installed "LeMaker Banana Pi"
+	`requires` sunixi "Bananapi"
+	`requires` lpae
+
+-- | LeMaker Banana Pro (untested)
+lemaker_Banana_Pro :: Property (HasInfo + DebianLike)
+lemaker_Banana_Pro = FlashKernel.installed "LeMaker Banana Pro"
+	`requires` sunixi "Bananapro"
+	`requires` lpae
+
+-- | Olimex A10-OLinuXino-LIME
 olimex_A10_OLinuXino_LIME :: Property (HasInfo + DebianLike)
 olimex_A10_OLinuXino_LIME = FlashKernel.installed "Olimex A10-OLinuXino-LIME"
-		`requires` sunixi "A10-OLinuXino-Lime"
-		`requires` armmp
+	`requires` sunixi "A10-OLinuXino-Lime"
+	`requires` armmp
+
+-- | Olimex A10s-Olinuxino Micro (untested)
+olimex_A10s_OLinuXino_Micro :: Property (HasInfo + DebianLike)
+olimex_A10s_OLinuXino_Micro = FlashKernel.installed "Olimex A10s-Olinuxino Micro"
+	`requires` sunixi "A10s-OLinuXino-M"
+	`requires` armmp
+
+-- | Olimex A20-OlinuXino-LIME (untested)
+olimex_A20_OLinuXino_LIME :: Property (HasInfo + DebianLike)
+olimex_A20_OLinuXino_LIME = FlashKernel.installed "Olimex A20-OLinuXino-LIME"
+	`requires` sunixi "A20-OLinuXino-Lime"
+	`requires` lpae
+
+-- | Olimex A20-OlinuXino-LIME2 (untested)
+olimex_A20_OLinuXino_LIME2 :: Property (HasInfo + DebianLike)
+olimex_A20_OLinuXino_LIME2 = FlashKernel.installed "Olimex A20-OLinuXino-LIME2"
+	`requires` sunixi "A20-OLinuXino-Lime2"
+	`requires` lpae
+
+-- | Olimex A20-Olinuxino Micro (untested)
+olimex_A20_OLinuXino_Micro :: Property (HasInfo + DebianLike)
+olimex_A20_OLinuXino_Micro = FlashKernel.installed "Olimex A20-Olinuxino Micro"
+	`requires` sunixi "A20-OLinuXino-MICRO"
+	`requires` lpae
+
+-- | Olimex A20-SOM-EVB (untested)
+olimex_A20_SOM_EVB :: Property (HasInfo + DebianLike)
+olimex_A20_SOM_EVB = FlashKernel.installed "Olimex A20-Olimex-SOM-EVB"
+	`requires` sunixi "A20-Olimex-SOM-EVB"
+	`requires` lpae
+
+-- | LinkSprite pcDuino Nano (untested)
+--
+-- Needs non-free firmware, see
+-- https://wiki.debian.org/InstallingDebianOn/Allwinner
+linkSprite_pcDuino3_Nano :: Property (HasInfo + DebianLike)
+linkSprite_pcDuino3_Nano = FlashKernel.installed "LinkSprite pcDuino3 Nano"
+	`requires` sunixi "Linksprite_pcDuino3"
+	`requires` lpae
 
 sunixi :: Uboot.BoardName -> Property (HasInfo + DebianLike)
 sunixi boardname = Uboot.sunxi boardname
