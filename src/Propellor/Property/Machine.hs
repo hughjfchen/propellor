@@ -28,7 +28,9 @@ import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.FlashKernel as FlashKernel
 import qualified Propellor.Property.Uboot as Uboot
 
-data Marvell_SheevaPlug_BootDevice = SDCard | ESATA
+data Marvell_SheevaPlug_BootDevice
+	= Marvell_SheevaPlug_SDCard
+	| Marvell_SheevaPlug_ESATA
 
 -- | Marvel SheevaPlug
 --
@@ -36,10 +38,11 @@ data Marvell_SheevaPlug_BootDevice = SDCard | ESATA
 -- configured to boot from the SD card or eSATA. See
 -- https://www.cyrius.com/debian/kirkwood/sheevaplug/install/
 marvell_SheevaPlug :: Marvell_SheevaPlug_BootDevice -> Property (HasInfo + DebianLike)
-marvell_SheevaPlug bd = case bd of
-	SDCard -> FlashKernel.installed "Marvell SheevaPlug Reference Board"
+marvell_SheevaPlug Marvell_SheevaPlug_SDCard =
+	FlashKernel.installed "Marvell SheevaPlug Reference Board"
 		`requires` kirkwood
-	ESATA -> FlashKernel.installed "Marvell eSATA SheevaPlug Reference Board"
+marvell_SheevaPlug Marvell_SheevaPlug_ESATA =
+	FlashKernel.installed "Marvell eSATA SheevaPlug Reference Board"
 		`requires` kirkwood
 
 -- | Cubietech Cubietruck (untested)
