@@ -98,9 +98,12 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& imageBuilt (RawDiskImage "/srv/sheevaplug.img")
 		(hostChroot sheevaplug (Debootstrapped mempty))
 		MSDOS
-		[ partition EXT4
+		[ partition EXT2
+			`mountedAt` "/boot"
+			`setSize` MegaBytes 150
+		, partition EXT4
 			`mountedAt` "/"
-			`setSize` MegaBytes 900
+			`setSize` MegaBytes 750
 		]
 
 sheevaplug :: Host

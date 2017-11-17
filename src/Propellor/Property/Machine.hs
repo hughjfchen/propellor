@@ -34,6 +34,8 @@ data Marvell_SheevaPlug_BootDevice
 
 -- | Marvel SheevaPlug
 --
+-- Needs a small /boot partition formatted EXT2
+--
 -- Note that u-boot may need to be upgraded manually, and will need to be
 -- configured to boot from the SD card or eSATA. See
 -- https://www.cyrius.com/debian/kirkwood/sheevaplug/install/
