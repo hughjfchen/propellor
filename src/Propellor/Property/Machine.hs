@@ -82,4 +82,4 @@ marvell = checkArchitecture [ARMEL] $
 checkArchitecture :: [Architecture] -> Property DebianLike -> Property DebianLike
 checkArchitecture as p = withOS (getDesc p) $ \w o -> case o of
 	(Just (System _ arch)) | arch `elem` as -> ensureProperty w p
-	_ -> unsupportedOS' -- error $ "Machine needs architecture to be one of: " ++ show as
+	_ -> error $ "Machine needs architecture to be one of: " ++ show as
