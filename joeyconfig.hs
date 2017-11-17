@@ -7,6 +7,7 @@ import Propellor.Property.Scheduled
 import Propellor.Property.DiskImage
 import Propellor.Property.Chroot
 import Propellor.Property.Machine
+import Propellor.Property.Bootstrap
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
@@ -194,6 +195,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
 	-- No hardware clock
 	& Apt.serviceInstalledRunning "ntp"
+	& bootstrappedFrom GitRepoOutsideChroot
 
 	& JoeySites.homePowerMonitor
 		(User "joey")
