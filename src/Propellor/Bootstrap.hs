@@ -280,7 +280,9 @@ cabalBuild msys = do
 				boolSystem "sh" [Param "-c", Param (depsCommand (Robustly Cabal) (Just sys))]
 					<&&> cabal ["configure"]
 		)
-	cabal_build = cabal ["build", "propellor-config"]
+	-- The -j1 is to only run one job at a time -- in some situations,
+	-- eg in qemu, ghc does not run reliably in parallel.
+	cabal_build = cabal ["build", "-j1", "propellor-config"]
 
 stackBuild :: Maybe System -> IO Bool
 stackBuild _msys = do
