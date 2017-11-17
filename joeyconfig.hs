@@ -25,6 +25,7 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
+import qualified Propellor.Property.Locale as Locale
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
@@ -186,16 +187,18 @@ honeybee :: Host
 honeybee = host "honeybee.kitenet.net" $ props
 	& standardSystem Testing ARMHF
 		[ "Home router and arm git-annex build box." ]
-
+	
 	& cubietech_Cubietruck
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
 		`requires` File.hasPrivContent "/lib/firmware/brcm/brcmfmac43362-sdio.txt" anyContext
 		`requires` File.dirExists "/lib/firmware/brcm"
 	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
-	-- No hardware clock
-	& Apt.serviceInstalledRunning "ntp"
+	& Apt.serviceInstalledRunning "ntp" -- no hardware clock
 	& bootstrappedFrom GitRepoOutsideChroot
+	& Ssh.hostKeys hostContext
+		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIS/hDYq1MAxfOBf49htym3BOYlx4Gk9SDpiHjv7u6IC")
+		]
 
 	& JoeySites.homePowerMonitor
 		(User "joey")
@@ -555,6 +558,7 @@ standardSystemUnhardened suite arch motd = propertyList "standard system" $ prop
 	& osDebian suite arch
 	& Hostname.sane
 	& Hostname.searchDomain
+	& Locale.available "en_US.utf8"
 	& File.hasContent "/etc/motd" ("":motd++[""])
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.cacheCleaned
