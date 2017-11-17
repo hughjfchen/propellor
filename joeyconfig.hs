@@ -100,7 +100,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 		MSDOS
 		[ partition EXT4
 			`mountedAt` "/"
-			`setSize` MegaBytes 1024
+			`setSize` MegaBytes 900
 		]
 
 sheevaplug :: Host
