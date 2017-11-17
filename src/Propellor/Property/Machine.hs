@@ -82,7 +82,7 @@ cubietech_Cubieboard2 = FlashKernel.installed "Cubietech Cubieboard2"
 	`requires` sunixi "Cubieboard2"
 	`requires` lpae
 
--- | LeMaker Banana Pi (untested)
+-- | LeMaker Banana Pi
 lemaker_Banana_Pi :: Property (HasInfo + DebianLike)
 lemaker_Banana_Pi = FlashKernel.installed "LeMaker Banana Pi"
 	`requires` sunixi "Bananapi"
