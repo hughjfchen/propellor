@@ -80,7 +80,7 @@ buildCommand bs = intercalate " && " (go (getBuilder bs))
   where
 	go Cabal =
 		[ "cabal configure"
-		, "cabal build propellor-config"
+		, "cabal build -j1 propellor-config"
 		, "ln -sf dist/build/propellor-config/propellor-config propellor"
 		]
 	go Stack =
