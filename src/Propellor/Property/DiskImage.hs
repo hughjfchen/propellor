@@ -28,6 +28,7 @@ import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Qemu as Qemu
+import qualified Propellor.Property.FlashKernel as FlashKernel
 import Propellor.Property.Parted
 import Propellor.Property.Fstab (SwapPartition(..), genFstab)
 import Propellor.Property.Partition
@@ -193,13 +194,14 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 	-- installed.
 	final = case fromInfo (containerInfo chroot) of
 		[] -> unbootable "no bootloader is installed"
-		l -> case filter (not . ignorablefinal) l of
-			[] -> \_ _ _ -> doNothing
-			[GrubInstalled] -> grubFinalized
-			[UbootInstalled p] -> ubootFinalized p
-			_ -> unbootable $ "multiple bootloaders are installed; don't know which to use: " ++ show l
-	ignorablefinal FlashKernelInstalled = True
-	ignorablefinal _ = False
+		[GrubInstalled] -> grubFinalized
+		[UbootInstalled p] -> ubootFinalized p
+		[FlashKernelInstalled] -> flashKernelFinalized
+		[UbootInstalled p, FlashKernelInstalled] -> 
+			ubootFlashKernelFinalized p
+		[FlashKernelInstalled, UbootInstalled p] -> 
+			ubootFlashKernelFinalized p
+		_ -> unbootable "multiple bootloaders are installed; don't know which to use"
 
 -- | This property is automatically added to the chroot when building a
 -- disk image. It cleans any caches of information that can be omitted;
@@ -426,6 +428,14 @@ grubFinalized _img mnt loopdevs = Grub.bootsMounted mnt wholediskloopdev
 
 ubootFinalized :: (FilePath -> FilePath -> Property Linux) -> Finalization
 ubootFinalized p (RawDiskImage img) mnt _loopdevs = p img mnt
+
+flashKernelFinalized :: Finalization
+flashKernelFinalized _img mnt _loopdevs = FlashKernel.flashKernelMounted mnt
+
+ubootFlashKernelFinalized :: (FilePath -> FilePath -> Property Linux) -> Finalization
+ubootFlashKernelFinalized p img mnt loopdevs = 
+	ubootFinalized p img mnt loopdevs
+		`before` flashKernelFinalized img mnt loopdevs
 
 isChild :: FilePath -> Maybe MountPoint -> Bool
 isChild mntpt (Just d)

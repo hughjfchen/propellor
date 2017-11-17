@@ -6,6 +6,7 @@ import Propellor
 import Propellor.Property.Scheduled
 import Propellor.Property.DiskImage
 import Propellor.Property.Chroot
+import Propellor.Property.Machine
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
@@ -24,7 +25,6 @@ import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Grub as Grub
-import qualified Propellor.Property.Machine as Machine
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
@@ -109,12 +109,12 @@ darkstar = host "darkstar.kitenet.net" $ props
 sheevaplug :: Host
 sheevaplug = host "sheevaplug.kitenet.net" $ props
 	& osDebian Unstable ARMEL
-	& Machine.marvell_SheevaPlug Machine.Marvell_SheevaPlug_SDCard
+	& marvell_SheevaPlug Marvell_SheevaPlug_SDCard
 
 lime :: Host
 lime = host "lime.kitenet.net" $ props
 	& osDebian Unstable ARMHF
-	& Machine.olimex_A10_OLinuXino_LIME
+	& olimex_A10_OLinuXino_LIME
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
@@ -200,7 +200,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 	-- and try to be robust.
 	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
 
-	& Machine.cubietech_Cubietruck
+	& cubietech_Cubietruck
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
 		`requires` File.hasPrivContent "/lib/firmware/brcm/brcmfmac43362-sdio.txt" anyContext
