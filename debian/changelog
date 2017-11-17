@@ -15,6 +15,9 @@ propellor (4.9.1) UNRELEASED; urgency=medium
   * Uboot: New module.
   * Machine: New module, machine-specific properties for ARM boards are
     being collected here.
+  * Service: Changed to use invoke-rc.d rather than service for starting
+    services. This notably means that in chroots, services will not be
+    started.
 
  -- Joey Hess <id@joeyh.name>  Thu, 02 Nov 2017 10:28:44 -0400
 

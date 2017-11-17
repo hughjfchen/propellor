@@ -23,5 +23,5 @@ reloaded = signaled "reload" "reloaded"
 signaled :: String -> Desc -> ServiceName -> Property DebianLike
 signaled cmd desc svc = tightenTargets $ p `describe` (desc ++ " " ++ svc)
   where
-	p = scriptProperty ["service " ++ shellEscape svc ++ " " ++ cmd ++ " >/dev/null 2>&1 || true"]
+	p = scriptProperty ["invoke-rc.d " ++ shellEscape svc ++ " " ++ cmd ++ " >/dev/null 2>&1 || true"]
 		`assume` NoChange
