@@ -372,8 +372,8 @@ imageFinalized final img mnts mntopts devs (PartTable _ parts) =
 		liftIO $ writefstab top
 		liftIO $ allowservices top
 		ensureProperty w $ 
-			Qemu.removeHostEmulationBinary top
-				`before` final img top devs
+			final img top devs
+				`before` Qemu.removeHostEmulationBinary top
 
 	-- Ordered lexographically by mount point, so / comes before /usr
 	-- comes before /usr/local
