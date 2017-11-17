@@ -19,9 +19,11 @@ foreignBinariesEmulated = (setup <!> cleanup)
 --
 -- Note that removing the binary will prevent using the chroot on the host
 -- system.
-removeHostEmulationBinary :: Property DebianLike
-removeHostEmulationBinary = tightenTargets $ 
-	scriptProperty ["rm -f /usr/bin/qemu-*-static"]
+--
+-- The FilePath is the path to the top of the chroot.
+removeHostEmulationBinary :: FilePath -> Property Linux
+removeHostEmulationBinary top = tightenTargets $ 
+	scriptProperty ["rm -f " ++ top ++ "/usr/bin/qemu-*-static"]
 		`assume` MadeChange
 
 -- | Check if the given System supports an Architecture.

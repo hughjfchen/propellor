@@ -27,6 +27,7 @@ import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Qemu as Qemu
 import Propellor.Property.Parted
 import Propellor.Property.Fstab (SwapPartition(..), genFstab)
 import Propellor.Property.Partition
@@ -368,7 +369,9 @@ imageFinalized final img mnts mntopts devs (PartTable _ parts) =
 		liftIO $ mountall top
 		liftIO $ writefstab top
 		liftIO $ allowservices top
-		ensureProperty w $ final img top devs
+		ensureProperty w $ 
+			Qemu.removeHostEmulationBinary top
+				`before` final img top devs
 
 	-- Ordered lexographically by mount point, so / comes before /usr
 	-- comes before /usr/local
