@@ -558,7 +558,7 @@ standardSystemUnhardened suite arch motd = propertyList "standard system" $ prop
 	& osDebian suite arch
 	& Hostname.sane
 	& Hostname.searchDomain
-	& Locale.available "en_US.utf8"
+	& Locale.available "en_US.UTF-8"
 	& File.hasContent "/etc/motd" ("":motd++[""])
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.cacheCleaned
