@@ -20,7 +20,14 @@ installedFor user@(User u) = check (not <$> hasGitDir user) $
 				moveout tmpdir home
 			, property "rmdir" $ makeChange $ void $
 				catchMaybeIO $ removeDirectory tmpdir
-			, userScriptProperty user ["rm -rf .aptitude/ .bashrc .profile; bin/mr checkout; bin/fixups"]
+			, userScriptProperty user ["rm -rf .aptitude/ .bashrc .profile"]
+				`assume` MadeChange
+			-- Set HOSTNAME so that this sees the right
+			-- hostname when run in a chroot with a different
+			-- hostname than the current one.
+			, userScriptProperty user ["HOSTNAME=$(cat /etc/hostname) bin/mr checkout"]
+				`assume` MadeChange
+			, userScriptProperty user ["bin/fixups"]
 				`assume` MadeChange
 			]
 	moveout tmpdir home = do
