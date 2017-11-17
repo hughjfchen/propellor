@@ -95,21 +95,16 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Ssh.userKeys (User "joey") hostContext
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
-	& imageBuilt (RawDiskImage "/srv/test.img")
-		(hostChroot test (Debootstrapped mempty))
+	& imageBuilt (RawDiskImage "/srv/honeybee.img")
+		(hostChroot honeybee (Debootstrapped mempty))
 		MSDOS
 		[ partition EXT2
 			`mountedAt` "/boot"
-			`setSize` MegaBytes 150
+			`setSize` MegaBytes 200
 		, partition EXT4
 			`mountedAt` "/"
-			`setSize` MegaBytes 750
+			`setSize` MegaBytes 8192
 		]
-
-test :: Host
-test = host "test.kitenet.net" $ props
-	& osDebian Unstable ARMHF
-	& lemaker_Banana_Pi
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
@@ -191,16 +186,12 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& standardSystem Testing ARMHF
 		[ "Home router and arm git-annex build box." ]
 
-	-- Hard to get console access, so no automatic upgrades,
-	-- and try to be robust.
-	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
-
 	& cubietech_Cubietruck
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
 		`requires` File.hasPrivContent "/lib/firmware/brcm/brcmfmac43362-sdio.txt" anyContext
 		`requires` File.dirExists "/lib/firmware/brcm"
-
+	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
 	-- No hardware clock
 	& Apt.serviceInstalledRunning "ntp"
 
@@ -215,16 +206,8 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.armAutoBuilder
 		Unstable ARMEL Nothing (Cron.Times "15 10 * * *") "10h")
-	-- Disabled because it does not work, and the old systemd
-	-- in the container uses a ton of CPU
-	! Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
-		GitAnnexBuilder.stackAutoBuilder
-		(Stable "jessie") ARMEL (Just "ancient") weekdays "10h")
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
-  where
-	weekdays = Cron.Times "15 10 * * 2-5"
-	-- weekends = Cron.Times "15 10 * * 6-7"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
