@@ -40,10 +40,10 @@ data Marvell_SheevaPlug_BootDevice
 marvell_SheevaPlug :: Marvell_SheevaPlug_BootDevice -> Property (HasInfo + DebianLike)
 marvell_SheevaPlug Marvell_SheevaPlug_SDCard =
 	FlashKernel.installed "Marvell SheevaPlug Reference Board"
-		`requires` kirkwood
+		`requires` marvell
 marvell_SheevaPlug Marvell_SheevaPlug_ESATA =
 	FlashKernel.installed "Marvell eSATA SheevaPlug Reference Board"
-		`requires` kirkwood
+		`requires` marvell
 
 -- | Cubietech Cubietruck (untested)
 -- 
@@ -75,9 +75,9 @@ lpae :: Property DebianLike
 lpae = checkArchitecture [ARMHF, ARMEL] $ 
 	Apt.installed ["linux-image-armmp-lpae"]
 
-kirkwood :: Property DebianLike
-kirkwood = checkArchitecture [ARMEL] $
-	Apt.installed ["linux-image-kirkwwood"]
+marvell :: Property DebianLike
+marvell = checkArchitecture [ARMEL] $
+	Apt.installed ["linux-image-marvell"]
 
 checkArchitecture :: [Architecture] -> Property DebianLike -> Property DebianLike
 checkArchitecture as p = withOS (getDesc p) $ \w o -> case o of
