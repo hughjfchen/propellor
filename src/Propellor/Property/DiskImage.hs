@@ -24,6 +24,7 @@ import Propellor.Property.Chroot (Chroot)
 import Propellor.Property.Chroot.Util (removeChroot)
 import Propellor.Property.Mount
 import qualified Propellor.Property.Chroot as Chroot
+import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
@@ -103,7 +104,7 @@ instance DiskImage VirtualBoxPointer where
 -- to avoid expensive IO to generate a new one. And, it's updated in-place,
 -- so its contents are undefined during the build process.
 --
--- Note that the `Chroot.noServices` property is automatically added to the
+-- Note that the `Service.noServices` property is automatically added to the
 -- chroot while the disk image is being built, which should prevent any
 -- daemons that are included from being started on the system that is
 -- building the disk image.
@@ -185,7 +186,7 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 		in setContainerProps c $ containerProps c
 			-- Before ensuring any other properties of the chroot,
 			-- avoid starting services. Reverted by imageFinalized.
-			&^ Chroot.noServices
+			&^ Service.noServices
 			& cachesCleaned
 	-- Only propagate privdata Info from this chroot, nothing else.
 	propprivdataonly (Chroot.Chroot d b ip h) =

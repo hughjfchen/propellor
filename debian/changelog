@@ -1,13 +1,13 @@
-propellor (4.9.1) UNRELEASED; urgency=medium
+propellor (5.0.0) UNRELEASED; urgency=medium
 
   * Debootstrap.built now supports bootstrapping chroots for foreign
     OS's, using qemu-user-static.
   * Machine: New module collecting machine-specific properties for 
     building bootable images for ARM boards.
     Tested working boards: Olimex Lime, CubieTruck, Banana Pi, SheevaPlug.
-  * Service: Changed to use invoke-rc.d rather than the service command for
-    starting services. This notably means that in chroots, services will
-    not be started.
+  * Chroot.noServices moved to Service.noServices and its type changed.
+    (API change)
+  * Service: Avoid starting services when noServices is used.
   * Add Typeable instance to OriginUrl, fixing build with old versions
     of ghc.
   * Added Propellor.Property.impossible
