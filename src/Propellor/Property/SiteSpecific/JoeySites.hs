@@ -964,7 +964,7 @@ homeRouter = propertyList "home router" $ props
 			, "hw_mode=g"
 			, "channel=8"
 			]
-		`requires` File.dirExists "/lib/hostapd"
+		`requires` File.dirExists "/etc/hostapd"
 	& File.hasContent "/etc/resolv.conf"
 		[ "domain kitenet.net"
 		, "search kitenet.net"
