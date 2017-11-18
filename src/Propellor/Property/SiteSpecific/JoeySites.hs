@@ -919,7 +919,7 @@ homePowerMonitor user ctx sshkey = propertyList "home power monitor" $ props
 	& Systemd.enabled servicename
 		`requires` serviceinstalled
 		`onChange` Systemd.started servicename
-	& User.inGroup user (Group "dialout")
+	& User.hasGroup user (Group "dialout")
 	& Cron.niceJob "homepower upload"
 		(Cron.Times "1 * * * *") user d rsynccommand
 		`requires` Ssh.userKeyAt (Just sshkeyfile) user ctx sshkey
