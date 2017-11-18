@@ -20,14 +20,16 @@ stretch, which older sbuild can't handle.
 
 Suggested usage in @config.hs@:
 
+>  mybox = host "mybox.example.com" $ props
+>  	& osDebian Unstable X86_64
+>  	& Apt.useLocalCacher
 -- TODO can we use '$' here or do we require more brackets?
->  & Apt.useLocalCacher
->  & Sbuild.built Sbuild.UseCcache $ props
->  	& osDebian Unstable X86_32
->  	& Sbuild.update `period` Weekly 1
->  	& Sbuild.useHostProxy
->  & Sbuild.usableBy (User "spwhitton")
->  & Schroot.overlaysInTmpfs
+>  	& Sbuild.built Sbuild.UseCcache $ props
+>  		& osDebian Unstable X86_32
+>  		& Sbuild.update `period` Weekly 1
+>  		& Sbuild.useHostProxy mybox
+>  	& Sbuild.usableBy (User "spwhitton")
+>  	& Schroot.overlaysInTmpfs
 
 If you are using sbuild older than 0.70.0, you also need:
 
@@ -246,8 +248,13 @@ update = Apt.update `before` Apt.upgrade `before` Apt.autoRemove
 -- | Ensure that an sbuild schroot uses the host's Apt proxy.
 --
 -- This property is standardly used when the host has 'Apt.useLocalCacher'.
-useHostProxy :: Property (HasInfo + DebianLike)
-useHostProxy = undefined
+useHostProxy :: Host -> Property (HasInfo + DebianLike)
+useHostProxy host = case getProxyInfo of
+	Nothing -> doNothing
+	Just (Apt.HostAptProxy u) -> Apt.proxy u
+  where
+	getProxyInfo :: Maybe Apt.HostAptProxy
+	getProxyInfo = fromInfoVal . fromInfo . hostInfo $ host
 
 aptCacheLine :: String
 aptCacheLine = "/var/cache/apt/archives /var/cache/apt/archives none rw,bind 0 0"
