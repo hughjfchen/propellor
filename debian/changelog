@@ -1,8 +1,26 @@
-propellor (4.9.1) UNRELEASED; urgency=medium
+propellor (4.10.0) UNRELEASED; urgency=medium
 
+  [ Joey Hess ]
   * Add Typeable instance to OriginUrl, fixing build with old versions
     of ghc.
   * Added Propellor.Property.impossible
+
+  [ Sean Whitton ]
+  * File.isSymlinkedTo now revertable.
+  * Sbuild module changes:
+    - Type of Sbuild.built changed to accept additional properties to be ensured
+      inside schroots. (API change)
+      See the suggested usage in module's documentation for new syntax.
+    - Drop Sbuild.installed, Sbuild.builtFor, Sbuild.updated,
+      Sbuild.updatedFor. (API change)
+      Use Sbuild.built instead.  See suggested usage in module's documentation.
+    - Propellor no longer sets up apt proxies in chroots automatically.
+      Instead, pass the new Sbuild.useHostProxy to Sbuild.built to have Propellor
+      propagate the host's Apt proxy configuration into the chroot.  See suggested
+      usage in module's documentation.
+    - Internally, Propellor no longer invokes sbuild-createchroot(1) to build
+      schroots.
+    - Update documentation.
 
  -- Joey Hess <id@joeyh.name>  Thu, 02 Nov 2017 10:28:44 -0400
 
