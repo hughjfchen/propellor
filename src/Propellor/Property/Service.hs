@@ -26,7 +26,8 @@ reloaded :: ServiceName -> Property DebianLike
 reloaded = signaled "reload" "reloaded"
 
 signaled :: String -> Desc -> ServiceName -> Property DebianLike
-signaled cmd desc svc = tightenTargets $ p `describe` (desc ++ " " ++ svc)
+signaled cmd desc svc = check (not <$> servicesDisabled) $
+	tightenTargets $ p `describe` (desc ++ " " ++ svc)
   where
 	p = scriptProperty ["service " ++ shellEscape svc ++ " " ++ cmd ++ " >/dev/null 2>&1 || true"]
 		`assume` NoChange
@@ -51,8 +52,8 @@ noServices = (setup `setInfoProperty` toInfo (InfoVal NoServices)) <!> teardown
 	teardown = File.notPresent f
 
 -- | Check if the noServices property is in effect.
-checkNoServices :: Propellor Bool
-checkNoServices = isJust . fromInfoVal
+servicesDisabled :: Propellor Bool
+servicesDisabled = isJust . fromInfoVal
 	<$> (askInfo :: Propellor (InfoVal NoServices))
 
 data NoServices = NoServices deriving (Eq, Show, Typeable)
