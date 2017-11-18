@@ -252,12 +252,12 @@ update = Apt.update `before` Apt.upgrade `before` Apt.autoRemove
 --
 -- This property is standardly used when the host has 'Apt.useLocalCacher'.
 useHostProxy :: Host -> Property (HasInfo + DebianLike)
-useHostProxy host = case getProxyInfo of
+useHostProxy h = case getProxyInfo of
 	Nothing -> doNothing
 	Just (Apt.HostAptProxy u) -> Apt.proxy u
   where
 	getProxyInfo :: Maybe Apt.HostAptProxy
-	getProxyInfo = fromInfoVal . fromInfo . hostInfo $ host
+	getProxyInfo = fromInfoVal . fromInfo . hostInfo $ h
 
 aptCacheLine :: String
 aptCacheLine = "/var/cache/apt/archives /var/cache/apt/archives none rw,bind 0 0"
