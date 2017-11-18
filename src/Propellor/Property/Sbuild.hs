@@ -21,9 +21,11 @@ stretch, which older sbuild can't handle.
 Suggested usage in @config.hs@:
 
 -- TODO can we use '$' here or do we require more brackets?
+>  & Apt.useLocalCacher
 >  & Sbuild.built Sbuild.UseCcache $ props
 >  	& osDebian Unstable X86_32
 >  	& Sbuild.update `period` Weekly 1
+>  	& Sbuild.useHostProxy
 >  & Sbuild.usableBy (User "spwhitton")
 >  & Schroot.overlaysInTmpfs
 
@@ -120,7 +122,6 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 		& preReqsInstalled
 		& ccacheMaybePrepared cc
 		& Chroot.provisioned schroot
-		& proxyCacher
 		& conf suite arch
 	  where
 		desc = "built sbuild schroot for " ++ suiteArch
@@ -158,31 +159,6 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 	compatSymlink = File.isSymlinkedTo
 		("/etc/sbuild/chroot" </> suiteArch ++ "-sbuild")
 		(File.LinkTarget schrootRoot)
-
-	-- set the apt proxy inside the chroot.  If the host has an apt proxy
-	-- set, assume that it does some sort of caching.  Otherwise, set up a
-	-- local apt-cacher-ng instance
-	--
-	-- (if we didn't assume that the apt proxy does some sort of caching,
-	-- we'd need to complicate the Apt.HostAptProxy type to indicate whether
-	-- the proxy caches, and if it doesn't, set up apt-cacher-ng as an
-	-- intermediary proxy between the chroot's apt and the Apt.HostAptProxy
-	-- proxy.  This complexity is more likely to cause problems than help
-	-- anyone)
-	proxyCacher :: Property DebianLike
-	proxyCacher = property' "set schroot apt proxy" $ \w -> do
-		proxyInfo <- getProxyInfo
-		ensureProperty w $ case proxyInfo of
-			Just (Apt.HostAptProxy u) -> setChrootProxy u
-			Nothing -> (Apt.serviceInstalledRunning "apt-cacher-ng"
-				`before` setChrootProxy "http://localhost:3142")
-	  where
-		getProxyInfo :: Propellor (Maybe Apt.HostAptProxy)
-		getProxyInfo = fromInfoVal <$> askInfo
-		setChrootProxy :: Apt.Url -> Property DebianLike
-		setChrootProxy u = tightenTargets $ File.hasContent
-			(schrootRoot </> "etc/apt/apt.conf.d/20proxy")
-			[ "Acquire::HTTP::Proxy \"" ++ u ++ "\";" ]
 
 	-- if we're building a sid chroot, add useful aliases
 	-- In order to avoid more than one schroot getting the same aliases, we
@@ -266,6 +242,12 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 -- This replaces use of sbuild-update(1).
 update :: Property DebianLike
 update = Apt.update `before` Apt.upgrade `before` Apt.autoRemove
+
+-- | Ensure that an sbuild schroot uses the host's Apt proxy.
+--
+-- This property is standardly used when the host has 'Apt.useLocalCacher'.
+useHostProxy :: Property (HasInfo + DebianLike)
+useHostProxy = undefined
 
 aptCacheLine :: String
 aptCacheLine = "/var/cache/apt/archives /var/cache/apt/archives none rw,bind 0 0"
