@@ -922,6 +922,9 @@ homePowerMonitor user ctx sshkey = propertyList "home power monitor" $ props
 	& Cron.niceJob "homepower upload"
 		(Cron.Times "1 * * * *") user d rsynccommand
 		`requires` Ssh.userKeyAt (Just sshkeyfile) user ctx sshkey
+		`requires` File.ownerGroup (takeDirectory sshkeyfile)
+			user (userGroup user)
+		`requires` File.dirExists (takeDirectory sshkeyfile)
   where
 	d = "/var/www/html/homepower"
 	sshkeyfile = d </> ".ssh/key"

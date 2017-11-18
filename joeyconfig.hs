@@ -105,7 +105,6 @@ darkstar = host "darkstar.kitenet.net" $ props
 			`setSize` MegaBytes 200
 		, partition EXT4
 			`mountedAt` "/"
-			`setSize` MegaBytes 8192
 		]
 
 gnu :: Host
