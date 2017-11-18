@@ -54,7 +54,9 @@ module Propellor.Property.Sbuild (
 	-- * Creating and updating sbuild schroots
 	UseCcache(..),
 	built,
+	-- * Properties for use inside sbuild schroots
 	update,
+	useHostProxy,
 	-- * Global sbuild configuration
 	-- blockNetwork,
 	keypairGenerated,
