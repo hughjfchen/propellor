@@ -912,13 +912,14 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 homePowerMonitor :: IsContext c => User -> c -> (SshKeyType, Ssh.PubKeyText) -> Property (HasInfo + DebianLike)
 homePowerMonitor user ctx sshkey = propertyList "home power monitor" $ props
 	& Apache.installed
-	& Apt.installed ["python", "python-pymodbus"]
+	& Apt.installed ["python", "python-pymodbus", "rrdtool"]
 	& File.ownerGroup "/var/www/html" user (userGroup user)
 	& Git.cloned user "git://git.kitenet.net/joey/homepower" d Nothing
-		`onChange` buildpoller
+	& buildpoller
 	& Systemd.enabled servicename
 		`requires` serviceinstalled
 		`onChange` Systemd.started servicename
+	& User.inGroup user (Group "dialout")
 	& Cron.niceJob "homepower upload"
 		(Cron.Times "1 * * * *") user d rsynccommand
 		`requires` Ssh.userKeyAt (Just sshkeyfile) user ctx sshkey
@@ -960,14 +961,17 @@ homeRouter :: Property (HasInfo + DebianLike)
 homeRouter = propertyList "home router" $ props
 	& Network.static "wlan0" (IPv4 "10.1.1.1") Nothing
 		`requires` Network.cleanInterfacesFile
-	& Apt.serviceInstalledRunning "hostapd"
-		`requires` File.hasContent "/etc/hostapd/hostapd.conf"
+	& Apt.installed ["hostapd"]
+	& File.hasContent "/etc/hostapd/hostapd.conf"
 			[ "interface=wlan0"
 			, "ssid=house"
 			, "hw_mode=g"
 			, "channel=8"
 			]
 		`requires` File.dirExists "/etc/hostapd"
+		`requires` File.hasContent "/etc/default/hostapd"
+			[ "DAEMON_CONF=/etc/hostapd/hostapd.conf" ]
+		`onChange` Service.restarted "hostapd"
 	& File.hasContent "/etc/resolv.conf"
 		[ "domain kitenet.net"
 		, "search kitenet.net"
