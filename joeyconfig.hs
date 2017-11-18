@@ -212,9 +212,9 @@ honeybee = host "honeybee.kitenet.net" $ props
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
   where
-	autobuilder = Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+	autobuilder = Systemd.nspawned $ GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.armAutoBuilder
-		Unstable ARMEL Nothing (Cron.Times "15 10 * * *") "10h")
+		Unstable ARMEL Nothing (Cron.Times "15 10 * * *") "10h"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
