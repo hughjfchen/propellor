@@ -224,7 +224,7 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 		liftIO $ unmountBelow chrootdir
 		szm <- M.mapKeys (toSysDir chrootdir) . M.map toPartSize
 			<$> liftIO (dirSizes chrootdir)
-		let calcsz mnts = maybe defSz fudge . getMountSz szm mnts
+		let calcsz mnts = maybe defSz fudgeSz . getMountSz szm mnts
 		-- tie the knot!
 		let (mnts, mntopts, parttable) = fitChrootSize tabletype partspec $
 			map (calcsz mnts) mnts
