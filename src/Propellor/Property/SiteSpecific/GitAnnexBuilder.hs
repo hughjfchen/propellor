@@ -119,10 +119,10 @@ standardAutoBuilder :: DebianSuite -> Architecture -> Flavor -> Property (HasInf
 standardAutoBuilder suite arch flavor =
 	propertyList "standard git-annex autobuilder" $ props
 		& osDebian suite arch
-		& buildDepsApt
 		& Apt.stdSourcesList
 		& Apt.unattendedUpgrades
 		& Apt.cacheCleaned
+		& buildDepsApt
 		& User.accountFor (User builduser)
 		& tree (architectureToDebianArchString arch) flavor
 
