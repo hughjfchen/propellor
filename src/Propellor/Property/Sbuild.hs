@@ -149,6 +149,7 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 		& pair "type" "directory"
 		& pair "directory" schrootRoot
 		& unionTypeOverlay
+		& aliasesLine
 		& pair "command-prefix" (intercalate "," commandPrefix)
 	  where
 		pair k v = ConfFile.containsIniSetting schrootConf
