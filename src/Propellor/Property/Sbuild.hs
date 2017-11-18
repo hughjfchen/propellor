@@ -21,15 +21,16 @@ stretch, which older sbuild can't handle.
 Suggested usage in @config.hs@:
 
 >  mybox = host "mybox.example.com" $ props
->  	& osDebian Unstable X86_64
+>  	& osDebian (Stable "stretch") X86_64
 >  	& Apt.useLocalCacher
--- TODO can we use '$' here or do we require more brackets?
->  	& Sbuild.built Sbuild.UseCcache $ props
->  		& osDebian Unstable X86_32
->  		& Sbuild.update `period` Weekly 1
->  		& Sbuild.useHostProxy mybox
+>  	& Sbuild.built Sbuild.UseCcache unstableSchroot
 >  	& Sbuild.usableBy (User "spwhitton")
 >  	& Schroot.overlaysInTmpfs
+>    where
+>  	unstableSchroot = props
+>  		& osDebian Unstable X86_32
+>  		& Sbuild.update `period` Weekly (Just 1)
+>  		& Sbuild.useHostProxy mybox
 
 If you are using sbuild older than 0.70.0, you also need:
 
