@@ -141,7 +141,7 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 	  where
 		desc = "no sbuild schroot for " ++ suiteArch
 
-	conf suite' arch' = propertyList "sbuild config file" $ props
+	conf suite' arch' = combineProperties "sbuild config file" $ props
 		& pair "description" (suite' ++ "/" ++ arch' ++ " autobuilder")
 		& pair "groups" "root,sbuild"
 		& pair "root-groups" "root,sbuild"
