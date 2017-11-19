@@ -69,6 +69,3 @@ extended s = adjustp s $ \p -> p { partType = Extended }
 
 adjustp :: PartSpec t -> (Partition -> Partition) -> PartSpec t
 adjustp (mp, o, p, t) f = (mp, o, f . p, t)
-
-adjustt :: PartSpec t -> (t -> t) -> PartSpec t
-adjustt (mp, o, p, t) f = (mp, o, p, f t)
