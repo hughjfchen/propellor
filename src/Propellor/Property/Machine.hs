@@ -30,7 +30,7 @@
 -- > sheeva = host "sheeva.example.com" $ props
 -- > 	& osDebian Unstable ARMEL
 -- > 	& marvell_SheevaPlug Marvell_SheevaPlug_SDCard
--- >	& hasPartiton
+-- >	& hasPartition
 -- >		( partition EXT4
 -- > 		`mountedAt` "/"
 -- >		`addFreeSpace` MegaBytes 2048
