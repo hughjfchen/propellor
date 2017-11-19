@@ -24,9 +24,12 @@ import Propellor.Property.Chroot (Chroot)
 import Propellor.Property.Chroot.Util (removeChroot)
 import Propellor.Property.Mount
 import qualified Propellor.Property.Chroot as Chroot
+import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
+import qualified Propellor.Property.Qemu as Qemu
+import qualified Propellor.Property.FlashKernel as FlashKernel
 import Propellor.Property.Parted
 import Propellor.Property.Fstab (SwapPartition(..), genFstab)
 import Propellor.Property.Partition
@@ -101,7 +104,7 @@ instance DiskImage VirtualBoxPointer where
 -- to avoid expensive IO to generate a new one. And, it's updated in-place,
 -- so its contents are undefined during the build process.
 --
--- Note that the `Chroot.noServices` property is automatically added to the
+-- Note that the `Service.noServices` property is automatically added to the
 -- chroot while the disk image is being built, which should prevent any
 -- daemons that are included from being started on the system that is
 -- building the disk image.
@@ -183,7 +186,7 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 		in setContainerProps c $ containerProps c
 			-- Before ensuring any other properties of the chroot,
 			-- avoid starting services. Reverted by imageFinalized.
-			&^ Chroot.noServices
+			&^ Service.noServices
 			& cachesCleaned
 	-- Only propagate privdata Info from this chroot, nothing else.
 	propprivdataonly (Chroot.Chroot d b ip h) =
@@ -191,8 +194,14 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 	-- Pick boot loader finalization based on which bootloader is
 	-- installed.
 	final = case fromInfo (containerInfo chroot) of
-		[GrubInstalled] -> grubBooted
 		[] -> unbootable "no bootloader is installed"
+		[GrubInstalled] -> grubFinalized
+		[UbootInstalled p] -> ubootFinalized p
+		[FlashKernelInstalled] -> flashKernelFinalized
+		[UbootInstalled p, FlashKernelInstalled] -> 
+			ubootFlashKernelFinalized p
+		[FlashKernelInstalled, UbootInstalled p] -> 
+			ubootFlashKernelFinalized p
 		_ -> unbootable "multiple bootloaders are installed; don't know which to use"
 
 -- | This property is automatically added to the chroot when building a
@@ -215,7 +224,7 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 		liftIO $ unmountBelow chrootdir
 		szm <- M.mapKeys (toSysDir chrootdir) . M.map toPartSize
 			<$> liftIO (dirSizes chrootdir)
-		let calcsz mnts = maybe defSz fudge . getMountSz szm mnts
+		let calcsz mnts = maybe defSz fudgeSz . getMountSz szm mnts
 		-- tie the knot!
 		let (mnts, mntopts, parttable) = fitChrootSize tabletype partspec $
 			map (calcsz mnts) mnts
@@ -228,7 +237,7 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 	mkimg' mnts mntopts parttable devs =
 		partitionsPopulated chrootdir mnts mntopts devs
 			`before`
-		imageFinalized final mnts mntopts devs parttable
+		imageFinalized final dest mnts mntopts devs parttable
 	rmimg = undoRevertableProperty (buildDiskImage img)
 		`before` undoRevertableProperty (imageExists' dest dummyparttable)
 	dummyparttable = PartTable tabletype []
@@ -351,10 +360,10 @@ imageExists' dest@(RawDiskImage img) parttable = (setup <!> cleanup) `describe` 
 --
 -- It's ok if the property leaves additional things mounted
 -- in the partition tree.
-type Finalization = (FilePath -> [LoopDev] -> Property Linux)
+type Finalization = (RawDiskImage -> FilePath -> [LoopDev] -> Property Linux)
 
-imageFinalized :: Finalization -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> PartTable -> Property Linux
-imageFinalized final mnts mntopts devs (PartTable _ parts) =
+imageFinalized :: Finalization -> RawDiskImage -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> PartTable -> Property Linux
+imageFinalized final img mnts mntopts devs (PartTable _ parts) =
 	property' "disk image finalized" $ \w ->
 		withTmpDir "mnt" $ \top ->
 			go w top `finally` liftIO (unmountall top)
@@ -363,7 +372,9 @@ imageFinalized final mnts mntopts devs (PartTable _ parts) =
 		liftIO $ mountall top
 		liftIO $ writefstab top
 		liftIO $ allowservices top
-		ensureProperty w $ final top devs
+		ensureProperty w $ 
+			final img top devs
+				`before` Qemu.removeHostEmulationBinary top
 
 	-- Ordered lexographically by mount point, so / comes before /usr
 	-- comes before /usr/local
@@ -399,18 +410,14 @@ imageFinalized final mnts mntopts devs (PartTable _ parts) =
 	allowservices top = nukeFile (top ++ "/usr/sbin/policy-rc.d")
 
 unbootable :: String -> Finalization
-unbootable msg = \_ _ -> property desc $ do
+unbootable msg = \_ _ _ -> property desc $ do
 	warningMessage (desc ++ ": " ++ msg)
 	return FailedChange
   where
 	desc = "image is not bootable"
 
--- | Makes grub be the boot loader of the disk image.
---
--- This does not install the grub package. You will need to add
--- the `Grub.installed` property to the chroot.
-grubBooted :: Finalization
-grubBooted mnt loopdevs = Grub.bootsMounted mnt wholediskloopdev
+grubFinalized :: Finalization
+grubFinalized _img mnt loopdevs = Grub.bootsMounted mnt wholediskloopdev
 	`describe` "disk image boots using grub"
   where
 	-- It doesn't matter which loopdev we use; all
@@ -419,6 +426,17 @@ grubBooted mnt loopdevs = Grub.bootsMounted mnt wholediskloopdev
 	wholediskloopdev = case loopdevs of
 		(l:_) -> wholeDiskLoopDev l
 		[] -> error "No loop devs provided!"
+
+ubootFinalized :: (FilePath -> FilePath -> Property Linux) -> Finalization
+ubootFinalized p (RawDiskImage img) mnt _loopdevs = p img mnt
+
+flashKernelFinalized :: Finalization
+flashKernelFinalized _img mnt _loopdevs = FlashKernel.flashKernelMounted mnt
+
+ubootFlashKernelFinalized :: (FilePath -> FilePath -> Property Linux) -> Finalization
+ubootFlashKernelFinalized p img mnt loopdevs = 
+	ubootFinalized p img mnt loopdevs
+		`before` flashKernelFinalized img mnt loopdevs
 
 isChild :: FilePath -> Maybe MountPoint -> Bool
 isChild mntpt (Just d)

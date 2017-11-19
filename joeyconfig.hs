@@ -6,6 +6,8 @@ import Propellor
 import Propellor.Property.Scheduled
 import Propellor.Property.DiskImage
 import Propellor.Property.Chroot
+import Propellor.Property.Machine
+import Propellor.Property.Bootstrap
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
@@ -23,6 +25,7 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
+import qualified Propellor.Property.Locale as Locale
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
@@ -94,16 +97,16 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Ssh.userKeys (User "joey") hostContext
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
-	& imageBuilt (VirtualBoxPointer "/srv/test.vmdk") mychroot MSDOS
-		[ partition EXT2 `mountedAt` "/boot"
-		, partition EXT4 `mountedAt` "/"
-		, swapPartition (MegaBytes 256)
+	& imageBuilt (RawDiskImage "/srv/honeybee.img")
+		(hostChroot honeybee (Debootstrapped mempty))
+		MSDOS
+		[ partition EXT2
+			`mountedAt` "/boot"
+			`setSize` MegaBytes 200
+		, partition EXT4
+			`mountedAt` "/"
+			`addFreeSpace` MegaBytes 500
 		]
-  where
-	mychroot d = debootstrapped mempty d $ props
-		& osDebian Unstable X86_64
-		& Apt.installed ["linux-image-amd64"]
-		& Grub.installed PC
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
@@ -184,22 +187,18 @@ honeybee :: Host
 honeybee = host "honeybee.kitenet.net" $ props
 	& standardSystem Testing ARMHF
 		[ "Home router and arm git-annex build box." ]
-
-	-- Hard to get console access, so no automatic upgrades,
-	-- and try to be robust.
-	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
-
-	-- Cubietruck
-	& Apt.installed ["flash-kernel"]
-	& "/etc/flash-kernel/machine" `File.hasContent` ["Cubietech Cubietruck"]
-	& Apt.installed ["linux-image-armmp"]
+	
+	& cubietech_Cubietruck
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
 		`requires` File.hasPrivContent "/lib/firmware/brcm/brcmfmac43362-sdio.txt" anyContext
 		`requires` File.dirExists "/lib/firmware/brcm"
-
-	-- No hardware clock
-	& Apt.serviceInstalledRunning "ntp"
+	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
+	& Apt.serviceInstalledRunning "ntp" -- no hardware clock
+	& bootstrappedFrom GitRepoOutsideChroot
+	& Ssh.hostKeys hostContext
+		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIS/hDYq1MAxfOBf49htym3BOYlx4Gk9SDpiHjv7u6IC")
+		]
 
 	& JoeySites.homePowerMonitor
 		(User "joey")
@@ -209,19 +208,13 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Apt.installed ["mtr-tiny", "iftop", "screen"]
 	& Postfix.satellite
 
-	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
-		GitAnnexBuilder.armAutoBuilder
-		Unstable ARMEL Nothing (Cron.Times "15 10 * * *") "10h")
-	-- Disabled because it does not work, and the old systemd
-	-- in the container uses a ton of CPU
-	! Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
-		GitAnnexBuilder.stackAutoBuilder
-		(Stable "jessie") ARMEL (Just "ancient") weekdays "10h")
+	& check (not <$> inChroot) (setupRevertableProperty autobuilder)
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
   where
-	weekdays = Cron.Times "15 10 * * 2-5"
-	-- weekends = Cron.Times "15 10 * * 6-7"
+	autobuilder = Systemd.nspawned $ GitAnnexBuilder.autoBuilderContainer
+		GitAnnexBuilder.armAutoBuilder
+		Unstable ARMEL Nothing (Cron.Times "15 10 * * *") "10h"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
@@ -565,6 +558,7 @@ standardSystemUnhardened suite arch motd = propertyList "standard system" $ prop
 	& osDebian suite arch
 	& Hostname.sane
 	& Hostname.searchDomain
+	& Locale.available "en_US.UTF-8"
 	& File.hasContent "/etc/motd" ("":motd++[""])
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.cacheCleaned

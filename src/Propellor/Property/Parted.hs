@@ -21,13 +21,14 @@ module Propellor.Property.Parted (
 	parted,
 	Eep(..),
 	installed,
-	-- * PartSpec combinators
+	-- * Partition table sizing
 	calcPartTable,
 	DiskSize(..),
 	DiskPart,
-	module Propellor.Types.PartSpec,
 	DiskSpaceUse(..),
 	useDiskSpace,
+	defSz,
+	fudgeSz,
 ) where
 
 import Propellor.Base
@@ -35,7 +36,7 @@ import Propellor.Property.Parted.Types
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Pacman as Pacman
 import qualified Propellor.Property.Partition as Partition
-import Propellor.Types.PartSpec
+import Propellor.Types.PartSpec (PartSpec)
 import Utility.DataUnits
 
 import System.Posix.Files
@@ -160,3 +161,19 @@ instance Monoid DiskPart
 -- (less all fixed size partitions), or the remaining space in the disk.
 useDiskSpace :: PartSpec DiskPart -> DiskSpaceUse -> PartSpec DiskPart
 useDiskSpace (mp, o, p, _) diskuse = (mp, o, p, DynamicDiskPart diskuse)
+
+-- | Default partition size when not otherwize specified is 128 MegaBytes.
+defSz :: PartSize
+defSz = MegaBytes 128
+
+-- | When a partition is sized to fit the files that live in it,
+-- this fudge factor is added to the size of the files. This is necessary
+-- since filesystems have some space overhead.
+-- 
+-- Add 2% for filesystem overhead. Rationalle for picking 2%:
+-- A filesystem with 1% overhead might just sneak by as acceptable.
+-- Double that just in case. Add an additional 3 mb to deal with
+-- non-scaling overhead of filesystems (eg, superblocks). 
+-- Add an additional 200 mb for temp files, journals, etc.
+fudgeSz :: PartSize -> PartSize
+fudgeSz (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3 + 200)

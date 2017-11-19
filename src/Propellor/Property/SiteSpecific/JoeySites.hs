@@ -912,16 +912,20 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 homePowerMonitor :: IsContext c => User -> c -> (SshKeyType, Ssh.PubKeyText) -> Property (HasInfo + DebianLike)
 homePowerMonitor user ctx sshkey = propertyList "home power monitor" $ props
 	& Apache.installed
-	& Apt.installed ["python", "python-pymodbus"]
+	& Apt.installed ["python", "python-pymodbus", "rrdtool"]
 	& File.ownerGroup "/var/www/html" user (userGroup user)
 	& Git.cloned user "git://git.kitenet.net/joey/homepower" d Nothing
-		`onChange` buildpoller
+	& buildpoller
 	& Systemd.enabled servicename
 		`requires` serviceinstalled
 		`onChange` Systemd.started servicename
+	& User.hasGroup user (Group "dialout")
 	& Cron.niceJob "homepower upload"
 		(Cron.Times "1 * * * *") user d rsynccommand
 		`requires` Ssh.userKeyAt (Just sshkeyfile) user ctx sshkey
+		`requires` File.ownerGroup (takeDirectory sshkeyfile)
+			user (userGroup user)
+		`requires` File.dirExists (takeDirectory sshkeyfile)
   where
 	d = "/var/www/html/homepower"
 	sshkeyfile = d </> ".ssh/key"
@@ -957,30 +961,34 @@ homeRouter :: Property (HasInfo + DebianLike)
 homeRouter = propertyList "home router" $ props
 	& Network.static "wlan0" (IPv4 "10.1.1.1") Nothing
 		`requires` Network.cleanInterfacesFile
-	& Apt.serviceInstalledRunning "hostapd"
-		`requires` File.hasContent "/etc/hostapd/hostapd.conf"
+	& Apt.installed ["hostapd"]
+	& File.hasContent "/etc/hostapd/hostapd.conf"
 			[ "interface=wlan0"
 			, "ssid=house"
 			, "hw_mode=g"
 			, "channel=8"
 			]
-		`requires` File.dirExists "/lib/hostapd"
-	& Apt.serviceInstalledRunning "dnsmasq"
-		`requires` File.hasContent "/etc/dnsmasq.conf"
-			[ "domain-needed"
-			, "bogus-priv"
-			, "interface=wlan0"
-			, "domain=kitenet.net"
-			, "dhcp-range=10.1.1.100,10.1.1.150,24h"
-			, "no-hosts"
-			, "address=/honeybee.kitenet.net/10.1.1.1"
-			]
-		`requires` File.hasContent "/etc/resolv.conf"
-			[ "domain kitenet.net"
-			, "search kitenet.net"
-			, "nameserver 8.8.8.8"
-			, "nameserver 8.8.4.4"
-			]
+		`requires` File.dirExists "/etc/hostapd"
+		`requires` File.hasContent "/etc/default/hostapd"
+			[ "DAEMON_CONF=/etc/hostapd/hostapd.conf" ]
+		`onChange` Service.running "hostapd"
+	& File.hasContent "/etc/resolv.conf"
+		[ "domain kitenet.net"
+		, "search kitenet.net"
+		, "nameserver 8.8.8.8"
+		, "nameserver 8.8.4.4"
+		]
+	& Apt.installed ["dnsmasq"]
+	& File.hasContent "/etc/dnsmasq.conf"
+		[ "domain-needed"
+		, "bogus-priv"
+		, "interface=wlan0"
+		, "domain=kitenet.net"
+		, "dhcp-range=10.1.1.100,10.1.1.150,24h"
+		, "no-hosts"
+		, "address=/honeybee.kitenet.net/10.1.1.1"
+		]
+		`onChange` Service.restarted "dnsmasq"
 	& ipmasq "wlan0"
 	& Apt.serviceInstalledRunning "netplug"
 	& Network.dhcp' "eth0"

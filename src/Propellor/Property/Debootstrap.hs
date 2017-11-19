@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Propellor.Property.Debootstrap (
 	Url,
 	DebootstrapConfig(..),
@@ -6,12 +8,12 @@ module Propellor.Property.Debootstrap (
 	extractSuite,
 	installed,
 	sourceInstall,
-	programPath,
 ) where
 
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Chroot.Util
+import Propellor.Property.Qemu
 import Utility.Path
 import Utility.FileMode
 
@@ -29,6 +31,7 @@ data DebootstrapConfig
 	| MinBase
 	| BuilddD
 	| DebootstrapParam String
+	| UseEmulation
 	| DebootstrapConfig :+ DebootstrapConfig
 	deriving (Show)
 
@@ -41,15 +44,41 @@ toParams DefaultConfig = []
 toParams MinBase = [Param "--variant=minbase"]
 toParams BuilddD = [Param "--variant=buildd"]
 toParams (DebootstrapParam p) = [Param p]
+toParams UseEmulation = []
 toParams (c1 :+ c2) = toParams c1 <> toParams c2
+
+useEmulation :: DebootstrapConfig -> Bool
+useEmulation UseEmulation = True
+useEmulation (a :+ b) = useEmulation a || useEmulation b
+useEmulation _ = False
 
 -- | Builds a chroot in the given directory using debootstrap.
 --
 -- The System can be any OS and architecture that debootstrap
 -- and the kernel support.
+--
+-- When the System is architecture that the kernel does not support,
+-- it can still be bootstrapped using emulation. This is determined
+-- by checking `supportsArch`, or can be configured with `UseEmulation`.
+--
+-- When emulation is used, the chroot will have an additional binary 
+-- installed in it. To get a completelty clean chroot (eg for producing a
+-- bootable disk image), use the `removeHostEmulationBinary` property.
 built :: FilePath -> System -> DebootstrapConfig -> Property Linux
-built target system config = built' (setupRevertableProperty installed) target system config
+built target system@(System _ targetarch) config =
+	withOS ("debootstrapped " ++ target) go
+  where
+	go w (Just hostos)
+		| supportsArch hostos targetarch && not (useEmulation config) =
+			ensureProperty w $
+				built' (setupRevertableProperty installed)
+					target system config
+	go w _ = ensureProperty w $ do
+		let p = setupRevertableProperty foreignBinariesEmulated
+			`before` setupRevertableProperty installed
+		built' p target system (config :+ UseEmulation)
 
+-- | Like `built`,  but uses the provided Property to install debootstrap.
 built' :: Property Linux -> FilePath -> System -> DebootstrapConfig -> Property Linux
 built' installprop target system@(System _ arch) config = 
 	go `before` oldpermfix
@@ -68,7 +97,9 @@ built' installprop target system@(System _ arch) config =
 			, Param suite
 			, Param target
 			]
-		cmd <- fromMaybe "debootstrap" <$> programPath
+		cmd <- if useEmulation config
+			then pure "qemu-debootstrap"
+			else fromMaybe "debootstrap" <$> programPath
 		de <- standardPathEnv
 		ifM (boolSystemEnv cmd params (Just de))
 			( return MadeChange
