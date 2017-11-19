@@ -97,16 +97,9 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Ssh.userKeys (User "joey") hostContext
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
-	& imageBuilt (RawDiskImage "/srv/honeybee.img")
-		(hostChroot honeybee (Debootstrapped mempty))
-		MSDOS
-		[ partition EXT2
-			`mountedAt` "/boot"
-			`setSize` MegaBytes 200
-		, partition EXT4
-			`mountedAt` "/"
-			`addFreeSpace` MegaBytes 500
-		]
+	& imageBuiltFor honeybee
+		(RawDiskImage "/srv/honeybee.img")
+		(Debootstrapped mempty)
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
@@ -189,6 +182,18 @@ honeybee = host "honeybee.kitenet.net" $ props
 		[ "Home router and arm git-annex build box." ]
 	
 	& cubietech_Cubietruck
+	& hasPartition
+		( partition EXT2
+			`mountedAt` "/boot"
+			`partLocation` Beginning
+			`setSize` MegaBytes 200
+		)
+	& hasPartition
+		( partition EXT4
+			`mountedAt` "/"
+			`addFreeSpace` MegaBytes 500
+		]
+	
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
 		`requires` File.hasPrivContent "/lib/firmware/brcm/brcmfmac43362-sdio.txt" anyContext

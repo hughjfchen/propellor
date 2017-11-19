@@ -5,6 +5,9 @@ propellor (5.0.0) UNRELEASED; urgency=medium
   * Machine: New module collecting machine-specific properties for 
     building bootable images for ARM boards.
     Tested working boards: Olimex Lime, CubieTruck, Banana Pi, SheevaPlug.
+  * Diskimage.imageBuiltFor: New property to build a disk image for a Host,
+    using partition table information configured via the new properties
+    hasPartitionTableType, hasPartition and adjustPartition.
   * Chroot.noServices moved to Service.noServices and its type changed.
     (API change)
   * Service: Avoid starting services when noServices is used.

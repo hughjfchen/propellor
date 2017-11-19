@@ -1,18 +1,47 @@
--- | Disk image partition specification and combinators.
+{-# LANGUAGE DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
+
+-- | Disk image partition specification.
 
 module Propellor.Property.DiskImage.PartSpec (
-	module Propellor.Types.PartSpec,
-	module Propellor.Property.DiskImage.PartSpec,
-	module Propellor.Property.Parted.Types,
-	module Propellor.Property.Partition,
+	PartSpec,
+	Fs(..),
+	PartSize(..),
+	partition,
+	-- * PartSpec combinators
+	swapPartition,
+	mountedAt,
+	addFreeSpace,
+	setSize,
+	mountOpt,
+	errorReadonly,
+	reservedSpacePercentage,
+	setFlag,
+	extended,
+	-- * Partition properties
+	--
+	-- | These properties do not do any disk partitioning on their own, but
+	-- the Info they set can be used when building a disk image for a
+	-- host.
+	hasPartition,
+	adjustPartition,
+	PartLocation(..),
+	partLocation,
+	hasPartitionTableType,
+	TableType(..),
+	PartInfo,
+	toPartTableSpec,
+	PartTableSpec(..)
 ) where
 
 import Propellor.Base
 import Propellor.Property.Parted
 import Propellor.Types.PartSpec
-import Propellor.Property.Parted.Types
+import Propellor.Types.Info
 import Propellor.Property.Partition (Fs(..))
 import Propellor.Property.Mount
+
+import Data.List (sortBy)
+import Data.Ord
 
 -- | Specifies a partition with a given filesystem.
 --
@@ -26,7 +55,7 @@ swapPartition :: Monoid t => PartSize -> PartSpec t
 swapPartition sz = (Nothing, mempty, const (mkPartition LinuxSwap sz), mempty)
 
 -- | Specifies where to mount a partition.
-mountedAt :: PartSpec t -> FilePath -> PartSpec t
+mountedAt :: PartSpec t -> MountPoint -> PartSpec t
 mountedAt (_, o, p, t) mp = (Just mp, o, p, t)
 
 -- | Partitions in disk images default to being sized large enough to hold
@@ -69,3 +98,89 @@ extended s = adjustp s $ \p -> p { partType = Extended }
 
 adjustp :: PartSpec t -> (Partition -> Partition) -> PartSpec t
 adjustp (mp, o, p, t) f = (mp, o, f . p, t)
+
+data PartInfoVal
+	= TableTypeInfo TableType
+	| PartSpecInfo (PartSpec PartLocation)
+	| AdjustPartSpecInfo MountPoint (PartSpec PartLocation -> PartSpec PartLocation)
+
+newtype PartInfo = PartInfo [PartInfoVal]
+	deriving (Monoid, Typeable)
+
+instance IsInfo PartInfo where
+	propagateInfo _ = PropagateInfo False
+
+instance Show PartInfo where
+	show = show . toPartTableSpec
+
+toPartTableSpec :: PartInfo -> PartTableSpec
+toPartTableSpec (PartInfo l) = PartTableSpec tt pil
+  where
+	tt = fromMaybe MSDOS $ headMaybe $ reverse $ mapMaybe gettt l
+
+	pil = map convert $ sortBy (comparing location) $ adjust collect
+	collect = mapMaybe getspartspec l
+	adjust ps = adjust' ps (mapMaybe getadjust l)
+	adjust' ps [] = ps
+	adjust' ps ((mp, f):rest) = adjust' (map (adjustone mp f) ps) rest
+	adjustone mp f p@(mp', _, _, _)
+		| Just mp == mp' = f p
+		| otherwise = p
+	location (_, _, _, loc) = loc
+	convert (mp, o, p, _) = (mp, o, p, ())
+	
+	gettt (TableTypeInfo t) = Just t
+	gettt _ = Nothing
+	getspartspec (PartSpecInfo ps) = Just ps
+	getspartspec _ = Nothing
+	getadjust (AdjustPartSpecInfo mp f) = Just (mp, f)
+	getadjust _ = Nothing
+
+-- | Indicates the partition table type of a host.
+--
+-- When not specified, the default is MSDOS.
+--
+-- For example:
+--
+-- >	& hasPartitionTableType GPT
+hasPartitionTableType :: TableType -> Property (HasInfo + UnixLike)
+hasPartitionTableType tt = pureInfoProperty
+	("partition table type " ++ show tt)
+	(PartInfo [TableTypeInfo tt])
+
+-- | Indicates that a host has a partition.
+--
+-- For example:
+--
+-- >	& hasPartiton (partition EXT2 `mountedAt` "/boot" `partLocation` Beginning)
+-- >	& hasPartiton (partition EXT4 `mountedAt` "/")
+-- >	& hasPartiton (partition EXT4 `mountedAt` "/home" `partLocation` End `reservedSpacePercentage` 0)
+hasPartition :: PartSpec PartLocation -> Property (HasInfo + UnixLike)
+hasPartition p@(mmp, _, _, _) = pureInfoProperty desc
+	(PartInfo [PartSpecInfo p])
+  where
+	desc = case mmp of
+		Just mp -> "has " ++ mp ++ " partition"
+		Nothing -> "has unmounted partition"
+
+-- | Adjusts the PartSpec for the partition mounted at the specified location.
+--
+-- For example:
+--
+-- > 	& adjustPartition "/boot" (`addFreeSpace` MegaBytes 150)
+adjustPartition :: MountPoint -> (PartSpec PartLocation -> PartSpec PartLocation) -> Property (HasInfo + UnixLike)
+adjustPartition mp f = pureInfoProperty
+	("has " ++ mp ++ " adjusted")
+	(PartInfo [AdjustPartSpecInfo mp f])
+
+-- | Indicates partition layout in a disk. Default is somewhere in the
+-- middle.
+data PartLocation = Beginning | Middle | End
+	deriving (Eq, Ord)
+
+instance Monoid PartLocation where
+	mempty = Middle
+	mappend _ b = b
+
+partLocation :: PartSpec PartLocation -> PartLocation -> PartSpec PartLocation
+partLocation (mp, o, p, _) l = (mp, o, p, l)

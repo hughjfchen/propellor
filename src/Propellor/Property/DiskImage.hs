@@ -13,6 +13,8 @@ module Propellor.Property.DiskImage (
 	VirtualBoxPointer(..),
 	imageBuilt,
 	imageRebuilt,
+	imageBuiltFor,
+	imageRebuiltFor,
 	imageBuiltFrom,
 	imageExists,
 	Grub.BIOS(..),
@@ -134,36 +136,59 @@ instance DiskImage VirtualBoxPointer where
 -- > 		& User.hasPassword (User "demo")
 -- >		& User.hasDesktopGroups (User "demo")
 -- > 		& ...
+imageBuilt :: DiskImage d => d -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageBuilt = imageBuilt' False
+
+-- | Like 'imageBuilt', but the chroot is deleted and rebuilt from scratch
+-- each time. This is more expensive, but useful to ensure reproducible
+-- results when the properties of the chroot have been changed.
+imageRebuilt :: DiskImage d => d -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
+imageRebuilt = imageBuilt' True
+
+-- | Create a bootable disk image for a Host.
 --
--- This can also be used with `Chroot.hostChroot` to build a disk image
--- that has all the properties of a Host. For example:
+-- This works just like 'imageBuilt', but partition table is
+-- determined by looking at the Host's 'hasPartitionTableType'
+-- `hasPartition', and 'adjustPartition' properties.
+--
+-- For example:
 --
 -- > foo :: Host
 -- > foo = host "foo.example.com" $ props
--- >	& imageBuilt (RawDiskImage "/srv/diskimages/bar-disk.img")
--- >		(hostChroot bar (Debootstrapped mempty))
--- >		MSDOS
--- >		[ partition EXT2 `mountedAt` "/boot"
--- >			`setFlag` BootFlag
--- >		, partition EXT4 `mountedAt` "/"
--- >			`addFreeSpace` MegaBytes 5000
--- >		, swapPartition (MegaBytes 256)
--- >		]
+-- >	& imageBuiltFor bar
+-- >		(RawDiskImage "/srv/diskimages/bar-disk.img")
+-- >		(Debootstrapped mempty)
 -- >
 -- > bar :: Host
 -- > bar = host "bar.example.com" $ props
+-- >	& hasPartiton
+-- >		( partition EXT2
+-- >		`mountedAt` "/boot"
+-- >		`partLocation` Beginning
+-- >		`addFreeSpace` MegaBytes 150
+-- >		)
+-- >	& hasPartiton
+-- >		( partition EXT4
+-- >		`mountedAt` "/"
+-- >		`addFreeSpace` MegaBytes 500
+-- >		)
 -- >	& osDebian Unstable X86_64
 -- >	& Apt.installed ["linux-image-amd64"]
 -- >	& Grub.installed PC
 -- >	& hasPassword (User "root")
-imageBuilt :: DiskImage d => d -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
-imageBuilt = imageBuilt' False
+imageBuiltFor :: (DiskImage d, Chroot.ChrootBootstrapper bootstrapper) => Host -> d -> bootstrapper -> RevertableProperty (HasInfo + DebianLike) Linux
+imageBuiltFor = imageBuiltFor' False
 
--- | Like 'built', but the chroot is deleted and rebuilt from scratch each
--- time. This is more expensive, but useful to ensure reproducible results
--- when the properties of the chroot have been changed.
-imageRebuilt :: DiskImage d => d -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
-imageRebuilt = imageBuilt' True
+-- | Like 'imageBuiltFor', but the chroot is deleted and rebuilt from
+-- scratch each time.
+imageRebuiltFor :: (DiskImage d, Chroot.ChrootBootstrapper bootstrapper) => Host -> d -> bootstrapper -> RevertableProperty (HasInfo + DebianLike) Linux
+imageRebuiltFor = imageBuiltFor' False
+
+imageBuiltFor' :: (DiskImage d, Chroot.ChrootBootstrapper bootstrapper) => Bool -> Host -> d -> bootstrapper -> RevertableProperty (HasInfo + DebianLike) Linux
+imageBuiltFor' rebuild h d bs =
+	imageBuilt' rebuild d (Chroot.hostChroot h bs) tt pil
+  where
+	PartTableSpec tt pil = toPartTableSpec (fromInfo (hostInfo h))
 
 imageBuilt' :: DiskImage d => Bool -> d -> (FilePath -> Chroot) -> TableType -> [PartSpec ()] -> RevertableProperty (HasInfo + DebianLike) Linux
 imageBuilt' rebuild img mkchroot tabletype partspec =
