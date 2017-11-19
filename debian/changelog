@@ -1,4 +1,4 @@
-propellor (5.0.0) UNRELEASED; urgency=medium
+propellor (5.0.0) unstable; urgency=medium
 
   * Debootstrap.built now supports bootstrapping chroots for foreign
     OS's, using qemu-user-static.
@@ -19,7 +19,7 @@ propellor (5.0.0) UNRELEASED; urgency=medium
   * Fail2Ban: Renamed jail.d conf file to use .local.
     Thanks, Félix Sipma.
 
- -- Joey Hess <id@joeyh.name>  Thu, 02 Nov 2017 10:28:44 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 19 Nov 2017 15:42:44 -0400
 
 propellor (4.9.0) unstable; urgency=medium
 
