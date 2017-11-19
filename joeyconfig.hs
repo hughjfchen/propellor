@@ -192,7 +192,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 		( partition EXT4
 			`mountedAt` "/"
 			`addFreeSpace` MegaBytes 500
-		]
+		)
 	
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
