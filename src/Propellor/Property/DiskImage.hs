@@ -148,7 +148,7 @@ imageRebuilt = imageBuilt' True
 -- | Create a bootable disk image for a Host.
 --
 -- This works just like 'imageBuilt', but partition table is
--- determined by looking at the Host's 'hasPartitionTableType'
+-- determined by looking at the Host's 'hasPartitionTableType',
 -- `hasPartition', and 'adjustPartition' properties.
 --
 -- For example:
