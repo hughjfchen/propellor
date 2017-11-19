@@ -912,7 +912,7 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 homePowerMonitor :: IsContext c => User -> c -> (SshKeyType, Ssh.PubKeyText) -> Property (HasInfo + DebianLike)
 homePowerMonitor user ctx sshkey = propertyList "home power monitor" $ props
 	& Apache.installed
-	& Apt.installed ["python", "python-pymodbus", "rrdtool"]
+	& Apt.installed ["python", "python-pymodbus", "rrdtool", "rsync"]
 	& File.ownerGroup "/var/www/html" user (userGroup user)
 	& Git.cloned user "git://git.kitenet.net/joey/homepower" d Nothing
 	& buildpoller
