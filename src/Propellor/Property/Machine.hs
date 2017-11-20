@@ -16,6 +16,31 @@
 -- be functional at all without it, its property will include the non-free
 -- firmware, but if the non-free firmware is only needed for non-critical
 -- functionality, it won't be included.
+-- 
+-- Example: Building a disk image for a Marvell SheevaPlug 
+--
+-- This defines a Host "sheeva" that is a Marvell SheevaPlug.
+-- A bootable disk image for "sheeva" is built on another machine
+-- "darkstar", which can be eg an Intel laptop running Debian.
+--
+-- > import Propellor.Property.Machine
+-- > import Propellor.Property.DiskImage
+-- > 
+-- > sheeva :: Host
+-- > sheeva = host "sheeva.example.com" $ props
+-- > 	& osDebian Unstable ARMEL
+-- > 	& marvell_SheevaPlug Marvell_SheevaPlug_SDCard
+-- >	& hasPartition
+-- >		( partition EXT4
+-- > 		`mountedAt` "/"
+-- >		`addFreeSpace` MegaBytes 2048
+-- >		)
+-- >
+-- > darkstar :: Host
+-- > darkstar = host "darkstar.example.com" $ props
+-- >	& imageBuiltFor sheeva
+-- >		(RawDiskImage "/srv/sheeva-disk.img")
+-- >		(Debootstrapped mempty)
 
 module Propellor.Property.Machine (
 	-- * ARM boards
@@ -41,25 +66,37 @@ import Propellor.Types.Core
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.FlashKernel as FlashKernel
 import qualified Propellor.Property.Uboot as Uboot
+import Propellor.Property.DiskImage.PartSpec
 
 data Marvell_SheevaPlug_BootDevice
 	= Marvell_SheevaPlug_SDCard
 	| Marvell_SheevaPlug_ESATA
 
--- | Marvel SheevaPlug
+-- | Marvell SheevaPlug
 --
--- Needs a small /boot partition formatted EXT2
+-- This includes a small EXT2 formatted /boot partition.
 --
 -- Note that u-boot may need to be upgraded manually, and will need to be
 -- configured to boot from the SD card or eSATA. See
 -- https://www.cyrius.com/debian/kirkwood/sheevaplug/install/
 marvell_SheevaPlug :: Marvell_SheevaPlug_BootDevice -> Property (HasInfo + DebianLike)
-marvell_SheevaPlug Marvell_SheevaPlug_SDCard =
-	FlashKernel.installed "Marvell SheevaPlug Reference Board"
-		`requires` marvell
-marvell_SheevaPlug Marvell_SheevaPlug_ESATA =
-	FlashKernel.installed "Marvell eSATA SheevaPlug Reference Board"
-		`requires` marvell
+marvell_SheevaPlug bd = fk
+	`requires` marvell
+	`requires` hasPartition bootpart
+  where
+	fk = case bd of
+		Marvell_SheevaPlug_SDCard ->
+			FlashKernel.installed "Marvell SheevaPlug Reference Board"
+		Marvell_SheevaPlug_ESATA ->
+			FlashKernel.installed "Marvell eSATA SheevaPlug Reference Board"
+	-- The boot loader needs an EXT2 boot partition, which comes
+	-- first. Add some free space to allow for additional kernel images
+	-- and initrds.
+	bootpart :: PartSpec PartLocation
+	bootpart = partition EXT2
+		`mountedAt` "/boot"
+		`partLocation` Beginning
+		`addFreeSpace` MegaBytes 150
 
 -- | Cubietech Cubietruck
 -- 
