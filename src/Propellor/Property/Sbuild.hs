@@ -23,11 +23,11 @@ Suggested usage in @config.hs@:
 >  mybox = host "mybox.example.com" $ props
 >  	& osDebian (Stable "stretch") X86_64
 >  	& Apt.useLocalCacher
->  	& Sbuild.built Sbuild.UseCcache unstableSchroot
+>  	& sidSchrootBuilt
 >  	& Sbuild.usableBy (User "spwhitton")
 >  	& Schroot.overlaysInTmpfs
 >    where
->  	unstableSchroot = props
+>  	sidSchrootBuilt = Sbuild.built Sbuild.UseCcache $ props
 >  		& osDebian Unstable X86_32
 >  		& Sbuild.update `period` Weekly (Just 1)
 >  		& Sbuild.useHostProxy mybox
