@@ -126,9 +126,9 @@ newtype LinkTarget = LinkTarget FilePath
 
 -- | Creates or atomically updates a symbolic link.
 --
--- Revert to ensure the symlink is not present.
+-- Revert to ensure no symlink is present.
 --
--- Does not overwrite regular files or directories.
+-- Does not overwrite or delete regular files or directories.
 isSymlinkedTo :: FilePath -> LinkTarget -> RevertableProperty UnixLike UnixLike
 link `isSymlinkedTo` (LinkTarget target) = linked <!> notLinked
   where
