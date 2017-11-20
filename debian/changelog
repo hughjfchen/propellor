@@ -1,6 +1,6 @@
 propellor (5.1.0) UNRELEASED; urgency=medium
 
-  * File.isSymlinkedTo now revertable.
+  * File.isSymlinkedTo now revertable. (minor API change)
   * Sbuild module changes:
     - Type of Sbuild.built changed to accept additional properties to be ensured
       inside schroots. (API change)
