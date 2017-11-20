@@ -252,12 +252,15 @@ update = Apt.update `before` Apt.upgrade `before` Apt.autoRemove
 -- | Ensure that an sbuild schroot uses the host's Apt proxy.
 --
 -- This property is standardly used when the host has 'Apt.useLocalCacher'.
-useHostProxy :: Host -> Property (HasInfo + DebianLike)
-useHostProxy h = case getProxyInfo of
-	Nothing -> doNothing
-	Just (Apt.HostAptProxy u) -> Apt.proxy u
+useHostProxy :: Host -> Property DebianLike
+useHostProxy h = property' "use host's apt proxy" $ \w ->
+	-- Note that we can't look at getProxyInfo outside the property,
+	-- as that would loop, but it's ok to look at it inside the
+	-- property. Thus the slightly strange construction here.
+	case getProxyInfo of
+		Just (Apt.HostAptProxy u) -> ensureProperty w (Apt.proxy' u)
+		Nothing -> noChange
   where
-	getProxyInfo :: Maybe Apt.HostAptProxy
 	getProxyInfo = fromInfoVal . fromInfo . hostInfo $ h
 
 aptCacheLine :: String

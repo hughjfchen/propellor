@@ -501,12 +501,16 @@ dpkgStatus = "/var/lib/dpkg/status"
 
 -- | Set apt's proxy
 proxy :: Url -> Property (HasInfo + DebianLike)
-proxy u = tightenTargets $
-	proxyInfo `before` proxyConfig `describe` desc
+proxy u = setInfoProperty (proxy' u) (proxyInfo u)
   where
-	proxyInfo = pureInfoProperty desc (InfoVal (HostAptProxy u))
-	proxyConfig = "/etc/apt/apt.conf.d/20proxy" `File.hasContent`
+	proxyInfo = toInfo . InfoVal . HostAptProxy
+
+proxy' :: Url -> Property DebianLike
+proxy' u = tightenTargets $
+	"/etc/apt/apt.conf.d/20proxy" `File.hasContent`
 		[ "Acquire::HTTP::Proxy \"" ++ u ++ "\";" ]
+		`describe` desc
+  where
 	desc = (u ++ " apt proxy selected")
 
 -- | Cause apt to proxy downloads via an apt cacher on localhost
