@@ -134,7 +134,7 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 	-- TODO we should kill any sessions still using the chroot
 	-- before destroying it (as suggested by sbuild-destroychroot)
 	deleted :: Property Linux
-	deleted = propertyList desc $ props
+	deleted = combineProperties desc $ props
 		! Chroot.provisioned schroot
 		! compatSymlink
 		& File.notPresent schrootConf
