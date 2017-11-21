@@ -26,6 +26,6 @@ jailed ps = mconcat (map jailed' ps)
 	`requires` installed
 	`describe` unwords ("firejail jailed":ps)
 
-jailed' :: String -> Property UnixLike
+jailed' :: String -> RevertableProperty UnixLike UnixLike
 jailed' p = ("/usr/local/bin" </> p)
 	`File.isSymlinkedTo` File.LinkTarget "/usr/bin/firejail"
