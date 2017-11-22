@@ -102,7 +102,7 @@ onlyProcess lockfile a = bracket lock unlock (const a)
 			`catchIO` const alreadyrunning
 		return l
 	unlock = closeFd
-	alreadyrunning = error "Propellor is already running on this host!"
+	alreadyrunning = giveup "Propellor is already running on this host!"
 
 -- | Chains to a propellor sub-Process, forwarding its output on to the
 -- display, except for the last line which is a Result.
