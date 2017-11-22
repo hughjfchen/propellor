@@ -126,17 +126,29 @@ newtype LinkTarget = LinkTarget FilePath
 
 -- | Creates or atomically updates a symbolic link.
 --
--- Does not overwrite regular files or directories.
-isSymlinkedTo :: FilePath -> LinkTarget -> Property UnixLike
-link `isSymlinkedTo` (LinkTarget target) = property desc $
-	go =<< (liftIO $ tryIO $ getSymbolicLinkStatus link)
+-- Revert to ensure no symlink is present.
+--
+-- Does not overwrite or delete regular files or directories.
+isSymlinkedTo :: FilePath -> LinkTarget -> RevertableProperty UnixLike UnixLike
+link `isSymlinkedTo` (LinkTarget target) = linked <!> notLinked
   where
-	desc = link ++ " is symlinked to " ++ target
+	linked = property (link ++ " is symlinked to " ++ target) $
+		go =<< getLinkStatus
+
 	go (Right stat) =
 		if isSymbolicLink stat
 			then checkLink
 			else nonSymlinkExists
 	go (Left _) = makeChange $ createSymbolicLink target link
+
+	notLinked = property (link ++ "does not exist as a symlink") $
+		stop =<< getLinkStatus
+
+	stop (Right stat) =
+		if isSymbolicLink stat
+			then makeChange $ nukeFile link
+			else nonSymlinkExists
+	stop (Left _) = noChange
 
 	nonSymlinkExists = do
 		warningMessage $ link ++ " exists and is not a symlink"
@@ -147,6 +159,8 @@ link `isSymlinkedTo` (LinkTarget target) = property desc $
 			then noChange
 			else makeChange updateLink
 	updateLink = createSymbolicLink target `viaStableTmp` link
+
+	getLinkStatus = liftIO $ tryIO $ getSymbolicLinkStatus link
 
 -- | Ensures that a file is a copy of another (regular) file.
 isCopyOf :: FilePath -> FilePath -> Property UnixLike

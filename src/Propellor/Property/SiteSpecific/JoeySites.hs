@@ -595,19 +595,16 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		[ "#!/bin/sh"
 		, "# deployed with propellor"
 		, "set -e"
-		, "pass=$HOME/.pine-password"
-		, "if [ ! -e $pass ]; then"
-		, "\ttouch $pass"
-		, "fi"
-		, "chmod 600 $pass"
-		, "exec alpine -passfile $pass \"$@\""
+		, "exec alpine \"$@\""
 		]
 		`onChange` (pinescript `File.mode`
 			combineModes (readModes ++ executeModes))
 		`describe` "pine wrapper script"
+	-- Make pine use dovecot pipe to read maildir.
 	& "/etc/pine.conf" `File.hasContent`
 		[ "# deployed with propellor"
-		, "inbox-path={localhost/novalidate-cert/NoRsh}inbox"
+		, "inbox-path={localhost}inbox"
+		, "rsh-command=/usr/lib/dovecot/imap"
 		]
 		`describe` "pine configured to use local imap server"
 

@@ -16,8 +16,8 @@
 -- be functional at all without it, its property will include the non-free
 -- firmware, but if the non-free firmware is only needed for non-critical
 -- functionality, it won't be included.
-
--- | Example: Building a disk image for a Marvell SheevaPlug 
+-- 
+-- Example: Building a disk image for a Marvell SheevaPlug 
 --
 -- This defines a Host "sheeva" that is a Marvell SheevaPlug.
 -- A bootable disk image for "sheeva" is built on another machine
