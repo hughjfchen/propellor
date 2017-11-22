@@ -603,7 +603,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 	-- Make pine use dovecot pipe to read maildir.
 	& "/etc/pine.conf" `File.hasContent`
 		[ "# deployed with propellor"
-		, "inbox-path={localhost/user=NIXUSER}inbox"
+		, "inbox-path={localhost}inbox"
 		, "rsh-command=/usr/lib/dovecot/imap"
 		]
 		`describe` "pine configured to use local imap server"
