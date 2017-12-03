@@ -183,12 +183,6 @@ honeybee = host "honeybee.kitenet.net" $ props
 	
 	& cubietech_Cubietruck
 	& hasPartition
-		( partition EXT2
-			`mountedAt` "/boot"
-			`partLocation` Beginning
-			`setSize` MegaBytes 200
-		)
-	& hasPartition
 		( partition EXT4
 			`mountedAt` "/"
 			`addFreeSpace` MegaBytes 500

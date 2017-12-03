@@ -14,6 +14,8 @@ import Propellor.Base
 import Propellor.Bootstrap
 import Propellor.Types.Info
 import Propellor.Property.Chroot
+import Propellor.PrivData.Paths
+import Utility.FileMode
 
 import Data.List
 import qualified Data.ByteString as B
@@ -63,8 +65,18 @@ bootstrappedFrom reposource = check inChroot $
 	go :: Property Linux
 	go = property "Propellor bootstrapped" $ do
 		system <- getOS
+		-- gets Host value representing the chroot this is run in
+		chroothost <- ask
+		-- load privdata from outside the chroot, and filter
+		-- to only the privdata needed inside the chroot.
+		privdata <- liftIO $ filterPrivData chroothost
+			<$> readPrivDataFile privDataLocal
 		bootstrapper <- getBootstrapper
-		assumeChange $ exposeTrueLocaldir $ const $ 
+		assumeChange $ exposeTrueLocaldir $ const $ do
+			liftIO $ createDirectoryIfMissing True $
+				takeDirectory privDataLocal
+			liftIO $ writeFileProtected privDataLocal $
+				show privdata
 			runShellCommand $ buildShellCommand
 				[ "cd " ++ localdir
 				, checkDepsCommand bootstrapper system

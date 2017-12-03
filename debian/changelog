@@ -1,3 +1,9 @@
+propellor (5.1.1) UNRELEASED; urgency=medium
+
+  * bootstrappedFrom: Set up local privdata file.
+
+ -- Joey Hess <id@joeyh.name>  Wed, 29 Nov 2017 11:45:08 -0400
+
 propellor (5.1.0) unstable; urgency=medium
 
   [ Sean Whitton ]
