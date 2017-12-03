@@ -3,7 +3,7 @@
  subject="""comment 7"""
  date="2017-12-03T18:20:25Z"
  content="""
-Felix did some more work on this last April, in his precompiled-rebased
+Felix did some more work on this last April, in his precompiled-rebased-2
 branch.
 
 In particular, that branch is supposed to handle case #3 above (by a git
