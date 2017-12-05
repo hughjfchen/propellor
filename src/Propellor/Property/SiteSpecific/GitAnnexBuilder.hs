@@ -181,6 +181,8 @@ armAutoBuilder suite arch flavor =
 		-- Works around ghc crash with parallel builds on arm.
 		& (homedir </> ".cabal" </> "config")
 			`File.lacksLine` "jobs: $ncpus"
+		-- Work around https://github.com/systemd/systemd/issues/7135
+		& Systemd.containerCfg "--system-call-filter=set_tls"
 
 androidAutoBuilderContainer :: Times -> TimeOut -> Systemd.Container
 androidAutoBuilderContainer crontimes timeout =
