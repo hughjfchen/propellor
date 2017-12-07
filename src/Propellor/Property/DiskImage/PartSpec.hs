@@ -160,8 +160,8 @@ hasPartition p@(mmp, _, _, _) = pureInfoProperty desc
 	(PartInfo [PartSpecInfo p])
   where
 	desc = case mmp of
-		Just mp -> "has " ++ mp ++ " partition"
-		Nothing -> "has unmounted partition"
+		Just mp -> mp ++ " partition"
+		Nothing -> "unmounted partition"
 
 -- | Adjusts the PartSpec for the partition mounted at the specified location.
 --
@@ -170,7 +170,7 @@ hasPartition p@(mmp, _, _, _) = pureInfoProperty desc
 -- > 	& adjustPartition "/boot" (`addFreeSpace` MegaBytes 150)
 adjustPartition :: MountPoint -> (PartSpec PartLocation -> PartSpec PartLocation) -> Property (HasInfo + UnixLike)
 adjustPartition mp f = pureInfoProperty
-	("has " ++ mp ++ " adjusted")
+	(mp ++ " adjusted")
 	(PartInfo [AdjustPartSpecInfo mp f])
 
 -- | Indicates partition layout in a disk. Default is somewhere in the
