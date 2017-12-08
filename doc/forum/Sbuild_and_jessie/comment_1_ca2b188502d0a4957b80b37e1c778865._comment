@@ -1,0 +1,8 @@
+[[!comment format=mdwn
+ username="spwhitton"
+ avatar="http://cdn.libravatar.org/avatar/9c3f08f80e67733fd506c353239569eb"
+ subject="comment 1"
+ date="2017-12-08T17:44:56Z"
+ content="""
+I am mystified by this.  `Sbuild.built` calls `Sbuild.preReqsInstalled` which calls `Apt.installed [\"autopkgtest\", ...]` ...
+"""]]
