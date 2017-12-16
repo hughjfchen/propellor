@@ -185,7 +185,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& hasPartition
 		( partition EXT4
 			`mountedAt` "/"
-			`addFreeSpace` MegaBytes 500
+			`setSize` MegaBytes 8000
 		)
 	
 	& Apt.installed ["firmware-brcm80211"]
