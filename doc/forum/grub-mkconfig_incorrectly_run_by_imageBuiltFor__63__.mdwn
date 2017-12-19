@@ -29,7 +29,7 @@ I'm trying to create an image to boot a PC Engines' APU2, which uses coreboot. T
       where
         serialGrub :: Property (HasInfo + DebianLike)
         serialGrub = "/etc/default/grub" `File.containsLines`
-                [ "GRUB_CMDLINE_LINUX=\"console=ttyS0,115200n8\" biosdevname=0"
+                [ "GRUB_CMDLINE_LINUX=\"console=ttyS0,115200n8 biosdevname=0\""
                 , "GRUB_SERIAL_COMMAND=\"serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1\""
                 , "GRUB_TERMINAL=serial"
                 ]
