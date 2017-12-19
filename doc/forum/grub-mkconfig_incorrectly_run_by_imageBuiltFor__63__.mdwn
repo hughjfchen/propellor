@@ -1,0 +1,65 @@
+I'm trying to create an image to boot a PC Engines' APU2, which uses coreboot. The debugging is particularly funny as I don't have a usb to serial converter to see what's going on -_-. I've used the following properties:
+
+    laptop :: Host
+    laptop = host "laptop" $ props
+        & osDebian Unstable X86_64
+        ...
+        & imageBuiltFor router
+            (RawDiskImage "/srv/router.img")
+            (Chroot.Debootstrapped mempty)
+
+    router :: Host
+    router = host "router" $ props
+        & hasPartitionTableType GPT
+        & hasPartition
+            ( partition EXT2
+                `mountedAt` "/boot"
+                `partLocation` Beginning
+                `setSize` MegaBytes 150
+            )
+        & hasPartition
+            ( partition EXT4
+                `mountedAt` "/"
+                `addFreeSpace` MegaBytes 500
+            )
+        & osDebian (Stable "stretch") X86_64
+        & Apt.installed ["linux-image-amd64"]
+        & serialGrub
+        ...
+      where
+        serialGrub :: Property (HasInfo + DebianLike)
+        serialGrub = "/etc/default/grub" `File.containsLines`
+                [ "GRUB_CMDLINE_LINUX=\"console=ttyS0,115200n8\" biosdevname=0"
+                , "GRUB_SERIAL_COMMAND=\"serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1\""
+                , "GRUB_TERMINAL=serial"
+                ]
+                -- `onChange` Grub.mkConfig
+                `requires` Grub.installed Grub.Coreboot
+                `describe` "GRUB configured for PC Engines' APU2 serial console"
+
+This returns:
+    
+    $ propellor --spin laptop
+    ...
+    router no services started ... ok
+    router has partition table type GPT ... ok
+    router has has /boot partition ... ok
+    router has has / partition ... ok
+    router has Operating System (Debian Linux (Stable "stretch")) X86_64 ... ok
+    ...
+    router apt installed linux-image-amd64 ... ok
+    router GRUB configured for PC Engines' APU2 serial console ... ok
+    loop deleted : /dev/loop0
+         25,091,167 100%  194.29MB/s    0:00:00 (xfr#4, to-chk=0/5)
+        769,633,861  99%   26.74MB/s    0:00:27 (xfr#26204, to-chk=0/33524)   
+    update-initramfs: Generating /boot/initrd.img-4.9.0-4-amd64
+    /usr/sbin/grub-mkconfig: 253: /usr/sbin/grub-mkconfig: cannot create /boot/grub/grub.cfg.new: Directory nonexistent
+    loop deleted : /dev/loop0
+    laptop built disk image /srv/router.img ... failed
+    laptop overall ... failed
+
+So, grub-mkconfig seems to be run without /boot/grub existing, which I can confirm by looking into /srv/router.img.chroot/boot/:
+
+    $ ls /srv/router.img.chroot/boot/
+    config-4.9.0-4-amd64      initrd.img-4.9.0-4-amd64  System.map-4.9.0-4-amd64  vmlinuz-4.9.0-4-amd64
+
