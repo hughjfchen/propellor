@@ -149,4 +149,6 @@ umountLazy mnt =
 unmountBelow :: FilePath -> IO ()
 unmountBelow d = do
 	submnts <- mountPointsBelow d
-	forM_ submnts umountLazy
+	-- sort so sub-mounts are unmounted before the mount point
+	-- containing them
+	forM_ (sort submnts) umountLazy

@@ -274,13 +274,18 @@ partitionsPopulated chrootdir mnts mntopts devs = property' desc $ \w ->
 	desc = "partitions populated from " ++ chrootdir
 
 	go _ Nothing _ _ = noChange
-	go w (Just mnt) mntopt loopdev = withTmpDir "mnt" $ \tmpdir -> bracket
-		(liftIO $ mount "auto" (partitionLoopDev loopdev) tmpdir mntopt)
-		(const $ liftIO $ umountLazy tmpdir)
-		$ \ismounted -> if ismounted
-			then ensureProperty w $
-				syncDirFiltered (filtersfor mnt) (chrootdir ++ mnt) tmpdir
-			else return FailedChange
+	go w (Just mnt) mntopt loopdev = ifM (liftIO $ doesDirectoryExist srcdir) $
+		( withTmpDir "mnt" $ \tmpdir -> bracket
+			(liftIO $ mount "auto" (partitionLoopDev loopdev) tmpdir mntopt)
+			(const $ liftIO $ umountLazy tmpdir)
+			$ \ismounted -> if ismounted
+				then ensureProperty w $
+					syncDirFiltered (filtersfor mnt) srcdir tmpdir
+				else return FailedChange
+		, return NoChange
+		)
+	  where
+		srcdir = chrootdir ++ mnt
 
 	filtersfor mnt =
 		let childmnts = map (drop (length (dropTrailingPathSeparator mnt))) $

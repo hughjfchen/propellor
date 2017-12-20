@@ -9,6 +9,10 @@ propellor (5.2.0) UNRELEASED; urgency=medium
   * DiskImage: Use safeAlignment. It didn't seem worth making the
     alignment configurable here.
   * Fixed rounding bug in Parted.calcPartTable.
+  * DiskImage: Fix rsync crash when a mount point does not exist in the
+    chroot.
+  * Fix bug in unmountBelow that caused unmounting of nested mounts to
+    fail.
 
  -- Joey Hess <id@joeyh.name>  Wed, 29 Nov 2017 11:45:08 -0400
 
