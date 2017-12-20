@@ -1,7 +1,14 @@
-propellor (5.1.1) UNRELEASED; urgency=medium
+propellor (5.2.0) UNRELEASED; urgency=medium
 
   * bootstrappedFrom: Set up local privdata file.
   * Parted: Fix names used for FAT and VFAT partitions.
+  * Parted: Add an Alignment parameter. (API change)
+    A good default to use is safeAlignment, which is 4MiB,
+    well suited for inexpensive flash drives, and fine for other disks too.
+    Previously, a very non-optimial 1MB (not 1MiB) alignment had been used.
+  * DiskImage: Use safeAlignment. It didn't seem worth making the
+    alignment configurable here.
+  * Fixed rounding bug in Parted.calcPartTable.
 
  -- Joey Hess <id@joeyh.name>  Wed, 29 Nov 2017 11:45:08 -0400
 
