@@ -106,6 +106,8 @@ instance PartedVal Bool where
 	pval True = "on"
 	pval False = "off"
 
+-- This is used for creating partitions, not formatting partitions,
+-- so it's ok to use eg, fat32 for both FAT and VFAT.
 instance PartedVal Partition.Fs where
 	pval Partition.EXT2 = "ext2"
 	pval Partition.EXT3 = "ext3"
@@ -113,7 +115,7 @@ instance PartedVal Partition.Fs where
 	pval Partition.BTRFS = "btrfs"
 	pval Partition.REISERFS = "reiserfs"
 	pval Partition.XFS = "xfs"
-	pval Partition.FAT = "fat"
-	pval Partition.VFAT = "vfat"
+	pval Partition.FAT = "fat32"
+	pval Partition.VFAT = "fat32"
 	pval Partition.NTFS = "ntfs"
 	pval Partition.LinuxSwap = "linux-swap"
