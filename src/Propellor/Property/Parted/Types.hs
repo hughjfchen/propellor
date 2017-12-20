@@ -1,6 +1,5 @@
 module Propellor.Property.Parted.Types where
 
-import Propellor.Base
 import qualified Propellor.Property.Partition as Partition
 import Utility.DataUnits
 
@@ -17,14 +16,16 @@ instance PartedVal TableType where
 	pval = map toLower . show
 
 -- | A disk's partition table.
-data PartTable = PartTable TableType [Partition]
+data PartTable = PartTable TableType Alignment [Partition]
 	deriving (Show)
 
 instance Monoid PartTable where
-	-- | default TableType is MSDOS
-	mempty = PartTable MSDOS []
+	-- | default TableType is MSDOS, with a `safeAlignment`.
+	mempty = PartTable MSDOS safeAlignment []
 	-- | uses the TableType of the second parameter
-	mappend (PartTable _l1 ps1) (PartTable l2 ps2) = PartTable l2 (ps1 ++ ps2)
+	-- and the larger alignment,
+	mappend (PartTable _l1 a1 ps1) (PartTable l2 a2 ps2) =
+		PartTable l2 (max a1 a2) (ps1 ++ ps2)
 
 -- | A partition on the disk.
 data Partition = Partition
@@ -57,33 +58,49 @@ instance PartedVal PartType where
 	pval Logical = "logical"
 	pval Extended = "extended"
 
--- | All partition sizing is done in megabytes, so that parted can
--- automatically lay out the partitions.
---
--- Note that these are SI megabytes, not mebibytes.
-newtype PartSize = MegaBytes Integer
+-- | Size of a partition.
+data PartSize
+	-- Since disk sizes are typically given in MB, not MiB, this
+	-- uses SI MegaBytes (powers of 10).
+	= MegaBytes Integer
+	-- For more control, the partition size can be given in bytes.
+	-- Note that this will prevent any automatic alignment from 
+	-- being done.
+	| Bytes Integer
 	deriving (Show)
-
-instance PartedVal PartSize where
-	pval (MegaBytes n)
-		| n > 0 = val n ++ "MB"
-		-- parted can't make partitions smaller than 1MB;
-		-- avoid failure in edge cases
-		| otherwise = "1MB"
 
 -- | Rounds up to the nearest MegaByte.
 toPartSize :: ByteSize -> PartSize
-toPartSize b = MegaBytes $ ceiling (fromInteger b / 1000000 :: Double)
+toPartSize = toPartSize' ceiling
+
+toPartSize' :: (Double -> Integer) -> ByteSize -> PartSize
+toPartSize' rounder b = MegaBytes $ rounder (fromInteger b / 1000000 :: Double)
 
 fromPartSize :: PartSize -> ByteSize
 fromPartSize (MegaBytes b) = b * 1000000
+fromPartSize (Bytes n) = n
 
 instance Monoid PartSize where
 	mempty = MegaBytes 0
 	mappend (MegaBytes a) (MegaBytes b) = MegaBytes (a + b)
+	mappend (Bytes a) b = Bytes (a + fromPartSize b)
+	mappend a (Bytes b) = Bytes (b + fromPartSize a)
 
 reducePartSize :: PartSize -> PartSize -> PartSize
 reducePartSize (MegaBytes a) (MegaBytes b) = MegaBytes (a - b)
+
+-- | Partitions need to be aligned for optimal efficiency.
+-- The alignment is a number of bytes.
+newtype Alignment = Alignment ByteSize
+	deriving (Show, Eq, Ord)
+
+-- | 4MiB alignment is optimal for inexpensive flash drives and
+-- is a good safe default for all drives.
+safeAlignment :: Alignment
+safeAlignment = Alignment (4*1024*1024)
+
+fromAlignment :: Alignment -> ByteSize
+fromAlignment (Alignment n) = n
 
 -- | Flags that can be set on a partition.
 data PartFlag = BootFlag | RootFlag | SwapFlag | HiddenFlag | RaidFlag | LvmFlag | LbaFlag | LegacyBootFlag | IrstFlag | EspFlag | PaloFlag
@@ -106,6 +123,8 @@ instance PartedVal Bool where
 	pval True = "on"
 	pval False = "off"
 
+-- This is used for creating partitions, not formatting partitions,
+-- so it's ok to use eg, fat32 for both FAT and VFAT.
 instance PartedVal Partition.Fs where
 	pval Partition.EXT2 = "ext2"
 	pval Partition.EXT3 = "ext3"
@@ -113,7 +132,7 @@ instance PartedVal Partition.Fs where
 	pval Partition.BTRFS = "btrfs"
 	pval Partition.REISERFS = "reiserfs"
 	pval Partition.XFS = "xfs"
-	pval Partition.FAT = "fat"
-	pval Partition.VFAT = "vfat"
+	pval Partition.FAT = "fat32"
+	pval Partition.VFAT = "fat32"
 	pval Partition.NTFS = "ntfs"
 	pval Partition.LinuxSwap = "linux-swap"

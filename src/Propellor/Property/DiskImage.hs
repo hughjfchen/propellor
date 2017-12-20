@@ -265,7 +265,7 @@ imageBuiltFrom img chrootdir tabletype final partspec = mkimg <!> rmimg
 		imageFinalized final dest mnts mntopts devs parttable
 	rmimg = undoRevertableProperty (buildDiskImage img)
 		`before` undoRevertableProperty (imageExists' dest dummyparttable)
-	dummyparttable = PartTable tabletype []
+	dummyparttable = PartTable tabletype safeAlignment []
 
 partitionsPopulated :: FilePath -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> Property DebianLike
 partitionsPopulated chrootdir mnts mntopts devs = property' desc $ \w ->
@@ -300,7 +300,7 @@ fitChrootSize :: TableType -> [PartSpec ()] -> [PartSize] -> ([Maybe MountPoint]
 fitChrootSize tt l basesizes = (mounts, mountopts, parttable)
   where
 	(mounts, mountopts, sizers, _) = unzip4 l
-	parttable = PartTable tt (zipWith id sizers basesizes)
+	parttable = PartTable tt safeAlignment (zipWith id sizers basesizes)
 
 -- | Generates a map of the sizes of the contents of
 -- every directory in a filesystem tree.
@@ -388,7 +388,7 @@ imageExists' dest@(RawDiskImage img) parttable = (setup <!> cleanup) `describe` 
 type Finalization = (RawDiskImage -> FilePath -> [LoopDev] -> Property Linux)
 
 imageFinalized :: Finalization -> RawDiskImage -> [Maybe MountPoint] -> [MountOpts] -> [LoopDev] -> PartTable -> Property Linux
-imageFinalized final img mnts mntopts devs (PartTable _ parts) =
+imageFinalized final img mnts mntopts devs (PartTable _ _ parts) =
 	property' "disk image finalized" $ \w ->
 		withTmpDir "mnt" $ \top ->
 			go w top `finally` liftIO (unmountall top)
