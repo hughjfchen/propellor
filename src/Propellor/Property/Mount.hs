@@ -151,4 +151,4 @@ unmountBelow d = do
 	submnts <- mountPointsBelow d
 	-- sort so sub-mounts are unmounted before the mount point
 	-- containing them
-	forM_ (sort submnts) umountLazy
+	forM_ (reverse (sort submnts)) umountLazy
