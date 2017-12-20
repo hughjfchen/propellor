@@ -192,6 +192,7 @@ defSz = MegaBytes 128
 -- Add an additional 200 mb for temp files, journals, etc.
 fudgeSz :: PartSize -> PartSize
 fudgeSz (MegaBytes n) = MegaBytes (n + n `div` 100 * 2 + 3 + 200)
+fudgeSz (Bytes n) = fudgeSz (toPartSize n)
 
 alignTo :: Alignment -> PartSize -> ByteSize
 alignTo _ (Bytes n) = n -- no alignment done for Bytes
