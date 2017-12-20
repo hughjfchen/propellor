@@ -88,6 +88,8 @@ instance Monoid PartSize where
 
 reducePartSize :: PartSize -> PartSize -> PartSize
 reducePartSize (MegaBytes a) (MegaBytes b) = MegaBytes (a - b)
+reducePartSize (Bytes a) b = Bytes (a - fromPartSize b)
+reducePartSize a (Bytes b) = Bytes (fromPartSize a - b)
 
 -- | Partitions need to be aligned for optimal efficiency.
 -- The alignment is a number of bytes.
