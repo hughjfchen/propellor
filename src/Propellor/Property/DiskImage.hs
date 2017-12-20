@@ -41,6 +41,7 @@ import Propellor.Types.Bootloader
 import Propellor.Container
 import Utility.Path
 import Utility.FileMode
+import Utility.DataUnits
 
 import Data.List (isPrefixOf, isInfixOf, sortBy, unzip4)
 import Data.Function (on)
@@ -344,17 +345,24 @@ getMountSz szm l (Just mntpt) =
 imageExists :: RawDiskImage -> ByteSize -> Property Linux
 imageExists (RawDiskImage img) isz = property ("disk image exists" ++ img) $ liftIO $ do
 	ms <- catchMaybeIO $ getFileStatus img
-	case ms of
+	case fmap (toInteger . fileSize) ms of
 		Just s
-			| toInteger (fileSize s) == toInteger sz -> return NoChange
-			| toInteger (fileSize s) > toInteger sz -> do
+			| s == toInteger sz -> return NoChange
+			| s > toInteger sz -> do
+				infoMessage ["truncating " ++ img ++ " to " ++ humansz]
 				setFileSize img (fromInteger sz)
 				return MadeChange
-		_ -> do
+			| otherwise -> do
+				infoMessage ["expanding " ++ img ++ " from " ++ roughSize storageUnits False s ++ " to " ++ humansz]
+				L.writeFile img (L.replicate (fromIntegral sz) 0)
+				return MadeChange
+		Nothing -> do
+			infoMessage ["creating " ++ img ++ " of size " ++ humansz]
 			L.writeFile img (L.replicate (fromIntegral sz) 0)
 			return MadeChange
   where
 	sz = ceiling (fromInteger isz / sectorsize) * ceiling sectorsize
+	humansz = roughSize storageUnits False (toInteger sz)
 	-- Disks have a sector size, and making a disk image not
 	-- aligned to a sector size will confuse some programs.
 	-- Common sector sizes are 512 and 4096; use 4096 as it's larger.
