@@ -646,7 +646,7 @@ dkimInstalled = go `onChange` Service.restarted "opendkim"
 		& Apt.serviceInstalledRunning "opendkim"
 		& File.dirExists "/etc/mail"
 		& File.hasPrivContent "/etc/mail/dkim.key" (Context "kitenet.net")
-		& File.ownerGroup "/etc/mail/dkim.key" (User "opendkim") (Group "opendkim")
+		& File.ownerGroup "/etc/mail/dkim.key" (User "root") (Group "root")
 		& "/etc/default/opendkim" `File.containsLine`
 			"SOCKET=\"inet:8891@localhost\""
 			`onChange` 
