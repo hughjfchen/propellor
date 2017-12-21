@@ -49,7 +49,7 @@ Let's see.. this works with the gpt example:
 
 	(parted) mkpart primary fat32 4194304B 16.777215MB
 	(parted) mkpart primary ext2 16777216B 167.772159MB
-	(parted) mkpart primary ext4 167772160B 660.944383MB
+	(parted) mkpart primary ext4 167772160B 1660.944383MB
 
 That lets parted end the last partition right at the ideal 1660927487B.
 The previous two partitions end right where propellor expects.
