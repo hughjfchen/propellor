@@ -85,8 +85,8 @@ calcPartedParamsSize (PartTable tabletype alignment parts) =
 		[ "mkpart"
 		, pval (partType p)
 		, pval (partFs p)
-		, partpos startpos
-		, partpos endpos
+		, partposexact startpos
+		, partposfuzzy endpos
 		] ++ case partName p of
 			Just n -> ["name", show partnum, n]
 			Nothing -> []
@@ -95,14 +95,29 @@ calcPartedParamsSize (PartTable tabletype alignment parts) =
 		in calcparts (partnum+1) endpos ps
 			(c ++ mkpart partnum startpos (endpos-1) p : map (mkflag partnum) (partFlags p))
 	calcparts _ endpos [] c = (c, endpos)
-	partpos n
-		| n > 0 = val n ++ "B"
+
+	-- Exact partition position value for parted.
+	-- For alignment to work, the start of a partition must be
+	-- specified exactly.
+	partposexact n
+		| n > 0 = show n ++ "B"
 		-- parted can't make partitions smaller than 1MB;
 		-- avoid failure in edge cases
 		| otherwise = "1MB"
+	
+	-- Fuzzy partition position valie for parted.
+	-- This is used to specify the end of the partition,
+	-- parted takes the "MB" as license to slightly reduce the
+	-- partition size when something about the partition table
+	-- does not allow the partition to end exactly at the position.
+	partposfuzzy n
+		| n > 0 = show (fromIntegral n / 1000000) ++ "MB"
+		| otherwise = "1MB"
+
 	-- Location of the start of the first partition,
 	-- leaving space for the partition table, and aligning.
 	firstpos = align partitionTableOverhead
+	
 	align = alignTo alignment
 
 -- | Runs parted on a disk with the specified parameters.
