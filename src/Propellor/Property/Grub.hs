@@ -1,4 +1,15 @@
-module Propellor.Property.Grub where
+module Propellor.Property.Grub (
+	GrubDevice,
+	OSDevice,
+	GrubTarget(..),
+	installed,
+	mkConfig,
+	installed',
+	boots,
+	bootsMounted,
+	TimeoutSecs,
+	chainPVGrub
+) where
 
 import Propellor.Base
 import qualified Propellor.Property.File as File
@@ -14,40 +25,36 @@ type GrubDevice = String
 -- | Eg, \"\/dev/sda\"
 type OSDevice = String
 
-type TimeoutSecs = Int
-
--- | Types of machines that grub can boot.
-data BIOS = PC | EFI64 | EFI32 | Coreboot | Xen
-
 -- | Installs the grub package. This does not make grub be used as the
 -- bootloader.
 --
 -- This includes running update-grub, unless it's run in a chroot.
-installed :: BIOS -> Property (HasInfo + DebianLike)
-installed bios = installed' bios 
+installed :: GrubTarget -> Property (HasInfo + DebianLike)
+installed grubtarget = installed' grubtarget 
 	`onChange` (check (not <$> inChroot) mkConfig)
 
--- Run update-grub, to generate the grub boot menu. It will be
+-- | Run update-grub, to generate the grub boot menu. It will be
 -- automatically updated when kernel packages are installed.
 mkConfig :: Property DebianLike
 mkConfig = tightenTargets $ cmdProperty "update-grub" []
 	`assume` MadeChange
 
 -- | Installs grub; does not run update-grub.
-installed' :: BIOS -> Property (HasInfo + DebianLike)
-installed' bios = setInfoProperty aptinstall
-	(toInfo [GrubInstalled])
+installed' :: GrubTarget -> Property (HasInfo + DebianLike)
+installed' grubtarget = setInfoProperty aptinstall
+	(toInfo [GrubInstalled grubtarget])
 	`describe` "grub package installed"
   where
 	aptinstall = Apt.installed [debpkg]
-	debpkg = case bios of
+	debpkg = case grubtarget of
 		PC -> "grub-pc"
 		EFI64 -> "grub-efi-amd64"
 		EFI32 -> "grub-efi-ia32"
 		Coreboot -> "grub-coreboot"
 		Xen -> "grub-xen"
 
--- | Installs grub onto a device, so the system can boot from that device.
+-- | Installs grub onto a device's boot loader, 
+-- so the system can boot from that device.
 --
 -- You may want to install grub to multiple devices; eg for a system
 -- that uses software RAID.
@@ -57,9 +64,24 @@ installed' bios = setInfoProperty aptinstall
 -- to arrange for this property to only run once, by eg making it be run
 -- onChange after OS.cleanInstallOnce.
 boots :: OSDevice -> Property Linux
-boots dev = tightenTargets $ cmdProperty "grub-install" [dev]
-	`assume` MadeChange
-	`describe` ("grub boots " ++ dev)
+boots dev = property' ("grub boots " ++ dev) $ \w -> do
+	grubtarget <- askInfo
+	let ps = case grubtarget of
+		[GrubInstalled t] -> [targetParam t]
+		_ -> []
+	ensureProperty w $
+		cmdProperty "grub-install" (ps ++ [dev])
+			`assume` MadeChange
+
+targetParam :: GrubTarget -> String
+targetParam t = "--target=" ++ case t of
+	PC -> "i386-pc"
+	EFI64 -> "i386-efi"
+	EFI32 -> "x86_64-efi"
+	Coreboot -> "i386-coreboot"
+	Xen -> "x86_64-xen"
+
+type TimeoutSecs = Int
 
 -- | Use PV-grub chaining to boot
 --
@@ -95,8 +117,8 @@ chainPVGrub rootdev bootdev timeout = combineProperties desc $ props
 -- at a particular directory. The OSDevice should be the underlying disk
 -- device that grub will be installed to (generally a whole disk, 
 -- not a partition).
-bootsMounted :: FilePath -> OSDevice -> Property Linux
-bootsMounted mnt wholediskdev = combineProperties desc $ props
+bootsMounted :: FilePath -> OSDevice -> GrubTarget -> Property Linux
+bootsMounted mnt wholediskdev grubtarget = combineProperties desc $ props
 	-- remove mounts that are done below to make sure the right thing
 	-- gets mounted
 	& cleanupmounts
@@ -112,7 +134,7 @@ bootsMounted mnt wholediskdev = combineProperties desc $ props
 	& inchroot "update-grub" []
 		`assume` MadeChange
 	& check haveosprober (inchroot "chmod" ["+x", osprober])
-	& inchroot "grub-install" [wholediskdev]
+	& inchroot "grub-install" [targetParam grubtarget, wholediskdev]
 		`assume` MadeChange
 	& cleanupmounts
 	-- sync all buffered changes out to the disk in case it's

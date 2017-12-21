@@ -13,6 +13,7 @@ propellor (5.2.0) UNRELEASED; urgency=medium
     chroot.
   * Fix bug in unmountBelow that caused unmounting of nested mounts to
     fail.
+  * Grub.boots, Grub.bootsMounted: Pass --target to grub-install.
 
  -- Joey Hess <id@joeyh.name>  Wed, 29 Nov 2017 11:45:08 -0400
 

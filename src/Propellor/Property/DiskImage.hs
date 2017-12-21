@@ -17,7 +17,7 @@ module Propellor.Property.DiskImage (
 	imageRebuiltFor,
 	imageBuiltFrom,
 	imageExists,
-	Grub.BIOS(..),
+	GrubTarget(..),
 ) where
 
 import Propellor.Base
@@ -221,7 +221,7 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 	-- installed.
 	final = case fromInfo (containerInfo chroot) of
 		[] -> unbootable "no bootloader is installed"
-		[GrubInstalled] -> grubFinalized
+		[GrubInstalled grubtarget] -> grubFinalized grubtarget
 		[UbootInstalled p] -> ubootFinalized p
 		[FlashKernelInstalled] -> flashKernelFinalized
 		[UbootInstalled p, FlashKernelInstalled] -> 
@@ -454,9 +454,10 @@ unbootable msg = \_ _ _ -> property desc $ do
   where
 	desc = "image is not bootable"
 
-grubFinalized :: Finalization
-grubFinalized _img mnt loopdevs = Grub.bootsMounted mnt wholediskloopdev
-	`describe` "disk image boots using grub"
+grubFinalized :: GrubTarget -> Finalization
+grubFinalized grubtarget _img mnt loopdevs = 
+	Grub.bootsMounted mnt wholediskloopdev grubtarget
+		`describe` "disk image boots using grub"
   where
 	-- It doesn't matter which loopdev we use; all
 	-- come from the same disk image, and it's the loop dev
