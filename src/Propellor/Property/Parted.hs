@@ -111,7 +111,7 @@ calcPartedParamsSize (PartTable tabletype alignment parts) =
 	-- partition size when something about the partition table
 	-- does not allow the partition to end exactly at the position.
 	partposfuzzy n
-		| n > 0 = show (fromIntegral n / 1000000) ++ "MB"
+		| n > 0 = show (fromIntegral n / 1000000 :: Double) ++ "MB"
 		| otherwise = "1MB"
 
 	-- Location of the start of the first partition,
