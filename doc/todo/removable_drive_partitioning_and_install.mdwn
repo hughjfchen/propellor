@@ -1,0 +1,34 @@
+I want to be able to temporarily plug in the root drive of another host
+to my laptop and run propellor to re-image the drive with the properties of
+the host it belongs to. This is especially useful when the drive is too
+large to make a DiskImage on my laptop.
+
+Open design questions:
+
+* How to uniquely identify which removable drive belongs to which Host?
+  Could use partition uuids for updating an already imaged drive, but not
+  for the initial build.
+
+  /dev/disk/by-id/ seems a good way to go. Eg for a USB drive I have,
+  "/dev/disk/by-id/usb-LaCie_iamaKey_37637172f536ba-0:0" probably uniquely
+  identifies it, at least as long as the manufacturer is not reusing serial
+  numbers.
+
+  One problem with /dev/disk/by-id/ is, if a removable drive is attached
+  on a different bus (ie, a SATA drive might be connected via SATA or a USB
+  dock), it won't appear the same there.
+
+  Could instead use eg `udevadm info --query=all -n /dev/sdb`, which
+  breaks out `ID_SERIAL`. However, this would be harder for the user to
+  look up. Or, could parse the /dev/disk/by-id/ name, excluding the bus
+  part of it.
+
+* Should an already imaged drive be updated incrementally or re-imaged?
+  Seems both cases would be useful, the former especially for incrementally
+  configuring it, the latter to bring it up from a clean state.
+  If it defaults to updating, the user could force a re-image by deleting
+  the partitions from the drive manually.
+
+secret-project has some code for /target which might be reusable here.
+
+--[[Joey]]
