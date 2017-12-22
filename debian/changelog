@@ -1,5 +1,6 @@
 propellor (5.2.0) UNRELEASED; urgency=medium
 
+  [ Joey Hess ]
   * bootstrappedFrom: Set up local privdata file.
   * Parted: Fix names used for FAT and VFAT partitions.
   * Parted: Add an Alignment parameter. (API change)
@@ -14,6 +15,10 @@ propellor (5.2.0) UNRELEASED; urgency=medium
   * Fix bug in unmountBelow that caused unmounting of nested mounts to
     fail.
   * Grub.boots, Grub.bootsMounted: Pass --target to grub-install.
+
+  [ Sean Whitton ]
+  * Sbuild: add notes about Debian jessie hosts and backports of sbuild and
+    autopkgtest.
 
  -- Joey Hess <id@joeyh.name>  Wed, 29 Nov 2017 11:45:08 -0400
 

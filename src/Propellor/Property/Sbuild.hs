@@ -48,6 +48,14 @@ To take advantage of the piuparts and autopkgtest support, add to your
 >
 >  $autopkgtest_root_args = "";
 >  $autopkgtest_opts = ["--", "schroot", "%r-%a-sbuild"];
+
+On Debian jessie hosts, you should ensure that sbuild and autopkgtest come from
+the same suite.  This is because the autopkgtest binary changed its name between
+jessie and stretch.  If you have not installed backports of sbuild or
+autopkgtest, you don't need to do anything.  But if you have installed either
+package from jessie-backports (with Propellor or otherwise), you should install
+the other from jessie-backports, too.
+
 -}
 
 module Propellor.Property.Sbuild (
@@ -376,6 +384,13 @@ ccachePrepared = propertyList "sbuild group ccache configured" $ props
 --
 -- You probably want a custom ~/.sbuildrc on your workstation, but
 -- this property is handy for quickly setting up build boxes.
+--
+-- On Debian jessie hosts, you should ensure that sbuild and autopkgtest come
+-- from the same suite.  This is because the autopkgtest binary changed its name
+-- between jessie and stretch.  If you have not installed backports of sbuild or
+-- autopkgtest, you don't need to do anything.  But if you have installed either
+-- package from jessie-backports (with Propellor or otherwise), you should
+-- install the other from jessie-backports, too.
 userConfig :: User -> Property DebianLike
 userConfig user@(User u) = go
 	`requires` usableBy user
