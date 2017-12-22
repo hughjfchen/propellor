@@ -76,8 +76,8 @@ boots dev = property' ("grub boots " ++ dev) $ \w -> do
 targetParam :: GrubTarget -> String
 targetParam t = "--target=" ++ case t of
 	PC -> "i386-pc"
-	EFI64 -> "i386-efi"
-	EFI32 -> "x86_64-efi"
+	EFI32 -> "i386-efi"
+	EFI64 -> "x86_64-efi"
 	Coreboot -> "i386-coreboot"
 	Xen -> "x86_64-xen"
 
