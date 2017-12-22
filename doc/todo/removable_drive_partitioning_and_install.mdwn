@@ -23,6 +23,9 @@ Open design questions:
   look up. Or, could parse the /dev/disk/by-id/ name, excluding the bus
   part of it.
 
+  Question: When using microsd card adapter, does the serial number pass
+  through so different microsds can be distinguished?
+
 * Should an already imaged drive be updated incrementally or re-imaged?
   Seems both cases would be useful, the former especially for incrementally
   configuring it, the latter to bring it up from a clean state.
