@@ -25,6 +25,9 @@ Open design questions:
 
   Question: When using microsd card adapter, does the serial number pass
   through so different microsds can be distinguished?
+  > Checked this, and two microsd card adapters from different
+  > manufacturers with different microsd cards have the same by-id.
+  > Those must have no serial number..
 
 * Should an already imaged drive be updated incrementally or re-imaged?
   Seems both cases would be useful, the former especially for incrementally
