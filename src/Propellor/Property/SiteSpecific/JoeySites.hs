@@ -1033,3 +1033,47 @@ ipmasq intif = File.hasContent ifupscript
 	ifupscript = "/etc/network/if-up.d/ipmasq"
 	pppupscript = "/etc/ppp/ip-up.d/ipmasq"
 	scriptmode f = f `File.mode` combineModes (readModes ++ executeModes)
+
+laptopSoftware :: Property DebianLike
+laptopSoftware = Apt.installed
+	[ "procmeter3", "xfce4", "procmeter3", "unclutter"
+	, "mplayer", "fbreader", "firefox", "chromium"
+	, "libdatetime-event-sunrise-perl", "libtime-duration-perl"
+	, "iftop", "network-manager", "gtk-redshift", "powertop"
+	, "gimp", "gthumb", "inkscape", "sozi", "xzgv", "hugin"
+	, "mpc", "mpd", "ncmpc", "sonata", "mpdtoys"
+	, "bsdgames", "nethack"
+	, "xmonad", "libghc-xmonad-dev", "libghc-xmonad-contrib-dev"
+	, "ttf-bitstream-vera"
+	, "mairix", "offlineimap", "mutt"
+	, "nmap"
+	, "udevil", "pmount"
+	, "arbtt", "hledger"
+	, "apache2", "ikiwiki", "libhighlight-perl"
+	, "pal"
+	, "yeahconsole", "xkbset", "xinput"
+	, "assword", "pumpa", "vorbis-tools"
+	, "xul-ext-ublock-origin", "xul-ext-pdf.js", "xul-ext-status4evar"
+	, "vim-syntastic", "vim-fugitive"
+	, "adb", "gthumb"
+	, "w3m", "sm", "weechat"
+	, "borgbackup"
+	]
+	`requires` baseSoftware
+	`requires` devSoftware
+
+baseSoftware :: Property DebianLike
+baseSoftware = Apt.installed
+	[ "bash", "bash-completion", "vim", "screen", "less", "moreutils"
+	, "git", "mr", "etckeeper", "git-annex", "ssh", "vim-vimoutliner"
+	]
+
+devSoftware :: Property DebianLike
+devSoftware = Apt.installed
+	[ "build-essential", "debhelper", "devscripts"
+	, "ghc", "cabal-install", "haskell-stack"
+	, "hothasktags", "hdevtools", "hlint"
+	, "gdb", "dpkg-repack", "lintian"
+	, "pristine-tar", "github-backup"
+	, "kvm"
+	]
