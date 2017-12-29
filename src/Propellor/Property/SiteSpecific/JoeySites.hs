@@ -1048,7 +1048,7 @@ laptopSoftware = Apt.installed
 	, "mairix", "offlineimap", "mutt"
 	, "nmap"
 	, "udevil", "pmount"
-	, "arbtt", "hledger"
+	, "arbtt", "hledger", "bc"
 	, "apache2", "ikiwiki", "libhighlight-perl"
 	, "pal"
 	, "yeahconsole", "xkbset", "xinput"
