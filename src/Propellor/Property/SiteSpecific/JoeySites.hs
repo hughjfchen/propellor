@@ -906,8 +906,8 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 		("Login", "LidSwitchIgnoreInhibited", "no")
 
 -- My home power monitor.
-homePowerMonitor :: IsContext c => User -> c -> (SshKeyType, Ssh.PubKeyText) -> Property (HasInfo + DebianLike)
-homePowerMonitor user ctx sshkey = propertyList "home power monitor" $ props
+homePowerMonitor :: IsContext c => User -> [Host] -> c -> (SshKeyType, Ssh.PubKeyText) -> Property (HasInfo + DebianLike)
+homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ props
 	& Apache.installed
 	& Apt.installed ["python", "python-pymodbus", "rrdtool", "rsync"]
 	& File.ownerGroup "/var/www/html" user (userGroup user)
@@ -923,6 +923,7 @@ homePowerMonitor user ctx sshkey = propertyList "home power monitor" $ props
 		`requires` File.ownerGroup (takeDirectory sshkeyfile)
 			user (userGroup user)
 		`requires` File.dirExists (takeDirectory sshkeyfile)
+		`requires` Ssh.knownHost hosts "kitenet.net" user
   where
 	d = "/var/www/html/homepower"
 	sshkeyfile = d </> ".ssh/key"
