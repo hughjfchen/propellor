@@ -1,4 +1,4 @@
-propellor (5.2.0) UNRELEASED; urgency=medium
+propellor (5.2.0) unstable; urgency=medium
 
   [ Joey Hess ]
   * bootstrappedFrom: Set up local privdata file.
@@ -17,14 +17,14 @@ propellor (5.2.0) UNRELEASED; urgency=medium
   * Grub.boots, Grub.bootsMounted: Pass --target to grub-install.
   * Added Propellor.Property.Installer modules, which can be used to create
     bootable installer disk images, which then run propellor to install
-    a system. This code was extracted from the demo I gave at my
+    a system. This code was extracted from the demo I gave in my
     talk at DebConf 2017.
 
   [ Sean Whitton ]
   * Sbuild: add notes about Debian jessie hosts and backports of sbuild and
     autopkgtest.
 
- -- Joey Hess <id@joeyh.name>  Wed, 29 Nov 2017 11:45:08 -0400
+ -- Joey Hess <id@joeyh.name>  Sat, 30 Dec 2017 13:34:29 -0400
 
 propellor (5.1.0) unstable; urgency=medium
 
