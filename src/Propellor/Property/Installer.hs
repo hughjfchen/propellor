@@ -11,7 +11,10 @@
 -- this to build a full, interactive installer, see
 -- <https://git.joeyh.name/index.cgi/secret-project.git/>
 
-module Propellor.Property.Installer (module X) where
+module Propellor.Property.Installer (
+	module Propellor.Property.Installer.Types,
+	module Propellor.Property.Installer.Target
+) where
 
-import Propellor.Property.Installer.Types as X
-import Propellor.Property.Installer.Target as X
+import Propellor.Property.Installer.Types
+import Propellor.Property.Installer.Target

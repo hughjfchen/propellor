@@ -424,8 +424,10 @@ getMountsSizes = mapMaybe (parse . words) . lines <$> readProcess "findmnt" ps "
 	parse _ = Nothing
 
 -- | How much of the target disks are used, compared with the size of the
--- installer's root device. Since the main action is rsyncing the latter
--- to the former, this allows roughly estimating the percent done.
+-- installer's root device. Since the main part of an installation 
+-- is rsyncing the latter to the former, this allows roughly estimating
+-- the percent done while an install is running, and can be used in some
+-- sort of progress display.
 data TargetFilled = TargetFilled (Ratio Integer)
 	deriving (Show, Eq)
 
