@@ -200,6 +200,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 
 	& JoeySites.homePowerMonitor
 		(User "joey")
+		hosts
 		(Context "homepower.joeyh.name")
 		(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAmVYddg/RgCbIj+cLcEiddeFXaYFnbEJ3uGj9G/EyV joey@honeybee")
 	& JoeySites.homeRouter
