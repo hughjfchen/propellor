@@ -68,15 +68,19 @@
 -- see <https://git.joeyh.name/index.cgi/secret-project.git/>
 
 module Propellor.Property.Installer.Target (
+	-- * Main interface
 	TargetPartTable(..),
 	targetInstalled,
-	mountTarget,
 	fstabLists,
+	-- * Additional properties
+	mountTarget,
 	targetBootable,
 	partitionTargetDisk,
+	-- * Utility functions
 	targetDir,
 	probeDisk,
 	findDiskDevices,
+	-- * Installation progress tracking
 	TargetFilled,
 	TargetFilledHandle,
 	prepTargetFilled,
@@ -110,6 +114,7 @@ import Data.Ord
 import Data.Ratio
 import System.Process (readProcess)
 
+-- | Partition table for the target disk.
 data TargetPartTable = TargetPartTable TableType [PartSpec DiskPart]
 
 -- | Property that installs the target system to the TargetDiskDevice
@@ -179,6 +184,7 @@ instance ChrootBootstrapper RsyncBootstrapper where
 		umountaside = cmdProperty "umount" ["-l", "/mnt"]
 			`assume` MadeChange
 
+-- | Gets the target mounted.
 mountTarget
 	:: UserInput i
 	=> i
@@ -271,6 +277,7 @@ targetBootable userinput =
 				warningMessage $ "don't know how to enable bootloader(s) " ++ show l
 				return FailedChange
 
+-- | Partitions the target disk.
 partitionTargetDisk
 	:: UserInput i
 	=> i
@@ -424,10 +431,10 @@ getMountsSizes = mapMaybe (parse . words) . lines <$> readProcess "findmnt" ps "
 	parse _ = Nothing
 
 -- | How much of the target disks are used, compared with the size of the
--- installer's root device. Since the main part of an installation 
--- is rsyncing the latter to the former, this allows roughly estimating
--- the percent done while an install is running, and can be used in some
--- sort of progress display.
+-- installer's root device. Since the main part of an installation
+-- is `targetInstalled` rsyncing the latter to the former, this allows
+-- roughly estimating the percent done while an install is running,
+-- and can be used in some sort of progress display.
 data TargetFilled = TargetFilled (Ratio Integer)
 	deriving (Show, Eq)
 
@@ -437,6 +444,7 @@ instance Monoid TargetFilled where
 
 newtype TargetFilledHandle = TargetFilledHandle Integer
 
+-- | Prepare for getting `TargetFilled`.
 prepTargetFilled :: IO TargetFilledHandle
 prepTargetFilled = go =<< getMountSource "/"
   where
@@ -446,6 +454,8 @@ prepTargetFilled = go =<< getMountSource "/"
 		return (TargetFilledHandle sz)
 	go Nothing = return (TargetFilledHandle 0)
 
+-- | Get the current `TargetFilled` value. This is fast enough to be run
+-- multiple times per second without using much CPU.
 checkTargetFilled :: TargetFilledHandle -> IO TargetFilled
 checkTargetFilled (TargetFilledHandle installsz) = do
 	targetsz <- sum . map snd . filter (isTargetMountPoint . fst)
