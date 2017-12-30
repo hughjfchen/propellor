@@ -121,6 +121,9 @@ Library
     Propellor.Property.Gpg
     Propellor.Property.Group
     Propellor.Property.Grub
+    Propellor.Property.Installer
+    Propellor.Property.Installer.Types
+    Propellor.Property.Installer.Target
     Propellor.Property.Journald
     Propellor.Property.Kerberos
     Propellor.Property.LetsEncrypt
