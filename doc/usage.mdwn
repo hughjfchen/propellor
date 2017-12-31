@@ -160,6 +160,11 @@ spin when the foo branch is not checked out.
 `git config propellor.forbid-dirty-spin true` will configure propellor to refuse
 to spin when there are uncommitted changes in the `~/.propellor` repository.
 
+`git config propellor.buildsystem stack` makes propellor use stack for
+building itself, rather than the default cabal. This only controls the
+local build of propellor; Hosts can have properties set to control how
+propellor is built on them.
+
 The usual git configuration controls which centralized repository (if any)
 propellor pushes and pulls from. 
 
