@@ -1043,7 +1043,7 @@ laptopSoftware = Apt.installed
 	, "network-manager", "gtk-redshift", "powertop"
 	, "gimp", "gthumb", "inkscape", "sozi", "xzgv", "hugin"
 	, "mpc", "mpd", "ncmpc", "sonata", "mpdtoys"
-	, "bsdgames", "nethack"
+	, "bsdgames", "nethack-console"
 	, "xmonad", "libghc-xmonad-dev", "libghc-xmonad-contrib-dev"
 	, "ttf-bitstream-vera"
 	, "mairix", "offlineimap", "mutt"
