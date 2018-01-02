@@ -1,3 +1,11 @@
+propellor (5.2.1) UNRELEASED; urgency=medium
+
+  * Avoid bogus warning about new upstream version when /usr/bin/propellor
+    is run on a Debian system, but ~/.propellor was not cloned from the
+    Debian git bundle.
+
+ -- Joey Hess <id@joeyh.name>  Tue, 02 Jan 2018 13:06:45 -0400
+
 propellor (5.2.0) unstable; urgency=medium
 
   [ Joey Hess ]

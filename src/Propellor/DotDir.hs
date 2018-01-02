@@ -358,7 +358,7 @@ checkRepoUpToDate = whenM (gitbundleavail <&&> dotpropellorpopulated) $ do
 		withQuietOutput createProcessSuccess $
 			proc "git" ["log", headrev]
 	if (headknown == Nothing)
-		then setupUpstreamMaster headrev
+		then updateUpstreamMaster headrev
 		else do
 			theirhead <- getCurrentGitSha1 =<< getCurrentBranchRef
 			when (theirhead /= headrev) $ do
@@ -372,26 +372,29 @@ checkRepoUpToDate = whenM (gitbundleavail <&&> dotpropellorpopulated) $ do
 		d <- dotPropellor
 		doesFileExist (d </> "propellor.cabal")
 
--- Makes upstream/master in dotPropellor be a usefully mergeable branch.
+-- Updates upstream/master in dotPropellor so merging from it will update
+-- to the latest distrepo.
 --
--- We cannot just use origin/master, because in the case of a distrepo,
--- it only contains 1 commit. So, trying to merge with it will result
--- in lots of merge conflicts, since git cannot find a common parent
--- commit.
+-- We cannot just fetch the distrepo because the distrepo contains only 
+-- 1 commit. So, trying to merge with it will result in lots of merge
+-- conflicts, since git cannot find a common parent commit.
 --
--- Instead, the upstream/master branch is created by taking the
+-- Instead, the upstream/master branch is updated by taking the
 -- upstream/master branch (which must be an old version of propellor,
 -- as distributed), and diffing from it to the current origin/master,
 -- and committing the result. This is done in a temporary clone of the
 -- repository, giving it a new master branch. That new branch is fetched
 -- into the user's repository, as if fetching from a upstream remote,
 -- yielding a new upstream/master branch.
-setupUpstreamMaster :: String -> IO ()
-setupUpstreamMaster newref = do
+--
+-- If there's no upstream/master, the user is not using the distrepo,
+-- so does nothing.
+updateUpstreamMaster :: String -> IO ()
+updateUpstreamMaster newref = do
 	changeWorkingDirectory =<< dotPropellor
 	go =<< catchMaybeIO getoldrev
   where
-	go Nothing = warnoutofdate False
+	go Nothing = return ()
 	go (Just oldref) = do
 		let tmprepo = ".git/propellordisttmp"
 		let cleantmprepo = void $ catchMaybeIO $ removeDirectoryRecursive tmprepo
