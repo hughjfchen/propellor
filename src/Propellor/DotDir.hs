@@ -427,7 +427,7 @@ setupUpstreamMaster newref = do
 warnoutofdate :: Bool -> IO ()
 warnoutofdate havebranch = do
 	warningMessage ("** Your ~/.propellor/ is out of date..")
-	let also s = hPutStrLn stderr ("   " ++ s)
+	let also s = infoMessage ["   " ++ s]
 	also ("A newer upstream version is available in " ++ distrepo)
 	if havebranch
 		then also ("To merge it, run: git merge " ++ upstreambranch)
