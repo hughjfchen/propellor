@@ -23,9 +23,12 @@ getCurrentGitSha1 branchref = takeWhile (/= '\n')
 	<$> readProcess "git" ["show-ref", "--hash", branchref]
 
 hasOrigin :: IO Bool
-hasOrigin = catchDefaultIO False $ do
+hasOrigin = hasRemote "origin"
+
+hasRemote :: String -> IO Bool
+hasRemote remotename = catchDefaultIO False $ do
 	rs <- lines <$> readProcess "git" ["remote"]
-	return $ "origin" `elem` rs
+	return $ remotename `elem` rs
 
 hasGitRepo :: IO Bool
 hasGitRepo = doesFileExist ".git/HEAD"

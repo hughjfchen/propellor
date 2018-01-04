@@ -379,8 +379,8 @@ checkRepoUpToDate = whenM (gitbundleavail <&&> dotpropellorpopulated) $ do
 -- 1 commit. So, trying to merge with it will result in lots of merge
 -- conflicts, since git cannot find a common parent commit.
 --
--- Instead, the upstream/master branch is updated by taking the
--- upstream/master branch (which must be an old version of propellor,
+-- Instead, the new upstream/master branch is updated by taking the
+-- current upstream/master branch (which must be an old version of propellor,
 -- as distributed), and diffing from it to the current origin/master,
 -- and committing the result. This is done in a temporary clone of the
 -- repository, giving it a new master branch. That new branch is fetched
@@ -388,9 +388,10 @@ checkRepoUpToDate = whenM (gitbundleavail <&&> dotpropellorpopulated) $ do
 -- yielding a new upstream/master branch.
 --
 -- If there's no upstream/master, the user is not using the distrepo,
--- so does nothing.
+-- so do nothing. And, if there's a remote named "upstream", the user
+-- must have set that up is not using the distrepo, so do nothing.
 updateUpstreamMaster :: String -> IO ()
-updateUpstreamMaster newref = do
+updateUpstreamMaster newref = unlessM (hasRemote "upstream") $ do
 	changeWorkingDirectory =<< dotPropellor
 	go =<< catchMaybeIO getoldrev
   where
