@@ -1037,7 +1037,8 @@ ipmasq intif = File.hasContent ifupscript
 
 laptopSoftware :: Property DebianLike
 laptopSoftware = Apt.installed
-	[ "procmeter3", "xfce4", "procmeter3", "unclutter"
+	[ "intel-microcode"
+	, "procmeter3", "xfce4", "procmeter3", "unclutter"
 	, "mplayer", "fbreader", "firefox", "chromium"
 	, "libdatetime-event-sunrise-perl", "libtime-duration-perl"
 	, "network-manager", "gtk-redshift", "powertop"
