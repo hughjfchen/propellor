@@ -9,6 +9,7 @@ module Propellor.Property.DiskImage.PartSpec (
 	partition,
 	-- * PartSpec combinators
 	swapPartition,
+	rawPartition,
 	mountedAt,
 	addFreeSpace,
 	setSize,
@@ -48,11 +49,15 @@ import Data.Ord
 -- The partition is not mounted anywhere by default; use the combinators
 -- below to configure it.
 partition :: Monoid t => Fs -> PartSpec t
-partition fs = (Nothing, mempty, mkPartition fs, mempty)
+partition fs = (Nothing, mempty, mkPartition (Just fs), mempty)
 
 -- | Specifies a swap partition of a given size.
 swapPartition :: Monoid t => PartSize -> PartSpec t
-swapPartition sz = (Nothing, mempty, const (mkPartition LinuxSwap sz), mempty)
+swapPartition sz = (Nothing, mempty, const (mkPartition (Just LinuxSwap) sz), mempty)
+
+-- | Specifies a partition without any filesystem, of a given size.
+rawPartition :: Monoid t => PartSize -> PartSpec t
+rawPartition sz = (Nothing, mempty, const (mkPartition Nothing sz), mempty)
 
 -- | Specifies where to mount a partition.
 mountedAt :: PartSpec t -> MountPoint -> PartSpec t

@@ -420,7 +420,7 @@ imageFinalized final img mnts mntopts devs (PartTable _ _ parts) =
 	orderedmntsdevs = sortBy (compare `on` fst) $ zip mnts (zip mntopts devs)
 
 	swaps = map (SwapPartition . partitionLoopDev . snd) $
-		filter ((== LinuxSwap) . partFs . fst) $
+		filter ((== Just LinuxSwap) . partFs . fst) $
 			zip parts devs
 
 	mountall top = forM_ orderedmntsdevs $ \(mp, (mopts, loopdev)) -> case mp of

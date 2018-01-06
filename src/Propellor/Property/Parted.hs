@@ -62,8 +62,10 @@ partitioned eep disk parttable@(PartTable _ _ parts) = property' desc $ \w -> do
   where
 	desc = disk ++ " partitioned"
 	formatl devs = combineProperties desc (toProps $ map format (zip parts devs))
-	format (p, dev) = Partition.formatted' (partMkFsOpts p)
-		Partition.YesReallyFormatPartition (partFs p) dev
+	format (p, dev) = case partFs p of
+		Just fs -> Partition.formatted' (partMkFsOpts p)
+			Partition.YesReallyFormatPartition fs dev
+		Nothing -> doNothing
 
 -- | Gets the total size of the disk specified by the partition table.
 partTableSize :: PartTable -> ByteSize
@@ -81,12 +83,12 @@ calcPartedParamsSize (PartTable tabletype alignment parts) =
 		, pval f
 		, pval b
 		]
-	mkpart partnum startpos endpos p =
-		[ "mkpart"
-		, pval (partType p)
-		, pval (partFs p)
-		, partposexact startpos
-		, partposfuzzy endpos
+	mkpart partnum startpos endpos p = catMaybes
+		[ Just "mkpart"
+		, Just $ pval (partType p)
+		, fmap pval (partFs p)
+		, Just $ partposexact startpos
+		, Just $ partposfuzzy endpos
 		] ++ case partName p of
 			Just n -> ["name", show partnum, n]
 			Nothing -> []

@@ -1,8 +1,13 @@
-propellor (5.2.1) UNRELEASED; urgency=medium
+propellor (5.3.0) UNRELEASED; urgency=medium
 
   * Avoid bogus warning about new upstream version when /usr/bin/propellor
     is run on a Debian system, but ~/.propellor was not cloned from the
     Debian git bundle.
+  * Parted: Allow partitions to have no filesystem, for eg, GPT BIOS boot
+    partitions. (API change)
+  * Added rawPartition to PartSpec, for specifying partitions with no
+    filesystem.
+  * Added BiosGrubFlag to PartFlag.
 
  -- Joey Hess <id@joeyh.name>  Tue, 02 Jan 2018 13:06:45 -0400
 

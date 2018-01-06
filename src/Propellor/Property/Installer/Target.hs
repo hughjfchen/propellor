@@ -246,10 +246,10 @@ fstabLists userinput (TargetPartTable _ partspecs) = setup <!> doNothing
 	
 	partitions = map (\(mp, _, mkpart, _) -> (mp, mkpart mempty)) partspecs
 	mnts = mapMaybe fst $
-		filter (\(_, p) -> partFs p /= LinuxSwap) partitions
+		filter (\(_, p) -> partFs p /= Just LinuxSwap && partFs p /= Nothing) partitions
 	swaps targetdev = 
 		map (Fstab.SwapPartition . diskPartition targetdev . snd) $
-			filter (\((_, p), _) -> partFs p == LinuxSwap)
+			filter (\((_, p), _) -> partFs p == Just LinuxSwap)
 				(zip partitions partNums)
 
 -- | Make the target bootable using whatever bootloader is installed on it.

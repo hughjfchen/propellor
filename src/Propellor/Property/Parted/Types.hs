@@ -31,7 +31,7 @@ instance Monoid PartTable where
 data Partition = Partition
 	{ partType :: PartType
 	, partSize :: PartSize
-	, partFs :: Partition.Fs
+	, partFs :: Maybe Partition.Fs
 	, partMkFsOpts :: Partition.MkfsOpts
 	, partFlags :: [(PartFlag, Bool)] -- ^ flags can be set or unset (parted may set some flags by default)
 	, partName :: Maybe String -- ^ optional name for partition (only works for GPT, PC98, MAC)
@@ -39,7 +39,7 @@ data Partition = Partition
 	deriving (Show)
 
 -- | Makes a Partition with defaults for non-important values.
-mkPartition :: Partition.Fs -> PartSize -> Partition
+mkPartition :: Maybe Partition.Fs -> PartSize -> Partition
 mkPartition fs sz = Partition
 	{ partType = Primary
 	, partSize = sz
@@ -105,7 +105,7 @@ fromAlignment :: Alignment -> ByteSize
 fromAlignment (Alignment n) = n
 
 -- | Flags that can be set on a partition.
-data PartFlag = BootFlag | RootFlag | SwapFlag | HiddenFlag | RaidFlag | LvmFlag | LbaFlag | LegacyBootFlag | IrstFlag | EspFlag | PaloFlag
+data PartFlag = BootFlag | RootFlag | SwapFlag | HiddenFlag | RaidFlag | LvmFlag | LbaFlag | LegacyBootFlag | IrstFlag | EspFlag | PaloFlag | BiosGrubFlag
 	deriving (Show)
 
 instance PartedVal PartFlag where
@@ -120,6 +120,7 @@ instance PartedVal PartFlag where
 	pval IrstFlag = "irst"
 	pval EspFlag = "esp"
 	pval PaloFlag = "palo"
+	pval BiosGrubFlag = "bios_grub"
 
 instance PartedVal Bool where
 	pval True = "on"
