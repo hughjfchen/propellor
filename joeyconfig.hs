@@ -316,6 +316,7 @@ kite = host "kite.kitenet.net" $ props
 	& myDnsPrimary True "kitenet.net"
 		[ (RelDomain "mouse-onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
 		, (RelDomain "beaver-onion", CNAME $ AbsDomain "tl4xsvaxryjylgxs.onion")
+		, (RelDomain "peregrine-onion", CNAME $ AbsDomain "ahw47zqw6qszoufl.onion")
 		]
 	& myDnsPrimary True "joeyh.name" []
 	& myDnsPrimary True "ikiwiki.info" []
