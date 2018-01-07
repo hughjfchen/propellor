@@ -28,6 +28,8 @@ Open design questions:
   > Checked this, and two microsd card adapters from different
   > manufacturers with different microsd cards have the same by-id.
   > Those must have no serial number..
+  > 
+  > Also, a USB SD/microSD reader had the same by-id for multiple cards.
 
 * Should an already imaged drive be updated incrementally or re-imaged?
   Seems both cases would be useful, the former especially for incrementally
