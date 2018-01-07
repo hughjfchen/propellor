@@ -58,6 +58,7 @@ hosts =                 --                  (o)  `
 	, elephant
 	, beaver
 	, mouse
+	, peregrine
 	, pell
 	, keysafe
 	] ++ monsters
@@ -315,6 +316,7 @@ kite = host "kite.kitenet.net" $ props
 	& myDnsPrimary True "kitenet.net"
 		[ (RelDomain "mouse-onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
 		, (RelDomain "beaver-onion", CNAME $ AbsDomain "tl4xsvaxryjylgxs.onion")
+		, (RelDomain "peregrine-onion", CNAME $ AbsDomain "ahw47zqw6qszoufl.onion")
 		]
 	& myDnsPrimary True "joeyh.name" []
 	& myDnsPrimary True "ikiwiki.info" []
@@ -415,6 +417,12 @@ beaver = host "beaver.kitenet.net" $ props
 mouse :: Host
 mouse = host "mouse.kitenet.net" $ props
 	& ipv4 "67.223.19.96"
+	& Apt.installed ["ssh"]
+	& Tor.installed
+	& Tor.hiddenServiceAvailable "ssh" (Port 22)
+
+peregrine :: Host
+peregrine = host "peregrine.kitenet.net" $ props
 	& Apt.installed ["ssh"]
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "ssh" (Port 22)
