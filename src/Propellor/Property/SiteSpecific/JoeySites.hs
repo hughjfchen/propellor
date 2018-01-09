@@ -998,7 +998,7 @@ homeRouter = propertyList "home router" $ props
 	& Apt.installed ["ppp"]
 		`before` File.hasContent "/etc/ppp/peers/provider"
 			[ "user \"joeyh@arczip.com\""
-			, "connect \"/usr/sbin/chat -v -f /etc/chatscripts/pap -T 9734111\""
+			, "connect \"/usr/sbin/chat -v -f /etc/chatscripts/pap -T 3825441\""
 			, "/dev/ttyACM0"
 			, "115200"
 			, "noipdefault"
