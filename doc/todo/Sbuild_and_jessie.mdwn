@@ -22,4 +22,4 @@ Cheers and thanks for this new Sbuild which is really nice :))
 
 Frederic
 
-:[[done]] --spwhitton
+> [[done]] --spwhitton
