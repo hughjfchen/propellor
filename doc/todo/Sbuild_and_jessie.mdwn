@@ -21,3 +21,5 @@ So to my opinion the autopkgtest dependency is missing.
 Cheers and thanks for this new Sbuild which is really nice :))
 
 Frederic
+
+:[[done]] --spwhitton
