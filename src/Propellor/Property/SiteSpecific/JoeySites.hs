@@ -998,7 +998,7 @@ homeRouter = propertyList "home router" $ props
 	& Apt.installed ["ppp"]
 		`before` File.hasContent "/etc/ppp/peers/provider"
 			[ "user \"joeyh@arczip.com\""
-			, "connect \"/usr/sbin/chat -v -f /etc/chatscripts/pap -T 9734111\""
+			, "connect \"/usr/sbin/chat -v -f /etc/chatscripts/pap -T 3825441\""
 			, "/dev/ttyACM0"
 			, "115200"
 			, "noipdefault"
@@ -1054,7 +1054,8 @@ laptopSoftware = Apt.installed
 	, "apache2", "ikiwiki", "libhighlight-perl"
 	, "pal"
 	, "yeahconsole", "xkbset", "xinput"
-	, "assword", "pumpa", "vorbis-tools"
+	, "assword", "pumpa"
+	, "vorbis-tools", "audacity"
 	, "xul-ext-ublock-origin", "xul-ext-pdf.js", "xul-ext-status4evar"
 	, "vim-syntastic", "vim-fugitive"
 	, "adb", "gthumb"
