@@ -27,6 +27,7 @@ import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Locale as Locale
 import qualified Propellor.Property.Grub as Grub
+import qualified Propellor.Property.FlashKernel as FlashKernel
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
@@ -187,6 +188,9 @@ honeybee = host "honeybee.kitenet.net" $ props
 			`mountedAt` "/"
 			`setSize` MegaBytes 8000
 		)
+	& File.hasPrivContentExposed "/etc/flash-kernel/dtbs/sun7i-a20-cubietruck.dtb"
+		(Context "cubietruck gpio")
+		`onChange` FlashKernel.flashKernel
 	
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056

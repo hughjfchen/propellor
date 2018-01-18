@@ -23,9 +23,14 @@ installed :: Machine -> Property (HasInfo + DebianLike)
 installed machine = setInfoProperty go (toInfo [FlashKernelInstalled])
   where
 	go = "/etc/flash-kernel/machine" `File.hasContent` [machine]
-		`onChange` (cmdProperty "flash-kernel" [] `assume` MadeChange)
+		`onChange` flashKernel
 		`requires` File.dirExists "/etc/flash-kernel"
 		`requires` Apt.installed ["flash-kernel"]
+
+-- | Runs flash-kernel with whatever machine `installed` configured.
+flashKernel :: Property DebianLike
+flashKernel = tightenTargets $
+	cmdProperty "flash-kernel" [] `assume` MadeChange
 
 -- | Runs flash-kernel in the system mounted at a particular directory.
 flashKernelMounted :: FilePath -> Property Linux
