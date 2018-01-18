@@ -948,10 +948,9 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 		, "[Install]"
 		, "WantedBy=multi-user.target"
 		]
-	-- Only upload when eth0 is up; eg the satellite internet is up.
 	-- Any changes to the rsync command will need my .authorized_keys
 	-- rsync server command to be updated too.
-	rsynccommand = "if ip route | grep '^default' | grep -q eth0; then rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/recent/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/recent/; fi"
+	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/recent/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/recent/"
 
 -- My home router, running hostapd and dnsmasq for wlan0,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
