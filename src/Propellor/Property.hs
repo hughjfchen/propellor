@@ -55,6 +55,7 @@ import Data.Maybe
 import Data.List
 import Data.Hashable
 import Control.Applicative
+import GHC.Stack
 import Prelude
 
 import Propellor.Types
@@ -283,6 +284,7 @@ isNewerThan x y = do
 -- fail that way.
 pickOS
 	::
+		HasCallStack =>
 		( SingKind ('KProxy :: KProxy ka)
 		, SingKind ('KProxy :: KProxy kb)
 		, DemoteRep ('KProxy :: KProxy ka) ~ [MetaType]
@@ -344,7 +346,7 @@ unsupportedOS = property "unsupportedOS" unsupportedOS'
 
 -- | Throws an error, for use in `withOS` when a property is lacking
 -- support for an OS.
-unsupportedOS' :: Propellor Result
+unsupportedOS' :: HasCallStack => Propellor Result
 unsupportedOS' = go =<< getOS
 	  where
 		go Nothing = error "Unknown host OS is not supported by this property."

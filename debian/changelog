@@ -8,6 +8,8 @@ propellor (5.3.0) UNRELEASED; urgency=medium
   * Added rawPartition to PartSpec, for specifying partitions with no
     filesystem.
   * Added BiosGrubFlag to PartFlag.
+  * Add HasCallStack constraint to pickOS and unsupportedOS, so the
+    call stack includes the caller.
 
  -- Joey Hess <id@joeyh.name>  Tue, 02 Jan 2018 13:06:45 -0400
 
