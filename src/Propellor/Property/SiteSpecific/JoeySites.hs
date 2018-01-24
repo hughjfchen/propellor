@@ -1077,5 +1077,4 @@ devSoftware = Apt.installed
 	, "hothasktags", "hdevtools", "hlint"
 	, "gdb", "dpkg-repack", "lintian"
 	, "pristine-tar", "github-backup"
-	, "kvm"
 	]
