@@ -33,7 +33,7 @@ keyImported key@(GpgKeyId keyid) user@(User u) = prop
 			ifM (liftIO $ hasGpgKey (parse keylines))
 				( return NoChange
 				, makeChange $ withHandle StdinHandle createProcessSuccess
-					(proc "su" ["-c", "gpg --import", u]) $ \h -> do
+					(proc "su" ["--login", "-c", "gpg --import", u]) $ \h -> do
 						hPutStr h (unlines keylines)
 						hClose h
 				)
@@ -49,11 +49,11 @@ keyImported key@(GpgKeyId keyid) user@(User u) = prop
 
 hasPrivKey :: GpgKeyId -> User -> IO Bool
 hasPrivKey (GpgKeyId keyid) (User u) = catchBoolIO $
-	snd <$> processTranscript "su" ["-c", "gpg --list-secret-keys " ++ shellEscape keyid, u] Nothing
+	snd <$> processTranscript "su" ["--login", "-c", "gpg --list-secret-keys " ++ shellEscape keyid, u] Nothing
 
 hasPubKey :: GpgKeyId -> User -> IO Bool
 hasPubKey (GpgKeyId keyid) (User u) = catchBoolIO $
-	snd <$> processTranscript "su" ["-c", "gpg --list-public-keys " ++ shellEscape keyid, u] Nothing
+	snd <$> processTranscript "su" ["--login", "-c", "gpg --list-public-keys " ++ shellEscape keyid, u] Nothing
 
 dotDir :: User -> IO FilePath
 dotDir (User u) = do

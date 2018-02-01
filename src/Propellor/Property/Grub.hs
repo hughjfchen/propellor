@@ -5,6 +5,8 @@ module Propellor.Property.Grub (
 	installed,
 	mkConfig,
 	installed',
+	configured,
+	cmdline_Linux_default,
 	boots,
 	bootsMounted,
 	TimeoutSecs,
@@ -13,11 +15,15 @@ module Propellor.Property.Grub (
 
 import Propellor.Base
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.ConfFile as ConfFile
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Mount
 import Propellor.Property.Chroot (inChroot)
 import Propellor.Types.Info
 import Propellor.Types.Bootloader
+import Utility.SafeCommand
+
+import Data.List
 
 -- | Eg, \"hd0,0\" or \"xen/xvda1\"
 type GrubDevice = String
@@ -52,6 +58,65 @@ installed' grubtarget = setInfoProperty aptinstall
 		EFI32 -> "grub-efi-ia32"
 		Coreboot -> "grub-coreboot"
 		Xen -> "grub-xen"
+
+-- | Sets a simple confguration value, using grub-mkconfig to update
+-- the grub boot menu accordingly. On Debian, these are written to
+-- </etc/default/grub>
+--
+-- Example:
+--
+-- >	& Grub.configured "GRUB_TIMEOUT" "10"
+-- >	& Grub.configured "GRUB_TERMINAL_INPUT" "console serial"
+configured :: String -> String -> Property DebianLike
+configured k v = ConfFile.adjustSection 
+	("grub configured with " ++ k ++ "=" ++ v)
+	isline
+	(not . isline)
+	(const [l])
+	(const [l])
+	simpleConfigFile
+	`onChange` mkConfig
+  where
+	isline s = (k ++ "=") `isPrefixOf` s
+	l = k ++ "=" ++ shellEscape v
+
+simpleConfigFile :: FilePath
+simpleConfigFile = "/etc/default/grub"
+
+-- | Adds a word to the default linux command line.
+-- Any other words in the command line will be left unchanged.
+--
+-- Example:
+--
+-- > 	& Grub.cmdline_Linux_default "i915.enable_psr=1"
+-- > 	! Grub.cmdline_Linux_default "quiet"
+cmdline_Linux_default :: String -> RevertableProperty DebianLike DebianLike
+cmdline_Linux_default w = setup <!> undo
+  where
+	setup = ConfFile.adjustSection
+		("linux command line includes " ++ w)
+		isline
+		(not . isline)
+		(map (mkline . addw . getws))
+		(++ [mkline [w]])
+		simpleConfigFile
+		`onChange` mkConfig
+	undo = ConfFile.adjustSection
+		("linux command line does not include " ++ w)
+		isline
+		(not . isline)
+		(map (mkline . rmw . getws))
+		(++ [mkline [""]])
+		simpleConfigFile
+		`onChange` mkConfig
+	k = "GRUB_CMDLINE_LINUX_DEFAULT"
+	isline s = (k ++ "=") `isPrefixOf` s
+	mkline ws = k ++ "=" ++ shellEscape (unwords ws)
+	getws = concatMap words . shellUnEscape . drop 1 . dropWhile (/= '=')
+	addw ws
+		| w `elem` ws = ws
+		| otherwise = ws ++ [w]
+	rmw = filter (/= w)
 
 -- | Installs grub onto a device's boot loader, 
 -- so the system can boot from that device.

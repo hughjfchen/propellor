@@ -94,6 +94,7 @@ scriptProperty script = cmdProperty "sh" ["-c", shellcmd]
 -- | A property that can satisfied by running a script
 -- as user (cd'd to their home directory).
 userScriptProperty :: User -> Script -> UncheckedProperty UnixLike
-userScriptProperty (User user) script = cmdProperty "su" ["--shell", "/bin/sh", "-c", shellcmd, user]
+userScriptProperty (User user) script = cmdProperty "su"
+	["--login", "--shell", "/bin/sh", "-c", shellcmd, user]
   where
 	shellcmd = intercalate " ; " ("set -e" : "cd" : script)

@@ -27,11 +27,13 @@ import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Locale as Locale
 import qualified Propellor.Property.Grub as Grub
+import qualified Propellor.Property.FlashKernel as FlashKernel
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
+import qualified Propellor.Property.Laptop as Laptop
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -88,12 +90,16 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& ipv6 "2001:4830:1600:187::2"
 	& Hostname.sane
 	& Apt.serviceInstalledRunning "swapspace"
+	& Laptop.powertopAutoTuneOnBoot
+	& Grub.cmdline_Linux_default "i915.enable_psr=1"
+	! Grub.cmdline_Linux_default "quiet"
 
 	& JoeySites.dkimMilter
 	& JoeySites.postfixSaslPasswordClient
 	-- & JoeySites.alarmClock "*-*-* 7:30" (User "joey")
 	--	"/usr/bin/timeout 45m /home/joey/bin/goodmorning"
 	& JoeySites.laptopSoftware
+	& JoeySites.userDirHtml
 	& Ssh.userKeys (User "joey") hostContext
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1YoyHxZwG5Eg0yiMTJLSWJ/+dMM6zZkZiR4JJ0iUfP+tT2bm/lxYompbSqBeiCq+PYcSC67mALxp1vfmdOV//LWlbXfotpxtyxbdTcQbHhdz4num9rJQz1tjsOsxTEheX5jKirFNC5OiKhqwIuNydKWDS9qHGqsKcZQ8p+n1g9Lr3nJVGY7eRRXzw/HopTpwmGmAmb9IXY6DC2k91KReRZAlOrk0287LaK3eCe1z0bu7LYzqqS+w99iXZ/Qs0m9OqAPnHZjWQQ0fN4xn5JQpZSJ7sqO38TBAimM+IHPmy2FTNVVn9zGM+vN1O2xr3l796QmaUG1+XLL0shfR/OZbb joey@darkstar")
 		]
@@ -187,6 +193,9 @@ honeybee = host "honeybee.kitenet.net" $ props
 			`mountedAt` "/"
 			`setSize` MegaBytes 8000
 		)
+	& File.hasPrivContentExposed "/etc/flash-kernel/dtbs/sun7i-a20-cubietruck.dtb"
+		(Context "cubietruck gpio")
+		`onChange` FlashKernel.flashKernel
 	
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
