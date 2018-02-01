@@ -33,6 +33,7 @@ import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
+import qualified Propellor.Property.Laptop as Laptop
 import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -89,9 +90,9 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& ipv6 "2001:4830:1600:187::2"
 	& Hostname.sane
 	& Apt.serviceInstalledRunning "swapspace"
-	! Grub.cmdline_Linux_default "quiet"
-	-- Power consumption tuning
+	& Laptop.powertopAutoTuneOnBoot
 	& Grub.cmdline_Linux_default "i915.enable_psr=1"
+	! Grub.cmdline_Linux_default "quiet"
 
 	& JoeySites.dkimMilter
 	& JoeySites.postfixSaslPasswordClient
