@@ -89,8 +89,9 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& ipv6 "2001:4830:1600:187::2"
 	& Hostname.sane
 	& Apt.serviceInstalledRunning "swapspace"
-	& Grub.cmdline_Linux "i915.enable_psr=1"
-	! Grub.cmdline_Linux "quiet"
+	! Grub.cmdline_Linux_default "quiet"
+	-- Power consumption tuning
+	& Grub.cmdline_Linux_default "i915.enable_psr=1"
 
 	& JoeySites.dkimMilter
 	& JoeySites.postfixSaslPasswordClient

@@ -6,7 +6,7 @@ module Propellor.Property.Grub (
 	mkConfig,
 	installed',
 	configured,
-	cmdline_Linux,
+	cmdline_Linux_default,
 	boots,
 	bootsMounted,
 	TimeoutSecs,
@@ -83,15 +83,15 @@ configured k v = ConfFile.adjustSection
 simpleConfigFile :: FilePath
 simpleConfigFile = "/etc/default/grub"
 
--- | Adds a word to the linux command line. Any other words in the command
--- line will be left unchanged.
+-- | Adds a word to the default linux command line.
+-- Any other words in the command line will be left unchanged.
 --
 -- Example:
 --
--- > 	& Grub.cmdline_Linux "i915.enable_psr=1"
--- > 	! Grub.cmdline_Linux "quiet"
-cmdline_Linux :: String -> RevertableProperty DebianLike DebianLike
-cmdline_Linux w = setup <!> undo
+-- > 	& Grub.cmdline_Linux_default "i915.enable_psr=1"
+-- > 	! Grub.cmdline_Linux_default "quiet"
+cmdline_Linux_default :: String -> RevertableProperty DebianLike DebianLike
+cmdline_Linux_default w = setup <!> undo
   where
 	setup = ConfFile.adjustSection
 		("linux command line includes " ++ w)
@@ -109,7 +109,7 @@ cmdline_Linux w = setup <!> undo
 		(++ [mkline [""]])
 		simpleConfigFile
 		`onChange` mkConfig
-	k = "GRUB_CMDLINE_LINUX"
+	k = "GRUB_CMDLINE_LINUX_DEFAULT"
 	isline s = (k ++ "=") `isPrefixOf` s
 	mkline ws = k ++ "=" ++ shellEscape (unwords ws)
 	getws = concatMap words . shellUnEscape . drop 1 . dropWhile (/= '=')
