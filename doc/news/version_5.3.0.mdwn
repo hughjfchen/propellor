@@ -1,0 +1,16 @@
+propellor 5.3.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Avoid bogus warning about new upstream version when /usr/bin/propellor
+     is run on a Debian system, but ~/.propellor was not cloned from the
+     Debian git bundle.
+   * Parted: Allow partitions to have no filesystem, for eg, GPT BIOS boot
+     partitions. (API change)
+   * Added rawPartition to PartSpec, for specifying partitions with no
+     filesystem.
+   * Added BiosGrubFlag to PartFlag.
+   * Add HasCallStack constraint to pickOS and unsupportedOS, so the
+     call stack includes the caller.
+   * Run su with --login, to avoid inheriting some problematic environment
+     variables, such as TMP, from the caller.
+   * Grub: Added properties to configure /etc/default/grub.
+   * Laptop: New module, starting with powertopAutoTuneOnBoot."""]]
