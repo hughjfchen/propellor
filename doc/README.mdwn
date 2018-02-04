@@ -18,12 +18,10 @@ There is fairly complete
 which includes many built-in Properties for dealing with
 [Apt](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Apt.html)
 and
-[Apache](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Apache.html)
-,
+[Apache](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Apache.html),
 [Cron](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Cron.html)
 and
-[Commands](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Cmd.html)
-,
+[Commands](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Cmd.html),
 [Dns](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Dns.html)
 and
 [Docker](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Docker.html), etc.
