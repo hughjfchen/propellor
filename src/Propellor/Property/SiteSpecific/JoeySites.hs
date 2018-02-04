@@ -1048,7 +1048,7 @@ laptopSoftware = Apt.installed
 	, "ttf-bitstream-vera"
 	, "mairix", "offlineimap", "mutt"
 	, "nmap", "whois", "wireshark", "tcpdump", "iftop"
-	, "udevil", "pmount"
+	, "udevil", "pmount", "tree"
 	, "arbtt", "hledger", "bc"
 	, "apache2", "ikiwiki", "libhighlight-perl"
 	, "pal"
@@ -1060,6 +1060,7 @@ laptopSoftware = Apt.installed
 	, "adb", "gthumb"
 	, "w3m", "sm", "weechat"
 	, "borgbackup", "wipe"
+	, "units"
 	]
 	`requires` baseSoftware
 	`requires` devSoftware
