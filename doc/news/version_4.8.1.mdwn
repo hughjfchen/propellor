@@ -1,4 +1,0 @@
-propellor 4.8.1 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Borg: Fix propigation of exit status of borg backup.
-   * Borg: Fix handling of UseSshKey."""]]
