@@ -1,3 +1,11 @@
+propellor (5.3.1) UNRELEASED; urgency=medium
+
+  * Last release mistakenly contained my personal branch not master.
+  * contrib/post-merge-hook documentation updated to recommend also using
+    it as a post-checkout hook, to avoid such problems.
+
+ -- Joey Hess <id@joeyh.name>  Sun, 04 Feb 2018 11:54:28 -0400
+
 propellor (5.3.0) unstable; urgency=medium
 
   * Avoid bogus warning about new upstream version when /usr/bin/propellor

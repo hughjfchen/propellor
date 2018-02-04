@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# git post-merge hook, used by propellor's author to maintain a
-# joeyconfig branch with some changes while being able to merge
+# git post-merge (and post-checkout) hook, used by propellor's author to
+# maintain a joeyconfig branch with some changes while being able to merge
 # between it and branches without the changes.
 #
 # Each time this hook is run, it checks if it's on a branch with
