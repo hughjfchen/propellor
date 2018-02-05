@@ -22,7 +22,6 @@ import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Network as Network
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
-import qualified Propellor.Property.FlashKernel as FlashKernel
 import Utility.FileMode
 import Utility.Split
 
@@ -1084,11 +1083,14 @@ devSoftware = Apt.installed
 cubieTruckOneWire :: Property DebianLike
 cubieTruckOneWire = 
 	File.hasContent "/etc/easy-peasy-devicetree-squeezy/my.dts" mydts
-		`onChange` FlashKernel.flashKernel
+		`onChange` utilitysetup
 		`requires` utilityinstalled
   where
 	utilityinstalled = Git.cloned (User "root") "https://git.joeyh.name/git/easy-peasy-devicetree-squeezy.git" "/usr/local/easy-peasy-devicetree-squeezy" Nothing
 		`onChange` File.isSymlinkedTo "/usr/local/bin/easy-peasy-devicetree-squeezy" (File.LinkTarget "/usr/local/easy-peasy-devicetree-squeezy/easy-peasy-devicetree-squeezy")
+	utilitysetup = cmdProperty "easy-peasy-devicetree-squeezy"
+		["--debian", "sun7i-a20-cubietruck"]
+		`assume` MadeChange
 	mydts =
 		[ "/* Device tree addition enabling onewire sensors on CubieTruck GPIO pin PG8 */"
 		, "#include <dt-bindings/gpio/gpio.h>"
