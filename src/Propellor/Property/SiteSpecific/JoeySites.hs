@@ -1059,7 +1059,7 @@ laptopSoftware = Apt.installed
 	, "vim-syntastic", "vim-fugitive"
 	, "adb", "gthumb"
 	, "w3m", "sm", "weechat"
-	, "borgbackup", "wipe"
+	, "borgbackup", "wipe", "smartmontools"
 	, "units"
 	]
 	`requires` baseSoftware
