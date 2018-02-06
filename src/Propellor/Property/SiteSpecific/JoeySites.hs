@@ -1048,7 +1048,7 @@ laptopSoftware = Apt.installed
 	, "ttf-bitstream-vera"
 	, "mairix", "offlineimap", "mutt"
 	, "nmap", "whois", "wireshark", "tcpdump", "iftop"
-	, "udevil", "pmount", "tree"
+	, "udevil", "pmount", "tree", "pv"
 	, "arbtt", "hledger", "bc"
 	, "apache2", "ikiwiki", "libhighlight-perl"
 	, "pal"
@@ -1079,3 +1079,35 @@ devSoftware = Apt.installed
 	, "gdb", "dpkg-repack", "lintian"
 	, "pristine-tar", "github-backup"
 	]
+
+cubieTruckOneWire :: Property DebianLike
+cubieTruckOneWire = 
+	File.hasContent "/etc/easy-peasy-devicetree-squeezy/my.dts" mydts
+		`onChange` utilitysetup
+		`requires` utilityinstalled
+  where
+	utilityinstalled = Git.cloned (User "root") "https://git.joeyh.name/git/easy-peasy-devicetree-squeezy.git" "/usr/local/easy-peasy-devicetree-squeezy" Nothing
+		`onChange` File.isSymlinkedTo "/usr/local/bin/easy-peasy-devicetree-squeezy" (File.LinkTarget "/usr/local/easy-peasy-devicetree-squeezy/easy-peasy-devicetree-squeezy")
+	utilitysetup = cmdProperty "easy-peasy-devicetree-squeezy"
+		["--debian", "sun7i-a20-cubietruck"]
+		`assume` MadeChange
+	mydts =
+		[ "/* Device tree addition enabling onewire sensors on CubieTruck GPIO pin PG8 */"
+		, "#include <dt-bindings/gpio/gpio.h>"
+		, ""
+		, "/ {"
+		, "\tonewire_device {"
+		, "\t\tcompatible = \"w1-gpio\";"
+		, "\t\tgpios = <&pio 6 8 GPIO_ACTIVE_HIGH>; /* PG8 */"
+		, "\t\tpinctrl-names = \"default\";"
+		, "\t\tpinctrl-0 = <&my_w1_pin>;"
+		, "\t};"
+		, "};"
+		, ""
+		, "&pio {"
+		, "\tmy_w1_pin: my_w1_pin@0 {"
+		, "\t\tallwinner,pins = \"PG8\";"
+		, "\t\tallwinner,function = \"gpio_in\";"
+		, "\t};"
+		, "};"
+		]
