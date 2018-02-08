@@ -541,7 +541,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "smtpd_sasl_security_options = noanonymous"
 		, "smtpd_sasl_local_domain = kitenet.net"
 
-		, "# Enable postgrey."
+		, "# Enable postgrey and sasl auth and client certs."
 		, "smtpd_recipient_restrictions = permit_tls_clientcerts,permit_sasl_authenticated,,permit_mynetworks,reject_unauth_destination,check_policy_service inet:127.0.0.1:10023"
 
 		, "# Enable spamass-milter, amavis-milter (opendkim is not enabled because it causes mails forwarded from eg gmail to be rejected)"
@@ -668,7 +668,6 @@ domainKey = (RelDomain "mail._domainkey", TXT "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb
 
 postfixSaslPasswordClient :: Property (HasInfo + DebianLike)
 postfixSaslPasswordClient = combineProperties "postfix uses SASL password to authenticate with smarthost" $ props
-	& Postfix.satellite
 	& Postfix.mappedFile "/etc/postfix/sasl_passwd" 
 		(`File.hasPrivContent` (Context "kitenet.net"))
 	& Postfix.mainCfFile `File.containsLines`
@@ -680,6 +679,9 @@ postfixSaslPasswordClient = combineProperties "postfix uses SASL password to aut
 		, "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd"
 		]
 		`onChange` Postfix.reloaded
+	-- Comes after so it does not set relayhost but uses the setting 
+	-- above.
+	& Postfix.satellite
 
 hasPostfixCert :: Context -> Property (HasInfo + UnixLike)
 hasPostfixCert ctx = combineProperties "postfix tls cert installed" $ props
