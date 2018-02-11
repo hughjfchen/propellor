@@ -3,8 +3,12 @@
 
 module Propellor.Property.Atomic (
 	atomicDirUpdate,
+	atomicDirSync,
 	atomicUpdate,
-	atomicDirSync
+	AtomicResourcePair(..),
+	flipAtomicResourcePair,
+	SwapAtomicResourcePair,
+	CheckAtomicResourcePair,
 ) where
 
 import Propellor.Base
@@ -31,7 +35,7 @@ flipAtomicResourcePair a = AtomicResourcePair
 
 -- | Action that activates the inactiveAtomicResource, and deactivates
 -- the activeAtomicResource. This action must be fully atomic.
-type SwapAtomicResourcePair a = AtomicResourcePair a -> Propellor ()
+type SwapAtomicResourcePair a = AtomicResourcePair a -> Propellor Bool
 
 -- | Checks which of the pair of resources is currently active and
 -- which is inactive, and puts them in the correct poisition in
@@ -59,8 +63,10 @@ atomicUpdate rbase rcheck rswap mkp = property' d $ \w -> do
 		FailedChange -> return FailedChange
 		NoChange -> return NoChange
 		MadeChange -> do
-			rswap r
-			return res
+			ok <- rswap r
+			if ok
+				then return res
+				else return FailedChange
   where
 	d = getDesc $ mkp $ activeAtomicResource rbase
 
@@ -81,13 +87,10 @@ atomicUpdate rbase rcheck rswap mkp = property' d $ \w -> do
 -- non-atomically. After the Property successfully makes a change, the
 -- copy is swapped into place, fully atomically.
 --
--- This necessarily uses double the disk space of the directory, since its
--- copy is preserved. Note that the directory must not already exist,
--- or symlink creation will fail.
---
--- The parent directory will actually contain three children, a symlink
--- with the name of the directory itself, and two copies of the directory,
--- with names suffixed with ".1" and ".2"
+-- This necessarily uses double the disk space, since there are two copies
+-- of the directory. The parent directory will actually contain three
+-- children: a symlink with the name of the directory itself, and two copies
+-- of the directory, with names suffixed with ".1" and ".2"
 atomicDirUpdate
 	-- Constriaints inherited from ensureProperty.
 	:: ( Cannot_ensureProperty_WithInfo t ~ 'True
@@ -111,8 +114,14 @@ inactiveLinkTarget :: AtomicResourcePair FilePath -> FilePath
 inactiveLinkTarget = takeFileName . inactiveAtomicResource
 
 swapDirLink :: FilePath -> SwapAtomicResourcePair FilePath
-swapDirLink d rp = liftIO $ createSymbolicLink (inactiveLinkTarget rp)
-	`viaStableTmp` d
+swapDirLink d rp = liftIO $ do
+	v <- tryIO $ createSymbolicLink (inactiveLinkTarget rp)
+		`viaStableTmp` d
+	case v of
+		Right () -> return True
+		Left e -> do
+			warningMessage $ "Unable to update symlink at " ++ d ++ " (" ++ show e ++ ")"
+			return False
 
 checkDirLink :: FilePath -> CheckAtomicResourcePair FilePath
 checkDirLink d rp = liftIO $ do
