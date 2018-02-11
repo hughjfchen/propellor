@@ -54,3 +54,6 @@ see [configuration for the Haskell newbie](https://propellor.branchable.com/hask
    each host becomes tiresome, you can
    [automate that](http://propellor.branchable.com/automated_spins/).
 7. Write some neat new properties and send patches!
+
+(Want to get your feet wet with propellor before plunging in?
+[[try this|forum/Simple_quickstart_without_git__44___SSH__44___GPG]])
