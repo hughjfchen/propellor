@@ -144,7 +144,7 @@ checkDirLink d rp = liftIO $ do
 -- Using atomicDirSync in the above example lets git only download
 -- the changes once, rather than the same changes being downloaded a second
 -- time to update the other copy of the directory the next time propellor
--- runs
+-- runs.
 --
 -- Suppose that a web server program is run from the git repository,
 -- and needs to be restarted after the pull. That restart should be done
