@@ -89,6 +89,7 @@ Library
     Propellor.Property.Apache
     Propellor.Property.Apt
     Propellor.Property.Apt.PPA
+    Propellor.Property.Atomic
     Propellor.Property.Attic
     Propellor.Property.Bootstrap
     Propellor.Property.Borg

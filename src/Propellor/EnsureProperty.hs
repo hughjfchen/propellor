@@ -8,6 +8,7 @@ module Propellor.EnsureProperty
 	( ensureProperty
 	, property'
 	, OuterMetaTypesWitness(..)
+	, Cannot_ensureProperty_WithInfo
 	) where
 
 import Propellor.Types
