@@ -61,6 +61,9 @@ type Branch = String
 -- it will be recursively deleted first.
 --
 -- A branch can be specified, to check out.
+--
+-- Does not make subsequent changes be pulled into the repository after
+-- it's cloned.
 cloned :: User -> RepoUrl -> FilePath -> Maybe Branch -> Property DebianLike
 cloned owner url dir mbranch = check originurl go
 	`requires` installed
@@ -95,11 +98,26 @@ cloned owner url dir mbranch = check originurl go
 		, Just "git update-server-info"
 		]
 
+-- | Specified git repository is cloned to the specified directory,
+-- and any new commits are pulled into it each time this property runs.
+pulled :: User -> RepoUrl -> FilePath -> Maybe Branch -> Property DebianLike
+pulled owner url dir mbranch = go
+	`requires` cloned owner url dir mbranch
+	`describe` desc
+  where
+	desc = "git pulled " ++ url ++ " to " ++ dir
+	go = userScriptProperty owner
+		[ "cd " ++ shellEscape dir
+		, "git pull"
+		]
+		`changesFile` (dir </> ".git" </> "FETCH_HEAD")
+
 isGitDir :: FilePath -> IO Bool
 isGitDir dir = isNothing <$> catchMaybeIO (readProcess "git" ["rev-parse", "--resolve-git-dir", dir])
 
 data GitShared = Shared Group | SharedAll | NotShared
 
+-- | Sets up a new, empty bare git repository.
 bareRepo :: FilePath -> User -> GitShared -> Property UnixLike
 bareRepo repo user gitshared = check (isRepo repo) $ propertyList ("git repo: " ++ repo) $ toProps $
 	dirExists repo : case gitshared of
