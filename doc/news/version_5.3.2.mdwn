@@ -1,0 +1,10 @@
+propellor 5.3.2 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Added Propellor.Property.Atomic, which can make a non-atomic property
+     that operates on a directory into an atomic property.
+     (Inspired by Vaibhav Sagar's talk on Functional Devops in a
+     Dysfunctional World at LCA 2018.)
+   * Added Git.pulled.
+   * Systemd.machined: Install systemd-container on Debian
+     stretch.
+     Thanks, Sean Whitton"""]]
