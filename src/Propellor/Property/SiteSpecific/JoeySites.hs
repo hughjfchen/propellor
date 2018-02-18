@@ -1061,7 +1061,7 @@ laptopSoftware = Apt.installed
 	, "vim-syntastic", "vim-fugitive"
 	, "adb", "gthumb"
 	, "w3m", "sm", "weechat"
-	, "borgbackup", "wipe", "smartmontools"
+	, "borgbackup", "wipe", "smartmontools", "libgfshare-bin"
 	, "units"
 	]
 	`requires` baseSoftware
