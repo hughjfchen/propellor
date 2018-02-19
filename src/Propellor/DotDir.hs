@@ -392,12 +392,10 @@ checkRepoUpToDate = whenM (gitbundleavail <&&> dotpropellorpopulated) $ do
 updateUpstreamMaster :: String -> IO ()
 updateUpstreamMaster newref = do
 	changeWorkingDirectory =<< dotPropellor
-	v <- getoldrev
-	case v of
-		Nothing -> return ()
-		Just oldref -> go oldref
+	go =<< getoldref
   where
-	go oldref = do
+	go Nothing = return ()
+	go (Just oldref) = do
 		let tmprepo = ".git/propellordisttmp"
 		let cleantmprepo = void $ catchMaybeIO $ removeDirectoryRecursive tmprepo
 		cleantmprepo
@@ -428,11 +426,10 @@ updateUpstreamMaster newref = do
 
 	-- Get ref that the upstreambranch points to, only when
 	-- the distrepo is being used.
-	getoldrev = do
-		mrev <- catchMaybeIO $ takeWhile (/= '\n')
+	getoldref = do
+		mref <- catchMaybeIO $ takeWhile (/= '\n')
 			<$> readProcess "git" ["show-ref", upstreambranch, "--hash"]
-		print mrev
-		case mrev of
+		case mref of
 			Just _ -> do
 				-- Normally there will be no upstream
 				-- remote when the distrepo is used.
@@ -442,13 +439,12 @@ updateUpstreamMaster newref = do
 				ifM (hasRemote "upstream")
 					( do
 						v <- remoteUrl "upstream"
-						print ("remote url", v)
 						return $ case v of
-							Just rurl | rurl == distrepo -> mrev
+							Just rurl | rurl == distrepo -> mref
 							_ -> Nothing
-					, return mrev
+					, return mref
 					)
-			Nothing -> return mrev
+			Nothing -> return mref
 
 -- And, if there's a remote named "upstream"
 -- that does not point at the distrepo, the user must have set that up
