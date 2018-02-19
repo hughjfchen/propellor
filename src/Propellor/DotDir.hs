@@ -389,7 +389,7 @@ checkRepoUpToDate = whenM (gitbundleavail <&&> dotpropellorpopulated) $ do
 --
 -- If there's no upstream/master, the user is not using the distrepo,
 -- so do nothing. And, if there's a remote named "upstream", the user
--- must have set that up is not using the distrepo, so do nothing.
+-- must have set that up and is not using the distrepo, so do nothing.
 updateUpstreamMaster :: String -> IO ()
 updateUpstreamMaster newref = unlessM (hasRemote "upstream") $ do
 	changeWorkingDirectory =<< dotPropellor
