@@ -1,3 +1,11 @@
+propellor (5.3.3) UNRELEASED; urgency=medium
+
+  * Warn again about new upstream version when ~/.propellor was cloned from the
+    Debian git bundle using an older version of propellor that set up an
+    upstream remote.
+
+ -- Joey Hess <id@joeyh.name>  Mon, 19 Feb 2018 12:44:24 -0400
+
 propellor (5.3.2) unstable; urgency=medium
 
   * Added Propellor.Property.Atomic, which can make a non-atomic property
