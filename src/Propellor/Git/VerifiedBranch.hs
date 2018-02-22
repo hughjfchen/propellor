@@ -30,11 +30,16 @@ verifyOriginBranch originbranch = do
 -- Returns True if HEAD is changed by fetching and merging from origin.
 fetchOrigin :: IO Bool
 fetchOrigin = do
+	fetched <- actionMessage "Pull from central git repository" $
+		boolSystem "git" [Param "fetch"]
+	if fetched
+		then mergeOrigin
+		else return False
+
+mergeOrigin :: IO Bool
+mergeOrigin = do
 	branchref <- getCurrentBranch
 	let originbranch = "origin" </> branchref
-
-	void $ actionMessage "Pull from central git repository" $
-		boolSystem "git" [Param "fetch"]
 
 	oldsha <- getCurrentGitSha1 branchref
 

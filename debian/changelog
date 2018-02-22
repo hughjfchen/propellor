@@ -3,6 +3,7 @@ propellor (5.3.3) UNRELEASED; urgency=medium
   * Warn again about new upstream version when ~/.propellor was cloned from the
     Debian git bundle using an older version of propellor that set up an
     upstream remote.
+  * Avoid crashing if initial fetch from origin fails when spinning a host.
 
  -- Joey Hess <id@joeyh.name>  Mon, 19 Feb 2018 12:44:24 -0400
 
