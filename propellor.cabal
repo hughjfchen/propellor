@@ -103,6 +103,7 @@ Library
     Propellor.Property.Cron
     Propellor.Property.DebianMirror
     Propellor.Property.Debootstrap
+    Propellor.Property.Dhparams
     Propellor.Property.DiskImage
     Propellor.Property.DiskImage.PartSpec
     Propellor.Property.Dns
