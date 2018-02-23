@@ -9,6 +9,9 @@ import Utility.FileMode
 import Utility.SafeCommand
 
 
+installed :: Property DebianLike
+installed = Apt.installed ["openssl"]
+
 dhparamsLength :: Int
 dhparamsLength = 2048
 
@@ -18,7 +21,7 @@ dhparams = "/etc/ssl/private/dhparams.pem"
 safeDhparams :: Property DebianLike
 safeDhparams = propertyList "safe dhparams" $ props
 	& File.dirExists (takeDirectory file)
-	& Apt.installed ["openssl"]
+	& installed
 	& check (not <$> doesFileExist file) (createDhparams file length')
 
 createDhparams :: FilePath -> Int -> Property UnixLike
