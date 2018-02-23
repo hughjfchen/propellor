@@ -103,7 +103,6 @@ Library
     Propellor.Property.Cron
     Propellor.Property.DebianMirror
     Propellor.Property.Debootstrap
-    Propellor.Property.Dhparams
     Propellor.Property.DiskImage
     Propellor.Property.DiskImage.PartSpec
     Propellor.Property.Dns
@@ -141,6 +140,7 @@ Library
     Propellor.Property.Nginx
     Propellor.Property.Obnam
     Propellor.Property.OpenId
+    Propellor.Property.Openssl
     Propellor.Property.OS
     Propellor.Property.Pacman
     Propellor.Property.Parted

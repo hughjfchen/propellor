@@ -1,6 +1,6 @@
 -- | Maintainer: Félix Sipma <felix+propellor@gueux.org>
 
-module Propellor.Property.Dhparams where
+module Propellor.Property.Openssl where
 
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
@@ -9,11 +9,11 @@ import Utility.FileMode
 import Utility.SafeCommand
 
 
-length' :: Int
-length' = 2048
+dhparamsLength :: Int
+dhparamsLength = 2048
 
-file :: FilePath
-file = "/etc/ssl/private/dhparams.pem"
+dhparams :: FilePath
+dhparams = "/etc/ssl/private/dhparams.pem"
 
 safeDhparams :: Property DebianLike
 safeDhparams = propertyList "safe dhparams" $ props
