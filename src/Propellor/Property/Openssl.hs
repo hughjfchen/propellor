@@ -20,9 +20,9 @@ dhparams = "/etc/ssl/private/dhparams.pem"
 
 safeDhparams :: Property DebianLike
 safeDhparams = propertyList "safe dhparams" $ props
-	& File.dirExists (takeDirectory file)
+	& File.dirExists (takeDirectory dhparams)
 	& installed
-	& check (not <$> doesFileExist file) (createDhparams file length')
+	& check (not <$> doesFileExist dhparams) (createDhparams dhparams dhparamsLength)
 
 createDhparams :: FilePath -> Int -> Property UnixLike
 createDhparams f l = property ("generate new dhparams: " ++ f) $ liftIO $ withUmask 0o0177 $ withFile f WriteMode $ \h ->
