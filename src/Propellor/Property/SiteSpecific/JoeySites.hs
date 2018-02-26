@@ -990,7 +990,8 @@ homeRouter = propertyList "home router" $ props
 		`onChange` Service.restarted "dnsmasq"
 	& ipmasq "wlan0"
 	& Apt.serviceInstalledRunning "netplug"
-	& Network.dhcp' "eth0"
+	& Network.static' "eth0" (IPv4 "192.168.1.100")
+		(Just (Network.Gateway (IPv4 "192.168.1.1")))
 		-- When satellite is down, fall back to dialup
 		[ ("pre-up", "poff -a || true")
 		, ("post-down", "pon")
