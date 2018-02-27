@@ -387,13 +387,12 @@ checkRepoUpToDate = whenM (gitbundleavail <&&> dotpropellorpopulated) $ do
 -- into the user's repository, as if fetching from a upstream remote,
 -- yielding a new upstream/master branch.
 --
--- If there's no upstream/master, the user is not using the distrepo,
--- so do nothing. And, if there's a remote named "upstream", the user
--- must have set that up is not using the distrepo, so do nothing.
+-- If there's no upstream/master, or the repo is not using the distrepo,
+-- do nothing.
 updateUpstreamMaster :: String -> IO ()
-updateUpstreamMaster newref = unlessM (hasRemote "upstream") $ do
+updateUpstreamMaster newref = do
 	changeWorkingDirectory =<< dotPropellor
-	go =<< catchMaybeIO getoldrev
+	go =<< getoldref
   where
 	go Nothing = return ()
 	go (Just oldref) = do
@@ -421,19 +420,42 @@ updateUpstreamMaster newref = unlessM (hasRemote "upstream") $ do
 		cleantmprepo
 		warnoutofdate True
 
-	getoldrev = takeWhile (/= '\n')
-		<$> readProcess "git" ["show-ref", upstreambranch, "--hash"]
-
 	git = run "git"
 	run cmd ps = unlessM (boolSystem cmd (map Param ps)) $
 		error $ "Failed to run " ++ cmd ++ " " ++ show ps
 
+	-- Get ref that the upstreambranch points to, only when
+	-- the distrepo is being used.
+	getoldref = do
+		mref <- catchMaybeIO $ takeWhile (/= '\n')
+			<$> readProcess "git" ["show-ref", upstreambranch, "--hash"]
+		case mref of
+			Just _ -> do
+				-- Normally there will be no upstream
+				-- remote when the distrepo is used.
+				-- Older versions of propellor set up
+				-- an upstream remote pointing at the 
+				-- distrepo.
+				ifM (hasRemote "upstream")
+					( do
+						v <- remoteUrl "upstream"
+						return $ case v of
+							Just rurl | rurl == distrepo -> mref
+							_ -> Nothing
+					, return mref
+					)
+			Nothing -> return mref
+
+-- And, if there's a remote named "upstream"
+-- that does not point at the distrepo, the user must have set that up
+-- and is not using the distrepo, so do nothing.
 warnoutofdate :: Bool -> IO ()
-warnoutofdate havebranch = do
-	warningMessage ("** Your ~/.propellor/ is out of date..")
-	let also s = infoMessage ["   " ++ s]
-	also ("A newer upstream version is available in " ++ distrepo)
-	if havebranch
-		then also ("To merge it, run: git merge " ++ upstreambranch)
-		else also ("To merge it, find the most recent commit in your repository's history that corresponds to an upstream release of propellor, and set refs/remotes/" ++ upstreambranch ++ " to it. Then run propellor again.")
-	also ""
+warnoutofdate havebranch = warningMessage $ unlines
+	[ "** Your ~/.propellor/ is out of date.."
+	, indent "A newer upstream version is available in " ++ distrepo
+	, indent $ if havebranch
+		then "To merge it, run: git merge " ++ upstreambranch
+		else "To merge it, find the most recent commit in your repository's history that corresponds to an upstream release of propellor, and set refs/remotes/" ++ upstreambranch ++ " to it. Then run propellor again."
+	]
+  where
+	indent s = "   " ++ s

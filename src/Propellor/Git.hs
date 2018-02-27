@@ -30,6 +30,10 @@ hasRemote remotename = catchDefaultIO False $ do
 	rs <- lines <$> readProcess "git" ["remote"]
 	return $ remotename `elem` rs
 
+remoteUrl :: String -> IO (Maybe String)
+remoteUrl remotename = catchDefaultIO Nothing $ headMaybe . lines
+	<$> readProcess "git" ["config", "remote." ++ remotename ++ ".url"]
+
 hasGitRepo :: IO Bool
 hasGitRepo = doesFileExist ".git/HEAD"
 
