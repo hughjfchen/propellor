@@ -4,8 +4,7 @@ propellor (5.3.3) unstable; urgency=medium
     Debian git bundle using an older version of propellor that set up an
     upstream remote.
   * Avoid crashing if initial fetch from origin fails when spinning a host.
-  * Added Propllor.Property.Openssl module contributed by contributed by
-    Félix Sipma.
+  * Added Propllor.Property.Openssl module contributed by Félix Sipma.
 
  -- Joey Hess <id@joeyh.name>  Mon, 26 Feb 2018 14:34:37 -0400
 
