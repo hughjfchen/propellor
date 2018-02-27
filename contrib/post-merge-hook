@@ -16,7 +16,7 @@ set -e
 
 commit () {
 	if [ -n "$(git status --short privdata/relocate config.hs)" ]; then
-		git commit privdata/relocate config.hs -m "$1"
+		git commit -m "$1"
 	fi
 }
 
