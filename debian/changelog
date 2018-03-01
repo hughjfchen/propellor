@@ -1,3 +1,11 @@
+propellor (5.3.4) UNRELEASED; urgency=medium
+
+  * Apt.trustsKey: Use apt-key to add key rather than manually driving gpg,
+    which seems to not work anymore.
+    Thanks, Russell Sim.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 01 Mar 2018 18:25:04 -0400
+
 propellor (5.3.3) unstable; urgency=medium
 
   * Warn again about new upstream version when ~/.propellor was cloned from the

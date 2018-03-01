@@ -447,7 +447,7 @@ trustsKey k = trustsKey' k <!> untrustKey k
 trustsKey' :: AptKey -> Property DebianLike
 trustsKey' k = check (not <$> doesFileExist f) $ property desc $ makeChange $ do
 	withHandle StdinHandle createProcessSuccess
-		(proc "gpg" ["--no-default-keyring", "--keyring", f, "--import", "-"]) $ \h -> do
+		(proc "apt-key" ["--keyring", f, "add", "-"]) $ \h -> do
 			hPutStr h (pubkey k)
 			hClose h
 	nukeFile $ f ++ "~" -- gpg dropping
