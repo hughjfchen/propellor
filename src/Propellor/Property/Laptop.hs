@@ -26,3 +26,7 @@ powertopAutoTuneOnBoot = setup <!> undo
 		`requires` check (doesFileExist servicefile)
 			(Systemd.disabled "powertop")
 	servicefile = "/etc/systemd/system/powertop.service"
+
+-- | Enables weekly TRIM for SSDs, using systemd's fstrim.timer,
+trimSSD :: Property Linux
+trimSSD = Systemd.enabled "fstrim.timer"

@@ -636,6 +636,7 @@ dkimMilter = Postfix.mainCfFile `File.containsLines`
 	`onChange` Postfix.dedupMainCf
 	`onChange` Postfix.reloaded
 	`requires` dkimInstalled
+	`requires` Postfix.installed
 
 -- This does not configure postfix to use the dkim milter,
 -- nor does it set up domainkey DNS.

@@ -90,6 +90,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Hostname.sane
 	& Apt.serviceInstalledRunning "swapspace"
 	& Laptop.powertopAutoTuneOnBoot
+	& Laptop.trimSSD
 	& Grub.cmdline_Linux_default "i915.enable_psr=1"
 	! Grub.cmdline_Linux_default "quiet"
 
