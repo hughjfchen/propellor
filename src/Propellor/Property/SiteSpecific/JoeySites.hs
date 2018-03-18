@@ -1051,7 +1051,7 @@ laptopSoftware = Apt.installed
 	, "xmonad", "libghc-xmonad-dev", "libghc-xmonad-contrib-dev"
 	, "ttf-bitstream-vera"
 	, "mairix", "offlineimap", "mutt"
-	, "nmap", "whois", "wireshark", "tcpdump", "iftop"
+	, "mtr", "nmap", "whois", "wireshark", "tcpdump", "iftop"
 	, "udevil", "pmount", "tree", "pv"
 	, "arbtt", "hledger", "bc"
 	, "apache2", "ikiwiki", "libhighlight-perl"
