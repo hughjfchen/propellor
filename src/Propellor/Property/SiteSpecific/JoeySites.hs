@@ -636,6 +636,7 @@ dkimMilter = Postfix.mainCfFile `File.containsLines`
 	`onChange` Postfix.dedupMainCf
 	`onChange` Postfix.reloaded
 	`requires` dkimInstalled
+	`requires` Postfix.installed
 
 -- This does not configure postfix to use the dkim milter,
 -- nor does it set up domainkey DNS.
@@ -1050,7 +1051,7 @@ laptopSoftware = Apt.installed
 	, "xmonad", "libghc-xmonad-dev", "libghc-xmonad-contrib-dev"
 	, "ttf-bitstream-vera"
 	, "mairix", "offlineimap", "mutt"
-	, "nmap", "whois", "wireshark", "tcpdump", "iftop"
+	, "mtr", "nmap", "whois", "wireshark", "tcpdump", "iftop"
 	, "udevil", "pmount", "tree", "pv"
 	, "arbtt", "hledger", "bc"
 	, "apache2", "ikiwiki", "libhighlight-perl"
