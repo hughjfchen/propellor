@@ -1052,7 +1052,7 @@ laptopSoftware = Apt.installed
 	, "ttf-bitstream-vera"
 	, "mairix", "offlineimap", "mutt"
 	, "mtr", "nmap", "whois", "wireshark", "tcpdump", "iftop"
-	, "udevil", "pmount", "tree", "pv"
+	, "pmount", "tree", "pv"
 	, "arbtt", "hledger", "bc"
 	, "apache2", "ikiwiki", "libhighlight-perl"
 	, "pal"
