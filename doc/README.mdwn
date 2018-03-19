@@ -56,4 +56,4 @@ see [configuration for the Haskell newbie](https://propellor.branchable.com/hask
 7. Write some neat new properties and send patches!
 
 (Want to get your feet wet with propellor before plunging in?
-[[try this|forum/Simple_quickstart_without_git__44___SSH__44___GPG]])
+[try this|http://propellor.branchable.com/forum/Simple_quickstart_without_git__44___SSH__44___GPG])
