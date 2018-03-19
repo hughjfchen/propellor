@@ -44,8 +44,8 @@ rule c tb tg rs = property ("firewall rule: " <> show r) addIpTable
 toIpTable :: Rule -> [CommandParam]
 toIpTable r =  map Param $
 	val (ruleChain r) :
-	toIpTableArg (ruleRules r) ++
-	["-t", val (ruleTable r), "-j", val (ruleTarget r)]
+	["-t", val (ruleTable r), "-j", val (ruleTarget r)] ++
+	toIpTableArg (ruleRules r)
 
 toIpTableArg :: Rules -> [String]
 toIpTableArg Everything = []
