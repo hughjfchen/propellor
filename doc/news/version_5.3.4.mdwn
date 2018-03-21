@@ -1,0 +1,8 @@
+propellor 5.3.4 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Apt.trustsKey: Use apt-key to add key rather than manually driving gpg,
+     which seems to not work anymore.
+     Thanks, Russell Sim.
+   * Firewall: Reorder iptables parameters that are order
+     dependant to make --to-dest and --to-source work.
+     Thanks, Russell Sim"""]]
