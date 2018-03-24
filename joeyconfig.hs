@@ -341,7 +341,7 @@ kite = host "kite.kitenet.net" $ props
 		, "search kitenet.net"
 		]
 	& alias "debug-me.joeyh.name"
-	-- debug-me installed manually until package is available
+	& Apt.installed ["debug-me"]
 	& Systemd.enabled "debug-me"
 
 	-- testing
