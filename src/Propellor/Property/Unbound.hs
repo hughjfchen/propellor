@@ -126,19 +126,36 @@ genRecord dom (PTR revip) = Just $ unwords
 	, "PTR"
 	, dValue dom
 	]
-genRecord _ (CNAME _) = Nothing
-genRecord _ (NS _) = Nothing
-genRecord _ (TXT _) = Nothing
+genRecord dom (CNAME dest) = Just $ unwords
+	[ dValue dom
+	, "CNAME"
+	, dValue dest
+	]
+genRecord dom (NS serv) = Just $ unwords
+	[ dValue dom
+	, "NS"
+	, dValue serv
+	]
+genRecord dom (TXT txt) = Just $ unwords
+	[ dValue dom
+	, "TXT"
+	, txt
+	]
 genRecord dom (SRV priority weight port target) = Just $ unwords
 	[ dValue dom
-	, "IN"
 	, "SRV"
 	, val priority
 	, val weight
 	, val port
 	, dValue target
 	]
-genRecord _ (SSHFP _ _ _) = Nothing
+genRecord dom (SSHFP algo hash fingerprint) = Just $ unwords
+	[ dValue dom
+	, "SSHFP"
+	, val algo
+	, val hash
+	, fingerprint
+	]
 genRecord _ (INCLUDE _) = Nothing
 
 genAddressNoTtl :: BindDomain -> IPAddr -> String
