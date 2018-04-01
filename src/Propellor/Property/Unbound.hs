@@ -120,7 +120,15 @@ genRecord dom (PTR revip) = Just $ genPTR dom revip
 genRecord _ (CNAME _) = Nothing
 genRecord _ (NS _) = Nothing
 genRecord _ (TXT _) = Nothing
-genRecord _ (SRV _ _ _ _) = Nothing
+genRecord dom (SRV priority weight port target) = Just $ unwords
+	[ dValue dom
+	, "IN"
+	, "SRV"
+	, val priority
+	, val weight
+	, val port
+	, dValue target
+	]
 genRecord _ (SSHFP _ _ _) = Nothing
 genRecord _ (INCLUDE _) = Nothing
 
