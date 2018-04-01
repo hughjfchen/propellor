@@ -115,8 +115,17 @@ genRecord' dom r = "    local-data: \"" ++ fromMaybe "" (genRecord dom r) ++ "\"
 
 genRecord :: BindDomain -> Record -> Maybe String
 genRecord dom (Address addr) = Just $ genAddressNoTtl dom addr
-genRecord dom (MX priority dest) = Just $ genMX dom priority dest
-genRecord dom (PTR revip) = Just $ genPTR dom revip
+genRecord dom (MX priority dest) = Just $ unwords
+	[ dValue dom
+	, "MX"
+	, val priority
+	, dValue dest
+	]
+genRecord dom (PTR revip) = Just $ unwords
+	[ revip ++ "."
+	, "PTR"
+	, dValue dom
+	]
 genRecord _ (CNAME _) = Nothing
 genRecord _ (NS _) = Nothing
 genRecord _ (TXT _) = Nothing
@@ -141,10 +150,10 @@ genAddress dom ttl addr = case addr of
 	IPv6 _ -> genAddress' "AAAA" dom ttl addr
 
 genAddress' :: String -> BindDomain -> Maybe Int -> IPAddr -> String
-genAddress' recordtype dom ttl addr = dValue dom ++ " " ++ maybe "" (\ttl' -> val ttl' ++ " ") ttl ++ "IN " ++ recordtype ++ " " ++ val addr
-
-genMX :: BindDomain -> Int -> BindDomain -> String
-genMX dom priority dest = dValue dom ++ " " ++ "MX" ++ " " ++ val priority ++ " " ++ dValue dest
-
-genPTR :: BindDomain -> ReverseIP -> String
-genPTR dom revip = revip ++ ". " ++ "PTR" ++ " " ++ dValue dom
+genAddress' recordtype dom ttl addr = unwords $
+	[ dValue dom ]
+	++ maybe [] (\ttl' -> [val ttl']) ttl ++
+	[ "IN"
+	, recordtype
+	, val addr
+	]
