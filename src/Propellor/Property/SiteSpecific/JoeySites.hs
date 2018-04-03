@@ -1040,7 +1040,7 @@ ipmasq intif = File.hasContent ifupscript
 
 laptopSoftware :: Property DebianLike
 laptopSoftware = Apt.installed
-	[ "intel-microcode"
+	[ "intel-microcode", "acpi"
 	, "procmeter3", "xfce4", "procmeter3", "unclutter"
 	, "mplayer", "fbreader", "firefox", "chromium"
 	, "libdatetime-event-sunrise-perl", "libtime-duration-perl"
@@ -1055,6 +1055,7 @@ laptopSoftware = Apt.installed
 	, "pmount", "tree", "pv"
 	, "arbtt", "hledger", "bc"
 	, "apache2", "ikiwiki", "libhighlight-perl"
+	, "avahi-daemon", "avahi-discover"
 	, "pal"
 	, "yeahconsole", "xkbset", "xinput"
 	, "assword", "pumpa"
