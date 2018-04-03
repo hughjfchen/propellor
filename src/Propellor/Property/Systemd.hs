@@ -217,7 +217,7 @@ machined = withOS "machined installed" $ \w o ->
 -- to bootstrap.
 --
 -- > container "webserver" $ \d -> Chroot.debootstrapped mempty d $ props
--- >	& osDebian Unstable X86_64
+-- >    & osDebian Unstable X86_64
 -- >    & Apt.installedRunning "apache2"
 -- >    & ...
 container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
@@ -238,7 +238,7 @@ container name mkchroot =
 -- to bootstrap.
 --
 -- > debContainer "webserver" $ props
--- >	& osDebian Unstable X86_64
+-- >    & osDebian Unstable X86_64
 -- >    & Apt.installedRunning "apache2"
 -- >    & ...
 debContainer :: MachineName -> Props metatypes -> Container
