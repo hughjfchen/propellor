@@ -6,5 +6,5 @@ additional porting to support FreeBSD. Such properties have types like
 `Property DebianLike`. The type checker will detect and reject attempts
 to combine such properties with `Property FreeBSD`.
 
-[Sample config file](http://git.joeyh.name/?p=propellor.git;a=blob;f=config-freebsd.hs)
+[Sample config file](https://git.joeyh.name/index.cgi/propellor.git/tree/config-freebsd.hs)
 which configures a FreeBSD system, as well as a Linux one.
