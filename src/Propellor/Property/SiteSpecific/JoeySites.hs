@@ -1010,6 +1010,7 @@ homeRouter = propertyList "home router" $ props
 		, "dhcp-range=10.1.1.100,10.1.1.150,24h"
 		, "no-hosts"
 		, "address=/honeybee.kitenet.net/10.1.1.1"
+		, "address=/house.kitenet.net/10.1.1.1"
 		]
 		`onChange` Service.restarted "dnsmasq"
 	& ipmasq "wlan0"
