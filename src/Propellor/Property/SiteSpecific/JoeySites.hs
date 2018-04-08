@@ -959,7 +959,7 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 		]
 	setupservicename = "homepower-setup"
 	setupservicefile = "/etc/systemd/system/" ++ setupservicename ++ ".service"
-	setupserviceinstalled = servicefile `File.hasContent`
+	setupserviceinstalled = setupservicefile `File.hasContent`
 		[ "[Unit]"
 		, "Description=home power monitor setup"
 		, ""
