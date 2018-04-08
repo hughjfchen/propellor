@@ -15,6 +15,7 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
+import qualified Propellor.Property.Group as Group
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
@@ -916,10 +917,15 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 	& File.ownerGroup "/var/www/html" user (userGroup user)
 	& Git.cloned user "git://git.kitenet.net/joey/homepower" d Nothing
 	& buildpoller
+	& Systemd.enabled setupservicename
+		`requires` setupserviceinstalled
+		`onChange` Systemd.started setupservicename
 	& Systemd.enabled servicename
 		`requires` serviceinstalled
 		`onChange` Systemd.started servicename
 	& User.hasGroup user (Group "dialout")
+	& Group.exists (Group "gpio") Nothing
+	& User.hasGroup user (Group "gpio")
 	& Cron.niceJob "homepower upload"
 		(Cron.Times "1 * * * *") user d rsynccommand
 		`requires` Ssh.userKeyAt (Just sshkeyfile) user ctx sshkey
@@ -950,6 +956,23 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 		, ""
 		, "[Install]"
 		, "WantedBy=multi-user.target"
+		]
+	setupservicename = "homepower-setup"
+	setupservicefile = "/etc/systemd/system/" ++ setupservicename ++ ".service"
+	setupserviceinstalled = servicefile `File.hasContent`
+		[ "[Unit]"
+		, "Description=home power monitor setup"
+		, ""
+		, "[Service]"
+		, "ExecStart=" ++ d ++ "/setup"
+		, "WorkingDirectory=" ++ d
+		, "User=root"
+		, "Group=root"
+		, "Type=oneshot"
+		, ""
+		, "[Install]"
+		, "WantedBy=multi-user.target"
+		, "WantedBy=homepower.target"
 		]
 	-- Any changes to the rsync command will need my .authorized_keys
 	-- rsync server command to be updated too.
