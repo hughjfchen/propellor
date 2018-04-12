@@ -1121,13 +1121,13 @@ cubieTruckOneWire =
 		["--debian", "sun7i-a20-cubietruck"]
 		`assume` MadeChange
 	mydts =
-		[ "/* Device tree addition enabling onewire sensors on CubieTruck GPIO pin PG8 */"
+		[ "/* Device tree addition enabling onewire sensors on CubieTruck GPIO pin PC21 */"
 		, "#include <dt-bindings/gpio/gpio.h>"
 		, ""
 		, "/ {"
 		, "\tonewire_device {"
 		, "\t\tcompatible = \"w1-gpio\";"
-		, "\t\tgpios = <&pio 6 8 GPIO_ACTIVE_HIGH>; /* PG8 */"
+		, "\t\tgpios = <&pio 2 21 GPIO_ACTIVE_HIGH>; /* PC21 */"
 		, "\t\tpinctrl-names = \"default\";"
 		, "\t\tpinctrl-0 = <&my_w1_pin>;"
 		, "\t};"
@@ -1135,7 +1135,7 @@ cubieTruckOneWire =
 		, ""
 		, "&pio {"
 		, "\tmy_w1_pin: my_w1_pin@0 {"
-		, "\t\tallwinner,pins = \"PG8\";"
+		, "\t\tallwinner,pins = \"PC21\";"
 		, "\t\tallwinner,function = \"gpio_in\";"
 		, "\t};"
 		, "};"
