@@ -15,6 +15,7 @@ import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
+import qualified Propellor.Property.Group as Group
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
@@ -916,10 +917,15 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 	& File.ownerGroup "/var/www/html" user (userGroup user)
 	& Git.cloned user "git://git.kitenet.net/joey/homepower" d Nothing
 	& buildpoller
+	& Systemd.enabled setupservicename
+		`requires` setupserviceinstalled
+		`onChange` Systemd.started setupservicename
 	& Systemd.enabled servicename
 		`requires` serviceinstalled
 		`onChange` Systemd.started servicename
 	& User.hasGroup user (Group "dialout")
+	& Group.exists (Group "gpio") Nothing
+	& User.hasGroup user (Group "gpio")
 	& Cron.niceJob "homepower upload"
 		(Cron.Times "1 * * * *") user d rsynccommand
 		`requires` Ssh.userKeyAt (Just sshkeyfile) user ctx sshkey
@@ -950,6 +956,23 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 		, ""
 		, "[Install]"
 		, "WantedBy=multi-user.target"
+		]
+	setupservicename = "homepower-setup"
+	setupservicefile = "/etc/systemd/system/" ++ setupservicename ++ ".service"
+	setupserviceinstalled = setupservicefile `File.hasContent`
+		[ "[Unit]"
+		, "Description=home power monitor setup"
+		, ""
+		, "[Service]"
+		, "ExecStart=" ++ d ++ "/setup"
+		, "WorkingDirectory=" ++ d
+		, "User=root"
+		, "Group=root"
+		, "Type=oneshot"
+		, ""
+		, "[Install]"
+		, "WantedBy=multi-user.target"
+		, "WantedBy=homepower.target"
 		]
 	-- Any changes to the rsync command will need my .authorized_keys
 	-- rsync server command to be updated too.
@@ -987,6 +1010,7 @@ homeRouter = propertyList "home router" $ props
 		, "dhcp-range=10.1.1.100,10.1.1.150,24h"
 		, "no-hosts"
 		, "address=/honeybee.kitenet.net/10.1.1.1"
+		, "address=/house.kitenet.net/10.1.1.1"
 		]
 		`onChange` Service.restarted "dnsmasq"
 	& ipmasq "wlan0"
@@ -1097,13 +1121,13 @@ cubieTruckOneWire =
 		["--debian", "sun7i-a20-cubietruck"]
 		`assume` MadeChange
 	mydts =
-		[ "/* Device tree addition enabling onewire sensors on CubieTruck GPIO pin PG8 */"
+		[ "/* Device tree addition enabling onewire sensors on CubieTruck GPIO pin PC21 */"
 		, "#include <dt-bindings/gpio/gpio.h>"
 		, ""
 		, "/ {"
 		, "\tonewire_device {"
 		, "\t\tcompatible = \"w1-gpio\";"
-		, "\t\tgpios = <&pio 6 8 GPIO_ACTIVE_HIGH>; /* PG8 */"
+		, "\t\tgpios = <&pio 2 21 GPIO_ACTIVE_HIGH>; /* PC21 */"
 		, "\t\tpinctrl-names = \"default\";"
 		, "\t\tpinctrl-0 = <&my_w1_pin>;"
 		, "\t};"
@@ -1111,7 +1135,7 @@ cubieTruckOneWire =
 		, ""
 		, "&pio {"
 		, "\tmy_w1_pin: my_w1_pin@0 {"
-		, "\t\tallwinner,pins = \"PG8\";"
+		, "\t\tallwinner,pins = \"PC21\";"
 		, "\t\tallwinner,function = \"gpio_in\";"
 		, "\t};"
 		, "};"

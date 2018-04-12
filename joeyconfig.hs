@@ -637,8 +637,7 @@ monsters =            -- but do want to track their public keys etc.
 	, host "ns6.gandi.net" $ props
 		& ipv4 "217.70.177.40"
 	, host "animx" $ props
-		& ipv4 "76.7.162.186"
-		& ipv4 "76.7.162.187"
+		& ipv4 "76.7.174.49"
 	]
 
 
