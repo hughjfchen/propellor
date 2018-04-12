@@ -106,6 +106,9 @@ darkstar = host "darkstar.kitenet.net" $ props
 	-- & imageBuiltFor honeybee
 	--	(RawDiskImage "/srv/honeybee.img")
 	--	(Debootstrapped mempty)
+	& imageBuiltFor banana
+		(RawDiskImage "/srv/banana.img")
+		(Debootstrapped mempty)
 
 gnu :: Host
 gnu = host "gnu.kitenet.net" $ props
@@ -181,6 +184,17 @@ orca = host "orca.kitenet.net" $ props
 		(Stable "jessie") X86_32 (Just "ancient") (Cron.Times "45 * * * *") "2h")
 	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer
 		(Cron.Times "1 1 * * *") "3h")
+
+banana :: Host
+banana = host "banana.kitenet.net" $ props
+	& standardSystem Testing ARMHF
+		[ "Banana pi dev board." ]
+	& lemaker_Banana_Pi
+	& hasPartition
+		( partition EXT4
+			`mountedAt` "/"
+			`setSize` MegaBytes 200
+		)
 
 honeybee :: Host
 honeybee = host "honeybee.kitenet.net" $ props
