@@ -48,10 +48,10 @@ module Propellor.Property.Machine (
 	marvell_SheevaPlug,
 	cubietech_Cubietruck,
 	olimex_A10_OLinuXino_LIME,
+	lemaker_Banana_Pi,
 	-- * ARM boards (untested)
 	cubietech_Cubieboard,
 	cubietech_Cubieboard2,
-	lemaker_Banana_Pi,
 	lemaker_Banana_Pro,
 	olimex_A10s_OLinuXino_Micro,
 	olimex_A20_OLinuXino_LIME,
