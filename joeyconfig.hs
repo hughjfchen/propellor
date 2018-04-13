@@ -187,14 +187,14 @@ orca = host "orca.kitenet.net" $ props
 
 banana :: Host
 banana = host "banana.kitenet.net" $ props
-	& standardSystem Testing ARMHF
-		[ "Banana pi dev board." ]
 	& lemaker_Banana_Pi
 	& hasPartition
 		( partition EXT4
 			`mountedAt` "/"
-			`setSize` MegaBytes 200
+			`setSize` MegaBytes 800
 		)
+	& osDebian Testing ARMHF
+	& User.hasInsecurePassword (User "root") "root"
 
 honeybee :: Host
 honeybee = host "honeybee.kitenet.net" $ props
