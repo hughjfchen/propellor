@@ -167,7 +167,7 @@ banana = host "banana.kitenet.net" $ props
 	& hasPartition
 		( partition EXT4
 			`mountedAt` "/"
-			`setSize` MegaBytes 800
+			`setSize` MegaBytes 950
 		)
 	& osDebian Testing ARMHF
 	& User.hasInsecurePassword (User "root") "root"
