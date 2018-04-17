@@ -88,6 +88,8 @@ binandsrc :: String -> SourcesGenerator
 binandsrc url suite = catMaybes
 	[ Just l
 	, Just $ srcLine l
+	, sul
+	, srcLine <$> sul
 	, bl
 	, srcLine <$> bl
 	]
@@ -96,6 +98,10 @@ binandsrc url suite = catMaybes
 	bl = do
 		bs <- backportSuite suite
 		return $ debLine bs url stdSections
+	-- formerly known as 'volatile'
+	sul = do
+		sus <- stableUpdatesSuite suite
+		return $ debLine sus url stdSections
 
 stdArchiveLines :: Propellor SourcesGenerator
 stdArchiveLines = return . binandsrc =<< getMirror
