@@ -1,3 +1,10 @@
+propellor (5.3.5) UNRELEASED; urgency=medium
+
+  * Apt.stdSourcesList now adds stable-updates suite
+    Thanks, Sean Whitton
+
+ -- Joey Hess <id@joeyh.name>  Wed, 18 Apr 2018 10:12:21 -0400
+
 propellor (5.3.4) unstable; urgency=medium
 
   * Apt.trustsKey: Use apt-key to add key rather than manually driving gpg,
