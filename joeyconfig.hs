@@ -49,7 +49,6 @@ main = defaultMain hosts --  /   \___-=O`/|O`/__|                      (____.'
 hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                 --                  (o)  `
 	[ darkstar
-	, gnu
 	, dragon
 	, clam
 	, orca
@@ -63,25 +62,6 @@ hosts =                 --                  (o)  `
 	, pell
 	, keysafe
 	] ++ monsters
-
-testvm :: Host
-testvm = host "testvm.kitenet.net" $ props
-	& osDebian Unstable X86_64
-	& OS.cleanInstallOnce (OS.Confirmed "testvm.kitenet.net")
-	 	`onChange` postinstall
-	& Hostname.sane
-	& Hostname.searchDomain
-	& Apt.installed ["linux-image-amd64"]
-	& Apt.installed ["ssh"]
-	& User.hasPassword (User "root")
-  where
-	postinstall :: Property (HasInfo + DebianLike)
-	postinstall = propertyList "fixing up after clean install" $ props
-		& OS.preserveRootSshAuthorized
-		& OS.preserveResolvConf
-		& Apt.update
-		& Grub.boots "/dev/sda"
-			`requires` Grub.installed Grub.PC
 
 darkstar :: Host
 darkstar = host "darkstar.kitenet.net" $ props
@@ -106,10 +86,9 @@ darkstar = host "darkstar.kitenet.net" $ props
 	-- & imageBuiltFor honeybee
 	--	(RawDiskImage "/srv/honeybee.img")
 	--	(Debootstrapped mempty)
-
-gnu :: Host
-gnu = host "gnu.kitenet.net" $ props
-	& Postfix.satellite
+	& imageBuiltFor banana
+		(RawDiskImage "/srv/banana.img")
+		(Debootstrapped mempty)
 
 dragon :: Host
 dragon = host "dragon.kitenet.net" $ props
@@ -181,6 +160,17 @@ orca = host "orca.kitenet.net" $ props
 		(Stable "jessie") X86_32 (Just "ancient") (Cron.Times "45 * * * *") "2h")
 	& Systemd.nspawned (GitAnnexBuilder.androidAutoBuilderContainer
 		(Cron.Times "1 1 * * *") "3h")
+
+banana :: Host
+banana = host "banana.kitenet.net" $ props
+	& lemaker_Banana_Pi
+	& hasPartition
+		( partition EXT4
+			`mountedAt` "/"
+			`setSize` MegaBytes 950
+		)
+	& osDebian Testing ARMHF
+	& User.hasInsecurePassword (User "root") "root"
 
 honeybee :: Host
 honeybee = host "honeybee.kitenet.net" $ props
