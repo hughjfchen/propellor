@@ -21,7 +21,7 @@ import qualified Data.Map as M
 --
 -- This uses the description of the Property to keep track of when it was
 -- last run.
-period :: (IsProp (Property i)) => Property i -> Recurrance -> Property i
+period :: Property i -> Recurrance -> Property i
 period prop recurrance = flip describe desc $ adjustPropertySatisfy prop $ \satisfy -> do
 	lasttime <- liftIO $ getLastChecked (getDesc prop)
 	nexttime <- liftIO $ fmap startTime <$> nextTime schedule lasttime
@@ -37,7 +37,7 @@ period prop recurrance = flip describe desc $ adjustPropertySatisfy prop $ \sati
 	desc = getDesc prop ++ " (period " ++ fromRecurrance recurrance ++ ")"
 
 -- | Like period, but parse a human-friendly string.
-periodParse :: (IsProp (Property i)) => Property i -> String -> Property i
+periodParse :: Property i -> String -> Property i
 periodParse prop s = case toRecurrance s of
 	Just recurrance -> period prop recurrance
 	Nothing -> adjustPropertySatisfy prop $ \_ -> do
