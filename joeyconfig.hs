@@ -33,7 +33,6 @@ import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.Laptop as Laptop
-import qualified Propellor.Property.OS as OS
 import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
