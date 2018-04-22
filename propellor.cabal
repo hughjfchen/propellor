@@ -1,6 +1,6 @@
 Name: propellor
 Version: 5.3.5
-Cabal-Version: >= 1.20
+Cabal-Version: 1.20
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
 Author: Joey Hess
