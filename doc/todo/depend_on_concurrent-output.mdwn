@@ -3,4 +3,7 @@ should be converted to a dependency.
 
 Waiting on concurrent-output reaching Debian stable.
 
+> Well, it's in stable now. Not in oldstable yet, and propellor is still
+> supporting the current oldstable, I believe.. --[[Joey]]
+
 [[!tag user/joey]]
