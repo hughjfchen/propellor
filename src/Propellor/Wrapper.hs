@@ -1,4 +1,5 @@
--- | Wrapper program for propellor distribution.
+-- | This module is used to implement a wrapper program for propellor
+-- distribution.
 --
 -- Distributions should install this program into PATH.
 -- (Cabal builds it as dist/build/propellor/propellor).
@@ -10,7 +11,7 @@
 -- If ./config.hs exists and looks like a propellor config file, 
 -- it instead builds and runs in the current working directory.
 
-module Main where
+module Propellor.Wrapper (runWrapper) where
 
 import Propellor.DotDir
 import Propellor.Message
@@ -30,8 +31,8 @@ import Control.Monad.IfElse
 import Control.Applicative
 import Prelude
 
-main :: IO ()
-main = withConcurrentOutput $ do
+runWrapper :: IO ()
+runWrapper = withConcurrentOutput $ do
 	useFileSystemEncoding
 	go =<< getArgs
   where

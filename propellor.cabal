@@ -35,10 +35,9 @@ Description:
  .
  It is configured using haskell.
 
-Executable propellor
+Library
   Default-Language: Haskell98
-  Main-Is: wrapper.hs
-  GHC-Options: -threaded -Wall -fno-warn-tabs -O0
+  GHC-Options: -Wall -fno-warn-tabs -O0
   if impl(ghc >= 8.0)
     GHC-Options: -fno-warn-redundant-constraints
   Default-Extensions: TypeOperators
@@ -50,39 +49,11 @@ Executable propellor
     directory, filepath, IfElse, process, bytestring, hslogger, split,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
     time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
-  Other-Modules:
-    Propellor.DotDir
-
-Executable propellor-config
-  Default-Language: Haskell98
-  Main-Is: propellor-config.hs
-  GHC-Options: -threaded -Wall -fno-warn-tabs -O0
-  if impl(ghc >= 8.0)
-    GHC-Options: -fno-warn-redundant-constraints
-  Default-Extensions: TypeOperators
-  Hs-Source-Dirs: src
-  Build-Depends:
-    base >= 4.5, base < 5,
-    directory, filepath, IfElse, process, bytestring, hslogger, split,
-    unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
-
-Library
-  Default-Language: Haskell98
-  GHC-Options: -Wall -fno-warn-tabs -O0
-  if impl(ghc >= 8.0)
-    GHC-Options: -fno-warn-redundant-constraints
-  Default-Extensions: TypeOperators
-  Hs-Source-Dirs: src
-  Build-Depends:
-    base >= 4.5, base < 5,
-    directory, filepath, IfElse, process, bytestring, hslogger, split,
-    unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
 
   Exposed-Modules:
     Propellor
     Propellor.Base
+    Propellor.DotDir
     Propellor.Location
     Propellor.Property
     Propellor.Property.Aiccu
@@ -211,6 +182,7 @@ Library
     Propellor.Types.ResultCheck
     Propellor.Types.Singletons
     Propellor.Types.ZFS
+    Propellor.Wrapper
   Other-Modules:
     Propellor.Bootstrap
     Propellor.Git
@@ -254,6 +226,23 @@ Library
     System.Console.Concurrent
     System.Console.Concurrent.Internal
     System.Process.Concurrent
+    Paths_propellor
+
+Executable propellor-config
+  Default-Language: Haskell98
+  Hs-Source-Dirs: executables
+  Main-Is: propellor-config.hs
+  GHC-Options: -threaded -Wall -fno-warn-tabs -O0
+  if impl(ghc >= 8.0)
+    GHC-Options: -fno-warn-redundant-constraints
+  Default-Extensions: TypeOperators
+  Build-Depends: propellor, base
+
+Executable propellor
+  Default-Language: Haskell98
+  Hs-Source-Dirs: executables
+  Main-Is: wrapper.hs
+  Build-Depends: propellor, base
 
 source-repository head
   type: git
