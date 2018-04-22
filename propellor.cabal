@@ -233,8 +233,6 @@ Executable propellor-config
   Hs-Source-Dirs: executables
   Main-Is: propellor-config.hs
   GHC-Options: -threaded -Wall -fno-warn-tabs
-  if impl(ghc >= 8.0)
-    GHC-Options: -fno-warn-redundant-constraints
   Default-Extensions: TypeOperators
   Build-Depends: propellor, base
 
@@ -242,6 +240,7 @@ Executable propellor
   Default-Language: Haskell98
   Hs-Source-Dirs: executables
   Main-Is: wrapper.hs
+  GHC-Options: -threaded -Wall -fno-warn-tabs
   Build-Depends: propellor, base
 
 source-repository head
