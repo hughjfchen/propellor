@@ -1,4 +1,4 @@
-propellor (5.3.5) UNRELEASED; urgency=medium
+propellor (5.3.5) unstable; urgency=medium
 
   * Apt.stdSourcesList now adds stable-updates suite
     Thanks, Sean Whitton
@@ -6,7 +6,7 @@ propellor (5.3.5) UNRELEASED; urgency=medium
     is in a fork of the propellor repository, by avoiding redundant builds
     of propellor library.
 
- -- Joey Hess <id@joeyh.name>  Wed, 18 Apr 2018 10:12:21 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 22 Apr 2018 12:27:45 -0400
 
 propellor (5.3.4) unstable; urgency=medium
 
