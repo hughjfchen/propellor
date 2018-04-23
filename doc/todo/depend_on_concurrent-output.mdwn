@@ -5,5 +5,9 @@ Waiting on concurrent-output reaching Debian stable.
 
 > Well, it's in stable now. Not in oldstable yet, and propellor is still
 > supporting the current oldstable, I believe.. --[[Joey]]
+> >
+> > not anymore; dropping it now.
+
+[[done]]
 
 [[!tag user/joey]]

@@ -4,6 +4,7 @@ propellor (5.3.6) UNRELEASED; urgency=medium
   * Dropped support for building propellor with ghc 7 (as in debian
     oldstable), to avoid needing to depend on the semigroups transitional
     package, but also because it's just too old to be worth supporting.
+  * Added dependency on concurrent-output; removed embedded copy.
 
  -- Joey Hess <id@joeyh.name>  Mon, 23 Apr 2018 13:12:25 -0400
 
