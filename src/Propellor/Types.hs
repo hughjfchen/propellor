@@ -43,6 +43,7 @@ module Propellor.Types (
 	, module Propellor.Types.ZFS
 	) where
 
+import qualified Data.Semigroup as Sem
 import Data.Monoid
 import Control.Applicative
 import Prelude
@@ -212,14 +213,13 @@ class TightenTargets p where
 instance TightenTargets Property where
 	tightenTargets (Property _ d a i c) = Property sing d a i c
 
--- | Any type of Property is a monoid. When properties x and y are
+-- | Any type of Property is a Semigroup. When properties x and y are
 -- appended together, the resulting property has a description like
 -- "x and y". Note that when x fails to be ensured, it will not
 -- try to ensure y.
-instance SingI metatypes => Monoid (Property (MetaTypes metatypes))
+instance SingI metatypes => Sem.Semigroup (Property (MetaTypes metatypes))
   where
-	mempty = Property sing "noop property" Nothing mempty mempty
-	mappend (Property _ d1 a1 i1 c1) (Property _ d2 a2 i2 c2) =
+	Property _ d1 a1 i1 c1 <> Property _ d2 a2 i2 c2 =
 	  	Property sing d (a1 <> a2) (i1 <> i2) (c1 <> c2)
 	  where
 		-- Avoid including "noop property" in description
@@ -230,10 +230,26 @@ instance SingI metatypes => Monoid (Property (MetaTypes metatypes))
 			(Nothing, Just _) -> d2
 			(Nothing, Nothing) -> d1
 
--- | Any type of RevertableProperty is a monoid. When revertable 
+-- | Any type of Property is a Monoid.
+instance SingI metatypes => Monoid (Property (MetaTypes metatypes))
+  where
+	-- | A property that does nothing.
+	mempty = Property sing "noop property" Nothing mempty mempty
+	mappend = (<>)
+
+-- | Any type of RevertableProperty is a Semigroup. When revertable 
 -- properties x and y are appended together, the resulting revertable
 -- property has a description like "x and y".
 -- Note that when x fails to be ensured, it will not try to ensure y.
+instance
+	( Sem.Semigroup (Property setupmetatypes)
+	, Sem.Semigroup (Property undometatypes)
+	)
+	=> Sem.Semigroup (RevertableProperty setupmetatypes undometatypes)
+  where
+	RevertableProperty s1 u1 <> RevertableProperty s2 u2 =
+		RevertableProperty (s1 <> s2) (u2 <> u1)
+
 instance
 	( Monoid (Property setupmetatypes)
 	, Monoid (Property undometatypes)
@@ -241,5 +257,4 @@ instance
 	=> Monoid (RevertableProperty setupmetatypes undometatypes)
   where
 	mempty = RevertableProperty mempty mempty
-	mappend (RevertableProperty s1 u1) (RevertableProperty s2 u2) =
-		RevertableProperty (s1 <> s2) (u2 <> u1)
+	mappend = (<>)

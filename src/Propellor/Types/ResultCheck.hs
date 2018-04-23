@@ -14,6 +14,7 @@ import Propellor.Exception
 import Utility.Monad
 
 import Data.Monoid
+import Prelude
 
 -- | This is a `Property` but its `Result` is not accurate; in particular
 -- it may return `NoChange` despite having made a change. 
