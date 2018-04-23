@@ -66,7 +66,7 @@ type instance IncludesInfo (MetaTypes l) = Elem 'WithInfo l
 type MetaTypes = Sing
 
 -- This boilerplate would not be needed if the singletons library were
--- used. However, we're targeting too old a version of ghc to use it yet.
+-- used.
 data instance Sing (x :: MetaType) where
 	OSDebianS :: Sing ('Targeting 'OSDebian)
 	OSBuntishS :: Sing ('Targeting 'OSBuntish)
