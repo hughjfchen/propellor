@@ -17,6 +17,7 @@ module Propellor.Types.Info (
 import Data.Dynamic
 import Data.Maybe
 import Data.Monoid
+import qualified Data.Semigroup as Sem
 import qualified Data.Typeable as T
 import Prelude
 
@@ -25,7 +26,7 @@ import Prelude
 -- Many different types of data can be contained in the same Info value
 -- at the same time. See `toInfo` and `fromInfo`.
 newtype Info = Info [InfoEntry]
-	deriving (Monoid, Show)
+	deriving (Sem.Semigroup, Monoid, Show)
 
 data InfoEntry where
 	InfoEntry :: (IsInfo v, Typeable v) => v -> InfoEntry
@@ -80,10 +81,13 @@ mapInfo f (Info l) = Info (map go l)
 data InfoVal v = NoInfoVal | InfoVal v
 	deriving (Typeable, Show)
 
+instance Sem.Semigroup (InfoVal v) where
+	_ <> v@(InfoVal _) = v
+	v <> NoInfoVal = v
+
 instance Monoid (InfoVal v) where
 	mempty = NoInfoVal
-	mappend _ v@(InfoVal _) = v
-	mappend v NoInfoVal = v
+	mappend = (<>)
 
 instance (Typeable v, Show v) => IsInfo (InfoVal v) where
 	propagateInfo _ = PropagateInfo False

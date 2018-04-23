@@ -10,6 +10,7 @@ import Propellor.Types.OS
 import Propellor.Types.Result
 
 import Data.Monoid
+import qualified Data.Semigroup as Sem
 import "mtl" Control.Monad.RWS.Strict
 import Control.Monad.Catch
 import Control.Applicative
@@ -50,15 +51,18 @@ instance LiftPropellor IO where
 
 -- | When two actions are appended together, the second action
 -- is only run if the first action does not fail.
-instance Monoid (Propellor Result) where
-	mempty = return NoChange
-	mappend x y = do
+instance Sem.Semigroup (Propellor Result) where
+	x <> y = do
 		rx <- x
 		case rx of
 			FailedChange -> return FailedChange
 			_ -> do
 				ry <- y
 				return (rx <> ry)
+	
+instance Monoid (Propellor Result) where
+	mempty = return NoChange
+	mappend = (<>)
 
 -- | An action that Propellor runs at the end, after trying to satisfy all
 -- properties. It's passed the combined Result of the entire Propellor run.

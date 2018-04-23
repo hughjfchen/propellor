@@ -9,6 +9,8 @@ module Propellor.Property.FreeBSD.Pkg where
 import Propellor.Base
 import Propellor.Types.Info
 
+import qualified Data.Semigroup as Sem
+
 noninteractiveEnv :: [([Char], [Char])]
 noninteractiveEnv = [("ASSUME_ALWAYS_YES", "yes")]
 
@@ -37,7 +39,7 @@ pkgCmd cmd args =
 		lines <$> readProcessEnv p a (Just noninteractiveEnv)
 
 newtype PkgUpdate = PkgUpdate String
-	deriving (Typeable, Monoid, Show)
+	deriving (Typeable, Sem.Semigroup, Monoid, Show)
 instance IsInfo PkgUpdate where
 	propagateInfo _ = PropagateInfo False
 
@@ -54,7 +56,7 @@ update =
 			`setInfoProperty` (toInfo (PkgUpdate ""))
 
 newtype PkgUpgrade = PkgUpgrade String
-	deriving (Typeable, Monoid, Show)
+	deriving (Typeable, Sem.Semigroup, Monoid, Show)
 
 instance IsInfo PkgUpgrade where
 	propagateInfo _ = PropagateInfo False

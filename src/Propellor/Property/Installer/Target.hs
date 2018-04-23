@@ -112,6 +112,7 @@ import Data.List
 import Data.Char
 import Data.Ord
 import Data.Ratio
+import qualified Data.Semigroup as Sem
 import System.Process (readProcess)
 
 -- | Partition table for the target disk.
@@ -438,9 +439,12 @@ getMountsSizes = mapMaybe (parse . words) . lines <$> readProcess "findmnt" ps "
 data TargetFilled = TargetFilled (Ratio Integer)
 	deriving (Show, Eq)
 
+instance Sem.Semigroup TargetFilled where
+	TargetFilled n <> TargetFilled m = TargetFilled (n+m) 
+
 instance Monoid TargetFilled where
 	mempty = TargetFilled (0 % 1)
-	mappend (TargetFilled n) (TargetFilled m) = TargetFilled (n+m)
+	mappend = (<>)
 
 newtype TargetFilledHandle = TargetFilledHandle Integer
 

@@ -4,6 +4,9 @@ import qualified Propellor.Property.Partition as Partition
 import Utility.DataUnits
 
 import Data.Char
+import qualified Data.Semigroup as Sem
+import Data.Monoid
+import Prelude
 
 class PartedVal a where
 	pval :: a -> String
@@ -19,13 +22,16 @@ instance PartedVal TableType where
 data PartTable = PartTable TableType Alignment [Partition]
 	deriving (Show)
 
+instance Sem.Semigroup PartTable where
+	-- | uses the TableType of the second parameter
+	-- and the larger alignment,
+	PartTable _l1 a1 ps1 <> PartTable l2 a2 ps2 =
+		PartTable l2 (max a1 a2) (ps1 ++ ps2)
+
 instance Monoid PartTable where
 	-- | default TableType is MSDOS, with a `safeAlignment`.
 	mempty = PartTable MSDOS safeAlignment []
-	-- | uses the TableType of the second parameter
-	-- and the larger alignment,
-	mappend (PartTable _l1 a1 ps1) (PartTable l2 a2 ps2) =
-		PartTable l2 (max a1 a2) (ps1 ++ ps2)
+	mappend = (<>)
 
 -- | A partition on the disk.
 data Partition = Partition
@@ -80,11 +86,14 @@ fromPartSize :: PartSize -> ByteSize
 fromPartSize (MegaBytes b) = b * 1000000
 fromPartSize (Bytes n) = n
 
+instance Sem.Semigroup PartSize where
+	MegaBytes a <> MegaBytes b = MegaBytes (a + b)
+	Bytes a <> b = Bytes (a + fromPartSize b)
+	a <> Bytes b = Bytes (b + fromPartSize a)
+
 instance Monoid PartSize where
 	mempty = MegaBytes 0
-	mappend (MegaBytes a) (MegaBytes b) = MegaBytes (a + b)
-	mappend (Bytes a) b = Bytes (a + fromPartSize b)
-	mappend a (Bytes b) = Bytes (b + fromPartSize a)
+	mappend = (<>)
 
 reducePartSize :: PartSize -> PartSize -> PartSize
 reducePartSize (MegaBytes a) (MegaBytes b) = MegaBytes (a - b)

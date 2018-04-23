@@ -18,6 +18,7 @@ module Propellor.Property.Firewall (
 ) where
 
 import Data.Monoid
+import qualified Data.Semigroup as Sem
 import Data.Char
 import Data.List
 
@@ -199,6 +200,9 @@ data Rules
 
 infixl 0 :-
 
+instance Sem.Semigroup Rules where
+	(<>) = (:-)
+
 instance Monoid Rules where
 	mempty  = Everything
-	mappend = (:-)
+	mappend = (<>)

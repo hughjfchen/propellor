@@ -43,6 +43,7 @@ import Propellor.Property.Mount
 
 import Data.List (sortBy)
 import Data.Ord
+import qualified Data.Semigroup as Sem
 
 -- | Specifies a partition with a given filesystem.
 --
@@ -110,7 +111,7 @@ data PartInfoVal
 	| AdjustPartSpecInfo MountPoint (PartSpec PartLocation -> PartSpec PartLocation)
 
 newtype PartInfo = PartInfo [PartInfoVal]
-	deriving (Monoid, Typeable)
+	deriving (Monoid, Sem.Semigroup, Typeable)
 
 instance IsInfo PartInfo where
 	propagateInfo _ = PropagateInfo False
@@ -183,9 +184,12 @@ adjustPartition mp f = pureInfoProperty
 data PartLocation = Beginning | Middle | End
 	deriving (Eq, Ord)
 
+instance Sem.Semigroup PartLocation where
+	_ <> b = b
+
 instance Monoid PartLocation where
 	mempty = Middle
-	mappend _ b = b
+	mappend = (<>)
 
 partLocation :: PartSpec PartLocation -> PartLocation -> PartSpec PartLocation
 partLocation (mp, o, p, _) l = (mp, o, p, l)

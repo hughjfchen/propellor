@@ -42,6 +42,7 @@ import Propellor.Types.PartSpec (PartSpec)
 import Utility.DataUnits
 
 import System.Posix.Files
+import qualified Data.Semigroup as Sem
 import Data.List (genericLength)
 
 data Eep = YesReallyDeleteDiskContents
@@ -178,16 +179,21 @@ data DiskPart = FixedDiskPart | DynamicDiskPart DiskSpaceUse
 
 data DiskSpaceUse = Percent Int | RemainingSpace
 
+instance Sem.Semigroup DiskPart where
+	FixedDiskPart <> FixedDiskPart = FixedDiskPart
+	DynamicDiskPart (Percent a) <> DynamicDiskPart (Percent b) =
+		DynamicDiskPart (Percent (a + b))
+	DynamicDiskPart RemainingSpace <> DynamicDiskPart RemainingSpace = 
+		DynamicDiskPart RemainingSpace
+	DynamicDiskPart (Percent a) <> _ = DynamicDiskPart (Percent a)
+	_ <> DynamicDiskPart (Percent b) = DynamicDiskPart (Percent b)
+	DynamicDiskPart RemainingSpace <> _ = DynamicDiskPart RemainingSpace
+	_ <> DynamicDiskPart RemainingSpace = DynamicDiskPart RemainingSpace
+
 instance Monoid DiskPart
   where
 	mempty = FixedDiskPart
-	mappend FixedDiskPart FixedDiskPart = FixedDiskPart
-	mappend (DynamicDiskPart (Percent a)) (DynamicDiskPart (Percent b)) = DynamicDiskPart (Percent (a + b))
-	mappend (DynamicDiskPart RemainingSpace) (DynamicDiskPart RemainingSpace) = DynamicDiskPart RemainingSpace
-	mappend (DynamicDiskPart (Percent a)) _ = DynamicDiskPart (Percent a)
-	mappend _ (DynamicDiskPart (Percent b)) = DynamicDiskPart (Percent b)
-	mappend (DynamicDiskPart RemainingSpace) _ = DynamicDiskPart RemainingSpace
-	mappend _ (DynamicDiskPart RemainingSpace) = DynamicDiskPart RemainingSpace
+	mappend = (<>)
 
 -- | Make a partition use some percentage of the size of the disk
 -- (less all fixed size partitions), or the remaining space in the disk.

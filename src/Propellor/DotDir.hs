@@ -271,7 +271,7 @@ minimalConfig = do
 		, "  Main-Is: config.hs"
 		, "  GHC-Options: -threaded -Wall -fno-warn-tabs -O0"
 		, "  Extensions: TypeOperators"
-		, "  Build-Depends: propellor >= 3.0, base >= 3"
+		, "  Build-Depends: propellor >= 3.0, base >= 4.9"
 		]
 	configcontent =
 		[ "-- This is the main configuration file for Propellor, and is used to build"

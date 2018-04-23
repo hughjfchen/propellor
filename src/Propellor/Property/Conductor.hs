@@ -81,6 +81,7 @@ import Propellor.Types.Info
 import qualified Propellor.Property.Ssh as Ssh
 
 import qualified Data.Set as S
+import qualified Data.Semigroup as Sem
 
 -- | Class of things that can be conducted.
 --
@@ -313,9 +314,9 @@ cdesc n = "conducting " ++ n
 -- A Host's Info indicates when it's a conductor for hosts, and when it's
 -- stopped being a conductor.
 newtype ConductorFor = ConductorFor [Host]
-	deriving (Typeable, Monoid)
+	deriving (Typeable, Sem.Semigroup, Monoid)
 newtype NotConductorFor = NotConductorFor [Host]
-	deriving (Typeable, Monoid)
+	deriving (Typeable, Sem.Semigroup, Monoid)
 
 instance Show ConductorFor where
 	show (ConductorFor l) = "ConductorFor " ++ show (map hostName l)
@@ -329,7 +330,7 @@ instance IsInfo NotConductorFor where
 
 -- Added to Info when a host has been orchestrated.
 newtype Orchestrated = Orchestrated Any
-	deriving (Typeable, Monoid, Show)
+	deriving (Typeable, Sem.Semigroup, Monoid, Show)
 instance IsInfo Orchestrated where
 	propagateInfo _ = PropagateInfo False
 

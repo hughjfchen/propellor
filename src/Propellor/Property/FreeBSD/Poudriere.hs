@@ -8,17 +8,18 @@ module Propellor.Property.FreeBSD.Poudriere where
 
 import Propellor.Base
 import Propellor.Types.Info
-import Data.List
-
 import qualified Propellor.Property.FreeBSD.Pkg as Pkg
 import qualified Propellor.Property.ZFS as ZFS
 import qualified Propellor.Property.File as File
+
+import Data.List
+import qualified Data.Semigroup as Sem
 
 poudriereConfigPath :: FilePath
 poudriereConfigPath = "/usr/local/etc/poudriere.conf"
 
 newtype PoudriereConfigured = PoudriereConfigured String
-	deriving (Typeable, Monoid, Show)
+	deriving (Typeable, Sem.Semigroup, Monoid, Show)
 
 instance IsInfo PoudriereConfigured where
 	propagateInfo _ = PropagateInfo False

@@ -12,6 +12,7 @@ import Utility.Split
 import Data.Word
 import qualified Data.Map as M
 import qualified Data.Set as S
+import qualified Data.Semigroup as Sem
 import Data.List
 import Data.Monoid
 import Prelude
@@ -26,7 +27,7 @@ instance ConfigurableValue IPAddr where
 	val (IPv6 addr) = addr
 
 newtype AliasesInfo = AliasesInfo (S.Set HostName)
-	deriving (Show, Eq, Ord, Monoid, Typeable)
+	deriving (Show, Eq, Ord, Sem.Semigroup, Monoid, Typeable)
 
 instance IsInfo AliasesInfo where
 	propagateInfo _ = PropagateInfo False
@@ -42,7 +43,7 @@ fromAliasesInfo (AliasesInfo s) = S.toList s
 -- of the containers in the host be reflected in the DNS.
 newtype DnsInfoPropagated = DnsInfoPropagated
 	{ fromDnsInfoPropagated :: S.Set Record }
-	deriving (Show, Eq, Ord, Monoid, Typeable)
+	deriving (Show, Eq, Ord, Sem.Semigroup, Monoid, Typeable)
 
 toDnsInfoPropagated :: S.Set Record -> DnsInfoPropagated
 toDnsInfoPropagated = DnsInfoPropagated
@@ -55,7 +56,7 @@ instance IsInfo DnsInfoPropagated where
 -- the host.
 newtype DnsInfoUnpropagated = DnsInfoUnpropagated
 	{ fromDnsInfoUnpropagated :: S.Set Record }
-	deriving (Show, Eq, Ord, Monoid, Typeable)
+	deriving (Show, Eq, Ord, Sem.Semigroup, Monoid, Typeable)
 
 toDnsInfoUnpropagated :: S.Set Record -> DnsInfoUnpropagated
 toDnsInfoUnpropagated = DnsInfoUnpropagated
@@ -183,14 +184,17 @@ instance IsInfo NamedConfMap where
 -- | Adding a Master NamedConf stanza for a particulr domain always
 -- overrides an existing Secondary stanza for that domain, while a
 -- Secondary stanza is only added when there is no existing Master stanza.
-instance Monoid NamedConfMap where
-	mempty = NamedConfMap M.empty
-	mappend (NamedConfMap old) (NamedConfMap new) = NamedConfMap $
+instance Sem.Semigroup NamedConfMap where
+	NamedConfMap old <> NamedConfMap new = NamedConfMap $
 		M.unionWith combiner new old
 	  where
 		combiner n o = case (confDnsServerType n, confDnsServerType o) of
 			(Secondary, Master) -> o
 			_  -> n
+
+instance Monoid NamedConfMap where
+	mempty = NamedConfMap M.empty
+	mappend = (<>)
 
 instance Empty NamedConfMap where
 	isEmpty (NamedConfMap m) = isEmpty m

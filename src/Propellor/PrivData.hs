@@ -37,6 +37,7 @@ import qualified Data.Set as S
 import qualified Data.ByteString.Lazy as L
 import Control.Applicative
 import Data.Monoid
+import Data.Semigroup as Sem
 import Prelude
 
 import Propellor.Types
@@ -279,7 +280,7 @@ makePrivDataDir = createDirectoryIfMissing False privDataDir
 
 newtype PrivInfo = PrivInfo
 	{ fromPrivInfo :: S.Set (PrivDataField, Maybe PrivDataSourceDesc, HostContext) }
-	deriving (Eq, Ord, Show, Typeable, Monoid)
+	deriving (Eq, Ord, Show, Typeable, Sem.Semigroup, Monoid)
 
 -- PrivInfo always propagates out of containers, so that propellor
 -- can see which hosts need it.

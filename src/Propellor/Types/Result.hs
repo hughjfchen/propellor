@@ -1,6 +1,7 @@
 module Propellor.Types.Result where
 
 import System.Console.ANSI
+import qualified Data.Semigroup as Sem
 import Data.Monoid
 import Prelude
 
@@ -8,14 +9,16 @@ import Prelude
 data Result = NoChange | MadeChange | FailedChange
 	deriving (Read, Show, Eq)
 
+instance Sem.Semigroup Result where
+	FailedChange <> _ = FailedChange
+	_ <> FailedChange = FailedChange
+	MadeChange <> _ = MadeChange
+	_ <> MadeChange = MadeChange
+	NoChange <> NoChange = NoChange
+
 instance Monoid Result where
 	mempty = NoChange
-
-	mappend FailedChange _ = FailedChange
-	mappend _ FailedChange = FailedChange
-	mappend MadeChange _ = MadeChange
-	mappend _ MadeChange = MadeChange
-	mappend NoChange NoChange = NoChange
+	mappend = (<>)
 
 class ToResult t where
 	toResult :: t -> Result

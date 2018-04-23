@@ -10,6 +10,7 @@ import Propellor.Base
 import Utility.Path
 
 import Data.List
+import qualified Data.Semigroup as Sem
 
 -- | type of filesystem to mount ("auto" to autodetect)
 type FsType = String
@@ -24,7 +25,7 @@ type MountPoint = FilePath
 --
 -- For default mount options, use `mempty`.
 newtype MountOpts = MountOpts [String]
-	deriving Monoid
+	deriving (Sem.Semigroup, Monoid)
 
 class ToMountOpts a where
 	toMountOpts :: a -> MountOpts

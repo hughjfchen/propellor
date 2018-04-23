@@ -14,6 +14,7 @@ import qualified Propellor.Property.Apt as Apt
 import Utility.FileMode
 import Utility.DataUnits
 import System.Posix.Files
+import qualified Data.Semigroup as Sem
 
 -- | Limits on the size of a ccache
 data Limit
@@ -25,9 +26,12 @@ data Limit
 	| NoLimit
 	| Limit :+ Limit
 
+instance Sem.Semigroup Limit where
+	(<>) = (:+)
+
 instance Monoid Limit where
 	mempty  = NoLimit
-	mappend = (:+)
+	mappend = (<>)
 
 -- | A string that will be parsed to get a data size.
 --

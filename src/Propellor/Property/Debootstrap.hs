@@ -19,12 +19,13 @@ import Utility.FileMode
 
 import Data.List
 import Data.Char
+import qualified Data.Semigroup as Sem
 import System.Posix.Directory
 import System.Posix.Files
 
 type Url = String
 
--- | A monoid for debootstrap configuration.
+-- | A data type for debootstrap configuration.
 -- mempty is a default debootstrapped system.
 data DebootstrapConfig
 	= DefaultConfig
@@ -35,9 +36,12 @@ data DebootstrapConfig
 	| DebootstrapConfig :+ DebootstrapConfig
 	deriving (Show)
 
+instance Sem.Semigroup DebootstrapConfig where
+	(<>) = (:+)
+
 instance Monoid DebootstrapConfig where
 	mempty  = DefaultConfig
-	mappend = (:+)
+	mappend = (<>)
 
 toParams :: DebootstrapConfig -> [CommandParam]
 toParams DefaultConfig = []

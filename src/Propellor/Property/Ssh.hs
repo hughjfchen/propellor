@@ -45,6 +45,7 @@ import Utility.FileMode
 import System.PosixCompat
 import qualified Data.Map as M
 import qualified Data.Set as S
+import qualified Data.Semigroup as Sem
 import Data.List
 
 installed :: Property UnixLike
@@ -229,12 +230,15 @@ newtype HostKeyInfo = HostKeyInfo
 instance IsInfo HostKeyInfo where
 	propagateInfo _ = PropagateInfo False
 
-instance Monoid HostKeyInfo where
-	mempty = HostKeyInfo M.empty
-	mappend (HostKeyInfo old) (HostKeyInfo new) =
+instance Sem.Semigroup HostKeyInfo where
+	HostKeyInfo old <> HostKeyInfo new =
 		-- new first because union prefers values from the first
 		-- parameter when there is a duplicate key
 		HostKeyInfo (new `M.union` old)
+
+instance Monoid HostKeyInfo where
+	mempty = HostKeyInfo M.empty
+	mappend = (<>)
 
 userPubKeys :: User -> [(SshKeyType, PubKeyText)] -> Property (HasInfo + UnixLike)
 userPubKeys u@(User n) l = pureInfoProperty ("ssh pubkey for " ++ n) $
@@ -250,10 +254,13 @@ newtype UserKeyInfo = UserKeyInfo
 instance IsInfo UserKeyInfo where
 	propagateInfo _ = PropagateInfo False
 
+instance Sem.Semigroup UserKeyInfo where
+	UserKeyInfo old <> UserKeyInfo new =
+		UserKeyInfo (M.unionWith S.union old new)
+
 instance Monoid UserKeyInfo where
 	mempty = UserKeyInfo M.empty
-	mappend (UserKeyInfo old) (UserKeyInfo new) =
-		UserKeyInfo (M.unionWith S.union old new)
+	mappend = (<>)
 
 -- | Sets up a user with the specified public keys, and the corresponding
 -- private keys from the privdata.
