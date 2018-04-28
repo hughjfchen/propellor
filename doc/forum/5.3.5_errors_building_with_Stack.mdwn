@@ -1,6 +1,6 @@
 I'm able to reproduce the following with a freshly cloned Propellor:
 
->    stack build
+    > stack build
     propellor-5.3.5: build (lib + exe)
     Preprocessing library propellor-5.3.5...
     [ 43 of 171] Compiling Propellor.Types  ( src/Propellor/Types.hs, .stack-work/dist/x86_64-linux-nopie/Cabal-1.24.2.0/build/Propellor/Types.o )
