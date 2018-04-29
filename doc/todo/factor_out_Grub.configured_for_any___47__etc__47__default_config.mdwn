@@ -13,3 +13,5 @@ Notes:
 * The use of a tuple for the last two parameters ensures that the property can be used infix.
 
 * I think this property should deduplicate the config key after setting it.  I.e. after uncommenting and modifying ANACRON_RUN_ON_BATTERY_POWER it should remove any further ANACRON_RUN_ON_BATTERY_POWER settings further down the config.  This allows a seamless transition from just using File.containsLine to add to the end of the file.
+
+--spwhitton
