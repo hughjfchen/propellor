@@ -20,6 +20,7 @@ import Propellor.Engine
 import Propellor.Exception
 
 import Data.Monoid
+import Prelude
 
 toProps :: [Property (MetaTypes metatypes)] -> Props (MetaTypes metatypes)
 toProps ps = Props (map toChildProperty ps)

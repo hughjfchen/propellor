@@ -6,9 +6,10 @@ import Propellor.Types
 import Propellor.Types.Empty
 import Propellor.Types.Info
 
-import Data.Monoid
 import qualified Data.Semigroup as Sem
 import qualified Data.Map as M
+import Data.Monoid
+import Prelude
 
 data ChrootInfo = ChrootInfo
 	{ _chroots :: M.Map FilePath Host
