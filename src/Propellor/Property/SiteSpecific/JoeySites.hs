@@ -1105,7 +1105,8 @@ devSoftware = Apt.installed
 	[ "build-essential", "debhelper", "devscripts"
 	, "ghc", "cabal-install", "haskell-stack"
 	, "hothasktags", "hdevtools", "hlint"
-	, "gdb", "dpkg-repack", "lintian"
+	, "gdb", "time"
+	, "dpkg-repack", "lintian"
 	, "pristine-tar", "github-backup"
 	]
 
