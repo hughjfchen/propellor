@@ -7,3 +7,23 @@ Waiting on concurrent-output reaching Debian stable.
 > supporting the current oldstable, I believe.. --[[Joey]]
 
 [[!tag user/joey]]
+
+> This was attempted again in 2018 and had to be reverted
+> in [[!commit b6ac64737b59e74d4aa2d889690e8fab3772d2c6]].
+> 
+> The strange output I was seeing is the first line 
+> of "apt-cache policy apache2" (but not subsequent lines)
+> and the ssh-keygen command run by `genSSHFP'`
+
+> Propellor also misbehaved in some other ways likely due to not seeing
+> the command output it expected. In particular Git.cloned must have
+> failed to see an origin url in git config output, because it nuked and
+> re-cloned a git repo (losing data).
+> 
+> So, it seems that readProcess was somehow leaking output to the console
+> and also likely not providing it to the caller. 
+> 
+> The affected system had libghc-concurrent-output-dev 1.10.5-1 installed
+> from debian. That is a somewhat old version and perhaps it was buggy?
+> However, I have not had any luck reproducing the problem there running
+> readProcess in ghci. --[[Joey]]
