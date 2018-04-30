@@ -205,4 +205,4 @@ instance Sem.Semigroup Rules where
 
 instance Monoid Rules where
 	mempty  = Everything
-	mappend = (<>)
+	mappend = (Sem.<>)

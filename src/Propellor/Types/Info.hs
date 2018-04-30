@@ -87,7 +87,7 @@ instance Sem.Semigroup (InfoVal v) where
 
 instance Monoid (InfoVal v) where
 	mempty = NoInfoVal
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 instance (Typeable v, Show v) => IsInfo (InfoVal v) where
 	propagateInfo _ = PropagateInfo False

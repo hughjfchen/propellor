@@ -238,7 +238,7 @@ instance Sem.Semigroup HostKeyInfo where
 
 instance Monoid HostKeyInfo where
 	mempty = HostKeyInfo M.empty
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 userPubKeys :: User -> [(SshKeyType, PubKeyText)] -> Property (HasInfo + UnixLike)
 userPubKeys u@(User n) l = pureInfoProperty ("ssh pubkey for " ++ n) $
@@ -260,7 +260,7 @@ instance Sem.Semigroup UserKeyInfo where
 
 instance Monoid UserKeyInfo where
 	mempty = UserKeyInfo M.empty
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 -- | Sets up a user with the specified public keys, and the corresponding
 -- private keys from the privdata.

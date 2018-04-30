@@ -235,7 +235,7 @@ instance SingI metatypes => Monoid (Property (MetaTypes metatypes))
   where
 	-- | A property that does nothing.
 	mempty = Property sing "noop property" Nothing mempty mempty
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 -- | Any type of RevertableProperty is a Semigroup. When revertable 
 -- properties x and y are appended together, the resulting revertable
@@ -253,10 +253,12 @@ instance
 		RevertableProperty (s1 <> s2) (u2 <> u1)
 
 instance
-	( Monoid (Property setupmetatypes)
-	, Monoid (Property undometatypes)
+	( Monoid (Property (MetaTypes setupmetatypes))
+	, Monoid (Property (MetaTypes undometatypes))
+	, SingI setupmetatypes
+	, SingI undometatypes
 	)
-	=> Monoid (RevertableProperty setupmetatypes undometatypes)
+	=> Monoid (RevertableProperty (MetaTypes setupmetatypes) (MetaTypes undometatypes))
   where
 	mempty = RevertableProperty mempty mempty
-	mappend = (<>)
+	mappend = (Sem.<>)

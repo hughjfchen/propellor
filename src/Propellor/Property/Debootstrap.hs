@@ -41,7 +41,7 @@ instance Sem.Semigroup DebootstrapConfig where
 
 instance Monoid DebootstrapConfig where
 	mempty  = DefaultConfig
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 toParams :: DebootstrapConfig -> [CommandParam]
 toParams DefaultConfig = []

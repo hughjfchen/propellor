@@ -194,7 +194,7 @@ instance Sem.Semigroup NamedConfMap where
 
 instance Monoid NamedConfMap where
 	mempty = NamedConfMap M.empty
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 instance Empty NamedConfMap where
 	isEmpty (NamedConfMap m) = isEmpty m

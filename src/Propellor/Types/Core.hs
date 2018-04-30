@@ -62,7 +62,7 @@ instance Sem.Semigroup (Propellor Result) where
 	
 instance Monoid (Propellor Result) where
 	mempty = return NoChange
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 -- | An action that Propellor runs at the end, after trying to satisfy all
 -- properties. It's passed the combined Result of the entire Propellor run.

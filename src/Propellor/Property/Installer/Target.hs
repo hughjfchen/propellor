@@ -444,7 +444,7 @@ instance Sem.Semigroup TargetFilled where
 
 instance Monoid TargetFilled where
 	mempty = TargetFilled (0 % 1)
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 newtype TargetFilledHandle = TargetFilledHandle Integer
 

@@ -193,7 +193,7 @@ instance Sem.Semigroup DiskPart where
 instance Monoid DiskPart
   where
 	mempty = FixedDiskPart
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 -- | Make a partition use some percentage of the size of the disk
 -- (less all fixed size partitions), or the remaining space in the disk.
