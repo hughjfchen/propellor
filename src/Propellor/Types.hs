@@ -242,10 +242,12 @@ instance SingI metatypes => Monoid (Property (MetaTypes metatypes))
 -- property has a description like "x and y".
 -- Note that when x fails to be ensured, it will not try to ensure y.
 instance
-	( Sem.Semigroup (Property setupmetatypes)
-	, Sem.Semigroup (Property undometatypes)
+	( Sem.Semigroup (Property (MetaTypes setupmetatypes))
+	, Sem.Semigroup (Property (MetaTypes undometatypes))
+	, SingI setupmetatypes
+	, SingI undometatypes
 	)
-	=> Sem.Semigroup (RevertableProperty setupmetatypes undometatypes)
+	=> Sem.Semigroup (RevertableProperty (MetaTypes setupmetatypes) (MetaTypes undometatypes))
   where
 	RevertableProperty s1 u1 <> RevertableProperty s2 u2 =
 		RevertableProperty (s1 <> s2) (u2 <> u1)
