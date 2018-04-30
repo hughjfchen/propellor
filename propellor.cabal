@@ -42,31 +42,14 @@ Library
     GHC-Options: -fno-warn-redundant-constraints
   Default-Extensions: TypeOperators
   Hs-Source-Dirs: src
-  -- propellor needs to support the ghc shipped in Debian stable,
-  -- and also only depends on packages in Debian stable.
-  -- 
-  -- When updating dependencies here, also update the lists in
-  -- Propellor.Bootstrap
   Build-Depends:
-    ansi-terminal,
-    async,
+    -- propellor needs to support the ghc shipped in Debian stable,
+    -- and also only depends on packages in Debian stable.
     base >= 4.9, base < 5,
-    bytestring,
-    concurrent-output,
-    containers (>= 0.5),
-    directory,
-    exceptions (>= 0.6),
-    filepath,
-    hashable,
-    hslogger,
-    IfElse,
-    mtl,
-    network,
-    process,
-    split,
-    time,
-    unix,
-    unix-compat
+    directory, filepath, IfElse, process, bytestring, hslogger, split,
+    unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
+    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
+
   Exposed-Modules:
     Propellor
     Propellor.Base
@@ -240,6 +223,9 @@ Library
     Utility.Tmp
     Utility.Tuple
     Utility.UserInfo
+    System.Console.Concurrent
+    System.Console.Concurrent.Internal
+    System.Process.Concurrent
     Paths_propellor
 
 Executable propellor-config
