@@ -31,7 +31,7 @@ instance Sem.Semigroup PartTable where
 instance Monoid PartTable where
 	-- | default TableType is MSDOS, with a `safeAlignment`.
 	mempty = PartTable MSDOS safeAlignment []
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 -- | A partition on the disk.
 data Partition = Partition
@@ -93,7 +93,7 @@ instance Sem.Semigroup PartSize where
 
 instance Monoid PartSize where
 	mempty = MegaBytes 0
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 reducePartSize :: PartSize -> PartSize -> PartSize
 reducePartSize (MegaBytes a) (MegaBytes b) = MegaBytes (a - b)

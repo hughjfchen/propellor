@@ -28,7 +28,7 @@ instance Sem.Semigroup DockerInfo where
 
 instance Monoid DockerInfo where
 	mempty = DockerInfo mempty mempty
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 instance Empty DockerInfo where
 	isEmpty i = and

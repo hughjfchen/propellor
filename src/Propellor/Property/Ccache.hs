@@ -31,7 +31,7 @@ instance Sem.Semigroup Limit where
 
 instance Monoid Limit where
 	mempty  = NoLimit
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 -- | A string that will be parsed to get a data size.
 --

@@ -28,7 +28,7 @@ instance Sem.Semigroup ChrootInfo where
 
 instance Monoid ChrootInfo where
 	mempty = ChrootInfo mempty mempty
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 instance Empty ChrootInfo where
 	isEmpty i = and
@@ -49,7 +49,7 @@ instance Sem.Semigroup ChrootCfg where
 
 instance Monoid ChrootCfg where
 	mempty = NoChrootCfg
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 instance Empty ChrootCfg where
 	isEmpty c= c == NoChrootCfg

@@ -18,7 +18,7 @@ instance Sem.Semigroup Result where
 
 instance Monoid Result where
 	mempty = NoChange
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 class ToResult t where
 	toResult :: t -> Result

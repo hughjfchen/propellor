@@ -189,7 +189,7 @@ instance Sem.Semigroup PartLocation where
 
 instance Monoid PartLocation where
 	mempty = Middle
-	mappend = (<>)
+	mappend = (Sem.<>)
 
 partLocation :: PartSpec PartLocation -> PartLocation -> PartSpec PartLocation
 partLocation (mp, o, p, _) l = (mp, o, p, l)
