@@ -5,6 +5,8 @@ propellor (5.3.6) UNRELEASED; urgency=medium
     oldstable), to avoid needing to depend on the semigroups transitional
     package, but also because it's just too old to be worth supporting.
   * stack.yaml: Updated to lts-9.21.
+  * Make Schroot.overlaysInTmpfs revertable
+    Thanks, Sean Whitton
 
  -- Joey Hess <id@joeyh.name>  Mon, 23 Apr 2018 13:12:25 -0400
 
