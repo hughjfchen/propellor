@@ -446,9 +446,6 @@ updateUpstreamMaster newref = do
 					)
 			Nothing -> return mref
 
--- And, if there's a remote named "upstream"
--- that does not point at the distrepo, the user must have set that up
--- and is not using the distrepo, so do nothing.
 warnoutofdate :: Bool -> IO ()
 warnoutofdate havebranch = warningMessage $ unlines
 	[ "** Your ~/.propellor/ is out of date.."
