@@ -32,8 +32,8 @@ usesOverlays = isJust . fromInfoVal
 -- Implicitly sets 'useOverlays' info property.
 --
 -- Shell script from <https://wiki.debian.org/sbuild>.
-overlaysInTmpfs :: Property (HasInfo + DebianLike)
-overlaysInTmpfs = go `requires` installed
+overlaysInTmpfs :: RevertableProperty (HasInfo + DebianLike) UnixLike
+overlaysInTmpfs = (go `requires` installed) <!> undo
   where
 	f = "/etc/schroot/setup.d/04tmpfs"
 	go :: Property (HasInfo + UnixLike)
@@ -58,6 +58,7 @@ overlaysInTmpfs = go `requires` installed
 			, "fi"
 			]
 		`onChange` (f `File.mode` combineModes (readModes ++ executeModes))
+	undo = File.notPresent f
 
 installed :: Property DebianLike
 installed = Apt.installed ["schroot"]

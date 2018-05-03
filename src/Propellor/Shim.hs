@@ -16,11 +16,18 @@ import System.Posix.Files
 -- | Sets up a shimmed version of the program, in a directory, and
 -- returns its path.
 --
+-- If the shim was already set up, it's refreshed, in case newer
+-- versions of libraries are needed.
+--
 -- Propellor may be running from an existing shim, in which case it's
 -- simply reused.
 setup :: FilePath -> Maybe FilePath -> FilePath -> IO FilePath
-setup propellorbin propellorbinpath dest = checkAlreadyShimmed shim $ do
+setup propellorbin propellorbinpath dest = checkAlreadyShimmed propellorbin $ do
 	createDirectoryIfMissing True dest
+
+	-- Remove all old libraries inside dest, but do not delete the
+	-- directory itself, since it may be bind-mounted inside a chroot.
+	mapM_ nukeFile =<< dirContentsRecursive dest
 
 	libs <- parseLdd <$> readProcess "ldd" [propellorbin]
 	glibclibs <- glibcLibs

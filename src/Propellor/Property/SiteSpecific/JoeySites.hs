@@ -1074,7 +1074,7 @@ laptopSoftware = Apt.installed
 	, "bsdgames", "nethack-console"
 	, "xmonad", "libghc-xmonad-dev", "libghc-xmonad-contrib-dev"
 	, "ttf-bitstream-vera"
-	, "mairix", "offlineimap", "mutt"
+	, "mairix", "offlineimap", "mutt", "slrn"
 	, "mtr", "nmap", "whois", "wireshark", "tcpdump", "iftop"
 	, "pmount", "tree", "pv"
 	, "arbtt", "hledger", "bc"
