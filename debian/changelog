@@ -7,6 +7,8 @@ propellor (5.3.6) UNRELEASED; urgency=medium
   * stack.yaml: Updated to lts-9.21.
   * Make Schroot.overlaysInTmpfs revertable
     Thanks, Sean Whitton
+  * Update shim each time propellor is run in a container, to deal with
+    library version changes.
 
  -- Joey Hess <id@joeyh.name>  Mon, 23 Apr 2018 13:12:25 -0400
 
