@@ -915,7 +915,8 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 	& Apache.installed
 	& Apt.installed ["python", "python-pymodbus", "rrdtool", "rsync"]
 	& File.ownerGroup "/var/www/html" user (userGroup user)
-	& Git.cloned user "git://git.kitenet.net/joey/homepower" d Nothing
+	& Git.cloned user "https://git.joeyh.name/git/joey/homepower.git" d Nothing
+	& Git.cloned user "https://git.joeyh.name/git/reactive-banana-automation.git" (d </> "reactive-banana-automation") Nothing
 	& buildpoller
 	& Systemd.enabled setupservicename
 		`requires` setupserviceinstalled
@@ -937,11 +938,21 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 	d = "/var/www/html/homepower"
 	sshkeyfile = d </> ".ssh/key"
 	buildpoller = userScriptProperty (User "joey")
-		[ "cd " ++ d
+		[ "cd " ++ d </> "reactive-banana-automation"
+		, "cabal install"
+		, "cd " ++ d
 		, "make"
 		]
 		`assume` MadeChange
-		`requires` Apt.installed ["ghc", "make"]
+		`requires` Apt.installed
+			[ "ghc", "cabal-install", "make"
+			, "libghc-http-types-dev"
+			, "libghc-stm-dev"
+			, "libghc-aeson-dev"
+			, "libghc-wai-dev"
+			, "libghc-warp-dev"
+			, "libghc-reactive-banana-dev"
+			]
 	servicename = "homepower"
 	servicefile = "/etc/systemd/system/" ++ servicename ++ ".service"
 	serviceinstalled = servicefile `File.hasContent`
@@ -953,6 +964,7 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 		, "WorkingDirectory=" ++ d
 		, "User=joey"
 		, "Group=joey"
+		, "Restart=always"
 		, ""
 		, "[Install]"
 		, "WantedBy=multi-user.target"
