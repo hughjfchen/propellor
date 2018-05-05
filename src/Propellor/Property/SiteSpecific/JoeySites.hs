@@ -953,6 +953,7 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 			, "libghc-warp-dev"
 			, "libghc-http-client-dev"
 			, "libghc-reactive-banana-dev"
+			, "libghc-hinotify-dev"
 			]
 	servicename = "homepower"
 	servicefile = "/etc/systemd/system/" ++ servicename ++ ".service"
@@ -1020,7 +1021,9 @@ homeRouter = propertyList "home router" $ props
 		, "bogus-priv"
 		, "interface=wlan0"
 		, "domain=kitenet.net"
-		, "dhcp-range=10.1.1.100,10.1.1.150,24h"
+		-- lease time is 30 minutes because the homepower
+		-- controller wants to know when clients disconnect
+		, "dhcp-range=10.1.1.100,10.1.1.150,30m"
 		, "no-hosts"
 		, "address=/honeybee.kitenet.net/10.1.1.1"
 		, "address=/house.kitenet.net/10.1.1.1"
