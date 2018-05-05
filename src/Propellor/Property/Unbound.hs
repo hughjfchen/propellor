@@ -64,6 +64,10 @@ config = "/etc/unbound/unbound.conf.d/propellor.conf"
 -- | Provided a [UnboundSection], a [UnboundZone] and a [UnboundHost],
 -- cachingDnsServer ensure unbound is configured accordingly.
 --
+-- Be carefull with CNAMEs, unbound is not a primary DNS server, so it will
+-- resolve these by itself. For a locally served zone, you probably want A/AAAA
+-- records instead.
+--
 -- Example property:
 --
 -- > cachingDnsServer
@@ -126,9 +130,6 @@ genRecord dom (PTR revip) = Just $ unwords
 	, "PTR"
 	, dValue dom
 	]
--- | Be carefull with CNAMEs, unbound is not a primary DNS server, so it will
--- resolve these by itself. For a locally served zone, you probably want A/AAAA
--- records instead.
 genRecord dom (CNAME dest) = Just $ unwords
 	[ dValue dom
 	, "CNAME"
