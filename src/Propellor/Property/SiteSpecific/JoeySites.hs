@@ -951,6 +951,7 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 			, "libghc-aeson-dev"
 			, "libghc-wai-dev"
 			, "libghc-warp-dev"
+			, "libghc-http-client-dev"
 			, "libghc-reactive-banana-dev"
 			]
 	servicename = "homepower"
