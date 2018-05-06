@@ -9,6 +9,8 @@ propellor (5.3.6) UNRELEASED; urgency=medium
     Thanks, Sean Whitton
   * Update shim each time propellor is run in a container, to deal with
     library version changes.
+  * Unbound: Added support for various DNS record types.
+    Thanks, Félix Sipma.
 
  -- Joey Hess <id@joeyh.name>  Mon, 23 Apr 2018 13:12:25 -0400
 
