@@ -909,21 +909,23 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 	& "/etc/systemd/logind.conf" `ConfFile.containsIniSetting`
 		("Login", "LidSwitchIgnoreInhibited", "no")
 
--- My home power monitor.
-homePowerMonitor :: IsContext c => User -> [Host] -> c -> (SshKeyType, Ssh.PubKeyText) -> Property (HasInfo + DebianLike)
-homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ props
+homePower :: IsContext c => User -> [Host] -> c -> (SshKeyType, Ssh.PubKeyText) -> Property (HasInfo + DebianLike)
+homePower user hosts ctx sshkey = propertyList "home power" $ props
 	& Apache.installed
 	& Apt.installed ["python", "python-pymodbus", "rrdtool", "rsync"]
 	& File.ownerGroup "/var/www/html" user (userGroup user)
 	& Git.cloned user "https://git.joeyh.name/git/joey/homepower.git" d Nothing
 	& Git.cloned user "https://git.joeyh.name/git/reactive-banana-automation.git" (d </> "reactive-banana-automation") Nothing
-	& buildpoller
+	& build
 	& Systemd.enabled setupservicename
 		`requires` setupserviceinstalled
 		`onChange` Systemd.started setupservicename
-	& Systemd.enabled servicename
-		`requires` serviceinstalled
-		`onChange` Systemd.started servicename
+	& Systemd.enabled pollerservicename
+		`requires` pollerserviceinstalled
+		`onChange` Systemd.started pollerservicename
+	& Systemd.enabled controllerservicename
+		`requires` controllerserviceinstalled
+		`onChange` Systemd.started controllerservicename
 	& User.hasGroup user (Group "dialout")
 	& Group.exists (Group "gpio") Nothing
 	& User.hasGroup user (Group "gpio")
@@ -937,7 +939,7 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
   where
 	d = "/var/www/html/homepower"
 	sshkeyfile = d </> ".ssh/key"
-	buildpoller = userScriptProperty (User "joey")
+	build = userScriptProperty (User "joey")
 		[ "cd " ++ d </> "reactive-banana-automation"
 		, "cabal install"
 		, "cd " ++ d
@@ -955,14 +957,31 @@ homePowerMonitor user hosts ctx sshkey = propertyList "home power monitor" $ pro
 			, "libghc-reactive-banana-dev"
 			, "libghc-hinotify-dev"
 			]
-	servicename = "homepower"
-	servicefile = "/etc/systemd/system/" ++ servicename ++ ".service"
-	serviceinstalled = servicefile `File.hasContent`
+	pollerservicename = "homepower"
+	pollerservicefile = "/etc/systemd/system/" ++ pollerservicename ++ ".service"
+	pollerserviceinstalled = pollerservicefile `File.hasContent`
 		[ "[Unit]"
-		, "Description=home power monitor"
+		, "Description=home power poller"
 		, ""
 		, "[Service]"
 		, "ExecStart=" ++ d ++ "/poller"
+		, "WorkingDirectory=" ++ d
+		, "User=joey"
+		, "Group=joey"
+		, "Restart=always"
+		, ""
+		, "[Install]"
+		, "WantedBy=multi-user.target"
+		, "WantedBy=homepower-controller.target"
+		]
+	controllerservicename = "homepower-controller"
+	controllerservicefile = "/etc/systemd/system/" ++ controllerservicename ++ ".service"
+	controllerserviceinstalled = controllerservicefile `File.hasContent`
+		[ "[Unit]"
+		, "Description=home power controller"
+		, ""
+		, "[Service]"
+		, "ExecStart=" ++ d ++ "/controller"
 		, "WorkingDirectory=" ++ d
 		, "User=joey"
 		, "Group=joey"

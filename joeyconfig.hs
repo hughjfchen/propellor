@@ -196,7 +196,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIS/hDYq1MAxfOBf49htym3BOYlx4Gk9SDpiHjv7u6IC")
 		]
 
-	& JoeySites.homePowerMonitor
+	& JoeySites.homePower
 		(User "joey")
 		hosts
 		(Context "homepower.joeyh.name")
