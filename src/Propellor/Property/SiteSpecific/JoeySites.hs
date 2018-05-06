@@ -1040,9 +1040,9 @@ homeRouter = propertyList "home router" $ props
 		, "bogus-priv"
 		, "interface=wlan0"
 		, "domain=kitenet.net"
-		-- lease time is 30 minutes because the homepower
+		-- lease time is short because the homepower
 		-- controller wants to know when clients disconnect
-		, "dhcp-range=10.1.1.100,10.1.1.150,30m"
+		, "dhcp-range=10.1.1.100,10.1.1.150,5m"
 		, "no-hosts"
 		, "address=/honeybee.kitenet.net/10.1.1.1"
 		, "address=/house.kitenet.net/10.1.1.1"
