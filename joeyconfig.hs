@@ -176,6 +176,7 @@ honeybee :: Host
 honeybee = host "honeybee.kitenet.net" $ props
 	& standardSystem Testing ARMHF
 		[ "Home router and arm git-annex build box." ]
+	& Apt.removed ["rsyslog"]
 	
 	& cubietech_Cubietruck
 	& hasPartition
