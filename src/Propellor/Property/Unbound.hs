@@ -64,6 +64,10 @@ config = "/etc/unbound/unbound.conf.d/propellor.conf"
 -- | Provided a [UnboundSection], a [UnboundZone] and a [UnboundHost],
 -- cachingDnsServer ensure unbound is configured accordingly.
 --
+-- Be carefull with CNAMEs, unbound is not a primary DNS server, so it will
+-- resolve these by itself. For a locally served zone, you probably want A/AAAA
+-- records instead.
+--
 -- Example property:
 --
 -- > cachingDnsServer
@@ -115,13 +119,47 @@ genRecord' dom r = "    local-data: \"" ++ fromMaybe "" (genRecord dom r) ++ "\"
 
 genRecord :: BindDomain -> Record -> Maybe String
 genRecord dom (Address addr) = Just $ genAddressNoTtl dom addr
-genRecord dom (MX priority dest) = Just $ genMX dom priority dest
-genRecord dom (PTR revip) = Just $ genPTR dom revip
-genRecord _ (CNAME _) = Nothing
-genRecord _ (NS _) = Nothing
-genRecord _ (TXT _) = Nothing
-genRecord _ (SRV _ _ _ _) = Nothing
-genRecord _ (SSHFP _ _ _) = Nothing
+genRecord dom (MX priority dest) = Just $ unwords
+	[ dValue dom
+	, "MX"
+	, val priority
+	, dValue dest
+	]
+genRecord dom (PTR revip) = Just $ unwords
+	[ revip ++ "."
+	, "PTR"
+	, dValue dom
+	]
+genRecord dom (CNAME dest) = Just $ unwords
+	[ dValue dom
+	, "CNAME"
+	, dValue dest
+	]
+genRecord dom (NS serv) = Just $ unwords
+	[ dValue dom
+	, "NS"
+	, dValue serv
+	]
+genRecord dom (TXT txt) = Just $ unwords
+	[ dValue dom
+	, "TXT"
+	, txt
+	]
+genRecord dom (SRV priority weight port target) = Just $ unwords
+	[ dValue dom
+	, "SRV"
+	, val priority
+	, val weight
+	, val port
+	, dValue target
+	]
+genRecord dom (SSHFP algo hash fingerprint) = Just $ unwords
+	[ dValue dom
+	, "SSHFP"
+	, val algo
+	, val hash
+	, fingerprint
+	]
 genRecord _ (INCLUDE _) = Nothing
 
 genAddressNoTtl :: BindDomain -> IPAddr -> String
@@ -133,10 +171,10 @@ genAddress dom ttl addr = case addr of
 	IPv6 _ -> genAddress' "AAAA" dom ttl addr
 
 genAddress' :: String -> BindDomain -> Maybe Int -> IPAddr -> String
-genAddress' recordtype dom ttl addr = dValue dom ++ " " ++ maybe "" (\ttl' -> val ttl' ++ " ") ttl ++ "IN " ++ recordtype ++ " " ++ val addr
-
-genMX :: BindDomain -> Int -> BindDomain -> String
-genMX dom priority dest = dValue dom ++ " " ++ "MX" ++ " " ++ val priority ++ " " ++ dValue dest
-
-genPTR :: BindDomain -> ReverseIP -> String
-genPTR dom revip = revip ++ ". " ++ "PTR" ++ " " ++ dValue dom
+genAddress' recordtype dom ttl addr = unwords $
+	[ dValue dom ]
+	++ maybe [] (\ttl' -> [val ttl']) ttl ++
+	[ "IN"
+	, recordtype
+	, val addr
+	]
