@@ -1042,7 +1042,7 @@ homeRouter = propertyList "home router" $ props
 		, "domain=kitenet.net"
 		-- lease time is short because the homepower
 		-- controller wants to know when clients disconnect
-		, "dhcp-range=10.1.1.100,10.1.1.150,5m"
+		, "dhcp-range=10.1.1.100,10.1.1.150,10m"
 		, "no-hosts"
 		, "address=/honeybee.kitenet.net/10.1.1.1"
 		, "address=/house.kitenet.net/10.1.1.1"
