@@ -939,12 +939,13 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
   where
 	d = "/var/www/html/homepower"
 	sshkeyfile = d </> ".ssh/key"
-	build = userScriptProperty (User "joey")
-		[ "cd " ++ d </> "reactive-banana-automation"
-		, "cabal install"
-		, "cd " ++ d
-		, "make"
-		]
+	build = check (not <$> doesFileExist (d </> "controller")) $
+		userScriptProperty (User "joey")
+			[ "cd " ++ d </> "reactive-banana-automation"
+			, "cabal install"
+			, "cd " ++ d
+			, "make"
+			]
 		`assume` MadeChange
 		`requires` Apt.installed
 			[ "ghc", "cabal-install", "make"
