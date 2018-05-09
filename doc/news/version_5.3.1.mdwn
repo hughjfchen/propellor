@@ -1,5 +1,0 @@
-propellor 5.3.1 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Last release mistakenly contained my personal branch not master.
-   * contrib/post-merge-hook documentation updated to recommend also using
-     it as a post-checkout hook, to avoid such problems."""]]
