@@ -1,3 +1,10 @@
+propellor (5.3.7) UNRELEASED; urgency=medium
+
+  * Restic.installed: stop trying to install a backport on jessie, because no
+    such backport exists.
+
+ -- Sean Whitton <spwhitton@spwhitton.name>  Thu, 17 May 2018 00:12:42 -0700
+
 propellor (5.3.6) unstable; urgency=medium
 
   * Fix build with ghc 8.4, which broke due to the Semigroup Monoid change.

@@ -35,13 +35,7 @@ instance ConfigurableValue ResticRepo where
 	val (REST url) = "rest:" ++ url
 
 installed :: Property DebianLike
-installed = withOS desc $ \w o -> case o of
-	(Just (System (Debian _ (Stable "jessie")) _)) -> ensureProperty w $
-		Apt.installedBackport ["restic"]
-	_ -> ensureProperty w $
-		Apt.installed ["restic"]
-  where
-	desc = "installed restic"
+installed = Apt.installed ["restic"] `describe` "installed restic"
 
 repoExists :: ResticRepo -> IO Bool
 repoExists repo = boolSystem "restic"
