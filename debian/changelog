@@ -1,7 +1,12 @@
-propellor (5.3.7) UNRELEASED; urgency=medium
+propellor (5.4.0) UNRELEASED; urgency=medium
 
   * Restic.installed: stop trying to install a backport on jessie, because no
     such backport exists.
+  * Apt.installedBackport replaced with Apt.backportInstalled, which take the
+    same parameters but has different behaviour.  (API change)
+    The new property will fail in cases where the old property would install
+    dependencies of the requested backports from stable-backports even though
+    the versions in stable satisfy the requested backports' dependencies.
 
  -- Sean Whitton <spwhitton@spwhitton.name>  Thu, 17 May 2018 00:12:42 -0700
 

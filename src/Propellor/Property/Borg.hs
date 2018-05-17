@@ -57,7 +57,7 @@ runBorgEnv (BorgRepoUsing os _) = map go os
 installed :: Property DebianLike
 installed = withOS desc $ \w o -> case o of
 	(Just (System (Debian _ (Stable "jessie")) _)) -> ensureProperty w $
-		Apt.installedBackport ["borgbackup"]
+		Apt.backportInstalled ["borgbackup", "python3-msgpack"]
 	_ -> ensureProperty w $
 		Apt.installed ["borgbackup"]
   where

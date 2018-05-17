@@ -247,12 +247,17 @@ installed' params ps = robustly $ check (not <$> isInstalled' ps) go
   where
 	go = runApt (params ++ ["install"] ++ ps)
 
-installedBackport :: [Package] -> Property Debian
-installedBackport ps = withOS desc $ \w o -> case o of
+-- | Install packages from the stable-backports suite.
+--
+-- If installing the backport requires installing versions of a package's
+-- dependencies from stable-backports too, you will need to include those
+-- dependencies in the list of packages passed to this function.
+backportInstalled :: [Package] -> Property Debian
+backportInstalled ps = withOS desc $ \w o -> case o of
 	(Just (System (Debian _ suite) _)) -> case backportSuite suite of
 		Nothing -> unsupportedOS'
 		Just bs -> ensureProperty w $
-			runApt (["install", "-t", bs, "-y"] ++ ps)
+			runApt (["install", "-y"] ++ ((++ '/':bs) <$> ps))
 				`changesFile` dpkgStatus
 	_ -> unsupportedOS'
   where
