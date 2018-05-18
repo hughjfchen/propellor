@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Build-Depends: 
 	debhelper (>= 9),
-	git,
+	git (>= 2.0),
 	ghc (>= 7.6),
 	cabal-install,
 	libghc-async-dev,
@@ -43,7 +43,7 @@ Depends: ${misc:Depends}, ${shlibs:Depends},
 	libghc-stm-dev,
 	libghc-text-dev,
 	libghc-hashable-dev,
-	git,
+	git (>= 2.0),
 Description: property-based host configuration management in haskell
  Propellor ensures that the system it's run in satisfies a list of
  properties, taking action as necessary when a property is not yet met.

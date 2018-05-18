@@ -6,9 +6,8 @@ import Propellor.PrivData.Paths
 import Utility.FileMode
 
 {- To verify origin branch commit's signature, have to convince gpg
- - to use our keyring.
- - While running git log. Which has no way to pass options to gpg.
- - Argh!
+ - to use our keyring while running git verify-tag.
+ - Which has no way to pass options to gpg. Argh!
  -}
 verifyOriginBranch :: String -> IO Bool
 verifyOriginBranch originbranch = do
@@ -20,12 +19,12 @@ verifyOriginBranch originbranch = do
 		]
 	-- gpg is picky about perms
 	modifyFileMode privDataDir (removeModes otherGroupModes)
-	s <- readProcessEnv "git" ["log", "-n", "1", "--format=%G?", originbranch]
+	verified <- boolSystemEnv "git" ["verify-commit", originbranch]
 		(Just [("GNUPGHOME", privDataDir)])
 	nukeFile $ privDataDir </> "trustdb.gpg"
 	nukeFile $ privDataDir </> "pubring.gpg"
 	nukeFile $ privDataDir </> "gpg.conf"
-	return (s == "U\n" || s == "G\n")
+	return verified
 
 -- Returns True if HEAD is changed by fetching and merging from origin.
 fetchOrigin :: IO Bool
