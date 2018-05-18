@@ -1,3 +1,10 @@
+propellor (5.4.1) UNRELEASED; urgency=medium
+
+  * Modernized and simplified the MetaTypes implementation now that
+    compatability with ghc 7 is no longer needed.
+
+ -- Joey Hess <id@joeyh.name>  Fri, 18 May 2018 10:25:05 -0400
+
 propellor (5.4.0) unstable; urgency=medium
 
   [ Sean Whitton ]

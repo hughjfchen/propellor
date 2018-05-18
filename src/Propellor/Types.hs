@@ -154,13 +154,19 @@ instance IsProp (RevertableProperty setupmetatypes undometatypes) where
 
 -- | Type level calculation of the type that results from combining two
 -- types of properties.
-type family CombinedType x y
-type instance CombinedType (Property (MetaTypes x)) (Property (MetaTypes y)) = Property (MetaTypes (Combine x y))
-type instance CombinedType (RevertableProperty (MetaTypes x) (MetaTypes x')) (RevertableProperty (MetaTypes y) (MetaTypes y')) = RevertableProperty (MetaTypes (Combine x y)) (MetaTypes (Combine x' y'))
--- When only one of the properties is revertable, the combined property is
--- not fully revertable, so is not a RevertableProperty.
-type instance CombinedType (RevertableProperty (MetaTypes x) (MetaTypes x')) (Property (MetaTypes y)) = Property (MetaTypes (Combine x y))
-type instance CombinedType (Property (MetaTypes x)) (RevertableProperty (MetaTypes y) (MetaTypes y')) = Property (MetaTypes (Combine x y))
+type family CombinedType x y where
+	CombinedType (Property (MetaTypes x)) (Property (MetaTypes y)) =
+		Property (MetaTypes (Combine x y))
+	CombinedType
+		(RevertableProperty (MetaTypes x) (MetaTypes x'))
+		(RevertableProperty (MetaTypes y) (MetaTypes y')) =
+			RevertableProperty (MetaTypes (Combine x y)) (MetaTypes (Combine x' y'))
+	-- When only one of the properties is revertable, the combined
+	-- property is not fully revertable, so is not a RevertableProperty.
+	CombinedType (RevertableProperty (MetaTypes x) (MetaTypes x')) (Property (MetaTypes y)) =
+		Property (MetaTypes (Combine x y))
+	CombinedType (Property (MetaTypes x)) (RevertableProperty (MetaTypes y) (MetaTypes y')) =
+		Property (MetaTypes (Combine x y))
 
 type ResultCombiner = Maybe (Propellor Result) -> Maybe (Propellor Result) -> Maybe (Propellor Result)
 

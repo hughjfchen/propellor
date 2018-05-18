@@ -41,9 +41,9 @@ infixl 1 &
 infixl 1 &^
 infixl 1 !
 
-type family GetMetaTypes x
-type instance GetMetaTypes (Property (MetaTypes t)) = MetaTypes t
-type instance GetMetaTypes (RevertableProperty (MetaTypes t) undo) = MetaTypes t
+type family GetMetaTypes x where
+	GetMetaTypes (Property (MetaTypes t)) = MetaTypes t
+	GetMetaTypes (RevertableProperty (MetaTypes t) undo) = MetaTypes t
 
 -- | Adds a property to a Props.
 --
