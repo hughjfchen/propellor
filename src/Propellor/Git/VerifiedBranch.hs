@@ -19,7 +19,7 @@ verifyOriginBranch originbranch = do
 		]
 	-- gpg is picky about perms
 	modifyFileMode privDataDir (removeModes otherGroupModes)
-	verified <- boolSystemEnv "git" ["verify-commit", originbranch]
+	verified <- boolSystemEnv "git" [Param "verify-commit", Param originbranch]
 		(Just [("GNUPGHOME", privDataDir)])
 	nukeFile $ privDataDir </> "trustdb.gpg"
 	nukeFile $ privDataDir </> "pubring.gpg"
