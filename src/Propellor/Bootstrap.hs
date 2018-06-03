@@ -100,10 +100,9 @@ checkDepsCommand bs sys = go (getBuilder bs)
 --
 -- When bootstrapping Robustly, first try to install the builder, 
 -- and all haskell libraries that propellor uses from OS packages.
--- Some packages may not be available in some versions of Debian
--- (eg, Debian wheezy lacks async), or propellor may need a newer version.
--- So, as a second step, any other dependencies are installed from source
--- using the builder.
+-- Some packages may not be available in some versions of the OS,
+-- or propellor may need a newer version. So, as a second step, 
+-- ny other dependencies are installed from source using the builder.
 --
 -- Note: May succeed and leave some deps not installed.
 depsCommand :: Bootstrapper -> Maybe System -> ShellCommand
