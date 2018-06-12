@@ -50,10 +50,10 @@ ensureProperty
 ensureProperty _ = maybe (return NoChange) catchPropellor . getSatisfy
 
 -- The name of this was chosen to make type errors a bit more understandable.
-type family Cannot_ensureProperty_WithInfo (l :: [a]) :: Bool
-type instance Cannot_ensureProperty_WithInfo '[] = 'True
-type instance Cannot_ensureProperty_WithInfo (t ': ts) =
-	Not (t `EqT` 'WithInfo) && Cannot_ensureProperty_WithInfo ts
+type family Cannot_ensureProperty_WithInfo (l :: [a]) :: Bool where
+	Cannot_ensureProperty_WithInfo '[] = 'True
+	Cannot_ensureProperty_WithInfo (t ': ts) =
+		Not (t `EqT` 'WithInfo) && Cannot_ensureProperty_WithInfo ts
 
 -- | Constructs a property, like `property`, but provides its
 -- `OuterMetaTypesWitness`.

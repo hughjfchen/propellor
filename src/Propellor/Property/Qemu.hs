@@ -5,6 +5,11 @@ import qualified Propellor.Property.Apt as Apt
 
 -- | Installs qemu user mode emulation binaries, built statically,
 -- which allow foreign binaries to run directly.
+--
+-- Note that this is not necessary after qemu 2.12~rc3+dfsg-1.
+-- See http://bugs.debian.org/868030
+-- It's currently always done to support older versions, but
+-- could be skipped with the newer version.
 foreignBinariesEmulated :: RevertableProperty Linux Linux
 foreignBinariesEmulated = (setup <!> cleanup)
 	`describe` "foreign binary emulation"

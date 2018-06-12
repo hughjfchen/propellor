@@ -920,6 +920,9 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	& Systemd.enabled setupservicename
 		`requires` setupserviceinstalled
 		`onChange` Systemd.started setupservicename
+	& Systemd.enabled watchdogservicename
+		`requires` watchdogserviceinstalled
+		`onChange` Systemd.started watchdogservicename
 	& Systemd.enabled pollerservicename
 		`requires` pollerserviceinstalled
 		`onChange` Systemd.started pollerservicename
@@ -986,6 +989,22 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 		, "WorkingDirectory=" ++ d
 		, "User=joey"
 		, "Group=joey"
+		, "Restart=always"
+		, ""
+		, "[Install]"
+		, "WantedBy=multi-user.target"
+		]
+	watchdogservicename = "homepower-watchdog"
+	watchdogservicefile = "/etc/systemd/system/" ++ watchdogservicename ++ ".service"
+	watchdogserviceinstalled = watchdogservicefile `File.hasContent`
+		[ "[Unit]"
+		, "Description=home power watchdog"
+		, ""
+		, "[Service]"
+		, "ExecStart=" ++ d ++ "/watchdog"
+		, "WorkingDirectory=" ++ d
+		, "User=root"
+		, "Group=root"
 		, "Restart=always"
 		, ""
 		, "[Install]"
@@ -1126,6 +1145,7 @@ laptopSoftware = Apt.installed
 	, "w3m", "sm", "weechat"
 	, "borgbackup", "wipe", "smartmontools", "libgfshare-bin"
 	, "units"
+	, "virtualbox", "qemu-kvm"
 	]
 	`requires` baseSoftware
 	`requires` devSoftware
