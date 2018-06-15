@@ -13,6 +13,10 @@ module Propellor.Property.ConfFile (
 	hasIniSection,
 	lacksIniSection,
 	iniFileContains,
+	-- * Conffiles that are actually shell scripts setting env vars
+	ShellKey,
+	containsShellSetting,
+	lacksShellSetting,
 ) where
 
 import Propellor.Base
@@ -139,3 +143,52 @@ iniFileContains f l = f `hasContent` content <!> notPresent f
 	content = concatMap sectioncontent l
 	sectioncontent (section, keyvalues) = iniHeader section :
 		map (\(key, value) -> key ++ "=" ++ value) keyvalues
+
+-- | Key for a shell conffile property.  Conventionally uppercase letters and
+-- numbers with underscores for separators.  See files in </etc/default>.
+type ShellKey = String
+
+-- | Ensures a shell conffile (like those in </etc/default>) exists and has a
+-- key=value pair.
+--
+-- Comments out any further settings of that key further down the
+-- file, to avoid those taking precedence.
+containsShellSetting :: FilePath -> (ShellKey, String) -> Property UnixLike
+containsShellSetting f (k, v) = adjust `before` dedup
+  where
+	adjust = adjustSection
+		(f ++ " contains " ++ k ++ "=" ++ v)
+		isline
+		(not . isline)
+		(const [line])
+		(const [line])
+		f
+	dedup = fileProperty "" dedup' f
+	dedup' ls = let (pre, wanted, post) = foldl' find ([], [], []) ls
+		    in pre ++ wanted ++ map commentIfIsline post
+	find (pre, wanted, post) l
+		| null wanted && (not . isline) l = (pre ++ [l], wanted, post)
+		| null wanted && isline l         = (pre, [l], post)
+		| otherwise                       = (pre, wanted, post ++ [l])
+	-- some /etc/default files comment settings lines with '# '
+	-- and some use '#'; one advantage of just using '#' is that
+	-- it distinguishes settings values from prose comments
+	commentIfIsline l
+		| isline l  = '#':l
+		| otherwise = l
+
+	isline s = (k ++ "=") `isPrefixOf` s
+	line = k ++ "=" ++ shellEscape v
+
+-- | Comments out a key=value pair in a shell conffile.
+--
+-- Does not delete the file if empty, and does not uncomment any
+-- lines, so not a perfect reversion of 'containsShellSetting'.
+lacksShellSetting :: FilePath -> (ShellKey, String) -> Property UnixLike
+lacksShellSetting f (k, v) =
+	fileProperty (f ++ "lacks shell setting " ++ k ++ "=" ++ v) go f
+  where
+	go ls = map commentOut ls
+	commentOut l
+		| (k ++ "=") `isPrefixOf` l = '#':l
+		| otherwise                 = l
