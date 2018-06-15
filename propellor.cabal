@@ -79,6 +79,7 @@ Library
     Propellor.Property.Dns
     Propellor.Property.DnsSec
     Propellor.Property.Docker
+    Propellor.Property.EtcDefault
     Propellor.Property.Fail2Ban
     Propellor.Property.File
     Propellor.Property.Firejail
