@@ -68,17 +68,9 @@ installed' grubtarget = setInfoProperty aptinstall
 -- >	& Grub.configured "GRUB_TIMEOUT" "10"
 -- >	& Grub.configured "GRUB_TERMINAL_INPUT" "console serial"
 configured :: String -> String -> Property DebianLike
-configured k v = ConfFile.adjustSection 
-	("grub configured with " ++ k ++ "=" ++ v)
-	isline
-	(not . isline)
-	(const [l])
-	(const [l])
-	simpleConfigFile
+configured k v = ConfFile.containsShellSetting simpleConfigFile (k, v)
+	`describe` ("grub configured with " ++ k ++ "=" ++ v)
 	`onChange` mkConfig
-  where
-	isline s = (k ++ "=") `isPrefixOf` s
-	l = k ++ "=" ++ shellEscape v
 
 simpleConfigFile :: FilePath
 simpleConfigFile = "/etc/default/grub"
