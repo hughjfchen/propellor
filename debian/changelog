@@ -4,6 +4,8 @@ propellor (5.4.1) UNRELEASED; urgency=medium
     compatability with ghc 7 is no longer needed.
   * Use git verify-commit to verify gpg signatures, rather than the old
     method of parsing git log output. Needs git 2.0.
+  * Added ConfFile.containsShellSetting, ConfFile.lacksShellSetting,
+    and EtcDefault.set properties. Thanks, Sean Whitton
 
  -- Joey Hess <id@joeyh.name>  Fri, 18 May 2018 10:25:05 -0400
 
