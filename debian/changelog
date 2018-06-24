@@ -6,6 +6,8 @@ propellor (5.4.1) UNRELEASED; urgency=medium
     method of parsing git log output. Needs git 2.0.
   * Added ConfFile.containsShellSetting, ConfFile.lacksShellSetting,
     and EtcDefault.set properties. Thanks, Sean Whitton
+  * Dns: Support TXT values longer than bind's maximum string length
+    of 255 bytes. Thanks, rsiddharth.
 
  -- Joey Hess <id@joeyh.name>  Fri, 18 May 2018 10:25:05 -0400
 
