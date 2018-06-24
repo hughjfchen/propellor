@@ -26,6 +26,7 @@ import Utility.Applicative
 
 import qualified Data.Map as M
 import qualified Data.Set as S
+import qualified Data.List.Split as Split (chunksOf)
 import Data.List
 
 -- | Primary dns server for a domain, using bind.
@@ -321,8 +322,15 @@ rValue (SSHFP x y s) = Just $ unwords
 	, s
 	]
 rValue (INCLUDE f) = Just f
-rValue (TXT s) = Just $ [q] ++ filter (/= q) s ++ [q]
+rValue (TXT s) = Just $ [op] ++ [w]
+	++ (intercalate "\n\t" $
+		map (\x -> [q] ++ filter (/= q) x ++ [q]) $
+		Split.chunksOf 255 s)
+	++ [w] ++ [cp]
   where
+	op = '('
+	cp = ')'
+	w = ' '
 	q = '"'
 rValue (PTR _) = Nothing
 
