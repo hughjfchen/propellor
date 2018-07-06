@@ -312,14 +312,14 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.oldUseNetServer hosts
 
 	& alias "ns4.kitenet.net"
-	& myDnsPrimary True "kitenet.net"
+	& myDnsPrimary "kitenet.net"
 		[ (RelDomain "mouse-onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
 		, (RelDomain "beaver-onion", CNAME $ AbsDomain "tl4xsvaxryjylgxs.onion")
 		, (RelDomain "peregrine-onion", CNAME $ AbsDomain "ahw47zqw6qszoufl.onion")
 		]
-	& myDnsPrimary True "joeyh.name" []
-	& myDnsPrimary True "ikiwiki.info" []
-	& myDnsPrimary True "olduse.net"
+	& myDnsPrimary "joeyh.name" []
+	& myDnsPrimary "ikiwiki.info" []
+	& myDnsPrimary "olduse.net"
 		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
 		]
 	& alias "ns4.branchable.com"
@@ -606,8 +606,8 @@ branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 -- Currently using kite (ns4) as primary with secondaries
 -- elephant (ns3) and gandi.
 -- kite handles all mail.
-myDnsPrimary :: Bool -> Domain -> [(BindDomain, Record)] -> RevertableProperty (HasInfo + DebianLike) DebianLike
-myDnsPrimary dnssec domain extras = (if dnssec then Dns.signedPrimary (Weekly Nothing) else Dns.primary) hosts domain
+myDnsPrimary :: Domain -> [(BindDomain, Record)] -> RevertableProperty (HasInfo + DebianLike) DebianLike
+myDnsPrimary domain extras = Dns.signedPrimary (Weekly Nothing) hosts domain
 	(Dns.mkSOA "ns4.kitenet.net" 100) $
 	[ (RootDomain, NS $ AbsDomain "ns4.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
@@ -616,7 +616,6 @@ myDnsPrimary dnssec domain extras = (if dnssec then Dns.signedPrimary (Weekly No
 	, (RootDomain, TXT "v=spf1 a a:kitenet.net ~all")
 	, JoeySites.domainKey
 	] ++ extras
-
 
 monsters :: [Host]    -- Systems I don't manage with propellor,
 monsters =            -- but do want to track their public keys etc.
