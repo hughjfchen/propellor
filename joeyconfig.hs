@@ -107,19 +107,11 @@ clam = host "clam.kitenet.net" $ props
 		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPhfvcOuw0Yt+MnsFc4TI2gWkKi62Eajxz+TgbHMO/uRTYF8c5V8fOI3o+J/3m5+lT0S5o8j8a7xIC3COvi+AVw=")
 		]
 	& Apt.unattendedUpgrades
-	& Systemd.persistentJournal
-	& Journald.systemMaxUse "50MiB"
 	& Apt.serviceInstalledRunning "swapspace"
 
 	& Tor.isRelay
 	& Tor.named "kite1"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
-
-	& Systemd.nspawned oldusenetShellBox
-
-	& JoeySites.scrollBox
-	& alias "scroll.joeyh.name"
-	& alias "us.scroll.joeyh.name"
 
 baleen :: Host
 baleen = host "baleen.kitenet.net" $ props
@@ -308,6 +300,11 @@ kite = host "kite.kitenet.net" $ props
 
 	& alias "nntp.olduse.net"
 	& JoeySites.oldUseNetServer hosts
+	& Systemd.nspawned oldusenetShellBox
+
+	& JoeySites.scrollBox
+	& alias "scroll.joeyh.name"
+	& alias "us.scroll.joeyh.name"
 
 	& alias "ns4.kitenet.net"
 	& myDnsPrimary "kitenet.net"
