@@ -323,11 +323,6 @@ rValue (SSHFP x y s) = Just $ unwords
 	]
 rValue (INCLUDE f) = Just f
 rValue (TXT s) = Just $ zoneFileString s
-  where
-	op = '('
-	cp = ')'
-	w = ' '
-	q = '"'
 rValue (PTR _) = Nothing
 
 -- Bind has a limit on the length of a string in its zone file,
