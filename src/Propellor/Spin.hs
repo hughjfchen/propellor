@@ -144,12 +144,8 @@ spin' mprivdata relay target hst = do
 -- the host in it at all, use one of the Host's IPs instead.
 getSshTarget :: HostName -> Host -> IO String
 getSshTarget target hst
-	| null configips = do
-		print "no configured IPs"
-		return target
-	| otherwise = do
-		print configips
-		go =<< tryIO (dnslookup target)
+	| null configips = return target
+	| otherwise = go =<< tryIO (dnslookup target)
   where
 	go (Left e) = useip (show e)
 	go (Right addrinfos) = do
