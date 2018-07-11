@@ -26,6 +26,7 @@ import Utility.Applicative
 
 import qualified Data.Map as M
 import qualified Data.Set as S
+import qualified Data.List.Split as Split (chunksOf)
 import Data.List
 
 -- | Primary dns server for a domain, using bind.
@@ -321,10 +322,32 @@ rValue (SSHFP x y s) = Just $ unwords
 	, s
 	]
 rValue (INCLUDE f) = Just f
-rValue (TXT s) = Just $ [q] ++ filter (/= q) s ++ [q]
+rValue (TXT s) = Just $ zoneFileString s
   where
+	op = '('
+	cp = ')'
+	w = ' '
 	q = '"'
 rValue (PTR _) = Nothing
+
+-- Bind has a limit on the length of a string in its zone file,
+-- but a string can be split into sections that are glued together
+-- inside parens to configure a longer value.
+--
+-- This adds quotes around each substring.
+zoneFileString :: String -> String
+zoneFileString s = concat
+	[ [op, w]
+	, (intercalate "\n\t" $
+		map (\x -> [q] ++ filter (/= q) x ++ [q]) $
+		Split.chunksOf 255 s)
+	, [w, cp]
+	]
+  where
+	op = '('
+	cp = ')'
+	w = ' '
+	q = '"'
 
 -- | Adjusts the serial number of the zone to always be larger
 -- than the serial number in the Zone record,
