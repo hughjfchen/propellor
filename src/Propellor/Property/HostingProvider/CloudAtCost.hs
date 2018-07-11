@@ -1,4 +1,8 @@
-module Propellor.Property.HostingProvider.CloudAtCost where
+-- | Maintainer: currently unmaintained; your name here!
+
+module Propellor.Property.HostingProvider.CloudAtCost
+	{-# WARNING "This module does not have a maintainer. It might not work right anymore. If you use it, please consider becoming its maintainer." #-}
+	where
 
 import Propellor.Base
 import qualified Propellor.Property.Hostname as Hostname

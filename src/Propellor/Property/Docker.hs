@@ -1,11 +1,14 @@
 {-# LANGUAGE FlexibleContexts, TypeSynonymInstances, FlexibleInstances, TypeFamilies #-}
 
--- | Docker support for propellor
+-- | Maintainer: currently unmaintained; your name here!
+--
+-- Docker support for propellor
 --
 -- The existance of a docker container is just another Property of a system,
 -- which propellor can set up. See config.hs for an example.
 
-module Propellor.Property.Docker (
+module Propellor.Property.Docker
+	{-# WARNING "This module does not have a maintainer. It might not work right anymore. If you use it, please consider becoming its maintainer." #-} (
 	-- * Host properties
 	installed,
 	configured,
