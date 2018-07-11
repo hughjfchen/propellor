@@ -112,6 +112,14 @@ clam = host "clam.kitenet.net" $ props
 	& Tor.isRelay
 	& Tor.named "kite1"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
+	
+	& "/etc/resolv.conf" `File.hasContent`
+		[ "nameserver 8.8.8.8"
+		, "nameserver 8.8.4.4"
+		, "nameserver 1.1.1.1"
+		, "domain kitenet.net"
+		, "search kitenet.net"
+		]
 
 baleen :: Host
 baleen = host "baleen.kitenet.net" $ props
