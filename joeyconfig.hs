@@ -183,8 +183,6 @@ honeybee = host "honeybee.kitenet.net" $ props
 			`setSize` MegaBytes 8000
 		)
 	& JoeySites.cubieTruckOneWire
-	& Apt.installed ["i2c-tools"]
-	& User "joey" `hasGroup` Group "i2c"
 	
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056

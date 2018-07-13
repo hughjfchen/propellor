@@ -932,6 +932,9 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	& User.hasGroup user (Group "dialout")
 	& Group.exists (Group "gpio") Nothing
 	& User.hasGroup user (Group "gpio")
+	& Apt.installed ["i2c-tools"]
+	& User.hasGroup user (Group "i2c")
+	& "/etc/modules-load.d/homepower.conf" `File.hasContent` ["i2c-dev"]
 	& Cron.niceJob "homepower upload"
 		(Cron.Times "1 * * * *") user d rsynccommand
 		`requires` Ssh.userKeyAt (Just sshkeyfile) user ctx sshkey
