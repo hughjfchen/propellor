@@ -958,6 +958,7 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 			, "libghc-wai-dev"
 			, "libghc-warp-dev"
 			, "libghc-http-client-dev"
+			, "libghc-http-client-tls-dev"
 			, "libghc-reactive-banana-dev"
 			, "libghc-hinotify-dev"
 			]
