@@ -10,9 +10,9 @@ so is `debootstrapTheChrootAndPackIntoQcow2File`,
 so to check if the disk image exists, you'll instead
 want to use the `check` combinator. Something like:
 
-	& check (doesFileExist "/path/to/image.qcow2")
-		debootstrapTheChrootAndPackIntoQcow2File theHost
 	& check (not <$> doesFileExist "/path/to/image.qcow2")
+		debootstrapTheChrootAndPackIntoQcow2File theHost
+	& check (doesFileExist "/path/to/image.qcow2")
 		conducts [theHost] `requires` KVM.booted theHost
 
 Perhaps the redundancy in that can be reduced with a new combinator
