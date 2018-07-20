@@ -33,7 +33,6 @@ import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.Laptop as Laptop
-import qualified Propellor.Property.HostingProvider.CloudAtCost as CloudAtCost
 import qualified Propellor.Property.HostingProvider.Linode as Linode
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
@@ -97,11 +96,10 @@ dragon = host "dragon.kitenet.net" $ props
 
 clam :: Host
 clam = host "clam.kitenet.net" $ props
-	& standardSystem Unstable X86_64
+	& standardSystem (Stable "stretch") X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "64.137.164.186"
+	& ipv4 "167.114.76.178"
 
-	& CloudAtCost.decruft
 	& User.hasPassword (User "root")
 	& Ssh.hostKeys hostContext
 		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBAI3WUq0RaigLlcUivgNG4sXpso2ORZkMvfqKz6zkc60L6dpxvWDNmZVEH8hEjxRSYG07NehcuOgQqeyFnS++xw1hdeGjf37JqCUH49i02lra3Zxv8oPpRxyeqe5MmuzUJhlWvBdlc3O/nqZ4bTUfnxMzSYWyy6++s/BpSHttZplNAAAAFQC1DE0vzgVeNAv9smHLObQWZFe2VQAAAIBECtpJry3GC8NVTFsTHDGWksluoFPIbKiZUFFztZGdM0AO2VwAbiJ6Au6M3VddGFANgTlni6d2/9yS919zO90TaFoIjywZeXhxE2CSuRfU7sx2hqDBk73jlycem/ER0sanFhzpHVpwmLfWneTXImWyq37vhAxatJANOtbj81vQ3AAAAIBV3lcyTT9xWg1Q4vERJbvyF8mCliwZmnIPa7ohveKkxlcgUk5d6dnaqFfjVaiXBPN3Qd08WXoQ/a9k3chBPT9nW2vWgzzM8l36j2MbHLmaxGwevAc9+vx4MXqvnGHzd2ex950mC33ct3j0fzMZlO6vqEsgD4CYmiASxhfefj+JCQ==")
@@ -109,19 +107,19 @@ clam = host "clam.kitenet.net" $ props
 		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPhfvcOuw0Yt+MnsFc4TI2gWkKi62Eajxz+TgbHMO/uRTYF8c5V8fOI3o+J/3m5+lT0S5o8j8a7xIC3COvi+AVw=")
 		]
 	& Apt.unattendedUpgrades
-	& Systemd.persistentJournal
-	& Journald.systemMaxUse "50MiB"
 	& Apt.serviceInstalledRunning "swapspace"
 
 	& Tor.isRelay
 	& Tor.named "kite1"
 	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
-
-	& Systemd.nspawned oldusenetShellBox
-
-	& JoeySites.scrollBox
-	& alias "scroll.joeyh.name"
-	& alias "us.scroll.joeyh.name"
+	
+	& "/etc/resolv.conf" `File.hasContent`
+		[ "nameserver 8.8.8.8"
+		, "nameserver 8.8.4.4"
+		, "nameserver 1.1.1.1"
+		, "domain kitenet.net"
+		, "search kitenet.net"
+		]
 
 baleen :: Host
 baleen = host "baleen.kitenet.net" $ props
@@ -185,7 +183,6 @@ honeybee = host "honeybee.kitenet.net" $ props
 			`setSize` MegaBytes 8000
 		)
 	& JoeySites.cubieTruckOneWire
-	& Apt.installed ["i2c-tools"]
 	
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
@@ -310,6 +307,11 @@ kite = host "kite.kitenet.net" $ props
 
 	& alias "nntp.olduse.net"
 	& JoeySites.oldUseNetServer hosts
+	& Systemd.nspawned oldusenetShellBox
+
+	& JoeySites.scrollBox
+	& alias "scroll.joeyh.name"
+	& alias "us.scroll.joeyh.name"
 
 	& alias "ns4.kitenet.net"
 	& myDnsPrimary "kitenet.net"
@@ -581,9 +583,6 @@ standardSystemUnhardened suite arch motd = propertyList "standard system" $ prop
 	-- I use postfix, or no MTA.
 	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
 		`onChange` Apt.autoRemove
-	-- At least until system integration catches up, revert
-	-- systemd 230's behavior of enabling this property by default.
-	! Systemd.killUserProcesses
 
 -- This is my standard container setup, Featuring automatic upgrades.
 standardContainer :: DebianSuite -> Property (HasInfo + Debian)

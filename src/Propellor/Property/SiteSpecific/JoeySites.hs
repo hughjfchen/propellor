@@ -932,6 +932,9 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	& User.hasGroup user (Group "dialout")
 	& Group.exists (Group "gpio") Nothing
 	& User.hasGroup user (Group "gpio")
+	& Apt.installed ["i2c-tools"]
+	& User.hasGroup user (Group "i2c")
+	& "/etc/modules-load.d/homepower.conf" `File.hasContent` ["i2c-dev"]
 	& Cron.niceJob "homepower upload"
 		(Cron.Times "1 * * * *") user d rsynccommand
 		`requires` Ssh.userKeyAt (Just sshkeyfile) user ctx sshkey
@@ -958,6 +961,7 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 			, "libghc-wai-dev"
 			, "libghc-warp-dev"
 			, "libghc-http-client-dev"
+			, "libghc-http-client-tls-dev"
 			, "libghc-reactive-banana-dev"
 			, "libghc-hinotify-dev"
 			]
@@ -1123,7 +1127,8 @@ laptopSoftware = Apt.installed
 	, "procmeter3", "xfce4", "procmeter3", "unclutter"
 	, "mplayer", "fbreader", "firefox", "chromium"
 	, "libdatetime-event-sunrise-perl", "libtime-duration-perl"
-	, "network-manager", "gtk-redshift", "powertop"
+	, "network-manager", "network-manager-openvpn-gnome", "openvpn"
+	, "gtk-redshift", "powertop"
 	, "gimp", "gthumb", "inkscape", "sozi", "xzgv", "hugin"
 	, "mpc", "mpd", "ncmpc", "sonata", "mpdtoys"
 	, "bsdgames", "nethack-console"
