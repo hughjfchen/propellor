@@ -570,6 +570,13 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		, "smtp_tls_loglevel = 1"
 		, "smtp_use_tls = yes"
 		, "smtp_tls_session_cache_database = sdbm:/etc/postfix/smtp_scache"
+
+		, "# Allow larger attachments, up to 200 mb."
+		, "# (Avoid setting too high; the postfix queue must have"
+		, "# 1.5 times this much space free, or postfix will reject"
+		, "# ALL mail!)"
+		, "message_size_limit = 204800000"
+		, "virtual_mailbox_limit = 20480000"
 		]
 		`onChange` Postfix.dedupMainCf
 		`onChange` Postfix.reloaded
