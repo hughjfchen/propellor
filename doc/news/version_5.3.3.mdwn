@@ -1,8 +1,0 @@
-propellor 5.3.3 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Warn again about new upstream version when ~/.propellor was cloned from the
-     Debian git bundle using an older version of propellor that set up an
-     upstream remote.
-   * Avoid crashing if initial fetch from origin fails when spinning a host.
-   * Added Propllor.Property.Openssl module contributed by contributed by
-     Félix Sipma."""]]
