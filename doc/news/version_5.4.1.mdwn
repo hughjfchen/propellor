@@ -1,0 +1,14 @@
+propellor 5.4.1 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Modernized and simplified the MetaTypes implementation now that
+     compatability with ghc 7 is no longer needed.
+   * Use git verify-commit to verify gpg signatures, rather than the old
+     method of parsing git log output. Needs git 2.0.
+   * Added ConfFile.containsShellSetting, ConfFile.lacksShellSetting,
+     and EtcDefault.set properties. Thanks, Sean Whitton
+   * Dns: Support TXT values longer than bind's maximum string length
+     of 255 bytes. Thanks, rsiddharth.
+   * Docker and HostingProvider.CloudAtCost modules are not being
+     maintained, so marked them as such.
+     Seeking a maintainer for the Docker module; I anticipate
+     removing the CloudAtCost module in the next API bump."""]]
