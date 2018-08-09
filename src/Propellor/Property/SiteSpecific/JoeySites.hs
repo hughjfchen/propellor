@@ -1140,7 +1140,7 @@ laptopSoftware = Apt.installed
 	, "mpc", "mpd", "ncmpc", "sonata", "mpdtoys"
 	, "bsdgames", "nethack-console"
 	, "xmonad", "libghc-xmonad-dev", "libghc-xmonad-contrib-dev"
-	, "ttf-bitstream-vera"
+	, "ttf-bitstream-vera", "fonts-symbola", "fonts-noto-color-emoji"
 	, "mairix", "offlineimap", "mutt", "slrn"
 	, "mtr", "nmap", "whois", "wireshark", "tcpdump", "iftop"
 	, "pmount", "tree", "pv"
