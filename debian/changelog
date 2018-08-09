@@ -1,3 +1,9 @@
+propellor (5.4.2) UNRELEASED; urgency=medium
+
+  * letsencrypt': Pass --expand to support expanding the list of domains
+
+ -- Joey Hess <id@joeyh.name>  Thu, 09 Aug 2018 10:54:41 -0400
+
 propellor (5.4.1) unstable; urgency=medium
 
   * Modernized and simplified the MetaTypes implementation now that
