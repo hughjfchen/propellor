@@ -13,6 +13,7 @@ import qualified Propellor.Property.User as User
 decruft :: Property DebianLike
 decruft = propertyList "cloudatcost cleanup" $ props
 	& Hostname.sane
+	& Hostname.mailname
 	& grubbugfix
 	& nukecruft
   where

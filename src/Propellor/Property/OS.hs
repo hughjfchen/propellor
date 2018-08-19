@@ -58,6 +58,7 @@ import Control.Exception (throw)
 -- >        -- , oldOsRemoved (Confirmed "foo.example.com")
 -- >        ]
 -- > & Hostname.sane
+-- > & Hostname.mailname
 -- > & Apt.installed ["linux-image-amd64"]
 -- > & Apt.installed ["ssh"]
 -- > & User.hasSomePassword "root"

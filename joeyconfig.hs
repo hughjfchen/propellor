@@ -66,6 +66,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& osDebian Unstable X86_64
 	& ipv6 "2001:4830:1600:187::2"
 	& Hostname.sane
+	& Hostname.mailname
 	& Apt.serviceInstalledRunning "swapspace"
 	& Laptop.powertopAutoTuneOnBoot
 	& Laptop.trimSSD
@@ -461,6 +462,7 @@ keysafe :: Host
 keysafe = host "keysafe.joeyh.name" $ props
 	& ipv4 "139.59.17.168"
 	& Hostname.sane
+	& Hostname.mailname
 	& osDebian (Stable "stretch") X86_64
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.unattendedUpgrades
@@ -565,6 +567,7 @@ standardSystemUnhardened :: DebianSuite -> Architecture -> Motd -> Property (Has
 standardSystemUnhardened suite arch motd = propertyList "standard system" $ props
 	& osDebian suite arch
 	& Hostname.sane
+	& Hostname.mailname
 	& Hostname.searchDomain
 	& Locale.available "en_US.UTF-8"
 	& File.hasContent "/etc/motd" ("":motd++[""])
