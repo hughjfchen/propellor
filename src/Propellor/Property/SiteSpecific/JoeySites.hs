@@ -1285,7 +1285,7 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 	& Systemd.enabled automount
 	& Systemd.started automount
 	& Sudo.sudoersDFile ("automount-" ++ label)
-		[ "%joey ALL= NOPASSWD: " ++ sudocommands
+		[ "joey ALL= NOPASSWD: " ++ sudocommands
 		]
   where
 	mountpoint = "/media/joey/" ++ label
