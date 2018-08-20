@@ -473,4 +473,4 @@ escapePath = concatMap escape
 	escape '/' = "-"
 	escape c
 		| ((isAscii c && isAlphaNum c) || c == '_') = [c]
-		| otherwise = '\\' : printf "%x" c
+		| otherwise = '\\' : 'x' : printf "%x" c
