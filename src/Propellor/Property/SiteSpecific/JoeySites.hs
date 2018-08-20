@@ -16,6 +16,7 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Group as Group
+import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
@@ -1232,7 +1233,7 @@ newtype USBHubPort = USBHubPort Int
 --
 -- The hub port is turned on and off automatically as needed, using
 -- uhubctl.
-autoMountDrive :: Mount.Label -> USBHubPort -> Maybe FilePath -> Property Linux
+autoMountDrive :: Mount.Label -> USBHubPort -> Maybe FilePath -> Property DebianLike
 autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 	& File.ownerGroup mountpoint (User "joey") (Group "joey")
 	& File.dirExists mountpoint
@@ -1283,6 +1284,9 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		`onChange` Systemd.daemonReloaded
 	& Systemd.enabled automount
 	& Systemd.started automount
+	& Sudo.sudoersDFile ("automount-" ++ label)
+		[ "%joey ALL= NOPASSWD: " ++ sudocommands
+		]
   where
 	mountpoint = "/media/joey/" ++ label
 	desc = "auto mount " ++ mountpoint
@@ -1290,3 +1294,7 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 	automount = svcbase ++ ".automount"
 	mount = svcbase ++ ".mount"
 	svcbase = Systemd.escapePath mountpoint
+	sudocommands = intercalate " , " $ map (\c -> "/bin/systemctl " ++ c)
+		[ "stop " ++ mountpoint
+		, "start " ++ mountpoint
+		]
