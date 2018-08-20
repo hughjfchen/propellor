@@ -1242,7 +1242,9 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		, "Requires=" ++ hub
 		, "After=" ++ hub
 		, "[Mount]"
-		, "Type=auto"
+		-- avoid mounting whenever the block device is available,
+		-- only want to automount on deman
+		, "Options=noauto"
 		, "What=/dev/disk/by-label/" ++ label
 		, "Where=" ++ mountpoint
 		, "[Install]"
