@@ -23,6 +23,7 @@ import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Network as Network
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
+import qualified Propellor.Property.Mount as Mount
 import Utility.FileMode
 import Utility.Split
 
@@ -1209,3 +1210,68 @@ cubieTruckOneWire =
 		, "\t};"
 		, "};"
 		]
+
+-- My home networked attached storage server.
+homeNAS :: Property DebianLike
+homeNAS = propertyList "home NAS" $ props
+	& autoMountDrive "archive-10" (USBHubPort 1)
+	& autoMountDrive "archive-11" (USBHubPort 2)
+	& autoMountDrive "archive-12" (USBHubPort 3)
+	& autoMountDrive "passport" (USBHubPort 4)
+	& Apt.installed ["git-annex", "borgbackup"]
+
+newtype USBHubPort = USBHubPort Int
+
+-- Makes a USB drive with the given label automount, with a 10 minute idle
+-- timeout before it unmounts.
+--
+-- The hub port is turned on and off automatically as needed, using
+-- uhubctl.
+autoMountDrive :: Mount.Label -> USBHubPort -> Property DebianLike
+autoMountDrive label (USBHubPort port) = propertyList desc $ props
+	& Apt.installed ["uhubctl"]
+	& File.ownerGroup mountpoint (User "joey") (Group "joey")
+	& File.dirExists mountpoint
+	& File.hasContent ("/etc/systemd/system/" ++ automount)
+		[ "[Unit]"
+		, "Description=Automount " ++ label
+		, "[Automount]"
+		, "Where=" ++ mountpoint
+		, "TimeoutIdleSec=600"
+		, "[Install]"
+		, "WantedBy=multi-user.target"
+		]
+	& File.hasContent ("/etc/systemd/system/" ++ mount)
+		[ "[Unit]"
+		, "Description=Mount " ++ label
+		, "Requires=" ++ hub
+		, "After=" ++ hub
+		, "[Mount]"
+		, "Type=auto"
+		, "What=/dev/disk/by-label/" ++ label
+		, "Where=" ++ mountpoint
+		, "[Install]"
+		, "WantedBy="
+		]
+	& File.hasContent ("/etc/systemd/system/" ++ hub)
+		[ "[Unit]"
+		, "Description=Startech usb hub port " ++ show port
+		, "PartOf=" ++ mount
+		, "[Service]"
+		, "Type=oneshot"
+		, "ExecStart=/usr/sbin/uhubctl -a on -p " ++ show port ++ 
+			-- short sleep to give the drive time to wake up before
+			-- it is mounted
+			" ; /bin/sleep 20"
+		, "RemainAfterExit=true"
+		, "ExecStop=/usr/sbin/uhubctl -a off -p " ++ show port
+		, "[Install]"
+		, "WantedBy="
+		]
+  where
+	desc = "auto mount drive " ++ label
+	hub = "startech-hub-port-" ++ show port ++ ".service"
+	automount = svcbase ++ ".automount"
+	mount = svcbase ++ ".mount"
+	svcbase = Systemd.escapePath mountpoint
+	mountpoint = "/media/joey/" ++ label
