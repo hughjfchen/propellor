@@ -1233,8 +1233,8 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 	& File.ownerGroup mountpoint (User "joey") (Group "joey")
 	& File.dirExists mountpoint
 	& case malias of
-		Just t -> mountpoint `File.isSymlinkedTo`
-			File.LinkTarget ("/media/joey/" ++ t)
+		Just t -> ("/media/joey/" ++ t) `File.isSymlinkedTo`
+			File.LinkTarget mountpoint
 		Nothing -> doNothing <!> doNothing
 	& File.hasContent ("/etc/systemd/system/" ++ mount)
 		[ "[Unit]"
