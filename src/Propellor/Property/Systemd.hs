@@ -13,6 +13,7 @@ module Propellor.Property.Systemd (
 	networkd,
 	journald,
 	logind,
+	escapePath,
 	-- * Configuration
 	installed,
 	Option,
@@ -58,7 +59,9 @@ import Utility.FileMode
 import Utility.Split
 
 import Data.List
+import Data.Char
 import qualified Data.Map as M
+import Text.Printf
 
 type ServiceName = String
 
@@ -459,3 +462,15 @@ bind p = containerCfg $ "--bind=" ++ toBind p
 -- | Read-only mind mount.
 bindRo :: Bindable p => p -> RevertableProperty (HasInfo + Linux) (HasInfo + Linux)
 bindRo p = containerCfg $ "--bind-ro=" ++ toBind p
+
+-- | Escapes a path for inclusion in a systemd unit name,
+-- the same as systemd-escape does.
+escapePath :: FilePath -> String
+escapePath = concatMap escape 
+	. dropWhile (== '/')
+	. reverse . dropWhile (== '/') . reverse
+  where
+	escape '/' = "-"
+	escape c
+		| (isAscii c || c == '_') = [c]
+		| otherwise = '\\' : printf "%x" c
