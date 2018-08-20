@@ -1238,7 +1238,7 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		Nothing -> doNothing <!> doNothing
 	& File.hasContent ("/etc/systemd/system/" ++ mount)
 		[ "[Unit]"
-		, "Description=Mount " ++ label
+		, "Description=" ++ label
 		, "Requires=" ++ hub
 		, "After=" ++ hub
 		, "[Mount]"
