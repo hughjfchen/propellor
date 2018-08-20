@@ -5,6 +5,7 @@ propellor (5.5.0) UNRELEASED; urgency=medium
     guesses can lead to ugly surprises. (API change)
   * Added Systemd.escapePath helper function useful when creating mount
     units.
+  * Added Sudo.sudoersDFile property.
 
  -- Joey Hess <id@joeyh.name>  Thu, 09 Aug 2018 10:54:41 -0400
 

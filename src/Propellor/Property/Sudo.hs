@@ -41,3 +41,15 @@ enabledFor user@(User u) = setup `requires` Apt.installed ["sudo"] <!> cleanup
 	modify locked ls
 		| sudoline locked `elem` ls = ls
 		| otherwise = ls ++ [sudoline locked]
+
+-- | Sets up a file in /etc/sudoers.d/, which /etc/sudoers includes,
+-- with the specified content.
+--
+-- The FilePath can be relative to that directory.
+sudoersDFile :: FilePath -> [Line] -> RevertableProperty DebianLike Linux
+sudoersDFile dfile content = setup `requires` Apt.installed ["sudo"] <!> cleanup
+  where
+	f = "/etc/sudoers.d" </> dfile
+	-- sudoers.d files should not be world readable
+	setup = hasContentProtected f content
+	cleanup = tightenTargets $ notPresent f
