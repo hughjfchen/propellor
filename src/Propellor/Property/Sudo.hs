@@ -34,7 +34,7 @@ enabledFor user@(User u) = setup `requires` Apt.installed ["sudo"] <!> cleanup
 	sudoline True = sudobaseline ++ " NOPASSWD:ALL"
 	sudoline False = sudobaseline ++ " ALL"
 	wanted locked l
-		-- TOOD: Full sudoers file format parse.. 
+		-- TODO: Full sudoers file format parse.. 
 		| notuserline l = True
 		| "NOPASSWD" `isInfixOf` l = locked
 		| otherwise = True
