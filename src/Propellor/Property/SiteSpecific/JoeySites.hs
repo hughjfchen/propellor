@@ -1214,9 +1214,9 @@ cubieTruckOneWire =
 -- My home networked attached storage server.
 homeNAS :: Property DebianLike
 homeNAS = propertyList "home NAS" $ props
-	& autoMountDrive "archive-10" (USBHubPort 1) (Just "archive")
+	& autoMountDrive "archive-10" (USBHubPort 1) (Just "archive-older")
 	& autoMountDrive "archive-11" (USBHubPort 2) (Just "archive-old")
-	& autoMountDrive "archive-12" (USBHubPort 3) (Just "archive-older")
+	& autoMountDrive "archive-12" (USBHubPort 3) (Just "archive")
 	& autoMountDrive "passport" (USBHubPort 4) Nothing
 	& Apt.installed ["git-annex", "borgbackup"]
 
