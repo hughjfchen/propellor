@@ -3,6 +3,9 @@ propellor (5.5.0) UNRELEASED; urgency=medium
   * letsencrypt': Pass --expand to support expanding the list of domains
   * Split mailname property out of Hostname.sane, since bad mailname
     guesses can lead to ugly surprises. (API change)
+  * Removed HostingProvider.CloudatCost module as it lacks a maintainer.
+    (If anyone would like to maintain it, send a patch adding it back.)
+    (API change)
   * Added Systemd.escapePath helper function useful when creating mount
     units.
   * Added Sudo.sudoersDFile property.
