@@ -81,7 +81,7 @@ Sending privdata (73139 bytes) to kite.kitenet.net ... done
 [2017-06-18 16:31:16 EDT] received marked GITPUSH
 [2017-06-18 16:31:16 EDT] command line:  GitPush 11 12
 16:31:16.361717 pkt-line.c:80           packet:        fetch< 17abde8439d17d49676f549f357f45eb2adce868 refs/remotes/db48x/master
-<pre>
+</pre>
 
 > > So there's an actual protocol error here; the first 13 lines
 > > of git protocol were not sent.
