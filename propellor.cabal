@@ -144,7 +144,6 @@ Library
     Propellor.Property.ZFS
     Propellor.Property.ZFS.Process
     Propellor.Property.ZFS.Properties
-    Propellor.Property.HostingProvider.CloudAtCost
     Propellor.Property.HostingProvider.DigitalOcean
     Propellor.Property.HostingProvider.Exoscale
     Propellor.Property.HostingProvider.Linode

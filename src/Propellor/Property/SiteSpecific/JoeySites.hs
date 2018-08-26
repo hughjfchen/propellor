@@ -16,6 +16,7 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Group as Group
+import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Apache as Apache
 import qualified Propellor.Property.Postfix as Postfix
@@ -1214,9 +1215,14 @@ cubieTruckOneWire =
 -- My home networked attached storage server.
 homeNAS :: Property DebianLike
 homeNAS = propertyList "home NAS" $ props
-	& autoMountDrive "archive-10" (USBHubPort 1) (Just "archive")
+	& Apt.installed ["uhubctl"]
+	& "/etc/udev/rules.d/52-startech-hub.rules" `File.hasContent`
+		[ "# let users power control startech hub with uhubctl"
+		, "ATTR{idVendor}==\"0409\", ATTR{idProduct}==\"005a\", MODE=\"0666\""
+		]
+	& autoMountDrive "archive-10" (USBHubPort 1) (Just "archive-older")
 	& autoMountDrive "archive-11" (USBHubPort 2) (Just "archive-old")
-	& autoMountDrive "archive-12" (USBHubPort 3) (Just "archive-older")
+	& autoMountDrive "archive-12" (USBHubPort 3) (Just "archive")
 	& autoMountDrive "passport" (USBHubPort 4) Nothing
 	& Apt.installed ["git-annex", "borgbackup"]
 
@@ -1229,7 +1235,6 @@ newtype USBHubPort = USBHubPort Int
 -- uhubctl.
 autoMountDrive :: Mount.Label -> USBHubPort -> Maybe FilePath -> Property DebianLike
 autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
-	& Apt.installed ["uhubctl"]
 	& File.ownerGroup mountpoint (User "joey") (Group "joey")
 	& File.dirExists mountpoint
 	& case malias of
@@ -1238,11 +1243,13 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		Nothing -> doNothing <!> doNothing
 	& File.hasContent ("/etc/systemd/system/" ++ mount)
 		[ "[Unit]"
-		, "Description=Mount " ++ label
+		, "Description=" ++ label
 		, "Requires=" ++ hub
 		, "After=" ++ hub
 		, "[Mount]"
-		, "Type=auto"
+		-- avoid mounting whenever the block device is available,
+		-- only want to automount on deman
+		, "Options=noauto"
 		, "What=/dev/disk/by-label/" ++ label
 		, "Where=" ++ mountpoint
 		, "[Install]"
@@ -1277,6 +1284,9 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		`onChange` Systemd.daemonReloaded
 	& Systemd.enabled automount
 	& Systemd.started automount
+	& Sudo.sudoersDFile ("automount-" ++ label)
+		[ "joey ALL= NOPASSWD: " ++ sudocommands
+		]
   where
 	mountpoint = "/media/joey/" ++ label
 	desc = "auto mount " ++ mountpoint
@@ -1284,3 +1294,7 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 	automount = svcbase ++ ".automount"
 	mount = svcbase ++ ".mount"
 	svcbase = Systemd.escapePath mountpoint
+	sudocommands = intercalate " , " $ map (\c -> "/bin/systemctl " ++ c)
+		[ "stop " ++ mountpoint
+		, "start " ++ mountpoint
+		]
