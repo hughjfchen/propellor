@@ -1277,7 +1277,7 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		, "Description=Automount " ++ label
 		, "[Automount]"
 		, "Where=" ++ mountpoint
-		, "TimeoutIdleSec=600"
+		, "TimeoutIdleSec=300"
 		, "[Install]"
 		, "WantedBy=multi-user.target"
 		]
