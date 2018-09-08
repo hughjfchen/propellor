@@ -82,9 +82,9 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Ssh.userKeys (User "joey") hostContext
 		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICfFntnesZcYz2B2T41ay45igfckXRSh5uVffkuCQkLv joey@darkstar")
 		]
-	-- & imageBuiltFor honeybee
-	--	(RawDiskImage "/srv/honeybee.img")
-	--	(Debootstrapped mempty)
+	& imageBuiltFor honeybee
+		(RawDiskImage "/srv/honeybee.img")
+		(Debootstrapped mempty)
 	& imageBuiltFor banana
 		(RawDiskImage "/srv/banana.img")
 		(Debootstrapped mempty)
