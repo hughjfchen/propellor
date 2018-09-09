@@ -1182,17 +1182,20 @@ devSoftware = Apt.installed
 	]
 
 cubieTruckOneWire :: Property DebianLike
-cubieTruckOneWire = dtsinstalled
-	`onChange` utilitysetup
+cubieTruckOneWire = utilitysetup
+	`requires` dtsinstalled
 	`requires` utilityinstalled
   where
 	dtsinstalled = File.hasContent "/etc/easy-peasy-devicetree-squeezy/my.dts" mydts
 		`requires` File.dirExists "/etc/easy-peasy-devicetree-squeezy"
 	utilityinstalled = Git.cloned (User "root") "https://git.joeyh.name/git/easy-peasy-devicetree-squeezy.git" "/usr/local/easy-peasy-devicetree-squeezy" Nothing
 		`onChange` File.isSymlinkedTo "/usr/local/bin/easy-peasy-devicetree-squeezy" (File.LinkTarget "/usr/local/easy-peasy-devicetree-squeezy/easy-peasy-devicetree-squeezy")
-	utilitysetup = cmdProperty "easy-peasy-devicetree-squeezy"
-		["--debian", "sun7i-a20-cubietruck"]
-		`assume` MadeChange
+		`requires` Apt.installed ["pv", "device-tree-compiler", "cpp", "linux-source"]
+	utilitysetup = check (not <$> doesFileExist dtb) $ 
+		cmdProperty "easy-peasy-devicetree-squeezy"
+			["--debian", "sun7i-a20-cubietruck"]
+			`assume` MadeChange
+	dtb = "/etc/flash-kernel/dtbs/sun7i-a20-cubietruck.dtb"
 	mydts =
 		[ "/* Device tree addition enabling onewire sensors on CubieTruck GPIO pin PC21 */"
 		, "#include <dt-bindings/gpio/gpio.h>"
