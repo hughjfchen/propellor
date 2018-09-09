@@ -85,7 +85,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& imageBuiltFor honeybee
 		(RawDiskImage "/srv/honeybee.img")
 		(Debootstrapped mempty)
-	& imageBuiltFor banana
+	! imageBuiltFor banana
 		(RawDiskImage "/srv/banana.img")
 		(Debootstrapped mempty)
 

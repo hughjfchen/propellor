@@ -1103,7 +1103,7 @@ homeRouter = propertyList "home router" $ props
 			]
 		`before` File.hasPrivContent "/etc/ppp/pap-secrets" (Context "joeyh@arczip.com")
 
--- | Enable IP masqerading, on whatever other interfaces come up than the
+-- | Enable IP masqerading, on whatever other interfaces come up, besides the
 -- provided intif.
 ipmasq :: String -> Property DebianLike
 ipmasq intif = File.hasContent ifupscript
@@ -1119,6 +1119,7 @@ ipmasq intif = File.hasContent ifupscript
 	, "echo 1 > /proc/sys/net/ipv4/ip_forward"
 	]
 	`before` scriptmode ifupscript
+	`before` File.dirExists (takeDirectory pppupscript)
 	`before` File.hasContent pppupscript
 		[ "#!/bin/sh"
 		, "IFACE=$PPP_IFACE " ++ ifupscript
@@ -1181,11 +1182,12 @@ devSoftware = Apt.installed
 	]
 
 cubieTruckOneWire :: Property DebianLike
-cubieTruckOneWire = 
-	File.hasContent "/etc/easy-peasy-devicetree-squeezy/my.dts" mydts
-		`onChange` utilitysetup
-		`requires` utilityinstalled
+cubieTruckOneWire = dtsinstalled
+	`onChange` utilitysetup
+	`requires` utilityinstalled
   where
+	dtsinstalled = File.hasContent "/etc/easy-peasy-devicetree-squeezy/my.dts" mydts
+		`requires` File.dirExists "/etc/easy-peasy-devicetree-squeezy"
 	utilityinstalled = Git.cloned (User "root") "https://git.joeyh.name/git/easy-peasy-devicetree-squeezy.git" "/usr/local/easy-peasy-devicetree-squeezy" Nothing
 		`onChange` File.isSymlinkedTo "/usr/local/bin/easy-peasy-devicetree-squeezy" (File.LinkTarget "/usr/local/easy-peasy-devicetree-squeezy/easy-peasy-devicetree-squeezy")
 	utilitysetup = cmdProperty "easy-peasy-devicetree-squeezy"
@@ -1236,7 +1238,7 @@ newtype USBHubPort = USBHubPort Int
 autoMountDrive :: Mount.Label -> USBHubPort -> Maybe FilePath -> Property DebianLike
 autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 	& File.ownerGroup mountpoint (User "joey") (Group "joey")
-	& File.dirExists mountpoint
+		`requires` File.dirExists mountpoint
 	& case malias of
 		Just t -> ("/media/joey/" ++ t) `File.isSymlinkedTo`
 			File.LinkTarget mountpoint
