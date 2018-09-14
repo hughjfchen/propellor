@@ -1061,6 +1061,7 @@ homeRouter = propertyList "home router" $ props
 		`requires` File.hasContent "/etc/default/hostapd"
 			[ "DAEMON_CONF=/etc/hostapd/hostapd.conf" ]
 		`onChange` Service.running "hostapd"
+	& Systemd.enabled "hostapd"
 	& File.hasContent "/etc/resolv.conf"
 		[ "domain kitenet.net"
 		, "search kitenet.net"
