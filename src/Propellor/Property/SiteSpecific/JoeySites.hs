@@ -1234,8 +1234,8 @@ homeNAS = propertyList "home NAS" $ props
 
 newtype USBHubPort = USBHubPort Int
 
--- Makes a USB drive with the given label automount, with a 10 minute idle
--- timeout before it unmounts.
+-- Makes a USB drive with the given label automount, and unmount after idle
+-- for a while.
 --
 -- The hub port is turned on and off automatically as needed, using
 -- uhubctl.
