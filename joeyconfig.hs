@@ -183,6 +183,11 @@ honeybee = host "honeybee.kitenet.net" $ props
 			`mountedAt` "/"
 			`setSize` MegaBytes 8000
 		)
+	& hasPartition
+		( partition EXT4
+			`mountedAt` "/boot"
+			`setSize` MegaBytes 512
+		)
 	& JoeySites.cubieTruckOneWire
 	
 	& Apt.installed ["firmware-brcm80211"]

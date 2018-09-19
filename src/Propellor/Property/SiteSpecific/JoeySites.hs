@@ -1254,9 +1254,9 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		, "After=" ++ hub
 		, "[Mount]"
 		-- avoid mounting whenever the block device is available,
-		-- only want to automount on deman
+		-- only want to automount on demand
 		, "Options=noauto"
-		, "What=/dev/disk/by-label/" ++ label
+		, "What=" ++ devfile
 		, "Where=" ++ mountpoint
 		, "[Install]"
 		, "WantedBy="
@@ -1269,11 +1269,16 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		, "[Service]"
 		, "Type=oneshot"
 		, "RemainAfterExit=true"
-		, "ExecStart=/usr/sbin/uhubctl -a on -p " ++ show port ++ 
-			-- short sleep to give the drive time to wake up before
-			-- it is mounted
-			" ; /bin/sleep 20"
-		, "ExecStop=/usr/sbin/uhubctl -a off -p " ++ show port
+		, "ExecStart=/usr/sbin/uhubctl -a on -p " ++ show port
+		, "ExecStop=/bin/sh -c 'uhubctl -a off -p " ++ show port ++
+			-- Powering off the port does not remove device
+			-- files, so ask udev to remove the devfile; it will
+			-- be added back after the drive next spins up
+			-- and so avoid mount happening before the drive is
+			-- spun up.
+			-- (This only works when the devfile is in
+			-- by-label.)
+			"; udevadm trigger --action=remove " ++ devfile ++ " || true'"
 		, "[Install]"
 		, "WantedBy="
 		]
@@ -1294,6 +1299,7 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		[ "joey ALL= NOPASSWD: " ++ sudocommands
 		]
   where
+	devfile = "/dev/disk/by-label/" ++ label
 	mountpoint = "/media/joey/" ++ label
 	desc = "auto mount " ++ mountpoint
 	hub = "startech-hub-port-" ++ show port ++ ".service"
