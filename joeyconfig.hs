@@ -291,18 +291,6 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.gitAnnexDistributor
 	& JoeySites.tmp
 
-	& alias "bitlbee.kitenet.net"
-	& Apt.serviceInstalledRunning "bitlbee"
-	& "/etc/bitlbee/bitlbee.conf" `File.hasContent`
-		[ "[settings]"
-		, "User = bitlbee"
-		, "AuthMode = Registered"
-		, "[defaults]"
-		]
-		`onChange` Service.restarted "bitlbee"
-	& "/etc/default/bitlbee" `File.containsLine` "BITLBEE_PORT=\"6767\""
-		`onChange` Service.restarted "bitlbee"
-
 	& Apt.installed
 		[ "git-annex", "myrepos"
 		, "build-essential", "make"
