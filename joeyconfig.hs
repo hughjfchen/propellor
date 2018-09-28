@@ -11,7 +11,6 @@ import Propellor.Property.Bootstrap
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
-import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
@@ -182,11 +181,6 @@ honeybee = host "honeybee.kitenet.net" $ props
 		( partition EXT4
 			`mountedAt` "/"
 			`setSize` MegaBytes 8000
-		)
-	& hasPartition
-		( partition EXT4
-			`mountedAt` "/boot"
-			`setSize` MegaBytes 512
 		)
 	& JoeySites.cubieTruckOneWire
 	
