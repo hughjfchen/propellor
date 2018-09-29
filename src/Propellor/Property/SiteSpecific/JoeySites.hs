@@ -1044,15 +1044,18 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	-- rsync server command to be updated too.
 	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/"
 
--- My home router, running hostapd and dnsmasq for wlan0,
+homerouterWifiInterface :: String
+homerouterWifiInterface = "wlx7cdd90400448"
+
+-- My home router, running hostapd and dnsmasq,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
 homeRouter :: Property (HasInfo + DebianLike)
 homeRouter = propertyList "home router" $ props
-	& Network.static "wlan0" (IPv4 "10.1.1.1") Nothing
+	& Network.static homerouterWifiInterface (IPv4 "10.1.1.1") Nothing
 		`requires` Network.cleanInterfacesFile
 	& Apt.installed ["hostapd"]
 	& File.hasContent "/etc/hostapd/hostapd.conf"
-			[ "interface=wlan0"
+			[ "interface=" ++ homerouterWifiInterface
 			, "ssid=house"
 			, "hw_mode=g"
 			, "channel=8"
@@ -1072,7 +1075,7 @@ homeRouter = propertyList "home router" $ props
 	& File.hasContent "/etc/dnsmasq.conf"
 		[ "domain-needed"
 		, "bogus-priv"
-		, "interface=wlan0"
+		, "interface=" ++ homerouterWifiInterface
 		, "domain=kitenet.net"
 		-- lease time is short because the homepower
 		-- controller wants to know when clients disconnect
@@ -1082,7 +1085,7 @@ homeRouter = propertyList "home router" $ props
 		, "address=/house.kitenet.net/10.1.1.1"
 		]
 		`onChange` Service.restarted "dnsmasq"
-	& ipmasq "wlan0"
+	& ipmasq homerouterWifiInterface
 	& Apt.serviceInstalledRunning "netplug"
 	& Network.static' "eth0" (IPv4 "192.168.1.100")
 		(Just (Network.Gateway (IPv4 "192.168.1.1")))
