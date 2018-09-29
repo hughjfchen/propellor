@@ -1076,6 +1076,7 @@ homeRouter = propertyList "home router" $ props
 		[ "domain-needed"
 		, "bogus-priv"
 		, "interface=" ++ homerouterWifiInterface
+		, "interface=eth0"
 		, "domain=kitenet.net"
 		-- lease time is short because the homepower
 		-- controller wants to know when clients disconnect
@@ -1086,7 +1087,9 @@ homeRouter = propertyList "home router" $ props
 		]
 		`onChange` Service.restarted "dnsmasq"
 	& ipmasq homerouterWifiInterface
-	& Apt.serviceInstalledRunning "netplug"
+	-- Used to bring down eth0 when satellite is off, which causes ppp
+	-- to start, but I am not using this currently.
+	& Apt.removed ["netplug"]
 	& Network.static' "eth0" (IPv4 "192.168.1.100")
 		(Just (Network.Gateway (IPv4 "192.168.1.1")))
 		-- When satellite is down, fall back to dialup
