@@ -180,7 +180,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& hasPartition
 		( partition EXT4
 			`mountedAt` "/"
-			`setSize` MegaBytes 8000
+			`setSize` MegaBytes 32000
 		)
 	& JoeySites.cubieTruckOneWire
 	
