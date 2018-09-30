@@ -951,6 +951,7 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 			user (userGroup user)
 		`requires` File.dirExists (takeDirectory sshkeyfile)
 		`requires` Ssh.knownHost hosts "kitenet.net" user
+	&  File.hasPrivContentExposed "/etc/darksky-forecast-url" anyContext
   where
 	d = "/var/www/html/homepower"
 	sshkeyfile = d </> ".ssh/key"
