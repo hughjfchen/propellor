@@ -151,7 +151,7 @@ stackInstalled = withOS "stack installed" $ \w o ->
 	manualinstall :: Architecture -> Property Linux
 	manualinstall arch = tightenTargets $ check (not <$> doesFileExist binstack) $
 		propertyList "stack installed from upstream tarball" $ props
-			& cmdProperty "wget" ["https://www.stackage.org/stack/linux-" ++ archname, "-O", tmptar]
+			& cmdProperty "wget" [url, "-O", tmptar]
 				`assume` MadeChange
 			& File.dirExists tmpdir
 			& cmdProperty "tar" ["xf", tmptar, "-C", tmpdir, "--strip-components=1"]
@@ -161,14 +161,12 @@ stackInstalled = withOS "stack installed" $ \w o ->
 			& cmdProperty "rm" ["-rf", tmpdir, tmptar]
 				`assume` MadeChange
 	  where
-	  	-- See https://www.stackage.org/stack/ for the list of
-		-- binaries.
-		archname = case arch of
-			X86_32 -> "i386"
-			X86_64 -> "x86_64"
-			ARMHF -> "arm"
+		url = case arch of
+			X86_32 -> "https://www.stackage.org/stack/linux-i386"
+			X86_64 -> "https://www.stackage.org/stack/linux-x86_64"
+			ARMEL -> "https://github.com/commercialhaskell/stack/releases/download/v1.7.1/stack-1.7.1-linux-arm.tar.gz"
 			-- Probably not available.
-			a -> architectureToDebianArchString a
+			a -> "https://www.stackage.org/stack/linux-" ++ architectureToDebianArchString a
 	binstack = "/usr/bin/stack"
 	tmptar = "/root/stack.tar.gz"
 	tmpdir = "/root/stack"
