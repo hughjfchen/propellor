@@ -175,7 +175,6 @@ armAutoBuilder :: (DebianSuite -> Architecture -> Flavor -> Property (HasInfo + 
 armAutoBuilder baseautobuilder suite arch flavor =
 	propertyList "arm git-annex autobuilder" $ props
 		& baseautobuilder suite arch flavor
-		& buildDepsApt
 		-- Works around ghc crash with parallel builds on arm.
 		& (homedir </> ".cabal" </> "config")
 			`File.lacksLine` "jobs: $ncpus"
