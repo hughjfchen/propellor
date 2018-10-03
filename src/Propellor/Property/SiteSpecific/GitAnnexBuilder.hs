@@ -173,10 +173,10 @@ stackInstalled = withOS "stack installed" $ \w o ->
 	tmptar = "/root/stack.tar.gz"
 	tmpdir = "/root/stack"
 
-armAutoBuilder :: DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)
-armAutoBuilder suite arch flavor =
+armAutoBuilder :: (DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)) -> DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)
+armAutoBuilder baseautobuilder suite arch flavor =
 	propertyList "arm git-annex autobuilder" $ props
-		& standardAutoBuilder suite arch flavor
+		& baseautobuilder suite arch flavor
 		& buildDepsApt
 		-- Works around ghc crash with parallel builds on arm.
 		& (homedir </> ".cabal" </> "config")
