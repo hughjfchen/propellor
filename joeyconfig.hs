@@ -207,7 +207,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Postfix.satellite
 
 	& check (not <$> inChroot) (setupRevertableProperty autobuilder)
-	& check (not <$> inChroot) (setupRevertableProperty ancientautobuilder)
+	& check (not <$> inChroot) (undoRevertableProperty ancientautobuilder)
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
   where
