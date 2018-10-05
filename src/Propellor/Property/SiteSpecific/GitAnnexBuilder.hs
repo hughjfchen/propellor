@@ -160,6 +160,12 @@ stackInstalled = withOS "stack installed" $ \w o ->
 				`assume` MadeChange
 			& cmdProperty "rm" ["-rf", tmpdir, tmptar]
 				`assume` MadeChange
+			& case arch of
+				ARMEL -> setupRevertableProperty $
+					"/lib/ld-linux-armhf.so.3"
+					`File.isSymlinkedTo`
+					File.LinkTarget "/lib/ld-linux.so.3"
+				_ -> doNothing
 	  where
 		url = case arch of
 			X86_32 -> "https://www.stackage.org/stack/linux-i386"
@@ -177,7 +183,7 @@ armAutoBuilder baseautobuilder suite arch flavor =
 		& baseautobuilder suite arch flavor
 		-- Works around ghc crash with parallel builds on arm.
 		& (homedir </> ".cabal" </> "config")
-			`File.lacksLine` "jobs: $ncpus"
+			`File.containsLine` "jobs: 1"
 		-- Work around https://github.com/systemd/systemd/issues/7135
 		& Systemd.containerCfg "--system-call-filter=set_tls"
 
