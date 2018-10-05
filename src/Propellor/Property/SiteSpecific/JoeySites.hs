@@ -951,6 +951,7 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 			user (userGroup user)
 		`requires` File.dirExists (takeDirectory sshkeyfile)
 		`requires` Ssh.knownHost hosts "kitenet.net" user
+	&  File.hasPrivContentExposed "/etc/darksky-forecast-url" anyContext
   where
 	d = "/var/www/html/homepower"
 	sshkeyfile = d </> ".ssh/key"
@@ -1044,15 +1045,18 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	-- rsync server command to be updated too.
 	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/"
 
--- My home router, running hostapd and dnsmasq for wlan0,
+homerouterWifiInterface :: String
+homerouterWifiInterface = "wlan0" -- "wlx7cdd90400448" is a wifi dongle
+
+-- My home router, running hostapd and dnsmasq,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
 homeRouter :: Property (HasInfo + DebianLike)
 homeRouter = propertyList "home router" $ props
-	& Network.static "wlan0" (IPv4 "10.1.1.1") Nothing
+	& Network.static homerouterWifiInterface (IPv4 "10.1.1.1") Nothing
 		`requires` Network.cleanInterfacesFile
 	& Apt.installed ["hostapd"]
 	& File.hasContent "/etc/hostapd/hostapd.conf"
-			[ "interface=wlan0"
+			[ "interface=" ++ homerouterWifiInterface
 			, "ssid=house"
 			, "hw_mode=g"
 			, "channel=8"
@@ -1072,7 +1076,8 @@ homeRouter = propertyList "home router" $ props
 	& File.hasContent "/etc/dnsmasq.conf"
 		[ "domain-needed"
 		, "bogus-priv"
-		, "interface=wlan0"
+		, "interface=" ++ homerouterWifiInterface
+		, "interface=eth0"
 		, "domain=kitenet.net"
 		-- lease time is short because the homepower
 		-- controller wants to know when clients disconnect
@@ -1082,8 +1087,10 @@ homeRouter = propertyList "home router" $ props
 		, "address=/house.kitenet.net/10.1.1.1"
 		]
 		`onChange` Service.restarted "dnsmasq"
-	& ipmasq "wlan0"
-	& Apt.serviceInstalledRunning "netplug"
+	& ipmasq homerouterWifiInterface
+	-- Used to bring down eth0 when satellite is off, which causes ppp
+	-- to start, but I am not using this currently.
+	& Apt.removed ["netplug"]
 	& Network.static' "eth0" (IPv4 "192.168.1.100")
 		(Just (Network.Gateway (IPv4 "192.168.1.1")))
 		-- When satellite is down, fall back to dialup
@@ -1234,8 +1241,8 @@ homeNAS = propertyList "home NAS" $ props
 
 newtype USBHubPort = USBHubPort Int
 
--- Makes a USB drive with the given label automount, with a 10 minute idle
--- timeout before it unmounts.
+-- Makes a USB drive with the given label automount, and unmount after idle
+-- for a while.
 --
 -- The hub port is turned on and off automatically as needed, using
 -- uhubctl.
@@ -1254,9 +1261,9 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		, "After=" ++ hub
 		, "[Mount]"
 		-- avoid mounting whenever the block device is available,
-		-- only want to automount on deman
+		-- only want to automount on demand
 		, "Options=noauto"
-		, "What=/dev/disk/by-label/" ++ label
+		, "What=" ++ devfile
 		, "Where=" ++ mountpoint
 		, "[Install]"
 		, "WantedBy="
@@ -1269,11 +1276,16 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		, "[Service]"
 		, "Type=oneshot"
 		, "RemainAfterExit=true"
-		, "ExecStart=/usr/sbin/uhubctl -a on -p " ++ show port ++ 
-			-- short sleep to give the drive time to wake up before
-			-- it is mounted
-			" ; /bin/sleep 20"
-		, "ExecStop=/usr/sbin/uhubctl -a off -p " ++ show port
+		, "ExecStart=/usr/sbin/uhubctl -a on -p " ++ show port
+		, "ExecStop=/bin/sh -c 'uhubctl -a off -p " ++ show port ++
+			-- Powering off the port does not remove device
+			-- files, so ask udev to remove the devfile; it will
+			-- be added back after the drive next spins up
+			-- and so avoid mount happening before the drive is
+			-- spun up.
+			-- (This only works when the devfile is in
+			-- by-label.)
+			"; udevadm trigger --action=remove " ++ devfile ++ " || true'"
 		, "[Install]"
 		, "WantedBy="
 		]
@@ -1294,6 +1306,7 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		[ "joey ALL= NOPASSWD: " ++ sudocommands
 		]
   where
+	devfile = "/dev/disk/by-label/" ++ label
 	mountpoint = "/media/joey/" ++ label
 	desc = "auto mount " ++ mountpoint
 	hub = "startech-hub-port-" ++ show port ++ ".service"

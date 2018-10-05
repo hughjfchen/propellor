@@ -11,7 +11,6 @@ import Propellor.Property.Bootstrap
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Network as Network
-import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
@@ -179,12 +178,13 @@ honeybee = host "honeybee.kitenet.net" $ props
 	
 	& cubietech_Cubietruck
 	& hasPartition
-		( partition EXT4
+		( partition EXT3
 			`mountedAt` "/"
-			`setSize` MegaBytes 8000
+			`setSize` MegaBytes 16000
 		)
 	& JoeySites.cubieTruckOneWire
 	
+	& Apt.installed ["firmware-misc-nonfree"]
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
 		`requires` File.hasPrivContent "/lib/firmware/brcm/brcmfmac43362-sdio.txt" anyContext
@@ -207,12 +207,16 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Postfix.satellite
 
 	& check (not <$> inChroot) (setupRevertableProperty autobuilder)
+	& check (not <$> inChroot) (setupRevertableProperty ancientautobuilder)
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
   where
 	autobuilder = Systemd.nspawned $ GitAnnexBuilder.autoBuilderContainer
-		GitAnnexBuilder.armAutoBuilder
+		(GitAnnexBuilder.armAutoBuilder GitAnnexBuilder.standardAutoBuilder)
 		Unstable ARMEL Nothing (Cron.Times "15 15 * * *") "10h"
+	ancientautobuilder = Systemd.nspawned $ GitAnnexBuilder.autoBuilderContainer
+		(GitAnnexBuilder.armAutoBuilder GitAnnexBuilder.stackAutoBuilder)
+		(Stable "jessie") ARMEL (Just "ancient") (Cron.Times "5 15 * * *") "10h"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
@@ -285,18 +289,6 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.downloads hosts
 	& JoeySites.gitAnnexDistributor
 	& JoeySites.tmp
-
-	& alias "bitlbee.kitenet.net"
-	& Apt.serviceInstalledRunning "bitlbee"
-	& "/etc/bitlbee/bitlbee.conf" `File.hasContent`
-		[ "[settings]"
-		, "User = bitlbee"
-		, "AuthMode = Registered"
-		, "[defaults]"
-		]
-		`onChange` Service.restarted "bitlbee"
-	& "/etc/default/bitlbee" `File.containsLine` "BITLBEE_PORT=\"6767\""
-		`onChange` Service.restarted "bitlbee"
 
 	& Apt.installed
 		[ "git-annex", "myrepos"
