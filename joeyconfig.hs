@@ -379,10 +379,10 @@ elephant = host "elephant.kitenet.net" $ props
 	& alias "podcatcher.kitenet.net"
 	& JoeySites.podcatcher
 
-	& alias "znc.kitenet.net"
-	& JoeySites.ircBouncer
-	& alias "kgb.kitenet.net"
-	& JoeySites.kgbServer
+	-- & alias "znc.kitenet.net"
+	-- & JoeySites.ircBouncer
+	-- & alias "kgb.kitenet.net"
+	-- & JoeySites.kgbServer
 
 	& alias "ns3.kitenet.net"
 	& myDnsSecondary
