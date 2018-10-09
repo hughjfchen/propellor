@@ -312,7 +312,6 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.kgbServer
 	
 	& Systemd.nspawned ancientKitenet
-	! Systemd.nspawned openidProvider
 
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
@@ -517,16 +516,6 @@ keysafe = host "keysafe.joeyh.name" $ props
 -------------------------- :                    / ---------------------------
 --------------------------- \____, o          ,' ----------------------------
 ---------------------------- '--,___________,'  -----------------------------
-
--- My own openid provider. Uses php, so containerized for security
--- and administrative sanity.
-openidProvider :: Systemd.Container
-openidProvider = Systemd.debContainer "openid-provider" $ props
-	& standardContainer (Stable "stretch")
-	& alias hn
-	& OpenId.providerFor [User "joey", User "liw"] hn (Just (Port 8081))
-  where
-	hn = "openid.kitenet.net"
 
 -- Exhibit: kite's 90's website on port 1994.
 ancientKitenet :: Systemd.Container
