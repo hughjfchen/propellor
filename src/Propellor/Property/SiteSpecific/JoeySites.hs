@@ -152,9 +152,8 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 			(User "root")
 			(Context "olduse.net")
 			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD0F6L76SChMCIGmeyGhlFMUTgZ3BoTbATiOSs0A7KXQoI1LTE5ZtDzzUkrQRJVpJ640pfMR7cQZyBm8tv+kYIPp0238GrX43c1vgm0L78agDnBU7r2iNMyWIwhssK8O3ZAhp8Q4KCz1r8hP2nIiD0y1D1VWW8h4KWOS7I1XCEAjOTvFvEjTh6a9MyHrcIkv7teUUzTBRjNrsyijCFRk1+pEET54RueoOmEjQcWd/sK1tYRiMZjegRLBOus2wUWsUOvznJ2iniLONUTGAWRnEV+O7hLN6CD44osJ+wkZk8bPAumTS0zcSLckX1jpdHJicmAyeniWSd4FCqm1YE6/xDD")
-		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
-	borgrepo = Borg.BorgRepoUsing [Borg.UseSshKey keyfile]
-		"joey@eubackup.kitenet.net:/home/joey/lib/backup/olduse.net/olduse.net.borg"
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
+	borgrepo = rsyncNetBorgRepo "olduse.net.borg" [Borg.UseSshKey keyfile]
 	keyfile = "/root/.ssh/olduse.net.key"
 
 oldUseNetShellBox :: Property DebianLike
@@ -207,7 +206,7 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 			(User "root")
 			(Context "git.kitenet.net")
 			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLwUUkpkI9c2Wcnv/E4v9bJ7WcpiNkToltXfzRDd1F31AYrucfSMgzu3rtDpEL+wSnQLua/taJkWUWT/pyXOAh+90K6O/YeBZmY5CK01rYDz3kSTAtwHkMqednsRjdQS6NNJsuWc1reO8a4pKtsToJ3G9VAKufCkt2b8Nhqz0yLvLYwwU/mdI8DmfX6IgXhdy9njVEG/jsQnLFXY6QEfwKbIPs9O6qo4iFJg3defXX+zVMLsh3NE1P2i2VxMjxJEQdPdy9Z1sVpkiQM+mgJuylQQ5flPK8sxhO9r4uoK/JROkjPJNYoJMlsN+QlK04ABb7JV2JwhAL/Y8ypjQ13JdT")
-		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 	& Ssh.authorizedKeys (User "family") (Context "git.kitenet.net")
 	& User.accountFor (User "family")
 	& Apt.installed ["git", "rsync", "cgit"]
@@ -238,8 +237,7 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 	& Apache.modEnabled "cgi"
   where
 	sshkey = "/root/.ssh/git.kitenet.net.key"
-	borgrepo = Borg.BorgRepoUsing [Borg.UseSshKey sshkey]
-		"joey@eubackup.kitenet.net:/home/joey/lib/backup/git.kitenet.net/git.kitenet.net.borg"
+	borgrepo = rsyncNetBorgRepo "git.kitenet.net.borg" [Borg.UseSshKey sshkey]
 	website hn = Apache.httpsVirtualHost' hn "/srv/web/git.kitenet.net/" letos
 		[ Apache.iconDir
 		, "  <Directory /srv/web/git.kitenet.net/>"
@@ -1318,8 +1316,8 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		, "start " ++ mountpoint
 		]
 
-rsyncNetBorgRepo :: String -> Borg.BorgRepo
-rsyncNetBorgRepo d = Borg.BorgRepoUsing
+rsyncNetBorgRepo :: String -> [Borg.BorgRepoOpt] -> Borg.BorgRepo
+rsyncNetBorgRepo d os = Borg.BorgRepoUsing os' ("2318@usw-s002.rsync.net:" ++ d)
+  where
 	-- rsync.net has a newer borg here
-	[ Borg.UsesEnvVar ("BORG_REMOTE_PATH", "borg1")
-	] ("2318@usw-s002.rsync.net:" ++ d)
+	os' = Borg.UsesEnvVar ("BORG_REMOTE_PATH", "borg1") : os

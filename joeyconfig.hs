@@ -250,7 +250,7 @@ kite = host "kite.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "ntp"
 	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
 	
-	& Borg.backup "/" (JoeySites.rsyncNetBorgRepo "kite.borg") Cron.Daily
+	& Borg.backup "/" (JoeySites.rsyncNetBorgRepo "kite.borg" []) Cron.Daily
 		[ "--exclude=/proc/*"
 		, "--exclude=/sys/*"
 		, "--exclude=/run/*"

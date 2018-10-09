@@ -6,7 +6,6 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Ssh as Ssh
 import qualified Propellor.Property.Postfix as Postfix
-import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Cron as Cron
@@ -56,8 +55,6 @@ server hosts = propertyList "branchable server" $ props
 		, Borg.KeepMonths 12
 		, Borg.KeepYears 1
 		]
-	-- gpg key that can be used to decrypt the borg backup key
-	& Gpg.keyImported (Gpg.GpgKeyId obnamkey) (User "root")
 	& Ssh.userKeys (User "root") (Context "branchable.com")
 		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC2PqTSupwncqeffNwZQXacdEWp7L+TxllIxH7WjfRMb3U74mQxWI0lwqLVW6Fox430DvhSqF1y5rJBvTHh4i49Tc9lZ7mwAxA6jNOP6bmdfteaKKYmUw5qwtJW0vISBFu28qBO11Nq3uJ1D3Oj6N+b3mM/0D3Y3NoGgF8+2dLdi81u9+l6AQ5Jsnozi2Ni/Osx2oVGZa+IQDO6gX8VEP4OrcJFNJe8qdnvItcGwoivhjbIfzaqNNvswKgGzhYLOAS5KT8HsjvIpYHWkyQ5QUX7W/lqGSbjP+6B8C3tkvm8VLXbmaD+aSkyCaYbuoXC2BoJdS7Jh8phKMwPJmdYVepn")
 		]
@@ -67,7 +64,6 @@ server hosts = propertyList "branchable server" $ props
 	& adminuser "joey"
 	& adminuser "liw"
   where
-	obnamkey = "41E1A9B9"
 	adminuser u = propertyList ("admin user " ++ u) $ props
 		& User.accountFor (User u)
 		& User.hasSomePassword (User u)
