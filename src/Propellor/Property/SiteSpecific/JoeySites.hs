@@ -369,18 +369,6 @@ ircBouncer = propertyList "IRC bouncer" $ props
   where
 	conf = "/home/znc/.znc/configs/znc.conf"
 
-kiteShellBox :: Property DebianLike
-kiteShellBox = propertyList "kitenet.net shellinabox" $ props
-	& Apt.installed ["openssl", "shellinabox", "openssh-client"]
-	& File.hasContent "/etc/default/shellinabox"
-		[ "# Deployed by propellor"
-		, "SHELLINABOX_DAEMON_START=1"
-		, "SHELLINABOX_PORT=443"
-		, "SHELLINABOX_ARGS=\"--no-beep --service=/:SSH:kitenet.net\""
-		]
-		`onChange` Service.restarted "shellinabox"
-	& Service.running "shellinabox"
-
 githubBackup :: Property (HasInfo + DebianLike)
 githubBackup = propertyList "github-backup box" $ props
 	& Apt.installed ["github-backup", "moreutils"]

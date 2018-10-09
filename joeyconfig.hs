@@ -310,6 +310,10 @@ kite = host "kite.kitenet.net" $ props
 
 	& alias "kgb.kitenet.net"
 	& JoeySites.kgbServer
+	
+	& Systemd.nspawned ancientKitenet
+	& Systemd.nspawned openidProvider
+	 	`requires` Apt.serviceInstalledRunning "ntp"
 
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
@@ -387,23 +391,19 @@ elephant = host "elephant.kitenet.net" $ props
 	-- & alias "ns3.kitenet.net"
 	-- & myDnsSecondary
 
-	& Systemd.nspawned oldusenetShellBox
-	& Systemd.nspawned ancientKitenet
-	& Systemd.nspawned openidProvider
-	 	`requires` Apt.serviceInstalledRunning "ntp"
-
-	& JoeySites.scrollBox
-	& alias "scroll.joeyh.name"
-	& alias "eu.scroll.joeyh.name"
+	-- & Systemd.nspawned oldusenetShellBox
+	-- & JoeySites.scrollBox
+	-- & alias "scroll.joeyh.name"
+	-- & alias "eu.scroll.joeyh.name"
 
 	-- For https port 443, shellinabox with ssh login to
 	-- kitenet.net
-	& alias "shell.kitenet.net"
-	& Systemd.nspawned kiteShellBox
+	-- & alias "shell.kitenet.net"
+	-- & Systemd.nspawned kiteShellBox
 	-- Nothing is using http port 80, so listen on
 	-- that port for ssh, for traveling on bad networks that
 	-- block 22.
-	& Ssh.listenPort (Port 80)
+	-- & Ssh.listenPort (Port 80)
 
 beaver :: Host
 beaver = host "beaver.kitenet.net" $ props
@@ -549,11 +549,6 @@ oldusenetShellBox = Systemd.debContainer "oldusenet-shellbox" $ props
 	& standardContainer (Stable "stretch")
 	& alias "shell.olduse.net"
 	& JoeySites.oldUseNetShellBox
-
-kiteShellBox :: Systemd.Container
-kiteShellBox = Systemd.debContainer "kiteshellbox" $ props
-	& standardContainer (Stable "stretch")
-	& JoeySites.kiteShellBox
 
 type Motd = [String]
 
