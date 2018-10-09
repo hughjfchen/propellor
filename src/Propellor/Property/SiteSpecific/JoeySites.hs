@@ -1317,3 +1317,9 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		[ "stop " ++ mountpoint
 		, "start " ++ mountpoint
 		]
+
+rsyncNetBorgRepo :: String -> Borg.BorgRepo
+rsyncNetBorgRepo d = Borg.BorgRepoUsing
+	-- rsync.net has a newer borg here
+	[ Borg.UsesEnvVar ("BORG_REMOTE_PATH", "borg1")
+	] ("2318@usw-s002.rsync.net:" ++ d)

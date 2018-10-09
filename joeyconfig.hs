@@ -250,13 +250,15 @@ kite = host "kite.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "ntp"
 	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
 	
-	& Borg.backup "/" (Borg.BorgRepo "joey@eubackup.kitenet.net:/home/joey/lib/backup/kite/kite.borg") Cron.Daily
+	& Borg.backup "/" (JoeySites.rsyncNetBorgRepo "kite.borg") Cron.Daily
 		[ "--exclude=/proc/*"
 		, "--exclude=/sys/*"
 		, "--exclude=/run/*"
 		, "--exclude=/tmp/*"
 		, "--exclude=/var/tmp/*"
 		, "--exclude=/var/cache/*"
+		, "--exclude=/var/lib/swapspace/*"
+		, "--exclude=/var/lib/container/*"
 		, "--exclude=/home/joey/lib"
 		-- These directories are backed up and restored separately.
 		, "--exclude=/srv/git"
@@ -266,7 +268,7 @@ kite = host "kite.kitenet.net" $ props
 		, Borg.KeepWeeks 4
 		, Borg.KeepMonths 6
 		]
-		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 		`requires` Ssh.userKeys (User "root")
 			(Context "kite.kitenet.net")
 			[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC5Gza2sNqSKfNtUN4dN/Z3rlqw18nijmXFx6df2GtBoZbkIak73uQfDuZLP+AXlyfHocwdkdHEf/zrxgXS4EokQMGLZhJ37Pr3edrEn/NEnqroiffw7kyd7EqaziA6UOezcLTjWGv+Zqg9JhitYs4WWTpNzrPH3yQf1V9FunZnkzb4gJGndts13wGmPEwSuf+QHbgQvjMOMCJwWSNcJGdhDR66hFlxfG26xx50uIczXYAbgLfHp5W6WuR/lcaS9J6i7HAPwcsPDA04XDinrcpl29QwsMW1HyGS/4FSCgrDqNZ2jzP49Bka78iCLRqfl1efyYas/Zo1jQ0x+pxq2RMr root@kite")
@@ -612,8 +614,10 @@ myDnsPrimary domain extras = Dns.signedPrimary (Weekly Nothing) hosts domain
 	, JoeySites.domainKey
 	] ++ extras
 
-monsters :: [Host]    -- Systems I don't manage with propellor,
-monsters =            -- but do want to track their public keys etc.
+-- Systems I don't manage with propellor,
+-- but do want to track their public keys etc.
+monsters :: [Host]
+monsters =
 	[ host "usw-s002.rsync.net" $ props
 		& Ssh.hostPubKey SshEd25519 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB7yTEBGfQYdwG/oeL+U9XPMIh/dW7XNs9T+M79YIOrd"
 	, host "github.com" $ props
