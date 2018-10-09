@@ -384,8 +384,8 @@ elephant = host "elephant.kitenet.net" $ props
 	-- & alias "kgb.kitenet.net"
 	-- & JoeySites.kgbServer
 
-	& alias "ns3.kitenet.net"
-	& myDnsSecondary
+	-- & alias "ns3.kitenet.net"
+	-- & myDnsSecondary
 
 	& Systemd.nspawned oldusenetShellBox
 	& Systemd.nspawned ancientKitenet
@@ -605,14 +605,12 @@ myDnsSecondary = propertyList "dns secondary for all my domains" $ props
 branchableSecondary :: RevertableProperty (HasInfo + DebianLike) DebianLike
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 
--- Currently using kite (ns4) as primary with secondaries
--- elephant (ns3) and gandi.
+-- Currently using kite (ns4) as primary with gandi as secondary
 -- kite handles all mail.
 myDnsPrimary :: Domain -> [(BindDomain, Record)] -> RevertableProperty (HasInfo + DebianLike) DebianLike
 myDnsPrimary domain extras = Dns.signedPrimary (Weekly Nothing) hosts domain
 	(Dns.mkSOA "ns4.kitenet.net" 100) $
 	[ (RootDomain, NS $ AbsDomain "ns4.kitenet.net")
-	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
 	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
 	, (RootDomain, TXT "v=spf1 a a:kitenet.net ~all")
