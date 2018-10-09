@@ -178,22 +178,16 @@ oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 			`assume` MadeChange
 			`describe` "olduse.net built"
 
-kgbServer :: Property (HasInfo + Debian)
+kgbServer :: Property (HasInfo + DebianLike)
 kgbServer = propertyList desc $ props
-	& installed
+	& Apt.serviceInstalledRunning "kgb-bot"
+	& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
+		`describe` "kgb bot enabled"
+		`onChange` Service.running "kgb-bot"
 	& File.hasPrivContent "/etc/kgb-bot/kgb.conf" anyContext
 		`onChange` Service.restarted "kgb-bot"
   where
 	desc = "kgb.kitenet.net setup"
-	installed :: Property Debian
-	installed = withOS desc $ \w o -> case o of
-		(Just (System (Debian _ Unstable) _)) ->
-			ensureProperty w $ propertyList desc $ props
-				& Apt.serviceInstalledRunning "kgb-bot"
-				& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
-					`describe` "kgb bot enabled"
-					`onChange` Service.running "kgb-bot"
-		_ -> error "kgb server needs Debian unstable (for kgb-bot 1.31+)"
 
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property (HasInfo + DebianLike)
