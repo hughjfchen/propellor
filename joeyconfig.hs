@@ -288,7 +288,7 @@ kite = host "kite.kitenet.net" $ props
 	& alias "git.joeyh.name"
 	& JoeySites.gitServer hosts
 
-	& JoeySites.downloads hosts
+	& JoeySites.downloads
 	& JoeySites.gitAnnexDistributor
 	& JoeySites.tmp
 
@@ -312,6 +312,9 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.kgbServer
 	
 	& Systemd.nspawned ancientKitenet
+	
+	& alias "podcatcher.kitenet.net"
+	& JoeySites.podcatcher
 
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
@@ -374,12 +377,9 @@ elephant = host "elephant.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "swapspace"
 
 	& alias "eubackup.kitenet.net"
-	& Apt.installed ["sshfs", "rsync", "borgbackup"]
+	-- & Apt.installed ["sshfs", "rsync", "borgbackup"]
 	& JoeySites.githubBackup
 	& JoeySites.rsyncNetBackup hosts
-
-	& alias "podcatcher.kitenet.net"
-	& JoeySites.podcatcher
 
 	-- & alias "znc.kitenet.net"
 	-- & JoeySites.ircBouncer

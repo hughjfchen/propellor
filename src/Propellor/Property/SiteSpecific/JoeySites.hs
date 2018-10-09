@@ -333,12 +333,11 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 		& File.dirExists d
 		& File.ownerGroup d (User "joey") (Group "joey")
 
-downloads :: [Host] -> Property (HasInfo + DebianLike)
-downloads hosts = annexWebSite "/srv/git/downloads.git"
+downloads :: Property (HasInfo + DebianLike)
+downloads = annexWebSite "/srv/git/downloads.git"
 	"downloads.kitenet.net"
 	"840760dc-08f0-11e2-8c61-576b7e66acfd"
-	[("eubackup", "ssh://eubackup.kitenet.net/~/lib/downloads/")]
-	`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "joey")
+	[]
 
 tmp :: Property (HasInfo + DebianLike)
 tmp = propertyList "tmp.joeyh.name" $ props
