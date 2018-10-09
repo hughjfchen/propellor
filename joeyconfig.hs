@@ -312,8 +312,7 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.kgbServer
 	
 	& Systemd.nspawned ancientKitenet
-	& Systemd.nspawned openidProvider
-	 	`requires` Apt.serviceInstalledRunning "ntp"
+	! Systemd.nspawned openidProvider
 
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
