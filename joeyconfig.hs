@@ -304,6 +304,12 @@ kite = host "kite.kitenet.net" $ props
 	& alias "nntp.olduse.net"
 	& JoeySites.oldUseNetServer hosts
 	& Systemd.nspawned oldusenetShellBox
+	
+	& alias "znc.kitenet.net"
+	& JoeySites.ircBouncer
+
+	& alias "kgb.kitenet.net"
+	& JoeySites.kgbServer
 
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
@@ -330,6 +336,7 @@ kite = host "kite.kitenet.net" $ props
 		, "domain kitenet.net"
 		, "search kitenet.net"
 		]
+	
 	& alias "debug-me.joeyh.name"
 	& Apt.installed ["debug-me"]
 	& Systemd.enabled "debug-me"
@@ -405,8 +412,6 @@ beaver = host "beaver.kitenet.net" $ props
 	& Ssh.hostPubKey SshDsa "ssh-dss AAAAB3NzaC1kc3MAAACBAIrLX260fY0Jjj/p0syNhX8OyR8hcr6feDPGOj87bMad0k/w/taDSOzpXe0Wet7rvUTbxUjH+Q5wPd4R9zkaSDiR/tCb45OdG6JsaIkmqncwe8yrU+pqSRCxttwbcFe+UU+4AAcinjVedZjVRDj2rRaFPc9BXkPt7ffk8GwEJ31/AAAAFQCG/gOjObsr86vvldUZHCteaJttNQAAAIB5nomvcqOk/TD07DLaWKyG7gAcW5WnfY3WtnvLRAFk09aq1EuiJ6Yba99Zkb+bsxXv89FWjWDg/Z3Psa22JMyi0HEDVsOevy/1sEQ96AGH5ijLzFInfXAM7gaJKXASD7hPbVdjySbgRCdwu0dzmQWHtH+8i1CMVmA2/a5Y/wtlJAAAAIAUZj2US2D378jBwyX1Py7e4sJfea3WSGYZjn4DLlsLGsB88POuh32aOChd1yzF6r6C2sdoPBHQcWBgNGXcx4gF0B5UmyVHg3lIX2NVSG1ZmfuLNJs9iKNu4cHXUmqBbwFYQJBvB69EEtrOw4jSbiTKwHFmqdA/mw1VsMB+khUaVw=="
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "ssh" (Port 22)
-	& alias "usbackup.kitenet.net"
-	& JoeySites.backupsBackedupFrom hosts "eubackup.kitenet.net" "/home/joey/lib/backup"
 	& Apt.serviceInstalledRunning "anacron"
 	& Cron.niceJob "system disk backed up" Cron.Weekly (User "root") "/"
 		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"

@@ -413,14 +413,6 @@ rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" (Cron.Times "30 
 	(User "joey") "/home/joey/lib/backup" "mkdir -p rsync.net && rsync --delete -az 2318@usw-s002.rsync.net: rsync.net"
 	`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "joey")
 
-backupsBackedupFrom :: [Host] -> HostName -> FilePath -> Property DebianLike
-backupsBackedupFrom hosts srchost destdir = Cron.niceJob desc
-	(Cron.Times "@reboot") (User "joey") "/" cmd
-	`requires` Ssh.knownHost hosts srchost (User "joey")
-  where
-	desc = "backups copied from " ++ srchost ++ " on boot"
-	cmd = "sleep 30m && rsync -az --bwlimit=300K --partial --delete " ++ srchost ++ ":lib/backup/ " ++ destdir </> srchost
-
 podcatcher :: Property DebianLike
 podcatcher = Cron.niceJob "podcatcher run hourly" (Cron.Times "55 * * * *")
 	(User "joey") "/home/joey/lib/sound/podcasts"
