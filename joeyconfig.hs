@@ -252,6 +252,7 @@ kite = host "kite.kitenet.net" $ props
 		[ "--exclude=/proc/*"
 		, "--exclude=/sys/*"
 		, "--exclude=/run/*"
+		, "--exclude=/mnt/*"
 		, "--exclude=/tmp/*"
 		, "--exclude=/var/tmp/*"
 		, "--exclude=/var/cache/*"
