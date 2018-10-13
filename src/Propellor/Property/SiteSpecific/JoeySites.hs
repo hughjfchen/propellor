@@ -152,9 +152,8 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 			(User "root")
 			(Context "olduse.net")
 			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD0F6L76SChMCIGmeyGhlFMUTgZ3BoTbATiOSs0A7KXQoI1LTE5ZtDzzUkrQRJVpJ640pfMR7cQZyBm8tv+kYIPp0238GrX43c1vgm0L78agDnBU7r2iNMyWIwhssK8O3ZAhp8Q4KCz1r8hP2nIiD0y1D1VWW8h4KWOS7I1XCEAjOTvFvEjTh6a9MyHrcIkv7teUUzTBRjNrsyijCFRk1+pEET54RueoOmEjQcWd/sK1tYRiMZjegRLBOus2wUWsUOvznJ2iniLONUTGAWRnEV+O7hLN6CD44osJ+wkZk8bPAumTS0zcSLckX1jpdHJicmAyeniWSd4FCqm1YE6/xDD")
-		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
-	borgrepo = Borg.BorgRepoUsing [Borg.UseSshKey keyfile]
-		"joey@eubackup.kitenet.net:/home/joey/lib/backup/olduse.net/olduse.net.borg"
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
+	borgrepo = rsyncNetBorgRepo "olduse.net.borg" [Borg.UseSshKey keyfile]
 	keyfile = "/root/.ssh/olduse.net.key"
 
 oldUseNetShellBox :: Property DebianLike
@@ -179,22 +178,16 @@ oldUseNetInstalled pkg = check (not <$> Apt.isInstalled pkg) $
 			`assume` MadeChange
 			`describe` "olduse.net built"
 
-kgbServer :: Property (HasInfo + Debian)
+kgbServer :: Property (HasInfo + DebianLike)
 kgbServer = propertyList desc $ props
-	& installed
+	& Apt.serviceInstalledRunning "kgb-bot"
+	& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
+		`describe` "kgb bot enabled"
+		`onChange` Service.running "kgb-bot"
 	& File.hasPrivContent "/etc/kgb-bot/kgb.conf" anyContext
 		`onChange` Service.restarted "kgb-bot"
   where
 	desc = "kgb.kitenet.net setup"
-	installed :: Property Debian
-	installed = withOS desc $ \w o -> case o of
-		(Just (System (Debian _ Unstable) _)) ->
-			ensureProperty w $ propertyList desc $ props
-				& Apt.serviceInstalledRunning "kgb-bot"
-				& "/etc/default/kgb-bot" `File.containsLine` "BOT_ENABLED=1"
-					`describe` "kgb bot enabled"
-					`onChange` Service.running "kgb-bot"
-		_ -> error "kgb server needs Debian unstable (for kgb-bot 1.31+)"
 
 -- git.kitenet.net and git.joeyh.name
 gitServer :: [Host] -> Property (HasInfo + DebianLike)
@@ -207,7 +200,7 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 			(User "root")
 			(Context "git.kitenet.net")
 			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLwUUkpkI9c2Wcnv/E4v9bJ7WcpiNkToltXfzRDd1F31AYrucfSMgzu3rtDpEL+wSnQLua/taJkWUWT/pyXOAh+90K6O/YeBZmY5CK01rYDz3kSTAtwHkMqednsRjdQS6NNJsuWc1reO8a4pKtsToJ3G9VAKufCkt2b8Nhqz0yLvLYwwU/mdI8DmfX6IgXhdy9njVEG/jsQnLFXY6QEfwKbIPs9O6qo4iFJg3defXX+zVMLsh3NE1P2i2VxMjxJEQdPdy9Z1sVpkiQM+mgJuylQQ5flPK8sxhO9r4uoK/JROkjPJNYoJMlsN+QlK04ABb7JV2JwhAL/Y8ypjQ13JdT")
-		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 	& Ssh.authorizedKeys (User "family") (Context "git.kitenet.net")
 	& User.accountFor (User "family")
 	& Apt.installed ["git", "rsync", "cgit"]
@@ -238,8 +231,7 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 	& Apache.modEnabled "cgi"
   where
 	sshkey = "/root/.ssh/git.kitenet.net.key"
-	borgrepo = Borg.BorgRepoUsing [Borg.UseSshKey sshkey]
-		"joey@eubackup.kitenet.net:/home/joey/lib/backup/git.kitenet.net/git.kitenet.net.borg"
+	borgrepo = rsyncNetBorgRepo "git.kitenet.net.borg" [Borg.UseSshKey sshkey]
 	website hn = Apache.httpsVirtualHost' hn "/srv/web/git.kitenet.net/" letos
 		[ Apache.iconDir
 		, "  <Directory /srv/web/git.kitenet.net/>"
@@ -341,12 +333,11 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 		& File.dirExists d
 		& File.ownerGroup d (User "joey") (Group "joey")
 
-downloads :: [Host] -> Property (HasInfo + DebianLike)
-downloads hosts = annexWebSite "/srv/git/downloads.git"
+downloads :: Property (HasInfo + DebianLike)
+downloads = annexWebSite "/srv/git/downloads.git"
 	"downloads.kitenet.net"
 	"840760dc-08f0-11e2-8c61-576b7e66acfd"
-	[("eubackup", "ssh://eubackup.kitenet.net/~/lib/downloads/")]
-	`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "joey")
+	[]
 
 tmp :: Property (HasInfo + DebianLike)
 tmp = propertyList "tmp.joeyh.name" $ props
@@ -377,18 +368,6 @@ ircBouncer = propertyList "IRC bouncer" $ props
   where
 	conf = "/home/znc/.znc/configs/znc.conf"
 
-kiteShellBox :: Property DebianLike
-kiteShellBox = propertyList "kitenet.net shellinabox" $ props
-	& Apt.installed ["openssl", "shellinabox", "openssh-client"]
-	& File.hasContent "/etc/default/shellinabox"
-		[ "# Deployed by propellor"
-		, "SHELLINABOX_DAEMON_START=1"
-		, "SHELLINABOX_PORT=443"
-		, "SHELLINABOX_ARGS=\"--no-beep --service=/:SSH:kitenet.net\""
-		]
-		`onChange` Service.restarted "shellinabox"
-	& Service.running "shellinabox"
-
 githubBackup :: Property (HasInfo + DebianLike)
 githubBackup = propertyList "github-backup box" $ props
 	& Apt.installed ["github-backup", "moreutils"]
@@ -414,14 +393,6 @@ rsyncNetBackup :: [Host] -> Property DebianLike
 rsyncNetBackup hosts = Cron.niceJob "rsync.net copied in daily" (Cron.Times "30 5 * * *")
 	(User "joey") "/home/joey/lib/backup" "mkdir -p rsync.net && rsync --delete -az 2318@usw-s002.rsync.net: rsync.net"
 	`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "joey")
-
-backupsBackedupFrom :: [Host] -> HostName -> FilePath -> Property DebianLike
-backupsBackedupFrom hosts srchost destdir = Cron.niceJob desc
-	(Cron.Times "@reboot") (User "joey") "/" cmd
-	`requires` Ssh.knownHost hosts srchost (User "joey")
-  where
-	desc = "backups copied from " ++ srchost ++ " on boot"
-	cmd = "sleep 30m && rsync -az --bwlimit=300K --partial --delete " ++ srchost ++ ":lib/backup/ " ++ destdir </> srchost
 
 podcatcher :: Property DebianLike
 podcatcher = Cron.niceJob "podcatcher run hourly" (Cron.Times "55 * * * *")
@@ -1085,6 +1056,7 @@ homeRouter = propertyList "home router" $ props
 		, "no-hosts"
 		, "address=/honeybee.kitenet.net/10.1.1.1"
 		, "address=/house.kitenet.net/10.1.1.1"
+		, "dhcp-host=0c:98:38:80:6a:f9,10.1.1.134,android-kodama
 		]
 		`onChange` Service.restarted "dnsmasq"
 	& ipmasq homerouterWifiInterface
@@ -1317,3 +1289,9 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		[ "stop " ++ mountpoint
 		, "start " ++ mountpoint
 		]
+
+rsyncNetBorgRepo :: String -> [Borg.BorgRepoOpt] -> Borg.BorgRepo
+rsyncNetBorgRepo d os = Borg.BorgRepoUsing os' ("2318@usw-s002.rsync.net:" ++ d)
+  where
+	-- rsync.net has a newer borg here
+	os' = Borg.UsesEnvVar ("BORG_REMOTE_PATH", "borg1") : os

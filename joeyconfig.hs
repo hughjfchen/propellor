@@ -19,7 +19,6 @@ import qualified Propellor.Property.Hostname as Hostname
 import qualified Propellor.Property.Fstab as Fstab
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Dns as Dns
-import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Git as Git
 import qualified Propellor.Property.Postfix as Postfix
 import qualified Propellor.Property.Apache as Apache
@@ -52,7 +51,6 @@ hosts =                 --                  (o)  `
 	, baleen
 	, honeybee
 	, kite
-	, elephant
 	, beaver
 	, mouse
 	, peregrine
@@ -207,7 +205,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Postfix.satellite
 
 	& check (not <$> inChroot) (setupRevertableProperty autobuilder)
-	& check (not <$> inChroot) (setupRevertableProperty ancientautobuilder)
+	& check (not <$> inChroot) (undoRevertableProperty ancientautobuilder)
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
   where
@@ -250,13 +248,16 @@ kite = host "kite.kitenet.net" $ props
 	& Apt.serviceInstalledRunning "ntp"
 	& "/etc/timezone" `File.hasContent` ["US/Eastern"]
 	
-	& Borg.backup "/" (Borg.BorgRepo "joey@eubackup.kitenet.net:/home/joey/lib/backup/kite/kite.borg") Cron.Daily
+	& Borg.backup "/" (JoeySites.rsyncNetBorgRepo "kite.borg" []) Cron.Daily
 		[ "--exclude=/proc/*"
 		, "--exclude=/sys/*"
 		, "--exclude=/run/*"
+		, "--exclude=/mnt/*"
 		, "--exclude=/tmp/*"
 		, "--exclude=/var/tmp/*"
 		, "--exclude=/var/cache/*"
+		, "--exclude=/var/lib/swapspace/*"
+		, "--exclude=/var/lib/container/*"
 		, "--exclude=/home/joey/lib"
 		-- These directories are backed up and restored separately.
 		, "--exclude=/srv/git"
@@ -266,7 +267,7 @@ kite = host "kite.kitenet.net" $ props
 		, Borg.KeepWeeks 4
 		, Borg.KeepMonths 6
 		]
-		`requires` Ssh.knownHost hosts "eubackup.kitenet.net" (User "root")
+		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 		`requires` Ssh.userKeys (User "root")
 			(Context "kite.kitenet.net")
 			[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC5Gza2sNqSKfNtUN4dN/Z3rlqw18nijmXFx6df2GtBoZbkIak73uQfDuZLP+AXlyfHocwdkdHEf/zrxgXS4EokQMGLZhJ37Pr3edrEn/NEnqroiffw7kyd7EqaziA6UOezcLTjWGv+Zqg9JhitYs4WWTpNzrPH3yQf1V9FunZnkzb4gJGndts13wGmPEwSuf+QHbgQvjMOMCJwWSNcJGdhDR66hFlxfG26xx50uIczXYAbgLfHp5W6WuR/lcaS9J6i7HAPwcsPDA04XDinrcpl29QwsMW1HyGS/4FSCgrDqNZ2jzP49Bka78iCLRqfl1efyYas/Zo1jQ0x+pxq2RMr root@kite")
@@ -286,7 +287,7 @@ kite = host "kite.kitenet.net" $ props
 	& alias "git.joeyh.name"
 	& JoeySites.gitServer hosts
 
-	& JoeySites.downloads hosts
+	& JoeySites.downloads
 	& JoeySites.gitAnnexDistributor
 	& JoeySites.tmp
 
@@ -302,6 +303,17 @@ kite = host "kite.kitenet.net" $ props
 	& alias "nntp.olduse.net"
 	& JoeySites.oldUseNetServer hosts
 	& Systemd.nspawned oldusenetShellBox
+	
+	& alias "znc.kitenet.net"
+	& JoeySites.ircBouncer
+
+	& alias "kgb.kitenet.net"
+	& JoeySites.kgbServer
+	
+	& Systemd.nspawned ancientKitenet
+	
+	& alias "podcatcher.kitenet.net"
+	& JoeySites.podcatcher
 
 	& JoeySites.scrollBox
 	& alias "scroll.joeyh.name"
@@ -328,6 +340,7 @@ kite = host "kite.kitenet.net" $ props
 		, "domain kitenet.net"
 		, "search kitenet.net"
 		]
+	
 	& alias "debug-me.joeyh.name"
 	& Apt.installed ["debug-me"]
 	& Systemd.enabled "debug-me"
@@ -336,65 +349,6 @@ kite = host "kite.kitenet.net" $ props
 	& Apache.httpsVirtualHost "letsencrypt.joeyh.name" "/var/www/html"
 		(LetsEncrypt.AgreeTOS (Just "id@joeyh.name"))
 	& alias "letsencrypt.joeyh.name"
-  where
-
-elephant :: Host
-elephant = host "elephant.kitenet.net" $ props
-	& standardSystem Unstable X86_64
-		[ "Storage, big data, and backups, omnomnom!"
-		, "(Encrypt all data stored here.)"
-		]
-	& ipv4 "193.234.225.114"
-	& Ssh.hostKeys hostContext
-		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBANxXGWac0Yz58akI3UbLkphAa8VPDCGswTS0CT3D5xWyL9OeArISAi/OKRIvxA4c+9XnWtNXS7nYVFDJmzzg8v3ZMx543AxXK82kXCfvTOc/nAlVz9YKJAA+FmCloxpmOGrdiTx1k36FE+uQgorslGW/QTxnOcO03fDZej/ppJifAAAAFQCnenyJIw6iJB1+zuF/1TSLT8UAeQAAAIEA1WDrI8rKnxnh2rGaQ0nk+lOcVMLEr7AxParnZjgC4wt2mm/BmkF/feI1Fjft2z4D+V1W7MJHOqshliuproxhFUNGgX9fTbstFJf66p7h7OLAlwK8ZkpRk/uV3h5cIUPel6aCwjL5M2gN6/yq+gcCTXeHLq9OPyUTmlN77SBL71UAAACBAJJiCHWxPAGooe7Vv3W7EIBbsDyf7b2kDH3bsIlo+XFcKIN6jysBu4kn9utjFlrlPeHUDzGQHe+DmSqTUQQ0JPCRGcAcuJL8XUqhJi6A6ye51M9hVt51cJMXmERx9TjLOP/adkEuxpv3Fj20FxRUr1HOmvRvewSHrJ1GeA1bjbYL")
-		, (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrEQ7aNmRYyLKY7xHILQsyV/w0B3++D98vn5IvjHkDnitrUWjB+vPxlS7LYKLzN9Jx7Hb14R2lg7+wdgtFMxLZZukA8b0tqFpTdRFBvBYGh8IM8Id1iE/6io/NZl+hTQEDp0LJP+RljH1CLfz7J3qtc+v6NbfTP5cOgH104mWYoLWzJGaZ4p53jz6THRWnVXy5nPO3dSBr2f/SQgRuJQWHNIh0jicRGD8H2kzOQzilpo+Y46PWtkufl3Yu3UsP5UMAyLRIXwZ6nNRZqRiVWrX44hoNfDbooTdFobbHlqMl+y6291bOXaOA6PACk8B4IVcC89/gmc9Oe4EaDuszU5kD")
-		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAJkoPRhUGT8EId6m37uBdYEtq42VNwslKnc9mmO+89ody066q6seHKeFY6ImfwjcyIjM30RTzEwftuVNQnbEB0=")
-		, (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB6VtXi0uygxZeCo26n6PuCTlSFCBcwRifv6N8HdWh2Z")
-		]
-
-	& Grub.chainPVGrub "hd0,0" "xen/xvda1" 30
-	& Postfix.satellite
-	& Apt.unattendedUpgrades
-	& Systemd.installed
-	& Systemd.persistentJournal
-	& Ssh.userKeys (User "joey") hostContext
-		[ (SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC4wJuQEGno+nJvtE75IKL6JQ08sJHZ9Bzs9Dvu0zuxSEZE30MWK98/twNwCH9PVf2N9m4apfN7f9GHgHTUongfo8xnLAk4PuBSTV74YgKyOCvNYqANuKKa+76PsS/vFf/or3ct++uTEWsRyYD29cQndufwKA4rthAqHG+fifbLDC53AjcldI0zI1RckpPzT+AMazlnSBFMlpKvGD2uzSXALVRXa3vSqWkWd0z7qmIkpmpq0AAgbDLwrGBcUGV/h0rOa2s8zSeirA0tLmHNROl4cZsX0T/6VBGfBRkrHSxL67xJziATw4WPq6spYlxg84pC/5qJVr9SC5HosppbDqgj joey@elephant")
-		]
-	& Apt.serviceInstalledRunning "swapspace"
-
-	& alias "eubackup.kitenet.net"
-	& Apt.installed ["sshfs", "rsync", "borgbackup"]
-	& JoeySites.githubBackup
-	& JoeySites.rsyncNetBackup hosts
-
-	& alias "podcatcher.kitenet.net"
-	& JoeySites.podcatcher
-
-	& alias "znc.kitenet.net"
-	& JoeySites.ircBouncer
-	& alias "kgb.kitenet.net"
-	& JoeySites.kgbServer
-
-	& alias "ns3.kitenet.net"
-	& myDnsSecondary
-
-	& Systemd.nspawned oldusenetShellBox
-	& Systemd.nspawned ancientKitenet
-	& Systemd.nspawned openidProvider
-	 	`requires` Apt.serviceInstalledRunning "ntp"
-
-	& JoeySites.scrollBox
-	& alias "scroll.joeyh.name"
-	& alias "eu.scroll.joeyh.name"
-
-	-- For https port 443, shellinabox with ssh login to
-	-- kitenet.net
-	& alias "shell.kitenet.net"
-	& Systemd.nspawned kiteShellBox
-	-- Nothing is using http port 80, so listen on
-	-- that port for ssh, for traveling on bad networks that
-	-- block 22.
-	& Ssh.listenPort (Port 80)
 
 beaver :: Host
 beaver = host "beaver.kitenet.net" $ props
@@ -403,8 +357,6 @@ beaver = host "beaver.kitenet.net" $ props
 	& Ssh.hostPubKey SshDsa "ssh-dss AAAAB3NzaC1kc3MAAACBAIrLX260fY0Jjj/p0syNhX8OyR8hcr6feDPGOj87bMad0k/w/taDSOzpXe0Wet7rvUTbxUjH+Q5wPd4R9zkaSDiR/tCb45OdG6JsaIkmqncwe8yrU+pqSRCxttwbcFe+UU+4AAcinjVedZjVRDj2rRaFPc9BXkPt7ffk8GwEJ31/AAAAFQCG/gOjObsr86vvldUZHCteaJttNQAAAIB5nomvcqOk/TD07DLaWKyG7gAcW5WnfY3WtnvLRAFk09aq1EuiJ6Yba99Zkb+bsxXv89FWjWDg/Z3Psa22JMyi0HEDVsOevy/1sEQ96AGH5ijLzFInfXAM7gaJKXASD7hPbVdjySbgRCdwu0dzmQWHtH+8i1CMVmA2/a5Y/wtlJAAAAIAUZj2US2D378jBwyX1Py7e4sJfea3WSGYZjn4DLlsLGsB88POuh32aOChd1yzF6r6C2sdoPBHQcWBgNGXcx4gF0B5UmyVHg3lIX2NVSG1ZmfuLNJs9iKNu4cHXUmqBbwFYQJBvB69EEtrOw4jSbiTKwHFmqdA/mw1VsMB+khUaVw=="
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "ssh" (Port 22)
-	& alias "usbackup.kitenet.net"
-	& JoeySites.backupsBackedupFrom hosts "eubackup.kitenet.net" "/home/joey/lib/backup"
 	& Apt.serviceInstalledRunning "anacron"
 	& Cron.niceJob "system disk backed up" Cron.Weekly (User "root") "/"
 		"rsync -a -x / /home/joey/lib/backup/beaver.kitenet.net/"
@@ -512,16 +464,6 @@ keysafe = host "keysafe.joeyh.name" $ props
 --------------------------- \____, o          ,' ----------------------------
 ---------------------------- '--,___________,'  -----------------------------
 
--- My own openid provider. Uses php, so containerized for security
--- and administrative sanity.
-openidProvider :: Systemd.Container
-openidProvider = Systemd.debContainer "openid-provider" $ props
-	& standardContainer (Stable "stretch")
-	& alias hn
-	& OpenId.providerFor [User "joey", User "liw"] hn (Just (Port 8081))
-  where
-	hn = "openid.kitenet.net"
-
 -- Exhibit: kite's 90's website on port 1994.
 ancientKitenet :: Systemd.Container
 ancientKitenet = Systemd.debContainer "ancient-kitenet" $ props
@@ -542,11 +484,6 @@ oldusenetShellBox = Systemd.debContainer "oldusenet-shellbox" $ props
 	& standardContainer (Stable "stretch")
 	& alias "shell.olduse.net"
 	& JoeySites.oldUseNetShellBox
-
-kiteShellBox :: Systemd.Container
-kiteShellBox = Systemd.debContainer "kiteshellbox" $ props
-	& standardContainer (Stable "stretch")
-	& JoeySites.kiteShellBox
 
 type Motd = [String]
 
@@ -598,22 +535,22 @@ myDnsSecondary = propertyList "dns secondary for all my domains" $ props
 branchableSecondary :: RevertableProperty (HasInfo + DebianLike) DebianLike
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 
--- Currently using kite (ns4) as primary with secondaries
--- elephant (ns3) and gandi.
+-- Currently using kite (ns4) as primary with gandi as secondary
 -- kite handles all mail.
 myDnsPrimary :: Domain -> [(BindDomain, Record)] -> RevertableProperty (HasInfo + DebianLike) DebianLike
 myDnsPrimary domain extras = Dns.signedPrimary (Weekly Nothing) hosts domain
 	(Dns.mkSOA "ns4.kitenet.net" 100) $
 	[ (RootDomain, NS $ AbsDomain "ns4.kitenet.net")
-	, (RootDomain, NS $ AbsDomain "ns3.kitenet.net")
 	, (RootDomain, NS $ AbsDomain "ns6.gandi.net")
 	, (RootDomain, MX 0 $ AbsDomain "kitenet.net")
 	, (RootDomain, TXT "v=spf1 a a:kitenet.net ~all")
 	, JoeySites.domainKey
 	] ++ extras
 
-monsters :: [Host]    -- Systems I don't manage with propellor,
-monsters =            -- but do want to track their public keys etc.
+-- Systems I don't manage with propellor,
+-- but do want to track their public keys etc.
+monsters :: [Host]
+monsters =
 	[ host "usw-s002.rsync.net" $ props
 		& Ssh.hostPubKey SshEd25519 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB7yTEBGfQYdwG/oeL+U9XPMIh/dW7XNs9T+M79YIOrd"
 	, host "github.com" $ props
