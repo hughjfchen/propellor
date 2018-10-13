@@ -1056,6 +1056,7 @@ homeRouter = propertyList "home router" $ props
 		, "no-hosts"
 		, "address=/honeybee.kitenet.net/10.1.1.1"
 		, "address=/house.kitenet.net/10.1.1.1"
+		, "dhcp-host=0c:98:38:80:6a:f9,10.1.1.134,android-kodama
 		]
 		`onChange` Service.restarted "dnsmasq"
 	& ipmasq homerouterWifiInterface
