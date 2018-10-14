@@ -228,6 +228,7 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 			ubootFlashKernelFinalized p
 		[FlashKernelInstalled, UbootInstalled p] -> 
 			ubootFlashKernelFinalized p
+                [DirectBoot] -> directBootFinalized
 		_ -> unbootable "multiple bootloaders are installed; don't know which to use"
 
 -- | This property is automatically added to the chroot when building a
@@ -468,6 +469,9 @@ grubFinalized grubtarget _img mnt loopdevs =
 
 ubootFinalized :: (FilePath -> FilePath -> Property Linux) -> Finalization
 ubootFinalized p (RawDiskImage img) mnt _loopdevs = p img mnt
+
+directBootFinalized :: Finalization
+directBootFinalized _img _mnt _loopDevs = doNothing
 
 flashKernelFinalized :: Finalization
 flashKernelFinalized _img mnt _loopdevs = FlashKernel.flashKernelMounted mnt
