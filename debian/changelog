@@ -15,6 +15,8 @@ propellor (5.5.0) UNRELEASED; urgency=medium
     the line to /etc/sudoers, but that would override more specific lines
     in the include directory.
   * Borg: Added UsesEnvVar.
+  * Added DiskImage.noBootloader, useful for eg, direct booting with
+    qemu. Thanks, David Bremner.
 
  -- Joey Hess <id@joeyh.name>  Thu, 09 Aug 2018 10:54:41 -0400
 

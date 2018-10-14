@@ -18,6 +18,7 @@ module Propellor.Property.DiskImage (
 	imageBuiltFrom,
 	imageExists,
 	GrubTarget(..),
+	noBootloader,
 ) where
 
 import Propellor.Base
@@ -228,7 +229,7 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 			ubootFlashKernelFinalized p
 		[FlashKernelInstalled, UbootInstalled p] -> 
 			ubootFlashKernelFinalized p
-                [DirectBoot] -> directBootFinalized
+		[NoBootloader] -> noBootloaderFinalized
 		_ -> unbootable "multiple bootloaders are installed; don't know which to use"
 
 -- | This property is automatically added to the chroot when building a
@@ -470,9 +471,6 @@ grubFinalized grubtarget _img mnt loopdevs =
 ubootFinalized :: (FilePath -> FilePath -> Property Linux) -> Finalization
 ubootFinalized p (RawDiskImage img) mnt _loopdevs = p img mnt
 
-directBootFinalized :: Finalization
-directBootFinalized _img _mnt _loopDevs = doNothing
-
 flashKernelFinalized :: Finalization
 flashKernelFinalized _img mnt _loopdevs = FlashKernel.flashKernelMounted mnt
 
@@ -480,6 +478,15 @@ ubootFlashKernelFinalized :: (FilePath -> FilePath -> Property Linux) -> Finaliz
 ubootFlashKernelFinalized p img mnt loopdevs = 
 	ubootFinalized p img mnt loopdevs
 		`before` flashKernelFinalized img mnt loopdevs
+
+-- | Normally a boot loader is installed on a disk image. However,
+-- when the disk image will be booted by eg qemu booting the kernel and
+-- initrd, no boot loader is needed, and this property can be used.
+noBootloader :: Property (HasInfo + UnixLike)
+noBootloader = pureInfoProperty "no bootloader" [NoBootloader]
+
+noBootloaderFinalized :: Finalization
+noBootloaderFinalized _img _mnt _loopDevs = doNothing
 
 isChild :: FilePath -> Maybe MountPoint -> Bool
 isChild mntpt (Just d)

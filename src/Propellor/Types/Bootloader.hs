@@ -10,7 +10,7 @@ data BootloaderInstalled
 	= GrubInstalled GrubTarget
 	| FlashKernelInstalled
 	| UbootInstalled (FilePath -> FilePath -> Property Linux)
-        | DirectBoot
+	| NoBootloader
 	deriving (Typeable)
 
 -- | Platforms that grub can boot.
@@ -20,7 +20,7 @@ instance Show BootloaderInstalled where
 	show (GrubInstalled _) = "GrubInstalled"
 	show FlashKernelInstalled = "FlashKernelInstalled"
 	show (UbootInstalled _) = "UbootInstalled"
-        show DirectBoot = "DirectBoot"
+	show NoBootloader = "NoBootloader"
 
 instance IsInfo [BootloaderInstalled] where
 	propagateInfo _ = PropagateInfo False
