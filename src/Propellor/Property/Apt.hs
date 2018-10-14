@@ -241,6 +241,10 @@ type Package = String
 installed :: [Package] -> Property DebianLike
 installed = installed' ["-y"]
 
+-- | Minimal install of package, without recommends.
+installedMin :: [Package] -> Property DebianLike
+installedMin = installed' ["--no-install-recommends", "-y"]
+
 installed' :: [String] -> [Package] -> Property DebianLike
 installed' params ps = robustly $ check (not <$> isInstalled' ps) go
 	`describe` unwords ("apt installed":ps)
@@ -253,19 +257,22 @@ installed' params ps = robustly $ check (not <$> isInstalled' ps) go
 -- dependencies from stable-backports too, you will need to include those
 -- dependencies in the list of packages passed to this function.
 backportInstalled :: [Package] -> Property Debian
-backportInstalled ps = withOS desc $ \w o -> case o of
+backportInstalled = backportInstalled' ["-y"]
+
+-- | Minimal install from the stable-backports suite, without recommends.
+backportInstalledMin :: [Package] -> Property Debian
+backportInstalledMin = backportInstalled' ["--no-install-recommends", "-y"]
+
+backportInstalled' :: [String] -> [Package] -> Property Debian
+backportInstalled' params ps = withOS desc $ \w o -> case o of
 	(Just (System (Debian _ suite) _)) -> case backportSuite suite of
 		Nothing -> unsupportedOS'
 		Just bs -> ensureProperty w $
-			runApt (["install", "-y"] ++ ((++ '/':bs) <$> ps))
+			runApt (("install":params) ++ ((++ '/':bs) <$> ps))
 				`changesFile` dpkgStatus
 	_ -> unsupportedOS'
   where
 	desc = unwords ("apt installed backport":ps)
-
--- | Minimal install of package, without recommends.
-installedMin :: [Package] -> Property DebianLike
-installedMin = installed' ["--no-install-recommends", "-y"]
 
 removed :: [Package] -> Property DebianLike
 removed ps = check (any (== IsInstalled) <$> getInstallStatus ps)
