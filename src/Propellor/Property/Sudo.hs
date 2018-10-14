@@ -18,6 +18,8 @@ import Propellor.Property.User
 --
 -- If the main sudoers file contains a conflicting line for
 -- the user for ALL commands, the line will be removed.
+--
+-- Also ensures that the main sudoers file includes /etc/sudoers.d/
 enabledFor :: User -> RevertableProperty DebianLike DebianLike
 enabledFor user@(User u) = setup `requires` Apt.installed ["sudo"] <!> cleanup
   where
@@ -25,6 +27,7 @@ enabledFor user@(User u) = setup `requires` Apt.installed ["sudo"] <!> cleanup
 	setup = property' desc $ \w -> do
 		locked <- liftIO $ isLockedPassword user
 		ensureProperty w $ combineProperties desc $ props
+			& containsLine sudoers "#includedir /etc/sudoers.d"
 			& fileProperty desc
 				(modify locked . filter (wanted locked))
 				dfile
