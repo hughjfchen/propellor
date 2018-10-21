@@ -30,8 +30,8 @@ install:
 
 clean:
 	rm -rf dist Setup tags propellor propellor.1 privdata/local
-	find -name \*.o -exec rm {} \;
-	find -name \*.hi -exec rm {} \;
+	find . -name \*.o -exec rm {} \;
+	find . -name \*.hi -exec rm {} \;
 
 # hothasktags chokes on some template haskell etc, so ignore errors
 # duplicate tags with Propellor.Property. removed from the start, as we
