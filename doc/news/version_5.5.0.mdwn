@@ -1,0 +1,20 @@
+propellor 5.5.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * letsencrypt': Pass --expand to support expanding the list of domains
+   * Split mailname property out of Hostname.sane, since bad mailname
+     guesses can lead to ugly surprises. (API change)
+   * Removed HostingProvider.CloudatCost module as it lacks a maintainer.
+     (If anyone would like to maintain it, send a patch adding it back.)
+     (API change)
+   * Added Systemd.escapePath helper function useful when creating mount
+     units.
+   * Added Sudo.sudoersDFile property.
+   * Sudo.enabledFor: Write to /etc/sudoers.d/000users rather than to
+     /etc/sudoers. (Any old lines it wrote to /etc/sudoers will be removed.)
+     This fixes a potential ordering problem; the property used to append
+     the line to /etc/sudoers, but that would override more specific lines
+     in the include directory.
+   * Borg: Added UsesEnvVar.
+   * Added DiskImage.noBootloader, useful for eg, direct booting with
+     qemu. Thanks, David Bremner.
+   * Added Apt.backportInstalledMin."""]]
