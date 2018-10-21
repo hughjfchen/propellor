@@ -1,4 +1,4 @@
-propellor (5.5.0) UNRELEASED; urgency=medium
+propellor (5.5.0) unstable; urgency=medium
 
   * letsencrypt': Pass --expand to support expanding the list of domains
   * Split mailname property out of Hostname.sane, since bad mailname
@@ -19,7 +19,7 @@ propellor (5.5.0) UNRELEASED; urgency=medium
     qemu. Thanks, David Bremner.
   * Added Apt.backportInstalledMin.
 
- -- Joey Hess <id@joeyh.name>  Thu, 09 Aug 2018 10:54:41 -0400
+ -- Joey Hess <id@joeyh.name>  Sat, 20 Oct 2018 21:00:27 -0400
 
 propellor (5.4.1) unstable; urgency=medium
 
