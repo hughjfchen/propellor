@@ -186,7 +186,6 @@ honeybee = host "honeybee.kitenet.net" $ props
 		-- Workaround for https://bugs.debian.org/844056
 		`requires` File.hasPrivContent "/lib/firmware/brcm/brcmfmac43362-sdio.txt" anyContext
 		`requires` File.dirExists "/lib/firmware/brcm"
-	& "/etc/default/rcS" `File.containsLine` "FSCKFIX=yes"
 	& Apt.serviceInstalledRunning "ntp" -- no hardware clock
 	& bootstrappedFrom GitRepoOutsideChroot
 	& Ssh.hostKeys hostContext
@@ -323,6 +322,7 @@ kite = host "kite.kitenet.net" $ props
 		[ (RelDomain "mouse-onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
 		, (RelDomain "beaver-onion", CNAME $ AbsDomain "tl4xsvaxryjylgxs.onion")
 		, (RelDomain "peregrine-onion", CNAME $ AbsDomain "ahw47zqw6qszoufl.onion")
+		, (RelDomain "sow-onion", CNAME $ AbsDomain "urt4g2tq32qktgtp.onion")
 		]
 	& myDnsPrimary "joeyh.name" []
 	& myDnsPrimary "ikiwiki.info" []
