@@ -1,3 +1,9 @@
+propellor (5.5.1) UNRELEASED; urgency=medium
+
+  * Some openbsd portability fixes. Thanks, rsiddharth.
+
+ -- Joey Hess <id@joeyh.name>  Tue, 23 Oct 2018 11:37:16 -0400
+
 propellor (5.5.0) unstable; urgency=medium
 
   * letsencrypt': Pass --expand to support expanding the list of domains
