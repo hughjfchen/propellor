@@ -1017,7 +1017,7 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/"
 
 homerouterWifiInterface :: String
-homerouterWifiInterface = "wlan0" -- "wlx7cdd90400448" is a wifi dongle
+homerouterWifiInterface = "wlx7cdd90400448" -- wifi dongle
 
 -- My home router, running hostapd and dnsmasq,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
