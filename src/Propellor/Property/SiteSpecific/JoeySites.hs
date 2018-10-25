@@ -806,7 +806,7 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "RewriteRule /~anna/.* http://waldeneffect\\.org/ [R]"
 		, "RewriteRule /~anna/.* http://waldeneffect\\.org/ [R]"
 		, "RewriteRule /~anna http://waldeneffect\\.org/ [R]"
-		, "RewriteRule /simpleid/ http://openid.kitenet.net:8081/simpleid/"
+		, "RewriteRule /simpleid/ http://openid.kitenet.net:8086/simpleid/"
 		, "# Even the kite home page is not here any more!"
 		, "RewriteRule ^/$ http://www.kitenet.net/ [R]"
 		, "RewriteRule ^/index.html http://www.kitenet.net/ [R]"

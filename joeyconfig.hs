@@ -27,6 +27,7 @@ import qualified Propellor.Property.Locale as Locale
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
+import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
@@ -309,6 +310,7 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.kgbServer
 	
 	& Systemd.nspawned ancientKitenet
+	& Systemd.nspawned openidProvider
 	
 	& alias "podcatcher.kitenet.net"
 	& JoeySites.podcatcher
@@ -486,6 +488,16 @@ oldusenetShellBox = Systemd.debContainer "oldusenet-shellbox" $ props
 	& standardContainer (Stable "stretch")
 	& alias "shell.olduse.net"
 	& JoeySites.oldUseNetShellBox
+
+-- My own openid provider. Uses php, so containerized for security
+-- and administrative sanity.
+openidProvider :: Systemd.Container
+openidProvider = Systemd.debContainer "openid-provider" $ props
+	& standardContainer (Stable "stretch")
+	& alias hn
+	& OpenId.providerFor [User "joey", User "liw"] hn (Just (Port 8086))
+  where
+	hn = "openid.kitenet.net"
 
 type Motd = [String]
 
