@@ -585,10 +585,18 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 	& "/etc/pine.conf" `File.hasContent`
 		[ "# deployed with propellor"
 		, "inbox-path={localhost}inbox"
-		, "rsh-command=/usr/lib/dovecot/imap"
+		, "rsh-command=" ++ imapalpinescript
 		]
 		`describe` "pine configured to use local imap server"
-
+	& imapalpinescript `File.hasContent`
+		[ "#!/bin/sh"
+		, "# deployed with propellor"
+		, "set -e"
+		, "exec /usr/lib/dovecot/imap 2>/dev/null"
+		]
+		`onChange` (imapalpinescript `File.mode`
+			combineModes (readModes ++ executeModes))
+		`describe` "imap script for pine"
 	& Apt.serviceInstalledRunning "mailman"
 	-- Override the default http url. (Only affects new lists.)
 	& "/etc/mailman/mm_cfg.py" `File.containsLine`
@@ -600,6 +608,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
   where
 	ctx = Context "kitenet.net"
 	pinescript = "/usr/local/bin/pine"
+	imapalpinescript = "/usr/local/bin/imap-for-alpine"
 	dovecotusers = "/etc/dovecot/users"
 
 	ssmtp = Postfix.Service
