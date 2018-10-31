@@ -122,9 +122,9 @@ standardAutoBuilder suite arch flavor =
 		& Apt.stdSourcesList
 		& Apt.unattendedUpgrades
 		& Apt.cacheCleaned
-		& buildDepsApt
 		& User.accountFor (User builduser)
 		& tree (architectureToDebianArchString arch) flavor
+		& buildDepsApt
 
 stackAutoBuilder :: DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)
 stackAutoBuilder suite arch flavor =
