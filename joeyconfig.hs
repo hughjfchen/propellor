@@ -156,6 +156,9 @@ orca = host "orca.kitenet.net" $ props
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.stackAutoBuilder
 		(Stable "jessie") X86_32 (Just "ancient") (Cron.Times "45 * * * *") "2h")
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		GitAnnexBuilder.standardAutoBuilder
+		Unstable ARM64 Nothing (Cron.Times "1 * * * *") "4h")
 
 banana :: Host
 banana = host "banana.kitenet.net" $ props
