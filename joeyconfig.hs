@@ -203,17 +203,13 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Apt.installed ["mtr-tiny", "iftop", "screen"]
 	& Postfix.satellite
 
-	& check (not <$> inChroot) (setupRevertableProperty autobuilder)
-	& check (not <$> inChroot) (undoRevertableProperty ancientautobuilder)
+	& check (not <$> inChroot) (undoRevertableProperty autobuilder)
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
   where
 	autobuilder = Systemd.nspawned $ GitAnnexBuilder.autoBuilderContainer
 		(GitAnnexBuilder.armAutoBuilder GitAnnexBuilder.standardAutoBuilder)
-		Unstable ARMEL Nothing (Cron.Times "15 15 * * *") "10h"
-	ancientautobuilder = Systemd.nspawned $ GitAnnexBuilder.autoBuilderContainer
-		(GitAnnexBuilder.armAutoBuilder GitAnnexBuilder.stackAutoBuilder)
-		(Stable "jessie") ARMEL (Just "ancient") (Cron.Times "5 15 * * *") "10h"
+		Testing ARMEL Nothing (Cron.Times "15 15 * * *") "10h"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
