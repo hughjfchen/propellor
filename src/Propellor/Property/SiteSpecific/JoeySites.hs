@@ -585,10 +585,18 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 	& "/etc/pine.conf" `File.hasContent`
 		[ "# deployed with propellor"
 		, "inbox-path={localhost}inbox"
-		, "rsh-command=/usr/lib/dovecot/imap"
+		, "rsh-command=" ++ imapalpinescript
 		]
 		`describe` "pine configured to use local imap server"
-
+	& imapalpinescript `File.hasContent`
+		[ "#!/bin/sh"
+		, "# deployed with propellor"
+		, "set -e"
+		, "exec /usr/lib/dovecot/imap 2>/dev/null"
+		]
+		`onChange` (imapalpinescript `File.mode`
+			combineModes (readModes ++ executeModes))
+		`describe` "imap script for pine"
 	& Apt.serviceInstalledRunning "mailman"
 	-- Override the default http url. (Only affects new lists.)
 	& "/etc/mailman/mm_cfg.py" `File.containsLine`
@@ -600,6 +608,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
   where
 	ctx = Context "kitenet.net"
 	pinescript = "/usr/local/bin/pine"
+	imapalpinescript = "/usr/local/bin/imap-for-alpine"
 	dovecotusers = "/etc/dovecot/users"
 
 	ssmtp = Postfix.Service
@@ -806,7 +815,7 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "RewriteRule /~anna/.* http://waldeneffect\\.org/ [R]"
 		, "RewriteRule /~anna/.* http://waldeneffect\\.org/ [R]"
 		, "RewriteRule /~anna http://waldeneffect\\.org/ [R]"
-		, "RewriteRule /simpleid/ http://openid.kitenet.net:8081/simpleid/"
+		, "RewriteRule /simpleid/ http://openid.kitenet.net:8086/simpleid/"
 		, "# Even the kite home page is not here any more!"
 		, "RewriteRule ^/$ http://www.kitenet.net/ [R]"
 		, "RewriteRule ^/index.html http://www.kitenet.net/ [R]"
@@ -1017,7 +1026,7 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/"
 
 homerouterWifiInterface :: String
-homerouterWifiInterface = "wlan0" -- "wlx7cdd90400448" is a wifi dongle
+homerouterWifiInterface = "wlx7cdd90400448" -- wifi dongle
 
 -- My home router, running hostapd and dnsmasq,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.

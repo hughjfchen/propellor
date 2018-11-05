@@ -122,9 +122,9 @@ standardAutoBuilder suite arch flavor =
 		& Apt.stdSourcesList
 		& Apt.unattendedUpgrades
 		& Apt.cacheCleaned
-		& buildDepsApt
 		& User.accountFor (User builduser)
 		& tree (architectureToDebianArchString arch) flavor
+		& buildDepsApt
 
 stackAutoBuilder :: DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)
 stackAutoBuilder suite arch flavor =
@@ -182,6 +182,7 @@ armAutoBuilder baseautobuilder suite arch flavor =
 	propertyList "arm git-annex autobuilder" $ props
 		& baseautobuilder suite arch flavor
 		-- Works around ghc crash with parallel builds on arm.
+		& File.dirExists (homedir </> ".cabal")
 		& (homedir </> ".cabal" </> "config")
 			`File.containsLine` "jobs: 1"
 		-- Work around https://github.com/systemd/systemd/issues/7135

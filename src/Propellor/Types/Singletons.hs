@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, DataKinds, PolyKinds, TypeOperators, TypeFamilies, GADTs, UndecidableInstances #-}
+{-# LANGUAGE CPP, DataKinds, PolyKinds, TypeOperators, TypeFamilies, GADTs, FlexibleContexts #-}
 
 -- | Simple implementation of singletons, portable back to ghc 7.6.3
 

@@ -27,6 +27,7 @@ import qualified Propellor.Property.Locale as Locale
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Gpg as Gpg
+import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
@@ -155,6 +156,9 @@ orca = host "orca.kitenet.net" $ props
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.stackAutoBuilder
 		(Stable "jessie") X86_32 (Just "ancient") (Cron.Times "45 * * * *") "2h")
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		GitAnnexBuilder.standardAutoBuilder
+		Testing ARM64 Nothing (Cron.Times "1 * * * *") "4h")
 
 banana :: Host
 banana = host "banana.kitenet.net" $ props
@@ -203,16 +207,12 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Postfix.satellite
 
 	& check (not <$> inChroot) (setupRevertableProperty autobuilder)
-	& check (not <$> inChroot) (undoRevertableProperty ancientautobuilder)
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
   where
 	autobuilder = Systemd.nspawned $ GitAnnexBuilder.autoBuilderContainer
 		(GitAnnexBuilder.armAutoBuilder GitAnnexBuilder.standardAutoBuilder)
-		Unstable ARMEL Nothing (Cron.Times "15 15 * * *") "10h"
-	ancientautobuilder = Systemd.nspawned $ GitAnnexBuilder.autoBuilderContainer
-		(GitAnnexBuilder.armAutoBuilder GitAnnexBuilder.stackAutoBuilder)
-		(Stable "jessie") ARMEL (Just "ancient") (Cron.Times "5 15 * * *") "10h"
+		Testing ARMEL Nothing (Cron.Times "15 15 * * *") "10h"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
@@ -309,6 +309,7 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.kgbServer
 	
 	& Systemd.nspawned ancientKitenet
+	& Systemd.nspawned openidProvider
 	
 	& alias "podcatcher.kitenet.net"
 	& JoeySites.podcatcher
@@ -486,6 +487,16 @@ oldusenetShellBox = Systemd.debContainer "oldusenet-shellbox" $ props
 	& standardContainer (Stable "stretch")
 	& alias "shell.olduse.net"
 	& JoeySites.oldUseNetShellBox
+
+-- My own openid provider. Uses php, so containerized for security
+-- and administrative sanity.
+openidProvider :: Systemd.Container
+openidProvider = Systemd.debContainer "openid-provider" $ props
+	& standardContainer (Stable "stretch")
+	& alias hn
+	& OpenId.providerFor [User "joey", User "liw"] hn (Just (Port 8086))
+  where
+	hn = "openid.kitenet.net"
 
 type Motd = [String]
 
