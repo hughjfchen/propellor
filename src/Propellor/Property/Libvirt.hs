@@ -24,6 +24,7 @@ installed = Apt.installed ["libvirt-clients", "virtinst"]
 defaultNetworkAutostarted :: Property UnixLike
 defaultNetworkAutostarted = check (not <$> doesFileExist autostartFile)
 	(cmdProperty "virsh" ["net-autostart", "default"])
+	`requires` installed
   where
 	autostartFile = "/etc/libvirt/qemu/networks/autostart/default.xml"
 
