@@ -127,8 +127,8 @@ kvmDefined imageType mem cpus auto h =
 	conf = "/etc/libvirt/qemu" </> hostName h <.> "xml"
 	confTmp = conf <.> "tmp"
 
-	osTypeArg = maybe "" ("--os-type=" ++) $ osType h
-	osVariantArg = maybe "" ("--os-variant=" ++) $ osVariant h
+	osTypeArg = maybe "" (" --os-type=" ++) $ osType h
+	osVariantArg = maybe "" (" --os-variant=" ++) $ osVariant h
 	autoStartArg = case auto of
 		AutoStart -> " --autostart"
 		NoAutoStart -> ""
