@@ -94,7 +94,7 @@ kvmDefined imageType mem cpus auto h =
 		(setupRevertableProperty $ imageBuiltFor h
 			(image) (Debootstrapped mempty))
 	nuked :: Property UnixLike
-	nuked = check (not <$> doesDirectoryExist (imageLoc <.> "chroot"))
+	nuked = check (doesDirectoryExist (imageLoc <.> "chroot"))
 		(property "destroy the chroot used to build the image" $ do
 			liftIO $ removeChroot (imageLoc <.> "chroot")
 			liftIO $ nukeFile (imageLoc <.> "parttable")
