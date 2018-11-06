@@ -1,8 +1,8 @@
 -- | Maintainer: Sean Whitton <spwhitton@spwhitton.name>
 
 module Propellor.Property.Libvirt (
-	NumVCPUs(..),
-	MiBMemory(..),
+	NumVCPUs,
+	MiBMemory,
 	AutoStart(..),
 	DiskImageType(..),
 	installed,
