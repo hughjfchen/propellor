@@ -116,8 +116,11 @@ kvmDefined imageType mem cpus auto h =
 			])
 	started :: Property UnixLike
 	started = case AutoStart of
-		AutoStart -> cmdProperty "virsh" ["start", hostName h]
-			`assume` MadeChange
+		AutoStart -> scriptProperty
+			[ "virsh list | grep -q \""
+				++ hostName h ++ " .*running\" && exit 0"
+			, "virsh start " ++ hostName h
+			] `assume` NoChange
 		NoAutoStart -> doNothing
 
 	image = case imageType of
