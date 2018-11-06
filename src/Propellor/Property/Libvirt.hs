@@ -115,7 +115,7 @@ kvmDefined imageType mem cpus auto h =
 			, "rm " ++ confTmp
 			])
 	started :: Property UnixLike
-	started = case AutoStart of
+	started = case auto of
 		AutoStart -> scriptProperty
 			[ "virsh list | grep -q \""
 				++ hostName h ++ " .*running\" && exit 0"
