@@ -33,7 +33,7 @@ installed = Apt.installed ["libvirt-clients", "virtinst"]
 -- | Ensure that the default libvirt network is set to autostart.
 --
 -- On Debian, it is not started by default after installation of libvirt.
-defaultNetworkAutostarted :: Property UnixLike
+defaultNetworkAutostarted :: Property DebianLike
 defaultNetworkAutostarted = check (not <$> doesFileExist autostartFile)
 	(cmdProperty "virsh" ["net-autostart", "default"])
 	`requires` installed
