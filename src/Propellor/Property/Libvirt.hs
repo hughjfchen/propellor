@@ -123,7 +123,7 @@ kvmDefined imageType mem cpus auto h =
 		Raw -> RawDiskImage imageLoc
 	imageLoc =
 		"/var/lib/libvirt/images" </> hostName h <.> case imageType of
-			Raw -> "xml"
+			Raw -> "img"
 	conf = "/etc/libvirt/qemu" </> hostName h <.> "xml"
 	confTmp = conf <.> "tmp"
 
