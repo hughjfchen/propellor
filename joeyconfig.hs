@@ -96,7 +96,7 @@ dragon = host "dragon.kitenet.net" $ props
 
 clam :: Host
 clam = host "clam.kitenet.net" $ props
-	& standardSystem Testing X86_64
+	& standardSystem (Stable "stretch") X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
 	& ipv4 "178.33.208.168"
 
