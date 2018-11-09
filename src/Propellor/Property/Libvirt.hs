@@ -1,8 +1,8 @@
 -- | Maintainer: Sean Whitton <spwhitton@spwhitton.name>
 
 module Propellor.Property.Libvirt (
-	NumVCPUs,
-	MiBMemory,
+	NumVCPUs(..),
+	MiBMemory(..),
 	AutoStart(..),
 	DiskImageType(..),
 	installed,
@@ -18,10 +18,10 @@ import Propellor.Property.Chroot.Util (removeChroot)
 import qualified Propellor.Property.Apt as Apt
 
 -- | The number of virtual CPUs to assign to the virtual machine
-type NumVCPUs = Int
+newtype NumVCPUs = NumVCPUs Int
 
 -- | The number of MiB of memory to assign to the virtual machine
-type MiBMemory = Int
+newtype MiBMemory = MiBMemory Int
 
 -- | Whether the virtual machine should be started after it is defined, and at
 -- host system boot
@@ -61,7 +61,9 @@ defaultNetworkAutostarted = check (not <$> doesFileExist autostartFile)
 -- >    & Libvirt.defaultNetworkAutostarted
 -- > 	`onChange` (cmdProperty "virsh" ["net-start", "default"]
 -- > 		`assume` MadeChange)
--- > 	& Libvirt.kvmDefined Libvirt.Raw 2048 2 Libvirt.NoAutoStart subbox
+-- > 	& Libvirt.kvmDefined Libvirt.Raw
+-- >		(Libvirt.MiBMemory 2048) (Libvirt.NumVCPUs 2)
+-- >		Libvirt.NoAutoStart subbox
 -- >
 -- > subbox = host "subbox.mybox.example.com" $ props
 -- > 	& osDebian Unstable X86_64
@@ -85,7 +87,7 @@ kvmDefined
 	-> AutoStart
 	-> Host
 	-> Property (HasInfo + DebianLike)
-kvmDefined imageType mem cpus auto h =
+kvmDefined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 	(built `before` nuked `before` defined `before` started)
 	`requires` installed
   where
