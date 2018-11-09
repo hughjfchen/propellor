@@ -7,7 +7,7 @@ module Propellor.Property.Libvirt (
 	DiskImageType(..),
 	installed,
 	defaultNetworkAutostarted,
-	kvmDefined,
+	defined,
 ) where
 
 import Propellor.Base
@@ -61,7 +61,7 @@ defaultNetworkAutostarted = check (not <$> doesFileExist autostartFile)
 -- >    & Libvirt.defaultNetworkAutostarted
 -- > 	`onChange` (cmdProperty "virsh" ["net-start", "default"]
 -- > 		`assume` MadeChange)
--- > 	& Libvirt.kvmDefined Libvirt.Raw
+-- > 	& Libvirt.defined Libvirt.Raw
 -- >		(Libvirt.MiBMemory 2048) (Libvirt.NumVCPUs 2)
 -- >		Libvirt.NoAutoStart subbox
 -- >
@@ -80,15 +80,15 @@ defaultNetworkAutostarted = check (not <$> doesFileExist autostartFile)
 -- > 		(Just (Network.Gateway (IPv4 "192.168.122.1")))
 -- > 		`requires` Network.cleanInterfacesFile
 -- > 	& Hostname.sane
-kvmDefined
+defined
 	:: DiskImageType
 	-> MiBMemory
 	-> NumVCPUs
 	-> AutoStart
 	-> Host
 	-> Property (HasInfo + DebianLike)
-kvmDefined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
-	(built `before` nuked `before` defined `before` started)
+defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
+	(built `before` nuked `before` xmlDefined `before` started)
 	`requires` installed
   where
 	built :: Property (HasInfo + DebianLike)
@@ -101,8 +101,8 @@ kvmDefined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 			liftIO $ removeChroot (imageLoc <.> "chroot")
 			liftIO $ nukeFile (imageLoc <.> "parttable")
 			return MadeChange)
-	defined :: Property UnixLike
-	defined = check (not <$> doesFileExist conf)
+	xmlDefined :: Property UnixLike
+	xmlDefined = check (not <$> doesFileExist conf)
 		(scriptProperty
 			[ "virt-install -n " ++ hostName h
 				++ osTypeArg ++ osVariantArg
