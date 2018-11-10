@@ -17,6 +17,8 @@ import Propellor.Property.DiskImage
 import Propellor.Property.Chroot.Util (removeChroot)
 import qualified Propellor.Property.Apt as Apt
 
+import Utility.Split
+
 -- | The number of virtual CPUs to assign to the virtual machine
 newtype NumVCPUs = NumVCPUs Int
 
@@ -175,6 +177,12 @@ osVariant h = hostSystem h >>= \s -> case s of
 	-- string, we need this to avoid a compiler warning)
 	System (Debian _ _) _ -> Nothing
 	System (Buntish _) _ -> Nothing
+
+-- Run a virsh command with the given list of arguments, that is expected to
+-- yield tabular output, and return the rows
+virshGetColumns :: [String] -> IO [[String]]
+virshGetColumns args = map (filter (not . null) . split " ") . drop 2 . lines
+ 	<$> readProcess "virsh" args
 
 hostSystem :: Host -> Maybe System
 hostSystem = fromInfoVal . fromInfo . hostInfo
