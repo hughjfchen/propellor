@@ -140,11 +140,38 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 
 -- ==== utility functions ====
 
--- TODO specify more of these
 osVariant :: Host -> Maybe String
 osVariant h = hostSystem h >>= \s -> case s of
+	System (Debian _ (Stable "jessie")) _ -> Just "debian8"
 	System (Debian _ (Stable "stretch")) _ -> Just "debian9"
-	_                                      -> Nothing
+	System (Debian _ Testing) _ -> Just "debiantesting"
+	System (Debian _ Unstable) _ -> Just "debiantesting"
+
+	System (Buntish "trusty") _ -> Just "ubuntu14.04"
+	System (Buntish "utopic") _ -> Just "ubuntu14.10"
+	System (Buntish "vivid") _ -> Just "ubuntu15.04"
+	System (Buntish "wily") _ -> Just "ubuntu15.10"
+	System (Buntish "xenial") _ -> Just "ubuntu16.04"
+	System (Buntish "yakkety") _ -> Just "ubuntu16.10"
+	System (Buntish "zesty") _ -> Just "ubuntu17.04"
+	System (Buntish "artful") _ -> Just "ubuntu17.10"
+	System (Buntish "bionic") _ -> Just "ubuntu18.04"
+
+	System (FreeBSD (FBSDProduction FBSD101)) _ -> Just "freebsd10.1"
+	System (FreeBSD (FBSDProduction FBSD102)) _ -> Just "freebsd10.2"
+	System (FreeBSD (FBSDProduction FBSD093)) _ -> Just "freebsd9.3"
+	System (FreeBSD (FBSDLegacy FBSD101)) _ -> Just "freebsd10.1"
+	System (FreeBSD (FBSDLegacy FBSD102)) _ -> Just "freebsd10.2"
+	System (FreeBSD (FBSDLegacy FBSD093)) _ -> Just "freebsd9.3"
+
+	-- libvirt doesn't have an archlinux variant yet, it seems
+	System ArchLinux _ -> Nothing
+
+	-- other stable releases that we don't know about (since there are
+	-- infinitely many possible stable release names, as it is a freeform
+	-- string, we need this to avoid a compiler warning)
+	System (Debian _ _) _ -> Nothing
+	System (Buntish _) _ -> Nothing
 
 hostSystem :: Host -> Maybe System
 hostSystem = fromInfoVal . fromInfo . hostInfo
