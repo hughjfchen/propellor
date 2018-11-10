@@ -140,6 +140,9 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 
 -- ==== utility functions ====
 
+-- The --os-variant property is optional, per virt-install(1), so return Nothing
+-- if there isn't a known correct value.  The VM will still be defined.  Pass
+-- the value if we can, though, to optimise the generated XML for the host's OS
 osVariant :: Host -> Maybe String
 osVariant h = hostSystem h >>= \s -> case s of
 	System (Debian _ (Stable "jessie")) _ -> Just "debian8"
