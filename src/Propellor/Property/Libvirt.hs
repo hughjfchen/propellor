@@ -120,12 +120,18 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 			]
 	started :: Property UnixLike
 	started = case auto of
-		AutoStart -> scriptProperty
-			[ "virsh list | grep -q \""
-				++ hostName h ++ " .*running\" && exit 0"
-			, "virsh start " ++ hostName h
-			] `assume` NoChange
+		AutoStart -> property "start the VM" $ do
+			runningVMs <- liftIO $ virshGetColumns ["list"]
+			-- From the point of view of `virsh start`, the "State"
+			-- column in the output of `virsh list` is not relevant.
+			-- So long as the VM is listed, it's considered started.
+			if [hostName h] `elem` (take 1 . drop 1 <$> runningVMs)
+				then noChange
+				else makeChange $ unlessM startIt $
+					errorMessage "failed to start VM"
 		NoAutoStart -> doNothing
+	  where
+		startIt = boolSystem "virsh" [Param "start", Param $ hostName h]
 
 	image = case imageType of
 		Raw -> RawDiskImage imageLoc
