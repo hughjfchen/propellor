@@ -120,19 +120,26 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 			return MadeChange
 	xmlDefined :: Property UnixLike
 	xmlDefined = check (not <$> doesFileExist conf) $
-		scriptProperty
-			[ "virt-install -n " ++ hostName h
-				++ osVariantArg
-				++ " --memory=" ++ show mem
-				++ " --vcpus=" ++ show cpus
-				++ " --disk path=" ++ imageLoc
+		property "define the libvirt VM" $
+		withTmpFile (hostName h) $ \t fh -> do
+			xml <- liftIO $ readProcess "virt-install" $
+				[ "-n", hostName h
+				, osVariantArg
+				, "--memory=" ++ show mem
+				, "--vcpus=" ++ show cpus
+				, "--disk"
+				, "path=" ++ imageLoc
 					++ ",device=disk,bus=virtio"
-				++ autoStartArg
-				++ " --print-xml"
-				++ " >" ++ confTmp
-			, "virsh define " ++ confTmp
-			, "rm " ++ confTmp
-			]
+				, autoStartArg
+				, "--print-xml"
+				]
+			liftIO $ hPutStrLn fh xml
+			liftIO $ hClose fh
+			makeChange $ unlessM (defineIt t) $
+				errorMessage "failed to define VM"
+	  where
+		defineIt t = boolSystem "virsh" [Param "define", Param t]
+
 	started :: Property UnixLike
 	started = case auto of
 		AutoStart -> property "start the VM" $ do
@@ -154,11 +161,10 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 		"/var/lib/libvirt/images" </> hostName h <.> case imageType of
 			Raw -> "img"
 	conf = "/etc/libvirt/qemu" </> hostName h <.> "xml"
-	confTmp = conf <.> "tmp"
 
-	osVariantArg = maybe "" (" --os-variant=" ++) $ osVariant h
+	osVariantArg = maybe "" ("--os-variant=" ++) $ osVariant h
 	autoStartArg = case auto of
-		AutoStart -> " --autostart"
+		AutoStart -> "--autostart"
 		NoAutoStart -> ""
 
 -- ==== utility functions ====
