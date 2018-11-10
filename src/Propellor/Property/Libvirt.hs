@@ -58,12 +58,12 @@ defaultNetworkAutostarted = check (not <$> doesFileExist autostartFile)
 --
 -- > mybox = host "mybox.example.com" $ props
 -- > 	& osDebian (Stable "stretch") X86_64
--- >    & Libvirt.defaultNetworkAutostarted
+-- > 	& Libvirt.defaultNetworkAutostarted
 -- > 	`onChange` (cmdProperty "virsh" ["net-start", "default"]
 -- > 		`assume` MadeChange)
 -- > 	& Libvirt.defined Libvirt.Raw
--- >		(Libvirt.MiBMemory 2048) (Libvirt.NumVCPUs 2)
--- >		Libvirt.NoAutoStart subbox
+-- > 		(Libvirt.MiBMemory 2048) (Libvirt.NumVCPUs 2)
+-- > 		Libvirt.NoAutoStart subbox
 -- >
 -- > subbox = host "subbox.mybox.example.com" $ props
 -- > 	& osDebian Unstable X86_64
