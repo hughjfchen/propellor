@@ -7,6 +7,7 @@ module Propellor.Property.Libvirt (
 	DiskImageType(..),
 	installed,
 	defaultNetworkAutostarted,
+	defaultNetworkStarted,
 	defined,
 ) where
 
@@ -36,15 +37,31 @@ data DiskImageType = Raw -- | QCow2
 installed :: Property DebianLike
 installed = Apt.installed ["libvirt-clients", "virtinst"]
 
--- | Ensure that the default libvirt network is set to autostart.
+-- | Ensure that the default libvirt network is set to autostart, and start it.
 --
 -- On Debian, it is not started by default after installation of libvirt.
 defaultNetworkAutostarted :: Property DebianLike
-defaultNetworkAutostarted = check (not <$> doesFileExist autostartFile)
-	(cmdProperty "virsh" ["net-autostart", "default"])
+defaultNetworkAutostarted = autostarted
 	`requires` installed
+	`before` defaultNetworkStarted
   where
+	autostarted = check (not <$> doesFileExist autostartFile) $
+		cmdProperty "virsh" ["net-autostart", "default"]
 	autostartFile = "/etc/libvirt/qemu/networks/autostart/default.xml"
+
+-- | Ensure that the default libvirt network is started.
+defaultNetworkStarted :: Property DebianLike
+defaultNetworkStarted =	go `requires` installed
+  where
+	go :: Property UnixLike
+	go = property "start libvirt's default network" $ do
+		runningNetworks <- liftIO $ virshGetColumns ["net-list"]
+		if ["default"] `elem` (take 1 <$> runningNetworks)
+			then noChange
+			else makeChange $ unlessM startIt $
+				errorMessage "failed to start default network"
+	startIt = boolSystem "virsh" [Param "net-start", Param "default"]
+
 
 -- | Builds a disk image with the properties of the given Host, installs a
 -- libvirt configuration file to boot the image, and if it is set to autostart,
@@ -61,8 +78,6 @@ defaultNetworkAutostarted = check (not <$> doesFileExist autostartFile)
 -- > mybox = host "mybox.example.com" $ props
 -- > 	& osDebian (Stable "stretch") X86_64
 -- > 	& Libvirt.defaultNetworkAutostarted
--- > 	`onChange` (cmdProperty "virsh" ["net-start", "default"]
--- > 		`assume` MadeChange)
 -- > 	& Libvirt.defined Libvirt.Raw
 -- > 		(Libvirt.MiBMemory 2048) (Libvirt.NumVCPUs 2)
 -- > 		Libvirt.NoAutoStart subbox
