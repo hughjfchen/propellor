@@ -105,7 +105,7 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 	xmlDefined = check (not <$> doesFileExist conf)
 		(scriptProperty
 			[ "virt-install -n " ++ hostName h
-				++ osTypeArg ++ osVariantArg
+				++ osVariantArg
 				++ " --memory=" ++ show mem
 				++ " --vcpus=" ++ show cpus
 				++ " --disk path=" ++ imageLoc
@@ -133,20 +133,12 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 	conf = "/etc/libvirt/qemu" </> hostName h <.> "xml"
 	confTmp = conf <.> "tmp"
 
-	osTypeArg = maybe "" (" --os-type=" ++) $ osType h
 	osVariantArg = maybe "" (" --os-variant=" ++) $ osVariant h
 	autoStartArg = case auto of
 		AutoStart -> " --autostart"
 		NoAutoStart -> ""
 
 -- ==== utility functions ====
-
-osType :: Host -> Maybe String
-osType h = hostSystem h >>= \s -> case s of
-	System (Debian Linux _) _ -> Just "Linux"
-	System (Buntish _) _      -> Just "Linux"
-	System ArchLinux _        -> Just "Linux"
-	_                         -> Nothing
 
 -- TODO specify more of these
 osVariant :: Host -> Maybe String
