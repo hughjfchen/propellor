@@ -168,7 +168,7 @@ hasDesktopGroups user@(User u) = property' desc $ \o -> do
 	existinggroups <- map (fst . break (== ':')) . lines
 		<$> liftIO (readFile "/etc/group")
 	let toadd = filter (`elem` existinggroups) desktopgroups
-	ensureProperty o $ propertyList desc $ toProps $
+	ensureProperty o $ combineProperties desc $ toProps $
 		map (hasGroup user . Group) toadd
   where
 	desc = "user " ++ u ++ " is in standard desktop groups"
