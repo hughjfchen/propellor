@@ -17,6 +17,7 @@ module Propellor.Property.DiskImage (
 	imageRebuiltFor,
 	imageBuiltFrom,
 	imageExists,
+	imageChrootNotPresent,
 	GrubTarget(..),
 	noBootloader,
 ) where
@@ -200,14 +201,13 @@ imageBuilt' rebuild img mkchroot tabletype partspec =
 		`describe` desc
   where
 	desc = "built disk image " ++ describeDiskImage img
-	RawDiskImage imgfile = rawDiskImage img
 	cleanrebuild :: Property Linux
 	cleanrebuild
 		| rebuild = property desc $ do
 			liftIO $ removeChroot chrootdir
 			return MadeChange
 		| otherwise = doNothing
-	chrootdir = imgfile ++ ".chroot"
+	chrootdir = imageChroot img
 	chroot =
 		let c = propprivdataonly $ mkchroot chrootdir
 		in setContainerProps c $ containerProps c
@@ -378,7 +378,7 @@ imageExists' :: RawDiskImage -> PartTable -> RevertableProperty DebianLike UnixL
 imageExists' dest@(RawDiskImage img) parttable = (setup <!> cleanup) `describe` desc
   where
 	desc = "disk image exists " ++ img
-	parttablefile = img ++ ".parttable"
+	parttablefile = imageParttableFile dest
 	setup = property' desc $ \w -> do
 		oldparttable <- liftIO $ catchDefaultIO "" $ readFileStrict parttablefile
 		res <- ensureProperty w $ imageExists dest (partTableSize parttable)
@@ -487,6 +487,24 @@ noBootloader = pureInfoProperty "no bootloader" [NoBootloader]
 
 noBootloaderFinalized :: Finalization
 noBootloaderFinalized _img _mnt _loopDevs = doNothing
+
+imageChrootNotPresent :: DiskImage d => d -> Property UnixLike
+imageChrootNotPresent img = check (doesDirectoryExist dir) $
+	property "destroy the chroot used to build the image" $ makeChange $ do
+		removeChroot dir
+		nukeFile $ imageParttableFile img
+  where
+	dir = imageChroot img
+
+imageChroot :: DiskImage d => d -> FilePath
+imageChroot img = imgfile <.> "chroot"
+  where
+	RawDiskImage imgfile = rawDiskImage img
+
+imageParttableFile :: DiskImage d => d -> FilePath
+imageParttableFile img = imgfile <.> "parttable"
+  where
+	RawDiskImage imgfile = rawDiskImage img
 
 isChild :: FilePath -> Maybe MountPoint -> Bool
 isChild mntpt (Just d)
