@@ -15,7 +15,6 @@ import Propellor.Base
 import Propellor.Types.Info
 import Propellor.Property.Chroot
 import Propellor.Property.DiskImage
-import Propellor.Property.Chroot.Util (removeChroot)
 import qualified Propellor.Property.Apt as Apt
 
 import Utility.Split
@@ -112,12 +111,10 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 	built = check (not <$> doesFileExist imageLoc) $
 		setupRevertableProperty $ imageBuiltFor h
 			(image) (Debootstrapped mempty)
+
 	nuked :: Property UnixLike
-	nuked = check (doesDirectoryExist (imageLoc <.> "chroot")) $
-		property "destroy the chroot used to build the image" $ do
-			liftIO $ removeChroot (imageLoc <.> "chroot")
-			liftIO $ nukeFile (imageLoc <.> "parttable")
-			return MadeChange
+	nuked = imageChrootNotPresent image
+
 	xmlDefined :: Property UnixLike
 	xmlDefined = check (not <$> doesFileExist conf) $
 		property "define the libvirt VM" $
