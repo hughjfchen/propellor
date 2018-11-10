@@ -94,18 +94,18 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 	`requires` installed
   where
 	built :: Property (HasInfo + DebianLike)
-	built = check (not <$> doesFileExist imageLoc)
-		(setupRevertableProperty $ imageBuiltFor h
-			(image) (Debootstrapped mempty))
+	built = check (not <$> doesFileExist imageLoc) $
+		setupRevertableProperty $ imageBuiltFor h
+			(image) (Debootstrapped mempty)
 	nuked :: Property UnixLike
-	nuked = check (doesDirectoryExist (imageLoc <.> "chroot"))
-		(property "destroy the chroot used to build the image" $ do
+	nuked = check (doesDirectoryExist (imageLoc <.> "chroot")) $
+		property "destroy the chroot used to build the image" $ do
 			liftIO $ removeChroot (imageLoc <.> "chroot")
 			liftIO $ nukeFile (imageLoc <.> "parttable")
-			return MadeChange)
+			return MadeChange
 	xmlDefined :: Property UnixLike
-	xmlDefined = check (not <$> doesFileExist conf)
-		(scriptProperty
+	xmlDefined = check (not <$> doesFileExist conf) $
+		scriptProperty
 			[ "virt-install -n " ++ hostName h
 				++ osVariantArg
 				++ " --memory=" ++ show mem
@@ -117,7 +117,7 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 				++ " >" ++ confTmp
 			, "virsh define " ++ confTmp
 			, "rm " ++ confTmp
-			])
+			]
 	started :: Property UnixLike
 	started = case auto of
 		AutoStart -> scriptProperty
