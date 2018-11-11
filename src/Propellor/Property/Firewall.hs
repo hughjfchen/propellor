@@ -17,7 +17,6 @@ module Propellor.Property.Firewall (
 	IPWithMask(..),
 ) where
 
-import Data.Monoid
 import qualified Data.Semigroup as Sem
 import Data.Char
 import Data.List
