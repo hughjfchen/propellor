@@ -121,14 +121,13 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 		withTmpFile (hostName h) $ \t fh -> do
 			xml <- liftIO $ readProcess "virt-install" $
 				[ "-n", hostName h
-				, osVariantArg
 				, "--memory=" ++ show mem
 				, "--vcpus=" ++ show cpus
 				, "--disk"
 				, "path=" ++ imageLoc
 					++ ",device=disk,bus=virtio"
 				, "--print-xml"
-				] ++ autoStartArg
+				] ++ autoStartArg ++ osVariantArg
 			liftIO $ hPutStrLn fh xml
 			liftIO $ hClose fh
 			makeChange $ unlessM (defineIt t) $
@@ -158,7 +157,7 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 			Raw -> "img"
 	conf = "/etc/libvirt/qemu" </> hostName h <.> "xml"
 
-	osVariantArg = maybe "" ("--os-variant=" ++) $ osVariant h
+	osVariantArg = maybe [] (\v -> ["--os-variant=" ++ v]) $ osVariant h
 	autoStartArg = case auto of
 		AutoStart -> ["--autostart"]
 		NoAutoStart -> []
