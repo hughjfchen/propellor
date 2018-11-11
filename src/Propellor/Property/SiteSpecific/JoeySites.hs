@@ -400,23 +400,31 @@ podcatcher = Cron.niceJob "podcatcher run hourly" (Cron.Times "55 * * * *")
 	"xargs git-annex importfeed -c annex.genmetadata=true < feeds; mr --quiet update"
 	`requires` Apt.installed ["git-annex", "myrepos"]
 
+spamdEnabled :: Property DebianLike
+spamdEnabled = tightenTargets $ 
+	cmdProperty "update-rc.d" ["spamassassin", "enable"]
+		`assume` MadeChange
+
+spamassassinConfigured :: Property DebianLike
+spamassassinConfigured = propertyList "spamassassin configured" $ props
+	& Apt.serviceInstalledRunning "spamassassin"
+	& "/etc/default/spamassassin" `File.containsLines`
+		[ "# Propellor deployed"
+		, "OPTIONS=\"--create-prefs --max-children 5 --helper-home-dir\""
+		, "CRON=1"
+		, "NICE=\"--nicelevel 15\""
+		]
+		`describe` "spamd configured"
+		`onChange` spamdEnabled
+		`onChange` Service.restarted "spamassassin"
+		`requires` Apt.serviceInstalledRunning "cron"
+
 kiteMailServer :: Property (HasInfo + DebianLike)
 kiteMailServer = propertyList "kitenet.net mail server" $ props
 	& Postfix.installed
 	& Apt.installed ["postfix-pcre"]
 	& Apt.serviceInstalledRunning "postgrey"
-
-	& Apt.serviceInstalledRunning "spamassassin"
-	& "/etc/default/spamassassin" `File.containsLines`
-		[ "# Propellor deployed"
-		, "ENABLED=1"
-		, "OPTIONS=\"--create-prefs --max-children 5 --helper-home-dir\""
-		, "CRON=1"
-		, "NICE=\"--nicelevel 15\""
-		] `onChange` Service.restarted "spamassassin"
-		`describe` "spamd enabled"
-		`requires` Apt.serviceInstalledRunning "cron"
-
+	& spamassassinConfigured
 	& Apt.serviceInstalledRunning "spamass-milter"
 	-- Add -m to prevent modifying messages Subject or body.
 	& "/etc/default/spamass-milter" `File.containsLine`
