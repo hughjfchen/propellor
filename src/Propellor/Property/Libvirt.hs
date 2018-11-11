@@ -127,9 +127,8 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 				, "--disk"
 				, "path=" ++ imageLoc
 					++ ",device=disk,bus=virtio"
-				, autoStartArg
 				, "--print-xml"
-				]
+				] ++ autoStartArg
 			liftIO $ hPutStrLn fh xml
 			liftIO $ hClose fh
 			makeChange $ unlessM (defineIt t) $
@@ -161,8 +160,8 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 
 	osVariantArg = maybe "" ("--os-variant=" ++) $ osVariant h
 	autoStartArg = case auto of
-		AutoStart -> "--autostart"
-		NoAutoStart -> ""
+		AutoStart -> ["--autostart"]
+		NoAutoStart -> []
 
 -- ==== utility functions ====
 
