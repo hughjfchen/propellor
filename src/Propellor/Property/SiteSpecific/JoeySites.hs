@@ -1220,15 +1220,17 @@ homeNAS = propertyList "home NAS" $ props
 	& Apt.installed ["uhubctl"]
 	& "/etc/udev/rules.d/52-startech-hub.rules" `File.hasContent`
 		[ "# let users power control startech hub with uhubctl"
-		, "ATTR{idVendor}==\"0409\", ATTR{idProduct}==\"005a\", MODE=\"0666\""
+		, "ATTR{idVendor}==\"" ++ hubvendor ++ "\", ATTR{idProduct}==\"005a\", MODE=\"0666\""
 		]
-	& autoMountDrive "archive-10" (USBHubPort 1) (Just "archive-older")
-	& autoMountDrive "archive-11" (USBHubPort 2) (Just "archive-old")
-	& autoMountDrive "archive-12" (USBHubPort 3) (Just "archive")
-	& autoMountDrive "passport" (USBHubPort 4) Nothing
+	& autoMountDrive "archive-10" (USBHubPort hubvendor 1) (Just "archive-older")
+	& autoMountDrive "archive-11" (USBHubPort hubvendor 2) (Just "archive-old")
+	& autoMountDrive "archive-12" (USBHubPort hubvendor 3) (Just "archive")
+	& autoMountDrive "passport" (USBHubPort hubvendor 4) Nothing
 	& Apt.installed ["git-annex", "borgbackup"]
+  where
+	hubvendor = "0409"
 
-newtype USBHubPort = USBHubPort Int
+data USBHubPort = USBHubPort String Int
 
 -- Makes a USB drive with the given label automount, and unmount after idle
 -- for a while.
@@ -1236,7 +1238,7 @@ newtype USBHubPort = USBHubPort Int
 -- The hub port is turned on and off automatically as needed, using
 -- uhubctl.
 autoMountDrive :: Mount.Label -> USBHubPort -> Maybe FilePath -> Property DebianLike
-autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
+autoMountDrive label (USBHubPort hubvendor port) malias = propertyList desc $ props
 	& File.ownerGroup mountpoint (User "joey") (Group "joey")
 		`requires` File.dirExists mountpoint
 	& case malias of
@@ -1265,8 +1267,8 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 		, "[Service]"
 		, "Type=oneshot"
 		, "RemainAfterExit=true"
-		, "ExecStart=/usr/sbin/uhubctl -a on -p " ++ show port
-		, "ExecStop=/bin/sh -c 'uhubctl -a off -p " ++ show port ++
+		, "ExecStart=/usr/sbin/uhubctl -a on -p " ++ show port ++ " --vendor " ++ hubvendor 
+		, "ExecStop=/bin/sh -c 'uhubctl -a off -p " ++ show port ++ " --vendor " ++ hubvendor
 			-- Powering off the port does not remove device
 			-- files, so ask udev to remove the devfile; it will
 			-- be added back after the drive next spins up
@@ -1274,7 +1276,7 @@ autoMountDrive label (USBHubPort port) malias = propertyList desc $ props
 			-- spun up.
 			-- (This only works when the devfile is in
 			-- by-label.)
-			"; udevadm trigger --action=remove " ++ devfile ++ " || true'"
+			++ "; udevadm trigger --action=remove " ++ devfile ++ " || true'"
 		, "[Install]"
 		, "WantedBy="
 		]
