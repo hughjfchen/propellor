@@ -954,7 +954,6 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 		`requires` Apt.installed
 			[ "ghc", "cabal-install", "make"
 			, "libghc-http-types-dev"
-			, "libghc-stm-dev"
 			, "libghc-aeson-dev"
 			, "libghc-wai-dev"
 			, "libghc-warp-dev"
