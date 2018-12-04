@@ -4,7 +4,7 @@ Priority: optional
 Build-Depends: 
 	debhelper (>= 9),
 	git (>= 2.0),
-	ghc (>= 7.6),
+	ghc (>= 8.4.3),
 	cabal-install,
 	libghc-async-dev,
 	libghc-split-dev,
@@ -16,7 +16,6 @@ Build-Depends:
 	libghc-mtl-dev,
 	libghc-transformers-dev,
 	libghc-exceptions-dev (>= 0.6),
-	libghc-stm-dev,
 	libghc-text-dev,
 	libghc-hashable-dev,
 Maintainer: Joey Hess <id@joeyh.name>
@@ -28,7 +27,7 @@ Package: propellor
 Architecture: any
 Section: admin
 Depends: ${misc:Depends}, ${shlibs:Depends},
-	ghc (>= 7.4),
+	ghc (>= 8.4.3),
 	cabal-install,
 	libghc-async-dev,
 	libghc-split-dev,
@@ -40,7 +39,6 @@ Depends: ${misc:Depends}, ${shlibs:Depends},
 	libghc-mtl-dev,
 	libghc-transformers-dev,
 	libghc-exceptions-dev (>= 0.6),
-	libghc-stm-dev,
 	libghc-text-dev,
 	libghc-hashable-dev,
 	git (>= 2.0),
