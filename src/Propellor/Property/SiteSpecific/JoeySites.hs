@@ -1034,12 +1034,16 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/"
 
 homerouterWifiInterface :: String
-homerouterWifiInterface = "wlx7cdd90400448" -- wifi dongle
+homerouterWifiInterface = "wlx00c0ca82eb78" -- thinkpenguin wifi adapter
+
+homerouterWifiInterfaceOld :: String
+homerouterWifiInterfaceOld = "wlx7cdd90400448" -- small wifi dongle
 
 -- My home router, running hostapd and dnsmasq,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
 homeRouter :: Property (HasInfo + DebianLike)
 homeRouter = propertyList "home router" $ props
+	& File.notPresent (Network.interfaceDFile homerouterWifiInterfaceOld)
 	& Network.static homerouterWifiInterface (IPv4 "10.1.1.1") Nothing
 		`requires` Network.cleanInterfacesFile
 	& Apt.installed ["hostapd"]

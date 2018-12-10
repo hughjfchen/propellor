@@ -185,6 +185,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 		)
 	& JoeySites.cubieTruckOneWire
 	
+	& Apt.installed ["firmware-atheros"]
 	& Apt.installed ["firmware-misc-nonfree"]
 	& Apt.installed ["firmware-brcm80211"]
 		-- Workaround for https://bugs.debian.org/844056
