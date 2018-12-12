@@ -1033,11 +1033,11 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	-- rsync server command to be updated too.
 	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/"
 
-homerouterWifiInterface :: String
-homerouterWifiInterface = "wlx00c0ca82eb78" -- thinkpenguin wifi adapter
-
 homerouterWifiInterfaceOld :: String
-homerouterWifiInterfaceOld = "wlx7cdd90400448" -- small wifi dongle
+homerouterWifiInterfaceOld = "wlx00c0ca82eb78" -- thinkpenguin wifi adapter
+
+homerouterWifiInterface :: String
+homerouterWifiInterface = "wlx7cdd90400448" -- small wifi dongle
 
 -- My home router, running hostapd and dnsmasq,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
