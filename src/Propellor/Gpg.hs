@@ -13,11 +13,13 @@ import Propellor.Message
 import Propellor.Git.Config
 import Utility.SafeCommand
 import Utility.Process
+import Utility.Process.Transcript
 import Utility.Process.NonConcurrent
 import Utility.Monad
 import Utility.Misc
 import Utility.Tmp
 import Utility.Env
+import Utility.Env.Set
 import Utility.Directory
 import Utility.Split
 import Utility.Exception

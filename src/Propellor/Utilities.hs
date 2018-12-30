@@ -9,19 +9,27 @@
 module Propellor.Utilities (
 	  module Utility.PartialPrelude
 	, module Utility.Process
+	, module Utility.Process.Transcript
 	, module Utility.Exception
 	, module Utility.Env
+	, module Utility.Env.Set
 	, module Utility.Directory
+	, module Utility.Directory.TestDirectory
 	, module Utility.Tmp
+	, module Utility.Tmp.Dir
 	, module Utility.Monad
 	, module Utility.Misc
 ) where
 
 import Utility.PartialPrelude
 import Utility.Process
+import Utility.Process.Transcript
 import Utility.Exception
 import Utility.Env
+import Utility.Env.Set
 import Utility.Directory
+import Utility.Directory.TestDirectory
 import Utility.Tmp
+import Utility.Tmp.Dir
 import Utility.Monad
 import Utility.Misc

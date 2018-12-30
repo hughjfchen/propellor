@@ -200,7 +200,11 @@ Library
     Utility.Data
     Utility.DataUnits
     Utility.Directory
+    Utility.Directory.Stream
+    Utility.Directory.TestDirectory
     Utility.Env
+    Utility.Env.Basic
+    Utility.Env.Set
     Utility.Exception
     Utility.FileMode
     Utility.FileSystemEncoding
@@ -210,10 +214,10 @@ Library
     Utility.Monad
     Utility.Path
     Utility.PartialPrelude
-    Utility.PosixFiles
     Utility.Process
     Utility.Process.Shim
     Utility.Process.NonConcurrent
+    Utility.Process.Transcript
     Utility.SafeCommand
     Utility.Scheduled
     Utility.Scheduled
@@ -222,6 +226,7 @@ Library
     Utility.Table
     Utility.ThreadScheduler
     Utility.Tmp
+    Utility.Tmp.Dir
     Utility.Tuple
     Utility.UserInfo
     System.Console.Concurrent
