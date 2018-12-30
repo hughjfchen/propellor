@@ -23,7 +23,7 @@ module Propellor.Types.OS (
 
 import Propellor.Types.ConfigurableValue
 
-import Network.BSD (HostName)
+import Network.Socket (HostName)
 import Data.Typeable
 import Data.String
 
