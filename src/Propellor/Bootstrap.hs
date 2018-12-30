@@ -95,6 +95,8 @@ checkDepsCommand bs sys = go (getBuilder bs)
 	go Cabal = "if ! cabal configure >/dev/null 2>&1; then " ++ depsCommand bs sys ++ "; fi"
 	go Stack = "if ! stack build --dry-run >/dev/null 2>&1; then " ++ depsCommand bs sys ++ "; fi"
 
+data Dep = Dep String | OldDep String
+
 -- Install build dependencies of propellor, using the specified
 -- Bootstrapper.
 --
@@ -128,32 +130,34 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
 
 	useapt builder = "apt-get update" : map aptinstall (debdeps builder)
 
-	aptinstall p = "DEBIAN_FRONTEND=noninteractive apt-get -qq --no-upgrade --no-install-recommends -y install " ++ p
+	aptinstall (Dep p) = "DEBIAN_FRONTEND=noninteractive apt-get -qq --no-upgrade --no-install-recommends -y install " ++ p
+	aptinstall (OldDep p) = "if LANG=C apt-cache policy " ++ p ++ "| grep -q Candidate:; then " ++ aptinstall (Dep p) ++ "; fi"
 	pkginstall p = "ASSUME_ALWAYS_YES=yes pkg install " ++ p
 	pacmaninstall p = "pacman -S --noconfirm --needed " ++ p
 
 	debdeps Cabal =
-		[ "gnupg"
+		[ Dep "gnupg"
 		-- Below are the same deps listed in debian/control.
-		, "ghc"
-		, "cabal-install"
-		, "libghc-async-dev"
-		, "libghc-split-dev"
-		, "libghc-hslogger-dev"
-		, "libghc-unix-compat-dev"
-		, "libghc-ansi-terminal-dev"
-		, "libghc-ifelse-dev"
-		, "libghc-network-dev"
-		, "libghc-mtl-dev"
-		, "libghc-transformers-dev"
-		, "libghc-exceptions-dev"
-		, "libghc-stm-dev"
-		, "libghc-text-dev"
-		, "libghc-hashable-dev"
+		, Dep "ghc"
+		, Dep "cabal-install"
+		, Dep "libghc-async-dev"
+		, Dep "libghc-split-dev"
+		, Dep "libghc-hslogger-dev"
+		, Dep "libghc-unix-compat-dev"
+		, Dep "libghc-ansi-terminal-dev"
+		, Dep "libghc-ifelse-dev"
+		, Dep "libghc-network-dev"
+		, Dep "libghc-mtl-dev"
+		, Dep "libghc-transformers-dev"
+		, Dep "libghc-exceptions-dev"
+		, Dep "libghc-text-dev"
+		, Dep "libghc-hashable-dev"
+		-- Deps that are only needed on old systems.
+		, OldDep "libghc-stm-dev"
 		]
 	debdeps Stack =
-		[ "gnupg"
-		, "haskell-stack"
+		[ Dep "gnupg"
+		, Dep "haskell-stack"
 		]
 
 	fbsddeps Cabal =

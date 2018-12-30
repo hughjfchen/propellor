@@ -1,6 +1,10 @@
 propellor (5.5.1) UNRELEASED; urgency=medium
 
   * Some openbsd portability fixes. Thanks, rsiddharth.
+  * Added Libvirt module. Thanks, Sean Whitton.
+  * When bootstrapping on Debian, libghc-stm-dev may not be available,
+    as it's become part of ghc, so check before trying to install it.
+  * Fix build with ghc 8.6.3.
 
  -- Joey Hess <id@joeyh.name>  Tue, 23 Oct 2018 11:37:16 -0400
 
