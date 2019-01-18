@@ -19,6 +19,7 @@ propellor (5.6.0) UNRELEASED; urgency=medium
   * Avoid exposing the constructor of OuterMetaTypesWitness, to avoid
     the kind of mistake that led to the withOS bug.
   * Merged Utility changes from git-annex.
+  * Fix --spin crash when ~/.ssh/ directory did not already exist.
 
  -- Joey Hess <id@joeyh.name>  Tue, 23 Oct 2018 11:37:16 -0400
 

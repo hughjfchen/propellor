@@ -19,7 +19,7 @@ sshCachingParams :: HostName -> IO [CommandParam]
 sshCachingParams hn = do
 	home <- myHomeDir
 	let socketfile = socketFile home hn
-	createDirectoryIfMissing False (takeDirectory socketfile)
+	createDirectoryIfMissing True (takeDirectory socketfile)
 	let ps =
 		[ Param "-o"
 		, Param ("ControlPath=" ++ socketfile)
