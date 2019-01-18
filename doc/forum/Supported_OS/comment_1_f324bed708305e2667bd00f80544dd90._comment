@@ -22,8 +22,8 @@ on multiple OS's:
 	upgraded :: Property (DebianLike + FreeBSD)
 	upgraded = Apt.upgraded `pickOS` Pkg.upgraded
 
-The `withOS` function lets a single property do different things for
-different OS versions as well as different OS's.
+The `pickOS` function lets a single property do different things for
+different OS's.
 
 The ArchLinux and FreeBSD ports were done by propellor users,
 and both are good examples of the scope of the changes involved in making
