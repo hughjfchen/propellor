@@ -140,7 +140,7 @@ stackAutoBuilder suite arch flavor =
 		-- Workaround https://github.com/commercialhaskell/stack/issues/2093
 		& Apt.installed ["libtinfo-dev"]
 
-stackInstalled :: Property Linux
+stackInstalled :: Property DebianLike
 stackInstalled = withOS "stack installed" $ \w o ->
 	case o of
 		(Just (System (Debian Linux (Stable "jessie")) arch)) ->

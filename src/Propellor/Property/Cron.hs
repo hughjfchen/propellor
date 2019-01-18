@@ -79,7 +79,7 @@ niceJob desc times user cddir command = job desc times user cddir
 	("nice ionice -c 3 sh -c " ++ shellEscape command)
 
 -- | Installs a cron job to run propellor.
-runPropellor :: Times -> Property UnixLike
+runPropellor :: Times -> Property DebianLike
 runPropellor times = withOS "propellor cron job" $ \w o -> do
 	bootstrapper <- getBootstrapper
 	ensureProperty w $
