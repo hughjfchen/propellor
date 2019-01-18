@@ -1,0 +1,22 @@
+propellor 5.6.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * withOS had a type level bug that allowed ensureProperty to be used inside
+     it with a Property that does not match the type of the withOS itself.
+     (API change)
+     The fix may cause some of your valid uses of withOS to no longer type
+     check; the best way to work around that is to use pickOS to pick between
+     several properties that are further specialized using withOS.
+     For an example of how to do that, see the source code to
+     Propellor.Property.Borg.installed
+   * Propellor.Property.Cron.runPropellor is a Property DebianLike; it was
+     incorrectly a Property UnixLike before and that wrong type was hidden by
+     the withOS bug.
+   * Some openbsd portability fixes. Thanks, rsiddharth.
+   * Added Libvirt module. Thanks, Sean Whitton.
+   * When bootstrapping on Debian, libghc-stm-dev may not be available,
+     as it's become part of ghc, so check before trying to install it.
+   * Fix build with ghc 8.6.3.
+   * Avoid exposing the constructor of OuterMetaTypesWitness, to avoid
+     the kind of mistake that led to the withOS bug.
+   * Merged Utility changes from git-annex.
+   * Fix --spin crash when ~/.ssh/ directory did not already exist."""]]

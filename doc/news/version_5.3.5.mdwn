@@ -1,7 +1,0 @@
-propellor 5.3.5 released with [[!toggle text="these changes"]]
-[[!toggleable text="""
-   * Apt.stdSourcesList now adds stable-updates suite
-     Thanks, Sean Whitton
-   * Significantly increased propellor build speed when your config.hs
-     is in a fork of the propellor repository, by avoiding redundant builds
-     of propellor library."""]]
