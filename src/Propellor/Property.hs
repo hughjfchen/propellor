@@ -303,7 +303,8 @@ pickOS a b = c `addChildren` [toChildProperty a, toChildProperty b]
   where
 	-- This use of getSatisfy is safe, because both a and b
 	-- are added as children, so their info will propigate.
-	c = withOS (getDesc a) $ \_ o ->
+	c = property (getDesc a) $ do
+		o <- getOS
 		if matching o a
 			then maybe (pure NoChange) id (getSatisfy a)
 			else if matching o b
