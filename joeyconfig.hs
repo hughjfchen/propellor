@@ -185,11 +185,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 		)
 	& JoeySites.cubieTruckOneWire
 	
-	& Apt.installed ["firmware-misc-nonfree"]
-	& Apt.installed ["firmware-brcm80211"]
-		-- Workaround for https://bugs.debian.org/844056
-		`requires` File.hasPrivContent "/lib/firmware/brcm/brcmfmac43362-sdio.txt" anyContext
-		`requires` File.dirExists "/lib/firmware/brcm"
+	& Apt.installed ["firmware-atheros"]
 	& Apt.serviceInstalledRunning "ntp" -- no hardware clock
 	& bootstrappedFrom GitRepoOutsideChroot
 	& Ssh.hostKeys hostContext

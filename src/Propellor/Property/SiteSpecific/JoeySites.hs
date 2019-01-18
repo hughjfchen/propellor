@@ -1032,13 +1032,17 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	-- rsync server command to be updated too.
 	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/"
 
+homerouterWifiInterfaceOld :: String
+homerouterWifiInterfaceOld = "wlx00c0ca82eb78" -- thinkpenguin wifi adapter
+
 homerouterWifiInterface :: String
-homerouterWifiInterface = "wlx7cdd90400448" -- wifi dongle
+homerouterWifiInterface = "wlx7cdd90400448" -- small wifi dongle
 
 -- My home router, running hostapd and dnsmasq,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
 homeRouter :: Property (HasInfo + DebianLike)
 homeRouter = propertyList "home router" $ props
+	& File.notPresent (Network.interfaceDFile homerouterWifiInterfaceOld)
 	& Network.static homerouterWifiInterface (IPv4 "10.1.1.1") Nothing
 		`requires` Network.cleanInterfacesFile
 	& Apt.installed ["hostapd"]
@@ -1150,6 +1154,8 @@ laptopSoftware = Apt.installed
 	, "yeahconsole", "xkbset", "xinput"
 	, "assword", "pumpa"
 	, "vorbis-tools", "audacity"
+	, "ekiga"
+	, "bluez-firmware", "blueman", "pulseaudio-module-bluetooth"
 	, "xul-ext-ublock-origin", "xul-ext-pdf.js", "xul-ext-status4evar"
 	, "vim-syntastic", "vim-fugitive"
 	, "adb", "gthumb"

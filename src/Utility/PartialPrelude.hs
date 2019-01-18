@@ -38,11 +38,9 @@ last = Prelude.last
 
 {- Attempts to read a value from a String.
  -
- - Ignores leading/trailing whitespace, and throws away any trailing
- - text after the part that can be read.
- -
- - readMaybe is available in Text.Read in new versions of GHC,
- - but that one requires the entire string to be consumed.
+ - Unlike Text.Read.readMaybe, this ignores some trailing text
+ - after the part that can be read. However, if the trailing text looks
+ - like another readable value, it fails.
  -}
 readish :: Read a => String -> Maybe a
 readish s = case reads s of
