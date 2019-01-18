@@ -1,4 +1,4 @@
-propellor (5.6.0) UNRELEASED; urgency=medium
+propellor (5.6.0) unstable; urgency=medium
 
   * withOS had a type level bug that allowed ensureProperty to be used inside
     it with a Property that does not match the type of the withOS itself.
@@ -21,7 +21,7 @@ propellor (5.6.0) UNRELEASED; urgency=medium
   * Merged Utility changes from git-annex.
   * Fix --spin crash when ~/.ssh/ directory did not already exist.
 
- -- Joey Hess <id@joeyh.name>  Tue, 23 Oct 2018 11:37:16 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 18 Jan 2019 12:11:53 -0400
 
 propellor (5.5.0) unstable; urgency=medium
 
