@@ -7,7 +7,7 @@
 module Propellor.EnsureProperty
 	( ensureProperty
 	, property'
-	, OuterMetaTypesWitness(..)
+	, OuterMetaTypesWitness
 	, Cannot_ensureProperty_WithInfo
 	) where
 
