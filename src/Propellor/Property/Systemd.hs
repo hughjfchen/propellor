@@ -204,13 +204,18 @@ killUserProcesses = set "yes" <!> set "no"
 
 -- | Ensures machined and machinectl are installed
 machined :: Property Linux
-machined = withOS "machined installed" $ \w o ->
-	case o of
-		-- Split into separate debian package since systemd 225.
-		(Just (System (Debian _ suite) _))
-			| not (isStable suite) || suite == (Stable "stretch") ->
-				ensureProperty w $ Apt.installed ["systemd-container"]
-		_ -> noChange
+machined = installeddebian `pickOS` assumeinstalled
+  where
+	installeddebian :: Property DebianLike
+	installeddebian = withOS "machined installed" $ \w o ->
+		case o of
+			-- Split into separate debian package since systemd 225.
+			(Just (System (Debian _ suite) _))
+				| not (isStable suite) || suite == (Stable "stretch") ->
+					ensureProperty w $ Apt.installed ["systemd-container"]
+			_ -> noChange
+	assumeinstalled :: Property Linux
+	assumeinstalled = doNothing
 
 -- | Defines a container with a given machine name,
 -- and how to create its chroot if not already present.
