@@ -1,0 +1,4 @@
+propellor 5.6.1 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * fix Libvirt.hs haddock build
+     Thanks, Sean Whitton"""]]
