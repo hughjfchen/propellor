@@ -30,7 +30,7 @@ newtype MiBMemory = MiBMemory Int
 data AutoStart = AutoStart | NoAutoStart
 
 -- | Which type of disk image to build for the virtual machine
-data DiskImageType = Raw -- | QCow2
+data DiskImageType = Raw -- ^ QCow2
 
 -- | Install basic libvirt components
 installed :: Property DebianLike
