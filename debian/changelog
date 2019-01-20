@@ -1,9 +1,9 @@
-propellor (5.6.1) UNRELEASED; urgency=medium
+propellor (5.6.1) unstable; urgency=medium
 
-  * fix haddock markup in Propellor.Property.Libvirt
-    Thanks, Sergei Trofimovich.
+  * fix Libvirt.hs haddock build
+    Thanks, Sean Whitton
 
- -- Joey Hess <id@joeyh.name>  Sun, 20 Jan 2019 13:30:02 -0400
+ -- Joey Hess <id@joeyh.name>  Sun, 20 Jan 2019 19:06:39 -0400
 
 propellor (5.6.0) unstable; urgency=medium
 
