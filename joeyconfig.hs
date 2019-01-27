@@ -184,7 +184,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 			`setSize` MegaBytes 16000
 		)
 	& JoeySites.cubieTruckOneWire
-	
+	& Systemd.persistentJournal
 	& Apt.installed ["firmware-atheros"]
 	& Apt.serviceInstalledRunning "ntp" -- no hardware clock
 	& bootstrappedFrom GitRepoOutsideChroot
