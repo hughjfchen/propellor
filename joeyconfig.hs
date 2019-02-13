@@ -71,6 +71,7 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Laptop.trimSSD
 	& Grub.cmdline_Linux_default "i915.enable_psr=1"
 	! Grub.cmdline_Linux_default "quiet"
+	& User.hasGroup (Use "joey") (Group "dialout")
 
 	& JoeySites.dkimMilter
 	& JoeySites.postfixSaslPasswordClient
