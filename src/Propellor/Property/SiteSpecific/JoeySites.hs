@@ -1162,7 +1162,7 @@ laptopSoftware = Apt.installed
 	, "w3m", "sm", "weechat"
 	, "borgbackup", "wipe", "smartmontools", "libgfshare-bin"
 	, "units"
-	, "virtualbox", "qemu-kvm"
+	, "virtualbox", "virtualbox-guest-additions-iso", "qemu-kvm"
 	]
 	`requires` baseSoftware
 	`requires` devSoftware
