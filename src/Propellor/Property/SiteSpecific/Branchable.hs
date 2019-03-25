@@ -56,7 +56,7 @@ server hosts = propertyList "branchable server" $ props
 	 	]
 	 	[ Borg.KeepDays 7
 	 	, Borg.KeepWeeks 5
-	 	, Borg.KeepMonths 12
+	 	, Borg.KeepMonths 3
 	 	, Borg.KeepYears 1
 	 	]
 	& Ssh.userKeys (User "root") (Context "branchable.com")
