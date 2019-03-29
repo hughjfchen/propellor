@@ -29,6 +29,7 @@ Suggested usage in @config.hs@:
 >    where
 >  	sidSchrootBuilt = Sbuild.built Sbuild.UseCcache $ props
 >  		& osDebian Unstable X86_32
+>  		& Sbuild.osDebianStandard
 >  		& Sbuild.update `period` Weekly (Just 1)
 >  		& Sbuild.useHostProxy mybox
 
@@ -65,6 +66,7 @@ module Propellor.Property.Sbuild (
 	-- * Properties for use inside sbuild schroots
 	update,
 	useHostProxy,
+	osDebianStandard,
 	-- * Global sbuild configuration
 	-- blockNetwork,
 	keypairGenerated,
@@ -222,8 +224,7 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 	schroot = Chroot.debootstrapped Debootstrap.BuilddD
 			schrootRoot (Props schrootProps)
 	schrootProps =
-		ps ++ [toChildProperty Apt.stdSourcesList
-		, toChildProperty $ Apt.installed ["eatmydata", "ccache"]]
+		ps ++ [toChildProperty $ Apt.installed ["eatmydata", "ccache"]]
 
 	-- static values
 	suiteArch = suite ++ "-" ++ arch
@@ -250,6 +251,12 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 		_ -> base
 	  where
 		base = ["eatmydata"]
+
+-- | Properties that will be wanted in almost any Debian schroot, but not in
+-- schroots for other operating systems.
+osDebianStandard :: Property Debian
+osDebianStandard = propertyList "standard Debian sbuild properties" $ props
+	& Apt.stdSourcesList
 
 -- | Ensure that an sbuild schroot's packages and apt indexes are updated
 --
