@@ -1,3 +1,13 @@
+propellor (5.7.0) UNRELEASED; urgency=medium
+
+  * Sbuild.built no longer includes Apt.stdSourcesList by default,
+    in order to support non-Debian OS's. (API change)
+    To upgrade: Simply add Sbuild.osDebianStandard to all Sbuild.built
+    calls which have osDebian.
+    Thanks, Sean Whitton
+
+ -- Joey Hess <id@joeyh.name>  Mon, 01 Apr 2019 11:35:15 -0400
+
 propellor (5.6.1) unstable; urgency=medium
 
   * fix Libvirt.hs haddock build
