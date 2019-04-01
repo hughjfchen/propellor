@@ -3,7 +3,6 @@ module Propellor.Git.VerifiedBranch where
 import Propellor.Base
 import Propellor.Git
 import Propellor.PrivData.Paths
-import Utility.FileMode
 
 {- To verify origin branch commit's signature, have to convince gpg
  - to use our keyring while running git verify-tag.

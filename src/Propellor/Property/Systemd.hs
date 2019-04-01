@@ -55,7 +55,6 @@ import qualified Propellor.Property.Chroot as Chroot
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
 import Propellor.Property.Systemd.Core
-import Utility.FileMode
 import Utility.Split
 
 import Data.List

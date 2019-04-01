@@ -40,7 +40,6 @@ import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.User
 import Propellor.Types.Info
-import Utility.FileMode
 
 import System.PosixCompat
 import qualified Data.Map as M

@@ -7,7 +7,6 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.ConfFile as ConfFile
-import Utility.FileMode
 import Utility.DataUnits
 
 import System.Posix.Files

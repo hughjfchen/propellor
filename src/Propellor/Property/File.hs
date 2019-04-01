@@ -3,7 +3,6 @@
 module Propellor.Property.File where
 
 import Propellor.Base
-import Utility.FileMode
 
 import qualified Data.ByteString.Lazy as L
 import Data.List (isInfixOf, isPrefixOf)

@@ -5,6 +5,8 @@ propellor (5.7.0) UNRELEASED; urgency=medium
     To upgrade: Simply add Sbuild.osDebianStandard to all Sbuild.built
     calls which have osDebian.
     Thanks, Sean Whitton
+  * Added Utility.FileMode to the modules exported by Propellor.Utilities
+    to propellor library users.
 
  -- Joey Hess <id@joeyh.name>  Mon, 01 Apr 2019 11:35:15 -0400
 

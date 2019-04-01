@@ -3,7 +3,6 @@ module Propellor.Property.HostingProvider.Linode where
 import Propellor.Base
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
-import Utility.FileMode
 
 -- | Configures grub to use the serial console as set up by Linode.
 -- Useful when running a distribution supplied kernel.

@@ -11,7 +11,6 @@ import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 
-import Utility.FileMode
 import Utility.DataUnits
 import System.Posix.Files
 import qualified Data.Semigroup as Sem

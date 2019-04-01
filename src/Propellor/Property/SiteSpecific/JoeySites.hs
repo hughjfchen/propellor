@@ -25,7 +25,6 @@ import qualified Propellor.Property.Network as Network
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Mount as Mount
-import Utility.FileMode
 import Utility.Split
 
 import Data.List

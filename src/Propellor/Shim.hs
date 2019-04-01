@@ -8,7 +8,6 @@ module Propellor.Shim (setup, cleanEnv, file) where
 
 import Propellor.Base
 import Utility.LinuxMkLibs
-import Utility.FileMode
 
 import Data.List
 import System.Posix.Files

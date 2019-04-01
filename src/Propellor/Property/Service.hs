@@ -5,7 +5,6 @@ module Propellor.Property.Service where
 import Propellor.Base
 import Propellor.Types.Info
 import qualified Propellor.Property.File as File
-import Utility.FileMode
 
 type ServiceName = String
 

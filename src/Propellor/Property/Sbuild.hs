@@ -89,7 +89,6 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Schroot as Schroot
 import qualified Propellor.Property.Reboot as Reboot
 import qualified Propellor.Property.User as User
-import Utility.FileMode
 
 import Data.List
 

@@ -5,9 +5,7 @@ module Propellor.Property.Openssl where
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.File as File
-import Utility.FileMode
 import Utility.SafeCommand
-
 
 installed :: Property DebianLike
 installed = Apt.installed ["openssl"]

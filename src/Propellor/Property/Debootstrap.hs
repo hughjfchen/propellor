@@ -15,7 +15,6 @@ import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Chroot.Util
 import Propellor.Property.Qemu
 import Utility.Path
-import Utility.FileMode
 
 import Data.List
 import Data.Char

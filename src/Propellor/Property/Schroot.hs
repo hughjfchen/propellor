@@ -9,8 +9,6 @@ import Propellor.Types.Info
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 
-import Utility.FileMode
-
 data UseOverlays = UseOverlays deriving (Eq, Show, Typeable)
 
 -- | Indicate that a schroots on a host should use @union-type=overlay@

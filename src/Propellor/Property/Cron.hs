@@ -4,7 +4,6 @@ import Propellor.Base
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Bootstrap
-import Utility.FileMode
 
 import Data.Char
 

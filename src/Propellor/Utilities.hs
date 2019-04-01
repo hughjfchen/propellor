@@ -19,6 +19,7 @@ module Propellor.Utilities (
 	, module Utility.Tmp.Dir
 	, module Utility.Monad
 	, module Utility.Misc
+	, module Utility.FileMode
 ) where
 
 import Utility.PartialPrelude
@@ -33,3 +34,4 @@ import Utility.Tmp
 import Utility.Tmp.Dir
 import Utility.Monad
 import Utility.Misc
+import Utility.FileMode

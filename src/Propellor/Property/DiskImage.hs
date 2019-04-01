@@ -42,7 +42,6 @@ import Propellor.Types.Info
 import Propellor.Types.Bootloader
 import Propellor.Container
 import Utility.Path
-import Utility.FileMode
 import Utility.DataUnits
 
 import Data.List (isPrefixOf, isInfixOf, sortBy, unzip4)

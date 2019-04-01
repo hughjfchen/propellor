@@ -15,7 +15,6 @@ import Propellor.Bootstrap
 import Propellor.Types.Info
 import Propellor.Property.Chroot
 import Propellor.PrivData.Paths
-import Utility.FileMode
 
 import Data.List
 import qualified Data.ByteString as B
