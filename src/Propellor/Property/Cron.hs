@@ -51,7 +51,7 @@ job desc times (User u) cddir command = combineProperties ("cronned " ++ desc) $
 			_ -> case u of
 				"root" -> "chronic " ++ shellEscape (scriptfile desc)
 				_ -> "chronic su " ++ u ++ " -c "
- 					++ shellEscape (scriptfile desc)
+					++ shellEscape (scriptfile desc)
 		]
 	& case times of
 		Times _ -> doNothing
