@@ -344,13 +344,7 @@ tmp = propertyList "tmp.joeyh.name" $ props
 		"tmp.joeyh.name"
 		"26fd6e38-1226-11e2-a75f-ff007033bdba"
 		[]
-	& pumpRss
-
--- Work around for expired ssl cert.
--- (Obsolete; need to revert this.)
-pumpRss :: Property DebianLike
-pumpRss = Cron.job "pump rss" (Cron.Times "15 * * * *") (User "joey") "/srv/web/tmp.joeyh.name/"
-	"wget https://pump2rss.com/feed/joeyh@identi.ca.atom -O pump.atom.new --no-check-certificate 2>/dev/null; sed 's/ & / /g' pump.atom.new > pump.atom"
+	& Cron.jobDropped "pump rss" (Cron.Times "15 * * * *")
 
 ircBouncer :: Property (HasInfo + DebianLike)
 ircBouncer = propertyList "IRC bouncer" $ props
