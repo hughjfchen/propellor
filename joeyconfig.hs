@@ -260,7 +260,7 @@ kite = host "kite.kitenet.net" $ props
 		]
 		[ Borg.KeepDays 7
 		, Borg.KeepWeeks 4
-		, Borg.KeepMonths 6
+		, Borg.KeepMonths 3
 		]
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 		`requires` Ssh.userKeys (User "root")
