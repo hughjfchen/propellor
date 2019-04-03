@@ -89,6 +89,20 @@ mountPointsBelow target = filter (\p -> simplifyPath p /= simplifyPath target)
 	. filter (dirContains target)
 	<$> mountPoints
 
+-- | Get mountpoints which are bind mounts of subdirectories of mounted
+-- filesystems
+--
+-- E.g. as created by @mount --bind /etc/foo /etc/bar@ where @/etc/foo@ is not
+-- itself a mount point, but just a subdirectory.  These are sometimes known as
+-- "partial bind mounts"
+partialBindMountsOf :: FilePath -> IO [MountPoint]
+partialBindMountsOf sourceDir =
+	map (drop 2 . dropWhile (/= ']')) . filter getThem . lines
+	<$> readProcess "findmnt" ["-rn", "--output", "source,target"]
+  where
+	getThem l = bracketed `isSuffixOf` (takeWhile (/= ' ') l)
+	bracketed = "[" ++ sourceDir ++ "]"
+
 -- | Filesystem type mounted at a given location.
 getFsType :: MountPoint -> IO (Maybe FsType)
 getFsType p = findmntField "fstype" [p]
