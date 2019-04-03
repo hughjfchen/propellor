@@ -7,8 +7,14 @@ propellor (5.7.0) UNRELEASED; urgency=medium
     Thanks, Sean Whitton
   * Propellor.Property.PropellorRepo renamed to Propellor.Property.Localdir
     to widen its scope. (API change)
+  * Added Localdir.removed property.
+    Thanks, Sean Whitton
   * Sbuild.built uses Localdir.removed to clean up the propellor localdir
     after it's done running in a schroot.
+    Thanks, Sean Whitton
+  * Cron.runPropellor made revertable. (minor API change)
+    Thanks, Sean Whitton
+  * Added Cron.jobDropped.
     Thanks, Sean Whitton
   * Added Utility.FileMode to the modules exported by Propellor.Utilities
     to propellor library users.
