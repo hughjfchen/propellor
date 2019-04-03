@@ -88,6 +88,7 @@ import qualified Propellor.Property.File as File
 -- import qualified Propellor.Property.Firewall as Firewall
 import qualified Propellor.Property.Schroot as Schroot
 import qualified Propellor.Property.Reboot as Reboot
+import qualified Propellor.Property.Localdir as Localdir
 import qualified Propellor.Property.User as User
 
 import Data.List
@@ -223,7 +224,11 @@ built' cc (Props ps) suite arch = provisioned <!> deleted
 	schroot = Chroot.debootstrapped Debootstrap.BuilddD
 			schrootRoot (Props schrootProps)
 	schrootProps =
-		ps ++ [toChildProperty $ Apt.installed ["eatmydata", "ccache"]]
+		ps ++ [toChildProperty $ Apt.installed ["eatmydata", "ccache"]
+		-- Drop /usr/local/propellor since build chroots should be
+		-- clean.  Note that propellor does not have to install its
+		-- build-deps into the chroot, so this is sufficient cleanup
+		, toChildProperty $ Localdir.removed]
 
 	-- static values
 	suiteArch = suite ++ "-" ++ arch
