@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Propellor.Property.PropellorRepo where
+-- | Properties to manipulate propellor's @/usr/local/propellor@ on spun hosts
+
+module Propellor.Property.Localdir where
 
 import Propellor.Base
 import Propellor.Git.Config
