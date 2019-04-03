@@ -7,6 +7,8 @@ module Propellor.Property.Localdir where
 import Propellor.Base
 import Propellor.Git.Config
 import Propellor.Types.Info
+import Propellor.Property.Chroot (inChroot)
+import Propellor.Property.Mount (partialBindMountsOf, umountLazy)
 
 -- | Sets the url to use as the origin of propellor's git repository.
 --
@@ -29,3 +31,31 @@ hasOriginUrl u = setInfoProperty p (toInfo (InfoVal (OriginUrl u)))
 
 newtype OriginUrl = OriginUrl String
 	deriving (Show, Typeable)
+
+-- | Removes the @/usr/local/propellor@ directory used to spin the host, after
+-- ensuring other properties.  Without this property, that directory is left
+-- behind after the spin.
+--
+-- Does not perform other clean up, such as removing Haskell libraries that were
+-- installed in order to build propellor, or removing cronjobs such as created
+-- by 'Propellor.Property.Cron.runPropellor'.
+removed :: Property UnixLike
+removed = check (doesDirectoryExist localdir) $
+	property "propellor's /usr/local dir to be removed" $ do
+		endAction "removing /usr/local/propellor" atend
+		return NoChange
+  where
+	atend _ = do
+		ifM inChroot
+			-- In a chroot, all we have to do is unmount localdir,
+			-- and then delete it
+			( liftIO $ umountLazy localdir
+			-- Outside of a chroot, if we don't unmount any bind
+			-- mounts of localdir before deleting it, another run of
+			-- propellor will have problems reestablishing those
+			-- bind mounts in order to spin chroots
+			, liftIO $ partialBindMountsOf localdir
+				>>= mapM_ umountLazy
+			)
+		liftIO $ removeDirectoryRecursive localdir
+		return NoChange
