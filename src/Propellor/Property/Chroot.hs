@@ -9,7 +9,6 @@ module Propellor.Property.Chroot (
 	ChrootBootstrapper(..),
 	Debootstrapped(..),
 	ChrootTarball(..),
-	inChroot,
 	exposeTrueLocaldir,
 	-- * Internal use
 	provisioned',
@@ -23,6 +22,7 @@ import Propellor.Base
 import Propellor.Container
 import Propellor.Types.CmdLine
 import Propellor.Types.Chroot
+import Propellor.Types.Container
 import Propellor.Types.Info
 import Propellor.Types.Core
 import Propellor.Property.Chroot.Util
@@ -127,19 +127,20 @@ bootstrapped bootstrapper location ps = c
 -- is first unmounted. Note that it does not ensure that any processes
 -- that might be running inside the chroot are stopped.
 provisioned :: Chroot -> RevertableProperty (HasInfo + Linux) Linux
-provisioned c = provisioned' c False
+provisioned c = provisioned' c False [FilesystemContained]
 
 provisioned'
 	:: Chroot
 	-> Bool
+	-> [ContainerCapability]
 	-> RevertableProperty (HasInfo + Linux) Linux
-provisioned' c@(Chroot loc bootstrapper infopropigator _) systemdonly =
+provisioned' c@(Chroot loc bootstrapper infopropigator _) systemdonly caps =
 	(infopropigator c normalContainerInfo $ setup `describe` chrootDesc c "exists")
 		<!>
 	(teardown `describe` chrootDesc c "removed")
   where
 	setup :: Property Linux
-	setup = propellChroot c (inChrootProcess (not systemdonly) c) systemdonly
+	setup = propellChroot c (inChrootProcess (not systemdonly) c) systemdonly caps
 		`requires` built
 
 	built = case buildchroot bootstrapper (chrootSystem c) loc of
@@ -165,8 +166,8 @@ chrootInfo (Chroot loc _ _ h) = mempty `addInfo`
 	mempty { _chroots = M.singleton loc h }
 
 -- | Propellor is run inside the chroot to provision it.
-propellChroot :: Chroot -> ([String] -> IO (CreateProcess, IO ())) -> Bool -> Property UnixLike
-propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "provisioned") $ do
+propellChroot :: Chroot -> ([String] -> IO (CreateProcess, IO ())) -> Bool -> [ContainerCapability] -> Property UnixLike
+propellChroot c@(Chroot loc _ _ _) mkproc systemdonly caps = property (chrootDesc c "provisioned") $ do
 	let d = localdir </> shimdir c
 	let me = localdir </> "propellor"
 	shim <- liftIO $ Shim.setup me Nothing d
@@ -188,7 +189,7 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 
 	chainprovision shim = do
 		parenthost <- asks hostName
-		cmd <- liftIO $ toChain parenthost c systemdonly
+		cmd <- liftIO $ toChain parenthost c systemdonly caps
 		pe <- liftIO standardPathEnv
 		(p, cleanup) <- liftIO $ mkproc
 			[ shim
@@ -199,13 +200,13 @@ propellChroot c@(Chroot loc _ _ _) mkproc systemdonly = property (chrootDesc c "
 		liftIO cleanup
 		return r
 
-toChain :: HostName -> Chroot -> Bool -> IO CmdLine
-toChain parenthost (Chroot loc _ _ _) systemdonly = do
+toChain :: HostName -> Chroot -> Bool -> [ContainerCapability] -> IO CmdLine
+toChain parenthost (Chroot loc _ _ _) systemdonly caps = do
 	onconsole <- isConsole <$> getMessageHandle
-	return $ ChrootChain parenthost loc systemdonly onconsole
+	return $ ChrootChain parenthost loc systemdonly onconsole caps
 
 chain :: [Host] -> CmdLine -> IO ()
-chain hostlist (ChrootChain hn loc systemdonly onconsole) =
+chain hostlist (ChrootChain hn loc systemdonly onconsole caps) =
 	case findHostNoAlias hostlist hn of
 		Nothing -> errorMessage ("cannot find host " ++ hn)
 		Just parenthost -> case M.lookup loc (_chroots $ fromInfo $ hostInfo parenthost) of
@@ -216,11 +217,12 @@ chain hostlist (ChrootChain hn loc systemdonly onconsole) =
 		changeWorkingDirectory localdir
 		when onconsole forceConsole
 		onlyProcess (provisioningLock loc) $
-			runChainPropellor (setInChroot h) $
+			runChainPropellor (setcaps h) $
 				ensureChildProperties $
 					if systemdonly
 						then [toChildProperty Systemd.installed]
 						else hostProperties h
+	setcaps h = h { hostInfo = hostInfo h `addInfo` caps }
 chain _ _ = errorMessage "bad chain command"
 
 inChrootProcess :: Bool -> Chroot -> [String] -> IO (CreateProcess, IO ())
@@ -252,21 +254,6 @@ mungeloc = replace "/" "_"
 chrootDesc :: Chroot -> String -> String
 chrootDesc (Chroot loc _ _ _) desc = "chroot " ++ loc ++ " " ++ desc
 
--- | Check if propellor is currently running within a chroot.
---
--- This allows properties to check and avoid performing actions that
--- should not be done in a chroot.
-inChroot :: Propellor Bool
-inChroot = extract . fromMaybe (InChroot False) . fromInfoVal <$> askInfo
-  where
-	extract (InChroot b) = b
-
-setInChroot :: Host -> Host
-setInChroot h = h { hostInfo = hostInfo h `addInfo` InfoVal (InChroot True) }
-
-newtype InChroot = InChroot Bool
-	deriving (Typeable, Show)
-
 -- | Runs an action with the true localdir exposed,
 -- not the one bind-mounted into a chroot. The action is passed the
 -- path containing the contents of the localdir outside the chroot.
@@ -276,7 +263,7 @@ newtype InChroot = InChroot Bool
 -- we unmount the localdir to expose the true localdir. Finally, to cleanup,
 -- the temp directory is bind mounted back to the localdir.
 exposeTrueLocaldir :: (FilePath -> Propellor a) -> Propellor a
-exposeTrueLocaldir a = ifM inChroot
+exposeTrueLocaldir a = ifM (hasContainerCapability FilesystemContained)
 	( withTmpDirIn (takeDirectory localdir) "propellor.tmp" $ \tmpdir ->
 		bracket_
 			(movebindmount localdir tmpdir)

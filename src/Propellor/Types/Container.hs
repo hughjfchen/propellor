@@ -1,6 +1,8 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, FlexibleInstances #-}
 
 module Propellor.Types.Container where
+
+import Propellor.Types.Info
 
 -- | A value that can be bound between the host and a container.
 --
@@ -28,3 +30,18 @@ data Bound v = Bound
 same :: v -> Bound v
 same v = Bound v v
 
+-- | Capabilities of a container.
+data ContainerCapability
+	= HostnameContained
+	-- ^ The container has its own hostname (and domain name)
+	-- separate from the system that contains it.
+	| FilesystemContained
+	-- ^ The container has its own root filesystem, rather than sharing
+	-- the root filesystem of the system that contains it.
+	deriving (Typeable, Eq, Read, Show)
+
+-- | A [ContainerCapability] can be used as Info.
+-- It does not propagate out to the Host.
+-- When not in a container, the Info value will be [].
+instance IsInfo [ContainerCapability] where
+        propagateInfo _ = PropagateInfo False

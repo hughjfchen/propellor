@@ -3,7 +3,7 @@ module Propellor.Property.Uboot where
 import Propellor.Base
 import Propellor.Types.Info
 import Propellor.Types.Bootloader
-import Propellor.Property.Chroot
+import Propellor.Types.Container
 import Propellor.Property.Mount
 import qualified Propellor.Property.Apt as Apt
 
@@ -14,7 +14,7 @@ type BoardName = String
 --
 -- This includes writing it to the boot sector.
 sunxi :: BoardName -> Property (HasInfo + DebianLike)
-sunxi boardname = setInfoProperty (check (not <$> inChroot) go) info
+sunxi boardname = setInfoProperty (check (not <$> hasContainerCapability FilesystemContained) go) info
 	`requires` Apt.installed ["u-boot", "u-boot-sunxi"]
   where
 	go :: Property Linux

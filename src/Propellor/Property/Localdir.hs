@@ -7,7 +7,7 @@ module Propellor.Property.Localdir where
 import Propellor.Base
 import Propellor.Git.Config
 import Propellor.Types.Info
-import Propellor.Property.Chroot (inChroot)
+import Propellor.Types.Container
 import Propellor.Property.Mount (partialBindMountsOf, umountLazy)
 
 -- | Sets the url to use as the origin of propellor's git repository.
@@ -46,7 +46,7 @@ removed = check (doesDirectoryExist localdir) $
 		return NoChange
   where
 	atend _ = do
-		ifM inChroot
+		ifM (hasContainerCapability FilesystemContained)
 			-- In a chroot, all we have to do is unmount localdir,
 			-- and then delete it
 			( liftIO $ umountLazy localdir

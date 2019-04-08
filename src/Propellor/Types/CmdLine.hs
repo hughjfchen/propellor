@@ -2,6 +2,7 @@ module Propellor.Types.CmdLine where
 
 import Propellor.Types.OS
 import Propellor.Types.PrivData
+import Propellor.Types.Container
 
 import System.Posix.Types
 
@@ -25,7 +26,7 @@ data CmdLine
 	| Relay HostName
 	| DockerInit HostName
 	| DockerChain HostName String
-	| ChrootChain HostName FilePath Bool Bool
+	| ChrootChain HostName FilePath Bool Bool [ContainerCapability]
 	| GitPush Fd Fd
 	| Check
 	| Build

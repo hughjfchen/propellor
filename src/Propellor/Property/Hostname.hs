@@ -1,8 +1,10 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Propellor.Property.Hostname where
 
 import Propellor.Base
 import qualified Propellor.Property.File as File
-import Propellor.Property.Chroot (inChroot)
+import Propellor.Types.Container
 import Utility.Split
 
 import Data.List
@@ -41,7 +43,7 @@ setTo' extractdomain hn = combineProperties desc $ toProps
 			else Just ("127.0.1.1", [hn, basehost])
 		, Just ("127.0.0.1", ["localhost"])
 		]
-	, check (not <$> inChroot) $
+	, check safetochange $
 		cmdProperty "hostname" [basehost]
 			`assume` NoChange
 	]
@@ -50,6 +52,10 @@ setTo' extractdomain hn = combineProperties desc $ toProps
 	basehost = takeWhile (/= '.') hn
 	domain = extractdomain hn
 	
+	safetochange = askInfo >>= return . \case
+		[] -> True
+		caps -> HostnameContained `elem` caps
+
 	hostslines ipsnames = 
 		File.fileProperty desc (addhostslines ipsnames) "/etc/hosts"
 	addhostslines :: [(String, [String])] -> [String] -> [String]

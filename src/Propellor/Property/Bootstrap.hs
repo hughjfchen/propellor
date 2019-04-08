@@ -13,6 +13,7 @@ module Propellor.Property.Bootstrap (
 import Propellor.Base
 import Propellor.Bootstrap
 import Propellor.Types.Info
+import Propellor.Types.Container
 import Propellor.Property.Chroot
 import Propellor.PrivData.Paths
 
@@ -58,7 +59,7 @@ data RepoSource
 -- All build dependencies are installed, using distribution packages
 -- or falling back to using cabal or stack.
 bootstrappedFrom :: RepoSource -> Property Linux
-bootstrappedFrom reposource = check inChroot $
+bootstrappedFrom reposource = check (hasContainerCapability FilesystemContained) $
 	go `requires` clonedFrom reposource
   where
 	go :: Property Linux
@@ -133,7 +134,7 @@ clonedFrom reposource = case reposource of
 			liftIO $ B.writeFile gitconfig cfg
 		return MadeChange
 
-	needclone = (inChroot <&&> truelocaldirisempty)
+	needclone = (hasContainerCapability FilesystemContained <&&> truelocaldirisempty)
 		<||> (liftIO (not <$> doesDirectoryExist localdir))
 	
 	truelocaldirisempty = exposeTrueLocaldir $ const $

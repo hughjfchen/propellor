@@ -1,8 +1,13 @@
-propellor (5.7.1) UNRELEASED; urgency=medium
+propellor (5.8.0) UNRELEASED; urgency=medium
 
   * Fix bug in File.containsShellSetting that replaced whole shell conffile
     content with the setting if the file did not previously contain a line
     setting the key to some value.
+  * Removed inChroot, instead use hasContainerCapability FilesystemContained.
+    (API change)
+  * Hostname: Properties that used to not do anything in a systemd or
+    docker container will now change the container's hostname,
+    since it's namespaced.
 
  -- Joey Hess <id@joeyh.name>  Mon, 08 Apr 2019 11:09:04 -0400
 

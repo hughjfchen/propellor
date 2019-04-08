@@ -598,8 +598,9 @@ chain hostlist hn s = case toContainerId s of
 	go cid h = do
 		changeWorkingDirectory localdir
 		onlyProcess (provisioningLock cid) $
-			runChainPropellor h $ 
+			runChainPropellor (setcaps h) $ 
 				ensureChildProperties $ hostProperties h
+	setcaps h = h { hostInfo = hostInfo h `addInfo` [HostnameContained, FilesystemContained] }
 
 stopContainer :: ContainerId -> IO Bool
 stopContainer cid = boolSystem dockercmd [Param "stop", Param $ fromContainerId cid ]

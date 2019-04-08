@@ -278,15 +278,20 @@ nspawned c@(Container name (Chroot.Chroot loc builder _ _) h) =
 	-- Chroot provisioning is run in systemd-only mode,
 	-- which sets up the chroot and ensures systemd and dbus are
 	-- installed, but does not handle the other properties.
-	chrootprovisioned = Chroot.provisioned' chroot True
+	chrootprovisioned = Chroot.provisioned' chroot True [FilesystemContained]
 
 	-- Use nsenter to enter container and and run propellor to
 	-- finish provisioning.
 	containerprovisioned :: RevertableProperty Linux Linux
 	containerprovisioned =
-		tightenTargets (Chroot.propellChroot chroot (enterContainerProcess c) False)
+		tightenTargets (Chroot.propellChroot chroot (enterContainerProcess c) False containercaps)
 			<!>
 		doNothing
+
+	containercaps = 
+		[ FilesystemContained
+		, HostnameContained
+		]
 
 	chroot = Chroot.Chroot loc builder Chroot.propagateChrootInfo h
 

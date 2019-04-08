@@ -11,6 +11,7 @@ module Propellor.Info (
 	pureInfoProperty',
 	askInfo,
 	getOS,
+	hasContainerCapability,
 	ipv4,
 	ipv6,
 	alias,
@@ -26,6 +27,7 @@ module Propellor.Info (
 import Propellor.Types
 import Propellor.Types.Info
 import Propellor.Types.MetaTypes
+import Propellor.Types.Container
 
 import "mtl" Control.Monad.Reader
 import qualified Data.Set as S
@@ -74,6 +76,11 @@ pureInfoProperty' desc i = setInfoProperty p i
 -- | Gets a value from the host's Info.
 askInfo :: (IsInfo v) => Propellor v
 askInfo = asks (fromInfo . hostInfo)
+
+-- | Checks if a ContainerCapability is set in the current Info.
+hasContainerCapability :: ContainerCapability -> Propellor Bool
+hasContainerCapability c = elem c
+	<$> (askInfo ::  Propellor [ContainerCapability])
 
 -- | Specifies that a host's operating system is Debian,
 -- and further indicates the suite and architecture.

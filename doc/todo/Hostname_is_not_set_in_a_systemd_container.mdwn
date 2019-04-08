@@ -8,3 +8,5 @@ Note: I use `Systemd.containerCfg "network-bridge=br0"`, so the container has
 a different network stack.
 
 I suppose that the `check (not <$> inChroot)` might be the problem here.
+
+> [[fixed|done]]

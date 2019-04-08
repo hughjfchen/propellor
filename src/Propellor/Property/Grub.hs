@@ -18,9 +18,9 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.ConfFile as ConfFile
 import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Mount
-import Propellor.Property.Chroot (inChroot)
 import Propellor.Types.Info
 import Propellor.Types.Bootloader
+import Propellor.Types.Container
 import Utility.SafeCommand
 
 import Data.List
@@ -34,10 +34,11 @@ type OSDevice = String
 -- | Installs the grub package. This does not make grub be used as the
 -- bootloader.
 --
--- This includes running update-grub, unless it's run in a chroot.
+-- This includes running update-grub, unless it's run in a chroot
+-- or container.
 installed :: GrubTarget -> Property (HasInfo + DebianLike)
 installed grubtarget = installed' grubtarget 
-	`onChange` (check (not <$> inChroot) mkConfig)
+	`onChange` (check (not <$> hasContainerCapability FilesystemContained) mkConfig)
 
 -- | Run update-grub, to generate the grub boot menu. It will be
 -- automatically updated when kernel packages are installed.
