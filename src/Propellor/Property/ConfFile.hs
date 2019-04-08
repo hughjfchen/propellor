@@ -161,7 +161,7 @@ containsShellSetting f (k, v) = adjust `before` dedup
 		isline
 		(not . isline)
 		(const [line])
-		(const [line])
+		(++ [line])
 		f
 	dedup = fileProperty "" dedup' f
 	dedup' ls = let (pre, wanted, post) = foldl' find ([], [], []) ls
