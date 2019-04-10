@@ -8,6 +8,8 @@ propellor (5.8.0) UNRELEASED; urgency=medium
   * Hostname: Properties that used to not do anything in a systemd or
     docker container will now change the container's hostname,
     since it's namespaced.
+  * Add User.ownsWithPrimaryGroup
+    Thanks, Sean Whitton
 
  -- Joey Hess <id@joeyh.name>  Mon, 08 Apr 2019 11:09:04 -0400
 
