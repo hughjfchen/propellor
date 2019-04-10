@@ -148,6 +148,10 @@ isLockedPassword user = (== LockedPassword) <$> getPasswordStatus user
 homedir :: User -> IO FilePath
 homedir (User user) = homeDirectory <$> getUserEntryForName user
 
+primaryGroup :: User -> IO Group
+primaryGroup (User u) = Group <$> groupName <$>
+	(getGroupEntryForID =<< (userGroupID <$> getUserEntryForName u))
+
 hasGroup :: User -> Group -> Property DebianLike
 hasGroup (User user) (Group group') = tightenTargets $ check test go
 	`describe` unwords ["user", user, "in group", group']
@@ -187,6 +191,14 @@ hasDesktopGroups user@(User u) = property' desc $ \o -> do
 		, "debian-tor"
 		, "lpadmin"
 		]
+
+-- | Ensures that a file is owned by a user, and also by that user's primary
+-- group.
+ownsWithPrimaryGroup :: User -> FilePath -> Property UnixLike
+ownsWithPrimaryGroup user@(User u) f =
+	property' (f ++ " has owner " ++ u) $ \w -> do
+		group <- liftIO $ primaryGroup user
+		ensureProperty w $ File.ownerGroup f user group
 
 -- | Controls whether shadow passwords are enabled or not.
 shadowConfig :: Bool -> Property DebianLike
