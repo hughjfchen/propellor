@@ -10,6 +10,10 @@ propellor (5.8.0) UNRELEASED; urgency=medium
     since it's namespaced.
   * Add User.ownsWithPrimaryGroup
     Thanks, Sean Whitton
+  * Ssh.userKeys, Ssh.userKeyAt: Create .ssh directory when it does not yet
+    exist.
+  * Ssh.userKeyAt: When a relative filepath is provided, it's put inside
+    the user's .ssh directory.
 
  -- Joey Hess <id@joeyh.name>  Mon, 08 Apr 2019 11:09:04 -0400
 
