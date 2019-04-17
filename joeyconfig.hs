@@ -203,7 +203,8 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Apt.installed ["mtr-tiny", "iftop", "screen"]
 	& Postfix.satellite
 
-	& check (not <$> inChroot) (setupRevertableProperty autobuilder)
+	& check (not <$> hasContainerCapability Systemd.FilesystemContained) 
+		(setupRevertableProperty autobuilder)
 	-- In case compiler needs more than available ram
 	& Apt.serviceInstalledRunning "swapspace"
   where
