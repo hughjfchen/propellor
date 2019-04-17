@@ -905,6 +905,7 @@ house user hosts ctx sshkey = propertyList "home automation" $ props
 	& Apt.installed ["python", "python-pymodbus", "rrdtool", "rsync"]
 	& Git.cloned user "https://git.joeyh.name/git/joey/house.git" d Nothing
 	& Git.cloned user "https://git.joeyh.name/git/reactive-banana-automation.git" (d </> "reactive-banana-automation") Nothing
+	& websitesymlink
 	& build
 	& Systemd.enabled setupservicename
 		`requires` setupserviceinstalled
@@ -1025,6 +1026,13 @@ house user hosts ctx sshkey = propertyList "home automation" $ props
 	-- Any changes to the rsync command will need my .authorized_keys
 	-- rsync server command to be updated too.
 	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/house.joeyh.name/rrds/"
+
+	websitesymlink :: Property UnixLike
+	websitesymlink = check (not . isSymbolicLink <$> getSymbolicLinkStatus "/var/www/html")
+		(property "website symlink" $ makeChange $ do
+			removeDirectoryRecursive "/var/www/html"
+			createSymbolicLink d "/var/www/html"
+		)
 
 homerouterWifiInterfaceOld :: String
 homerouterWifiInterfaceOld = "wlx00c0ca82eb78" -- thinkpenguin wifi adapter
