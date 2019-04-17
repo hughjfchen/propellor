@@ -754,10 +754,10 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "# Redirect all to joeyh.name."
 		, "rewriterule (.*) http://joeyh.name$1 [r]"
 		]
-	& alias "homepower.joeyh.name"
-	& apacheSite "homepower.joeyh.name"
-		[ "DocumentRoot /srv/web/homepower.joeyh.name"
-		, "<Directory /srv/web/homepower.joeyh.name>"
+	& alias "house.joeyh.name"
+	& apacheSite "house.joeyh.name"
+		[ "DocumentRoot /srv/web/house.joeyh.name"
+		, "<Directory /srv/web/house.joeyh.name>"
 		, "  Options Indexes ExecCGI"
 		, "  AllowOverride None"
 		, Apache.allowAll
@@ -904,7 +904,7 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	& Apache.installed
 	& Apt.installed ["python", "python-pymodbus", "rrdtool", "rsync"]
 	& File.ownerGroup "/var/www/html" user (userGroup user)
-	& Git.cloned user "https://git.joeyh.name/git/joey/homepower.git" d Nothing
+	& Git.cloned user "https://git.joeyh.name/git/joey/house.git" d Nothing
 	& Git.cloned user "https://git.joeyh.name/git/reactive-banana-automation.git" (d </> "reactive-banana-automation") Nothing
 	& build
 	& Systemd.enabled setupservicename
@@ -1023,7 +1023,7 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 		]
 	-- Any changes to the rsync command will need my .authorized_keys
 	-- rsync server command to be updated too.
-	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/"
+	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/house.joeyh.name/rrds/"
 
 homerouterWifiInterfaceOld :: String
 homerouterWifiInterfaceOld = "wlx00c0ca82eb78" -- thinkpenguin wifi adapter
