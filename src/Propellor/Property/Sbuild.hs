@@ -270,7 +270,7 @@ update = Apt.update `before` Apt.upgrade `before` Apt.autoRemove
 
 -- | Ensure that an sbuild schroot uses the host's Apt proxy.
 --
--- This property is standardly used when the host has 'Apt.useLocalCacher'.
+-- This property is typically used when the host has 'Apt.useLocalCacher'.
 useHostProxy :: Host -> Property DebianLike
 useHostProxy h = property' "use host's apt proxy" $ \w ->
 	-- Note that we can't look at getProxyInfo outside the property,
