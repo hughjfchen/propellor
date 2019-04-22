@@ -14,6 +14,8 @@ propellor (5.8.0) UNRELEASED; urgency=medium
     exist.
   * Ssh.userKeyAt: When a relative filepath is provided, it's put inside
     the user's .ssh directory.
+  * fix Git.pulled always reporting a change
+    Thanks, Sean Whitton
 
  -- Joey Hess <id@joeyh.name>  Mon, 08 Apr 2019 11:09:04 -0400
 
