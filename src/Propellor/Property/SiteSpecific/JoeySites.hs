@@ -754,10 +754,10 @@ legacyWebSites = propertyList "legacy web sites" $ props
 		, "# Redirect all to joeyh.name."
 		, "rewriterule (.*) http://joeyh.name$1 [r]"
 		]
-	& alias "homepower.joeyh.name"
-	& apacheSite "homepower.joeyh.name"
-		[ "DocumentRoot /srv/web/homepower.joeyh.name"
-		, "<Directory /srv/web/homepower.joeyh.name>"
+	& alias "house.joeyh.name"
+	& apacheSite "house.joeyh.name"
+		[ "DocumentRoot /srv/web/house.joeyh.name"
+		, "<Directory /srv/web/house.joeyh.name>"
 		, "  Options Indexes ExecCGI"
 		, "  AllowOverride None"
 		, Apache.allowAll
@@ -899,13 +899,13 @@ alarmClock oncalendar (User user) command = combineProperties "goodmorning timer
 	& "/etc/systemd/logind.conf" `ConfFile.containsIniSetting`
 		("Login", "LidSwitchIgnoreInhibited", "no")
 
-homePower :: IsContext c => User -> [Host] -> c -> (SshKeyType, Ssh.PubKeyText) -> Property (HasInfo + DebianLike)
-homePower user hosts ctx sshkey = propertyList "home power" $ props
+house :: IsContext c => User -> [Host] -> c -> (SshKeyType, Ssh.PubKeyText) -> Property (HasInfo + DebianLike)
+house user hosts ctx sshkey = propertyList "home automation" $ props
 	& Apache.installed
 	& Apt.installed ["python", "python-pymodbus", "rrdtool", "rsync"]
-	& File.ownerGroup "/var/www/html" user (userGroup user)
-	& Git.cloned user "https://git.joeyh.name/git/joey/homepower.git" d Nothing
+	& Git.cloned user "https://git.joeyh.name/git/joey/house.git" d Nothing
 	& Git.cloned user "https://git.joeyh.name/git/reactive-banana-automation.git" (d </> "reactive-banana-automation") Nothing
+	& websitesymlink
 	& build
 	& Systemd.enabled setupservicename
 		`requires` setupserviceinstalled
@@ -924,8 +924,8 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 	& User.hasGroup user (Group "gpio")
 	& Apt.installed ["i2c-tools"]
 	& User.hasGroup user (Group "i2c")
-	& "/etc/modules-load.d/homepower.conf" `File.hasContent` ["i2c-dev"]
-	& Cron.niceJob "homepower upload"
+	& "/etc/modules-load.d/house.conf" `File.hasContent` ["i2c-dev"]
+	& Cron.niceJob "house upload"
 		(Cron.Times "1 * * * *") user d rsynccommand
 		`requires` Ssh.userKeyAt (Just sshkeyfile) user ctx sshkey
 		`requires` File.ownerGroup (takeDirectory sshkeyfile)
@@ -934,7 +934,7 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 		`requires` Ssh.knownHost hosts "kitenet.net" user
 	&  File.hasPrivContentExposed "/etc/darksky-forecast-url" anyContext
   where
-	d = "/var/www/html/homepower"
+	d = "/home/joey/house"
 	sshkeyfile = d </> ".ssh/key"
 	build = check (not <$> doesFileExist (d </> "controller")) $
 		userScriptProperty (User "joey")
@@ -955,11 +955,11 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 			, "libghc-reactive-banana-dev"
 			, "libghc-hinotify-dev"
 			]
-	pollerservicename = "homepower"
+	pollerservicename = "house-poller"
 	pollerservicefile = "/etc/systemd/system/" ++ pollerservicename ++ ".service"
 	pollerserviceinstalled = pollerservicefile `File.hasContent`
 		[ "[Unit]"
-		, "Description=home power poller"
+		, "Description=house poller"
 		, ""
 		, "[Service]"
 		, "ExecStart=" ++ d ++ "/poller"
@@ -970,13 +970,13 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 		, ""
 		, "[Install]"
 		, "WantedBy=multi-user.target"
-		, "WantedBy=homepower-controller.target"
+		, "WantedBy=house-controller.target"
 		]
-	controllerservicename = "homepower-controller"
+	controllerservicename = "house-controller"
 	controllerservicefile = "/etc/systemd/system/" ++ controllerservicename ++ ".service"
 	controllerserviceinstalled = controllerservicefile `File.hasContent`
 		[ "[Unit]"
-		, "Description=home power controller"
+		, "Description=house controller"
 		, ""
 		, "[Service]"
 		, "ExecStart=" ++ d ++ "/controller"
@@ -988,11 +988,11 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 		, "[Install]"
 		, "WantedBy=multi-user.target"
 		]
-	watchdogservicename = "homepower-watchdog"
+	watchdogservicename = "house-watchdog"
 	watchdogservicefile = "/etc/systemd/system/" ++ watchdogservicename ++ ".service"
 	watchdogserviceinstalled = watchdogservicefile `File.hasContent`
 		[ "[Unit]"
-		, "Description=home power watchdog"
+		, "Description=house watchdog"
 		, ""
 		, "[Service]"
 		, "ExecStart=" ++ d ++ "/watchdog"
@@ -1004,11 +1004,11 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 		, "[Install]"
 		, "WantedBy=multi-user.target"
 		]
-	setupservicename = "homepower-setup"
+	setupservicename = "house-setup"
 	setupservicefile = "/etc/systemd/system/" ++ setupservicename ++ ".service"
 	setupserviceinstalled = setupservicefile `File.hasContent`
 		[ "[Unit]"
-		, "Description=home power monitor setup"
+		, "Description=house setup"
 		, ""
 		, "[Service]"
 		, "ExecStart=" ++ d ++ "/setup"
@@ -1019,11 +1019,20 @@ homePower user hosts ctx sshkey = propertyList "home power" $ props
 		, ""
 		, "[Install]"
 		, "WantedBy=multi-user.target"
-		, "WantedBy=homepower.target"
+		, "WantedBy=house-poller.target"
+		, "WantedBy=house-controller.target"
+		, "WantedBy=house-watchdog.target"
 		]
 	-- Any changes to the rsync command will need my .authorized_keys
 	-- rsync server command to be updated too.
-	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/homepower.joeyh.name/rrds/"
+	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/house.joeyh.name/rrds/"
+
+	websitesymlink :: Property UnixLike
+	websitesymlink = check (not . isSymbolicLink <$> getSymbolicLinkStatus "/var/www/html")
+		(property "website symlink" $ makeChange $ do
+			removeDirectoryRecursive "/var/www/html"
+			createSymbolicLink d "/var/www/html"
+		)
 
 homerouterWifiInterfaceOld :: String
 homerouterWifiInterfaceOld = "wlx00c0ca82eb78" -- thinkpenguin wifi adapter
@@ -1063,7 +1072,7 @@ homeRouter = propertyList "home router" $ props
 		, "interface=" ++ homerouterWifiInterface
 		, "interface=eth0"
 		, "domain=kitenet.net"
-		-- lease time is short because the homepower
+		-- lease time is short because the house
 		-- controller wants to know when clients disconnect
 		, "dhcp-range=10.1.1.100,10.1.1.150,10m"
 		, "no-hosts"
