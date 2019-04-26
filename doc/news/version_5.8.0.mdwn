@@ -1,0 +1,18 @@
+propellor 5.8.0 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Fix bug in File.containsShellSetting that replaced whole shell conffile
+     content with the setting if the file did not previously contain a line
+     setting the key to some value.
+   * Removed inChroot, instead use hasContainerCapability FilesystemContained.
+     (API change)
+   * Hostname: Properties that used to not do anything in a systemd or
+     docker container will now change the container's hostname,
+     since it's namespaced.
+   * Add User.ownsWithPrimaryGroup
+     Thanks, Sean Whitton
+   * Ssh.userKeys, Ssh.userKeyAt: Create .ssh directory when it does not yet
+     exist.
+   * Ssh.userKeyAt: When a relative filepath is provided, it's put inside
+     the user's .ssh directory.
+   * Fix Git.pulled always reporting a change.
+     Thanks, Sean Whitton"""]]
