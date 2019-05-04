@@ -1321,3 +1321,7 @@ rsyncNetBorgRepo d os = Borg.BorgRepoUsing os' ("2318@usw-s002.rsync.net:" ++ d)
   where
 	-- rsync.net has a newer borg here
 	os' = Borg.UsesEnvVar ("BORG_REMOTE_PATH", "borg1") : os
+
+noExim :: Property DebianLike
+noExim = Apt.removed ["exim4", "exim4-base", "exim4-daemon-light"]
+	`onChange` Apt.autoRemove
