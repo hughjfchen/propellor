@@ -1,3 +1,10 @@
+propellor (5.8.1) UNRELEASED; urgency=medium
+
+  * Libvirt.installed: install libvirt-daemon-system
+    Thanks, David Bremner
+
+ -- Joey Hess <id@joeyh.name>  Sat, 15 Jun 2019 12:32:37 -0400
+
 propellor (5.8.0) unstable; urgency=medium
 
   * Fix bug in File.containsShellSetting that replaced whole shell conffile
