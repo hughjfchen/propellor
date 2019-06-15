@@ -1025,7 +1025,7 @@ house user hosts ctx sshkey = propertyList "home automation" $ props
 		]
 	-- Any changes to the rsync command will need my .authorized_keys
 	-- rsync server command to be updated too.
-	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/house.joeyh.name/rrds/"
+	rsynccommand = "rsync -e 'ssh -i" ++ sshkeyfile ++ "' -avz rrds/ joey@kitenet.net:/srv/web/house.joeyh.name/rrds/ >/dev/null 2>&1"
 
 	websitesymlink :: Property UnixLike
 	websitesymlink = check (not . isSymbolicLink <$> getSymbolicLinkStatus "/var/www/html")
@@ -1321,3 +1321,7 @@ rsyncNetBorgRepo d os = Borg.BorgRepoUsing os' ("2318@usw-s002.rsync.net:" ++ d)
   where
 	-- rsync.net has a newer borg here
 	os' = Borg.UsesEnvVar ("BORG_REMOTE_PATH", "borg1") : os
+
+noExim :: Property DebianLike
+noExim = Apt.removed ["exim4", "exim4-base", "exim4-daemon-light"]
+	`onChange` Apt.autoRemove

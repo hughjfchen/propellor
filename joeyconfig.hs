@@ -417,7 +417,8 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& Apt.serviceInstalledRunning "swapspace"
 	& Cron.runPropellor (Cron.Times "30 * * * *")
 	& Apt.installed ["etckeeper", "sudo"]
-	& Apt.removed ["nfs-common", "exim4", "exim4-base", "exim4-daemon-light", "rsyslog", "acpid", "rpcbind", "at"]
+	& JoeySites.noExim
+	& Apt.removed ["nfs-common", "rsyslog", "acpid", "rpcbind", "at"]
 
 	& User.hasSomePassword (User "root")
 	& User.accountFor (User "joey")
@@ -525,13 +526,14 @@ standardSystemUnhardened suite arch motd = propertyList "standard system" $ prop
 	& Apt.installed ["vim", "screen", "less"]
 	& Cron.runPropellor (Cron.Times "30 * * * *")
 	-- I use postfix, or no MTA.
-	& Apt.removed ["exim4", "exim4-daemon-light", "exim4-config", "exim4-base"]
-		`onChange` Apt.autoRemove
+	& JoeySites.noExim
 
 -- This is my standard container setup, Featuring automatic upgrades.
 standardContainer :: DebianSuite -> Property (HasInfo + Debian)
 standardContainer suite = propertyList "standard container" $ props
 	& osDebian suite X86_64
+	-- Do not want to run mail daemon inside a random container..
+	& JoeySites.noExim
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.unattendedUpgrades
 	& Apt.cacheCleaned
