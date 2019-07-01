@@ -34,7 +34,7 @@ data DiskImageType = Raw -- TODO: | QCow2
 
 -- | Install basic libvirt components
 installed :: Property DebianLike
-installed = Apt.installed ["libvirt-clients", "virtinst"]
+installed = Apt.installed ["libvirt-clients", "virtinst", "libvirt-daemon", "libvirt-daemon-system"]
 
 -- | Ensure that the default libvirt network is set to autostart, and start it.
 --

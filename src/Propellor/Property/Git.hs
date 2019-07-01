@@ -110,7 +110,7 @@ pulled owner url dir mbranch = go
 		[ "cd " ++ shellEscape dir
 		, "git pull"
 		]
-		`changesFile` (dir </> ".git" </> "FETCH_HEAD")
+		`changesFileContent` (dir </> ".git" </> "FETCH_HEAD")
 
 isGitDir :: FilePath -> IO Bool
 isGitDir dir = isNothing <$> catchMaybeIO (readProcess "git" ["rev-parse", "--resolve-git-dir", dir])

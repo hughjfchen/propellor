@@ -1,4 +1,11 @@
-propellor (5.8.0) UNRELEASED; urgency=medium
+propellor (5.8.1) UNRELEASED; urgency=medium
+
+  * Libvirt.installed: install libvirt-daemon-system
+    Thanks, David Bremner
+
+ -- Joey Hess <id@joeyh.name>  Sat, 15 Jun 2019 12:32:37 -0400
+
+propellor (5.8.0) unstable; urgency=medium
 
   * Fix bug in File.containsShellSetting that replaced whole shell conffile
     content with the setting if the file did not previously contain a line
@@ -14,8 +21,10 @@ propellor (5.8.0) UNRELEASED; urgency=medium
     exist.
   * Ssh.userKeyAt: When a relative filepath is provided, it's put inside
     the user's .ssh directory.
+  * Fix Git.pulled always reporting a change.
+    Thanks, Sean Whitton
 
- -- Joey Hess <id@joeyh.name>  Mon, 08 Apr 2019 11:09:04 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 26 Apr 2019 08:23:29 -0400
 
 propellor (5.7.0) unstable; urgency=medium
 
