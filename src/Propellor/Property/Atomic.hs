@@ -46,10 +46,8 @@ type CheckAtomicResourcePair a = AtomicResourcePair a -> Propellor (AtomicResour
 -- inactiveAtomicResource, and if it was successful,
 -- atomically activating that resource.
 atomicUpdate
-	-- Constriaints inherited from ensureProperty.
-	:: ( Cannot_ensureProperty_WithInfo t ~ 'True
-	   , (Targets t `NotSuperset` Targets t) ~ 'CanCombine
-	   )
+	-- Constriaint inherited from ensureProperty.
+	:: (EnsurePropertyAllowed t t ~ 'True)
 	=> SingI t
 	=> AtomicResourcePair a
 	-> CheckAtomicResourcePair a
@@ -92,10 +90,8 @@ atomicUpdate rbase rcheck rswap mkp = property' d $ \w -> do
 -- children: a symlink with the name of the directory itself, and two copies
 -- of the directory, with names suffixed with ".1" and ".2"
 atomicDirUpdate
-	-- Constriaints inherited from ensureProperty.
-	:: ( Cannot_ensureProperty_WithInfo t ~ 'True
-	   , (Targets t `NotSuperset` Targets t) ~ 'CanCombine
-	   )
+	-- Constriaint inherited from ensureProperty.
+	:: (EnsurePropertyAllowed t t ~ 'True)
 	=> SingI t
 	=> FilePath
 	-> (FilePath -> Property (MetaTypes t))

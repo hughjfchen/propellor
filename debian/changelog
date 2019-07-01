@@ -1,5 +1,15 @@
-propellor (5.8.1) UNRELEASED; urgency=medium
+propellor (5.9.0) UNRELEASED; urgency=medium
 
+  * Avoid displaying an excessive amount of type error messages when many
+    properties have been combined in a props list.
+  * Added custom type error messages when Properties don't combine due to
+    conflicting metatypes.
+  * Added custom type error messages for ensureProperty and tightenTargets.
+  * ensureProperty: The constraints have been simplified
+    to EnsurePropertyAllowed. (API change)
+  * ensureProperty: The contraints have been simplified
+    to TightenTargetsAllowed. (API change)
+  * CheckCombinable generates a Bool. (API change)
   * Libvirt.installed: install libvirt-daemon-system
     Thanks, David Bremner
 

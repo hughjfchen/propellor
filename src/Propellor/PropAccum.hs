@@ -19,6 +19,7 @@ import Propellor.Types.MetaTypes
 import Propellor.Types.Core
 import Propellor.Property
 
+import GHC.TypeLits
 import Data.Monoid
 import Prelude
 
@@ -45,6 +46,16 @@ type family GetMetaTypes x where
 	GetMetaTypes (Property (MetaTypes t)) = MetaTypes t
 	GetMetaTypes (RevertableProperty (MetaTypes t) undo) = MetaTypes t
 
+-- When many properties are combined, ghc error message
+-- can include quite a lot of code, typically starting with
+-- `props  and including all the properties up to and including the
+-- one that fails to combine. Point the user in the right direction.
+type family NoteFor symbol :: ErrorMessage where
+	NoteFor symbol =
+		'Text "Probably the problem is with the last property added with "
+			':<>: symbol
+			':<>: 'Text " in the code excerpt below."
+
 -- | Adds a property to a Props.
 --
 -- Can add Properties and RevertableProperties
@@ -55,7 +66,7 @@ type family GetMetaTypes x where
 		-- this constraint appears redundant, but is actually
 		-- crucial.
 		, MetaTypes y ~ GetMetaTypes p
-		, CheckCombinable x y ~ 'CanCombine
+		, CheckCombinableNote x y (NoteFor ('Text "&")) ~ 'True
 		)
 	=> Props (MetaTypes x)
 	-> p
@@ -70,7 +81,7 @@ Props c & p = Props (c ++ [toChildProperty p])
 		-- this constraint appears redundant, but is actually
 		-- crucial.
 		, MetaTypes y ~ GetMetaTypes p
-		, CheckCombinable x y ~ 'CanCombine
+		, CheckCombinableNote x y (NoteFor ('Text "&^")) ~ 'True
 		)
 	=> Props (MetaTypes x)
 	-> p
@@ -82,7 +93,7 @@ Props c &^ p = Props (toChildProperty p : c)
 	-- -Wredundant-constraints is turned off because
 	-- this constraint appears redundant, but is actually
 	-- crucial.
-	:: (CheckCombinable x z ~ 'CanCombine)
+	:: (CheckCombinableNote x z (NoteFor ('Text "!")) ~ 'True)
 	=> Props (MetaTypes x)
 	-> RevertableProperty (MetaTypes y) (MetaTypes z)
 	-> Props (MetaTypes (Combine x z))
