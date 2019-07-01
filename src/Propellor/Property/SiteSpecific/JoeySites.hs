@@ -919,7 +919,7 @@ house user hosts ctx sshkey = propertyList "home automation" $ props
 	& Systemd.enabled watchdogservicename
 		`requires` watchdogserviceinstalled
 		`onChange` Systemd.started watchdogservicename
-	& Apt.serviceInstalledRunning ["watchdog"]
+	& Apt.serviceInstalledRunning "watchdog"
 	& User.hasGroup user (Group "dialout")
 	& Group.exists (Group "gpio") Nothing
 	& User.hasGroup user (Group "gpio")
