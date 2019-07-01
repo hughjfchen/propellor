@@ -24,4 +24,9 @@ Custom errors need a type class to be used. So, could do something like this:
 the `instance TypeError` can just be wrapped in an ifdef to make it only be
 used by the new ghc.)
 
+> The new type-errors library builds a lot of stuff on top of this.
+> Its ability to detect "stuckness" seems like it may be able to catch
+> the very long type errors that we sometimes see when using propellor, and
+> whittle them down to a more useful error. --[[Joey]]
+
 [[!tag user/joey]]
