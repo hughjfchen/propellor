@@ -224,9 +224,16 @@ type family TightenTargetsAllowed untightened tightened where
 		If (Targets tightened `IsSubset` Targets untightened
 		    && NonTargets untightened `IsSubset` NonTargets tightened)
 			'True
-			( TypeError
-				( 'Text "This use of tightenTargets would widen, not narrow, adding: "
-				  ':$$: PrettyPrintMetaTypes (Difference (Targets tightened) (Targets untightened))
+			(IfStuck (Targets tightened)
+				(TypeError
+					('Text "Unable to infer desired Property type in this use of tightenTargets."
+					 ':$$: ('Text "Consider adding a type annotation.")
+					)
+				)
+				(TypeError
+					('Text "This use of tightenTargets would widen, not narrow, adding: "
+					 ':$$: PrettyPrintMetaTypes (Difference (Targets tightened) (Targets untightened))
+					)
 				)
 			)
 

@@ -65,9 +65,16 @@ type family EnsurePropertyTargetOSMatches inner outer where
 	EnsurePropertyTargetOSMatches inner outer = 
 		If (Targets outer `IsSubset` Targets inner)
 			'True
-			( TypeError
-				( 'Text "ensureProperty inner Property is missing support for: "
-				  ':$$: PrettyPrintMetaTypes (Difference (Targets outer) (Targets inner))
+			(IfStuck (Targets outer)
+				(TypeError
+					('Text "ensureProperty outer Property type is not able to be inferred here."
+					 ':$$: 'Text "Consider adding a type annotation."
+					)
+				)
+				(TypeError
+					('Text "ensureProperty inner Property is missing support for: "
+					 ':$$: PrettyPrintMetaTypes (Difference (Targets outer) (Targets inner))
+					)
 				)
 			)
 

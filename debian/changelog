@@ -3,8 +3,15 @@ propellor (5.9.0) UNRELEASED; urgency=medium
   * Avoid displaying an excessive amount of type error messages when many
     properties have been combined in a props list.
   * Added custom type error messages when Properties don't combine due to
-    conflicting metatypes.
+    conflicting MetaTypes.
   * Added custom type error messages for ensureProperty and tightenTargets.
+  * Use the type-errors library to detect when the type checker gets stuck
+    unable to reduce type-level operations on MetaTypes, and avoid 
+    displaying massive error messages in such a case.
+  * But, since type-errors is a new library not available in eg Debian
+    yet, added a WithTypeErrors build flag. When the library is not
+    available, cabal will automatically disable that build flag,
+    and it will build without the type-errors library.
   * ensureProperty: The constraints have been simplified
     to EnsurePropertyAllowed. (API change)
   * ensureProperty: The contraints have been simplified
