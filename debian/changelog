@@ -1,26 +1,29 @@
 propellor (5.9.0) UNRELEASED; urgency=medium
 
-  * Avoid displaying an excessive amount of type error messages when many
-    properties have been combined in a props list.
   * Added custom type error messages when Properties don't combine due to
     conflicting MetaTypes.
   * Added custom type error messages for ensureProperty and tightenTargets.
   * Note that those changes made ghc 8.0.1 in a few cases unable to infer
-    types when ensureProperty or tightenTargets is used. Adding a type
-    annotation will work around this problem, if you cannot upgrade
-    to a newer ghc that handles them better.
+    types when ensureProperty or tightenTargets is used, while later ghc
+    versions had no difficulty. If this affects building your properties,
+    adding a type annotation to the code will work around the problem.
+  * Added custom type error messages displayed when type inference
+    fails when using ensureProperty and tightenTargets, that suggest
+    adding a type annotation.
   * Use the type-errors library to detect when the type checker gets stuck
     unable to reduce type-level operations on MetaTypes, and avoid 
-    displaying massive error messages in such a case.
+    displaying massive error messages.
   * But, since type-errors is a new library not available in eg Debian
     yet, added a WithTypeErrors build flag. When the library is not
     available, cabal will automatically disable that build flag,
     and it will build without the type-errors library.
   * ensureProperty: The constraints have been simplified
     to EnsurePropertyAllowed. (API change)
-  * ensureProperty: The contraints have been simplified
+  * tightenTargers: The contraints have been simplified
     to TightenTargetsAllowed. (API change)
-  * CheckCombinable generates a Bool. (API change)
+  * CheckCombinable type changed. (API change)
+  * Try harder to avoid displaying an excessive amount of type error
+    messages when many properties have been combined in a props list.
   * Libvirt.installed: install libvirt-daemon-system
     Thanks, David Bremner
 
