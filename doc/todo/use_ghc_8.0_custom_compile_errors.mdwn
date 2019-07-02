@@ -27,4 +27,6 @@ whittle them down to a more useful error. --[[Joey]]
 > > a simpler error would be a big improvement. Such large error messages
 > > can make ghc use an excessive amount of memory. --[[Joey]]
 
+now [[done]]! --[[Joey]]
+
 [[!tag user/joey]]
