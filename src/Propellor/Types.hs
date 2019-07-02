@@ -225,12 +225,12 @@ type family TightenTargetsAllowed untightened tightened where
 		    && NonTargets untightened `IsSubset` NonTargets tightened)
 			'True
 			(IfStuck (Targets tightened)
-				(TypeError
+				(DelayError
 					('Text "Unable to infer desired Property type in this use of tightenTargets."
 					 ':$$: ('Text "Consider adding a type annotation.")
 					)
 				)
-				(TypeError
+				(DelayErrorFcf
 					('Text "This use of tightenTargets would widen, not narrow, adding: "
 					 ':$$: PrettyPrintMetaTypes (Difference (Targets tightened) (Targets untightened))
 					)

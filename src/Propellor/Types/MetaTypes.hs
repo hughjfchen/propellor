@@ -30,6 +30,8 @@ module Propellor.Types.MetaTypes (
 	Intersect,
 	Difference,
 	IfStuck,
+	DelayError,
+	DelayErrorFcf,
 ) where
 
 import Propellor.Types.Singletons
@@ -43,6 +45,10 @@ import Type.Errors
 #else
 type family IfStuck (expr :: k) (b :: k1) (c :: k1) :: k1 where
 	IfStuck expr b c = c
+type family DelayError msg where
+	DelayError msg = TypeError msg
+type family DelayErrorFcf msg where
+	DelayErrorFcf msg = TypeError msg
 #endif
 
 data MetaType
@@ -167,12 +173,12 @@ type family CannotCombine (list1 :: [a]) (list2 :: [a]) (note :: Maybe ErrorMess
 	CannotCombine list1 list2 note = 
 		IfStuck list1
 			(IfStuck list2
-				(TypeError (CannotCombineMessage UnknownType UnknownType UnknownTypeNote))
-				(TypeError (CannotCombineMessage UnknownType (PrettyPrintMetaTypes list2) UnknownTypeNote))
+				(DelayError (CannotCombineMessage UnknownType UnknownType UnknownTypeNote))
+				(DelayErrorFcf (CannotCombineMessage UnknownType (PrettyPrintMetaTypes list2) UnknownTypeNote))
 			)
 			(IfStuck list2
-				(TypeError (CannotCombineMessage (PrettyPrintMetaTypes list1) UnknownType UnknownTypeNote))
-				(TypeError (CannotCombineMessage (PrettyPrintMetaTypes list1) (PrettyPrintMetaTypes list2) note))
+				(DelayError (CannotCombineMessage (PrettyPrintMetaTypes list1) UnknownType UnknownTypeNote))
+				(DelayErrorFcf (CannotCombineMessage (PrettyPrintMetaTypes list1) (PrettyPrintMetaTypes list2) note))
 			)
 
 type family UnknownType :: ErrorMessage where
