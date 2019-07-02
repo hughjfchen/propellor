@@ -185,7 +185,7 @@ type family UnknownType :: ErrorMessage where
 	UnknownType = 'Text "<unknown>"
 
 type family UnknownTypeNote :: Maybe ErrorMessage where
-	UnknownTypeNote = 'Just ('Text "(Property <unknown> is often caused by a Property constructor being passed the wrong number of parameters.)")
+	UnknownTypeNote = 'Just ('Text "(Property <unknown> is often caused by applying a Property constructor to the wrong number of arguments.)")
 
 type family CannotCombineMessage (a :: ErrorMessage) (b :: ErrorMessage) (note :: Maybe ErrorMessage) :: ErrorMessage where
 	CannotCombineMessage a b ('Just note) =
