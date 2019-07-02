@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, FlexibleInstances, GADTs #-}
+{-# LANGUAGE TypeOperators, PolyKinds, DataKinds, ConstraintKinds #-}
+{-# LANGUAGE TypeFamilies, UndecidableInstances, FlexibleInstances, GADTs #-}
 {-# LANGUAGE CPP #-}
 
 module Propellor.Types.MetaTypes (
@@ -38,6 +39,7 @@ import Propellor.Types.Singletons
 import Propellor.Types.OS
 
 import GHC.TypeLits hiding (type (+))
+import GHC.Exts (Constraint)
 import Data.Type.Bool
 
 #ifdef WITH_TYPE_ERRORS
@@ -151,25 +153,25 @@ type family IsCombinable (list1 :: [a]) (list2 :: [a]) :: Bool where
 -- | This (or CheckCombinableNote) should be used anywhere Combine is used, 
 -- as an additional constraint. For example:
 --
--- > foo :: (CheckCombinable x y ~ 'True) => x -> y -> Combine x y
-type family CheckCombinable (list1 :: [a]) (list2 :: [a]) :: Bool where
+-- > foo :: CheckCombinable x y => x -> y -> Combine x y
+type family CheckCombinable (list1 :: [a]) (list2 :: [a]) :: Constraint where
 	CheckCombinable list1 list2 =
 		If (IsCombinable list1 list2)
-			'True
+			('True ~ 'True)
 			(CannotCombine list1 list2 'Nothing)
 
 -- | Allows providing an additional note.
-type family CheckCombinableNote (list1 :: [a]) (list2 :: [a]) (note :: ErrorMessage) :: Bool where
+type family CheckCombinableNote (list1 :: [a]) (list2 :: [a]) (note :: ErrorMessage) :: Constraint where
 	CheckCombinableNote list1 list2 note =
 		If (IsCombinable list1 list2)
-			'True
+			('True ~ 'True)
 			(CannotCombine list1 list2
 				('Just ('Text "(" ':<>: note ':<>: 'Text ")"))
 			)
 
 -- Checking IfStuck is to avoid massive and useless error message leaking 
 -- type families from this module.
-type family CannotCombine (list1 :: [a]) (list2 :: [a]) (note :: Maybe ErrorMessage) :: Bool where
+type family CannotCombine (list1 :: [a]) (list2 :: [a]) (note :: Maybe ErrorMessage) :: Constraint where
 	CannotCombine list1 list2 note = 
 		IfStuck list1
 			(IfStuck list2

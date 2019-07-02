@@ -66,7 +66,7 @@ type family NoteFor symbol :: ErrorMessage where
 		-- this constraint appears redundant, but is actually
 		-- crucial.
 		, MetaTypes y ~ GetMetaTypes p
-		, CheckCombinableNote x y (NoteFor ('Text "&")) ~ 'True
+		, CheckCombinableNote x y (NoteFor ('Text "&"))
 		)
 	=> Props (MetaTypes x)
 	-> p
@@ -81,7 +81,7 @@ Props c & p = Props (c ++ [toChildProperty p])
 		-- this constraint appears redundant, but is actually
 		-- crucial.
 		, MetaTypes y ~ GetMetaTypes p
-		, CheckCombinableNote x y (NoteFor ('Text "&^")) ~ 'True
+		, CheckCombinableNote x y (NoteFor ('Text "&^"))
 		)
 	=> Props (MetaTypes x)
 	-> p
@@ -93,7 +93,7 @@ Props c &^ p = Props (toChildProperty p : c)
 	-- -Wredundant-constraints is turned off because
 	-- this constraint appears redundant, but is actually
 	-- crucial.
-	:: (CheckCombinableNote x z (NoteFor ('Text "!")) ~ 'True)
+	:: CheckCombinableNote x z (NoteFor ('Text "!"))
 	=> Props (MetaTypes x)
 	-> RevertableProperty (MetaTypes y) (MetaTypes z)
 	-> Props (MetaTypes (Combine x z))

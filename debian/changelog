@@ -17,11 +17,9 @@ propellor (5.9.0) UNRELEASED; urgency=medium
     yet, added a WithTypeErrors build flag. When the library is not
     available, cabal will automatically disable that build flag,
     and it will build without the type-errors library.
-  * ensureProperty: The constraints have been simplified
-    to EnsurePropertyAllowed. (API change)
-  * tightenTargers: The contraints have been simplified
-    to TightenTargetsAllowed. (API change)
-  * CheckCombinable type changed. (API change)
+  * EnsurePropertyAllowed, TightenTargetsAllowed, and CheckCombinable
+    types have changed to Constraint.
+    (API change)
   * Try harder to avoid displaying an excessive amount of type error
     messages when many properties have been combined in a props list.
   * Libvirt.installed: install libvirt-daemon-system

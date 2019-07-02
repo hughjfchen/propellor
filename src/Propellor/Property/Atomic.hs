@@ -47,7 +47,7 @@ type CheckAtomicResourcePair a = AtomicResourcePair a -> Propellor (AtomicResour
 -- atomically activating that resource.
 atomicUpdate
 	-- Constriaint inherited from ensureProperty.
-	:: (EnsurePropertyAllowed t t ~ 'True)
+	:: EnsurePropertyAllowed t t
 	=> SingI t
 	=> AtomicResourcePair a
 	-> CheckAtomicResourcePair a
@@ -91,7 +91,7 @@ atomicUpdate rbase rcheck rswap mkp = property' d $ \w -> do
 -- of the directory, with names suffixed with ".1" and ".2"
 atomicDirUpdate
 	-- Constriaint inherited from ensureProperty.
-	:: (EnsurePropertyAllowed t t ~ 'True)
+	:: EnsurePropertyAllowed t t
 	=> SingI t
 	=> FilePath
 	-> (FilePath -> Property (MetaTypes t))

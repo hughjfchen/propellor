@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -17,6 +18,7 @@ import Propellor.Types.MetaTypes
 import Propellor.Exception
 
 import GHC.TypeLits
+import GHC.Exts (Constraint)
 import Data.Type.Bool
 import Data.Monoid
 import Prelude
@@ -43,17 +45,17 @@ ensureProperty
 		-- -Wredundant-constraints is turned off because
 		-- this constraint appears redundant, but is actually
 		-- crucial.
-		( EnsurePropertyAllowed inner outer ~ 'True)
+		( EnsurePropertyAllowed inner outer)
 	=> OuterMetaTypesWitness outer
 	-> Property (MetaTypes inner)
 	-> Propellor Result
 ensureProperty _ = maybe (return NoChange) catchPropellor . getSatisfy
 
-type family EnsurePropertyAllowed inner outer where
-	EnsurePropertyAllowed inner outer = 
-		(EnsurePropertyNoInfo inner)
+type family EnsurePropertyAllowed inner outer :: Constraint where
+	EnsurePropertyAllowed inner outer = 'True ~
+		((EnsurePropertyNoInfo inner)
 			&&
-		(EnsurePropertyTargetOSMatches inner outer)
+		(EnsurePropertyTargetOSMatches inner outer))
 
 type family EnsurePropertyNoInfo (l :: [a]) :: Bool where
 	EnsurePropertyNoInfo '[] = 'True
