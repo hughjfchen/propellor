@@ -31,6 +31,7 @@ module Propellor.Types (
 	, HasInfo
 	, type (+)
 	, TightenTargets(..)
+	, TightenTargetsAllowed
 	-- * Combining and modifying properties
 	, Combines(..)
 	, CombinedType
@@ -44,6 +45,8 @@ module Propellor.Types (
 	, module Propellor.Types.ZFS
 	) where
 
+import GHC.TypeLits hiding (type (+))
+import Data.Type.Bool
 import qualified Data.Semigroup as Sem
 import Data.Monoid
 import Control.Applicative
@@ -59,7 +62,7 @@ import Propellor.Types.MetaTypes
 import Propellor.Types.ZFS
 
 -- | The core data type of Propellor, this represents a property
--- that the system should have, with a descrition, and an action to ensure
+-- that the system should have, with a description, and an action to ensure
 -- it has the property.
 --
 -- There are different types of properties that target different OS's,
@@ -185,17 +188,17 @@ class Combines x y where
 		-> y
 		-> CombinedType x y
 
-instance (CheckCombinable x y ~ 'CanCombine, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (Property (MetaTypes y)) where
+instance (CheckCombinable x y ~ 'True, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (Property (MetaTypes y)) where
 	combineWith f _ (Property _ d1 a1 i1 c1) (Property _ d2 a2 i2 c2) =
 		Property sing d1 (f a1 a2) i1 (ChildProperty d2 a2 i2 c2 : c1)
-instance (CheckCombinable x y ~ 'CanCombine, CheckCombinable x' y' ~ 'CanCombine, SingI (Combine x y), SingI (Combine x' y')) => Combines (RevertableProperty (MetaTypes x) (MetaTypes x')) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
+instance (CheckCombinable x y ~ 'True, CheckCombinable x' y' ~ 'True, SingI (Combine x y), SingI (Combine x' y')) => Combines (RevertableProperty (MetaTypes x) (MetaTypes x')) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
 	combineWith sf tf (RevertableProperty s1 t1) (RevertableProperty s2 t2) =
 		RevertableProperty
 			(combineWith sf tf s1 s2)
 			(combineWith tf sf t1 t2)
-instance (CheckCombinable x y ~ 'CanCombine, SingI (Combine x y)) => Combines (RevertableProperty (MetaTypes x) (MetaTypes x')) (Property (MetaTypes y)) where
+instance (CheckCombinable x y ~ 'True, SingI (Combine x y)) => Combines (RevertableProperty (MetaTypes x) (MetaTypes x')) (Property (MetaTypes y)) where
 	combineWith sf tf (RevertableProperty x _) y = combineWith sf tf x y
-instance (CheckCombinable x y ~ 'CanCombine, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
+instance (CheckCombinable x y ~ 'True, SingI (Combine x y)) => Combines (Property (MetaTypes x)) (RevertableProperty (MetaTypes y) (MetaTypes y')) where
 	combineWith sf tf x (RevertableProperty y _) = combineWith sf tf x y
 
 class TightenTargets p where
@@ -209,13 +212,30 @@ class TightenTargets p where
 	-- > upgraded = tightenTargets $ cmdProperty "apt-get" ["upgrade"]
 	tightenTargets
 		:: 
-			-- Note that this uses PolyKinds
-			( (Targets untightened `NotSuperset` Targets tightened) ~ 'CanCombine
-			, (NonTargets tightened `NotSuperset` NonTargets untightened) ~ 'CanCombine
+			( TightenTargetsAllowed untightened tightened ~ 'True
 			, SingI tightened
 			)
 		=> p (MetaTypes untightened)
 		-> p (MetaTypes tightened)
+
+-- Note that this uses PolyKinds
+type family TightenTargetsAllowed untightened tightened where
+	TightenTargetsAllowed untightened tightened =
+		If (Targets tightened `IsSubset` Targets untightened
+		    && NonTargets untightened `IsSubset` NonTargets tightened)
+			'True
+			(IfStuck (Targets tightened)
+				(TypeError
+					('Text "Unable to infer desired Property type in this use of tightenTargets."
+					 ':$$: ('Text "Consider adding a type annotation.")
+					)
+				)
+				(TypeError
+					('Text "This use of tightenTargets would widen, not narrow, adding: "
+					 ':$$: PrettyPrintMetaTypes (Difference (Targets tightened) (Targets untightened))
+					)
+				)
+			)
 
 instance TightenTargets Property where
 	tightenTargets (Property _ d a i c) = Property sing d a i c

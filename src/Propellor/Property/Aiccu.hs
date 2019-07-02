@@ -47,8 +47,7 @@ hasConfig :: TunnelId -> UserName -> Property (HasInfo + DebianLike)
 hasConfig t u = prop `onChange` restarted
   where
   	prop :: Property (HasInfo + UnixLike)
-	prop = withSomePrivData [(Password (u++"/"++t)), (Password u)] (Context "aiccu") $
-		property' "aiccu configured" . writeConfig
-	writeConfig getpassword w = getpassword $ ensureProperty w . go
+	prop = withSomePrivData [(Password (u++"/"++t)), (Password u)] (Context "aiccu") $ \getpassword ->
+		property' "aiccu configured" $ \w -> getpassword $ ensureProperty w . go
 	go (Password u', p) = confPath `File.hasContentProtected` config u' t p
 	go (f, _) = error $ "Unexpected type of privdata: " ++ show f
