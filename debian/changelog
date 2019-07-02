@@ -1,4 +1,4 @@
-propellor (5.9.0) UNRELEASED; urgency=medium
+propellor (5.9.0) unstable; urgency=medium
 
   * Added custom type error messages when Properties don't combine due to
     conflicting MetaTypes.
@@ -25,7 +25,7 @@ propellor (5.9.0) UNRELEASED; urgency=medium
   * Libvirt.installed: install libvirt-daemon-system
     Thanks, David Bremner
 
- -- Joey Hess <id@joeyh.name>  Sat, 15 Jun 2019 12:32:37 -0400
+ -- Joey Hess <id@joeyh.name>  Tue, 02 Jul 2019 16:27:07 -0400
 
 propellor (5.8.0) unstable; urgency=medium
 
