@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeOperators, PolyKinds, DataKinds, TypeFamilies, UndecidableInstances, FlexibleInstances, GADTs #-}
-{-# LANGUAGE CPP #-}
 
 module Propellor.Types.MetaTypes (
 	MetaType(..),
@@ -18,32 +17,20 @@ module Propellor.Types.MetaTypes (
 	IncludesInfo,
 	Targets,
 	NonTargets,
-	PrettyPrintMetaTypes,
-	IsSubset,
+	NotSuperset,
 	Combine,
+	CheckCombine(..),
 	CheckCombinable,
-	CheckCombinableNote,
 	type (&&),
 	Not,
 	EqT,
 	Union,
-	Intersect,
-	Difference,
-	IfStuck,
 ) where
 
 import Propellor.Types.Singletons
 import Propellor.Types.OS
 
-import GHC.TypeLits hiding (type (+))
 import Data.Type.Bool
-
-#ifdef WITH_TYPE_ERRORS
-import Type.Errors
-#else
-type family IfStuck (expr :: k) (b :: k1) (c :: k1) :: k1 where
-	IfStuck expr b c = c
-#endif
 
 data MetaType
 	= Targeting TargetOS -- ^ A target OS of a Property
@@ -126,69 +113,41 @@ type family Combine (list1 :: [a]) (list2 :: [a]) :: [a] where
 			(Targets list1 `Intersect` Targets list2)
 		)
 
--- | Checks if two MetaTypes lists can be safly combined;
--- eg they have at least one Target in common.
-type family IsCombinable (list1 :: [a]) (list2 :: [a]) :: Bool where
-	-- As a special case, if either list is empty or only WithInfo, 
-	-- let it be combined with the other. This relies on MetaTypes
-	-- list always containing at least one Target, so can only happen
-	-- if there's already been a type error. This special case lets the
-	-- type checker show only the original type error, and not
-	-- subsequent errors due to later CheckCombinable constraints.
-	IsCombinable '[] list2 = 'True
-	IsCombinable list1 '[] = 'True
-	IsCombinable ('WithInfo ': list1) list2 = IsCombinable list1 list2
-	IsCombinable list1 ('WithInfo ': list2) = IsCombinable list1 list2
-	IsCombinable list1 list2 =
-		Not (Null (Combine (Targets list1) (Targets list2)))
-
--- | This (or CheckCombinableNote) should be used anywhere Combine is used, 
--- as an additional constraint. For example:
+-- | Checks if two MetaTypes lists can be safely combined.
 --
--- > foo :: (CheckCombinable x y ~ 'True) => x -> y -> Combine x y
-type family CheckCombinable (list1 :: [a]) (list2 :: [a]) :: Bool where
-	CheckCombinable list1 list2 =
-		If (IsCombinable list1 list2)
-			'True
-			(CannotCombine list1 list2 'Nothing)
+-- This should be used anywhere Combine is used, as an additional
+-- constraint. For example:
+--
+-- > foo :: (CheckCombinable x y ~ 'CanCombine) => x -> y -> Combine x y
+type family CheckCombinable (list1 :: [a]) (list2 :: [a]) :: CheckCombine where
+	-- As a special case, if either list is empty, let it be combined
+	-- with the other. This relies on MetaTypes list always containing
+	-- at least one target, so can only happen if there's already been
+	-- a type error. This special case lets the type checker show only
+	-- the original type error, and not an extra error due to a later
+	-- CheckCombinable constraint.
+	CheckCombinable '[] list2 = 'CanCombine
+	CheckCombinable list1 '[] = 'CanCombine
+	CheckCombinable (l1 ': list1) (l2 ': list2) =
+		CheckCombinable' (Combine (l1 ': list1) (l2 ': list2))
+type family CheckCombinable' (combinedlist :: [a]) :: CheckCombine where
+	CheckCombinable' '[] = 'CannotCombineTargets
+	CheckCombinable' (a ': rest) 
+		= If (IsTarget a)
+			'CanCombine
+			(CheckCombinable' rest)
 
--- | Allows providing an additional note.
-type family CheckCombinableNote (list1 :: [a]) (list2 :: [a]) (note :: ErrorMessage) :: Bool where
-	CheckCombinableNote list1 list2 note =
-		If (IsCombinable list1 list2)
-			'True
-			(CannotCombine list1 list2
-				('Just ('Text "(" ':<>: note ':<>: 'Text ")"))
-			)
+data CheckCombine = CannotCombineTargets | CanCombine
 
--- Checking IfStuck is to avoid massive and useless error message leaking 
--- type families from this module.
-type family CannotCombine (list1 :: [a]) (list2 :: [a]) (note :: Maybe ErrorMessage) :: Bool where
-	CannotCombine list1 list2 note = 
-		IfStuck list1
-			(IfStuck list2
-				(TypeError (CannotCombineMessage UnknownType UnknownType UnknownTypeNote))
-				(TypeError (CannotCombineMessage UnknownType (PrettyPrintMetaTypes list2) UnknownTypeNote))
-			)
-			(IfStuck list2
-				(TypeError (CannotCombineMessage (PrettyPrintMetaTypes list1) UnknownType UnknownTypeNote))
-				(TypeError (CannotCombineMessage (PrettyPrintMetaTypes list1) (PrettyPrintMetaTypes list2) note))
-			)
-
-type family UnknownType :: ErrorMessage where
-	UnknownType = 'Text "<unknown>"
-
-type family UnknownTypeNote :: Maybe ErrorMessage where
-	UnknownTypeNote = 'Just ('Text "(Property <unknown> is often due to a partially applied Property constructor, or due to passing the wrong type to a Property constructor.)")
-
-type family CannotCombineMessage (a :: ErrorMessage) (b :: ErrorMessage) (note :: Maybe ErrorMessage) :: ErrorMessage where
-	CannotCombineMessage a b ('Just note) =
-		CannotCombineMessage a b 'Nothing
-			':$$: note
-	CannotCombineMessage a b 'Nothing =
-		'Text "Cannot combine Properties:"
-			':$$: ('Text "  Property " ':<>: a)
-			':$$: ('Text "  Property " ':<>: b)
+-- | Every item in the subset must be in the superset.
+--
+-- The name of this was chosen to make type errors more understandable.
+type family NotSuperset (superset :: [a]) (subset :: [a]) :: CheckCombine where
+	NotSuperset superset '[] = 'CanCombine
+	NotSuperset superset (s ': rest) =
+		If (Elem s superset)
+			(NotSuperset superset rest)
+			'CannotCombineTargets
 
 type family IsTarget (a :: t) :: Bool where
 	IsTarget ('Targeting a) = 'True
@@ -207,21 +166,6 @@ type family NonTargets (l :: [a]) :: [a] where
 		If (IsTarget x)
 			(NonTargets xs)
 			(x ': NonTargets xs)
-
--- | Pretty-prints a list of MetaTypes for display in a type error message.
-type family PrettyPrintMetaTypes (l :: [MetaType]) :: ErrorMessage where
-	PrettyPrintMetaTypes '[] = 'Text "<none>"
-	PrettyPrintMetaTypes (t ': '[]) = PrettyPrintMetaType t
-	PrettyPrintMetaTypes (t ': ts) = 
-		PrettyPrintMetaType t ':<>: 'Text " + " ':<>: PrettyPrintMetaTypes ts
-
-type family PrettyPrintMetaType t :: ErrorMessage where
-	PrettyPrintMetaType 'WithInfo = 'ShowType HasInfo
-	PrettyPrintMetaType ('Targeting 'OSDebian) = 'ShowType Debian
-	PrettyPrintMetaType ('Targeting 'OSBuntish) = 'ShowType Buntish
-	PrettyPrintMetaType ('Targeting 'OSFreeBSD) = 'ShowType FreeBSD
-	PrettyPrintMetaType ('Targeting 'OSArchLinux) = 'ShowType ArchLinux
-	PrettyPrintMetaType ('Targeting t) = 'ShowType t
 
 -- | Type level elem
 type family Elem (a :: t) (list :: [t]) :: Bool where
@@ -243,28 +187,6 @@ type family Intersect (list1 :: [a]) (list2 :: [a]) :: [a] where
 		If (Elem a list2 && Not (Elem a rest))
 			(a ': Intersect rest list2)
 			(Intersect rest list2)
-
--- | Type level difference. Items that are in the first list, but not in
--- the second.
-type family Difference (list1 :: [a]) (list2 :: [a]) :: [a] where
-	Difference '[] list2 = '[]
-	Difference (a ': rest) list2 =
-		If (Elem a list2)
-			(Difference rest list2)
-			(a ': Difference rest list2)
-
--- | Every item in the subset must be in the superset.
-type family IsSubset (subset :: [a]) (superset :: [a]) :: Bool where
-	IsSubset '[] superset = 'True
-	IsSubset (s ': rest) superset =
-		If (Elem s superset)
-			(IsSubset rest superset)
-			'False
-
--- | Type level null.
-type family Null (list :: [a]) :: Bool where
-	Null '[] = 'True
-	Null l = 'False
 
 -- | Type level equality of metatypes.
 type family EqT (a :: MetaType) (b :: MetaType) where

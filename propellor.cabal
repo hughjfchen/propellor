@@ -35,9 +35,6 @@ Description:
  .
  It is configured using haskell.
 
-Flag WithTypeErrors
-  Description: Build with type-errors library for better error messages
-
 Library
   Default-Language: Haskell98
   GHC-Options: -Wall -fno-warn-tabs -O0
@@ -50,9 +47,6 @@ Library
     directory, filepath, IfElse, process, bytestring, hslogger, split,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
     time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
-  if flag(WithTypeErrors)
-    Build-Depends: type-errors
-    CPP-Options: -DWITH_TYPE_ERRORS
 
   Exposed-Modules:
     Propellor
