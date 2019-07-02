@@ -172,20 +172,22 @@ hiddenServiceData hn context = combineProperties desc $ props
   where
 	desc = unwords ["hidden service data available in", varLib </> hn]
 	installonion :: FilePath -> Property (HasInfo + DebianLike)
-	installonion f = withPrivData (PrivFile $ varLib </> hn </> f) context $ \getcontent ->
-		property' desc $ \w -> getcontent $ install w $ varLib </> hn </> f
-	install w f privcontent = ifM (liftIO $ doesFileExist f)
-		( noChange
-		, ensureProperty w $ propertyList desc $ toProps
-			[ property desc $ makeChange $ do
-				createDirectoryIfMissing True (takeDirectory f)
-				writeFileProtected f (unlines (privDataLines privcontent))
-			, File.mode (takeDirectory f) $ combineModes
-				[ownerReadMode, ownerWriteMode, ownerExecuteMode]
-			, File.ownerGroup (takeDirectory f) user (userGroup user)
-			, File.ownerGroup f user (userGroup user)
-			]
-		)
+	installonion basef =
+		let f = varLib </> hn </> basef
+		in withPrivData (PrivFile f) context $ \getcontent ->
+		property' desc $ \w -> getcontent $ \privcontent ->
+			ifM (liftIO $ doesFileExist f)
+				( noChange
+				, ensureProperty w $ propertyList desc $ toProps
+					[ property desc $ makeChange $ do
+						createDirectoryIfMissing True (takeDirectory f)
+						writeFileProtected f (unlines (privDataLines privcontent))
+					, File.mode (takeDirectory f) $ combineModes
+						[ownerReadMode, ownerWriteMode, ownerExecuteMode]
+					, File.ownerGroup (takeDirectory f) user (userGroup user)
+					, File.ownerGroup f user (userGroup user)
+					]
+				)
 
 restarted :: Property DebianLike
 restarted = Service.restarted "tor"

@@ -391,6 +391,7 @@ mungename = replace "/" "_"
 containerCfg :: String -> RevertableProperty (HasInfo + Linux) (HasInfo + Linux)
 containerCfg p = RevertableProperty (mk True) (mk False)
   where
+	mk :: Bool -> Property (HasInfo + Linux)
 	mk b = tightenTargets $
 		pureInfoProperty desc $
 			mempty { _chrootCfg = SystemdNspawnCfg [(p', b)] }

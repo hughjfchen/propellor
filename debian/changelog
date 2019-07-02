@@ -5,6 +5,10 @@ propellor (5.9.0) UNRELEASED; urgency=medium
   * Added custom type error messages when Properties don't combine due to
     conflicting MetaTypes.
   * Added custom type error messages for ensureProperty and tightenTargets.
+  * Note that those changes made ghc 8.0.1 in a few cases unable to infer
+    types when ensureProperty or tightenTargets is used. Adding a type
+    annotation will work around this problem, if you cannot upgrade
+    to a newer ghc that handles them better.
   * Use the type-errors library to detect when the type checker gets stuck
     unable to reduce type-level operations on MetaTypes, and avoid 
     displaying massive error messages in such a case.
