@@ -110,9 +110,13 @@ stdArchiveLines = return . binandsrc =<< getMirror
 securityUpdates :: SourcesGenerator
 securityUpdates suite
 	| isStable suite || suite == Testing =
-		let l = "deb http://security.debian.org/ " ++ showSuite suite ++ "/updates " ++ unwords stdSections
+		let l = "deb http://security.debian.org/ " ++ securitysuite ++ "/updates " ++ unwords stdSections
 		in [l, srcLine l]
 	| otherwise = []
+  where
+	securitysuite
+		| suite == Testing = "testing-security"
+		| otherwise = showSuite suite
 
 -- | Makes sources.list have a standard content using the Debian mirror CDN
 -- (or other host specified using the `mirror` property), with the
