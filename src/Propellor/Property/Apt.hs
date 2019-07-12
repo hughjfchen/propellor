@@ -116,7 +116,10 @@ securityUpdates suite
   where
 	securitysuite
 		| suite == Testing = "testing-security"
-		| otherwise = showSuite suite
+		| suite `elem` map Stable releasesusingoldname =
+			showSuite suite
+		| otherwise = showSuite suite ++ "-security"
+	releasesusingoldname = ["jessie", "buster", "stretch"]
 
 -- | Makes sources.list have a standard content using the Debian mirror CDN
 -- (or other host specified using the `mirror` property), with the

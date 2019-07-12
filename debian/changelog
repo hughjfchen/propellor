@@ -2,6 +2,8 @@ propellor (5.9.1) UNRELEASED; urgency=medium
 
   * Apt: Debian has changed the name of the suite for testing security updates
     from testing to testing-security.
+  * Apt: Also the suite for stable releases from bullseye on will be
+    suffixed with "-security".
 
  -- Joey Hess <id@joeyh.name>  Wed, 10 Jul 2019 22:02:35 -0400
 
