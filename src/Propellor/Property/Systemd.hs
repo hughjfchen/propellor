@@ -210,7 +210,7 @@ machined = installeddebian `pickOS` assumeinstalled
 		case o of
 			-- Split into separate debian package since systemd 225.
 			(Just (System (Debian _ suite) _))
-				| not (isStable suite) || suite == (Stable "stretch") ->
+				| not (isStable suite) || suite /= (Stable "jessie") ->
 					ensureProperty w $ Apt.installed ["systemd-container"]
 			_ -> noChange
 	assumeinstalled :: Property Linux
