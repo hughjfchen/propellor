@@ -399,6 +399,7 @@ pell = host "pell.branchable.com" $ props
 
 	& osDebian (Stable "buster") X86_32
 	& Apt.installed ["linux-image-686-pae"]
+	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
 	& Linode.serialGrub
