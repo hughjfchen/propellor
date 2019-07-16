@@ -110,14 +110,14 @@ stdArchiveLines = return . binandsrc =<< getMirror
 securityUpdates :: SourcesGenerator
 securityUpdates suite
 	| isStable suite || suite == Testing =
-		let l = "deb http://security.debian.org/ " ++ securitysuite ++ "/updates " ++ unwords stdSections
+		let l = "deb http://security.debian.org/ " ++ securitysuite ++ " " ++ unwords stdSections
 		in [l, srcLine l]
 	| otherwise = []
   where
 	securitysuite
 		| suite == Testing = "testing-security"
 		| suite `elem` map Stable releasesusingoldname =
-			showSuite suite
+			showSuite suite ++ "/updates"
 		| otherwise = showSuite suite ++ "-security"
 	releasesusingoldname = ["jessie", "buster", "stretch"]
 
