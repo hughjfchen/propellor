@@ -214,10 +214,21 @@ noninteractiveEnv =
 
 -- | Have apt update its lists of packages, but without upgrading anything.
 update :: Property DebianLike
-update = combineProperties ("apt update") $ props
+update = combineProperties desc $ props
 	& pendingConfigured
-	& runApt ["update"]
-		`assume` MadeChange
+	& aptupdate
+  where
+	desc = "apt update"
+	aptupdate :: Property DebianLike
+	aptupdate = withOS desc $ \w o -> case o of
+		(Just (System (Debian _ suite) _))
+			| not (isStable suite) -> ensureProperty w $
+				-- rolling suites' release info can change
+				runApt ["update", "--allow-releaseinfo-change"]
+					`assume` MadeChange
+		_ -> ensureProperty w $ 
+			runApt ["update"]
+				`assume` MadeChange
 
 -- | Have apt upgrade packages, adding new packages and removing old as
 -- necessary. Often used in combination with the `update` property.

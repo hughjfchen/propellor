@@ -4,6 +4,9 @@ propellor (5.9.1) UNRELEASED; urgency=medium
     from testing to testing-security.
   * Apt: Also the suite for stable releases from bullseye on will be
     suffixed with "-security".
+  * Apt.update: Pass --allow-releaseinfo-change when updating Unstable
+    or Testing, so that code name changes that happen in those suites
+    during a stable release don't prevent updating the rolling suites.
 
  -- Joey Hess <id@joeyh.name>  Wed, 10 Jul 2019 22:02:35 -0400
 
