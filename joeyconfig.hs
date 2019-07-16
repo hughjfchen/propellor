@@ -409,7 +409,7 @@ keysafe = host "keysafe.joeyh.name" $ props
 	& ipv4 "139.59.17.168"
 	& Hostname.sane
 	& Hostname.mailname
-	& osDebian (Stable "stretch") X86_64
+	& osDebian (Stable "buster") X86_64
 	& Apt.stdSourcesList `onChange` Apt.upgrade
 	& Apt.unattendedUpgrades
 	& DigitalOcean.distroKernel
