@@ -1,0 +1,11 @@
+propellor 5.9.1 released with [[!toggle text="these changes"]]
+[[!toggleable text="""
+   * Apt: Debian has changed the name of the suite for testing security updates
+     from testing to testing-security.
+   * Apt: Also the suite for stable releases from bullseye on will be
+     suffixed with "-security".
+   * Apt.update: Pass --allow-releaseinfo-change when updating Unstable
+     or Testing, so that code name changes that happen in those suites
+     during a stable release don't prevent updating the rolling suites.
+   * Systemd.machined: Fix a bug that caused the systemd-container package
+     to not be installed when used with Debian buster."""]]
