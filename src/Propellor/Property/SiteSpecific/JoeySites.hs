@@ -1083,16 +1083,19 @@ homeRouter = propertyList "home router" $ props
 		]
 		`onChange` Service.restarted "dnsmasq"
 	& ipmasq homerouterWifiInterface
-	-- Used to bring down eth0 when satellite is off, which causes ppp
-	-- to start, but I am not using this currently.
-	& Apt.removed ["netplug"]
 	& Network.static' "eth0" (IPv4 "192.168.1.100")
 		(Just (Network.Gateway (IPv4 "192.168.1.1")))
 		-- When satellite is down, fall back to dialup
 		[ ("pre-up", "poff -a || true")
 		, ("post-down", "pon")
+		-- ethernet autonegotiation with satellite receiver 
+		-- sometimes fails
+		, ("ethernet-autoneg", "off")
+		, ("link-speed", "100")
+		, ("link-duplex", "full")
 		]
 		`requires` Network.cleanInterfacesFile
+		`requires` Apt.installed ["ethtool"]
 	& Apt.installed ["ppp"]
 		`before` File.hasContent "/etc/ppp/peers/provider"
 			[ "user \"joeyh@arczip.com\""
