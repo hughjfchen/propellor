@@ -97,9 +97,9 @@ dragon = host "dragon.kitenet.net" $ props
 
 clam :: Host
 clam = host "clam.kitenet.net" $ props
-	& standardSystem (Stable "stretch") X86_64
+	& standardSystem (Stable "buster") X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "178.33.208.168"
+	& ipv4 "46.36.36.189"
 
 	& User.hasPassword (User "root")
 	& Ssh.hostKeys hostContext
@@ -108,11 +108,10 @@ clam = host "clam.kitenet.net" $ props
 		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPhfvcOuw0Yt+MnsFc4TI2gWkKi62Eajxz+TgbHMO/uRTYF8c5V8fOI3o+J/3m5+lT0S5o8j8a7xIC3COvi+AVw=")
 		]
 	& Apt.unattendedUpgrades
-	& Apt.serviceInstalledRunning "swapspace"
 
-	& Tor.isRelay
-	& Tor.named "kite1"
-	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
+	-- & Tor.isRelay
+	-- & Tor.named "kite1"
+	-- & Tor.bandwidthRate (Tor.PerMonth "400 GB")
 	
 	& "/etc/resolv.conf" `File.hasContent`
 		[ "nameserver 8.8.8.8"
