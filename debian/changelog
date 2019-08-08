@@ -1,3 +1,12 @@
+propellor (5.10.1) UNRELEASED; urgency=medium
+
+  * Localdir.hasOriginUrl: Depend on Git.installed.
+  * Localdir.hasOriginUrl: Type changed from UnixLike to DebianLike
+    because Git.installed is not implemented for other unixes.
+    (API change)
+
+ -- Joey Hess <id@joeyh.name>  Thu, 08 Aug 2019 11:33:37 -0400
+
 propellor (5.9.1) unstable; urgency=medium
 
   * Apt: Debian has changed the name of the suite for testing security updates

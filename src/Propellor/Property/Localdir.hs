@@ -9,6 +9,7 @@ import Propellor.Git.Config
 import Propellor.Types.Info
 import Propellor.Types.Container
 import Propellor.Property.Mount (partialBindMountsOf, umountLazy)
+import qualified Propellor.Property.Git as Git
 
 -- | Sets the url to use as the origin of propellor's git repository.
 --
@@ -19,8 +20,10 @@ import Propellor.Property.Mount (partialBindMountsOf, umountLazy)
 -- When hosts are being updated without using -- --spin, eg when using
 -- the `Propellor.Property.Cron.runPropellor` cron job, this property can
 -- be set to redirect them to a new git repository url.
-hasOriginUrl :: String -> Property (HasInfo + UnixLike)
-hasOriginUrl u = setInfoProperty p (toInfo (InfoVal (OriginUrl u)))
+hasOriginUrl :: String -> Property (HasInfo + DebianLike)
+hasOriginUrl u =
+	setInfoProperty p (toInfo (InfoVal (OriginUrl u)))
+		`requires` Git.installed
   where
 	p :: Property UnixLike
 	p = property ("propellor repo url " ++ u) $ do
