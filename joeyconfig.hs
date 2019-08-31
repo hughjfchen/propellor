@@ -370,7 +370,7 @@ mouse = host "mouse.kitenet.net" $ props
 
 peregrine :: Host
 peregrine = host "peregrine.kitenet.net" $ props
-	& Apt.installed ["ssh"]
+	& Apt.installed ["ssh", "screen", "variety", "git-annex"]
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "ssh" (Port 22)
 
