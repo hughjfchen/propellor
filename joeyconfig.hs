@@ -32,6 +32,7 @@ import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.Laptop as Laptop
+import qualified Propellor.Property.LightDM as LightDM
 import qualified Propellor.Property.HostingProvider.Linode as Linode
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
@@ -374,6 +375,7 @@ peregrine = host "peregrine.kitenet.net" $ props
 	& Apt.installed ["ssh"]
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "ssh" (Port 22)
+	& LightDM.autoLogin (User "desktop")
 
 -- Branchable is not completely deployed with propellor yet.
 pell :: Host
