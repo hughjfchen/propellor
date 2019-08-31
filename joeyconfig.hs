@@ -319,7 +319,7 @@ kite = host "kite.kitenet.net" $ props
 	& myDnsPrimary "kitenet.net"
 		[ (RelDomain "mouse-onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
 		, (RelDomain "beaver-onion", CNAME $ AbsDomain "tl4xsvaxryjylgxs.onion")
-		, (RelDomain "peregrine-onion", CNAME $ AbsDomain "ahw47zqw6qszoufl.onion")
+		, (RelDomain "peregrine-onion", CNAME $ AbsDomain "rsdwvaabir6ty2kdzblq7wdda26ib4fuc6hzxzwum75jbn6thqbojvid.onion")
 		, (RelDomain "sow-onion", CNAME $ AbsDomain "urt4g2tq32qktgtp.onion")
 		]
 	& myDnsPrimary "joeyh.name" []
