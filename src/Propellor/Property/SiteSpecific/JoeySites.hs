@@ -1233,10 +1233,10 @@ homeNAS = propertyList "home NAS" $ props
 		[ "# let users power control startech hub with uhubctl"
 		, "ATTR{idVendor}==\"" ++ hubvendor ++ "\", ATTR{idProduct}==\"005a\", MODE=\"0666\""
 		]
-	& autoMountDrive "archive-10" (USBHubPort hubvendor 1) (Just "archive-older")
-	& autoMountDrive "archive-11" (USBHubPort hubvendor 2) (Just "archive-old")
-	& autoMountDrive "archive-12" (USBHubPort hubvendor 3) (Just "archive")
-	& autoMountDrive "passport" (USBHubPort hubvendor 4) Nothing
+	& autoMountDrive "archive-10" (USBHubPort hubvendor 1) (Just "archive-oldest")
+	& autoMountDrive "archive-11" (USBHubPort hubvendor 2) (Just "archive-older")
+	& autoMountDrive "archive-12" (USBHubPort hubvendor 3) (Just "archive-old")
+	& autoMountDrive "archive-13" (USBHubPort hubvendor 4) (Just "archive")
 	& Apt.installed ["git-annex", "borgbackup"]
   where
 	hubvendor = "0409"
