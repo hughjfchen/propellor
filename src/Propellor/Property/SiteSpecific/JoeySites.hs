@@ -327,6 +327,8 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/windows"
 	-- git-annex distribution signing key
 	& Gpg.keyImported (Gpg.GpgKeyId "89C809CB") (User "joey")
+	-- used for building rpms
+	& Apt.installed ["rpm", "createrepo"]
   where
 	endpoint d = combineProperties ("endpoint " ++ d) $ props
 		& File.dirExists d
