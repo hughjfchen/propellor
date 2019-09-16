@@ -327,6 +327,8 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 	& endpoint "/srv/web/downloads.kitenet.net/git-annex/autobuild/windows"
 	-- git-annex distribution signing key
 	& Gpg.keyImported (Gpg.GpgKeyId "89C809CB") (User "joey")
+	-- used for building rpms
+	& Apt.installed ["rpm", "createrepo"]
   where
 	endpoint d = combineProperties ("endpoint " ++ d) $ props
 		& File.dirExists d
@@ -1083,16 +1085,19 @@ homeRouter = propertyList "home router" $ props
 		]
 		`onChange` Service.restarted "dnsmasq"
 	& ipmasq homerouterWifiInterface
-	-- Used to bring down eth0 when satellite is off, which causes ppp
-	-- to start, but I am not using this currently.
-	& Apt.removed ["netplug"]
 	& Network.static' "eth0" (IPv4 "192.168.1.100")
 		(Just (Network.Gateway (IPv4 "192.168.1.1")))
 		-- When satellite is down, fall back to dialup
 		[ ("pre-up", "poff -a || true")
 		, ("post-down", "pon")
+		-- ethernet autonegotiation with satellite receiver 
+		-- sometimes fails
+		, ("ethernet-autoneg", "off")
+		, ("link-speed", "100")
+		, ("link-duplex", "full")
 		]
 		`requires` Network.cleanInterfacesFile
+		`requires` Apt.installed ["ethtool"]
 	& Apt.installed ["ppp"]
 		`before` File.hasContent "/etc/ppp/peers/provider"
 			[ "user \"joeyh@arczip.com\""
@@ -1230,10 +1235,10 @@ homeNAS = propertyList "home NAS" $ props
 		[ "# let users power control startech hub with uhubctl"
 		, "ATTR{idVendor}==\"" ++ hubvendor ++ "\", ATTR{idProduct}==\"005a\", MODE=\"0666\""
 		]
-	& autoMountDrive "archive-10" (USBHubPort hubvendor 1) (Just "archive-older")
-	& autoMountDrive "archive-11" (USBHubPort hubvendor 2) (Just "archive-old")
-	& autoMountDrive "archive-12" (USBHubPort hubvendor 3) (Just "archive")
-	& autoMountDrive "passport" (USBHubPort hubvendor 4) Nothing
+	& autoMountDrive "archive-10" (USBHubPort hubvendor 1) (Just "archive-oldest")
+	& autoMountDrive "archive-11" (USBHubPort hubvendor 2) (Just "archive-older")
+	& autoMountDrive "archive-12" (USBHubPort hubvendor 3) (Just "archive-old")
+	& autoMountDrive "archive-13" (USBHubPort hubvendor 4) (Just "archive")
 	& Apt.installed ["git-annex", "borgbackup"]
   where
 	hubvendor = "0409"

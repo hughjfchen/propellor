@@ -31,6 +31,7 @@ import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
+import qualified Propellor.Property.LightDM as LightDM
 import qualified Propellor.Property.Laptop as Laptop
 import qualified Propellor.Property.LightDM as LightDM
 import qualified Propellor.Property.HostingProvider.Linode as Linode
@@ -98,9 +99,9 @@ dragon = host "dragon.kitenet.net" $ props
 
 clam :: Host
 clam = host "clam.kitenet.net" $ props
-	& standardSystem (Stable "stretch") X86_64
+	& standardSystem (Stable "buster") X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "178.33.208.168"
+	& ipv4 "46.36.36.189"
 
 	& User.hasPassword (User "root")
 	& Ssh.hostKeys hostContext
@@ -109,11 +110,10 @@ clam = host "clam.kitenet.net" $ props
 		, (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPhfvcOuw0Yt+MnsFc4TI2gWkKi62Eajxz+TgbHMO/uRTYF8c5V8fOI3o+J/3m5+lT0S5o8j8a7xIC3COvi+AVw=")
 		]
 	& Apt.unattendedUpgrades
-	& Apt.serviceInstalledRunning "swapspace"
 
-	& Tor.isRelay
-	& Tor.named "kite1"
-	& Tor.bandwidthRate (Tor.PerMonth "400 GB")
+	-- & Tor.isRelay
+	-- & Tor.named "kite1"
+	-- & Tor.bandwidthRate (Tor.PerMonth "400 GB")
 	
 	& "/etc/resolv.conf" `File.hasContent`
 		[ "nameserver 8.8.8.8"
@@ -321,7 +321,7 @@ kite = host "kite.kitenet.net" $ props
 	& myDnsPrimary "kitenet.net"
 		[ (RelDomain "mouse-onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
 		, (RelDomain "beaver-onion", CNAME $ AbsDomain "tl4xsvaxryjylgxs.onion")
-		, (RelDomain "peregrine-onion", CNAME $ AbsDomain "ahw47zqw6qszoufl.onion")
+		, (RelDomain "peregrine-onion", CNAME $ AbsDomain "rsdwvaabir6ty2kdzblq7wdda26ib4fuc6hzxzwum75jbn6thqbojvid.onion")
 		, (RelDomain "sow-onion", CNAME $ AbsDomain "urt4g2tq32qktgtp.onion")
 		]
 	& myDnsPrimary "joeyh.name" []
@@ -372,7 +372,7 @@ mouse = host "mouse.kitenet.net" $ props
 
 peregrine :: Host
 peregrine = host "peregrine.kitenet.net" $ props
-	& Apt.installed ["ssh"]
+	& Apt.installed ["ssh", "screen", "variety", "git-annex"]
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "ssh" (Port 22)
 	& LightDM.autoLogin (User "desktop")
