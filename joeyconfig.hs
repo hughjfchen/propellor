@@ -307,7 +307,7 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.kgbServer
 	
 	& Systemd.nspawned ancientKitenet
-	& Systemd.nspawned openidProvider
+	! Systemd.nspawned openidProvider
 	
 	& alias "podcatcher.kitenet.net"
 	& JoeySites.podcatcher
