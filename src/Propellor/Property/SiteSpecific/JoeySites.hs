@@ -1038,10 +1038,10 @@ house user hosts ctx sshkey = propertyList "home automation" $ props
 		)
 
 homerouterWifiInterfaceOld :: String
-homerouterWifiInterfaceOld = "wlx00c0ca82eb78" -- thinkpenguin wifi adapter
+homerouterWifiInterfaceOld = "wlx7cdd90400448"
 
 homerouterWifiInterface :: String
-homerouterWifiInterface = "wlx7cdd90400448" -- small wifi dongle
+homerouterWifiInterface = "wlx7cdd90753b9f"
 
 -- My home router, running hostapd and dnsmasq,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
