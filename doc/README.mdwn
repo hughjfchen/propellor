@@ -26,7 +26,7 @@ and
 and
 [Docker](http://hackage.haskell.org/package/propellor/docs/Propellor-Property-Docker.html), etc.
 
-There is no special language as used in puppet, chef, ansible, etc.. just
+There is no special language as used in puppet, ansible, etc.. just
 the full power of Haskell. Hopefully that power can be put to good use in
 making declarative properties that are powerful, nicely idempotent, and
 easy to adapt to a system's special needs!
