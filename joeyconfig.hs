@@ -31,7 +31,6 @@ import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
-import qualified Propellor.Property.LightDM as LightDM
 import qualified Propellor.Property.Laptop as Laptop
 import qualified Propellor.Property.LightDM as LightDM
 import qualified Propellor.Property.HostingProvider.Linode as Linode
