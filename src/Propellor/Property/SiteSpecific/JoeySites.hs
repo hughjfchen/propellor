@@ -1037,11 +1037,11 @@ house user hosts ctx sshkey = propertyList "home automation" $ props
 			createSymbolicLink d "/var/www/html"
 		)
 
-homerouterWifiInterfaceOld :: String
-homerouterWifiInterfaceOld = "wlx7cdd90400448"
-
 homerouterWifiInterface :: String
-homerouterWifiInterface = "wlx7cdd90753b9f"
+homerouterWifiInterface = "wlx9cefd5fcd6f3"
+
+homerouterWifiInterfaceOld :: String
+homerouterWifiInterfaceOld = "wlx7cdd90753b9f"
 
 -- My home router, running hostapd and dnsmasq,
 -- with eth0 connected to a satellite modem, and a fallback ppp connection.
