@@ -1,4 +1,13 @@
-propellor (5.9.1) UNRELEASED; urgency=medium
+propellor (5.10.1) UNRELEASED; urgency=medium
+
+  * Localdir.hasOriginUrl: Depend on Git.installed.
+  * Localdir.hasOriginUrl: Type changed from UnixLike to DebianLike
+    because Git.installed is not implemented for other unixes.
+    (API change)
+
+ -- Joey Hess <id@joeyh.name>  Thu, 08 Aug 2019 11:33:37 -0400
+
+propellor (5.9.1) unstable; urgency=medium
 
   * Apt: Debian has changed the name of the suite for testing security updates
     from testing to testing-security.
@@ -10,7 +19,7 @@ propellor (5.9.1) UNRELEASED; urgency=medium
   * Systemd.machined: Fix a bug that caused the systemd-container package
     to not be installed when used with Debian buster.
 
- -- Joey Hess <id@joeyh.name>  Wed, 10 Jul 2019 22:02:35 -0400
+ -- Joey Hess <id@joeyh.name>  Wed, 17 Jul 2019 15:59:29 -0400
 
 propellor (5.9.0) unstable; urgency=medium
 

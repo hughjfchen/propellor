@@ -33,6 +33,7 @@ import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.LightDM as LightDM
 import qualified Propellor.Property.Laptop as Laptop
+import qualified Propellor.Property.LightDM as LightDM
 import qualified Propellor.Property.HostingProvider.Linode as Linode
 import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
@@ -186,7 +187,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 		)
 	& JoeySites.cubieTruckOneWire
 	& Systemd.persistentJournal
-	& Apt.installed ["firmware-atheros"]
+	& Apt.installed ["firmware-misc-nonfree"] -- wifi
 	& Apt.serviceInstalledRunning "ntp" -- no hardware clock
 	& bootstrappedFrom GitRepoOutsideChroot
 	& Ssh.hostKeys hostContext
