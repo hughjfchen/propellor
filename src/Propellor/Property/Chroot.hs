@@ -60,7 +60,11 @@ class ChrootBootstrapper b where
 	-- | Do initial bootstrapping of an operating system in a chroot.
 	-- If the operating System is not supported, return
 	-- Left error message.
-	buildchroot :: b -> Maybe System -> FilePath -> Either String (Property Linux)
+	buildchroot 
+		:: b
+		-> Info -- ^ info of the Properties of the chroot
+		-> FilePath -- ^ where to bootstrap the chroot
+		-> Either String (Property Linux)
 
 -- | Use this to bootstrap a chroot by extracting a tarball.
 --
@@ -91,7 +95,7 @@ extractTarball target src = check (isUnpopulated target) $
 data Debootstrapped = Debootstrapped Debootstrap.DebootstrapConfig
 
 instance ChrootBootstrapper Debootstrapped where
-	buildchroot (Debootstrapped cf) system loc = case system of
+	buildchroot (Debootstrapped cf) info loc = case system of
 		(Just s@(System (Debian _ _) _)) -> Right $ debootstrap s
 		(Just s@(System (Buntish _) _)) -> Right $ debootstrap s
 		(Just (System ArchLinux _)) -> Left "Arch Linux not supported by debootstrap."
@@ -99,6 +103,7 @@ instance ChrootBootstrapper Debootstrapped where
 		Nothing -> Left "Cannot debootstrap; OS not specified"
 	  where
 		debootstrap s = Debootstrap.built loc s cf
+		system = fromInfoVal (fromInfo info)
 
 -- | Defines a Chroot at the given location, built with debootstrap.
 --
@@ -143,7 +148,7 @@ provisioned' c@(Chroot loc bootstrapper infopropigator _) systemdonly caps =
 	setup = propellChroot c (inChrootProcess (not systemdonly) c) systemdonly caps
 		`requires` built
 
-	built = case buildchroot bootstrapper (chrootSystem c) loc of
+	built = case buildchroot bootstrapper (containerInfo c) loc of
 		Right p -> p
 		Left e -> cantbuild e
 
