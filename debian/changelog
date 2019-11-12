@@ -1,5 +1,6 @@
 propellor (5.10.1) UNRELEASED; urgency=medium
 
+  [ Joey Hess ]
   * Localdir.hasOriginUrl: Depend on Git.installed.
   * Localdir.hasOriginUrl: Type changed from UnixLike to DebianLike
     because Git.installed is not implemented for other unixes.
@@ -8,6 +9,11 @@ propellor (5.10.1) UNRELEASED; urgency=medium
     to take a Info parameter, instead of Maybe System.
     (The System can be extracted from the Info.)
     (API change)
+
+  [ Sean Whitton ]
+  * Chroot.{de,}bootstrapped uses the chroot's configured apt proxy and
+    mirror, if these exist, when debootstrapping the chroot.
+  * Rename Sbuild.useHostProxy -> Chroot.useHostProxy. (API change)
 
  -- Joey Hess <id@joeyh.name>  Thu, 08 Aug 2019 11:33:37 -0400
 
