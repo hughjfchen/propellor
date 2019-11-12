@@ -26,6 +26,7 @@ import Propellor.Types.Container
 import Propellor.Types.Info
 import Propellor.Types.Core
 import Propellor.Property.Chroot.Util
+import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Property.File as File
@@ -102,14 +103,33 @@ instance ChrootBootstrapper Debootstrapped where
 		(Just (System (FreeBSD _) _)) -> Left "FreeBSD not supported by debootstrap."
 		Nothing -> Left "Cannot debootstrap; OS not specified"
 	  where
-		debootstrap s = Debootstrap.built loc s cf
+		debootstrap s = Debootstrap.built loc s
+			(cf <> proxyConf <> mirrorConf)
 		system = fromInfoVal (fromInfo info)
+		-- If the chroot has a configured apt proxy and/or mirror, pass
+		-- these on to debootstrap.  Note that Debootstrap.built does
+		-- not get passed the Chroot, so the info inspection has to
+		-- happen here, not there
+		proxyConf = case (fromInfoVal . fromInfo) info of
+			Just (Apt.HostAptProxy u) ->
+				Debootstrap.DebootstrapProxy u
+			Nothing                   -> mempty
+		mirrorConf = case (fromInfoVal . fromInfo) info of
+			Just (Apt.HostMirror u)   ->
+				Debootstrap.DebootstrapMirror u
+			Nothing                   -> mempty
+
 
 -- | Defines a Chroot at the given location, built with debootstrap.
 --
 -- Properties can be added to configure the Chroot. At a minimum,
 -- add a property such as `osDebian` to specify the operating system
 -- to bootstrap.
+--
+-- If @conf@ does not include a 'DebootstrapProxy' entry, and the Chroot has a
+-- defined 'Apt.proxy', then the Chroot's apt proxy will be used by debootstrap
+-- in creating the Chroot, too.  Similarly if the @conf@ does not include a
+-- 'DebootstrapMirror' and the Chroot has a defined 'Apt.mirror'.
 --
 -- > debootstrapped Debootstrap.BuildD "/srv/chroot/ghc-dev" $ props
 -- >	& osDebian Unstable X86_64
@@ -120,6 +140,10 @@ debootstrapped conf = bootstrapped (Debootstrapped conf)
 
 -- | Defines a Chroot at the given location, bootstrapped with the
 -- specified ChrootBootstrapper.
+--
+-- Like 'Chroot.debootstrapped', if the ChrootBootstrapper is Debootstrap, this
+-- property respects the Chroot's configured Apt.proxy and Apt.mirror, if either
+-- exists.
 bootstrapped :: ChrootBootstrapper b => b -> FilePath -> Props metatypes -> Chroot
 bootstrapped bootstrapper location ps = c
   where
