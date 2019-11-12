@@ -10,6 +10,7 @@ module Propellor.Property.Chroot (
 	Debootstrapped(..),
 	ChrootTarball(..),
 	exposeTrueLocaldir,
+	useHostProxy,
 	-- * Internal use
 	provisioned',
 	propagateChrootInfo,
@@ -333,3 +334,18 @@ propagateHostChrootInfo :: Host -> InfoPropagator
 propagateHostChrootInfo h c pinfo p =
 	propagateContainer (hostName h) c pinfo $
 		p `setInfoProperty` chrootInfo c
+
+-- | Ensure that a chroot uses the host's Apt proxy.
+--
+-- This property is often used for 'Sbuild.built' chroots, when the host has
+-- 'Apt.useLocalCacher'.
+useHostProxy :: Host -> Property DebianLike
+useHostProxy h = property' "use host's apt proxy" $ \w ->
+	-- Note that we can't look at getProxyInfo outside the property,
+	-- as that would loop, but it's ok to look at it inside the
+	-- property. Thus the slightly strange construction here.
+	case getProxyInfo of
+		Just (Apt.HostAptProxy u) -> ensureProperty w (Apt.proxy' u)
+		Nothing -> noChange
+  where
+	getProxyInfo = fromInfoVal . fromInfo . hostInfo $ h
