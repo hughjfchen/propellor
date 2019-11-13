@@ -126,10 +126,10 @@ instance ChrootBootstrapper Debootstrapped where
 -- add a property such as `osDebian` to specify the operating system
 -- to bootstrap.
 --
--- If @conf@ does not include a 'DebootstrapProxy' entry, and the Chroot has a
--- defined 'Apt.proxy', then the Chroot's apt proxy will be used by debootstrap
--- in creating the Chroot, too.  Similarly if the @conf@ does not include a
--- 'DebootstrapMirror' and the Chroot has a defined 'Apt.mirror'.
+-- If the 'Debootstrap.DebootstrapConfig' does not include a 
+-- 'Debootstrap.DebootstrapMirror',
+-- any 'Apt.mirror' property of the chroot will configure debootstrap.
+-- Same for 'Debootstrap.DebootstrapProxy' and 'Apt.proxy'.
 --
 -- > debootstrapped Debootstrap.BuildD "/srv/chroot/ghc-dev" $ props
 -- >	& osDebian Unstable X86_64
@@ -141,9 +141,9 @@ debootstrapped conf = bootstrapped (Debootstrapped conf)
 -- | Defines a Chroot at the given location, bootstrapped with the
 -- specified ChrootBootstrapper.
 --
--- Like 'Chroot.debootstrapped', if the ChrootBootstrapper is Debootstrap, this
--- property respects the Chroot's configured Apt.proxy and Apt.mirror, if either
--- exists.
+-- Like 'Chroot.debootstrapped', if the 'ChrootBootstrapper' is
+-- 'Debootstrapped', this property respects the Chroot's
+-- 'Apt.proxy' and 'Apt.mirror' properties.
 bootstrapped :: ChrootBootstrapper b => b -> FilePath -> Props metatypes -> Chroot
 bootstrapped bootstrapper location ps = c
   where
