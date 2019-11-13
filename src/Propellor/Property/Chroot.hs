@@ -114,12 +114,11 @@ instance ChrootBootstrapper Debootstrapped where
 		proxyConf = case (fromInfoVal . fromInfo) info of
 			Just (Apt.HostAptProxy u) ->
 				Debootstrap.DebootstrapProxy u
-			Nothing                   -> mempty
+			Nothing -> mempty
 		mirrorConf = case (fromInfoVal . fromInfo) info of
-			Just (Apt.HostMirror u)   ->
+			Just (Apt.HostMirror u) ->
 				Debootstrap.DebootstrapMirror u
-			Nothing                   -> mempty
-
+			Nothing -> mempty
 
 -- | Defines a Chroot at the given location, built with debootstrap.
 --
