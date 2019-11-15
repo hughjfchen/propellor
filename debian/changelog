@@ -1,4 +1,4 @@
-propellor (5.10.1) UNRELEASED; urgency=medium
+propellor (5.10.1) unstable; urgency=medium
 
   [ Joey Hess ]
   * Localdir.hasOriginUrl: Depend on Git.installed.
@@ -15,7 +15,7 @@ propellor (5.10.1) UNRELEASED; urgency=medium
     mirror, if these exist, when debootstrapping the chroot.
   * Rename Sbuild.useHostProxy -> Chroot.useHostProxy. (API change)
 
- -- Joey Hess <id@joeyh.name>  Thu, 08 Aug 2019 11:33:37 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 15 Nov 2019 13:26:19 -0400
 
 propellor (5.9.1) unstable; urgency=medium
 
