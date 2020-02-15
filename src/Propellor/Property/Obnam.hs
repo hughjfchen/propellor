@@ -35,7 +35,7 @@ data NumClients = OnlyClient | MultipleClients
 -- >	& Obnam.backup "/srv/git" "33 3 * * *"
 -- >		[ "--repository=sftp://2318@usw-s002.rsync.net/~/mygitrepos.obnam"
 -- >		] Obnam.OnlyClient
--- >		`requires` Ssh.keyImported SshRsa "root" (Context hostname)
+-- >		`requires` Ssh.keyImported SshEd25519 "root" (Context hostname)
 --
 -- How awesome is that?
 --

@@ -150,7 +150,7 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 		`requires` Ssh.userKeyAt (Just keyfile)
 			(User "root")
 			(Context "olduse.net")
-			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD0F6L76SChMCIGmeyGhlFMUTgZ3BoTbATiOSs0A7KXQoI1LTE5ZtDzzUkrQRJVpJ640pfMR7cQZyBm8tv+kYIPp0238GrX43c1vgm0L78agDnBU7r2iNMyWIwhssK8O3ZAhp8Q4KCz1r8hP2nIiD0y1D1VWW8h4KWOS7I1XCEAjOTvFvEjTh6a9MyHrcIkv7teUUzTBRjNrsyijCFRk1+pEET54RueoOmEjQcWd/sK1tYRiMZjegRLBOus2wUWsUOvznJ2iniLONUTGAWRnEV+O7hLN6CD44osJ+wkZk8bPAumTS0zcSLckX1jpdHJicmAyeniWSd4FCqm1YE6/xDD")
+			(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGtHhNuO/abNTrc5pyWkwXz/F8FAHw8VcET0Yh4mjgOk root@kite")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 	borgrepo = rsyncNetBorgRepo "olduse.net.borg" [Borg.UseSshKey keyfile]
 	keyfile = "/root/.ssh/olduse.net.key"
@@ -198,7 +198,7 @@ gitServer hosts = propertyList "git.kitenet.net setup" $ props
 		`requires` Ssh.userKeyAt (Just sshkey)
 			(User "root")
 			(Context "git.kitenet.net")
-			(SshRsa, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLwUUkpkI9c2Wcnv/E4v9bJ7WcpiNkToltXfzRDd1F31AYrucfSMgzu3rtDpEL+wSnQLua/taJkWUWT/pyXOAh+90K6O/YeBZmY5CK01rYDz3kSTAtwHkMqednsRjdQS6NNJsuWc1reO8a4pKtsToJ3G9VAKufCkt2b8Nhqz0yLvLYwwU/mdI8DmfX6IgXhdy9njVEG/jsQnLFXY6QEfwKbIPs9O6qo4iFJg3defXX+zVMLsh3NE1P2i2VxMjxJEQdPdy9Z1sVpkiQM+mgJuylQQ5flPK8sxhO9r4uoK/JROkjPJNYoJMlsN+QlK04ABb7JV2JwhAL/Y8ypjQ13JdT")
+			(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOvgBVYP6srImGbJ+kg1K68HeUQqxHEBQswMWSqu9WOu root@kite")
 		`requires` Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 	& Ssh.authorizedKeys (User "family") (Context "git.kitenet.net")
 	& User.accountFor (User "family")
