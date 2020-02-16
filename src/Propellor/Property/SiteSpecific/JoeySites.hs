@@ -936,7 +936,7 @@ house user hosts ctx sshkey = propertyList "home automation" $ props
 			user (userGroup user)
 		`requires` File.dirExists (takeDirectory sshkeyfile)
 		`requires` Ssh.knownHost hosts "kitenet.net" user
-	&  File.hasPrivContentExposed "/etc/darksky-forecast-url" anyContext
+	& File.hasPrivContentExposed "/etc/darksky-forecast-url" anyContext
   where
 	d = "/home/joey/house"
 	sshkeyfile = d </> ".ssh/key"

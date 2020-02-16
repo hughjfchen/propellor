@@ -190,6 +190,9 @@ honeybee = host "honeybee.kitenet.net" $ props
 	& Ssh.hostKeys hostContext
 		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIS/hDYq1MAxfOBf49htym3BOYlx4Gk9SDpiHjv7u6IC")
 		]
+	& Ssh.userKeys (User "joey") hostContext
+		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAYgEgsDmN26goPBGPN0HIvtkZfxlc996nPfBPDWxGuh")
+		]
 
 	& JoeySites.house
 		(User "joey")
