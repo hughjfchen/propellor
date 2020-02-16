@@ -200,7 +200,7 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
 		, "haskell-exceptions"
 		, "haskell-stm"
 		, "haskell-text"
-		, "hashell-hashable"
+		, "haskell-hashable"
 		]
 	archlinuxdeps Stack = 
 		[ "gnupg"
