@@ -1,5 +1,7 @@
 propellor (5.10.2) UNRELEASED; urgency=medium
 
+  * Fix build with ghc 8.6.3.
+    Thanks, Robin Munn
   * Bootstrap: Fix typo in Arch Linux dependencies.
     Thanks, Robin Munn
 
