@@ -485,6 +485,12 @@ quarantimer = host "quarantimer.app" $ props
 	& User "joey" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
 	& Ssh.noPasswords
 
+	& Apt.installed ["certbot"]
+
+
+
+
+
        --'                        __|II|      ,.
      ----                      __|II|II|__   (  \_,/\
 --'-------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-.-'-
