@@ -485,9 +485,10 @@ quarantimer = host "quarantimer.app" $ props
 	& User "joey" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
 	& Ssh.noPasswords
 
-	& Apt.installed ["certbot"]
-
-
+	& LetsEncrypt.letsEncrypt (LetsEncrypt.AgreeTOS (Just "id@joeyh.name"))
+		"quarantimer.app" "/home/joey/quarantimer/static"
+	& Apt.installed ["zlib1g-dev"]
+	-- (Installing quarantimer not yet automated)
 
 
 
