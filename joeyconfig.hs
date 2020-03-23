@@ -566,14 +566,6 @@ standardContainer suite = propertyList "standard container" $ props
 	& Apt.unattendedUpgrades
 	& Apt.cacheCleaned
 
-myDnsSecondary :: Property (HasInfo + DebianLike)
-myDnsSecondary = propertyList "dns secondary for all my domains" $ props
-	& Dns.secondary hosts "kitenet.net"
-	& Dns.secondary hosts "joeyh.name"
-	& Dns.secondary hosts "ikiwiki.info"
-	& Dns.secondary hosts "olduse.net"
-	& Dns.secondary hosts "quarantimer.app"
-
 branchableSecondary :: RevertableProperty (HasInfo + DebianLike) DebianLike
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
 
