@@ -59,6 +59,7 @@ hosts =                 --                  (o)  `
 	, peregrine
 	, pell
 	, keysafe
+	, quarantimer
 	] ++ monsters
 
 darkstar :: Host
@@ -329,6 +330,7 @@ kite = host "kite.kitenet.net" $ props
 	& myDnsPrimary "olduse.net"
 		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
 		]
+	& myDnsPrimary "quarantimer.app" []
 	& alias "ns4.branchable.com"
 	& branchableSecondary
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
@@ -461,6 +463,28 @@ keysafe = host "keysafe.joeyh.name" $ props
 		, "&& rsync -a --delete --max-delete 3 ",  backupdir , rsyncnetbackup
 		]
 
+quarantimer :: Host
+quarantimer = host "quarantimer.app" $ props
+	& ipv4 "45.33.73.207"
+	& Hostname.sane
+	& Hostname.mailname
+	& osDebian (Stable "buster") X86_64
+	& Apt.stdSourcesList `onChange` Apt.upgrade
+	& Apt.unattendedUpgrades
+	& Cron.runPropellor (Cron.Times "30 * * * *")
+	& Apt.installed ["etckeeper", "sudo"]
+	& JoeySites.noExim
+
+	& User.hasSomePassword (User "root")
+	& User.accountFor (User "joey")
+	& User.hasSomePassword (User "joey")
+	& Sudo.enabledFor (User "joey")
+	& Ssh.installed
+	& Ssh.randomHostKeys
+	& User "root" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
+	& User "joey" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
+	& Ssh.noPasswords
+
        --'                        __|II|      ,.
      ----                      __|II|II|__   (  \_,/\
 --'-------'\o/-'-.-'-.-'-.- __|II|II|II|II|___/   __/ -'-.-'-.-'-.-'-.-'-.-'-
@@ -548,6 +572,7 @@ myDnsSecondary = propertyList "dns secondary for all my domains" $ props
 	& Dns.secondary hosts "joeyh.name"
 	& Dns.secondary hosts "ikiwiki.info"
 	& Dns.secondary hosts "olduse.net"
+	& Dns.secondary hosts "quarantimer.app"
 
 branchableSecondary :: RevertableProperty (HasInfo + DebianLike) DebianLike
 branchableSecondary = Dns.secondaryFor ["branchable.com"] hosts "branchable.com"
