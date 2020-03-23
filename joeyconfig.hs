@@ -488,7 +488,7 @@ quarantimer = host "quarantimer.app" $ props
 	& LetsEncrypt.letsEncrypt (LetsEncrypt.AgreeTOS (Just "id@joeyh.name"))
 		"quarantimer.app" "/home/joey/quarantimer/static"
 	& Apt.installed ["screen", "git", "ghc"]
-	& Apt.installed ["zlib1g-dev"]
+	& Apt.installed ["zlib1g-dev", "imagemagick"]
 	-- (Installing quarantimer not yet automated)
 
 
