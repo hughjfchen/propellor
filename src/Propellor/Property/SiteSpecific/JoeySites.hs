@@ -1238,15 +1238,24 @@ homeNAS = propertyList "home NAS" $ props
 		[ "# let users power control startech hub with uhubctl"
 		, "ATTR{idVendor}==\"" ++ hubvendor ++ "\", ATTR{idProduct}==\"005a\", MODE=\"0666\""
 		]
-	& autoMountDrive "archive-10" (USBHubPort hubvendor 1) (Just "archive-oldest")
-	& autoMountDrive "archive-11" (USBHubPort hubvendor 2) (Just "archive-older")
-	& autoMountDrive "archive-12" (USBHubPort hubvendor 3) (Just "archive-old")
-	& autoMountDrive "archive-13" (USBHubPort hubvendor 4) (Just "archive")
+	& autoMountDrive "archive-10" (USBHubPort hubvendor hubloc 1)
+		(Just "archive-oldest")
+	& autoMountDrive "archive-11" (USBHubPort hubvendor hubloc 2)
+		(Just "archive-older")
+	& autoMountDrive "archive-12" (USBHubPort hubvendor hubloc 3)
+		(Just "archive-old")
+	& autoMountDrive "archive-13" (USBHubPort hubvendor hubloc 4)
+		(Just "archive")
 	& Apt.installed ["git-annex", "borgbackup"]
   where
 	hubvendor = "0409"
+	hubloc = "1-1.6"
 
-data USBHubPort = USBHubPort String Int
+data USBHubPort = USBHubPort
+	{ hubVendor :: String
+	, hubLocation :: String
+	, hubPort :: Int
+	}
 
 -- Makes a USB drive with the given label automount, and unmount after idle
 -- for a while.
@@ -1254,7 +1263,7 @@ data USBHubPort = USBHubPort String Int
 -- The hub port is turned on and off automatically as needed, using
 -- uhubctl.
 autoMountDrive :: Mount.Label -> USBHubPort -> Maybe FilePath -> Property DebianLike
-autoMountDrive label (USBHubPort hubvendor port) malias = propertyList desc $ props
+autoMountDrive label hp malias = propertyList desc $ props
 	& File.ownerGroup mountpoint (User "joey") (Group "joey")
 		`requires` File.dirExists mountpoint
 	& case malias of
@@ -1278,13 +1287,13 @@ autoMountDrive label (USBHubPort hubvendor port) malias = propertyList desc $ pr
 		`onChange` Systemd.daemonReloaded
 	& File.hasContent ("/etc/systemd/system/" ++ hub)
 		[ "[Unit]"
-		, "Description=Startech usb hub port " ++ show port
+		, "Description=Startech usb hub port " ++ show (hubPort hp)
 		, "PartOf=" ++ mount
 		, "[Service]"
 		, "Type=oneshot"
 		, "RemainAfterExit=true"
-		, "ExecStart=/usr/sbin/uhubctl -a on -p " ++ show port ++ " --vendor " ++ hubvendor 
-		, "ExecStop=/bin/sh -c 'uhubctl -a off -p " ++ show port ++ " --vendor " ++ hubvendor
+		, "ExecStart=/usr/sbin/uhubctl -a on " ++ selecthubport
+		, "ExecStop=/bin/sh -c 'uhubctl -a off " ++ selecthubport
 			-- Powering off the port does not remove device
 			-- files, so ask udev to remove the devfile; it will
 			-- be added back after the drive next spins up
@@ -1316,13 +1325,18 @@ autoMountDrive label (USBHubPort hubvendor port) malias = propertyList desc $ pr
 	devfile = "/dev/disk/by-label/" ++ label
 	mountpoint = "/media/joey/" ++ label
 	desc = "auto mount " ++ mountpoint
-	hub = "startech-hub-port-" ++ show port ++ ".service"
+	hub = "startech-hub-port-" ++ show (hubPort hp) ++ ".service"
 	automount = svcbase ++ ".automount"
 	mount = svcbase ++ ".mount"
 	svcbase = Systemd.escapePath mountpoint
 	sudocommands = intercalate " , " $ map (\c -> "/bin/systemctl " ++ c)
 		[ "stop " ++ mountpoint
 		, "start " ++ mountpoint
+		]
+	selecthubport = unwords
+		[ "-p", show (hubPort hp)
+		, "--vendor", hubVendor hp
+		, "--location", hubLocation hp
 		]
 
 rsyncNetBorgRepo :: String -> [Borg.BorgRepoOpt] -> Borg.BorgRepo
