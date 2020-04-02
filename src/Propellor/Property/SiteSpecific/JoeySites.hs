@@ -1335,8 +1335,8 @@ autoMountDrive label hp malias = propertyList desc $ props
 		]
 	selecthubport = unwords
 		[ "-p", show (hubPort hp)
-		, "--vendor", hubVendor hp
-		, "--location", hubLocation hp
+		, "-v", hubVendor hp
+		, "-l", hubLocation hp
 		]
 
 rsyncNetBorgRepo :: String -> [Borg.BorgRepoOpt] -> Borg.BorgRepo
