@@ -1238,14 +1238,15 @@ homeNAS = propertyList "home NAS" $ props
 		[ "# let users power control startech hub with uhubctl"
 		, "ATTR{idVendor}==\"" ++ hubvendor ++ "\", ATTR{idProduct}==\"005a\", MODE=\"0666\""
 		]
-	& autoMountDrive "archive-10" (USBHubPort hubvendor hubloc 1)
+	& autoMountDrivePort "archive-10" (USBHubPort hubvendor hubloc 1)
 		(Just "archive-oldest")
-	& autoMountDrive "archive-11" (USBHubPort hubvendor hubloc 2)
+	& autoMountDrivePort "archive-11" (USBHubPort hubvendor hubloc 2)
 		(Just "archive-older")
-	& autoMountDrive "archive-12" (USBHubPort hubvendor hubloc 3)
+	& autoMountDrivePort "archive-12" (USBHubPort hubvendor hubloc 3)
 		(Just "archive-old")
-	& autoMountDrive "archive-13" (USBHubPort hubvendor hubloc 4)
+	& autoMountDrivePort "archive-13" (USBHubPort hubvendor hubloc 4)
 		(Just "archive")
+	& autoMountDrive "passport" Nothing
 	& Apt.installed ["git-annex", "borgbackup"]
   where
 	hubvendor = "0409"
@@ -1262,29 +1263,8 @@ data USBHubPort = USBHubPort
 --
 -- The hub port is turned on and off automatically as needed, using
 -- uhubctl.
-autoMountDrive :: Mount.Label -> USBHubPort -> Maybe FilePath -> Property DebianLike
-autoMountDrive label hp malias = propertyList desc $ props
-	& File.ownerGroup mountpoint (User "joey") (Group "joey")
-		`requires` File.dirExists mountpoint
-	& case malias of
-		Just t -> ("/media/joey/" ++ t) `File.isSymlinkedTo`
-			File.LinkTarget mountpoint
-		Nothing -> doNothing <!> doNothing
-	& File.hasContent ("/etc/systemd/system/" ++ mount)
-		[ "[Unit]"
-		, "Description=" ++ label
-		, "Requires=" ++ hub
-		, "After=" ++ hub
-		, "[Mount]"
-		-- avoid mounting whenever the block device is available,
-		-- only want to automount on demand
-		, "Options=noauto"
-		, "What=" ++ devfile
-		, "Where=" ++ mountpoint
-		, "[Install]"
-		, "WantedBy="
-		]
-		`onChange` Systemd.daemonReloaded
+autoMountDrivePort :: Mount.Label -> USBHubPort -> Maybe FilePath -> Property DebianLike
+autoMountDrivePort label hp malias = propertyList desc $ props
 	& File.hasContent ("/etc/systemd/system/" ++ hub)
 		[ "[Unit]"
 		, "Description=Startech usb hub port " ++ show (hubPort hp)
@@ -1306,6 +1286,50 @@ autoMountDrive label hp malias = propertyList desc $ props
 		, "WantedBy="
 		]
 		`onChange` Systemd.daemonReloaded
+	& autoMountDrive' 
+		[ "Requires=" ++ hub
+		, "After=" ++ hub
+		] label malias
+  where
+	devfile = "/dev/disk/by-label/" ++ label
+	mountpoint = "/media/joey/" ++ label
+	desc = "auto mount with hub port power control " ++ mountpoint
+	hub = "startech-hub-port-" ++ show (hubPort hp) ++ ".service"
+	mount = svcbase ++ ".mount"
+	svcbase = Systemd.escapePath mountpoint
+	selecthubport = unwords
+		[ "-p", show (hubPort hp)
+		, "-v", hubVendor hp
+		, "-l", hubLocation hp
+		]
+
+-- Makes a USB drive with the given label automount, and unmount after idle
+-- for a while.
+autoMountDrive :: Mount.Label -> Maybe FilePath -> Property DebianLike
+autoMountDrive = autoMountDrive' []
+
+autoMountDrive' :: [String] -> Mount.Label -> Maybe FilePath -> Property DebianLike
+autoMountDrive' mountunitadd label malias = propertyList desc $ props
+	& File.ownerGroup mountpoint (User "joey") (Group "joey")
+		`requires` File.dirExists mountpoint
+	& case malias of
+		Just t -> ("/media/joey/" ++ t) `File.isSymlinkedTo`
+			File.LinkTarget mountpoint
+		Nothing -> doNothing <!> doNothing
+	& File.hasContent ("/etc/systemd/system/" ++ mount)
+		([ "[Unit]"
+		, "Description=" ++ label
+		] ++ mountunitadd ++
+		[ "[Mount]"
+		-- avoid mounting whenever the block device is available,
+		-- only want to automount on demand
+		, "Options=noauto"
+		, "What=" ++ devfile
+		, "Where=" ++ mountpoint
+		, "[Install]"
+		, "WantedBy="
+		])
+		`onChange` Systemd.daemonReloaded
 	& File.hasContent ("/etc/systemd/system/" ++ automount)
 		[ "[Unit]"
 		, "Description=Automount " ++ label
@@ -1325,18 +1349,12 @@ autoMountDrive label hp malias = propertyList desc $ props
 	devfile = "/dev/disk/by-label/" ++ label
 	mountpoint = "/media/joey/" ++ label
 	desc = "auto mount " ++ mountpoint
-	hub = "startech-hub-port-" ++ show (hubPort hp) ++ ".service"
 	automount = svcbase ++ ".automount"
 	mount = svcbase ++ ".mount"
 	svcbase = Systemd.escapePath mountpoint
 	sudocommands = intercalate " , " $ map (\c -> "/bin/systemctl " ++ c)
 		[ "stop " ++ mountpoint
 		, "start " ++ mountpoint
-		]
-	selecthubport = unwords
-		[ "-p", show (hubPort hp)
-		, "-v", hubVendor hp
-		, "-l", hubLocation hp
 		]
 
 rsyncNetBorgRepo :: String -> [Borg.BorgRepoOpt] -> Borg.BorgRepo
