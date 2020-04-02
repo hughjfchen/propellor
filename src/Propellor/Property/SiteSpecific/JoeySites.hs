@@ -1299,7 +1299,7 @@ autoMountDrivePort label hp malias = propertyList desc $ props
 	svcbase = Systemd.escapePath mountpoint
 	selecthubport = unwords
 		[ "-p", show (hubPort hp)
-		, "-v", hubVendor hp
+		, "-n", hubVendor hp
 		, "-l", hubLocation hp
 		]
 
