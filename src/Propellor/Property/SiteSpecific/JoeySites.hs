@@ -1250,7 +1250,7 @@ homeNAS = propertyList "home NAS" $ props
 	& Apt.installed ["git-annex", "borgbackup"]
   where
 	hubvendor = "0409"
-	hubloc = "1-1.6"
+	hubloc = "4-1.6"
 
 data USBHubPort = USBHubPort
 	{ hubVendor :: String
