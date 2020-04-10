@@ -141,7 +141,7 @@ and configured in haskell.
 
   If propellor is run in a directory containing a config.hs, it
   assumes that the current directory is a propellor repository, and 
-  uses the configuration from the current directory, rather tnan
+  uses the configuration from the current directory, rather than
   ~/.propellor/ 
 
 # ENVIRONMENT
