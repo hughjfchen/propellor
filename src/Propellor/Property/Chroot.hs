@@ -10,6 +10,7 @@ module Propellor.Property.Chroot (
 	Debootstrapped(..),
 	ChrootTarball(..),
 	exposeTrueLocaldir,
+	useHostProxy,
 	-- * Internal use
 	provisioned',
 	propagateChrootInfo,
@@ -26,6 +27,7 @@ import Propellor.Types.Container
 import Propellor.Types.Info
 import Propellor.Types.Core
 import Propellor.Property.Chroot.Util
+import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.Systemd.Core as Systemd
 import qualified Propellor.Property.File as File
@@ -60,7 +62,11 @@ class ChrootBootstrapper b where
 	-- | Do initial bootstrapping of an operating system in a chroot.
 	-- If the operating System is not supported, return
 	-- Left error message.
-	buildchroot :: b -> Maybe System -> FilePath -> Either String (Property Linux)
+	buildchroot 
+		:: b
+		-> Info -- ^ info of the Properties of the chroot
+		-> FilePath -- ^ where to bootstrap the chroot
+		-> Either String (Property Linux)
 
 -- | Use this to bootstrap a chroot by extracting a tarball.
 --
@@ -91,20 +97,39 @@ extractTarball target src = check (isUnpopulated target) $
 data Debootstrapped = Debootstrapped Debootstrap.DebootstrapConfig
 
 instance ChrootBootstrapper Debootstrapped where
-	buildchroot (Debootstrapped cf) system loc = case system of
+	buildchroot (Debootstrapped cf) info loc = case system of
 		(Just s@(System (Debian _ _) _)) -> Right $ debootstrap s
 		(Just s@(System (Buntish _) _)) -> Right $ debootstrap s
 		(Just (System ArchLinux _)) -> Left "Arch Linux not supported by debootstrap."
 		(Just (System (FreeBSD _) _)) -> Left "FreeBSD not supported by debootstrap."
 		Nothing -> Left "Cannot debootstrap; OS not specified"
 	  where
-		debootstrap s = Debootstrap.built loc s cf
+		debootstrap s = Debootstrap.built loc s
+			(cf <> proxyConf <> mirrorConf)
+		system = fromInfoVal (fromInfo info)
+		-- If the chroot has a configured apt proxy and/or mirror, pass
+		-- these on to debootstrap.  Note that Debootstrap.built does
+		-- not get passed the Chroot, so the info inspection has to
+		-- happen here, not there
+		proxyConf = case (fromInfoVal . fromInfo) info of
+			Just (Apt.HostAptProxy u) ->
+				Debootstrap.DebootstrapProxy u
+			Nothing -> mempty
+		mirrorConf = case (fromInfoVal . fromInfo) info of
+			Just (Apt.HostMirror u) ->
+				Debootstrap.DebootstrapMirror u
+			Nothing -> mempty
 
 -- | Defines a Chroot at the given location, built with debootstrap.
 --
 -- Properties can be added to configure the Chroot. At a minimum,
 -- add a property such as `osDebian` to specify the operating system
 -- to bootstrap.
+--
+-- If the 'Debootstrap.DebootstrapConfig' does not include a 
+-- 'Debootstrap.DebootstrapMirror',
+-- any 'Apt.mirror' property of the chroot will configure debootstrap.
+-- Same for 'Debootstrap.DebootstrapProxy' and 'Apt.proxy'.
 --
 -- > debootstrapped Debootstrap.BuildD "/srv/chroot/ghc-dev" $ props
 -- >	& osDebian Unstable X86_64
@@ -115,6 +140,10 @@ debootstrapped conf = bootstrapped (Debootstrapped conf)
 
 -- | Defines a Chroot at the given location, bootstrapped with the
 -- specified ChrootBootstrapper.
+--
+-- Like 'Chroot.debootstrapped', if the 'ChrootBootstrapper' is
+-- 'Debootstrapped', this property respects the Chroot's
+-- 'Apt.proxy' and 'Apt.mirror' properties.
 bootstrapped :: ChrootBootstrapper b => b -> FilePath -> Props metatypes -> Chroot
 bootstrapped bootstrapper location ps = c
   where
@@ -143,7 +172,7 @@ provisioned' c@(Chroot loc bootstrapper infopropigator _) systemdonly caps =
 	setup = propellChroot c (inChrootProcess (not systemdonly) c) systemdonly caps
 		`requires` built
 
-	built = case buildchroot bootstrapper (chrootSystem c) loc of
+	built = case buildchroot bootstrapper (containerInfo c) loc of
 		Right p -> p
 		Left e -> cantbuild e
 
@@ -304,3 +333,18 @@ propagateHostChrootInfo :: Host -> InfoPropagator
 propagateHostChrootInfo h c pinfo p =
 	propagateContainer (hostName h) c pinfo $
 		p `setInfoProperty` chrootInfo c
+
+-- | Ensure that a chroot uses the host's Apt proxy.
+--
+-- This property is often used for 'Sbuild.built' chroots, when the host has
+-- 'Apt.useLocalCacher'.
+useHostProxy :: Host -> Property DebianLike
+useHostProxy h = property' "use host's apt proxy" $ \w ->
+	-- Note that we can't look at getProxyInfo outside the property,
+	-- as that would loop, but it's ok to look at it inside the
+	-- property. Thus the slightly strange construction here.
+	case getProxyInfo h of
+		Just (Apt.HostAptProxy u) -> ensureProperty w (Apt.proxy' u)
+		Nothing -> noChange
+  where
+	getProxyInfo = fromInfoVal . fromInfo . hostInfo

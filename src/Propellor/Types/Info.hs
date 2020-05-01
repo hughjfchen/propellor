@@ -63,6 +63,7 @@ addInfo (Info l) v = Info (l++[InfoEntry v])
 toInfo :: IsInfo v => v -> Info
 toInfo = addInfo mempty
 
+-- | Extracts a value from an Info.
 fromInfo :: IsInfo v => Info -> v
 fromInfo (Info l) = mconcat (mapMaybe extractInfoEntry l)
 

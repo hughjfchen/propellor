@@ -109,3 +109,6 @@ instance IsProp ChildProperty where
 	getInfo (ChildProperty _ _ i _) = i
 	toChildProperty = id
 	getSatisfy (ChildProperty _ a _ _) = a
+
+propsInfo :: Props metatypes -> Info
+propsInfo (Props l) = mconcat (map getInfo l)

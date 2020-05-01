@@ -32,6 +32,8 @@ data DebootstrapConfig
 	| BuilddD
 	| DebootstrapParam String
 	| UseEmulation
+	| DebootstrapProxy Url
+	| DebootstrapMirror Url
 	| DebootstrapConfig :+ DebootstrapConfig
 	deriving (Show)
 
@@ -48,12 +50,24 @@ toParams MinBase = [Param "--variant=minbase"]
 toParams BuilddD = [Param "--variant=buildd"]
 toParams (DebootstrapParam p) = [Param p]
 toParams UseEmulation = []
+toParams (DebootstrapProxy _) = []
+toParams (DebootstrapMirror _) = []
 toParams (c1 :+ c2) = toParams c1 <> toParams c2
 
 useEmulation :: DebootstrapConfig -> Bool
 useEmulation UseEmulation = True
 useEmulation (a :+ b) = useEmulation a || useEmulation b
 useEmulation _ = False
+
+debootstrapProxy :: DebootstrapConfig -> Maybe Url
+debootstrapProxy (DebootstrapProxy u) = Just u
+debootstrapProxy (a :+ b) = debootstrapProxy a <|> debootstrapProxy b
+debootstrapProxy _ = Nothing
+
+debootstrapMirror :: DebootstrapConfig -> Maybe Url
+debootstrapMirror (DebootstrapMirror u) = Just u
+debootstrapMirror (a :+ b) = debootstrapMirror a <|> debootstrapMirror b
+debootstrapMirror _ = Nothing
 
 -- | Builds a chroot in the given directory using debootstrap.
 --
@@ -99,11 +113,15 @@ built' installprop target system@(System _ arch) config =
 			[ Param $ "--arch=" ++ architectureToDebianArchString arch
 			, Param suite
 			, Param target
-			]
+			] ++ case debootstrapMirror config of
+				Just u -> [Param u]
+				Nothing -> []
 		cmd <- if useEmulation config
 			then pure "qemu-debootstrap"
 			else fromMaybe "debootstrap" <$> programPath
-		de <- standardPathEnv
+		de <- case debootstrapProxy config of
+			Just u -> addEntry "http_proxy" u <$> standardPathEnv
+			Nothing -> standardPathEnv
 		ifM (boolSystemEnv cmd params (Just de))
 			( return MadeChange
 			, return FailedChange

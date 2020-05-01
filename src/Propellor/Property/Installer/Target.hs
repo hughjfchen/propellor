@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators, RankNTypes, TypeFamilies, FlexibleContexts #-}
 
 -- | Installation to a target disk.
 -- 

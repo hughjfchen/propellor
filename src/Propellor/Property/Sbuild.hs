@@ -31,7 +31,7 @@ Suggested usage in @config.hs@:
 >  		& osDebian Unstable X86_32
 >  		& Sbuild.osDebianStandard
 >  		& Sbuild.update `period` Weekly (Just 1)
->  		& Sbuild.useHostProxy mybox
+>  		& Chroot.useHostProxy mybox
 
 If you are using sbuild older than 0.70.0, you also need:
 
@@ -65,7 +65,6 @@ module Propellor.Property.Sbuild (
 	built,
 	-- * Properties for use inside sbuild schroots
 	update,
-	useHostProxy,
 	osDebianStandard,
 	-- * Global sbuild configuration
 	-- blockNetwork,
@@ -267,20 +266,6 @@ osDebianStandard = propertyList "standard Debian sbuild properties" $ props
 -- This replaces use of sbuild-update(1).
 update :: Property DebianLike
 update = Apt.update `before` Apt.upgrade `before` Apt.autoRemove
-
--- | Ensure that an sbuild schroot uses the host's Apt proxy.
---
--- This property is typically used when the host has 'Apt.useLocalCacher'.
-useHostProxy :: Host -> Property DebianLike
-useHostProxy h = property' "use host's apt proxy" $ \w ->
-	-- Note that we can't look at getProxyInfo outside the property,
-	-- as that would loop, but it's ok to look at it inside the
-	-- property. Thus the slightly strange construction here.
-	case getProxyInfo of
-		Just (Apt.HostAptProxy u) -> ensureProperty w (Apt.proxy' u)
-		Nothing -> noChange
-  where
-	getProxyInfo = fromInfoVal . fromInfo . hostInfo $ h
 
 aptCacheLine :: String
 aptCacheLine = "/var/cache/apt/archives /var/cache/apt/archives none rw,bind 0 0"
