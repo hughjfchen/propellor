@@ -16,6 +16,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Service as Service
 import Propellor.Property.File (Line)
 import Propellor.Types.Info
+import Utility.SafeCommand
 
 data HostMirror = HostMirror Url
 	deriving (Eq, Show, Typeable)
@@ -308,11 +309,22 @@ buildDep ps = robustly $ go
 -- in the specifed directory, with a dummy package also
 -- installed so that autoRemove won't remove them.
 buildDepIn :: FilePath -> Property DebianLike
-buildDepIn dir = cmdPropertyEnv "sh" ["-c", cmd] noninteractiveEnv
+buildDepIn dir = go
 	`changesFile` dpkgStatus
 	`requires` installedMin ["devscripts", "equivs"]
   where
-	cmd = "cd '" ++ dir ++ "' && mk-build-deps debian/control --install --tool 'apt-get -y --no-install-recommends' --remove"
+	-- mk-build-deps may leave files behind sometimes, eg on failure,
+	-- so run it in a temp directory, passing the path to the control
+	-- file
+	go :: UncheckedProperty DebianLike
+	go = unchecked $ property ("build-dep in " ++ dir) $ liftIO $
+		withTmpDir "build-dep" $ \tmpdir -> do
+			cmdResult <$> boolSystem' "mk-build-deps"
+				[ File $ dir </> "debian" </> "control"
+				, Param "--install"
+				, Param "--tool"
+				, Param "apt-get -y --no-install-recommends"
+				] (\p -> p { cwd = Just tmpdir })
 
 -- | The name of a package, a glob to match the names of packages, or a regexp
 -- surrounded by slashes to match the names of packages.  See
