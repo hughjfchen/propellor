@@ -1,3 +1,11 @@
+propellor (5.10.3) UNRELEASED; urgency=medium
+
+  * Fix display of concurrent output from processes when using
+    Propellor.Property.Conductor.
+    (Reversion introduced in version 5.5.0.)
+
+ -- Joey Hess <id@joeyh.name>  Fri, 05 Jun 2020 11:26:21 -0400
+
 propellor (5.10.2) unstable; urgency=medium
 
   * Fix build with ghc 8.6.3.
