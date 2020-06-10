@@ -150,6 +150,7 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
 		, Dep "libghc-mtl-dev"
 		, Dep "libghc-exceptions-dev"
 		, Dep "libghc-hashable-dev"
+		, Dep "libghc-concurrent-output-dev"
 		]
 	debdeps Stack =
 		[ Dep "gnupg"
