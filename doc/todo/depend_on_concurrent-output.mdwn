@@ -27,3 +27,16 @@ Waiting on concurrent-output reaching Debian stable.
 > from debian. That is a somewhat old version and perhaps it was buggy?
 > However, I have not had any luck reproducing the problem there running
 > readProcess in ghci. --[[Joey]]
+> 
+> > Tried again in 2020, same bugs still happened. On a system running
+> > debian unstable with concurrent-output 1.10.9, and a system running stable that
+> > had cabal installed concurrent-output 1.10.11.
+> > 
+> > The former system (kite) had the strange output problem.
+> > 
+> > The latter system (keysafe) seemed ok but crashed at the end with
+> > a STM transaction deadlock. Downgrading to concurrent-output 1.10.6
+> > eliminated that problem.
+> > 
+> > This is really looking like a reversion, or several, in newer
+> > versions of concurrent-output. --[[Joey]]
