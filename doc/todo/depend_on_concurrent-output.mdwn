@@ -42,3 +42,11 @@ Waiting on concurrent-output reaching Debian stable.
 > > This is really looking like a reversion, or several, in newer
 > > versions of concurrent-output. The code bundled with propellor is
 > > the same as concurrent-output 1.7.4.
+
+> > > I think I've fixed it, concurrent-output (>= 1.10.12 || <= 1.7.4)
+> > > will be needed to avoid the bug. Will be several years until that's
+> > > in debian stable..
+> > > 
+> > > I've updated the embedded concurrent-output copy, and it should
+> > > be kept up-to-date as concurrent-output changes, to avoid more
+> > > such reversions. --[[Joey]]
