@@ -49,7 +49,7 @@ Library
     base >= 4.9, base < 5,
     directory, filepath, IfElse, process, bytestring, hslogger, split,
     unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
-    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
+    time, mtl, exceptions (>= 0.6), hashable, concurrent-output
   if flag(WithTypeErrors)
     Build-Depends: type-errors
     CPP-Options: -DWITH_TYPE_ERRORS
@@ -233,9 +233,6 @@ Library
     Utility.Tmp.Dir
     Utility.Tuple
     Utility.UserInfo
-    System.Console.Concurrent
-    System.Console.Concurrent.Internal
-    System.Process.Concurrent
     Paths_propellor
 
 Executable propellor-config
