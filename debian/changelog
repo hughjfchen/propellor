@@ -3,7 +3,6 @@ propellor (5.10.3) UNRELEASED; urgency=medium
   * Fix display of concurrent output from processes when using
     Propellor.Property.Conductor.
     (Reversion introduced in version 5.5.0.)
-  * Added dependency on concurrent-output; removed embedded copy.
 
  -- Joey Hess <id@joeyh.name>  Fri, 05 Jun 2020 11:26:21 -0400
 
