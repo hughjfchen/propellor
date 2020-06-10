@@ -35,8 +35,10 @@ Waiting on concurrent-output reaching Debian stable.
 > > The former system (kite) had the strange output problem.
 > > 
 > > The latter system (keysafe) seemed ok but crashed at the end with
-> > a STM transaction deadlock. Downgrading to concurrent-output 1.10.6
-> > eliminated that problem.
+> > a STM transaction deadlock. Seemed to only happen when spinning the
+> > host remotely, or not always; I tried to reproduce it running propellor
+> > manually to bisect concurrent-output but without success.
 > > 
 > > This is really looking like a reversion, or several, in newer
-> > versions of concurrent-output. --[[Joey]]
+> > versions of concurrent-output. The code bundled with propellor is
+> > the same as concurrent-output 1.7.4.
