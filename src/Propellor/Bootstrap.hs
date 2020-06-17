@@ -81,7 +81,12 @@ buildCommand bs = intercalate " && " (go (getBuilder bs))
 	go Cabal =
 		[ "cabal configure"
 		, "cabal build -j1 propellor-config"
-		, "ln -sf dist/build/propellor-config/propellor-config propellor"
+		, intercalate "; "
+			[ "if [ -d dist-newstyle ]"
+			, "then ln -sf $(find dist-newstyle/ -executable -type f | grep 'build/propellor-config/propellor-config$') propellor"
+			, "else ln -sf dist/build/propellor-config/propellor-config propellor"
+			, "fi"
+			]
 		]
 	go Stack =
 		[ "stack build :propellor-config"

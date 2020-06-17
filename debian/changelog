@@ -3,6 +3,8 @@ propellor (5.10.3) UNRELEASED; urgency=medium
   * Fix display of concurrent output from processes when using
     Propellor.Property.Conductor.
     (Reversion introduced in version 5.5.0.)
+  * Support bootstrapping to hosts using cabal 3.x, with new-dist directory.
+  * Makefile: Fix build with cabal 3.x.
 
  -- Joey Hess <id@joeyh.name>  Fri, 05 Jun 2020 11:26:21 -0400
 
