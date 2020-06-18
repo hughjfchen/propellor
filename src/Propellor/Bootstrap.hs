@@ -83,7 +83,7 @@ buildCommand bs = intercalate " && " (go (getBuilder bs))
 		, "cabal build -j1 propellor-config"
 		, intercalate "; "
 			[ "if [ -d dist-newstyle ]"
-			, "then ln -sf $(find dist-newstyle/ -executable -type f | grep 'build/propellor-config/propellor-config$' | tail -n1) propellor"
+			, "then ln -sf $(cabal exec -- sh -c 'command -v propellor-config') propellor"
 			, "else ln -sf dist/build/propellor-config/propellor-config propellor"
 			, "fi"
 			]
