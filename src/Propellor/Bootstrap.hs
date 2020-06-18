@@ -269,21 +269,14 @@ cabalBuild msys = do
 	unlessM cabal_build $
 		unlessM (cabal_configure <&&> cabal_build) $
 			error "cabal build failed"
-	-- For safety against eg power loss in the middle of the build,
-	-- make a copy of the binary, and move it into place atomically.
-	-- This ensures that the propellor symlink only ever points at
-	-- a binary that is fully built. Also, avoid ever removing
-	-- or breaking the symlink.
-	--
-	-- Need cp -pfRL to make build timestamp checking work.
-	let cpcmd = "cp -pfRL" `commandCabalBuildTo` tmpfor safetycopy
+	-- Make a copy of the binary, and move it into place atomically.
+	let safetycopy = "propellor.built"
+	let cpcmd = "cp -pfL" `commandCabalBuildTo` safetycopy
 	unlessM (boolSystem "sh" [Param "-c", Param cpcmd]) $
 		error "cp of binary failed"
-	rename (tmpfor safetycopy) safetycopy
-	symlinkPropellorBin safetycopy
+	rename safetycopy "propellor"
 	return True
   where
-	safetycopy = "propellor.built"
 	cabal_configure = ifM (cabal ["configure"])
 		( do
 			writeFile "configured" ""
