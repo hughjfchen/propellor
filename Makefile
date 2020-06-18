@@ -12,7 +12,7 @@ build: tags propellor.1 configured
 install:
 	install -d $(DESTDIR)/usr/bin $(DESTDIR)/usr/src/propellor
 	if [ -d dist-newstyle ]; then \
-		install -s $$(find dist-newstyle/ -executable -type f | grep 'build/propellor/propellor$$') $(DESTDIR)/usr/bin/propellor; \
+		install -s $$(cabal exec -- sh -c 'command -v propellor') $(DESTDIR)/usr/bin/propellor; \
 	else \
 		install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin/propellor; \
 	fi
