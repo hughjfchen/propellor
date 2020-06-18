@@ -1,4 +1,5 @@
 /propellor
+/propellor.built
 dist/*
 dist-newstyle/*
 tags

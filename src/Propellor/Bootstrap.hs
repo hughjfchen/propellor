@@ -81,17 +81,20 @@ buildCommand bs = intercalate " && " (go (getBuilder bs))
 	go Cabal =
 		[ "cabal configure"
 		, "cabal build -j1 propellor-config"
-		, intercalate "; "
-			[ "if [ -d dist-newstyle ]"
-			, "then ln -sf $(cabal exec -- sh -c 'command -v propellor-config') propellor"
-			, "else ln -sf dist/build/propellor-config/propellor-config propellor"
-			, "fi"
-			]
+		, "ln -sf" `commandCabalBuildTo` "propellor"
 		]
 	go Stack =
 		[ "stack build :propellor-config"
 		, "ln -sf $(stack path --dist-dir)/build/propellor-config/propellor-config propellor"
 		]
+
+commandCabalBuildTo :: ShellCommand -> FilePath -> ShellCommand
+commandCabalBuildTo cmd dest = intercalate "; "
+	[ "if [ -d dist-newstyle ]"
+	, "then " ++ cmd ++ " $(cabal exec -- sh -c 'command -v propellor-config') " ++ shellEscape dest
+	, "else " ++ cmd ++ " dist/build/propellor-config/propellor-config " ++ shellEscape dest
+	, "fi"
+	]
 
 -- Check if all dependencies are installed; if not, run the depsCommand.
 checkDepsCommand :: Bootstrapper -> Maybe System -> ShellCommand
@@ -273,14 +276,14 @@ cabalBuild msys = do
 	-- or breaking the symlink.
 	--
 	-- Need cp -pfRL to make build timestamp checking work.
-	unlessM (boolSystem "cp" [Param "-pfRL", Param cabalbuiltbin, Param (tmpfor safetycopy)]) $
+	let cpcmd = "cp -pfRL" `commandCabalBuildTo` tmpfor safetycopy
+	unlessM (boolSystem "sh" [Param "-c", Param cpcmd]) $
 		error "cp of binary failed"
 	rename (tmpfor safetycopy) safetycopy
 	symlinkPropellorBin safetycopy
 	return True
   where
-	cabalbuiltbin = "dist/build/propellor-config/propellor-config"
-	safetycopy = cabalbuiltbin ++ ".built"
+	safetycopy = "propellor.built"
 	cabal_configure = ifM (cabal ["configure"])
 		( do
 			writeFile "configured" ""
