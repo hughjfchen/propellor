@@ -262,7 +262,7 @@ buildPropellor mh = unlessM (actionMessage "Propellor build" build) $
 -- dependencies and retries.
 cabalBuild :: Maybe System -> IO Bool
 cabalBuild msys = do
-	make "dist/setup-config" ["propellor.cabal"] cabal_configure
+	make "configured" ["propellor.cabal"] cabal_configure
 	unlessM cabal_build $
 		unlessM (cabal_configure <&&> cabal_build) $
 			error "cabal build failed"
@@ -282,12 +282,15 @@ cabalBuild msys = do
 	cabalbuiltbin = "dist/build/propellor-config/propellor-config"
 	safetycopy = cabalbuiltbin ++ ".built"
 	cabal_configure = ifM (cabal ["configure"])
-		( return True
+		( do
+			writeFile "configured" ""
+			return True
 		, case msys of
 			Nothing -> return False
 			Just sys ->
 				boolSystem "sh" [Param "-c", Param (depsCommand (Robustly Cabal) (Just sys))]
 					<&&> cabal ["configure"]
+					<&&> (writeFile "configured" "" >> return True)
 		)
 	-- The -j1 is to only run one job at a time -- in some situations,
 	-- eg in qemu, ghc does not run reliably in parallel.
