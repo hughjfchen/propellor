@@ -2,7 +2,6 @@
 -- distribution.
 --
 -- Distributions should install this program into PATH.
--- (Cabal builds it as dist/build/propellor/propellor).
 --
 -- This is not the propellor main program (that's config.hs).
 -- This bootstraps ~/.propellor/config.hs, builds it if
