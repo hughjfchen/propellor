@@ -1319,9 +1319,9 @@ autoMountDrivePort label hp drive malias = propertyList desc $ props
 			-- and the vendor is not sufficient since I have 2
 			-- hubs from the same vendor. So search for the
 			-- drive in its output to determine it.
-			[ "$(uhubctl | awk -F '[: ]' '/Current status for hub/{u=\\\\$5}/"
+			[ "$(uhubctl | awk -F \"[: ]\" \"/Current status for hub/{u=\\\\$5}/"
 			, driveVendorId drive ++ ":" ++ driveProductId drive
-			, "/{print u}')"
+			, "/{print u}\")"
 			]
 		]
 
