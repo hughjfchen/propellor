@@ -1238,37 +1238,24 @@ homeNAS = propertyList "home NAS" $ props
 		[ "# let users power control startech hub with uhubctl"
 		, "ATTR{idVendor}==\"" ++ hubvendor ++ "\", ATTR{idProduct}==\"005a\", MODE=\"0666\""
 		]
-	& autoMountDrivePort "archive-10"
-		(USBHubPort hubvendor 1)
-		(USBDriveId wd "1230")
+	& autoMountDrivePort "archive-10" (USBHubPort hubvendor hubloc 1)
 		(Just "archive-oldest")
-	& autoMountDrivePort "archive-11"
-		(USBHubPort hubvendor 2)
-		(USBDriveId wd "25ee")
+	& autoMountDrivePort "archive-11" (USBHubPort hubvendor hubloc 2)
 		(Just "archive-older")
-	& autoMountDrivePort "archive-12"
-		(USBHubPort hubvendor 3)
-		(USBDriveId seagate "3322")
+	& autoMountDrivePort "archive-12" (USBHubPort hubvendor hubloc 3)
 		(Just "archive-old")
-	& autoMountDrivePort "archive-13"
-		(USBHubPort hubvendor 4)
-		(USBDriveId wd "25a3")
+	& autoMountDrivePort "archive-13" (USBHubPort hubvendor hubloc 4)
 		(Just "archive")
 	& autoMountDrive "passport" Nothing
 	& Apt.installed ["git-annex", "borgbackup"]
   where
 	hubvendor = "0409"
-	wd = "1058"
-	seagate = "0bc2"
+	hubloc = "4-1.6"
 
 data USBHubPort = USBHubPort
 	{ hubVendor :: String
+	, hubLocation :: String
 	, hubPort :: Int
-	}
-
-data USBDriveId = USBDriveId
-	{ driveVendorId :: String
-	, driveProductId :: String
 	}
 
 -- Makes a USB drive with the given label automount, and unmount after idle
@@ -1276,8 +1263,8 @@ data USBDriveId = USBDriveId
 --
 -- The hub port is turned on and off automatically as needed, using
 -- uhubctl.
-autoMountDrivePort :: Mount.Label -> USBHubPort -> USBDriveId -> Maybe FilePath -> Property DebianLike
-autoMountDrivePort label hp drive malias = propertyList desc $ props
+autoMountDrivePort :: Mount.Label -> USBHubPort -> Maybe FilePath -> Property DebianLike
+autoMountDrivePort label hp malias = propertyList desc $ props
 	& File.hasContent ("/etc/systemd/system/" ++ hub)
 		[ "[Unit]"
 		, "Description=Startech usb hub port " ++ show (hubPort hp)
@@ -1285,7 +1272,7 @@ autoMountDrivePort label hp drive malias = propertyList desc $ props
 		, "[Service]"
 		, "Type=oneshot"
 		, "RemainAfterExit=true"
-		, "ExecStart=/bin/sh -c 'uhubctl -a on " ++ selecthubport ++ "'"
+		, "ExecStart=/usr/sbin/uhubctl -a on " ++ selecthubport
 		, "ExecStop=/bin/sh -c 'uhubctl -a off " ++ selecthubport
 			-- Powering off the port does not remove device
 			-- files, so ask udev to remove the devfile; it will
@@ -1313,16 +1300,7 @@ autoMountDrivePort label hp drive malias = propertyList desc $ props
 	selecthubport = unwords
 		[ "-p", show (hubPort hp)
 		, "-n", hubVendor hp
-		, "-l", concat
-			-- The hub's location id, eg "1-1.4", does not seem
-			-- as stable as uhubctl claims it will be,
-			-- and the vendor is not sufficient since I have 2
-			-- hubs from the same vendor. So search for the
-			-- drive in its output to determine it.
-			[ "$(uhubctl | awk -F \"[: ]\" \"/Current status for hub/{u=\\\\$5}/"
-			, driveVendorId drive ++ ":" ++ driveProductId drive
-			, "/{print u}\")"
-			]
+		, "-l", hubLocation hp
 		]
 
 -- Makes a USB drive with the given label automount, and unmount after idle
