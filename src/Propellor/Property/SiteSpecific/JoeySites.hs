@@ -1321,7 +1321,7 @@ autoMountDrivePort label hp drive malias = propertyList desc $ props
 			-- drive lsusb to find that. This works even if the
 			-- port is powered off, as long as it's been on at
 			-- some point before.
-			[ "$(lsusb -tvv | perl -lne \"if (m!/sys/bus/usb/devices/(.*?) !) {\\\\$v=\\\\$1}; if (/"
+			[ "$(lsusb -tvv | perl -lne \"if (\\\\$h && m!/sys/bus/usb/devices/(.*?) !) {\\\\$v=\\\\$1}; if (m/Hub/) { \\\\$h=1 } else { \\\\$h=0 }; if (/"
 			, driveVendorId drive ++ ":" ++ driveProductId drive
 			++ "/) { print \\\\$v; last}\")"
 			]
