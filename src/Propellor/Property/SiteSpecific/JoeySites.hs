@@ -1285,8 +1285,8 @@ autoMountDrivePort label hp drive malias = propertyList desc $ props
 		, "[Service]"
 		, "Type=oneshot"
 		, "RemainAfterExit=true"
-		, "ExecStart=/bin/sh -c 'uhubctl -a on " ++ selecthubport ++ "'"
-		, "ExecStop=/bin/sh -c 'uhubctl -a off " ++ selecthubport
+		, "ExecStart=/bin/sh -c \"uhubctl -a on " ++ selecthubport ++ "\""
+		, "ExecStop=/bin/sh -c \"uhubctl -a off " ++ selecthubport
 			-- Powering off the port does not remove device
 			-- files, so ask udev to remove the devfile; it will
 			-- be added back after the drive next spins up
@@ -1294,7 +1294,7 @@ autoMountDrivePort label hp drive malias = propertyList desc $ props
 			-- spun up.
 			-- (This only works when the devfile is in
 			-- by-label.)
-			++ "; udevadm trigger --action=remove " ++ devfile ++ " || true'"
+			++ "; udevadm trigger --action=remove " ++ devfile ++ " || true\""
 		, "[Install]"
 		, "WantedBy="
 		]
@@ -1321,7 +1321,7 @@ autoMountDrivePort label hp drive malias = propertyList desc $ props
 			-- drive in its output to determine it.
 			[ "$(uhubctl | awk -F '[: ]' '/Current status for hub/{u=$5}/"
 			, driveVendorId drive ++ ":" ++ driveProductId drive
-			, "/{print u})"
+			, "/{print u})'"
 			]
 		]
 
