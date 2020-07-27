@@ -20,6 +20,7 @@ import Prelude hiding (init)
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
 import Data.List (intercalate)
+import Utility.SafeCommand (boolSystem')
 
 -- | Parameter to pass to a borg command.
 type BorgParam = String
@@ -66,12 +67,22 @@ repoLoc :: BorgRepo -> String
 repoLoc (BorgRepo s) = s
 repoLoc (BorgRepoUsing _ s) = s
 
-runBorg :: BorgRepo -> [CommandParam] -> IO Bool
-runBorg repo ps = case runBorgEnv repo of
-	[] -> boolSystem "borg" ps
+runBorg :: BorgRepo -> [CommandParam] -> Maybe FilePath -> IO Bool
+runBorg repo ps chdir = case runBorgEnv repo of
+	[] -> runBorg' Nothing
 	environ -> do
 		environ' <- addEntries environ <$> getEnvironment
-		boolSystemEnv "borg" ps (Just environ')
+		runBorg' (Just environ')
+  where
+	runBorg' environ = boolSystem' "borg" ps $
+		\p -> p { cwd = chdir, env = environ }
+
+readBorg :: BorgRepo -> [String] -> IO String
+readBorg repo ps = case runBorgEnv repo of
+	[] -> readProcess "borg" ps
+	environ -> do
+		environ' <- addEntries environ <$> getEnvironment
+		readProcessEnv "borg" ps (Just environ')
 
 runBorgEnv :: BorgRepo -> [(String, String)]
 runBorgEnv (BorgRepo _) = []
@@ -93,7 +104,21 @@ installed = pickOS installdebian aptinstall
         desc = "installed borgbackup"
 
 repoExists :: BorgRepo -> IO Bool
-repoExists repo = runBorg repo [Param "list", Param (repoLoc repo)]
+repoExists repo = runBorg repo [Param "list", Param (repoLoc repo)] Nothing
+
+-- | Get the name of the latest archive, use a trick to ignore checkpoints
+-- (idea from borgmatic, regular archives usually end with a timestamp).
+latestArchive :: BorgRepo -> IO String
+latestArchive repo = takeWhile (/= '\n')
+	<$> readBorg repo listargs
+  where
+	listargs =
+		[ "list"
+		, "--glob-archive=*[0123456789]"
+		, "--last=1"
+		, "--short"
+		, repoLoc repo
+		]
 
 -- | Inits a new borg repository
 init :: BorgRepo -> BorgEnc -> Property DebianLike
@@ -121,18 +146,25 @@ restored dir repo = go `requires` installed
 	go = property (dir ++ " restored by borg") $ ifM (liftIO needsRestore)
 		( do
 			warningMessage $ dir ++ " is empty/missing; restoring from backup ..."
-			liftIO restore
+			liftIO restoreLatest
 		, noChange
 		)
 
 	needsRestore = isUnpopulated dir
 
-	restore = withTmpDirIn (takeDirectory dir) "borg-restore" $ \tmpdir -> do
-		ok <- runBorg repo $
+	restoreLatest = do
+		latest <- latestArchive repo
+		ifM (pure $ not $ null latest)
+			( restore latest
+			, return FailedChange
+			)
+
+	restore latest = withTmpDirIn (takeDirectory dir) "borg-restore" $ \tmpdir -> do
+		ok <- runBorg repo
 			[ Param "extract"
-			, Param (repoLoc repo)
-			, Param tmpdir
+			, Param ((repoLoc repo) ++ "::" ++ latest)
 			]
+			(Just tmpdir)
 		let restoreddir = tmpdir ++ "/" ++ dir
 		ifM (pure ok <&&> doesDirectoryExist restoreddir)
 			( do
