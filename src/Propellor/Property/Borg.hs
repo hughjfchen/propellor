@@ -6,6 +6,7 @@ module Propellor.Property.Borg
 	( BorgParam
 	, BorgRepo(..)
 	, BorgRepoOpt(..)
+	, BorgEnc(..)
 	, installed
 	, repoExists
 	, init
@@ -39,6 +40,27 @@ data BorgRepoOpt
 	-- | Use to specify an environment variable to set when running
 	-- borg on a BorgRepo.
 	| UsesEnvVar (String, String)
+
+-- | Borg Encryption type.
+data BorgEnc
+	-- | No encryption, no authentication.
+	= BorgEncNone
+	-- | Authenticated, using SHA-256 for hash/MAC.
+	| BorgEncAuthenticated
+	-- | Authenticated, using Blake2b for hash/MAC.
+	| BorgEncAuthenticatedBlake2
+	-- | Encrypted, storing the key in the repository, using SHA-256 for
+	-- hash/MAC.
+	| BorgEncRepokey
+	-- | Encrypted, storing the key in the repository, using Blake2b for
+	-- hash/MAC.
+	| BorgEncRepokeyBlake2
+	-- | Encrypted, storing the key outside of the repository, using
+	-- SHA-256 for hash/MAC.
+	| BorgEncKeyfile
+	-- | Encrypted, storing the key outside of the repository, using
+	-- Blake2b for hash/MAC.
+	| BorgEncKeyfileBlake2
 
 repoLoc :: BorgRepo -> String
 repoLoc (BorgRepo s) = s
@@ -74,13 +96,14 @@ repoExists :: BorgRepo -> IO Bool
 repoExists repo = runBorg repo [Param "list", Param (repoLoc repo)]
 
 -- | Inits a new borg repository
-init :: BorgRepo -> Property DebianLike
-init repo = check (not <$> repoExists repo)
+init :: BorgRepo -> BorgEnc -> Property DebianLike
+init repo enc = check (not <$> repoExists repo)
 	(cmdPropertyEnv "borg" initargs (runBorgEnv repo))
 		`requires` installed
   where
 	initargs =
 		[ "init"
+		, encParam enc
 		, repoLoc repo
 		]
 
@@ -202,3 +225,13 @@ data KeepPolicy
 	| KeepWeeks Int
 	| KeepMonths Int
 	| KeepYears Int
+
+-- | Construct the encryption type parameter.
+encParam :: BorgEnc -> BorgParam
+encParam BorgEncNone = "--encryption=none"
+encParam BorgEncAuthenticated = "--encryption=authenticated"
+encParam BorgEncAuthenticatedBlake2 = "--encryption=authenticated-blake2"
+encParam BorgEncRepokey = "--encryption=repokey"
+encParam BorgEncRepokeyBlake2 = "--encryption=repokey-blake2"
+encParam BorgEncKeyfile = "--encryption=keyfile"
+encParam BorgEncKeyfileBlake2 = "--encryption=keyfile-blake2"
