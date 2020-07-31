@@ -181,7 +181,7 @@ newtype NamedConfMap = NamedConfMap (M.Map Domain NamedConf)
 instance IsInfo NamedConfMap where
 	propagateInfo _ = PropagateInfo False
 
--- | Adding a Master NamedConf stanza for a particulr domain always
+-- | Adding a Master NamedConf stanza for a particular domain always
 -- overrides an existing Secondary stanza for that domain, while a
 -- Secondary stanza is only added when there is no existing Master stanza.
 instance Sem.Semigroup NamedConfMap where
