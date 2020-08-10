@@ -15,11 +15,11 @@ module Propellor.Property.Borg
 	, KeepPolicy (..)
 	) where
 
-import Propellor.Base hiding (init)
+import Propellor.Base hiding (init, last)
 import Prelude hiding (init)
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
-import Data.List (intercalate)
+import Data.List (intercalate, isSuffixOf)
 import Utility.SafeCommand (boolSystem')
 
 -- | Parameter to pass to a borg command.
@@ -106,16 +106,15 @@ installed = pickOS installdebian aptinstall
 repoExists :: BorgRepo -> IO Bool
 repoExists repo = runBorg repo [Param "list", Param (repoLoc repo)] Nothing
 
--- | Get the name of the latest archive, use a trick to ignore checkpoints
--- (idea from borgmatic, regular archives usually end with a timestamp).
-latestArchive :: BorgRepo -> IO String
-latestArchive repo = takeWhile (/= '\n')
-	<$> readBorg repo listargs
+-- | Get the name of the latest archive.
+latestArchive :: BorgRepo -> IO (Maybe String)
+latestArchive repo = getLatest <$> readBorg repo listargs
   where
+	getLatest = maybeLast . filter (not . isSuffixOf ".checkpoint") . lines
+	maybeLast [] = Nothing
+	maybeLast ps = Just $ last ps
 	listargs =
 		[ "list"
-		, "--glob-archive=*[0123456789]"
-		, "--last=1"
 		, "--short"
 		, repoLoc repo
 		]
@@ -146,19 +145,18 @@ restored dir repo = go `requires` installed
 	go = property (dir ++ " restored by borg") $ ifM (liftIO needsRestore)
 		( do
 			warningMessage $ dir ++ " is empty/missing; restoring from backup ..."
-			liftIO restoreLatest
+			latest <- liftIO (latestArchive repo)
+			case latest of
+				Nothing -> do
+					warningMessage $ "no archive to extract"
+					return FailedChange
+				Just l -> liftIO (restore l)
 		, noChange
 		)
 
 	needsRestore = isUnpopulated dir
 
-	restoreLatest = do
-		latest <- latestArchive repo
-		ifM (pure $ not $ null latest)
-			( restore latest
-			, return FailedChange
-			)
-
+	restore :: String -> IO Result
 	restore latest = withTmpDirIn (takeDirectory dir) "borg-restore" $ \tmpdir -> do
 		ok <- runBorg repo
 			[ Param "extract"
