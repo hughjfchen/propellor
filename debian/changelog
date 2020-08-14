@@ -1,4 +1,4 @@
-propellor (5.11) UNRELEASED; urgency=medium
+propellor (5.11) unstable; urgency=medium
 
   * Fix display of concurrent output from processes when using
     Propellor.Property.Conductor.
@@ -12,7 +12,7 @@ propellor (5.11) UNRELEASED; urgency=medium
     Thanks, Nicolas Schodet.
     (API change)
 
- -- Joey Hess <id@joeyh.name>  Fri, 05 Jun 2020 11:26:21 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 14 Aug 2020 16:02:14 -0400
 
 propellor (5.10.2) unstable; urgency=medium
 
