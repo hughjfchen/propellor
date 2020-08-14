@@ -50,3 +50,14 @@ Waiting on concurrent-output reaching Debian stable.
 > > > I've updated the embedded concurrent-output copy, and it should
 > > > be kept up-to-date as concurrent-output changes, to avoid more
 > > > such reversions. --[[Joey]]
+
+> > > > Unforunately, the embedded concurrent-output copy had to be
+> > > > downgraded again, because it turns out the new version
+> > > > of concurrent-output depends on process-1.6, while propellor
+> > > > neeeds to also work with older versions.
+> > > >
+> > > > So, propellor will embed the old concurrent-output until
+> > > > process-1.6 is in debian oldstable, and then revert
+> > > > [[!commit ]] and version propellor's dep on process,
+> > > > and then, finally, once concurrent-output 1.10.12 is in oldstable
+> > > > propellor can stop embedding it. --[[Joey]]
