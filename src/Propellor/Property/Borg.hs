@@ -6,6 +6,7 @@ module Propellor.Property.Borg
 	( BorgParam
 	, BorgRepo(..)
 	, BorgRepoOpt(..)
+	, BorgEnc(..)
 	, installed
 	, repoExists
 	, init
@@ -14,11 +15,12 @@ module Propellor.Property.Borg
 	, KeepPolicy (..)
 	) where
 
-import Propellor.Base hiding (init)
+import Propellor.Base hiding (init, last)
 import Prelude hiding (init)
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
-import Data.List (intercalate)
+import Data.List (intercalate, isSuffixOf)
+import Utility.SafeCommand (boolSystem')
 
 -- | Parameter to pass to a borg command.
 type BorgParam = String
@@ -40,16 +42,47 @@ data BorgRepoOpt
 	-- borg on a BorgRepo.
 	| UsesEnvVar (String, String)
 
+-- | Borg Encryption type.
+data BorgEnc
+	-- | No encryption, no authentication.
+	= BorgEncNone
+	-- | Authenticated, using SHA-256 for hash/MAC.
+	| BorgEncAuthenticated
+	-- | Authenticated, using Blake2b for hash/MAC.
+	| BorgEncAuthenticatedBlake2
+	-- | Encrypted, storing the key in the repository, using SHA-256 for
+	-- hash/MAC.
+	| BorgEncRepokey
+	-- | Encrypted, storing the key in the repository, using Blake2b for
+	-- hash/MAC.
+	| BorgEncRepokeyBlake2
+	-- | Encrypted, storing the key outside of the repository, using
+	-- SHA-256 for hash/MAC.
+	| BorgEncKeyfile
+	-- | Encrypted, storing the key outside of the repository, using
+	-- Blake2b for hash/MAC.
+	| BorgEncKeyfileBlake2
+
 repoLoc :: BorgRepo -> String
 repoLoc (BorgRepo s) = s
 repoLoc (BorgRepoUsing _ s) = s
 
-runBorg :: BorgRepo -> [CommandParam] -> IO Bool
-runBorg repo ps = case runBorgEnv repo of
-	[] -> boolSystem "borg" ps
+runBorg :: BorgRepo -> [CommandParam] -> Maybe FilePath -> IO Bool
+runBorg repo ps chdir = case runBorgEnv repo of
+	[] -> runBorg' Nothing
 	environ -> do
 		environ' <- addEntries environ <$> getEnvironment
-		boolSystemEnv "borg" ps (Just environ')
+		runBorg' (Just environ')
+  where
+	runBorg' environ = boolSystem' "borg" ps $
+		\p -> p { cwd = chdir, env = environ }
+
+readBorg :: BorgRepo -> [String] -> IO String
+readBorg repo ps = case runBorgEnv repo of
+	[] -> readProcess "borg" ps
+	environ -> do
+		environ' <- addEntries environ <$> getEnvironment
+		readProcessEnv "borg" ps (Just environ')
 
 runBorgEnv :: BorgRepo -> [(String, String)]
 runBorgEnv (BorgRepo _) = []
@@ -71,16 +104,30 @@ installed = pickOS installdebian aptinstall
         desc = "installed borgbackup"
 
 repoExists :: BorgRepo -> IO Bool
-repoExists repo = runBorg repo [Param "list", Param (repoLoc repo)]
+repoExists repo = runBorg repo [Param "list", Param (repoLoc repo)] Nothing
+
+-- | Get the name of the latest archive.
+latestArchive :: BorgRepo -> IO (Maybe String)
+latestArchive repo = getLatest <$> readBorg repo listargs
+  where
+	getLatest = maybeLast . filter (not . isSuffixOf ".checkpoint") . lines
+	maybeLast [] = Nothing
+	maybeLast ps = Just $ last ps
+	listargs =
+		[ "list"
+		, "--short"
+		, repoLoc repo
+		]
 
 -- | Inits a new borg repository
-init :: BorgRepo -> Property DebianLike
-init repo = check (not <$> repoExists repo)
+init :: BorgRepo -> BorgEnc -> Property DebianLike
+init repo enc = check (not <$> repoExists repo)
 	(cmdPropertyEnv "borg" initargs (runBorgEnv repo))
 		`requires` installed
   where
 	initargs =
 		[ "init"
+		, encParam enc
 		, repoLoc repo
 		]
 
@@ -98,18 +145,24 @@ restored dir repo = go `requires` installed
 	go = property (dir ++ " restored by borg") $ ifM (liftIO needsRestore)
 		( do
 			warningMessage $ dir ++ " is empty/missing; restoring from backup ..."
-			liftIO restore
+			latest <- liftIO (latestArchive repo)
+			case latest of
+				Nothing -> do
+					warningMessage $ "no archive to extract"
+					return FailedChange
+				Just l -> liftIO (restore l)
 		, noChange
 		)
 
 	needsRestore = isUnpopulated dir
 
-	restore = withTmpDirIn (takeDirectory dir) "borg-restore" $ \tmpdir -> do
-		ok <- runBorg repo $
+	restore :: String -> IO Result
+	restore latest = withTmpDirIn (takeDirectory dir) "borg-restore" $ \tmpdir -> do
+		ok <- runBorg repo
 			[ Param "extract"
-			, Param (repoLoc repo)
-			, Param tmpdir
+			, Param ((repoLoc repo) ++ "::" ++ latest)
 			]
+			(Just tmpdir)
 		let restoreddir = tmpdir ++ "/" ++ dir
 		ifM (pure ok <&&> doesDirectoryExist restoreddir)
 			( do
@@ -202,3 +255,13 @@ data KeepPolicy
 	| KeepWeeks Int
 	| KeepMonths Int
 	| KeepYears Int
+
+-- | Construct the encryption type parameter.
+encParam :: BorgEnc -> BorgParam
+encParam BorgEncNone = "--encryption=none"
+encParam BorgEncAuthenticated = "--encryption=authenticated"
+encParam BorgEncAuthenticatedBlake2 = "--encryption=authenticated-blake2"
+encParam BorgEncRepokey = "--encryption=repokey"
+encParam BorgEncRepokeyBlake2 = "--encryption=repokey-blake2"
+encParam BorgEncKeyfile = "--encryption=keyfile"
+encParam BorgEncKeyfileBlake2 = "--encryption=keyfile-blake2"
