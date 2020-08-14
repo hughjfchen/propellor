@@ -38,7 +38,6 @@ import Propellor.Base
 import Propellor.Property.Parted
 import Propellor.Types.PartSpec
 import Propellor.Types.Info
-import Propellor.Property.Partition (Fs(..))
 import Propellor.Property.Mount
 
 import Data.List (sortBy)
