@@ -7,12 +7,14 @@
 -- > import Control.Concurrent.Async
 -- > import System.Console.Concurrent
 -- >
--- > main = withConcurrentOutput $ do
+-- > main = withConcurrentOutput $
 -- > 	outputConcurrent "washed the car\n"
 -- > 		`concurrently`
 -- >	outputConcurrent "walked the dog\n"
 -- >		`concurrently`
 -- > 	createProcessConcurrent (proc "ls" [])
+
+{-# LANGUAGE CPP #-}
 
 module System.Console.Concurrent (
 	-- * Concurrent output
@@ -20,12 +22,14 @@ module System.Console.Concurrent (
 	Outputable(..),
 	outputConcurrent,
 	errorConcurrent,
+	ConcurrentProcessHandle,
+#ifndef mingw32_HOST_OS
 	createProcessConcurrent,
+#endif
+	waitForProcessConcurrent,
 	createProcessForeground,
 	flushConcurrentOutput,
 	lockOutput,
-	ConcurrentProcessHandle,
-	waitForProcessConcurrent,
 	-- * Low level access to the output buffer
 	OutputBuffer,
 	StdHandle(..),
