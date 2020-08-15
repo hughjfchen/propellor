@@ -20,7 +20,9 @@ import Prelude hiding (init)
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
 import Data.List (intercalate, isSuffixOf)
-import Utility.SafeCommand (boolSystem')
+import Data.Char (intToDigit)
+import Numeric (showIntAtBase)
+import Utility.SafeCommand (boolSystem', toCommand)
 
 -- | Parameter to pass to a borg command.
 type BorgParam = String
@@ -38,6 +40,8 @@ data BorgRepoOpt
 	-- | Use to specify a ssh private key to use when accessing a
 	-- BorgRepo.
 	= UseSshKey FilePath
+	-- | Use to specify a umask to use when accessing BorgRepo.
+	| UseUmask FileMode
 	-- | Use to specify an environment variable to set when running
 	-- borg on a BorgRepo.
 	| UsesEnvVar (String, String)
@@ -74,22 +78,33 @@ runBorg repo ps chdir = case runBorgEnv repo of
 		environ' <- addEntries environ <$> getEnvironment
 		runBorg' (Just environ')
   where
-	runBorg' environ = boolSystem' "borg" ps $
+	runBorg' environ = boolSystem' "borg" params $
 		\p -> p { cwd = chdir, env = environ }
+	params = runBorgParam repo ++ ps
 
-readBorg :: BorgRepo -> [String] -> IO String
+readBorg :: BorgRepo -> [CommandParam] -> IO String
 readBorg repo ps = case runBorgEnv repo of
-	[] -> readProcess "borg" ps
+	[] -> readProcess "borg" params
 	environ -> do
 		environ' <- addEntries environ <$> getEnvironment
-		readProcessEnv "borg" ps (Just environ')
+		readProcessEnv "borg" params (Just environ')
+  where
+	params = toCommand (runBorgParam repo ++ ps)
+
+runBorgParam :: BorgRepo -> [CommandParam]
+runBorgParam (BorgRepo _) = []
+runBorgParam (BorgRepoUsing os _) = concatMap go os
+  where
+	go (UseUmask i) = [Param "--umask", Param (showIntAtBase 8 intToDigit i "")]
+	go _ = []
 
 runBorgEnv :: BorgRepo -> [(String, String)]
 runBorgEnv (BorgRepo _) = []
-runBorgEnv (BorgRepoUsing os _) = map go os
+runBorgEnv (BorgRepoUsing os _) = mapMaybe go os
   where
-	go (UseSshKey k) = ("BORG_RSH", "ssh -i " ++ k)
-	go (UsesEnvVar (k, v)) = (k, v)
+	go (UseSshKey k) = Just ("BORG_RSH", "ssh -i " ++ k)
+	go (UsesEnvVar (k, v)) = Just (k, v)
+	go _ = Nothing
 
 installed :: Property DebianLike
 installed = pickOS installdebian aptinstall
@@ -114,9 +129,9 @@ latestArchive repo = getLatest <$> readBorg repo listargs
 	maybeLast [] = Nothing
 	maybeLast ps = Just $ last ps
 	listargs =
-		[ "list"
-		, "--short"
-		, repoLoc repo
+		[ Param "list"
+		, Param "--short"
+		, Param (repoLoc repo)
 		]
 
 -- | Inits a new borg repository
@@ -125,7 +140,7 @@ init repo enc = check (not <$> repoExists repo)
 	(cmdPropertyEnv "borg" initargs (runBorgEnv repo))
 		`requires` installed
   where
-	initargs =
+	initargs = toCommand (runBorgParam repo) ++
 		[ "init"
 		, encParam enc
 		, repoLoc repo
@@ -160,7 +175,7 @@ restored dir repo = go `requires` installed
 	restore latest = withTmpDirIn (takeDirectory dir) "borg-restore" $ \tmpdir -> do
 		ok <- runBorg repo
 			[ Param "extract"
-			, Param ((repoLoc repo) ++ "::" ++ latest)
+			, Param (repoLoc repo ++ "::" ++ latest)
 			]
 			(Just tmpdir)
 		let restoreddir = tmpdir ++ "/" ++ dir
@@ -218,8 +233,9 @@ backup' dir repo crontimes extraargs kp = cronjob
 		, "export " ++ k
 		]
 	createCommand = unwords $
-		[ "borg"
-		, "create"
+		[ "borg" ]
+		++ map shellEscape (toCommand (runBorgParam repo)) ++
+		[ "create"
 		, "--stats"
 		]
 		++ map shellEscape extraargs ++
@@ -227,8 +243,9 @@ backup' dir repo crontimes extraargs kp = cronjob
 		, shellEscape dir
 		]
 	pruneCommand = unwords $
-		[ "borg"
-		, "prune"
+		[ "borg" ]
+		++ map shellEscape (toCommand (runBorgParam repo)) ++
+		[ "prune"
 		, shellEscape (repoLoc repo)
 		]
 		++
