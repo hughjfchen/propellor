@@ -223,7 +223,7 @@ backup' dir repo crontimes extraargs kp = cronjob
 		, "--stats"
 		]
 		++ map shellEscape extraargs ++
-		[ shellEscape (repoLoc repo) ++ "::" ++ "$(date --iso-8601=ns --utc)"
+		[ shellEscape ((repoLoc repo) ++ "::{now}")
 		, shellEscape dir
 		]
 	pruneCommand = unwords $
