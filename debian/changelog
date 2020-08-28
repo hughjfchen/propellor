@@ -2,6 +2,10 @@ propellor (5.12) UNRELEASED; urgency=medium
 
   * Added libghc-type-errors-dev to debian/control recommends, and
     install it if available when bootstrapping propellor.
+  * Borg: add UseUmask to BorgRepoOpt.
+    Thanks, Nicolas Schodet
+  * Borg: use "{now}" instead of $(date ...)
+    Thanks, Nicolas Schodet
 
  -- Joey Hess <id@joeyh.name>  Thu, 27 Aug 2020 20:57:48 -0400
 
