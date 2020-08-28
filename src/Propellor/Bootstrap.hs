@@ -103,7 +103,7 @@ checkDepsCommand bs sys = go (getBuilder bs)
 	go Cabal = "if ! cabal configure >/dev/null 2>&1; then " ++ depsCommand bs sys ++ "; fi"
 	go Stack = "if ! stack build --dry-run >/dev/null 2>&1; then " ++ depsCommand bs sys ++ "; fi"
 
-data Dep = Dep String | OldDep String
+data Dep = Dep String | OptDep String | OldDep String
 
 -- Install build dependencies of propellor, using the specified
 -- Bootstrapper.
@@ -139,7 +139,8 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
 	useapt builder = "apt-get update" : map aptinstall (debdeps builder)
 
 	aptinstall (Dep p) = "DEBIAN_FRONTEND=noninteractive apt-get -qq --no-upgrade --no-install-recommends -y install " ++ p
-	aptinstall (OldDep p) = "if LANG=C apt-cache policy " ++ p ++ "| grep -q Candidate:; then " ++ aptinstall (Dep p) ++ "; fi"
+	aptinstall (OptDep p) = "if LANG=C apt-cache policy " ++ p ++ "| grep -q Candidate:; then " ++ aptinstall (Dep p) ++ "; fi"
+	aptinstall (OldDep p) = aptinstall (OptDep p)
 	pkginstall p = "ASSUME_ALWAYS_YES=yes pkg install " ++ p
 	pacmaninstall p = "pacman -S --noconfirm --needed " ++ p
 
@@ -160,6 +161,8 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
 		, Dep "libghc-exceptions-dev"
 		, Dep "libghc-text-dev"
 		, Dep "libghc-hashable-dev"
+		-- Deps that can be skipped on old systems.
+		, OptDep "libghc-type-errors-dev"
 		-- Deps that are only needed on old systems.
 		, OldDep "libghc-stm-dev"
 		]

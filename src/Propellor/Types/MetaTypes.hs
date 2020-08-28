@@ -169,10 +169,10 @@ type family CheckCombinableNote (list1 :: [a]) (list2 :: [a]) (note :: ErrorMess
 				('Just ('Text "(" ':<>: note ':<>: 'Text ")"))
 			)
 
--- Checking IfStuck is to avoid massive and useless error message leaking 
--- type families from this module.
 type family CannotCombine (list1 :: [a]) (list2 :: [a]) (note :: Maybe ErrorMessage) :: Constraint where
-	CannotCombine list1 list2 note = 
+	-- Checking IfStuck is to avoid ugly error
+	-- message leaking type families from this module.
+	CannotCombine list1 list2 'Nothing = 
 		IfStuck list1
 			(IfStuck list2
 				(DelayError (CannotCombineMessage UnknownType UnknownType UnknownTypeNote))
@@ -180,8 +180,21 @@ type family CannotCombine (list1 :: [a]) (list2 :: [a]) (note :: Maybe ErrorMess
 			)
 			(IfStuck list2
 				(DelayError (CannotCombineMessage (PrettyPrintMetaTypes list1) UnknownType UnknownTypeNote))
-				(DelayErrorFcf (CannotCombineMessage (PrettyPrintMetaTypes list1) (PrettyPrintMetaTypes list2) note))
+				(DelayErrorFcf (CannotCombineMessage (PrettyPrintMetaTypes list1) (PrettyPrintMetaTypes list2) 'Nothing))
 			)
+	-- When there's a note, don't display the MetaTypes at all.
+	-- This is because the note is used when eg, combining properties
+	-- in a host with (&), and in that case, it's likely that the
+	-- problem resulted in the type checker getting stuck, and that
+	-- displaying the MetaTypes would involve a massive error messsage.
+	-- Displaying, or even checking IfStuck in that case can result in
+	-- huge amounts of memory being used by ghc. So, avoid it, and let
+	-- the note point the user in the right direction to fixing their
+	-- mistake.
+	CannotCombine list1 list2 ('Just note) = 
+		TypeError ('Text "Cannot combine two Properties."
+			':$$: 'Text "(They may have conflicting MetaTypes, or the wrong number of arguments.)"
+			':$$: note)
 
 type family UnknownType :: ErrorMessage where
 	UnknownType = 'Text "<unknown>"

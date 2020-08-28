@@ -48,7 +48,7 @@ type family GetMetaTypes x where
 
 -- When many properties are combined, ghc error message
 -- can include quite a lot of code, typically starting with
--- `props  and including all the properties up to and including the
+-- `props` and including all the properties up to and including the
 -- one that fails to combine. Point the user in the right direction.
 type family NoteFor symbol :: ErrorMessage where
 	NoteFor symbol =
