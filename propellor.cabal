@@ -36,7 +36,7 @@ Description:
  It is configured using haskell.
 
 Flag WithTypeErrors
-  Description: Build with type-errors library for better error messages
+  Description: Build with type-errors library for better error messages and less memory use
 
 Library
   Default-Language: Haskell98

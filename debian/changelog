@@ -1,5 +1,8 @@
 propellor (5.12) UNRELEASED; urgency=medium
 
+  * Worked around a situation where ghc uses insane amounts of memory
+    displaying an error message about a property of a host having the
+    wrong number of arguments.
   * Added libghc-type-errors-dev to debian/control recommends, and
     install it if available when bootstrapping propellor.
   * Borg: add UseUmask to BorgRepoOpt.
