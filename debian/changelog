@@ -1,3 +1,10 @@
+propellor (5.12) UNRELEASED; urgency=medium
+
+  * Added libghc-type-errors-dev to debian/control recommends, and
+    install it if available when bootstrapping propellor.
+
+ -- Joey Hess <id@joeyh.name>  Thu, 27 Aug 2020 20:57:48 -0400
+
 propellor (5.11) unstable; urgency=medium
 
   * Fix display of concurrent output from processes when using

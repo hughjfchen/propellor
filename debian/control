@@ -18,6 +18,7 @@ Build-Depends:
 	libghc-exceptions-dev (>= 0.6),
 	libghc-text-dev,
 	libghc-hashable-dev,
+	libghc-type-errors-dev,
 Maintainer: Joey Hess <id@joeyh.name>
 Standards-Version: 3.9.8
 Vcs-Git: git://git.joeyh.name/propellor
@@ -42,6 +43,7 @@ Depends: ${misc:Depends}, ${shlibs:Depends},
 	libghc-text-dev,
 	libghc-hashable-dev,
 	git (>= 2.0),
+Recommends: libghc-type-errors-dev,
 Description: property-based host configuration management in haskell
  Propellor ensures that the system it's run in satisfies a list of
  properties, taking action as necessary when a property is not yet met.
