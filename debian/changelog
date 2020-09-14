@@ -9,6 +9,9 @@ propellor (5.12) UNRELEASED; urgency=medium
     Thanks, Nicolas Schodet
   * Borg: use "{now}" instead of $(date ...)
     Thanks, Nicolas Schodet
+  * Makefile: Deal with cabal change that made sdist
+    not output tarball to stdout.
+    Thanks, Sean Whitton
 
  -- Joey Hess <id@joeyh.name>  Thu, 27 Aug 2020 20:57:48 -0400
 
