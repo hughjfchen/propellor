@@ -1,4 +1,4 @@
-propellor (5.12) UNRELEASED; urgency=medium
+propellor (5.12) unstable; urgency=medium
 
   * Worked around a situation where ghc uses insane amounts of memory
     displaying an error message about a property of a host having the
@@ -13,7 +13,7 @@ propellor (5.12) UNRELEASED; urgency=medium
     not output tarball to stdout.
     Thanks, Sean Whitton
 
- -- Joey Hess <id@joeyh.name>  Thu, 27 Aug 2020 20:57:48 -0400
+ -- Joey Hess <id@joeyh.name>  Mon, 14 Sep 2020 12:06:46 -0400
 
 propellor (5.11) unstable; urgency=medium
 
