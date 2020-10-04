@@ -17,7 +17,11 @@ install:
 		install -s dist/build/propellor/propellor $(DESTDIR)/usr/bin/propellor; \
 	fi
 	mkdir -p gittmp
-	$(CABAL) sdist -o - | (cd gittmp && tar zx --strip-components=1)
+	if [ "$(CABAL)" = ./Setup ]; then \
+		./Setup sdist --output-directory=gittmp; \
+	else \
+		$(CABAL) sdist -o - | (cd gittmp && tar zx --strip-components=1); \
+	fi
 	# cabal sdist does not preserve symlinks, so copy over file
 	cd gittmp && for f in $$(find -type f); do rm -f $$f; cp -a ../$$f $$f; done
 	# reset mtime on files in git bundle so bundle is reproducible
