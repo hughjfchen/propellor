@@ -1,3 +1,9 @@
+propellor (5.13) UNRELEASED; urgency=medium
+
+  * Sudo.enabledFor: Deal with new @includedir syntax in sudoers file.
+
+ -- Joey Hess <id@joeyh.name>  Sun, 04 Oct 2020 10:24:36 -0400
+
 propellor (5.12) unstable; urgency=medium
 
   * Worked around a situation where ghc uses insane amounts of memory
