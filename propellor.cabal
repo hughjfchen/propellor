@@ -39,7 +39,7 @@ Flag WithTypeErrors
   Description: Build with type-errors library for better error messages and less memory use
 
 Library
-  Default-Language: Haskell98
+  Default-Language: Haskell2010
   GHC-Options: -Wall -fno-warn-tabs -O0
   Default-Extensions: TypeOperators
   Hs-Source-Dirs: src
@@ -239,7 +239,7 @@ Library
     Paths_propellor
 
 Executable propellor-config
-  Default-Language: Haskell98
+  Default-Language: Haskell2010
   Hs-Source-Dirs: executables
   Main-Is: propellor-config.hs
   GHC-Options: -threaded -Wall -fno-warn-tabs
@@ -247,7 +247,7 @@ Executable propellor-config
   Build-Depends: propellor, base
 
 Executable propellor
-  Default-Language: Haskell98
+  Default-Language: Haskell2010
   Hs-Source-Dirs: executables
   Main-Is: wrapper.hs
   GHC-Options: -threaded -Wall -fno-warn-tabs
