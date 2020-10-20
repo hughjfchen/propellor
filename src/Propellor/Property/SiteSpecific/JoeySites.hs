@@ -1068,7 +1068,8 @@ homeRouter = propertyList "home router" $ props
 	& File.hasContent "/etc/resolv.conf"
 		[ "domain kitenet.net"
 		, "search kitenet.net"
-		, "nameserver 192.168.1.1"
+		, "nameserver 8.8.8.8"
+		, "nameserver 8.8.4.4"
 		]
 	& Apt.installed ["dnsmasq"]
 	& File.hasContent "/etc/dnsmasq.conf"
