@@ -1167,6 +1167,7 @@ laptopSoftware = Apt.installed
 	, "vorbis-tools", "audacity"
 	, "ekiga"
 	, "bluez-firmware", "blueman", "pulseaudio-module-bluetooth"
+	, "fwupd"
 	, "xul-ext-ublock-origin", "xul-ext-pdf.js", "xul-ext-status4evar"
 	, "vim-syntastic", "vim-fugitive"
 	, "adb", "gthumb"
