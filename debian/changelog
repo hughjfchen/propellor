@@ -1,6 +1,8 @@
 propellor (5.13) UNRELEASED; urgency=medium
 
   * Sudo.enabledFor: Deal with new @includedir syntax in sudoers file.
+  * Apt.securityUpdates: Stop generating testing-security lines, as
+    testing-security is unused per debian documentation.
 
  -- Joey Hess <id@joeyh.name>  Sun, 04 Oct 2020 10:24:36 -0400
 

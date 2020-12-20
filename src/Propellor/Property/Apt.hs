@@ -107,16 +107,15 @@ binandsrc url suite = catMaybes
 stdArchiveLines :: Propellor SourcesGenerator
 stdArchiveLines = return . binandsrc =<< getMirror
 
--- | Only available for Stable and Testing
+-- | Only available for Stable suites, not for Testing or Unstable.
 securityUpdates :: SourcesGenerator
 securityUpdates suite
-	| isStable suite || suite == Testing =
+	| isStable suite =
 		let l = "deb http://security.debian.org/debian-security " ++ securitysuite ++ " " ++ unwords stdSections
 		in [l, srcLine l]
 	| otherwise = []
   where
 	securitysuite
-		| suite == Testing = "testing-security"
 		| suite `elem` map Stable releasesusingoldname =
 			showSuite suite ++ "/updates"
 		| otherwise = showSuite suite ++ "-security"
