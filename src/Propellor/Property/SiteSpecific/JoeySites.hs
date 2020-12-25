@@ -600,7 +600,10 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		`onChange` (imapalpinescript `File.mode`
 			combineModes (readModes ++ executeModes))
 		`describe` "imap script for pine"
-	& Apt.serviceInstalledRunning "mailman"
+	-- XXX temporarily disabled installing as it's not available in
+	-- debian unstable any longer. Need to upgrade to mailman3
+	-- at some point. (nontrivial)
+	-- & Apt.serviceInstalledRunning "mailman"
 	-- Override the default http url. (Only affects new lists.)
 	& "/etc/mailman/mm_cfg.py" `File.containsLine`
 		"DEFAULT_URL_PATTERN = 'https://%s/cgi-bin/mailman/'"
