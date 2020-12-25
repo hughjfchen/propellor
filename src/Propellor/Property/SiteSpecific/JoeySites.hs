@@ -328,7 +328,7 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 	-- git-annex distribution signing key
 	& Gpg.keyImported (Gpg.GpgKeyId "89C809CB") (User "joey")
 	-- used for building rpms
-	& Apt.installed ["rpm", "createrepo"]
+	& Apt.installed ["rpm", "createrepo-c"]
   where
 	endpoint d = combineProperties ("endpoint " ++ d) $ props
 		& File.dirExists d
