@@ -10,6 +10,9 @@ type Interface = String
 -- | Options to put in a stanza of an ifupdown interfaces file.
 type InterfaceOptions = [(String, String)]
 
+-- | Stanza of an ifupdown interfaces file, with header lines and options.
+type InterfaceStanza = ([String], InterfaceOptions)
+
 ifUp :: Interface -> Property DebianLike
 ifUp iface = tightenTargets $ cmdProperty "ifup" [iface]
 	`assume` MadeChange
@@ -52,22 +55,29 @@ static iface addr gateway = static' iface addr gateway mempty
 
 static' :: Interface -> IPAddr -> Maybe Gateway -> InterfaceOptions -> Property DebianLike
 static' iface addr gateway options =
-	interfaceFileContains (interfaceDFile iface) headerlines options'
+	static'' iface [(addr, gateway, options)]
+
+-- | Configures an interface with several stanzas (IPv4 and IPv6 for example).
+static'' :: Interface -> [(IPAddr, Maybe Gateway, InterfaceOptions)] -> Property DebianLike
+static'' iface confs =
+	interfaceFileContains' (interfaceDFile iface) stanzas
 	`describe` ("static IP address for " ++ iface)
 	`requires` interfacesDEnabled
   where
-	headerlines =
+	stanzas = map stanza confs
+	stanza (addr, gateway, options) = (headerlines addr, options' addr gateway options)
+	headerlines addr =
 		[ "auto " ++ iface
-		, "iface " ++ iface ++ " " ++ inet ++ " static"
+		, "iface " ++ iface ++ " " ++ (inet addr) ++ " static"
 		]
-	options' = catMaybes
+	options' addr gateway options = catMaybes
 		[ Just $ ("address", val addr)
 		, case gateway of
-			Just (Gateway gaddr) -> 
+			Just (Gateway gaddr) ->
 				Just ("gateway", val gaddr)
 			Nothing -> Nothing
 		] ++ options
-	inet = case addr of
+	inet addr = case addr of
 		IPv4 _ -> "inet"
 		IPv6 _ -> "inet6"
 
@@ -149,8 +159,13 @@ interfacesDEnabled = tightenTargets $
 		`describe` "interfaces.d directory enabled"
 
 interfaceFileContains :: FilePath -> [String] -> InterfaceOptions -> Property DebianLike
-interfaceFileContains f headerlines options = tightenTargets $ hasContent f $
-	warning : headerlines ++ map fmt options
+interfaceFileContains f headerlines options =
+	interfaceFileContains' f [(headerlines, options)]
+
+interfaceFileContains' :: FilePath -> [InterfaceStanza] -> Property DebianLike
+interfaceFileContains' f stanzas = tightenTargets $ hasContent f $
+	warning : concatMap stanza stanzas
   where
+	stanza (headerlines, options) = headerlines ++ map fmt options
 	fmt (k, v) = "\t" ++ k ++ " " ++ v
 	warning = "# Deployed by propellor, do not edit."
