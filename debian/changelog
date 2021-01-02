@@ -1,3 +1,11 @@
+propellor (5.13) UNRELEASED; urgency=medium
+
+  * Network: Added support for network interfaces with several address
+    stanzas, eg ipv4 and ipv6.
+    Thanks, Nicolas Schodet
+
+ -- Joey Hess <id@joeyh.name>  Sat, 02 Jan 2021 11:39:47 -0400
+
 propellor (5.12) unstable; urgency=medium
 
   * Worked around a situation where ghc uses insane amounts of memory

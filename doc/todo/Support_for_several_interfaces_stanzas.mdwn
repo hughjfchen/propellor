@@ -9,3 +9,5 @@ should contains something like this:
 
 I made a patch for Network to allow this, please pull the network-stanzas branch at
 http://git.ni.fr.eu.org/nicolas/propellor.git.
+
+> Great, I've applied this. [[done]] --[[Joey]]
