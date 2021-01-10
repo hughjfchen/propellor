@@ -1288,7 +1288,7 @@ autoMountDrivePort :: Mount.Label -> USBHubPort -> USBDriveId -> Maybe FilePath 
 autoMountDrivePort label hp drive malias = propertyList desc $ props
 	& File.hasContent ("/etc/systemd/system/" ++ hub)
 		[ "[Unit]"
-		, "Description=Startech usb hub port " ++ show (hubPort hp)
+		, "Description=Startech usb hub port " ++ show (hubPort hp) ++ " vendor " ++ driveVendorId drive ++ " driveid " ++ driveProductId drive
 		, "PartOf=" ++ mount
 		, "[Service]"
 		, "Type=oneshot"
@@ -1315,7 +1315,7 @@ autoMountDrivePort label hp drive malias = propertyList desc $ props
 	devfile = "/dev/disk/by-label/" ++ label
 	mountpoint = "/media/joey/" ++ label
 	desc = "auto mount with hub port power control " ++ mountpoint
-	hub = "startech-hub-port-" ++ show (hubPort hp) ++ ".service"
+	hub = "startech-hub-port-" ++ show (hubPort hp) ++ "-vendor-" ++ driveVendorId drive ++ "-drivedid-" ++ driveProductId drive ++ ".service"
 	mount = svcbase ++ ".mount"
 	svcbase = Systemd.escapePath mountpoint
 	selecthubport = unwords
