@@ -1258,6 +1258,10 @@ homeNAS = propertyList "home NAS" $ props
 		(USBHubPort hubvendor 4)
 		(USBDriveId wd "25a3")
 		(Just "archive")
+	& autoMountDrivePort "archive-14"
+		(USBHubPort hubvendor 2)
+		(USBDriveId wd "25a3")
+		Nothing
 	& autoMountDrive "passport" Nothing
 	& Apt.installed ["git-annex", "borgbackup"]
   where
