@@ -67,7 +67,6 @@ server hosts = propertyList "branchable server" $ props
 	& Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
 
 	& adminuser "joey"
-	& adminuser "liw"
   where
 	adminuser u = propertyList ("admin user " ++ u) $ props
 		& User.accountFor (User u)
