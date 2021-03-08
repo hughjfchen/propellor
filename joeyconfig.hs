@@ -101,7 +101,7 @@ clam :: Host
 clam = host "clam.kitenet.net" $ props
 	& standardSystem (Stable "buster") X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "46.36.36.189"
+	& ipv4 "46.36.41.13"
 
 	& User.hasPassword (User "root")
 	& Ssh.hostKeys hostContext
