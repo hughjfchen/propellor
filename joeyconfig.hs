@@ -26,7 +26,6 @@ import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Locale as Locale
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Borg as Borg
-import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
@@ -34,7 +33,6 @@ import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.Laptop as Laptop
 import qualified Propellor.Property.LightDM as LightDM
 import qualified Propellor.Property.HostingProvider.Linode as Linode
-import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.Branchable as Branchable
