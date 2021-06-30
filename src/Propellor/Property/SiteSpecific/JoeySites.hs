@@ -99,7 +99,7 @@ scrollBox = propertyList "scroll server" $ props
 
 oldUseNetServer :: [Host] -> Property (HasInfo + DebianLike)
 oldUseNetServer hosts = propertyList "olduse.net server" $ props
-	& Apt.installed ["leafnode"]
+	& Apt.removed ["leafnode"]
 	& oldUseNetInstalled "oldusenet-server"
 	& oldUseNetBackup
 	& spoolsymlink
@@ -111,13 +111,10 @@ oldUseNetServer hosts = propertyList "olduse.net server" $ props
 		, "allowSTRANGERS = 42" -- lets anyone connect
 		, "nopost = 1" -- no new posting (just gather them)
 		]
-	& "/etc/hosts.deny" `File.lacksLine` "leafnode: ALL"
-	& Apt.serviceInstalledRunning "openbsd-inetd"
-	& File.notPresent "/etc/cron.daily/leafnode"
-	& File.notPresent "/etc/cron.d/leafnode"
+	& Apt.removed ["openbsd-inetd"]
 	& Cron.niceJob "oldusenet-expire" (Cron.Times "11 1 * * *") (User "news") newsspool expirecommand
 	& Cron.niceJob "oldusenet-uucp" (Cron.Times "*/5 * * * *") (User "news") "/" uucpcommand
-	& Apache.siteEnabled "nntp.olduse.net" nntpcfg
+	! Apache.siteEnabled "nntp.olduse.net" nntpcfg
   where
 	newsspool = "/var/spool/news"
 	datadir = "/var/spool/oldusenet"
@@ -328,7 +325,7 @@ gitAnnexDistributor = combineProperties "git-annex distributor, including rsync 
 	-- git-annex distribution signing key
 	& Gpg.keyImported (Gpg.GpgKeyId "89C809CB") (User "joey")
 	-- used for building rpms
-	& Apt.installed ["rpm", "createrepo"]
+	& Apt.installed ["rpm", "createrepo-c"]
   where
 	endpoint d = combineProperties ("endpoint " ++ d) $ props
 		& File.dirExists d
@@ -600,7 +597,10 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 		`onChange` (imapalpinescript `File.mode`
 			combineModes (readModes ++ executeModes))
 		`describe` "imap script for pine"
-	& Apt.serviceInstalledRunning "mailman"
+	-- XXX temporarily disabled installing as it's not available in
+	-- debian unstable any longer. Need to upgrade to mailman3
+	-- at some point. (nontrivial)
+	-- & Apt.serviceInstalledRunning "mailman"
 	-- Override the default http url. (Only affects new lists.)
 	& "/etc/mailman/mm_cfg.py" `File.containsLine`
 		"DEFAULT_URL_PATTERN = 'https://%s/cgi-bin/mailman/'"
@@ -1145,7 +1145,7 @@ ipmasq intif = File.hasContent ifupscript
 laptopSoftware :: Property DebianLike
 laptopSoftware = Apt.installed
 	[ "intel-microcode", "acpi"
-	, "procmeter3", "xfce4", "procmeter3", "unclutter"
+	, "procmeter3", "xfce4", "procmeter3", "unclutter-xfixes"
 	, "mplayer", "fbreader", "firefox", "chromium"
 	, "libdatetime-event-sunrise-perl", "libtime-duration-perl"
 	, "network-manager", "network-manager-openvpn-gnome", "openvpn"
@@ -1167,6 +1167,7 @@ laptopSoftware = Apt.installed
 	, "vorbis-tools", "audacity"
 	, "ekiga"
 	, "bluez-firmware", "blueman", "pulseaudio-module-bluetooth"
+	, "fwupd"
 	, "xul-ext-ublock-origin", "xul-ext-pdf.js", "xul-ext-status4evar"
 	, "vim-syntastic", "vim-fugitive"
 	, "adb", "gthumb"
@@ -1254,6 +1255,10 @@ homeNAS = propertyList "home NAS" $ props
 		(USBHubPort hubvendor 4)
 		(USBDriveId wd "25a3")
 		(Just "archive")
+	& autoMountDrivePort "archive-14"
+		(USBHubPort hubvendor 2)
+		(USBDriveId wd "25a3")
+		Nothing
 	& autoMountDrive "passport" Nothing
 	& Apt.installed ["git-annex", "borgbackup"]
   where
@@ -1280,7 +1285,7 @@ autoMountDrivePort :: Mount.Label -> USBHubPort -> USBDriveId -> Maybe FilePath 
 autoMountDrivePort label hp drive malias = propertyList desc $ props
 	& File.hasContent ("/etc/systemd/system/" ++ hub)
 		[ "[Unit]"
-		, "Description=Startech usb hub port " ++ show (hubPort hp)
+		, "Description=Startech usb hub port " ++ show (hubPort hp) ++ " vendor " ++ driveVendorId drive ++ " driveid " ++ driveProductId drive
 		, "PartOf=" ++ mount
 		, "[Service]"
 		, "Type=oneshot"
@@ -1307,7 +1312,7 @@ autoMountDrivePort label hp drive malias = propertyList desc $ props
 	devfile = "/dev/disk/by-label/" ++ label
 	mountpoint = "/media/joey/" ++ label
 	desc = "auto mount with hub port power control " ++ mountpoint
-	hub = "startech-hub-port-" ++ show (hubPort hp) ++ ".service"
+	hub = "startech-hub-port-" ++ show (hubPort hp) ++ "-vendor-" ++ driveVendorId drive ++ "-drivedid-" ++ driveProductId drive ++ ".service"
 	mount = svcbase ++ ".mount"
 	svcbase = Systemd.escapePath mountpoint
 	selecthubport = unwords

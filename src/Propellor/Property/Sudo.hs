@@ -27,7 +27,7 @@ enabledFor user@(User u) = setup `requires` Apt.installed ["sudo"] <!> cleanup
 	setup = property' desc $ \w -> do
 		locked <- liftIO $ isLockedPassword user
 		ensureProperty w $ combineProperties desc $ props
-			& containsLine sudoers "#includedir /etc/sudoers.d"
+			& includessudoersd
 			& fileProperty desc
 				(modify locked . filter (wanted locked))
 				dfile
@@ -43,8 +43,19 @@ enabledFor user@(User u) = setup `requires` Apt.installed ["sudo"] <!> cleanup
 		desc = u ++ " is not sudoer"
 	
 	removeconflicting = fileProperty "remove conflicting" (filter notuserline)
+	
+	-- Not reverted because this line is included by default.
+	includessudoersd = fileProperty (sudoers ++ " includes " ++ sudoersd) addl sudoers
+	  where
+		addl content = content ++ 
+			if l `notElem` content && oldl `notElem` content
+				then [l]
+				else []
+		l = "@includedir /etc/sudoers.d"
+		oldl = "#includedir /etc/sudoers.d"
 
 	sudoers = "/etc/sudoers"
+	sudoersd = "/etc/sudoers.d"
 	dfile = "/etc/sudoers.d/000users"
 	sudobaseline = u ++ " ALL=(ALL:ALL)"
 	notuserline l = not (sudobaseline `isPrefixOf` l)

@@ -26,7 +26,6 @@ import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Locale as Locale
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Borg as Borg
-import qualified Propellor.Property.Gpg as Gpg
 import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
@@ -34,7 +33,6 @@ import qualified Propellor.Property.Fail2Ban as Fail2Ban
 import qualified Propellor.Property.Laptop as Laptop
 import qualified Propellor.Property.LightDM as LightDM
 import qualified Propellor.Property.HostingProvider.Linode as Linode
-import qualified Propellor.Property.HostingProvider.DigitalOcean as DigitalOcean
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
 import qualified Propellor.Property.SiteSpecific.Branchable as Branchable
@@ -58,8 +56,6 @@ hosts =                 --                  (o)  `
 	, mouse
 	, peregrine
 	, pell
-	, keysafe
-	, quarantimer
 	] ++ monsters
 
 darkstar :: Host
@@ -87,9 +83,6 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& imageBuiltFor honeybee
 		(RawDiskImage "/srv/honeybee.img")
 		(Debootstrapped mempty)
-	! imageBuiltFor banana
-		(RawDiskImage "/srv/banana.img")
-		(Debootstrapped mempty)
 
 dragon :: Host
 dragon = host "dragon.kitenet.net" $ props
@@ -101,7 +94,7 @@ clam :: Host
 clam = host "clam.kitenet.net" $ props
 	& standardSystem (Stable "buster") X86_64
 		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "46.36.36.189"
+	& ipv4 "46.36.41.13"
 
 	& User.hasPassword (User "root")
 	& Ssh.hostKeys hostContext
@@ -159,17 +152,6 @@ orca = host "orca.kitenet.net" $ props
 	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
 		GitAnnexBuilder.standardAutoBuilder
 		Testing ARM64 Nothing (Cron.Times "1 * * * *") "4h")
-
-banana :: Host
-banana = host "banana.kitenet.net" $ props
-	& lemaker_Banana_Pi
-	& hasPartition
-		( partition EXT4
-			`mountedAt` "/"
-			`setSize` MegaBytes 950
-		)
-	& osDebian Testing ARMHF
-	& User.hasInsecurePassword (User "root") "root"
 
 honeybee :: Host
 honeybee = host "honeybee.kitenet.net" $ props
@@ -259,7 +241,6 @@ kite = host "kite.kitenet.net" $ props
 		, "--exclude=/home/joey/lib"
 		-- These directories are backed up and restored separately.
 		, "--exclude=/srv/git"
-		, "--exclude=/var/spool/oldusenet"
 		]
 		[ Borg.KeepDays 7
 		, Borg.KeepWeeks 4
@@ -298,9 +279,8 @@ kite = host "kite.kitenet.net" $ props
 		, "zsh"
 		]
 
-	& alias "nntp.olduse.net"
 	& JoeySites.oldUseNetServer hosts
-	& Systemd.nspawned oldusenetShellBox
+	! Systemd.nspawned oldusenetShellBox
 	
 	& alias "znc.kitenet.net"
 	& JoeySites.ircBouncer
@@ -330,7 +310,7 @@ kite = host "kite.kitenet.net" $ props
 	& myDnsPrimary "olduse.net"
 		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
 		]
-	& myDnsPrimary "quarantimer.app" []
+	! myDnsPrimary "quarantimer.app" []
 	& alias "ns4.branchable.com"
 	& branchableSecondary
 	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
@@ -343,7 +323,7 @@ kite = host "kite.kitenet.net" $ props
 		]
 	
 	& alias "debug-me.joeyh.name"
-	& Apt.installed ["debug-me"]
+	& Apt.installed ["debug-me", "debug-me-server"]
 	& Systemd.enabled "debug-me"
 
 	-- testing
@@ -407,89 +387,6 @@ pell = host "pell.branchable.com" $ props
 	& Apt.unattendedUpgrades
 	& Branchable.server hosts
 	& Linode.serialGrub
-
--- See https://joeyh.name/code/keysafe/servers/ for requirements.
-keysafe :: Host
-keysafe = host "keysafe.joeyh.name" $ props
-	& ipv4 "139.59.17.168"
-	& Hostname.sane
-	& Hostname.mailname
-	& osDebian (Stable "buster") X86_64
-	& Apt.stdSourcesList `onChange` Apt.upgrade
-	& Apt.unattendedUpgrades
-	& DigitalOcean.distroKernel
-	-- This is a 500 mb VM, so need more ram to build propellor.
-	& Apt.serviceInstalledRunning "swapspace"
-	& Cron.runPropellor (Cron.Times "30 * * * *")
-	& Apt.installed ["etckeeper", "sudo"]
-	& JoeySites.noExim
-	& Apt.removed ["nfs-common", "rsyslog", "acpid", "rpcbind", "at"]
-
-	& User.hasSomePassword (User "root")
-	& User.accountFor (User "joey")
-	& User.hasSomePassword (User "joey")
-	& Sudo.enabledFor (User "joey")
-
-	& Ssh.installed
-	& Ssh.randomHostKeys
-	& User "root" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
-	& User "joey" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
-	& Ssh.noPasswords
-
-	& Tor.installed
-	& Tor.hiddenServiceAvailable "keysafe" (Port 4242)
-		`requires` Tor.hiddenServiceData "keysafe" hostContext
-	& Tor.bandwidthRate (Tor.PerMonth "750 GB")
-
-	-- keysafe installed manually until package is available
-	& Systemd.enabled "keysafe"
-
-	& Gpg.keyImported (Gpg.GpgKeyId "CECE11AE") (User "root")
-	& Ssh.knownHost hosts "usw-s002.rsync.net" (User "root")
-	& Ssh.userKeys (User "root")
-		(Context "keysafe.joeyh.name")
-		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEx8bK9ZbXVEgEvxQeXLjnr9cGa/QvoB459aglP529My root@keysafe")
-		]
-	-- Note that this is not an incremental backup; it uploads the
-	-- whole content every time. So, only run weekly.
-	& Cron.niceJob "keysafe backup" Cron.Weekly (User "root") "/" backupcmd
-		`requires` Apt.installed ["rsync"]
-  where
-	datadir = "/var/lib/keysafe"
-	backupdir = "/var/backups/keysafe"
-	rsyncnetbackup = "2318@usw-s002.rsync.net:keysafe"
-	backupcmd = unwords
-		[ "keysafe --store-directory", datadir, "--backup-server", backupdir
-		, "&& rsync -a --delete --max-delete 3 ",  backupdir , rsyncnetbackup
-		]
-
-quarantimer :: Host
-quarantimer = host "quarantimer.app" $ props
-	& ipv4 "45.33.73.207"
-	& Hostname.sane
-	& Hostname.mailname
-	& osDebian (Stable "buster") X86_64
-	& Apt.stdSourcesList `onChange` Apt.upgrade
-	& Apt.unattendedUpgrades
-	& Cron.runPropellor (Cron.Times "30 * * * *")
-	& Apt.installed ["etckeeper", "sudo"]
-	& JoeySites.noExim
-
-	& User.hasSomePassword (User "root")
-	& User.accountFor (User "joey")
-	& User.hasSomePassword (User "joey")
-	& Sudo.enabledFor (User "joey")
-	& Ssh.installed
-	& Ssh.randomHostKeys
-	& User "root" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
-	& User "joey" `Ssh.authorizedKeysFrom` (User "joey", darkstar)
-	& Ssh.noPasswords
-
-	& LetsEncrypt.letsEncrypt (LetsEncrypt.AgreeTOS (Just "id@joeyh.name"))
-		"quarantimer.app" "/home/joey/quarantimer/static"
-	& Apt.installed ["screen", "git", "ghc"]
-	& Apt.installed ["zlib1g-dev", "imagemagick"]
-	-- (Installing quarantimer not yet automated)
 
 
 
