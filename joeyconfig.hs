@@ -279,9 +279,6 @@ kite = host "kite.kitenet.net" $ props
 		, "zsh"
 		]
 
-	& JoeySites.oldUseNetServer hosts
-	! Systemd.nspawned oldusenetShellBox
-	
 	& alias "znc.kitenet.net"
 	& JoeySites.ircBouncer
 
@@ -412,12 +409,6 @@ ancientKitenet = Systemd.debContainer "ancient-kitenet" $ props
   where
 	p = Port 1994
 	hn = "ancient.kitenet.net"
-
-oldusenetShellBox :: Systemd.Container
-oldusenetShellBox = Systemd.debContainer "oldusenet-shellbox" $ props
-	& standardContainer (Stable "buster")
-	& alias "shell.olduse.net"
-	& JoeySites.oldUseNetShellBox
 
 -- My own openid provider. Uses php, so containerized for security
 -- and administrative sanity.
