@@ -359,7 +359,7 @@ kiteMailServer = propertyList "kitenet.net mail server" $ props
 	& Apt.serviceInstalledRunning "clamav-freshclam"
 	-- Workaround https://bugs.debian.org/569150
 	& Cron.niceJob "amavis-expire" Cron.Daily (User "root") "/"
-		"find /var/lib/amavis/virusmails/ -type f -ctime +7 -delete"
+		"find /var/lib/amavis/virusmails/ -type f -ctime +2 -delete"
 
 	& dkimInstalled
 
