@@ -16,7 +16,6 @@ import qualified Propellor.Property.Cron as Cron
 import qualified Propellor.Property.Sudo as Sudo
 import qualified Propellor.Property.User as User
 import qualified Propellor.Property.Hostname as Hostname
-import qualified Propellor.Property.Fstab as Fstab
 import qualified Propellor.Property.Tor as Tor
 import qualified Propellor.Property.Dns as Dns
 import qualified Propellor.Property.Git as Git
@@ -47,8 +46,8 @@ hosts =                 --                  (o)  `
 	[ darkstar
 	, dragon
 	, clam
+	, oyster
 	, orca
-	, baleen
 	, honeybee
 	, kite
 	, beaver
@@ -101,10 +100,6 @@ clam = host "clam.kitenet.net" $ props
 		[ (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPhfvcOuw0Yt+MnsFc4TI2gWkKi62Eajxz+TgbHMO/uRTYF8c5V8fOI3o+J/3m5+lT0S5o8j8a7xIC3COvi+AVw=")
 		]
 	& Apt.unattendedUpgrades
-
-	-- & Tor.isRelay
-	-- & Tor.named "kite1"
-	-- & Tor.bandwidthRate (Tor.PerMonth "400 GB")
 	
 	& "/etc/resolv.conf" `File.hasContent`
 		[ "nameserver 8.8.8.8"
@@ -114,21 +109,14 @@ clam = host "clam.kitenet.net" $ props
 		, "search kitenet.net"
 		]
 
-baleen :: Host
-baleen = host "baleen.kitenet.net" $ props
-	& standardSystem Unstable X86_64 [ "New git-annex build box." ]
+oyster :: Host
+oyster = host "oyster.kitenet.net" $ props
+	& standardSystem (Stable "buster") X86_64
+		["Unreliable server. Anything here may be lost at any time!" ]
+	& ipv4 "45.138.157.89"
 
-	-- Not on public network; ssh access via bounce host.
-	& ipv4 "138.38.77.40"
-	
-	-- The root filesystem content may be lost if the VM is resized.
-	-- /dev/vdb contains persistent storage.
-	& Fstab.mounted "auto" "/dev/vdb" "/var/lib/container" mempty
-	
+	& User.hasPassword (User "root")
 	& Apt.unattendedUpgrades
-	& Postfix.satellite
-	& Apt.serviceInstalledRunning "ntp"
-	& Systemd.persistentJournal
 
 orca :: Host
 orca = host "orca.kitenet.net" $ props
