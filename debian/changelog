@@ -1,18 +1,13 @@
 propellor (5.13) UNRELEASED; urgency=medium
 
-<<<<<<< HEAD
   * Network: Added support for network interfaces with several address
     stanzas, eg ipv4 and ipv6.
     Thanks, Nicolas Schodet
-
- -- Joey Hess <id@joeyh.name>  Sat, 02 Jan 2021 11:39:47 -0400
-=======
   * Sudo.enabledFor: Deal with new @includedir syntax in sudoers file.
   * Apt.securityUpdates: Stop generating testing-security lines, as
     testing-security is unused per debian documentation.
 
  -- Joey Hess <id@joeyh.name>  Sun, 04 Oct 2020 10:24:36 -0400
->>>>>>> joeyconfig
 
 propellor (5.12) unstable; urgency=medium
 
