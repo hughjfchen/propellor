@@ -6,6 +6,10 @@ propellor (5.13) UNRELEASED; urgency=medium
   * Sudo.enabledFor: Deal with new @includedir syntax in sudoers file.
   * Apt.securityUpdates: Stop generating testing-security lines, as
     testing-security is unused per debian documentation.
+  * Utility.HumanNumber: Fix rounding bug that could result in
+    sometimes quite wrong values, eg "1.1 GB" when the input value was a
+    few bytes less than 2 GB. Properties in Ccache and Journald that
+    used it to generate config files were affected by this bug.
 
  -- Joey Hess <id@joeyh.name>  Sun, 04 Oct 2020 10:24:36 -0400
 
