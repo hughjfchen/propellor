@@ -1,4 +1,4 @@
-propellor (5.13) UNRELEASED; urgency=medium
+propellor (5.13) unstable; urgency=medium
 
   * Network: Added support for network interfaces with several address
     stanzas, eg ipv4 and ipv6.
@@ -11,7 +11,7 @@ propellor (5.13) UNRELEASED; urgency=medium
     few bytes less than 2 GB. Properties in Ccache and Journald that
     used it to generate config files were affected by this bug.
 
- -- Joey Hess <id@joeyh.name>  Sun, 04 Oct 2020 10:24:36 -0400
+ -- Joey Hess <id@joeyh.name>  Fri, 30 Jul 2021 10:02:19 -0400
 
 propellor (5.12) unstable; urgency=medium
 
