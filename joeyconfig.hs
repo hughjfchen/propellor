@@ -45,7 +45,6 @@ hosts :: [Host]          --   *             \ | |           '--------'
 hosts =                 --                  (o)  `
 	[ darkstar
 	, dragon
-	, clam
 	, oyster
 	, orca
 	, honeybee
@@ -88,26 +87,6 @@ dragon = host "dragon.kitenet.net" $ props
 	& ipv6 "2001:4830:1600:187::2"
 	& JoeySites.dkimMilter
 	& JoeySites.postfixSaslPasswordClient
-
-clam :: Host
-clam = host "clam.kitenet.net" $ props
-	& standardSystem (Stable "buster") X86_64
-		["Unreliable server. Anything here may be lost at any time!" ]
-	& ipv4 "46.36.41.13"
-
-	& User.hasPassword (User "root")
-	& Ssh.hostKeys hostContext
-		[ (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPhfvcOuw0Yt+MnsFc4TI2gWkKi62Eajxz+TgbHMO/uRTYF8c5V8fOI3o+J/3m5+lT0S5o8j8a7xIC3COvi+AVw=")
-		]
-	& Apt.unattendedUpgrades
-	
-	& "/etc/resolv.conf" `File.hasContent`
-		[ "nameserver 8.8.8.8"
-		, "nameserver 8.8.4.4"
-		, "nameserver 1.1.1.1"
-		, "domain kitenet.net"
-		, "search kitenet.net"
-		]
 
 oyster :: Host
 oyster = host "oyster.kitenet.net" $ props
