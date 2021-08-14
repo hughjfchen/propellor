@@ -117,7 +117,6 @@ Library
     Propellor.Property.Network
     Propellor.Property.Nginx
     Propellor.Property.Obnam
-    Propellor.Property.OpenId
     Propellor.Property.Openssl
     Propellor.Property.OS
     Propellor.Property.Pacman

@@ -25,7 +25,6 @@ import qualified Propellor.Property.LetsEncrypt as LetsEncrypt
 import qualified Propellor.Property.Locale as Locale
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.Borg as Borg
-import qualified Propellor.Property.OpenId as OpenId
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
@@ -253,7 +252,6 @@ kite = host "kite.kitenet.net" $ props
 	& JoeySites.kgbServer
 	
 	& Systemd.nspawned ancientKitenet
-	! Systemd.nspawned openidProvider
 	
 	& alias "podcatcher.kitenet.net"
 	& JoeySites.podcatcher
@@ -376,17 +374,6 @@ ancientKitenet = Systemd.debContainer "ancient-kitenet" $ props
   where
 	p = Port 1994
 	hn = "ancient.kitenet.net"
-
--- My own openid provider. Uses php, so containerized for security
--- and administrative sanity.
-openidProvider :: Systemd.Container
-openidProvider = Systemd.debContainer "openid-provider" $ props
-	-- simpleid is not in buster
-	& standardContainer (Stable "stretch")
-	& alias hn
-	& OpenId.providerFor [User "joey", User "liw"] hn (Just (Port 8086))
-  where
-	hn = "openid.kitenet.net"
 
 type Motd = [String]
 
