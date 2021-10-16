@@ -16,8 +16,6 @@ propellor.1
 .lastchecked
 .stack-work/*
 .cabal-sandbox/
-.dir-locals.el
 cabal.sandbox.config
-cabal.project.local
 *~
 result
