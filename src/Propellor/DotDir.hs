@@ -31,6 +31,7 @@ import System.IO
 import System.Console.Concurrent
 import Control.Applicative
 import Prelude
+import Propellor.Base (isNothing)
 
 distdir :: FilePath
 distdir = "/usr/src/propellor"
@@ -357,7 +358,7 @@ checkRepoUpToDate = whenM (gitbundleavail <&&> dotpropellorpopulated) $ do
 	headknown <- catchMaybeIO $
 		withQuietOutput createProcessSuccess $
 			proc "git" ["log", headrev]
-	if (headknown == Nothing)
+	if isNothing headknown
 		then updateUpstreamMaster headrev
 		else do
 			theirhead <- getCurrentGitSha1 =<< getCurrentBranchRef

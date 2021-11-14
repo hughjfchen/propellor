@@ -18,12 +18,6 @@ hosts =
 
 -- An example host.
 mybox :: Host
-mybox = host "mybox.example.com" $ props
-	& osDebian Unstable X86_64
-	& Apt.stdSourcesList
-	& Apt.unattendedUpgrades
-	& Apt.installed ["etckeeper"]
-	& Apt.installed ["ssh"]
-	& User.hasSomePassword (User "root")
-	& File.dirExists "/var/www"
-	& Cron.runPropellor (Cron.Times "30 * * * *")
+mybox = host "www.detachmentsoft.top" $ props
+	& osBuntish "20.04" X86_64
+        & User.hasSomePassword (User "chenjf")
