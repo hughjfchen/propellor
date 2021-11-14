@@ -1,0 +1,7 @@
+cradle:
+  cabal:
+    - path: "./src"
+      component: "lib:propellor"
+
+    - path: "./executables"
+      component: "propellor:exe:my-config"
