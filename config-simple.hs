@@ -20,3 +20,4 @@ hosts =
 mybox :: Host
 mybox = host "www.detachmentsoft.top" $ props
 	& osBuntish "20.04" X86_64
+        & User.hasSomePassword (User "chenjf")
