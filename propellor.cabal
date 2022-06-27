@@ -48,7 +48,7 @@ Library
     -- and also only depends on packages in Debian stable.
     base >= 4.9, base < 5,
     directory, filepath, IfElse, process, bytestring, hslogger, split,
-    unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
+    unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async (>= 2.2.4),
     time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
   if flag(WithTypeErrors)
     Build-Depends: type-errors

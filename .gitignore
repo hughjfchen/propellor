@@ -1,21 +1,64 @@
-/propellor
-/propellor.built
-dist/*
-dist-newstyle/*
-tags
-configured
-privdata/local
-privdata/keyring.gpg~
-Setup
-Setup.hi
-Setup.o
-docker
-chroot
-propellor.1
-.lock
-.lastchecked
-.stack-work/*
+### Haskell
+dist
+dist-*
+cabal-dev
+*.o
+*.hi
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+*.prof
+*.aux
+*.hp
+*.eventlog
+.virtualenv
+.hsenv
+.hpc
 .cabal-sandbox/
 cabal.sandbox.config
+cabal.config
+.ghc.environment.*
+.HTF/
+# Stack
+.stack-work/
+stack.yaml.lock
+
+### IDE/support
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-v][a-z]
+[._]sw[a-p]
 *~
+tags
+
+# IntellijIDEA
+.idea/
+.ideaHaskellLib/
+*.iml
+
+# Atom
+.haskell-ghc-mod.json
+
+# VS
+.vscode/
+
+# Emacs
+*#
+TAGS
+
+# other
+.DS_Store
+
+# nix
 result
+result-*
+
+# nodejs
+node_modules
+build
+
+# build artifact for collect-java-dump project
+mk-my-release-packer
+my-*-dist*.sh

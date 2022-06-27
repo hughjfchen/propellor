@@ -2,22 +2,19 @@
 -- the propellor program.
 
 import Propellor
-import qualified Propellor.Property.File as File
+import Propellor.Engine
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Cron as Cron
+import qualified Propellor.Property.File as File
 import qualified Propellor.Property.User as User
 
 main :: IO ()
-main = defaultMain hosts
+main = mainProperties localBox
 
--- The hosts propellor knows about.
-hosts :: [Host]
-hosts =
-	[ mybox
-	]
-
--- An example host.
-mybox :: Host
-mybox = host "www.detachmentsoft.top" $ props
-	& osBuntish "20.04" X86_64
-        & User.hasSomePassword (User "chenjf")
+-- An local host which should satisfy some properties.
+localBox :: Host
+localBox =
+  host "local" $
+    props
+      & osBuntish "20.04" X86_64
+      & User.hasSomePassword (User "chenjf")

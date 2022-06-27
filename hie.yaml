@@ -4,4 +4,4 @@ cradle:
       component: "lib:propellor"
 
     - path: "./executables"
-      component: "propellor:exe:my-config"
+      component: "propellor:exe:propellor-config"
