@@ -20,7 +20,6 @@ Extra-Source-Files:
   joeyconfig.hs
   config.hs
   contrib/post-merge-hook
-  stack.yaml
   debian/changelog
   debian/propellor.README.Debian
   debian/compat
