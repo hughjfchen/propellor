@@ -3,34 +3,30 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Propellor.Info (
-  osDebian,
-  osBuntish,
-  osArchLinux,
-  osFreeBSD,
-  setInfoProperty,
-  addInfoProperty,
-  pureInfoProperty,
-  pureInfoProperty',
-  askInfo,
-  getOS,
-  hasContainerCapability,
-  ipv4,
-  ipv6,
-  alias,
-  addDNS,
-  hostMap,
-  aliasMap,
-  findHost,
-  findHostNoAlias,
-  getAddresses,
-  hostAddresses,
-) where
-
-import Propellor.Types
-import Propellor.Types.Container
-import Propellor.Types.Info
-import Propellor.Types.MetaTypes
+module Propellor.Info
+  ( osDebian,
+    osBuntish,
+    osArchLinux,
+    osFreeBSD,
+    setInfoProperty,
+    addInfoProperty,
+    pureInfoProperty,
+    pureInfoProperty',
+    askInfo,
+    getOS,
+    hasContainerCapability,
+    ipv4,
+    ipv6,
+    alias,
+    addDNS,
+    hostMap,
+    aliasMap,
+    findHost,
+    findHostNoAlias,
+    getAddresses,
+    hostAddresses,
+  )
+where
 
 import Control.Applicative
 import "mtl" Control.Monad.Reader
@@ -38,13 +34,15 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Set as S
-import Propellor.EnsureProperty
+import Propellor.Types
+import Propellor.Types.Container
+import Propellor.Types.Info
+import Propellor.Types.MetaTypes
 import Prelude
 
-{- | Adds info to a Property.
-
- The new Property will include HasInfo in its metatypes.
--}
+-- | Adds info to a Property.
+--
+-- The new Property will include HasInfo in its metatypes.
 setInfoProperty ::
   -- -Wredundant-constraints is turned off because
   -- this constraint appears redundant, but is actually
@@ -74,9 +72,9 @@ pureInfoProperty desc v = pureInfoProperty' desc (toInfo v)
 
 pureInfoProperty' :: Desc -> Info -> Property (HasInfo + UnixLike)
 pureInfoProperty' desc i = setInfoProperty p i
- where
-  p :: Property UnixLike
-  p = property ("has " ++ desc) (return NoChange)
+  where
+    p :: Property UnixLike
+    p = property ("has " ++ desc) (return NoChange)
 
 -- | Gets a value from the host's Info.
 askInfo :: (IsInfo v) => Propellor v
@@ -88,17 +86,16 @@ hasContainerCapability c =
   elem c
     <$> (askInfo :: Propellor [ContainerCapability])
 
-{- | Specifies that a host's operating system is Debian,
- and further indicates the suite and architecture.
-
- This provides info for other Properties, so they can act
- conditionally on the details of the OS.
-
- It also lets the type checker know that all the properties of the
- host must support Debian.
-
- >	& osDebian (Stable "buster") X86_64
--}
+-- | Specifies that a host's operating system is Debian,
+-- and further indicates the suite and architecture.
+--
+-- This provides info for other Properties, so they can act
+-- conditionally on the details of the OS.
+--
+-- It also lets the type checker know that all the properties of the
+-- host must support Debian.
+--
+-- >	& osDebian (Stable "buster") X86_64
 osDebian :: DebianSuite -> Architecture -> Property (HasInfo + Debian)
 osDebian = osDebian' Linux
 
@@ -108,18 +105,16 @@ osDebian = osDebian' Linux
 osDebian' :: DebianKernel -> DebianSuite -> Architecture -> Property (HasInfo + Debian)
 osDebian' kernel suite arch = tightenTargets $ os (System (Debian kernel suite) arch)
 
-{- | Specifies that a host's operating system is a well-known Debian
- derivative founded by a space tourist.
-
- (The actual name of this distribution is not used in Propellor per
- <http://joeyh.name/blog/entry/trademark_nonsense/>)
--}
+-- | Specifies that a host's operating system is a well-known Debian
+-- derivative founded by a space tourist.
+--
+-- (The actual name of this distribution is not used in Propellor per
+-- <http://joeyh.name/blog/entry/trademark_nonsense/>)
 osBuntish :: Release -> Architecture -> Property (HasInfo + Buntish)
 osBuntish release arch = tightenTargets $ os (System (Buntish release) arch)
 
-{- | Specifies that a host's operating system is FreeBSD
- and further indicates the release and architecture.
--}
+-- | Specifies that a host's operating system is FreeBSD
+-- and further indicates the release and architecture.
 osFreeBSD :: FreeBSDRelease -> Architecture -> Property (HasInfo + FreeBSD)
 osFreeBSD release arch = tightenTargets $ os (System (FreeBSD release) arch)
 
@@ -134,16 +129,15 @@ os system = pureInfoProperty ("Operating " ++ show system) (InfoVal system)
 getOS :: Propellor (Maybe System)
 getOS = fromInfoVal <$> askInfo
 
-{- | Indicate that a host has an A record in the DNS.
-
- When propellor is used to deploy a DNS server for a domain,
- the hosts in the domain are found by looking for these
- and similar properites.
-
- When propellor --spin is used to deploy a host, it checks
- if the host's IP Property matches the DNS. If the DNS is missing or
- out of date, the host will instead be contacted directly by IP address.
--}
+-- | Indicate that a host has an A record in the DNS.
+--
+-- When propellor is used to deploy a DNS server for a domain,
+-- the hosts in the domain are found by looking for these
+-- and similar properites.
+--
+-- When propellor --spin is used to deploy a host, it checks
+-- if the host's IP Property matches the DNS. If the DNS is missing or
+-- out of date, the host will instead be contacted directly by IP address.
 ipv4 :: String -> Property (HasInfo + UnixLike)
 ipv4 = addDNS False . Address . IPv4
 
@@ -151,13 +145,12 @@ ipv4 = addDNS False . Address . IPv4
 ipv6 :: String -> Property (HasInfo + UnixLike)
 ipv6 = addDNS False . Address . IPv6
 
-{- | Indicates another name for the host in the DNS.
-
- When the host's ipv4/ipv6 addresses are known, the alias is set up
- to use their address, rather than using a CNAME. This avoids various
- problems with CNAMEs, and also means that when multiple hosts have the
- same alias, a DNS round-robin is automatically set up.
--}
+-- | Indicates another name for the host in the DNS.
+--
+-- When the host's ipv4/ipv6 addresses are known, the alias is set up
+-- to use their address, rather than using a CNAME. This avoids various
+-- problems with CNAMEs, and also means that when multiple hosts have the
+-- same alias, a DNS round-robin is automatically set up.
 alias :: Domain -> Property (HasInfo + UnixLike)
 alias d =
   pureInfoProperty' ("alias " ++ d) $
@@ -177,23 +170,23 @@ addDNS ::
 addDNS prop r
   | prop = pureInfoProperty (rdesc r) (toDnsInfoPropagated s)
   | otherwise = pureInfoProperty (rdesc r) (toDnsInfoUnpropagated s)
- where
-  s = S.singleton r
+  where
+    s = S.singleton r
 
-  rdesc (CNAME d) = unwords ["alias", ddesc d]
-  rdesc (Address (IPv4 addr)) = unwords ["ipv4", addr]
-  rdesc (Address (IPv6 addr)) = unwords ["ipv6", addr]
-  rdesc (MX n d) = unwords ["MX", show n, ddesc d]
-  rdesc (NS d) = unwords ["NS", ddesc d]
-  rdesc (TXT t) = unwords ["TXT", t]
-  rdesc (SRV x y z d) = unwords ["SRV", show x, show y, show z, ddesc d]
-  rdesc (SSHFP x y t) = unwords ["SSHFP", show x, show y, t]
-  rdesc (INCLUDE f) = unwords ["$INCLUDE", f]
-  rdesc (PTR x) = unwords ["PTR", x]
+    rdesc (CNAME d) = unwords ["alias", ddesc d]
+    rdesc (Address (IPv4 addr)) = unwords ["ipv4", addr]
+    rdesc (Address (IPv6 addr)) = unwords ["ipv6", addr]
+    rdesc (MX n d) = unwords ["MX", show n, ddesc d]
+    rdesc (NS d) = unwords ["NS", ddesc d]
+    rdesc (TXT t) = unwords ["TXT", t]
+    rdesc (SRV x y z d) = unwords ["SRV", show x, show y, show z, ddesc d]
+    rdesc (SSHFP x y t) = unwords ["SSHFP", show x, show y, t]
+    rdesc (INCLUDE f) = unwords ["$INCLUDE", f]
+    rdesc (PTR x) = unwords ["PTR", x]
 
-  ddesc (AbsDomain domain) = domain
-  ddesc (RelDomain domain) = domain
-  ddesc RootDomain = "@"
+    ddesc (AbsDomain domain) = domain
+    ddesc (RelDomain domain) = domain
+    ddesc RootDomain = "@"
 
 hostMap :: [Host] -> M.Map HostName Host
 hostMap l = M.fromList $ zip (map hostName l) l
