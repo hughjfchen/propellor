@@ -116,13 +116,14 @@ spin' mprivdata relay target hst = do
       intercalate
         " ; "
         [ "if [ ! -d " ++ localdir ++ "/.git ]",
-          "then " ++ "echo " ++ toMarked statusMarker (show NeedPrecompiled) ++ " || ("
+          "then ("
             ++ intercalate
               " && "
               [ installGitCommand sys,
                 "echo " ++ toMarked statusMarker (show NeedGitClone)
               ]
-            ++ ")",
+            ++ ") || echo "
+            ++ toMarked statusMarker (show NeedPrecompiled),
           "else " ++ updatecmd,
           "fi"
         ]
