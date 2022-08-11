@@ -1,22 +1,21 @@
 -- | Maintainer: Sean Whitton <spwhitton@spwhitton.name>
-
-module Propellor.Property.Libvirt (
-	NumVCPUs(..),
-	MiBMemory(..),
-	AutoStart(..),
-	DiskImageType(..),
-	installed,
-	defaultNetworkAutostarted,
-	defaultNetworkStarted,
-	defined,
-) where
+module Propellor.Property.Libvirt
+  ( NumVCPUs (..),
+    MiBMemory (..),
+    AutoStart (..),
+    DiskImageType (..),
+    installed,
+    defaultNetworkAutostarted,
+    defaultNetworkStarted,
+    defined,
+  )
+where
 
 import Propellor.Base
-import Propellor.Types.Info
+import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.Chroot
 import Propellor.Property.DiskImage
-import qualified Propellor.Property.Apt as Apt
-
+import Propellor.Types.Info
 import Utility.Split
 
 -- | The number of virtual CPUs to assign to the virtual machine
@@ -40,27 +39,30 @@ installed = Apt.installed ["libvirt-clients", "virtinst", "libvirt-daemon", "lib
 --
 -- On Debian, it is not started by default after installation of libvirt.
 defaultNetworkAutostarted :: Property DebianLike
-defaultNetworkAutostarted = autostarted
-	`requires` installed
-	`before` defaultNetworkStarted
+defaultNetworkAutostarted =
+  autostarted
+    `requires` installed
+    `before` defaultNetworkStarted
   where
-	autostarted = check (not <$> doesFileExist autostartFile) $
-		cmdProperty "virsh" ["net-autostart", "default"]
-	autostartFile = "/etc/libvirt/qemu/networks/autostart/default.xml"
+    autostarted =
+      check (not <$> doesFileExist autostartFile) $
+        cmdProperty "virsh" ["net-autostart", "default"]
+    autostartFile = "/etc/libvirt/qemu/networks/autostart/default.xml"
 
 -- | Ensure that the default libvirt network is started.
 defaultNetworkStarted :: Property DebianLike
-defaultNetworkStarted =	go `requires` installed
+defaultNetworkStarted = go `requires` installed
   where
-	go :: Property UnixLike
-	go = property "start libvirt's default network" $ do
-		runningNetworks <- liftIO $ virshGetColumns ["net-list"]
-		if ["default"] `elem` (take 1 <$> runningNetworks)
-			then noChange
-			else makeChange $ unlessM startIt $
-				errorMessage "failed to start default network"
-	startIt = boolSystem "virsh" [Param "net-start", Param "default"]
-
+    go :: Property UnixLike
+    go = property "start libvirt's default network" $ do
+      runningNetworks <- liftIO $ virshGetColumns ["net-list"]
+      if ["default"] `elem` (take 1 <$> runningNetworks)
+        then noChange
+        else
+          makeChange $
+            unlessM startIt $
+              errorMessage "failed to start default network"
+    startIt = boolSystem "virsh" [Param "net-start", Param "default"]
 
 -- | Builds a disk image with the properties of the given Host, installs a
 -- libvirt configuration file to boot the image, and if it is set to autostart,
@@ -96,71 +98,83 @@ defaultNetworkStarted =	go `requires` installed
 -- > 		(Just (Network.Gateway (IPv4 "192.168.122.1")))
 -- > 		`requires` Network.cleanInterfacesFile
 -- > 	& Hostname.sane
-defined
-	:: DiskImageType
-	-> MiBMemory
-	-> NumVCPUs
-	-> AutoStart
-	-> Host
-	-> Property (HasInfo + DebianLike)
+defined ::
+  DiskImageType ->
+  MiBMemory ->
+  NumVCPUs ->
+  AutoStart ->
+  Host ->
+  Property (HasInfo + DebianLike)
 defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
-	(built `before` nuked `before` xmlDefined `before` started)
-	`requires` installed
+  (built `before` nuked `before` xmlDefined `before` started)
+    `requires` installed
   where
-	built :: Property (HasInfo + DebianLike)
-	built = check (not <$> doesFileExist imageLoc) $
-		setupRevertableProperty $ imageBuiltFor h
-			(image) (Debootstrapped mempty)
+    built :: Property (HasInfo + DebianLike)
+    built =
+      check (not <$> doesFileExist imageLoc) $
+        setupRevertableProperty $
+          imageBuiltFor
+            h
+            (image)
+            (Debootstrapped mempty)
 
-	nuked :: Property UnixLike
-	nuked = imageChrootNotPresent image
+    nuked :: Property UnixLike
+    nuked = imageChrootNotPresent image
 
-	xmlDefined :: Property UnixLike
-	xmlDefined = check (not <$> doesFileExist conf) $
-		property "define the libvirt VM" $
-		withTmpFile (hostName h) $ \t fh -> do
-			xml <- liftIO $ readProcess "virt-install" $
-				[ "-n", hostName h
-				, "--memory=" ++ show mem
-				, "--vcpus=" ++ show cpus
-				, "--disk"
-				, "path=" ++ imageLoc
-					++ ",device=disk,bus=virtio"
-				, "--print-xml"
-				] ++ autoStartArg ++ osVariantArg
-			liftIO $ hPutStrLn fh xml
-			liftIO $ hClose fh
-			makeChange $ unlessM (defineIt t) $
-				errorMessage "failed to define VM"
-	  where
-		defineIt t = boolSystem "virsh" [Param "define", Param t]
+    xmlDefined :: Property UnixLike
+    xmlDefined = check (not <$> doesFileExist conf) $
+      property "define the libvirt VM" $
+        withTmpFile (hostName h) $ \t fh -> do
+          xml <-
+            liftIO $
+              readProcess "virt-install" $
+                [ "-n",
+                  hostName h,
+                  "--memory=" ++ show mem,
+                  "--vcpus=" ++ show cpus,
+                  "--disk",
+                  "path=" ++ imageLoc
+                    ++ ",device=disk,bus=virtio",
+                  "--print-xml"
+                ]
+                  ++ autoStartArg
+                  ++ osVariantArg
+          liftIO $ hPutStrLn fh xml
+          liftIO $ hClose fh
+          makeChange $
+            unlessM (defineIt t) $
+              errorMessage "failed to define VM"
+      where
+        defineIt t = boolSystem "virsh" [Param "define", Param t]
 
-	started :: Property UnixLike
-	started = case auto of
-		AutoStart -> property "start the VM" $ do
-			runningVMs <- liftIO $ virshGetColumns ["list"]
-			-- From the point of view of `virsh start`, the "State"
-			-- column in the output of `virsh list` is not relevant.
-			-- So long as the VM is listed, it's considered started.
-			if [hostName h] `elem` (take 1 . drop 1 <$> runningVMs)
-				then noChange
-				else makeChange $ unlessM startIt $
-					errorMessage "failed to start VM"
-		NoAutoStart -> doNothing
-	  where
-		startIt = boolSystem "virsh" [Param "start", Param $ hostName h]
+    started :: Property UnixLike
+    started = case auto of
+      AutoStart -> property "start the VM" $ do
+        runningVMs <- liftIO $ virshGetColumns ["list"]
+        -- From the point of view of `virsh start`, the "State"
+        -- column in the output of `virsh list` is not relevant.
+        -- So long as the VM is listed, it's considered started.
+        if [hostName h] `elem` (take 1 . drop 1 <$> runningVMs)
+          then noChange
+          else
+            makeChange $
+              unlessM startIt $
+                errorMessage "failed to start VM"
+      NoAutoStart -> doNothing
+      where
+        startIt = boolSystem "virsh" [Param "start", Param $ hostName h]
 
-	image = case imageType of
-		Raw -> RawDiskImage imageLoc
-	imageLoc =
-		"/var/lib/libvirt/images" </> hostName h <.> case imageType of
-			Raw -> "img"
-	conf = "/etc/libvirt/qemu" </> hostName h <.> "xml"
+    image = case imageType of
+      Raw -> RawDiskImage imageLoc
+    imageLoc =
+      "/var/lib/libvirt/images" </> hostName h <.> case imageType of
+        Raw -> "img"
+    conf = "/etc/libvirt/qemu" </> hostName h <.> "xml"
 
-	osVariantArg = maybe [] (\v -> ["--os-variant=" ++ v]) $ osVariant h
-	autoStartArg = case auto of
-		AutoStart -> ["--autostart"]
-		NoAutoStart -> []
+    osVariantArg = maybe [] (\v -> ["--os-variant=" ++ v]) $ osVariant h
+    autoStartArg = case auto of
+      AutoStart -> ["--autostart"]
+      NoAutoStart -> []
 
 -- ==== utility functions ====
 
@@ -168,43 +182,43 @@ defined imageType (MiBMemory mem) (NumVCPUs cpus) auto h =
 -- if there isn't a known correct value.  The VM will still be defined.  Pass
 -- the value if we can, though, to optimise the generated XML for the host's OS
 osVariant :: Host -> Maybe String
-osVariant h = hostSystem h >>= \s -> case s of
-	System (Debian _ (Stable "jessie")) _ -> Just "debian8"
-	System (Debian _ (Stable "stretch")) _ -> Just "debian9"
-	System (Debian _ Testing) _ -> Just "debiantesting"
-	System (Debian _ Unstable) _ -> Just "debiantesting"
-
-	System (Buntish "trusty") _ -> Just "ubuntu14.04"
-	System (Buntish "utopic") _ -> Just "ubuntu14.10"
-	System (Buntish "vivid") _ -> Just "ubuntu15.04"
-	System (Buntish "wily") _ -> Just "ubuntu15.10"
-	System (Buntish "xenial") _ -> Just "ubuntu16.04"
-	System (Buntish "yakkety") _ -> Just "ubuntu16.10"
-	System (Buntish "zesty") _ -> Just "ubuntu17.04"
-	System (Buntish "artful") _ -> Just "ubuntu17.10"
-	System (Buntish "bionic") _ -> Just "ubuntu18.04"
-
-	System (FreeBSD (FBSDProduction FBSD101)) _ -> Just "freebsd10.1"
-	System (FreeBSD (FBSDProduction FBSD102)) _ -> Just "freebsd10.2"
-	System (FreeBSD (FBSDProduction FBSD093)) _ -> Just "freebsd9.3"
-	System (FreeBSD (FBSDLegacy FBSD101)) _ -> Just "freebsd10.1"
-	System (FreeBSD (FBSDLegacy FBSD102)) _ -> Just "freebsd10.2"
-	System (FreeBSD (FBSDLegacy FBSD093)) _ -> Just "freebsd9.3"
-
-	-- libvirt doesn't have an archlinux variant yet, it seems
-	System ArchLinux _ -> Nothing
-
-	-- other stable releases that we don't know about (since there are
-	-- infinitely many possible stable release names, as it is a freeform
-	-- string, we need this to avoid a compiler warning)
-	System (Debian _ _) _ -> Nothing
-	System (Buntish _) _ -> Nothing
+osVariant h =
+  hostSystem h >>= \s -> case s of
+    System (Debian _ (Stable "jessie")) _ -> Just "debian8"
+    System (Debian _ (Stable "stretch")) _ -> Just "debian9"
+    System (Debian _ Testing) _ -> Just "debiantesting"
+    System (Debian _ Unstable) _ -> Just "debiantesting"
+    System (Buntish "trusty") _ -> Just "ubuntu14.04"
+    System (Buntish "utopic") _ -> Just "ubuntu14.10"
+    System (Buntish "vivid") _ -> Just "ubuntu15.04"
+    System (Buntish "wily") _ -> Just "ubuntu15.10"
+    System (Buntish "xenial") _ -> Just "ubuntu16.04"
+    System (Buntish "yakkety") _ -> Just "ubuntu16.10"
+    System (Buntish "zesty") _ -> Just "ubuntu17.04"
+    System (Buntish "artful") _ -> Just "ubuntu17.10"
+    System (Buntish "bionic") _ -> Just "ubuntu18.04"
+    System (FreeBSD (FBSDProduction FBSD101)) _ -> Just "freebsd10.1"
+    System (FreeBSD (FBSDProduction FBSD102)) _ -> Just "freebsd10.2"
+    System (FreeBSD (FBSDProduction FBSD093)) _ -> Just "freebsd9.3"
+    System (FreeBSD (FBSDLegacy FBSD101)) _ -> Just "freebsd10.1"
+    System (FreeBSD (FBSDLegacy FBSD102)) _ -> Just "freebsd10.2"
+    System (FreeBSD (FBSDLegacy FBSD093)) _ -> Just "freebsd9.3"
+    -- libvirt doesn't have an archlinux variant yet, it seems
+    System ArchLinux _ -> Nothing
+    -- not sure libvirt have a centos variant yet, leave it for now
+    System (CentOS _) _ -> Nothing
+    -- other stable releases that we don't know about (since there are
+    -- infinitely many possible stable release names, as it is a freeform
+    -- string, we need this to avoid a compiler warning)
+    System (Debian _ _) _ -> Nothing
+    System (Buntish _) _ -> Nothing
 
 -- Run a virsh command with the given list of arguments, that is expected to
 -- yield tabular output, and return the rows
 virshGetColumns :: [String] -> IO [[String]]
-virshGetColumns args = map (filter (not . null) . split " ") . drop 2 . lines
- 	<$> readProcess "virsh" args
+virshGetColumns args =
+  map (filter (not . null) . split " ") . drop 2 . lines
+    <$> readProcess "virsh" args
 
 hostSystem :: Host -> Maybe System
 hostSystem = fromInfoVal . fromInfo . hostInfo

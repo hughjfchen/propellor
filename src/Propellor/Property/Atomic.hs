@@ -1,37 +1,38 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Propellor.Property.Atomic (
-	atomicDirUpdate,
-	atomicDirSync,
-	atomicUpdate,
-	AtomicResourcePair(..),
-	flipAtomicResourcePair,
-	SwapAtomicResourcePair,
-	CheckAtomicResourcePair,
-) where
+module Propellor.Property.Atomic
+  ( atomicDirUpdate,
+    atomicDirSync,
+    atomicUpdate,
+    AtomicResourcePair (..),
+    flipAtomicResourcePair,
+    SwapAtomicResourcePair,
+    CheckAtomicResourcePair,
+  )
+where
 
 import Propellor.Base
-import Propellor.Types.Core
-import Propellor.Types.MetaTypes
 import Propellor.EnsureProperty
 import Propellor.Property.File
 import Propellor.Property.Rsync (syncDir)
-
+import Propellor.Types.Core
+import Propellor.Types.MetaTypes
 import System.Posix.Files
 
 -- | A pair of resources, one active and one inactive, which can swap
 -- positions atomically.
 data AtomicResourcePair a = AtomicResourcePair
-	{ activeAtomicResource :: a
-	, inactiveAtomicResource :: a
-	}
+  { activeAtomicResource :: a,
+    inactiveAtomicResource :: a
+  }
 
 flipAtomicResourcePair :: AtomicResourcePair a -> AtomicResourcePair a
-flipAtomicResourcePair a = AtomicResourcePair
-	{ activeAtomicResource = inactiveAtomicResource a
-	, inactiveAtomicResource = activeAtomicResource a
-	}
+flipAtomicResourcePair a =
+  AtomicResourcePair
+    { activeAtomicResource = inactiveAtomicResource a,
+      inactiveAtomicResource = activeAtomicResource a
+    }
 
 -- | Action that activates the inactiveAtomicResource, and deactivates
 -- the activeAtomicResource. This action must be fully atomic.
@@ -42,31 +43,31 @@ type SwapAtomicResourcePair a = AtomicResourcePair a -> Propellor Bool
 -- the AtomicResourcePair.
 type CheckAtomicResourcePair a = AtomicResourcePair a -> Propellor (AtomicResourcePair a)
 
--- | Makes a non-atomic Property be atomic, by applying it to the 
+-- | Makes a non-atomic Property be atomic, by applying it to the
 -- inactiveAtomicResource, and if it was successful,
 -- atomically activating that resource.
-atomicUpdate
-	-- Constriaint inherited from ensureProperty.
-	:: EnsurePropertyAllowed t t
-	=> SingI t
-	=> AtomicResourcePair a
-	-> CheckAtomicResourcePair a
-	-> SwapAtomicResourcePair a
-	-> (a -> Property (MetaTypes t))
-	-> Property (MetaTypes t)
+atomicUpdate ::
+  -- Constriaint inherited from ensureProperty.
+  EnsurePropertyAllowed t t =>
+  SingI t =>
+  AtomicResourcePair a ->
+  CheckAtomicResourcePair a ->
+  SwapAtomicResourcePair a ->
+  (a -> Property (MetaTypes t)) ->
+  Property (MetaTypes t)
 atomicUpdate rbase rcheck rswap mkp = property' d $ \w -> do
-	r <- rcheck rbase
-	res <- ensureProperty w $ mkp $ inactiveAtomicResource r
-	case res of
-		FailedChange -> return FailedChange
-		NoChange -> return NoChange
-		MadeChange -> do
-			ok <- rswap r
-			if ok
-				then return res
-				else return FailedChange
+  r <- rcheck rbase
+  res <- ensureProperty w $ mkp $ inactiveAtomicResource r
+  case res of
+    FailedChange -> return FailedChange
+    NoChange -> return NoChange
+    MadeChange -> do
+      ok <- rswap r
+      if ok
+        then return res
+        else return FailedChange
   where
-	d = getDesc $ mkp $ activeAtomicResource rbase
+    d = getDesc $ mkp $ activeAtomicResource rbase
 
 -- | Applies a Property to a directory such that the directory is updated
 -- fully atomically; there is no point in time in which the directory will
@@ -89,43 +90,47 @@ atomicUpdate rbase rcheck rswap mkp = property' d $ \w -> do
 -- of the directory. The parent directory will actually contain three
 -- children: a symlink with the name of the directory itself, and two copies
 -- of the directory, with names suffixed with ".1" and ".2"
-atomicDirUpdate
-	-- Constriaint inherited from ensureProperty.
-	:: EnsurePropertyAllowed t t
-	=> SingI t
-	=> FilePath
-	-> (FilePath -> Property (MetaTypes t))
-	-> Property (MetaTypes t)
+atomicDirUpdate ::
+  -- Constriaint inherited from ensureProperty.
+  EnsurePropertyAllowed t t =>
+  SingI t =>
+  FilePath ->
+  (FilePath -> Property (MetaTypes t)) ->
+  Property (MetaTypes t)
 atomicDirUpdate d = atomicUpdate (mkDirLink d) (checkDirLink d) (swapDirLink d)
 
 mkDirLink :: FilePath -> AtomicResourcePair FilePath
-mkDirLink d = AtomicResourcePair
-	{ activeAtomicResource = addext ".1"
-	, inactiveAtomicResource = addext ".2"
-	}
+mkDirLink d =
+  AtomicResourcePair
+    { activeAtomicResource = addext ".1",
+      inactiveAtomicResource = addext ".2"
+    }
   where
-	addext = addExtension (dropTrailingPathSeparator d)
+    addext = addExtension (dropTrailingPathSeparator d)
 
 inactiveLinkTarget :: AtomicResourcePair FilePath -> FilePath
 inactiveLinkTarget = takeFileName . inactiveAtomicResource
 
 swapDirLink :: FilePath -> SwapAtomicResourcePair FilePath
 swapDirLink d rp = liftIO $ do
-	v <- tryIO $ createSymbolicLink (inactiveLinkTarget rp)
-		`viaStableTmp` d
-	case v of
-		Right () -> return True
-		Left e -> do
-			warningMessage $ "Unable to update symlink at " ++ d ++ " (" ++ show e ++ ")"
-			return False
+  v <-
+    tryIO $
+      createSymbolicLink (inactiveLinkTarget rp)
+        `viaStableTmp` d
+  case v of
+    Right () -> return True
+    Left e -> do
+      warningMessage $ "Unable to update symlink at " ++ d ++ " (" ++ show e ++ ")"
+      return False
 
 checkDirLink :: FilePath -> CheckAtomicResourcePair FilePath
 checkDirLink d rp = liftIO $ do
-	v <- tryIO $ readSymbolicLink d
-	return $ case v of
-		Right t | t == inactiveLinkTarget rp ->
-			flipAtomicResourcePair rp
-		_ -> rp
+  v <- tryIO $ readSymbolicLink d
+  return $ case v of
+    Right t
+      | t == inactiveLinkTarget rp ->
+        flipAtomicResourcePair rp
+    _ -> rp
 
 -- | This can optionally be used after atomicDirUpdate to rsync the changes
 -- that were made over to the other copy of the directory. It's not
@@ -151,7 +156,7 @@ checkDirLink d rp = liftIO $ do
 -- >	& atomicDirUpdate "/srv/web/example.com"
 -- >		(\d -> Git.pulled "joey" "http://.." d Nothing)
 -- >		`onChange` (webServerRestart `before` atomicDirSync "/srv/web/example.com")
-atomicDirSync :: FilePath -> Property (DebianLike + ArchLinux)
+atomicDirSync :: FilePath -> Property Linux
 atomicDirSync d = syncDir (activeAtomicResource rp) (inactiveAtomicResource rp)
   where
-	rp = mkDirLink d
+    rp = mkDirLink d

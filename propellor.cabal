@@ -119,6 +119,7 @@ Library
     Propellor.Property.Openssl
     Propellor.Property.OS
     Propellor.Property.Pacman
+    Propellor.Property.Yum
     Propellor.Property.Parted
     Propellor.Property.Parted.Types
     Propellor.Property.Partition

@@ -3,12 +3,14 @@ module Propellor.Property.Rsync where
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 import qualified Propellor.Property.Pacman as Pacman
+import qualified Propellor.Property.Yum as Yum
 
 type Src = FilePath
+
 type Dest = FilePath
 
 class RsyncParam p where
-	toRsync :: p -> String
+  toRsync :: p -> String
 
 -- | A pattern that matches all files under a directory, but does not
 -- match the directory itself.
@@ -17,18 +19,18 @@ filesUnder d = Pattern (d ++ "/*")
 
 -- | Ensures that the Dest directory exists and has identical contents as
 -- the Src directory.
-syncDir :: Src -> Dest -> Property (DebianLike + ArchLinux)
+syncDir :: Src -> Dest -> Property Linux
 syncDir = syncDirFiltered []
 
-data Filter 
-	= Include Pattern
-	| Exclude Pattern
-	| Protect Pattern
+data Filter
+  = Include Pattern
+  | Exclude Pattern
+  | Protect Pattern
 
 instance RsyncParam Filter where
-	toRsync (Include (Pattern p)) = "--include=" ++ p
-	toRsync (Exclude (Pattern p)) = "--exclude=" ++ p
-	toRsync (Protect (Pattern p)) = "--filter=P " ++ p
+  toRsync (Include (Pattern p)) = "--include=" ++ p
+  toRsync (Exclude (Pattern p)) = "--exclude=" ++ p
+  toRsync (Protect (Pattern p)) = "--filter=P " ++ p
 
 -- | A pattern to match against files that rsync is going to transfer.
 --
@@ -44,23 +46,29 @@ newtype Pattern = Pattern String
 -- Rsync checks each name to be transferred against its list of Filter
 -- rules, and the first matching one is acted on. If no matching rule
 -- is found, the file is processed.
-syncDirFiltered :: [Filter] -> Src -> Dest -> Property (DebianLike + ArchLinux)
-syncDirFiltered filters src dest = rsync $
-	[ "-a"
-	-- Add trailing '/' to get rsync to sync the Dest directory,
-	-- rather than a subdir inside it, which it will do without a
-	-- trailing '/'.
-	, addTrailingPathSeparator src
-	, addTrailingPathSeparator dest
-	, "--delete"
-	, "--delete-excluded"
-	, "--info=progress2"
-	] ++ map toRsync filters
+syncDirFiltered :: [Filter] -> Src -> Dest -> Property Linux
+syncDirFiltered filters src dest =
+  rsync $
+    [ "-a",
+      -- Add trailing '/' to get rsync to sync the Dest directory,
+      -- rather than a subdir inside it, which it will do without a
+      -- trailing '/'.
+      addTrailingPathSeparator src,
+      addTrailingPathSeparator dest,
+      "--delete",
+      "--delete-excluded",
+      "--info=progress2"
+    ]
+      ++ map toRsync filters
 
-rsync :: [String] -> Property (DebianLike + ArchLinux)
-rsync ps = cmdProperty "rsync" ps
-	`assume` MadeChange
-	`requires` installed
+rsync :: [String] -> Property Linux
+rsync ps =
+  cmdProperty "rsync" ps
+    `assume` MadeChange
+    `requires` installed
 
-installed :: Property (DebianLike + ArchLinux)
-installed = Apt.installed ["rsync"] `pickOS` Pacman.installed ["rsync"]
+installed :: Property (DebianLike + NonDebianLike)
+installed = Apt.installed ["rsync"] `pickOS` installedNonDebian
+
+installedNonDebian :: Property (ArchLinux + CentOSLike)
+installedNonDebian = Pacman.installed ["rsync"] `pickOS` Yum.installed ["rsync"]
