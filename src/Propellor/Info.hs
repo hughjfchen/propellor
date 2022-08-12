@@ -8,6 +8,7 @@ module Propellor.Info
     osBuntish,
     osArchLinux,
     osFreeBSD,
+    osCentOS,
     setInfoProperty,
     addInfoProperty,
     pureInfoProperty,
@@ -117,6 +118,11 @@ osBuntish release arch = tightenTargets $ os (System (Buntish release) arch)
 -- and further indicates the release and architecture.
 osFreeBSD :: FreeBSDRelease -> Architecture -> Property (HasInfo + FreeBSD)
 osFreeBSD release arch = tightenTargets $ os (System (FreeBSD release) arch)
+
+-- | Specifies that a host's operating system is CentOS
+-- and further indicates the variant and architecture.
+osCentOS :: CentOSVariant -> Architecture -> Property (HasInfo + CentOS)
+osCentOS variant arch = tightenTargets $ os (System (CentOS variant) arch)
 
 -- | Specifies that a host's operating system is Arch Linux
 osArchLinux :: Architecture -> Property (HasInfo + ArchLinux)

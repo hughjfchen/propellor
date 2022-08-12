@@ -3,9 +3,6 @@
 
 import Propellor
 import Propellor.Engine
-import qualified Propellor.Property.Apt as Apt
-import qualified Propellor.Property.Cron as Cron
-import qualified Propellor.Property.File as File
 import qualified Propellor.Property.User as User
 
 main :: IO ()
@@ -16,5 +13,5 @@ localBox :: Host
 localBox =
   host "local" $
     props
-      & osBuntish "20.04" X86_64
-      & User.hasSomePassword (User "chenjf")
+      & osCentOS (CentOSLinux CentOS7) X86_64
+      & User.hasSomePassword (User "ubuntu")
