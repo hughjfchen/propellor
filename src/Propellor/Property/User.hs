@@ -47,7 +47,7 @@ systemAccountFor :: User -> Property (DebianLike + CentOSLike)
 systemAccountFor user = systemAccountForDebianLike user `pickOS` systemAccountForCentOSLike user
 
 systemAccountFor' :: User -> Maybe FilePath -> Maybe Group -> [String] -> Property (DebianLike + CentOSLike)
-systemAccountFor' (User u) mhome mgroup cmdParams =
+systemAccountFor' (User u) _ mgroup cmdParams =
   case mgroup of
     Nothing -> prop
     Just g ->

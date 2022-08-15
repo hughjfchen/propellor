@@ -6,12 +6,16 @@ import Propellor.Engine
 import qualified Propellor.Property.User as User
 
 main :: IO ()
-main = mainProperties localBox
+-- main = mainProperties localBox
+main =
+  defaultMain
+    [ lxcCentOS7
+    ]
 
 -- An local host which should satisfy some properties.
-localBox :: Host
-localBox =
-  host "local" $
+lxcCentOS7 :: Host
+lxcCentOS7 =
+  host "lxc-centos7" $
     props
       & osCentOS (CentOSLinux CentOS7) X86_64
-      & User.hasSomePassword (User "ubuntu")
+      & User.accountFor (User "chenjf")
