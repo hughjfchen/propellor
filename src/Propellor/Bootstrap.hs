@@ -139,7 +139,8 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
     go OSOnly = osinstall Cabal
 
     osinstall builder = case msys of
-      Just (System (CentOS (CentOSLinux CentOS7)) _) -> yumInstallEPELRepo >> yumInstallCoprStackRepo >> map yuminstall (centosdeps builder)
+      -- Just (System (CentOS (CentOSLinux CentOS7)) _) -> yumInstallEPELRepo >> yumInstallCoprStackRepo >> map yuminstall (centosdeps builder)
+      Just (System (CentOS (CentOSLinux CentOS7)) _) -> map yuminstall (centosdeps builder)
       Just (System (CentOS _) _) -> error "Right now, only CentOS Linux v7.x is supported."
       Just (System (FreeBSD _) _) -> map pkginstall (fbsddeps builder)
       Just (System (ArchLinux) _) -> map pacmaninstall (archlinuxdeps builder)
