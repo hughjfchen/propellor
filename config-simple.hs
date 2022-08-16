@@ -2,7 +2,7 @@
 -- the propellor program.
 
 import Propellor
-import Propellor.Engine
+import qualified Propellor.Property.Bootstrap as Bootstrap
 import qualified Propellor.Property.User as User
 
 main :: IO ()
@@ -18,4 +18,5 @@ lxcCentOS7 =
   host "lxc-centos7" $
     props
       & osCentOS (CentOSLinux CentOS7) X86_64
+      & Bootstrap.bootstrapWith (Bootstrap.Robustly Bootstrap.Stack)
       & User.accountFor (User "chenjf")
