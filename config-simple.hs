@@ -3,6 +3,7 @@
 
 import Propellor
 import qualified Propellor.Property.Bootstrap as Bootstrap
+import qualified Propellor.Property.Cmd as Cmd
 import qualified Propellor.Property.User as User
 
 main :: IO ()
@@ -19,6 +20,4 @@ lxcCentOS7 =
     props
       & osCentOS (CentOSLinux CentOS7) X86_64
       & Bootstrap.bootstrapWith (Bootstrap.Robustly Bootstrap.Stack)
-      & User.accountFor (User "chenjf")
-      & User.systemAccountFor (User "systemAcc1")
-      & User.systemGroup (Group "systemGrp1")
+      & Cmd.cmdProperty "echo" ["say something"] `assume` NoChange
