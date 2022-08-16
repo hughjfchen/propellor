@@ -9,16 +9,24 @@ runYum :: [String] -> UncheckedProperty CentOS
 runYum ps = tightenTargets $ cmdProperty "yum" ps
 
 -- | Have yum update its repo info, but without upgrading anything.
-update :: Property CentOS
-update =
+updateInfo :: Property CentOS
+updateInfo =
   combineProperties "yum updateinfo" $
     props
       & runYum ["updateinfo"]
         `assume` MadeChange
 
+-- | Have yum update to the same main version only.
+update :: Property CentOS
+update =
+  combineProperties "yum update" $
+    props
+      & runYum ["-y", "update"]
+        `assume` MadeChange
+
 upgrade :: Property CentOS
 upgrade =
-  combineProperties ("yum upgrade") $
+  combineProperties "yum upgrade" $
     props
       & runYum ["-y", "upgrade"]
         `assume` MadeChange
@@ -76,4 +84,4 @@ succeeds cmd args =
   where
     quietProcess :: IO ()
     quietProcess = withQuietOutput createProcessSuccess p
-    p = (proc cmd args)
+    p = proc cmd args
