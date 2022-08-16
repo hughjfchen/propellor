@@ -139,7 +139,9 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
     go OSOnly = osinstall Cabal
 
     osinstall builder = case msys of
-      Just (System (CentOS (CentOSLinux CentOS7)) _) -> yumInstallEPELRepo : yumInstallCoprStackRepo : "yum -y update" : map yuminstall (centosdeps builder)
+      Just (System (CentOS (CentOSLinux CentOS7)) _) -> case builder of
+        Stack -> yumInstallEPELRepo : yumInstallCoprStackRepo : "yum -y update" : "mv stack.yaml.orig stack.yaml" : map yuminstall (centosdeps builder)
+        Cabal -> error "cannot bootstrap CentOS7 with OS provided cabal, use stack instead."
       Just (System (CentOS _) _) -> error "Right now, only CentOS Linux v7.x is supported."
       Just (System (FreeBSD _) _) -> map pkginstall (fbsddeps builder)
       Just (System (ArchLinux) _) -> map pacmaninstall (archlinuxdeps builder)
@@ -206,6 +208,7 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
       ]
     centosdeps Stack =
       [ "gnupg",
+        "make",
         "stack"
       ]
 
