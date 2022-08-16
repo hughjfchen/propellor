@@ -5,3 +5,4 @@ packages:
 extra-deps:
   - type-errors-0.1.0.0
   - first-class-families-0.5.0.0
+  - IfElse-0.85@sha256:6939b94acc6a55f545f63a168a349dd2fbe4b9a7cca73bf60282db5cc6aa47d2
