@@ -93,7 +93,7 @@ systemGroup' :: Group -> String -> Property (DebianLike + CentOSLike)
 systemGroup' (Group g) cmd =
   tightenTargets $
     check nogroup go
-      `describe` ("system account for " ++ g)
+      `describe` ("system group for " ++ g)
   where
     nogroup = isNothing <$> catchMaybeIO (getGroupEntryForName g)
     go =
