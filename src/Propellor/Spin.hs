@@ -88,12 +88,6 @@ spin' mprivdata relay target hst = do
       Just r -> pure r
       Nothing -> getSshTarget target hst
 
-  debug $ "cacheparams: " : cacheparams
-  debug $ "sshtarget: " : [sshtarget]
-
-  debug $ "probecmd: " : [shellWrap probecmd]
-  -- debug $ "updatecmd: " : [shellWrap updatecmd]
-
   -- Install, or update the remote propellor.
   updateServer
     target
