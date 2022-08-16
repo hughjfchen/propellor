@@ -21,5 +21,4 @@ lxcCentOS7 =
     props
       & osCentOS (CentOSLinux CentOS7) X86_64
       & Bootstrap.bootstrapWith (Bootstrap.Robustly Bootstrap.Stack)
-      & Cmd.cmdProperty "echo" ["say something"] `assume` NoChange
-      & File.containsLine "/etc/ssh/sshd_config" "PubkeyAuthentication yes"
+      & Cmd.cmdProperty "userdel" ["-r", "chenjf1"] `assume` MadeChange
