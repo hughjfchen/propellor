@@ -5,6 +5,7 @@ import Propellor
 import qualified Propellor.Property.Bootstrap as Bootstrap
 import qualified Propellor.Property.Cmd as Cmd
 import qualified Propellor.Property.File as File
+import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.User as User
 
 main :: IO ()
@@ -23,3 +24,4 @@ lxcCentOS7 =
       & Bootstrap.bootstrapWith (Bootstrap.Robustly Bootstrap.Stack)
       & Cmd.cmdProperty "userdel" ["-r", "systemAcc1"] `assume` MadeChange
       & File.hasContent "/root/test-file" ["Should be there"]
+      & Systemd.daemonReloaded
