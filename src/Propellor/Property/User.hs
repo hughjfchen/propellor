@@ -39,7 +39,6 @@ accountForCentOSLike user@(User u) =
       user
       [ "--create-home",
         "--user-group",
-        "",
         u
       ]
 
