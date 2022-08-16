@@ -20,3 +20,5 @@ lxcCentOS7 =
       & osCentOS (CentOSLinux CentOS7) X86_64
       & Bootstrap.bootstrapWith (Bootstrap.Robustly Bootstrap.Stack)
       & User.accountFor (User "chenjf")
+      & User.systemAccountFor (User "systemAcc1")
+      & User.systemGroup (Group "systemGrp1")
