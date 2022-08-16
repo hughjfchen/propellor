@@ -4,6 +4,7 @@
 import Propellor
 import qualified Propellor.Property.Bootstrap as Bootstrap
 import qualified Propellor.Property.Cmd as Cmd
+import qualified Propellor.Property.File as File
 import qualified Propellor.Property.User as User
 
 main :: IO ()
@@ -21,3 +22,4 @@ lxcCentOS7 =
       & osCentOS (CentOSLinux CentOS7) X86_64
       & Bootstrap.bootstrapWith (Bootstrap.Robustly Bootstrap.Stack)
       & Cmd.cmdProperty "echo" ["say something"] `assume` NoChange
+      & File.containsLine "/etc/ssh/sshd_config" "PubkeyAuthentication yes"
