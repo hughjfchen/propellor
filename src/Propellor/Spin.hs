@@ -139,12 +139,7 @@ spin' mprivdata relay target hst = do
       intercalate
         " && "
         [ "cd " ++ localdir,
-          if viarelay
-            then
-              "./propellor --continue "
-                ++ shellEscape (show (Relay target))
-            else -- Still using --boot for back-compat...
-              "./propellor --boot " ++ target
+          "./propellor --continue " ++ target
         ]
     updatecmd' _ =
       intercalate
