@@ -169,9 +169,9 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
 
     nixInstall =
       "sh <(curl -L https://nixos.org/nix/install) --daemon" :
-      [ "echo 'trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=' >> ~/.config/nix/nix.conf",
-        "echo 'substituters = https://cache.nixos.org/ https://hydra.iohk.io' >> ~/.config/nix/nix.conf",
-        "echo 'experimental-features = nix-command' >> ~/.config/nix/nix.conf"
+      [ "echo \"trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=\" >> ~/.config/nix/nix.conf",
+        "echo \"substituters = https://cache.nixos.org/ https://hydra.iohk.io\" >> ~/.config/nix/nix.conf",
+        "echo \"experimental-features = nix-command\" >> ~/.config/nix/nix.conf"
       ]
     aptinstall (Dep p) = "DEBIAN_FRONTEND=noninteractive apt-get -qq --no-upgrade --no-install-recommends -y install " ++ p
     aptinstall (OptDep p) = "if LANG=C apt-cache policy " ++ p ++ "| grep -q Candidate:; then " ++ aptinstall (Dep p) ++ "; fi"
