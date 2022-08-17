@@ -137,8 +137,15 @@ spin' mprivdata relay target hst = do
 
     updatecmd' PrevBuiltBinary =
       intercalate
-        " ; "
-        ["true"]
+        " && "
+        [ "cd " ++ localdir,
+          if viarelay
+            then
+              "./propellor --continue "
+                ++ shellEscape (show (Relay target))
+            else -- Still using --boot for back-compat...
+              "./propellor --boot " ++ target
+        ]
     updatecmd' _ =
       intercalate
         " && "
