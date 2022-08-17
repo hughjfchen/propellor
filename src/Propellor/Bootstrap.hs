@@ -35,7 +35,8 @@ type ShellCommand = String
 data Bootstrapper = Robustly Builder | OSOnly
   deriving (Show, Typeable)
 
-data Builder = Cabal | Stack
+-- | add the nix builder
+data Builder = Cabal | Stack | Nix
   deriving (Show, Typeable)
 
 defaultBootstrapper :: Bootstrapper
@@ -80,6 +81,12 @@ checkBinaryCommand bs = "if test -x ./propellor && ! ./propellor --check; then "
         [ "stack clean",
           buildCommand bs
         ]
+    go Nix =
+      intercalate
+        " && "
+        [ "rm -fr ./result",
+          buildCommand bs
+        ]
 
 buildCommand :: Bootstrapper -> ShellCommand
 buildCommand bs = intercalate " && " (go (getBuilder bs))
@@ -92,6 +99,10 @@ buildCommand bs = intercalate " && " (go (getBuilder bs))
     go Stack =
       [ "stack build :propellor-config",
         "ln -sf $(stack path --dist-dir)/build/propellor-config/propellor-config propellor"
+      ]
+    go Nix =
+      [ "nix-build ./cross-build.nix",
+        "ln -sf ./result/bin/propellor-config ./propellor"
       ]
 
 commandCabalBuildTo :: ShellCommand -> FilePath -> ShellCommand
@@ -110,6 +121,7 @@ checkDepsCommand bs sys = go (getBuilder bs)
   where
     go Cabal = "if ! cabal configure >/dev/null 2>&1; then " ++ depsCommand bs sys ++ "; fi"
     go Stack = "if ! stack build --dry-run >/dev/null 2>&1; then " ++ depsCommand bs sys ++ "; fi"
+    go Nix = "if ! nix-build --no-out-link --dry-run > /dev/null 2>&1; then " ++ depsCommand bs sys ++ "; fi"
 
 data Dep = Dep String | OptDep String | OldDep String
 
@@ -136,15 +148,18 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
         ++ [ "stack setup",
              "stack build --only-dependencies :propellor-config"
            ]
+    go (Robustly Nix) = nixInstall
     go OSOnly = osinstall Cabal
 
+    osinstall Nix = nixInstall
     osinstall builder = case msys of
       Just (System (CentOS (CentOSLinux CentOS7)) _) -> case builder of
         Stack -> yumInstallEPELRepo : yumInstallCoprStackRepo : "yum -y update" : "[[ -f stack.yaml.orig ]] && [[ ! -f stack.yaml ]] && ln -sf stack.yaml.orig stack.yaml" : map yuminstall (centosdeps builder)
-        Cabal -> error "cannot bootstrap CentOS7 with OS provided cabal, use stack instead."
+        Cabal -> error "cannot bootstrap CentOS7 with OS provided cabal, use stack or Nix instead."
+        Nix -> nixInstall
       Just (System (CentOS _) _) -> error "Right now, only CentOS Linux v7.x is supported."
       Just (System (FreeBSD _) _) -> map pkginstall (fbsddeps builder)
-      Just (System (ArchLinux) _) -> map pacmaninstall (archlinuxdeps builder)
+      Just (System ArchLinux _) -> map pacmaninstall (archlinuxdeps builder)
       Just (System (Debian _ _) _) -> useapt builder
       Just (System (Buntish _) _) -> useapt builder
       -- assume a Debian derived system when not specified
@@ -152,6 +167,12 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
 
     useapt builder = "apt-get update" : map aptinstall (debdeps builder)
 
+    nixInstall =
+      "sh <(curl -L https://nixos.org/nix/install) --daemon" :
+      [ "echo 'trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=' >> ~/.config/nix/nix.conf",
+        "echo 'substituters = https://cache.nixos.org/ https://hydra.iohk.io' >> ~/.config/nix/nix.conf",
+        "echo 'experimental-features = nix-command' >> ~/.config/nix/nix.conf"
+      ]
     aptinstall (Dep p) = "DEBIAN_FRONTEND=noninteractive apt-get -qq --no-upgrade --no-install-recommends -y install " ++ p
     aptinstall (OptDep p) = "if LANG=C apt-cache policy " ++ p ++ "| grep -q Candidate:; then " ++ aptinstall (Dep p) ++ "; fi"
     aptinstall (OldDep p) = aptinstall (OptDep p)
@@ -187,6 +208,10 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
       [ Dep "gnupg",
         Dep "haskell-stack"
       ]
+    debdeps Nix =
+      [ Dep "gnupg",
+        Dep "nix"
+      ]
 
     centosdeps Cabal =
       [ "gnupg",
@@ -211,6 +236,10 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
         "make",
         "stack"
       ]
+    centosdeps Nix =
+      [ "gnupg",
+        "nix"
+      ]
 
     fbsddeps Cabal =
       [ "gnupg",
@@ -233,6 +262,10 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
     fbsddeps Stack =
       [ "gnupg",
         "stack"
+      ]
+    fbsddeps Nix =
+      [ "gnupg",
+        "nix"
       ]
 
     archlinuxdeps Cabal =
@@ -259,6 +292,10 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
       [ "gnupg",
         "stack"
       ]
+    archlinuxdeps Nix =
+      [ "gnupg",
+        "nix"
+      ]
 
 installGitCommand :: Maybe System -> ShellCommand
 installGitCommand msys = case msys of
@@ -275,7 +312,7 @@ installGitCommand msys = case msys of
         "yum -y install git"
       ]
   (Just (System (CentOS _) _)) -> error "Right now, only CentOS Linux v7.x is supported."
-  (Just (System (ArchLinux) _)) ->
+  (Just (System ArchLinux _)) ->
     use
       ["pacman -S --noconfirm --needed git"]
   -- assume a debian derived system when not specified
@@ -306,10 +343,12 @@ buildPropellor mh =
           bs <- getGitConfigValue "propellor.buildsystem"
           case bs of
             Just "stack" -> stackBuild msys
+            Just "nix" -> nixBuild msys
             _ -> cabalBuild msys
         InfoVal bs -> case getBuilder bs of
           Cabal -> cabalBuild msys
           Stack -> stackBuild msys
+          Nix -> nixBuild msys
 
 -- For speed, only runs cabal configure when it's not been run before.
 -- If the build fails cabal may need to have configure re-run.
@@ -367,6 +406,21 @@ stackBuild _msys = do
         "--copy-bins"
       ]
 
+nixBuild :: Maybe System -> IO Bool
+nixBuild _msys = do
+  ifM
+    (nix buildparams)
+    ( do
+        symlinkPropellorBin (builddest </> "bin" </> "propellor-config")
+        return True,
+      return False
+    )
+  where
+    builddest = "./result"
+    buildparams =
+      [ "./cross-build.nix"
+      ]
+
 -- Atomic symlink creation/update.
 symlinkPropellorBin :: FilePath -> IO ()
 symlinkPropellorBin bin = do
@@ -393,3 +447,6 @@ cabal = boolSystem "cabal" . map Param
 
 stack :: [String] -> IO Bool
 stack = boolSystem "stack" . map Param
+
+nix :: [String] -> IO Bool
+nix = boolSystem "nix-build" . map Param
