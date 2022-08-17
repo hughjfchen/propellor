@@ -353,8 +353,8 @@ sendPrecompiled hn = void $
       createDirectoryIfMissing True (tmpdir </> shimdir)
       changeWorkingDirectory (tmpdir </> shimdir)
       me <- readSymbolicLink "/proc/self/exe"
-      createDirectoryIfMissing True "bin"
-      unlessM (boolSystem "cp" [File me, File "bin/propellor"]) $
+      -- createDirectoryIfMissing True "bin"
+      unlessM (boolSystem "cp" [File me, File "propellor"]) $
         errorMessage "failed copying in propellor"
       -- let bin = "bin/propellor"
       -- let binpath = Just $ localdir </> bin
