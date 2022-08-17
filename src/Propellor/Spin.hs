@@ -139,7 +139,7 @@ spin' mprivdata relay target hst = do
       intercalate
         " && "
         [ "cd " ++ localdir,
-          "./propellor --continue " ++ target
+          "true"
         ]
     updatecmd' _ =
       intercalate
