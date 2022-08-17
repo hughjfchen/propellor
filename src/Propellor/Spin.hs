@@ -156,7 +156,10 @@ spin' mprivdata relay target hst = do
 
     updatecmd = updatecmd' bootstrapper
 
-    runcmd = "cd " ++ localdir ++ " && PROPELLOR_DEBUG=1 PROPELLOR_TRACE=1 ./propellor " ++ cmd
+    runcmd' PrevBuiltBinary = "cd " ++ localdir ++ " && PROPELLOR_DEBUG=1 PROPELLOR_TRACE=1 ./propellor " ++ "--serialized " ++ shellEscape (show $ SimpleRunBinary target)
+    runcmd' _ = "cd " ++ localdir ++ " && PROPELLOR_DEBUG=1 PROPELLOR_TRACE=1 ./propellor " ++ cmd
+    runcmd = runcmd' bootstrapper
+
     cmd = "--serialized " ++ shellEscape (show cmdline)
     cmdline
       | viarelay = Spin [target] (Just target)
