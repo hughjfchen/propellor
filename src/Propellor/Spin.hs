@@ -23,7 +23,6 @@ import Propellor.Gpg
 import Propellor.PrivData.Paths
 import Propellor.Property.Localdir (OriginUrl (..))
 import Propellor.Protocol
-import qualified Propellor.Shim as Shim
 import Propellor.Ssh
 import Propellor.Types.CmdLine
 import Propellor.Types.Info
@@ -156,8 +155,8 @@ spin' mprivdata relay target hst = do
 
     updatecmd = updatecmd' bootstrapper
 
-    runcmd' PrevBuiltBinary = "cd " ++ localdir ++ " && PROPELLOR_DEBUG=1 PROPELLOR_TRACE=1 ./propellor " ++ "--serialized " ++ shellEscape (show $ SimpleRunBinary target)
-    runcmd' _ = "cd " ++ localdir ++ " && PROPELLOR_DEBUG=1 PROPELLOR_TRACE=1 ./propellor " ++ cmd
+    runcmd' PrevBuiltBinary = "cd " ++ localdir ++ " && ./propellor " ++ "--serialized " ++ shellEscape (show $ SimpleRunBinary target)
+    runcmd' _ = "cd " ++ localdir ++ " && ./propellor " ++ cmd
     runcmd = runcmd' bootstrapper
 
     cmd = "--serialized " ++ shellEscape (show cmdline)
@@ -358,9 +357,11 @@ sendPrecompiled hn = void $
       createDirectoryIfMissing True (tmpdir </> shimdir)
       changeWorkingDirectory (tmpdir </> shimdir)
       me <- readSymbolicLink "/proc/self/exe"
+      -- no need to create an extra bin directory
       -- createDirectoryIfMissing True "bin"
       unlessM (boolSystem "cp" [File me, File "propellor"]) $
         errorMessage "failed copying in propellor"
+      -- We do not need to pack its dependent libs because our binary is fully statically linked.
       -- let bin = "bin/propellor"
       -- let binpath = Just $ localdir </> bin
       -- void $ Shim.setup bin binpath "."
