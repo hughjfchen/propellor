@@ -1,3 +1,9 @@
+## What's Changed?
+This repo mirror from the author's original one and add following features:
+1. Add Nix builder to bootstrap build propellor
+2. Add PrevBuiltBinary bootstrapper so that we can send a previously built binary to a spin host
+3. Add CentOS as a supported OS
+
 [Propellor](https://propellor.branchable.com/) is a
 configuration management system using Haskell and Git.
 Each system has a list of properties, which Propellor ensures
