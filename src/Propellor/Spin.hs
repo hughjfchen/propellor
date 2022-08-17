@@ -112,7 +112,12 @@ spin' mprivdata relay target hst = do
     relaying = relay == Just target
     viarelay = isJust relay && not relaying
 
-    probecmd =
+    probecmd' PrevBuiltBinary =
+      intercalate
+        " ; "
+        [ "echo " ++ toMarked statusMarker (show NeedPrecompiled)
+        ]
+    probecmd' _ =
       intercalate
         " ; "
         [ "if [ ! -d " ++ localdir ++ "/.git ]",
@@ -128,7 +133,13 @@ spin' mprivdata relay target hst = do
           "fi"
         ]
 
-    updatecmd =
+    probecmd = probecmd' bootstrapper
+
+    updatecmd' PrevBuiltBinary =
+      intercalate
+        " ; "
+        ["true"]
+    updatecmd' _ =
       intercalate
         " && "
         [ "cd " ++ localdir,
@@ -140,6 +151,8 @@ spin' mprivdata relay target hst = do
             else -- Still using --boot for back-compat...
               "./propellor --boot " ++ target
         ]
+
+    updatecmd = updatecmd' bootstrapper
 
     runcmd = "cd " ++ localdir ++ " && ./propellor " ++ cmd
     cmd = "--serialized " ++ shellEscape (show cmdline)
@@ -350,7 +363,7 @@ sendPrecompiled hn = void $
       withTmpFile "propellor.tar." $ \tarball _ ->
         allM
           id
-          [ boolSystem "strip" [File me],
+          [ -- boolSystem "strip" [File me], -- Why strip the original executable? Most likely, it is not under the dir to pack.
             boolSystem "tar" [Param "czf", File tarball, File shimdir],
             boolSystemNonConcurrent "scp" $ cacheparams ++ [File tarball, Param ("root@" ++ hn ++ ":" ++ remotetarball)],
             boolSystemNonConcurrent "ssh" $ cacheparams ++ [Param ("root@" ++ hn), Param unpackcmd]

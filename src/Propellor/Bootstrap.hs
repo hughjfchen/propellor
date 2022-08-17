@@ -32,7 +32,10 @@ type ShellCommand = String
 --
 -- `OSOnly` uses the OS's native packages of Cabal and all of propellor's
 -- build dependencies. It may not work on all systems.
-data Bootstrapper = Robustly Builder | OSOnly
+--
+-- Add a new bootstrap way, PrevBuiltBinary, i.e., send a previous built
+-- binary file to the remote host.
+data Bootstrapper = Robustly Builder | OSOnly | PrevBuiltBinary
   deriving (Show, Typeable)
 
 -- | add the nix builder
@@ -51,6 +54,7 @@ getBootstrapper = go <$> askInfo
 
 getBuilder :: Bootstrapper -> Builder
 getBuilder (Robustly b) = b
+getBuilder PrevBuiltBinary = Nix
 getBuilder OSOnly = Cabal
 
 -- Shell command line to ensure propellor is bootstrapped and ready to run.
@@ -150,6 +154,7 @@ depsCommand bs msys = "( " ++ intercalate " ; " (go bs) ++ ") || true"
            ]
     go (Robustly Nix) = nixInstall
     go OSOnly = osinstall Cabal
+    go PrevBuiltBinary = ["true"]
 
     osinstall Nix = nixInstall
     osinstall builder = case msys of

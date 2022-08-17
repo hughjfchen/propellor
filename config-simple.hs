@@ -20,7 +20,7 @@ lxcCentOS7 =
   host "lxc-centos7" $
     props
       & osCentOS (CentOSLinux CentOS7) X86_64
-      & Bootstrap.bootstrapWith (Bootstrap.Robustly Bootstrap.Nix)
+      & Bootstrap.bootstrapWith (Bootstrap.PrevBuiltBinary)
       & Cmd.cmdProperty "userdel" ["-r", "systemAcc1"] `assume` MadeChange
       & File.hasContent "/root/test-file" ["Should be there"]
       & Systemd.daemonReloaded

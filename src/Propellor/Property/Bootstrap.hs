@@ -37,6 +37,7 @@ bootstrapWith b = pureInfoProperty desc (InfoVal b)
         Robustly Nix -> "nix"
         Robustly Cabal -> "cabal"
         OSOnly -> "OS packages only"
+        PrevBuiltBinary -> "previously built binary"
 
 -- | Where a propellor repository should be bootstrapped from.
 data RepoSource
