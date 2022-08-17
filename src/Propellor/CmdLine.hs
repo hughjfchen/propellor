@@ -154,12 +154,12 @@ defaultMain hostlist = withConcurrentOutput $ do
         ( updateFirst (findHost hostlist hn) cr cmdline $ runhost hn,
           fetchFirst $ go cr (Spin [hn] Nothing)
         )
-    go _ (SimpleRun hn) =
-      forceConsole
-        >> runhost hn
-    go cr cmdline@(SimpleRunBinary hn) =
+    go cr cmdline@(SimpleRun hn) =
       forceConsole
         >> fetchFirst (buildFirst (findHost hostlist hn) cr cmdline (runhost hn))
+    go _ (SimpleRunBinary hn) =
+      forceConsole
+        >> runhost hn
     -- When continuing after a rebuild, don't want to rebuild again.
     go _ (Continue cmdline) = go NoRebuild cmdline
 
