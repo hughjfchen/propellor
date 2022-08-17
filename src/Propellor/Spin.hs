@@ -356,9 +356,9 @@ sendPrecompiled hn = void $
       createDirectoryIfMissing True "bin"
       unlessM (boolSystem "cp" [File me, File "bin/propellor"]) $
         errorMessage "failed copying in propellor"
-      let bin = "bin/propellor"
-      let binpath = Just $ localdir </> bin
-      void $ Shim.setup bin binpath "."
+      -- let bin = "bin/propellor"
+      -- let binpath = Just $ localdir </> bin
+      -- void $ Shim.setup bin binpath "."
       changeWorkingDirectory tmpdir
       withTmpFile "propellor.tar." $ \tarball _ ->
         allM
