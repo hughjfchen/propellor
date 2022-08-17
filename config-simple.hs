@@ -6,6 +6,7 @@ import qualified Propellor.Property.Bootstrap as Bootstrap
 import qualified Propellor.Property.Cmd as Cmd
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Systemd as Systemd
+import qualified Propellor.Property.User as User
 
 main :: IO ()
 -- main = mainProperties localBox
@@ -21,6 +22,7 @@ lxcCentOS7 =
     props
       & osCentOS (CentOSLinux CentOS7) X86_64
       & Bootstrap.bootstrapWith (Bootstrap.PrevBuiltBinary)
+      & User.accountFor (User "systemAcc1")
       & Cmd.cmdProperty "userdel" ["-r", "systemAcc1"] `assume` MadeChange
       & File.hasContent "/root/test-file" ["Should be there"]
       & Systemd.daemonReloaded
