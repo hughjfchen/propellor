@@ -11,6 +11,8 @@ module Utility.SafeCommand where
 import Control.Applicative
 import Data.Char
 import Data.List
+import Propellor.Types (Result (FailedChange))
+import Propellor.Types.Result (Result (MadeChange))
 import System.Exit
 import System.FilePath
 import Utility.Process
@@ -43,6 +45,43 @@ toCommand' (File s@(h : _))
     -- path separator on Windows.
     pathseps = pathSeparator : "./"
 toCommand' (File s) = s
+
+-- | Convert command Bool to Propellor Result
+boolToResult :: Bool -> IO Result
+boolToResult False = pure FailedChange
+boolToResult True = pure MadeChange
+
+-- | Same as boolSystem with stdout and stderr output ommited.
+boolSystemQuiet :: FilePath -> [CommandParam] -> IO Bool
+boolSystemQuiet cmd paras =
+  withNullHandle
+    ( \h -> boolSystem' cmd paras $
+        \p -> p {std_out = UseHandle h, std_err = UseHandle h}
+    )
+
+-- | Same as boolSystem but return Result.
+boolSystemResult :: FilePath -> [CommandParam] -> IO Result
+boolSystemResult p paras = boolSystem p paras >>= boolToResult
+
+-- | boolSystem with Result returned and nor stdour neither stderr output
+boolSystemResultQuiet :: FilePath -> [CommandParam] -> IO Result
+boolSystemResultQuiet p paras = boolSystemQuiet p paras >>= boolToResult
+
+-- | trail the new line at the line end.
+trailProcessOutput :: String -> String
+trailProcessOutput = dropWhileEnd isSpace
+
+-- | readCreateProcess with new line trailed
+readCreateProcessTrailed :: CreateProcess -> String -> IO String
+readCreateProcessTrailed p s = trailProcessOutput <$> readCreateProcess p s
+
+-- | readCreateProcessWithExitCode with stdout new line trailed.
+readCreateProcessWithExitCodeTrailedStdout :: CreateProcess -> String -> IO String
+readCreateProcessWithExitCodeTrailedStdout p s =
+  trailRCPWithExitCode
+    <$> readCreateProcessWithExitCode p s
+  where
+    trailRCPWithExitCode (_, out, _) = trailProcessOutput out
 
 -- | Run a system command, and returns True or False if it succeeded or failed.
 --
