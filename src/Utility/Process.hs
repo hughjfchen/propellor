@@ -23,6 +23,7 @@ module Utility.Process
     readProcess,
     readProcess',
     readProcessEnv,
+    readProcessOE',
     writeReadProcessEnv,
     forceSuccessProcess,
     forceSuccessProcess',
@@ -71,6 +72,9 @@ data StdHandle = StdinHandle | StdoutHandle | StderrHandle
 readProcess :: FilePath -> [String] -> IO String
 readProcess cmd args = readProcessEnv cmd args Nothing
 
+-- >>> readProcess "grep" ["Propellor", "/home/ubuntu/projects/propellor/propellor.cabalf"]
+-- user error (grep ["Propellor","/home/ubuntu/projects/propellor/propellor.cabalf"] exited 2)
+
 readProcessEnv :: FilePath -> [String] -> Maybe [(String, String)] -> IO String
 readProcessEnv cmd args environ = readProcess' p
   where
@@ -82,11 +86,19 @@ readProcessEnv cmd args environ = readProcess' p
 
 readProcess' :: CreateProcess -> IO String
 readProcess' p = do
-  debugProcess p
   withHandle StdoutHandle createProcessSuccess p $ \h -> do
     output <- hGetContentsStrict h
     hClose h
     return output
+
+readProcessOE' :: CreateProcess -> IO (String, String)
+readProcessOE' p = do
+  withOEHandles createProcessSuccess p $ \(out, err) -> do
+    myOut <- hGetContentsStrict out
+    hClose out
+    myErr <- hGetContentsStrict err
+    hClose err
+    return (myOut, myErr)
 
 -- | Runs an action to write to a process on its stdin,
 -- returns its output, and also allows specifying the environment.

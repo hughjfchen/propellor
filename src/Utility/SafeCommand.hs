@@ -75,9 +75,13 @@ trailProcessOutput = dropWhileEnd isSpace
 -- readCreateProcessTrailed :: CreateProcess -> String -> IO String
 -- readCreateProcessTrailed p s = trailProcessOutput <$> readCreateProcess p s
 
+-- | readCreateProcessOE read the output and error of a process
+readCreateProcessOE :: CreateProcess -> String -> IO (String, String)
+readCreateProcessOE p _ = readProcessOE' p
+
 -- | readCreateProcess with new line trailed
 readCreateProcessTrailed :: CreateProcess -> String -> IO String
-readCreateProcessTrailed p _ = trailProcessOutput <$> readProcess' p
+readCreateProcessTrailed p _ = trailProcessOutput . fst <$> readProcessOE' p
 
 -- | readCreateProcessWithExitCode with stdout new line trailed.
 -- readCreateProcessWithExitCodeTrailedStdout :: CreateProcess -> String -> IO String
@@ -90,8 +94,8 @@ readCreateProcessTrailed p _ = trailProcessOutput <$> readProcess' p
 -- | readCreateProcessWithExitCode with stdout new line trailed.
 readCreateProcessWithExitCodeTrailedStdout :: CreateProcess -> String -> IO String
 readCreateProcessWithExitCodeTrailedStdout p _ =
-  trailProcessOutput
-    <$> readProcess' p
+  trailProcessOutput . fst
+    <$> readProcessOE' p
 
 -- | Run a system command, and returns True or False if it succeeded or failed.
 --

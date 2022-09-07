@@ -43,6 +43,7 @@ module Propellor.Property.Cmd
     boolSystemResult,
     boolSystemResultQuiet,
     trailProcessOutput,
+    readCreateProcessOE,
     readCreateProcessTrailed,
     readCreateProcessWithExitCodeTrailedStdout,
     boolSystemEnv,
