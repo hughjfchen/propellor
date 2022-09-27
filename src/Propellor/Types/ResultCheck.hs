@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PackageImports #-}
 
 module Propellor.Types.ResultCheck
   ( UncheckedProperty,
@@ -13,11 +14,13 @@ module Propellor.Types.ResultCheck
   )
 where
 
+import "mtl" Control.Monad.RWS.Strict
 import Data.Monoid
 import Data.Typeable (Typeable)
 import Propellor.Exception
 import Propellor.Message (actionMessageOn)
 import Propellor.Types
+import Propellor.Types.Core (IsProp (getDesc))
 import Utility.Monad
 import Prelude
 
@@ -70,13 +73,17 @@ checkResult precheck postcheck p = adjustPropertySatisfy (checkedProp p) $ \sati
 
 -- | Makes a `Property` or an `UncheckedProperty` only run
 -- when a check return value CarryOn.
-prevCheck :: (Checkable p i, LiftPropellor m) => m PrevCheckResult -> p i -> Property i
+prevCheck :: (IsProp (p i), Checkable p i, LiftPropellor m) => m PrevCheckResult -> p i -> Property i
 prevCheck test p = adjustPropertySatisfy (preCheckedProp p) $ \satisfy -> do
   cResult <- liftPropellor test
   case cResult of
     CarryOn -> satisfy
-    NoNeedToCarryOn noNeedMsg -> actionMessageOn "" noNeedMsg $ return NoChange
-    UnableToCarryOn unableMsg -> actionMessageOn "" unableMsg $ return FailedChange
+    NoNeedToCarryOn noNeedMsg -> noCarryOn p noNeedMsg NoChange
+    UnableToCarryOn unableMsg -> noCarryOn p unableMsg FailedChange
+  where
+    noCarryOn :: IsProp (p' i') => p' i' -> String -> Result -> Propellor Result
+    noCarryOn p' msg res = do
+      asks hostName >>= \hn -> actionMessageOn hn (getDesc p' <> " - " <> msg) $ return res
 
 -- | Makes a `Property` or an `UncheckedProperty` only run
 -- when a test succeeds.
