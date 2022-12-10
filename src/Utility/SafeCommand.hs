@@ -84,18 +84,12 @@ readCreateProcessTrailed :: CreateProcess -> String -> IO String
 readCreateProcessTrailed p _ = trailProcessOutput . fst <$> readProcessOE' p
 
 -- | readCreateProcessWithExitCode with stdout new line trailed.
--- readCreateProcessWithExitCodeTrailedStdout :: CreateProcess -> String -> IO String
--- readCreateProcessWithExitCodeTrailedStdout p s =
---   trailRCPWithExitCode
---     <$> readCreateProcessWithExitCode p s
---   where
---     trailRCPWithExitCode (_, out, _) = trailProcessOutput out
-
--- | readCreateProcessWithExitCode with stdout new line trailed.
-readCreateProcessWithExitCodeTrailedStdout :: CreateProcess -> String -> IO String
-readCreateProcessWithExitCodeTrailedStdout p _ =
-  trailProcessOutput . fst
-    <$> readProcessOE' p
+readCreateProcessTrailedWithExitCode :: CreateProcess -> String -> IO (ExitCode, String)
+readCreateProcessTrailedWithExitCode p s =
+  trailRCPWithExitCode
+    <$> readCreateProcessWithExitCode p s
+  where
+    trailRCPWithExitCode (ec, out, _) = (ec, trailProcessOutput out)
 
 -- | Run a system command, and returns True or False if it succeeded or failed.
 --
