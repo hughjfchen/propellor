@@ -46,7 +46,7 @@ hosts =                 --                  (o)  `
 	, dragon
 	, oyster
 	, orca
-	, honeybee
+	, house
 	, kite
 	, beaver
 	, sow
@@ -77,8 +77,8 @@ darkstar = host "darkstar.kitenet.net" $ props
 	& Ssh.userKeys (User "joey") hostContext
 		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICfFntnesZcYz2B2T41ay45igfckXRSh5uVffkuCQkLv joey@darkstar")
 		]
-	& imageBuiltFor honeybee
-		(RawDiskImage "/srv/honeybee.img")
+	& imageBuiltFor house
+		(RawDiskImage "/srv/house.img")
 		(Debootstrapped mempty)
 
 dragon :: Host
@@ -119,8 +119,8 @@ orca = host "orca.kitenet.net" $ props
 		GitAnnexBuilder.standardAutoBuilder
 		Testing ARM64 Nothing (Cron.Times "1 * * * *") "4h")
 
-honeybee :: Host
-honeybee = host "honeybee.kitenet.net" $ props
+house :: Host
+house = host "house.lan" $ props
 	& standardSystem Testing ARMHF
 		[ "Home router and arm git-annex build box." ]
 	& Apt.removed ["rsyslog"]
@@ -133,7 +133,7 @@ honeybee = host "honeybee.kitenet.net" $ props
 		)
 	& JoeySites.cubieTruckOneWire
 	& Systemd.persistentJournal
-	& Apt.installed ["firmware-misc-nonfree"] -- wifi
+	& Apt.installed ["firmware-atheros"]
 	& Apt.serviceInstalledRunning "ntp" -- no hardware clock
 	& bootstrappedFrom GitRepoOutsideChroot
 	& Ssh.hostKeys hostContext
@@ -148,9 +148,12 @@ honeybee = host "honeybee.kitenet.net" $ props
 		hosts
 		(Context "house.joeyh.name")
 		(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAmVYddg/RgCbIj+cLcEiddeFXaYFnbEJ3uGj9G/EyV joey@honeybee")
+	& JoeySites.connectStarlinkRouter
 	& JoeySites.homeRouter
 	& JoeySites.homeNAS
-	& Apt.installed ["mtr-tiny", "iftop", "screen"]
+	& Apt.installed ["mtr-tiny", "iftop", "screen", "nmap"]
+	-- Currently manually building the xr_usb_serial module.
+	& Apt.installed ["linux-headers-armmp-lpae"]
 	& Postfix.satellite
 
 	& check (not <$> hasContainerCapability Systemd.FilesystemContained) 
@@ -169,7 +172,10 @@ kite :: Host
 kite = host "kite.kitenet.net" $ props
 	& standardSystemUnhardened Testing X86_64 [ "Welcome to kite!" ]
 	& ipv4 "66.228.36.95"
-	& ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
+	-- disabled because I've had complaints of mail bouncing, and it
+	-- seems mail servers are only trying ipv6 and then bouncing if
+	-- they have an ipv6 routing issue.
+	-- & ipv6 "2600:3c03::f03c:91ff:fe73:b0d2"
 	& alias "kitenet.net"
 	& Ssh.hostKeys (Context "kitenet.net")
 		[ (SshDsa, "ssh-dss AAAAB3NzaC1kc3MAAACBAO9tnPUT4p+9z7K6/OYuiBNHaij4Nzv5YVBih1vMl+ALz0gYAj8RWJzXmqp5buFAyfgOoLw+H9s1bBS01Sy3i07Dm6cx1fWG4RXL/E/3w1tavX99GD2bBxDBu890ebA5Tp+eFRJkS9+JwSvFiF6CP7NbVjifCagoUO56Ig048RwDAAAAFQDPY2xM3q6KwsVQliel23nrd0rV2QAAAIEAga3hj1hL00rYPNnAUzT8GAaSP62S4W68lusErH+KPbsMwFBFY/Ib1FVf8k6Zn6dZLh/HH/RtJi0JwdzPI1IFW+lwVbKfwBvhQ1lw9cH2rs1UIVgi7Wxdgfy8gEWxf+QIqn62wG+Ulf/HkWGvTrRpoJqlYRNS/gnOWj9Z/4s99koAAACBAM/uJIo2I0nK15wXiTYs/NYUZA7wcErugFn70TRbSgduIFH6U/CQa3rgHJw9DCPCQJLq7pwCnFH7too/qaK+czDk04PsgqV0+Jc7957gU5miPg50d60eJMctHV4eQ1FpwmGGfXxRBR9k2ZvikWYatYir3L6/x1ir7M0bA9IzNU45")
@@ -182,7 +188,7 @@ kite = host "kite.kitenet.net" $ props
 	& Apt.installed ["linux-image-amd64"]
 	& Apt.serviceInstalledRunning "swapspace"
 	& Linode.serialGrub
-	& Linode.mlocateEnabled
+	& Linode.locateEnabled
 	& Apt.unattendedUpgrades
 	& Systemd.installed
 	& Systemd.persistentJournal
@@ -239,7 +245,7 @@ kite = host "kite.kitenet.net" $ props
 	& Apt.installed
 		[ "git-annex", "myrepos"
 		, "build-essential", "make"
-		, "rss2email", "archivemail"
+		, "rss2email", "chewmail"
 		, "devscripts"
 		-- Some users have zsh as their login shell.
 		, "zsh"
@@ -256,10 +262,6 @@ kite = host "kite.kitenet.net" $ props
 	& alias "podcatcher.kitenet.net"
 	& JoeySites.podcatcher
 
-	& JoeySites.scrollBox
-	& alias "scroll.joeyh.name"
-	& alias "us.scroll.joeyh.name"
-
 	& alias "ns4.kitenet.net"
 	& myDnsPrimary "kitenet.net"
 		[ (RelDomain "mouse-onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
@@ -269,13 +271,12 @@ kite = host "kite.kitenet.net" $ props
 		]
 	& myDnsPrimary "joeyh.name" []
 	& myDnsPrimary "ikiwiki.info" []
-	& myDnsPrimary "olduse.net"
+	! myDnsPrimary "olduse.net"
 		[ (RelDomain "article", CNAME $ AbsDomain "virgil.koldfront.dk")
 		]
 	! myDnsPrimary "quarantimer.app" []
 	& alias "ns4.branchable.com"
 	& branchableSecondary
-	& Dns.secondaryFor ["animx"] hosts "animx.eu.org"
 	-- Use its own name server (amoung other things this avoids
 	-- spamassassin URIBL_BLOCKED.
 	& "/etc/resolv.conf" `File.hasContent`
@@ -330,8 +331,6 @@ pell = host "pell.branchable.com" $ props
 
 	-- All the websites I host at branchable that don't use
 	-- branchable.com dns.
-	& alias "olduse.net"
-	& alias "www.olduse.net"
 	& alias "www.kitenet.net"
 	& alias "joeyh.name"
 	& alias "www.joeyh.name"
@@ -439,8 +438,6 @@ monsters =
 		& Ssh.hostPubKey SshEd25519 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB7yTEBGfQYdwG/oeL+U9XPMIh/dW7XNs9T+M79YIOrd"
 	, host "ns6.gandi.net" $ props
 		& ipv4 "217.70.177.40"
-	, host "animx" $ props
-		& ipv4 "76.7.174.49"
 	]
 
 

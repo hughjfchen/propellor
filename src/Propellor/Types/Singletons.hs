@@ -1,17 +1,14 @@
 {-# LANGUAGE CPP, DataKinds, PolyKinds, TypeOperators, TypeFamilies, GADTs, FlexibleContexts #-}
 
--- | Simple implementation of singletons, portable back to ghc 7.6.3
+-- | Simple implementation of singletons, portable back to ghc 8.0.1
 
 module Propellor.Types.Singletons (
 	module Propellor.Types.Singletons,
 	KProxy(..)
 ) where
 
-#if __GLASGOW_HASKELL__ > 707
+import Data.Kind (Type)
 import Data.Proxy (KProxy(..))
-#else
-data KProxy (a :: *) = KProxy
-#endif
 
 -- | The data family of singleton types.
 data family Sing (x :: k)
@@ -34,7 +31,7 @@ instance SingI 'True where sing = TrueS
 instance SingI 'False where sing = FalseS
 
 class (kparam ~ 'KProxy) => SingKind (kparam :: KProxy k) where
-	type DemoteRep kparam :: *
+	type DemoteRep kparam :: Type
 	-- | From singleton to value.
 	fromSing :: Sing (a :: k) -> DemoteRep kparam
 

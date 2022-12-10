@@ -183,7 +183,9 @@ armAutoBuilder baseautobuilder suite arch flavor =
 		& baseautobuilder suite arch flavor
 		-- Works around ghc crash with parallel builds on arm.
 		& File.dirExists (homedir </> ".cabal")
+		& File.ownerGroup (homedir </> ".cabal") (User "builder") (Group "builder")
 		& (homedir </> ".cabal" </> "config")
 			`File.containsLine` "jobs: 1"
+		& File.ownerGroup (homedir </> ".cabal" </> "config") (User "builder") (Group "builder")
 		-- Work around https://github.com/systemd/systemd/issues/7135
 		& Systemd.containerCfg "--system-call-filter=set_tls"

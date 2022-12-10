@@ -231,7 +231,6 @@ container :: MachineName -> (FilePath -> Chroot.Chroot) -> Container
 container name mkchroot =
 	let c = Container name chroot h
 	in setContainerProps c $ containerProps c
-		&^ resolvConfed
 		&^ linkJournal
   where
 	chroot = mkchroot (containerDir name)
@@ -403,7 +402,10 @@ containerCfg p = RevertableProperty (mk True) (mk False)
 
 -- | Bind mounts </etc/resolv.conf> from the host into the container.
 --
--- This property is enabled by default. Revert it to disable it.
+-- This is not necessary when systemd configures the container's
+-- resolv.conf on its own. This used to be enabled by default, but when
+-- systemd did also configure the container's resolv.conf, that could
+-- modify the host's resolv.conf.
 resolvConfed :: RevertableProperty (HasInfo + Linux) (HasInfo + Linux)
 resolvConfed = containerCfg "bind=/etc/resolv.conf"
 

@@ -50,6 +50,7 @@ import GHC.Exts (Constraint)
 import GHC.TypeLits hiding (type (+))
 import Propellor.Types.OS
 import Propellor.Types.Singletons
+import Data.Kind (Type)
 
 #ifdef WITH_TYPE_ERRORS
 import Type.Errors
@@ -155,7 +156,7 @@ instance SingKind ('KProxy :: KProxy MetaType) where
 -- Which is shorthand for this type:
 --
 -- > MetaTypes '[WithInfo, Targeting OSDebian]
-type family a + b :: * where
+type family a + b :: Type where
   (MetaTypes a) + (MetaTypes b) = MetaTypes (Concat a b)
 
 type family Concat (list1 :: [a]) (list2 :: [a]) :: [a] where
@@ -165,11 +166,22 @@ type family Concat (list1 :: [a]) (list2 :: [a]) :: [a] where
 -- | Combine two MetaTypes lists, yielding a list
 -- that has targets present in both, and nontargets present in either.
 type family Combine (list1 :: [a]) (list2 :: [a]) :: [a] where
-  Combine (list1 :: [a]) (list2 :: [a]) =
-    ( Concat
-        (NonTargets list1 `Union` NonTargets list2)
-        (Targets list1 `Intersect` Targets list2)
-    )
+       Combine ('WithInfo : list1) ('WithInfo : list2) = 'WithInfo ':
+               list1 `Intersect` list2
+       Combine ('WithInfo : list1) list2 = 'WithInfo ':
+               list1 `Intersect` list2
+       Combine list1 ('WithInfo : list2) = 'WithInfo ':
+               list1 `Intersect` list2
+       Combine list1 list2 =
+               list1 `Intersect` list2
+       -- This is a cleaner implementation, but it causes an exponential
+       -- blowup of the type checker due to referencing list1 twice on
+       -- the right hand side.
+       -- Combine (list1 :: [a]) (list2 :: [a]) =
+       --      (Concat
+       --              (NonTargets list1 `Union` NonTargets list2)
+       --              (Targets list1 `Intersect` Targets list2)
+       --      )
 
 -- | Checks if two MetaTypes lists can be safly combined;
 -- eg they have at least one Target in common.
@@ -213,7 +225,7 @@ type family CheckCombinableNote (list1 :: [a]) (list2 :: [a]) (note :: ErrorMess
 type family CannotCombine (list1 :: [a]) (list2 :: [a]) (note :: Maybe ErrorMessage) :: Constraint where
 -- Checking IfStuck is to avoid ugly error
 -- message leaking type families from this module.
-  CannotCombine list1 list2 'Nothing =
+  CannotCombine list1 list2 note =
     IfStuck
       list1
       ( IfStuck
@@ -224,7 +236,7 @@ type family CannotCombine (list1 :: [a]) (list2 :: [a]) (note :: Maybe ErrorMess
       ( IfStuck
           list2
           (DelayError (CannotCombineMessage (PrettyPrintMetaTypes list1) UnknownType UnknownTypeNote))
-          (DelayErrorFcf (CannotCombineMessage (PrettyPrintMetaTypes list1) (PrettyPrintMetaTypes list2) 'Nothing))
+          (DelayErrorFcf (CannotCombineMessage (PrettyPrintMetaTypes list1) (PrettyPrintMetaTypes list2) note))
       )
 -- When there's a note, don't display the MetaTypes at all.
 -- This is because the note is used when eg, combining properties

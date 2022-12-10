@@ -12,8 +12,11 @@ import Data.List
 -- | Gets the properties of a ZFS volume.
 zfsGetProperties ::  ZFS -> IO ZFSProperties
 zfsGetProperties z =
-	let plist = fromPropertyList . map (\(_:k:v:_) -> (k, v)) . (map (split "\t"))
+	let plist = fromPropertyList . mapMaybe parse . (map (split "\t"))
 	in plist <$> runZfs "get" [Just "-H", Just "-p", Just "all"] z
+  where
+	parse (_:k:v:_) = Just (k, v)
+	parse _ = Nothing
 
 zfsExists :: ZFS -> IO Bool
 zfsExists z = any id . map (isInfixOf (zfsName z))

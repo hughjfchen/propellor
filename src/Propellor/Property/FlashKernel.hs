@@ -22,10 +22,11 @@ type Machine = String
 installed :: Machine -> Property (HasInfo + DebianLike)
 installed machine = setInfoProperty go (toInfo [FlashKernelInstalled])
   where
-	go = "/etc/flash-kernel/machine" `File.hasContent` [machine]
+	go = Apt.installed ["flash-kernel"]
+		`requires` configured
 		`onChange` flashKernel
+	configured = ("/etc/flash-kernel/machine" `File.hasContent` [machine])
 		`requires` File.dirExists "/etc/flash-kernel"
-		`requires` Apt.installed ["flash-kernel"]
 
 -- | Runs flash-kernel with whatever machine `installed` configured.
 flashKernel :: Property DebianLike

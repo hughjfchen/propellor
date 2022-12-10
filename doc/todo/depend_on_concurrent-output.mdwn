@@ -58,6 +58,10 @@ Waiting on concurrent-output reaching Debian stable.
 > > > >
 > > > > So, propellor will embed the old concurrent-output until
 > > > > process-1.6 is in debian oldstable, and then revert
-> > > > [[!commit ]] and version propellor's dep on process,
+> > > > [[!commit 9c08fa24f2e2bf07413b151656c373d873de7298]] and version propellor's dep on process,
 > > > > and then, finally, once concurrent-output 1.10.12 is in oldstable
 > > > > propellor can stop embedding it. --[[Joey]]
+> > > >
+> > > > > process-1.6 is in ghc-8.2.2, and oldstable (buster) has 8.4.4, so
+> > > > > the above reversion can be done now, as long as it's ok to break
+> > > > > support for oldoldstable (stretch). --[[Joey]]

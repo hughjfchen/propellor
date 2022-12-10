@@ -1,5 +1,5 @@
 Name: propellor
-Version: 5.13
+Version: 5.15
 Cabal-Version: 1.20
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
@@ -35,7 +35,7 @@ Description:
  It is configured using haskell.
 
 Flag WithTypeErrors
-  Description: Build with type-errors library for better error messages and less memory use
+  Description: Build with type-errors library for better error messages
 
 Library
   Default-Language: Haskell2010
@@ -46,9 +46,10 @@ Library
     -- propellor needs to support the ghc shipped in Debian stable,
     -- and also only depends on packages in Debian stable.
     base >= 4.9, base < 5,
-    directory, filepath, IfElse, process, bytestring, hslogger, split,
-    unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async (>= 2.1.1.1),
-    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
+    directory, filepath, IfElse, process, bytestring, hslogger,
+    split (>= 0.2.0.0), unix, unix-compat, ansi-terminal, containers (>= 0.5),
+    network, async (>= 2.0.0.0), time, mtl, transformers, exceptions (>= 0.6),
+    stm, text, hashable
   if flag(WithTypeErrors)
     Build-Depends: type-errors
     CPP-Options: -DWITH_TYPE_ERRORS

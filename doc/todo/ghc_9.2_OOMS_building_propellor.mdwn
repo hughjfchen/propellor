@@ -1,0 +1,7 @@
+This is a known bug in ghc, and a fix is being discussed here
+<https://gitlab.haskell.org/ghc/ghc/-/issues/21994>.
+
+It might be that changes to propellor's MetaTypes implementation would
+avoid the problem. --[[Joey]]
+
+> [[fixed|done]] --[[Joey]]

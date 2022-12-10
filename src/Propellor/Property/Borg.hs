@@ -245,7 +245,7 @@ backup' dir repo crontimes extraargs kp =
         concat
           [ concatMap exportenv (runBorgEnv repo),
             [createCommand],
-            if null kp then [] else [pruneCommand]
+            if null kp then [] else [pruneCommand, compactCommand]
           ]
     exportenv (k, v) =
       [ k ++ "=" ++ shellEscape v,
@@ -261,13 +261,20 @@ backup' dir repo crontimes extraargs kp =
               ++ [ Param (repoLoc repo ++ "::{now}"),
                    File dir
                  ]
-    pruneCommand = unwords $ ("borg" : pruneCommandParams)
+    pruneCommand = unwords ("borg" : pruneCommandParams)
     pruneCommandParams =
       map shellEscape $
         toCommand $
           runBorgParam repo "prune" $
             [Param (repoLoc repo)]
               ++ map keepParam kp
+    -- borg compact is needed after version 1.2 to actually free
+    -- pruned space, but is not supported by older versions.
+    compactCommand = "(" ++ unwords ("borg" : compactCommandParams)
+               ++ " 2>/dev/null || true)"
+    compactCommandParams =
+               map shellEscape $ toCommand $ runBorgParam repo "compact" $
+                       [ Param (repoLoc repo) ]
 
 -- | Constructs an BorgParam that specifies which old backup generations to
 -- keep. By default, all generations are kept. However, when this parameter is

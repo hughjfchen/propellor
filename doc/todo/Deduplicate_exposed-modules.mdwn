@@ -1,0 +1,16 @@
+```diff
+--- a/propellor.cabal
++++ b/propellor.cabal
+@@ -223,7 +223,6 @@ Library
+     Utility.Process.Transcript
+     Utility.SafeCommand
+     Utility.Scheduled
+-    Utility.Scheduled
+     Utility.Split
+     Utility.SystemDirectory
+     Utility.Table
+```
+
+Context: https://github.com/haskell/cabal/issues/6006#issuecomment-1210344593
+
+> [[done]], thank you! --[[Joey]]

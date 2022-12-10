@@ -32,7 +32,6 @@ import qualified Propellor.Property.Service as Service
 import qualified Propellor.Property.Grub as Grub
 import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Apt as Apt
-import qualified Propellor.Property.Qemu as Qemu
 import qualified Propellor.Property.FlashKernel as FlashKernel
 import Propellor.Property.Parted
 import Propellor.Property.Fstab (SwapPartition(..), genFstab)
@@ -413,7 +412,6 @@ imageFinalized final img mnts mntopts devs (PartTable _ _ parts) =
 		liftIO $ allowservices top
 		ensureProperty w $ 
 			final img top devs
-				`before` Qemu.removeHostEmulationBinary top
 
 	-- Ordered lexographically by mount point, so / comes before /usr
 	-- comes before /usr/local

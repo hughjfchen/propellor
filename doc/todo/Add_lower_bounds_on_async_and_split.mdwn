@@ -1,0 +1,45 @@
+```diff
+--- a/propellor.cabal
++++ b/propellor.cabal
+@@ -47,9 +47,10 @@ Library
+     -- propellor needs to support the ghc shipped in Debian stable,
+     -- and also only depends on packages in Debian stable.
+     base >= 4.9, base < 5,
+-    directory, filepath, IfElse, process, bytestring, hslogger, split,
+-    unix, unix-compat, ansi-terminal, containers (>= 0.5), network, async,
+-    time, mtl, transformers, exceptions (>= 0.6), stm, text, hashable
++    directory, filepath, IfElse, process, bytestring, hslogger,
++    split (>= 0.2.0.0), unix, unix-compat, ansi-terminal, containers (>= 0.5),
++    network, async (>= 2.0.0.0), time, mtl, transformers, exceptions (>= 0.6),
++    stm, text, hashable
+   if flag(WithTypeErrors)
+     Build-Depends: type-errors
+     CPP-Options: -DWITH_TYPE_ERRORS
+```
+
+The added bounds prevent the following build errors:
+
+```
+src/System/Console/Concurrent/Internal.hs:28:1: error:
+    Could not load module ‘Control.Concurrent.Async’
+    It is a member of the hidden package ‘async-2.2.4’.
+    Perhaps you need to add ‘async’ to the build-depends in your .cabal file.
+    It is a member of the hidden package ‘async-2.2.4’.
+    Perhaps you need to add ‘async’ to the build-depends in your .cabal file.
+    it is a hidden module in the package ‘tasty-1.4.2.3’
+    Use -v (or `:set -v` in ghci) to see a list of the files searched for.
+   |
+28 | import Control.Concurrent.Async
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+```
+
+
+```
+src/Propellor/Property/Dns.hs:29:44: error:
+    Module ‘Data.List.Split’ does not export ‘chunksOf’
+   |
+29 | import qualified Data.List.Split as Split (chunksOf)
+   |                                            ^^^^^^^^
+```
+
+> [[done]], thank you --[[Joey]]

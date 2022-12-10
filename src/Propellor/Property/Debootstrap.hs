@@ -74,10 +74,6 @@ debootstrapMirror _ = Nothing
 -- The System can be any OS and architecture that debootstrap
 -- and the kernel support.
 --
--- When the System is architecture that the kernel does not support,
--- it can still be bootstrapped using emulation. This is determined
--- by checking `supportsArch`, or can be configured with `UseEmulation`.
---
 -- When emulation is used, the chroot will have an additional binary
 -- installed in it. To get a completelty clean chroot (eg for producing a
 -- bootable disk image), use the `removeHostEmulationBinary` property.
@@ -124,10 +120,7 @@ built' installprop target system@(System _ arch) config =
                 ++ case debootstrapMirror config of
                   Just u -> [Param u]
                   Nothing -> []
-        cmd <-
-          if useEmulation config
-            then pure "qemu-debootstrap"
-            else fromMaybe "debootstrap" <$> programPath
+        cmd <- fromMaybe "debootstrap" <$> programPath
         de <- case debootstrapProxy config of
           Just u -> addEntry "http_proxy" u <$> standardPathEnv
           Nothing -> standardPathEnv

@@ -1,0 +1,3 @@
+propellor 5.14.1 released with [[!toggle text="these changes"]]
+[[!toggleable text="""  * Fix config.hs example, which was accidentially joeyconfig.hs in the
+    previous release."""]]

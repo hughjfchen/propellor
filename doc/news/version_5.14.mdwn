@@ -1,0 +1,26 @@
+propellor 5.14 released with [[!toggle text="these changes"]]
+[[!toggleable text="""  * Removed Propellor.Property.OpenID module, since the simpleid package
+    got removed from Debian.
+  * Renamed Linode.mlocateEnabled to Linode.locateEnabled, and made it also
+    make sure plocate is enabled, if it's installed rather than mlocate.
+    (API change)
+  * Debootstrap.built: Stop using the deprecated qemu-debootstrap
+    for bootstrapping foreign architectures. It is not needed since qemu
+    2.12, which, at least on Debian, enabled the
+    binfmt-support --fix-binary option.
+  * Qemu.removeHostEmulationBinary: Removed this property, which is no
+    longer necessary since qemu-debootstrap is not used.
+    (API change)
+  * Flashkernel.installed: Deal with a behavior change in flash-kernel,
+    which will fail to install if is not configured first.
+  * Systemd.resolvConfed is no longer enabled by default in systemd
+    containers. It is probably not necessary on current systems the way it
+    was back in 2014, and this avoids a problem where the host's
+    /etc/resolv.conf gets overwritten when systemd is managing the
+    container's /etc/resolv.conf.
+  * Borg: To support borg 1.2, run borg compact to free up space after pruning.
+  * Add lower bounds on async and split.
+    Thanks, Simon Jakobi
+  * propellor.cabal: Deduplicate exposed modules, which fixes a build
+    problem with recent cabal versions.
+    Thanks, Simon Jakobi"""]]

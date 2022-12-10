@@ -31,12 +31,11 @@ instance ConfigurableValue PPA where
 
 instance IsString PPA where
 	-- | Parse strings like "ppa:zfs-native/stable" into a PPA.
-	fromString s =
-		let
-			[_, ppa] = split "ppa:" s
-			[acct, arch] = split "/" ppa
-		in
-			PPA acct arch
+	fromString s = case split "ppa:" s of
+		[_, ppa] -> case split "/" ppa of
+			[acct, arch] -> PPA acct arch
+			_ -> PPA s s
+		_ -> PPA s s
 
 -- | Adds a PPA to the local system repositories.
 addPpa :: PPA -> Property DebianLike
@@ -89,11 +88,9 @@ instance ConfigurableValue AptSource where
 	val asrc = unwords ["deb", asURL asrc, asSuite asrc, unwords . asComponents $ asrc]
 
 instance IsString AptSource where
-	fromString s =
-		let
-			url:suite:comps = drop 1 . words $ s
-		in
-			AptSource url suite comps
+	fromString s = case drop 1 (words s) of
+		url:suite:comps -> AptSource url suite comps
+		_ -> AptSource s s []
 
 -- | A repository for apt-add-source, either a PPA or a regular repository line.
 data AptRepository = AptRepositoryPPA PPA | AptRepositorySource AptSource

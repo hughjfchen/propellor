@@ -27,3 +27,5 @@ It looks like ghc in Debian unstable is defaulting to new style cabal builds whi
 I think the simplest fix is to replace `cabal build` with `cabal v1-build` in `Propellor.Bootstrap.buildCommand`?
 
 --spwhitton
+
+> [[done]] --[[Joey]]
