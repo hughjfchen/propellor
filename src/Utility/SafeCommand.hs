@@ -83,14 +83,6 @@ readCreateProcessOE p _ = readProcessOE' p
 readCreateProcessTrailed :: CreateProcess -> String -> IO String
 readCreateProcessTrailed p _ = trailProcessOutput . fst <$> readProcessOE' p
 
--- | readCreateProcessWithExitCode with stdout new line trailed.
-readCreateProcessTrailedWithExitCode :: CreateProcess -> String -> IO (ExitCode, String)
-readCreateProcessTrailedWithExitCode p s =
-  trailRCPWithExitCode
-    <$> readCreateProcessWithExitCode p s
-  where
-    trailRCPWithExitCode (ec, out, _) = (ec, trailProcessOutput out)
-
 -- | Run a system command, and returns True or False if it succeeded or failed.
 --
 -- This and other command running functions in this module log the commands
@@ -111,6 +103,14 @@ boolSystemEnv command params environ = boolSystem' command params $
 -- | Runs a system command, returning the exit status.
 safeSystem :: FilePath -> [CommandParam] -> IO ExitCode
 safeSystem command params = safeSystem' command params id
+
+-- | Runs a system command quietly, returning the exit status.
+safeSystemQuiet :: FilePath -> [CommandParam] -> IO ExitCode
+safeSystemQuiet command params = 
+  withNullHandle
+    ( \h -> safeSystem' command params $
+        \p -> p {std_out = UseHandle h, std_err = UseHandle h}
+    )
 
 safeSystem' :: FilePath -> [CommandParam] -> (CreateProcess -> CreateProcess) -> IO ExitCode
 safeSystem' command params mkprocess = do

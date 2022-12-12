@@ -5,6 +5,7 @@
 module Propellor.Types.ResultCheck
   ( UncheckedProperty,
     PrevCheckResult (..),
+    prevCheckResult2Result,
     unchecked,
     checkResult,
     check,
@@ -15,7 +16,6 @@ module Propellor.Types.ResultCheck
 where
 
 import "mtl" Control.Monad.RWS.Strict
-import Data.Monoid
 import Data.Typeable (Typeable)
 import Propellor.Exception
 import Propellor.Message (actionMessageOn)
@@ -70,6 +70,12 @@ checkResult precheck postcheck p = adjustPropertySatisfy (checkedProp p) $ \sati
   -- as it may need to clean up after precheck.
   r' <- liftPropellor $ postcheck a
   return (r <> r')
+
+-- | convert PrevCheckResult to Result
+prevCheckResult2Result :: PrevCheckResult -> Result
+prevCheckResult2Result CarryOn = MadeChange
+prevCheckResult2Result (NoNeedToCarryOn _) = NoChange
+prevCheckResult2Result (UnableToCarryOn _)= FailedChange
 
 -- | Makes a `Property` or an `UncheckedProperty` only run
 -- when a check return value CarryOn.

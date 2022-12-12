@@ -45,9 +45,9 @@ module Propellor.Property.Cmd
     trailProcessOutput,
     readCreateProcessOE,
     readCreateProcessTrailed,
-    readCreateProcessTrailedWithExitCode,
     boolSystemEnv,
     safeSystem,
+    safeSystemQuiet,
     safeSystem',
     safeSystemEnv,
     shellEscape,
@@ -64,7 +64,6 @@ import Propellor.Types
 import Utility.Env
 import Utility.Process (CreateProcess, createProcess, waitForProcess)
 import Utility.SafeCommand
-import Utility.SafeCommand (readCreateProcessTrailedWithExitCode)
 import Prelude
 
 -- | A property that can be satisfied by running a command.
