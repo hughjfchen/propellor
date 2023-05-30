@@ -1,0 +1,43 @@
+Hi,
+It's been a while since I have used propellor and getting back to it feels good!
+I am encountering an issue though, when I set a GH remote in my local repository: Running propellor gives me the following message
+
+```
+Up to date
+Propellor build ... done
+[main 40dbfa8] propellor spin
+Git commit ... done
+Enumerating objects: 1, done.
+Counting objects: 100% (1/1), done.
+Writing objects: 100% (1/1), 715 bytes | 715.00 KiB/s, done.
+Total 1 (delta 0), reused 0 (delta 0), pack-reused 0
+To github.com:abailly-iohk/propellor.git
+   18ae6b9..40dbfa8  main -> main
+Push to central git repository ... done
+gpg: encrypted with 3072-bit RSA key, ID EB759F128BD1217C, created 2022-03-07
+      "Arnaud Bailly <arnaud.bailly@iohk.io>"
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+Pull from central git repository ... failed
+Sending privdata (280 bytes) to cardano.hydra.bzh ... done
+Sending git update to cardano.hydra.bzh ... done
+remote: Enumerating objects: 5, done.
+remote: Counting objects: 100% (5/5), done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 4 (delta 1), reused 0 (delta 0), pack-reused 0
+From .
+ * branch            HEAD       -> FETCH_HEAD
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+Pull from central git repository ... failed
+Up to date
+Propellor build ... done
+```
+
+What am I doing wrong?

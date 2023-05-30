@@ -41,7 +41,8 @@ import qualified Propellor.Property.Apt as Apt
 import Propellor.Property.User
 import Propellor.Types.Info
 
-import System.PosixCompat
+import System.Posix.User
+import System.Posix.Files
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.Semigroup as Sem

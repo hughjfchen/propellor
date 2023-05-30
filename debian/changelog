@@ -1,3 +1,12 @@
+propellor (5.16) unstable; urgency=medium
+
+  * Debootstrap: Added UseOldGpgKeyring constructor to DebootstrapConfig,
+    which allows bootstrapping ancient stable releases of Debian.
+  * Qemu: Install binfmt-support along with qemu-user-static.
+  * Fix build with unix-2.8.0.0 and with unix-compat-0.7.
+
+ -- Joey Hess <id@joeyh.name>  Mon, 29 May 2023 11:24:25 -0400
+
 propellor (5.15) unstable; urgency=medium
 
   * Improve propellor's MetaTypes implementation to avoid an expontential

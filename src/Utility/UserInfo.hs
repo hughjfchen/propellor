@@ -21,7 +21,10 @@ import Utility.Data
 import Control.Applicative
 #endif
 
-import System.PosixCompat
+import System.Posix.User
+#if MIN_VERSION_unix(2,8,0)
+import System.Posix.User.ByteString (UserEntry)
+#endif
 import Prelude
 
 {- Current user's home directory.

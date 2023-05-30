@@ -249,22 +249,23 @@ podcatcher = Cron.niceJob "podcatcher run hourly" (Cron.Times "55 * * * *")
 	`requires` Apt.installed ["git-annex", "myrepos"]
 
 spamdEnabled :: Property DebianLike
-spamdEnabled = tightenTargets $ 
-	cmdProperty "update-rc.d" ["spamassassin", "enable"]
-		`assume` MadeChange
+spamdEnabled = Apt.serviceInstalledRunning "spamd"
 
 spamassassinConfigured :: Property DebianLike
 spamassassinConfigured = propertyList "spamassassin configured" $ props
-	& Apt.serviceInstalledRunning "spamassassin"
-	& "/etc/default/spamassassin" `File.containsLines`
+	& spamdEnabled
+	& "/etc/default/spamd" `File.containsLines`
 		[ "# Propellor deployed"
 		, "OPTIONS=\"--create-prefs --max-children 5 --helper-home-dir\""
-		, "CRON=1"
 		, "NICE=\"--nicelevel 15\""
 		]
 		`describe` "spamd configured"
-		`onChange` spamdEnabled
-		`onChange` Service.restarted "spamassassin"
+		`onChange` Service.restarted "spamd"
+	& "/etc/default/spamassassin" `File.containsLines`
+		[ "# Propellor deployed"
+		, "CRON=1"
+		]
+		`describe` "spamassassin configured"
 		`requires` Apt.serviceInstalledRunning "cron"
 
 kiteMailServer :: Property (HasInfo + DebianLike)
@@ -881,12 +882,33 @@ homerouterWifiInterface :: String
 homerouterWifiInterface = "wlx00c0ca82eb78"
 
 homerouterWifiInterfaceOld :: String
-homerouterWifiInterfaceOld = "wlx00c0cab064eb"
+homerouterWifiInterfaceOld = "wlx9cefd5fcd6f3"
+
+-- Connect to the starlink dish directly (no starlink router)
+connectStarlinkDish :: Property DebianLike
+connectStarlinkDish = propertyList "connected via starlink dish" $ props
+	-- Use dhcpcd for ipv6 prefix delegation to the wifi interface.
+	& Apt.installed ["dhcpcd"]
+	-- dhcpcd is run by ifup on boot. When the daemon was enabled,
+	-- that somehow prevented prefix delegation from happening,
+	-- so disable the daemon from being run by systemd.
+	& Systemd.stopped "dhcpcd"
+	& Systemd.masked "dhcpcd"
+	& "/etc/dhcpcd.conf" `File.containsLine`
+		("ia_pd 1 " ++ homerouterWifiInterface)
+	& "/etc/dhcpcd.conf" `File.lacksLine`
+		("ia_pd 1 " ++ homerouterWifiInterfaceOld)
+	& Network.dhcp "end0"
+		`requires` Network.cleanInterfacesFile
 
 -- Connect to the starlink router with its ethernet adapter.
+--
+-- Static route because with dhcp it sometimes fails to get an address from
+-- starlink.
 connectStarlinkRouter :: Property DebianLike
 connectStarlinkRouter = propertyList "connected via starlink router" $ props
-	& Network.dhcp "eth0"
+	& Network.static "end0" (IPv4 "192.168.1.62")
+		(Just (Network.Gateway (IPv4 "192.168.1.1")))
 		`requires` Network.cleanInterfacesFile
 
 -- My home router, running hostapd and dnsmasq.
@@ -916,21 +938,37 @@ homeRouter = propertyList "home router" $ props
 		[ "domain-needed"
 		, "bogus-priv"
 		, "interface=" ++ homerouterWifiInterface
-		, "interface=eth0"
 		, "domain=lan"
 		-- lease time is short because the house
 		-- controller wants to know when clients disconnect
 		, "dhcp-range=10.1.1.100,10.1.1.150,10m"
 		, "no-hosts"
-		, "address=/honeybee.kitenet.net/10.1.1.1"
 		, "address=/house.lan/10.1.1.1"
+		-- allow accessing starlink dish when it's not online yet
+		, "address=/dishy.starlink.com/192.168.100.1"
 		]
 		`onChange` Service.restarted "dnsmasq"
 	-- Avoid DHCPNAK of lease obtained at boot, after NTP slews clock
-	-- forward too far, causing that least to not be valid.
+	-- forward too far, causing that lease to not be valid.
 	& "/etc/default/dnsmasq" `File.containsLine` "DNSMASQ_OPTS=\"--dhcp-authoritative\""
 		`onChange` Service.restarted "dnsmasq"
 	& ipmasq homerouterWifiInterface
+	& Apt.installed ["radvd"]
+	-- This needs ipv6 prefix delegation to the wifi interface to be
+	-- enabled.
+	& File.hasContent "/etc/radvd.conf"
+		[ "interface " ++ homerouterWifiInterface ++ " {"
+		, "  AdvSendAdvert on;"
+		, "  MinRtrAdvInterval 3;"
+		, "  MaxRtrAdvInterval 10;"
+		, "  prefix ::/64 {"
+		, "    AdvOnLink on;"
+		, "    AdvAutonomous on;"
+		, "    AdvRouterAddr on;"
+		, "  };"
+		, "};"
+		]
+		`onChange` Service.restarted "radvd"
 
 -- | Enable IP masqerading, on whatever other interfaces come up, besides the
 -- provided intif.

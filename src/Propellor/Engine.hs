@@ -16,7 +16,7 @@ import System.Exit
 import System.IO
 import Data.Monoid
 import "mtl" Control.Monad.RWS.Strict
-import System.PosixCompat
+import System.Posix.Files
 import System.Posix.IO
 import System.FilePath
 import System.Console.Concurrent

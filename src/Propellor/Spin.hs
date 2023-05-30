@@ -27,9 +27,8 @@ import Propellor.Ssh
 import Propellor.Types.CmdLine
 import Propellor.Types.Info
 import System.Exit
-import System.Posix.Directory
 import System.Posix.IO
-import System.PosixCompat
+import System.Posix
 import Utility.Process.NonConcurrent
 import Utility.SafeCommand
 

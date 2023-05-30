@@ -18,7 +18,7 @@ import Propellor.Spin
 import Propellor.Types.CmdLine
 import System.Environment (getArgs)
 import System.Exit
-import System.PosixCompat
+import System.Posix.User
 import Utility.FileSystemEncoding
 
 usage :: Handle -> IO ()

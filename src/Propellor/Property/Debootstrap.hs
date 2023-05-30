@@ -34,6 +34,9 @@ data DebootstrapConfig
   | UseEmulation
   | DebootstrapProxy Url
   | DebootstrapMirror Url
+  | UseOldGpgKeyring
+  -- ^ Debootstrap using the keyring of old and removed gpg keys.
+  -- This is needed to debootstrap ancient stable releases of Debian.
   | DebootstrapConfig :+ DebootstrapConfig
   deriving (Show)
 
@@ -52,6 +55,7 @@ toParams (DebootstrapParam p) = [Param p]
 toParams UseEmulation = []
 toParams (DebootstrapProxy _) = []
 toParams (DebootstrapMirror _) = []
+toParams UseOldGpgKeyring = [Param "--keyring=/usr/share/keyrings/debian-archive-removed-keys.gpg"]
 toParams (c1 :+ c2) = toParams c1 <> toParams c2
 
 useEmulation :: DebootstrapConfig -> Bool

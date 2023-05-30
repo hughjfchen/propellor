@@ -10,6 +10,7 @@ import qualified Propellor.Property.File as File
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Chroot as Chroot
 import Propellor.Property.Cron (Times)
+import Propellor.Property.Debootstrap
 
 builduser :: UserName
 builduser = "builder"
@@ -105,9 +106,9 @@ cabalDeps = flagFile go cabalupdated
 			`assume` MadeChange
 		cabalupdated = homedir </> ".cabal" </> "packages" </> "hackage.haskell.org" </> "00-index.cache"
 
-autoBuilderContainer :: (DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)) -> DebianSuite -> Architecture -> Flavor -> Times -> TimeOut -> Systemd.Container
-autoBuilderContainer mkprop suite arch flavor crontime timeout =
-	Systemd.container name $ \d -> Chroot.debootstrapped mempty d $ props
+autoBuilderContainer :: (DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)) -> DebianSuite -> Architecture -> DebootstrapConfig -> Flavor -> Times -> TimeOut -> Systemd.Container
+autoBuilderContainer mkprop suite arch debootstrapconfig flavor crontime timeout =
+	Systemd.container name $ \d -> Chroot.debootstrapped debootstrapconfig d $ props
 		& mkprop suite arch flavor
 		& autobuilder (architectureToDebianArchString arch) crontime timeout
   where
@@ -115,13 +116,13 @@ autoBuilderContainer mkprop suite arch flavor crontime timeout =
 
 type Flavor = Maybe String
 
-standardAutoBuilder :: DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)
-standardAutoBuilder suite arch flavor =
+standardAutoBuilder :: Bool -> DebianSuite -> Architecture -> Flavor -> Property (HasInfo + Debian)
+standardAutoBuilder unattendedupgrades suite arch flavor =
 	propertyList "standard git-annex autobuilder" $ props
 		& osDebian suite arch
 		& Apt.stdSourcesList
-		& Apt.unattendedUpgrades
 		& Apt.cacheCleaned
+		& (if unattendedupgrades then Apt.unattendedUpgrades else mempty)
 		& User.accountFor (User builduser)
 		& tree (architectureToDebianArchString arch) flavor
 		& buildDepsApt
@@ -131,7 +132,10 @@ stackAutoBuilder suite arch flavor =
 	propertyList "git-annex autobuilder using stack" $ props
 		& osDebian suite arch
 		& buildDepsNoHaskellLibs
-		& Apt.stdSourcesList
+		-- For some reason security.debian.org is very slow for
+		-- ancient versions of debian stable used with this. So
+		-- disable for now.
+		-- & Apt.stdSourcesList
 		& Apt.unattendedUpgrades
 		& Apt.cacheCleaned
 		& User.accountFor (User builduser)
@@ -139,18 +143,24 @@ stackAutoBuilder suite arch flavor =
 		& stackInstalled
 		-- Workaround https://github.com/commercialhaskell/stack/issues/2093
 		& Apt.installed ["libtinfo-dev"]
+		& Apt.installed ["libnuma1", "libnuma-dev", "zlib1g-dev"]
 
 stackInstalled :: Property DebianLike
 stackInstalled = withOS "stack installed" $ \w o ->
 	case o of
 		(Just (System (Debian Linux (Stable "jessie")) arch)) ->
 			ensureProperty w $ manualinstall arch
+		(Just (System (Debian Linux (Stable "stretch")) arch)) ->
+			ensureProperty w $ manualinstall arch
+		(Just (System (Debian Linux (Stable "buster")) arch)) ->
+			ensureProperty w $ manualinstall arch
 		_ -> ensureProperty w $ Apt.installed ["haskell-stack"]
   where
 	-- Warning: Using a binary downloaded w/o validation.
-	manualinstall :: Architecture -> Property Linux
+	manualinstall :: Architecture -> Property DebianLike
 	manualinstall arch = tightenTargets $ check (not <$> doesFileExist binstack) $
 		propertyList "stack installed from upstream tarball" $ props
+			& Apt.installed ["wget"]
 			& cmdProperty "wget" [url, "-O", tmptar]
 				`assume` MadeChange
 			& File.dirExists tmpdir
@@ -168,9 +178,12 @@ stackInstalled = withOS "stack installed" $ \w o ->
 				_ -> doNothing
 	  where
 		url = case arch of
-			X86_32 -> "https://www.stackage.org/stack/linux-i386"
-			X86_64 -> "https://www.stackage.org/stack/linux-x86_64"
-			ARMEL -> "https://github.com/commercialhaskell/stack/releases/download/v1.7.1/stack-1.7.1-linux-arm.tar.gz"
+			X86_64 -> "https://github.com/commercialhaskell/stack/releases/download/v1.9.3/stack-1.9.3-linux-x86_64.tar.gz"
+			X86_32 -> "https://github.com/commercialhaskell/stack/releases/download/v1.9.3/stack-1.9.3-linux-i386.tar.gz"
+			ARMEL -> "https://github.com/commercialhaskell/stack/releases/download/v1.9.3/stack-1.9.3-linux-arm.tar.gz"
+			-- Newer version because older version did not
+			-- support installing ghc on arm64
+			ARM64 -> "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-linux-aarch64.tar.gz"
 			-- Probably not available.
 			a -> "https://www.stackage.org/stack/linux-" ++ architectureToDebianArchString a
 	binstack = "/usr/bin/stack"

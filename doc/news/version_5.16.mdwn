@@ -1,0 +1,5 @@
+propellor 5.16 released with [[!toggle text="these changes"]]
+[[!toggleable text="""  * Debootstrap: Added UseOldGpgKeyring constructor to DebootstrapConfig,
+    which allows bootstrapping ancient stable releases of Debian.
+  * Qemu: Install binfmt-support along with qemu-user-static.
+  * Fix build with unix-2.8.0.0 and with unix-compat-0.7."""]]

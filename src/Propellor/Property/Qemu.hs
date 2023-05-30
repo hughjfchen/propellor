@@ -11,7 +11,7 @@ foreignBinariesEmulated = (setup <!> cleanup)
   where
 	setup = Apt.installed p `pickOS` unsupportedOS
 	cleanup = Apt.removed p `pickOS` unsupportedOS
-	p = ["qemu-user-static"]
+	p = ["qemu-user-static", "binfmt-support"]
 
 -- | Check if the given System supports an Architecture.
 --

@@ -4,7 +4,7 @@ import Propellor.Base
 import Utility.UserInfo
 import Utility.FileSystemEncoding
 
-import System.PosixCompat
+import System.Posix
 import Data.Time.Clock.POSIX
 import Data.Hashable
 

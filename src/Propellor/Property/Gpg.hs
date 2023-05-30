@@ -3,7 +3,7 @@ module Propellor.Property.Gpg where
 import Propellor.Base
 import qualified Propellor.Property.Apt as Apt
 
-import System.PosixCompat
+import System.Posix.User
 
 installed :: Property DebianLike
 installed = Apt.installed ["gnupg"]

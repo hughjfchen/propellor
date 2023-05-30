@@ -28,8 +28,10 @@ import qualified Propellor.Property.Borg as Borg
 import qualified Propellor.Property.Systemd as Systemd
 import qualified Propellor.Property.Journald as Journald
 import qualified Propellor.Property.Fail2Ban as Fail2Ban
+import qualified Propellor.Property.FlashKernel as FlashKernel
 import qualified Propellor.Property.Laptop as Laptop
 import qualified Propellor.Property.LightDM as LightDM
+import qualified Propellor.Property.Debootstrap as Debootstrap
 import qualified Propellor.Property.HostingProvider.Linode as Linode
 import qualified Propellor.Property.SiteSpecific.GitHome as GitHome
 import qualified Propellor.Property.SiteSpecific.GitAnnexBuilder as GitAnnexBuilder
@@ -45,13 +47,14 @@ hosts =                 --                  (o)  `
 	[ darkstar
 	, dragon
 	, oyster
-	, orca
 	, house
 	, kite
+	, sparrow
 	, beaver
 	, sow
 	, mouse
 	, peregrine
+	, eel
 	, pell
 	] ++ monsters
 
@@ -96,29 +99,6 @@ oyster = host "oyster.kitenet.net" $ props
 	& User.hasPassword (User "root")
 	& Apt.unattendedUpgrades
 
-orca :: Host
-orca = host "orca.kitenet.net" $ props
-	& standardSystem Unstable X86_64 [ "Main git-annex build box." ]
-	& ipv4 "138.38.108.179"
-
-	& Apt.unattendedUpgrades
-	& Postfix.satellite
-	& Apt.serviceInstalledRunning "ntp"
-	& Systemd.persistentJournal
-
-	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
-		GitAnnexBuilder.standardAutoBuilder
-		Unstable X86_64 Nothing (Cron.Times "15 * * * *") "2h")
-	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
-		GitAnnexBuilder.standardAutoBuilder
-		Unstable X86_32 Nothing (Cron.Times "30 * * * *") "2h")
-	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
-		GitAnnexBuilder.stackAutoBuilder
-		(Stable "jessie") X86_32 (Just "ancient") (Cron.Times "45 * * * *") "2h")
-	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
-		GitAnnexBuilder.standardAutoBuilder
-		Testing ARM64 Nothing (Cron.Times "1 * * * *") "4h")
-
 house :: Host
 house = host "house.lan" $ props
 	& standardSystem Testing ARMHF
@@ -126,6 +106,10 @@ house = host "house.lan" $ props
 	& Apt.removed ["rsyslog"]
 	
 	& cubietech_Cubietruck
+	-- fsck when needed on boot
+	& "/etc/default/flash-kernel"
+		`File.containsLine` "LINUX_KERNEL_CMDLINE=\"fsck.repair=yes\""
+		`onChange` FlashKernel.flashKernel
 	& hasPartition
 		( partition EXT3
 			`mountedAt` "/"
@@ -148,22 +132,13 @@ house = host "house.lan" $ props
 		hosts
 		(Context "house.joeyh.name")
 		(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAmVYddg/RgCbIj+cLcEiddeFXaYFnbEJ3uGj9G/EyV joey@honeybee")
-	& JoeySites.connectStarlinkRouter
+	& JoeySites.connectStarlinkDish
 	& JoeySites.homeRouter
 	& JoeySites.homeNAS
 	& Apt.installed ["mtr-tiny", "iftop", "screen", "nmap"]
 	-- Currently manually building the xr_usb_serial module.
 	& Apt.installed ["linux-headers-armmp-lpae"]
 	& Postfix.satellite
-
-	& check (not <$> hasContainerCapability Systemd.FilesystemContained) 
-		(setupRevertableProperty autobuilder)
-	-- In case compiler needs more than available ram
-	& Apt.serviceInstalledRunning "swapspace"
-  where
-	autobuilder = Systemd.nspawned $ GitAnnexBuilder.autoBuilderContainer
-		(GitAnnexBuilder.armAutoBuilder GitAnnexBuilder.standardAutoBuilder)
-		Testing ARMEL Nothing (Cron.Times "15 15 * * *") "10h"
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
@@ -186,7 +161,6 @@ kite = host "kite.kitenet.net" $ props
 
 	& Network.preserveStatic "eth0" `requires` Network.cleanInterfacesFile
 	& Apt.installed ["linux-image-amd64"]
-	& Apt.serviceInstalledRunning "swapspace"
 	& Linode.serialGrub
 	& Linode.locateEnabled
 	& Apt.unattendedUpgrades
@@ -257,8 +231,6 @@ kite = host "kite.kitenet.net" $ props
 	& alias "kgb.kitenet.net"
 	& JoeySites.kgbServer
 	
-	& Systemd.nspawned ancientKitenet
-	
 	& alias "podcatcher.kitenet.net"
 	& JoeySites.podcatcher
 
@@ -267,6 +239,7 @@ kite = host "kite.kitenet.net" $ props
 		[ (RelDomain "mouse-onion", CNAME $ AbsDomain "htieo6yu2qtcn2j3.onion")
 		, (RelDomain "beaver-onion", CNAME $ AbsDomain "tl4xsvaxryjylgxs.onion")
 		, (RelDomain "peregrine-onion", CNAME $ AbsDomain "rsdwvaabir6ty2kdzblq7wdda26ib4fuc6hzxzwum75jbn6thqbojvid.onion")
+		, (RelDomain "eel-onion", CNAME $ AbsDomain "4yuc425lsa6ho2c6dlsg4cinadxvsn7vvir7a36ljv7wdyvg52h3inid.onion")
 		, (RelDomain "sow-onion", CNAME $ AbsDomain "urt4g2tq32qktgtp.onion")
 		]
 	& myDnsPrimary "joeyh.name" []
@@ -294,6 +267,44 @@ kite = host "kite.kitenet.net" $ props
 		(LetsEncrypt.AgreeTOS (Just "id@joeyh.name"))
 	& alias "letsencrypt.joeyh.name"
 
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		(GitAnnexBuilder.standardAutoBuilder True)
+		Unstable X86_64 mempty Nothing (Cron.Times "15 * * * *") "2h")
+	& Apt.serviceInstalledRunning "swapspace"
+
+sparrow :: Host
+sparrow = host "sparrow.kitenet.net" $ props
+	& standardSystem Testing ARM64 [ "Welcome to sparrow!" ]
+	& ipv4 "128.140.52.168"
+	& ipv6 "2a01:4f8:c17:ed3a::1"
+	& Apt.installed ["ssh"]
+	& Apt.installed [ "git-annex", "myrepos", "build-essential", "make"]
+	-- In case compiler needs more than available ram
+	& Apt.serviceInstalledRunning "swapspace"
+
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		-- qemu hangs running unattended-upgrades on i386
+		-- so disable installing that
+		(GitAnnexBuilder.standardAutoBuilder False)
+		Unstable X86_32 mempty Nothing (Cron.Times "30 * * * *") "4h")
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		GitAnnexBuilder.stackAutoBuilder
+		(Stable "jessie") X86_32
+		(Debootstrap.UseOldGpgKeyring Debootstrap.:+ Debootstrap.DebootstrapMirror "http://archive.debian.org/debian/")
+		(Just "ancient") (Cron.Times "45 * * * *") "4h")
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		(GitAnnexBuilder.standardAutoBuilder True)
+		Testing ARM64 mempty Nothing (Cron.Times "1 * * * *") "2h")
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		GitAnnexBuilder.stackAutoBuilder
+		(Stable "bullseye") ARM64 mempty
+		(Just "ancient") (Cron.Times "20 * * * *") "2h")
+	& Systemd.nspawned (GitAnnexBuilder.autoBuilderContainer
+		(GitAnnexBuilder.armAutoBuilder (GitAnnexBuilder.standardAutoBuilder True))
+		Testing ARMEL mempty Nothing (Cron.Times "15 15 * * *") "2h")
+
+	& Systemd.nspawned ancientKitenet
+
 beaver :: Host
 beaver = host "beaver.kitenet.net" $ props
 	& Apt.installed ["ssh"]
@@ -314,6 +325,13 @@ mouse = host "mouse.kitenet.net" $ props
 	& Apt.installed ["ssh"]
 	& Tor.installed
 	& Tor.hiddenServiceAvailable "ssh" (Port 22)
+
+eel :: Host
+eel = host "eel.kitenet.net" $ props
+	& Apt.installed ["ssh", "screen", "git-annex"]
+	& Tor.installed
+	& Tor.hiddenServiceAvailable "ssh" (Port 22)
+	& LightDM.autoLogin (User "desktop")
 
 peregrine :: Host
 peregrine = host "peregrine.kitenet.net" $ props
@@ -362,7 +380,7 @@ pell = host "pell.branchable.com" $ props
 -- Exhibit: kite's 90's website on port 1994.
 ancientKitenet :: Systemd.Container
 ancientKitenet = Systemd.debContainer "ancient-kitenet" $ props
-	& standardContainer (Stable "buster")
+	& standardContainer (Stable "buster") ARM64
 	& alias hn
 	& Git.cloned (User "root") "git://kitenet-net.branchable.com/" "/var/www/html"
 		(Just "remotes/origin/old-kitenet.net")
@@ -406,9 +424,9 @@ standardSystemUnhardened suite arch motd = propertyList "standard system" $ prop
 	& JoeySites.noExim
 
 -- This is my standard container setup, Featuring automatic upgrades.
-standardContainer :: DebianSuite -> Property (HasInfo + Debian)
-standardContainer suite = propertyList "standard container" $ props
-	& osDebian suite X86_64
+standardContainer :: DebianSuite -> Architecture -> Property (HasInfo + Debian)
+standardContainer suite arch = propertyList "standard container" $ props
+	& osDebian suite arch
 	-- Do not want to run mail daemon inside a random container..
 	& JoeySites.noExim
 	& Apt.stdSourcesList `onChange` Apt.upgrade
