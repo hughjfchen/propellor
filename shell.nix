@@ -15,7 +15,7 @@
 
     # Some common tools can be added with the `tools` argument
     #tools = { cabal = "latest"; hlint = "latest"; };
-    tools = { cabal = defaultPlatformProject.pkgs.haskell-nix.cabal-install.ghc8107.version;
+    tools = { cabal = defaultPlatformProject.pkgs.haskell-nix.cabal-install.ghc928.version;
               hasktags = "latest";
               haskell-language-server = "latest";
             };
