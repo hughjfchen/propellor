@@ -755,15 +755,6 @@ house user hosts ctx sshkey = propertyList "home automation" $ props
 		, "interval = 1"
 		]
 		`onChange` Service.reloaded "watchdog"
-	-- Hardcode one of the pool server IPs because ntp only retries
-	-- DNS resolution after an hour when it's down initially due to
-	-- starlink not being up.
-	& "/etc/ntp.conf" `File.containsLines`
-		[ "server 50.205.244.20"
-		]
-		`onChange` Service.reloaded "ntpsec"
-	-- Comes after so it does not set relayhost but uses the setting
-	& User.hasGroup user (Group "dialout")
 	& Group.exists (Group "gpio") Nothing
 	& User.hasGroup user (Group "gpio")
 	& Apt.installed ["i2c-tools"]
@@ -777,7 +768,6 @@ house user hosts ctx sshkey = propertyList "home automation" $ props
 		`requires` File.dirExists (takeDirectory sshkeyfile)
 		`requires` Ssh.knownHost hosts "kitenet.net" user
 	& File.hasPrivContentExposed "/etc/darksky-forecast-url" anyContext
-	& File.containsLine "/etc/dhcp/dhclient.conf" "send host-name = \"house\";"
   where
 	d = "/home/joey/house"
 	sshkeyfile = d </> ".ssh/key"
@@ -878,15 +868,15 @@ house user hosts ctx sshkey = propertyList "home automation" $ props
 			createSymbolicLink d "/var/www/html"
 		)
 
-homerouterWifiInterface :: String
-homerouterWifiInterface = "wlx00c0ca82eb78"
-
-homerouterWifiInterfaceOld :: String
-homerouterWifiInterfaceOld = "wlx9cefd5fcd6f3"
+data Interfaces = Interfaces
+	{ ethernetInterface :: String
+	, wifiInterface :: String
+	, wifiInterfaceOld :: String
+	}
 
 -- Connect to the starlink dish directly (no starlink router)
-connectStarlinkDish :: Property DebianLike
-connectStarlinkDish = propertyList "connected via starlink dish" $ props
+connectStarlinkDish :: Interfaces -> Property DebianLike
+connectStarlinkDish ifs = propertyList "connected via starlink dish" $ props
 	-- Use dhcpcd for ipv6 prefix delegation to the wifi interface.
 	& Apt.installed ["dhcpcd"]
 	-- dhcpcd is run by ifup on boot. When the daemon was enabled,
@@ -895,33 +885,33 @@ connectStarlinkDish = propertyList "connected via starlink dish" $ props
 	& Systemd.stopped "dhcpcd"
 	& Systemd.masked "dhcpcd"
 	& "/etc/dhcpcd.conf" `File.containsLine`
-		("ia_pd 1 " ++ homerouterWifiInterface)
+		("ia_pd 1 " ++ wifiInterface ifs)
 	& "/etc/dhcpcd.conf" `File.lacksLine`
-		("ia_pd 1 " ++ homerouterWifiInterfaceOld)
-	& Network.dhcp "end0"
+		("ia_pd 1 " ++ wifiInterfaceOld ifs)
+	& Network.dhcp (ethernetInterface ifs)
 		`requires` Network.cleanInterfacesFile
 
 -- Connect to the starlink router with its ethernet adapter.
 --
 -- Static route because with dhcp it sometimes fails to get an address from
 -- starlink.
-connectStarlinkRouter :: Property DebianLike
-connectStarlinkRouter = propertyList "connected via starlink router" $ props
-	& Network.static "end0" (IPv4 "192.168.1.62")
+connectStarlinkRouter :: Interfaces -> Property DebianLike
+connectStarlinkRouter ifs = propertyList "connected via starlink router" $ props
+	& Network.static (ethernetInterface ifs) (IPv4 "192.168.1.62")
 		(Just (Network.Gateway (IPv4 "192.168.1.1")))
 		`requires` Network.cleanInterfacesFile
 
 -- My home router, running hostapd and dnsmasq.
-homeRouter :: Property DebianLike
-homeRouter = propertyList "home router" $ props
-	& File.notPresent (Network.interfaceDFile homerouterWifiInterfaceOld)
-	& Network.static homerouterWifiInterface (IPv4 "10.1.1.1") Nothing
+homeRouter :: Interfaces -> String -> HostapdConfig -> Property DebianLike
+homeRouter ifs wifinetworkname (HostapdConfig hostapdconfig) = propertyList "home router" $ props
+	& File.notPresent (Network.interfaceDFile (wifiInterfaceOld ifs))
+	& Network.static (wifiInterface ifs) (IPv4 "10.1.1.1") Nothing
 		`requires` Network.cleanInterfacesFile
 	& Apt.installed ["hostapd"]
 	& File.hasContent "/etc/hostapd/hostapd.conf"
-			([ "interface=" ++ homerouterWifiInterface
-			, "ssid=house"
-			] ++ hostapd2GhzConfig)
+			([ "interface=" ++ wifiInterface ifs
+			, "ssid=" ++ wifinetworkname
+			] ++ hostapdconfig)
 		`requires` File.dirExists "/etc/hostapd"
 		`requires` File.hasContent "/etc/default/hostapd"
 			[ "DAEMON_CONF=/etc/hostapd/hostapd.conf" ]
@@ -937,13 +927,14 @@ homeRouter = propertyList "home router" $ props
 	& File.hasContent "/etc/dnsmasq.conf"
 		[ "domain-needed"
 		, "bogus-priv"
-		, "interface=" ++ homerouterWifiInterface
+		, "interface=" ++ wifiInterface ifs
 		, "domain=lan"
 		-- lease time is short because the house
 		-- controller wants to know when clients disconnect
 		, "dhcp-range=10.1.1.100,10.1.1.150,10m"
 		, "no-hosts"
-		, "address=/house.lan/10.1.1.1"
+		, "address=/sky.lan/10.1.1.1"
+		, "address=/house.lan/10.1.1.2"
 		-- allow accessing starlink dish when it's not online yet
 		, "address=/dishy.starlink.com/192.168.100.1"
 		]
@@ -952,12 +943,12 @@ homeRouter = propertyList "home router" $ props
 	-- forward too far, causing that lease to not be valid.
 	& "/etc/default/dnsmasq" `File.containsLine` "DNSMASQ_OPTS=\"--dhcp-authoritative\""
 		`onChange` Service.restarted "dnsmasq"
-	& ipmasq homerouterWifiInterface
+	& ipmasq (wifiInterface ifs)
 	& Apt.installed ["radvd"]
 	-- This needs ipv6 prefix delegation to the wifi interface to be
 	-- enabled.
 	& File.hasContent "/etc/radvd.conf"
-		[ "interface " ++ homerouterWifiInterface ++ " {"
+		[ "interface " ++ wifiInterface ifs ++ " {"
 		, "  AdvSendAdvert on;"
 		, "  MinRtrAdvInterval 3;"
 		, "  MaxRtrAdvInterval 10;"
@@ -969,6 +960,7 @@ homeRouter = propertyList "home router" $ props
 		, "};"
 		]
 		`onChange` Service.restarted "radvd"
+	& "/etc/sysctl.conf" `File.containsLine` "net.ipv6.conf.all.forwarding=1"
 
 -- | Enable IP masqerading, on whatever other interfaces come up, besides the
 -- provided intif.
@@ -1245,14 +1237,31 @@ noExim :: Property DebianLike
 noExim = Apt.removed ["exim4", "exim4-base", "exim4-daemon-light"]
 	`onChange` Apt.autoRemove
 
-hostapd2GhzConfig :: [String]
-hostapd2GhzConfig =
-	[ "hw_mode=g"
-	, "channel=8"
-	]
+data HostapdConfig = HostapdConfig [String]
 
-hostapd5GhzConfig :: [String]
-hostapd5GhzConfig =
+hostapd2GhzConfig :: HostapdConfig
+hostapd2GhzConfig = HostapdConfig
+	[ "hw_mode=g"
+        , "channel=5"
+        , "country_code=US"
+        , "ieee80211d=1"
+        , "ieee80211n=1"
+        , "wmm_enabled=1"
+        ]
+
+-- For wifi adapters such as the Alfa AWUS036ACHM
+--
+-- Note that for maximum speed, this needs channel 5 or 6.
+-- This should make it be capable of 150 Mb/s.
+hostapd2GhzConfig_mt76 :: HostapdConfig
+hostapd2GhzConfig_mt76 = HostapdConfig $ c ++ 
+       [ "ht_capab=[HT40+][HT40-][GF][SHORT-GI-20][SHORT-GI-40]"
+       ]
+  where
+       HostapdConfig c = hostapd2GhzConfig
+
+hostapd5GhzConfig :: HostapdConfig
+hostapd5GhzConfig = HostapdConfig
 	[ "hw_mode=a"
 	, "channel=36"
 	, "country_code=US"

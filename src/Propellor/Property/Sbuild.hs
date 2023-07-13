@@ -21,7 +21,7 @@ stretch, which older sbuild can't handle.
 Suggested usage in @config.hs@:
 
 >  mybox = host "mybox.example.com" $ props
->  	& osDebian (Stable "buster") X86_64
+>  	& osDebian (Stable "bookworm") X86_64
 >  	& Apt.useLocalCacher
 >  	& sidSchrootBuilt
 >  	& Sbuild.usableBy (User "spwhitton")

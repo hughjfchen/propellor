@@ -1,3 +1,10 @@
+propellor (5.17) unstable; urgency=medium
+
+  * Apt: Enable the non-free-firmware section, when used with Debian
+    bookworm or newer.
+
+ -- Joey Hess <id@joeyh.name>  Sat, 10 Jun 2023 09:49:05 -0400
+
 propellor (5.16) unstable; urgency=medium
 
   * Debootstrap: Added UseOldGpgKeyring constructor to DebootstrapConfig,

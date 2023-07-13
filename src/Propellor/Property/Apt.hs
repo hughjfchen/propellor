@@ -83,8 +83,26 @@ srcLine l = case words l of
   ("deb" : rest) -> unwords $ "deb-src" : rest
   _ -> ""
 
-stdSections :: [Section]
-stdSections = ["main", "contrib", "non-free"]
+stdSections :: DebianSuite -> [Section]
+stdSections s = ["main", "contrib", "non-free"] ++ case s of
+	Stable r | r `elem` oldstables -> []
+	-- Suite added in debian bookworm.
+	_ -> ["non-free-firmware"]
+  where
+	oldstables = 
+		[ "bullseye"
+		, "buster"
+		, "stretch"
+		, "jessie"
+		, "wheezy"
+		, "lenny"
+		, "etch"
+		, "sarge"
+		, "woody"
+		, "potato"
+		, "slink"
+		, "hamm"
+		]
 
 binandsrc :: String -> SourcesGenerator
 binandsrc url suite =
@@ -97,14 +115,14 @@ binandsrc url suite =
       srcLine <$> bl
     ]
   where
-    l = debLine (showSuite suite) url stdSections
+    l = debLine (showSuite suite) url (stdSections suite)
     bl = do
       bs <- backportSuite suite
-      return $ debLine bs url stdSections
+      return $ debLine bs url (stdSections suite)
     -- formerly known as 'volatile'
     sul = do
       sus <- stableUpdatesSuite suite
-      return $ debLine sus url stdSections
+      return $ debLine sus url (stdSections suite)
 
 stdArchiveLines :: Propellor SourcesGenerator
 stdArchiveLines = return . binandsrc =<< getMirror
@@ -113,7 +131,7 @@ stdArchiveLines = return . binandsrc =<< getMirror
 securityUpdates :: SourcesGenerator
 securityUpdates suite
   | isStable suite =
-    let l = "deb http://security.debian.org/debian-security " ++ securitysuite ++ " " ++ unwords stdSections
+    let l = "deb http://security.debian.org/debian-security " ++ securitysuite ++ " " ++ unwords (stdSections suite)
      in [l, srcLine l]
   | otherwise = []
   where

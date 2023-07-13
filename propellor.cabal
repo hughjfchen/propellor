@@ -1,11 +1,11 @@
 Name: propellor
-Version: 5.16
+Version: 5.17
 Cabal-Version: 1.20
 License: BSD2
 Maintainer: Joey Hess <id@joeyh.name>
 Author: Joey Hess
 Stability: Stable
-Copyright: 2014 Joey Hess
+Copyright: 2014-2023 Joey Hess
 License-File: LICENSE
 Build-Type: Simple
 Homepage: https://propellor.branchable.com/

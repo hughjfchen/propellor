@@ -48,6 +48,7 @@ hosts =                 --                  (o)  `
 	, dragon
 	, oyster
 	, house
+	, sky
 	, kite
 	, sparrow
 	, beaver
@@ -101,8 +102,7 @@ oyster = host "oyster.kitenet.net" $ props
 
 house :: Host
 house = host "house.lan" $ props
-	& standardSystem Testing ARMHF
-		[ "Home router and arm git-annex build box." ]
+	& standardSystem Testing ARMHF [ "House mail computer." ]
 	& Apt.removed ["rsyslog"]
 	
 	& cubietech_Cubietruck
@@ -118,7 +118,7 @@ house = host "house.lan" $ props
 	& JoeySites.cubieTruckOneWire
 	& Systemd.persistentJournal
 	& Apt.installed ["firmware-atheros"]
-	& Apt.serviceInstalledRunning "ntp" -- no hardware clock
+	& Apt.serviceInstalledRunning "systemd-timesyncd" -- no hardware clock
 	& bootstrappedFrom GitRepoOutsideChroot
 	& Ssh.hostKeys hostContext
 		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIS/hDYq1MAxfOBf49htym3BOYlx4Gk9SDpiHjv7u6IC")
@@ -132,13 +132,56 @@ house = host "house.lan" $ props
 		hosts
 		(Context "house.joeyh.name")
 		(SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAmVYddg/RgCbIj+cLcEiddeFXaYFnbEJ3uGj9G/EyV joey@honeybee")
-	& JoeySites.connectStarlinkDish
-	& JoeySites.homeRouter
+	
+	-- Use iwd to connect to wifi on whatever usb wifi is connected.
+	& Apt.installed ["iwd"]
+	& File.hasContent "/var/lib/iwd/.known_network.freq"
+		[ "[7085c93b-9e5f-5cdb-a13d-bf72db7c3adf]"
+		, "name=/var/lib/iwd//hollow.open"
+		, "list= 2457"
+		]
+	& File.hasContent "/var/lib/iwd/hollow.open"
+		[ "[IPv4]"
+		, "Address=10.1.1.2"
+		, "Netmask=255.255.255.0"
+		, "Gateway=10.1.1.1"
+		, "Broadcast=10.1.1.255"
+		, "DNS=10.1.1.1"
+		]
+	& Systemd.enabled "iwd"
+	& "/etc/resolv.conf" `File.containsLine` "search lan"
+
 	& JoeySites.homeNAS
 	& Apt.installed ["mtr-tiny", "iftop", "screen", "nmap"]
 	-- Currently manually building the xr_usb_serial module.
 	& Apt.installed ["linux-headers-armmp-lpae"]
 	& Postfix.satellite
+
+sky :: Host
+sky = host "sky.lan" $ props
+	& standardSystem Testing ARMHF [ "Wifi router." ]
+	& Apt.removed ["rsyslog"]
+	
+	& Apt.installed ["raspi-firmware", "firmware-misc-nonfree"]
+	& Apt.serviceInstalledRunning "systemd-timesyncd" -- no hardware clock
+
+	& Ssh.hostKeys hostContext
+		[ (SshEcdsa, "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBG19v7K59SzFp/OntM9iyhlKOj2pShFSPJeqR1aiYhPF2NqztcmsY6WvIDqh6jmaISnyV1IqZZ60zvGTVRoOyMY=")
+		]
+	& Ssh.userKeys (User "joey") hostContext
+		[ (SshEd25519, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOmwEfM5qTjA7xuJgygEgHfa1Y/WrRBpu7xBY8D82ul+")
+		]
+
+	& JoeySites.connectStarlinkDish ifs
+	& JoeySites.homeRouter ifs "hollow" JoeySites.hostapd2GhzConfig_mt76
+	& Apt.installed ["mtr-tiny", "iftop", "screen", "nmap", "net-tools"]
+	& Postfix.satellite
+  where
+	ifs = JoeySites.Interfaces
+		{ JoeySites.ethernetInterface = "eth0"
+		, JoeySites.wifiInterface = "wlan0"
+		, JoeySites.wifiInterfaceOld = "wlan1"
+		}
 
 -- This is not a complete description of kite, since it's a
 -- multiuser system with eg, user passwords that are not deployed
